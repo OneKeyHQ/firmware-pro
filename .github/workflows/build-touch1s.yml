@@ -56,7 +56,7 @@ jobs:
           nix-shell --run "poetry run make -C core build_boardloader"
           nix-shell --run "poetry run make -C core build_bootloader"
           nix-shell --run "poetry run make -C core build_firmware"
-          nix-shell --run "poetry run core/tools/headertool.py -h core/build/firmware/bootloader*Stable*.bin -S 1:${{ secrets.SECRET_QA_KEY_1 }} -S 2:${{ secrets.SECRET_QA_KEY_2 }}"
+          nix-shell --run "poetry run core/tools/headertool.py -h core/build/bootloader/bootloader*Stable*.bin -S 1:${{ secrets.SECRET_QA_KEY_1 }} -S 2:${{ secrets.SECRET_QA_KEY_2 }}"
           nix-shell --run "poetry run core/tools/headertool.py -h core/build/firmware/touch*Stable*.bin -S 1:${{ secrets.SECRET_QA_KEY_1 }} -S 2:${{ secrets.SECRET_QA_KEY_2 }}"
           mkdir -p core/build/output/qa
           cp ./core/build/boardloader/boardloader.bin ./core/build/bootloader/bootloader*Stable*.bin ./core/build/firmware/touch*Stable*.bin core/build/output/qa
