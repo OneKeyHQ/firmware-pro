@@ -512,6 +512,12 @@ secbool se_getRetryTimes(uint8_t *ptimes) {
     return secfalse;
   }
   *ptimes = remain;
+
+  if (remain == 0) {
+    se_reset_se();
+    error_pin_max();
+  }
+
   return sectrue;
 }
 
