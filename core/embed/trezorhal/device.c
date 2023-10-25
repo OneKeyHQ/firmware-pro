@@ -398,12 +398,6 @@ static void lock_burnin_test_otp(void) {
 #define TEST_DURATION (3 * 60 * 60 * TIMER_1S)  // 3 hours
 
 void device_burnin_test(bool force) {
-  char *serial;
-  device_get_serial(&serial);
-  if (memcmp(serial + 7, "20230201", 8) < 0) {
-    return;
-  }
-
   uint32_t start = 0, current, remain, previous_remain, previous;
   uint8_t rand_buffer[32];
   char remain_timer[16] = {0};
