@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from trezor import utils, wire
+from trezor.crypto import se_thd89
 from trezor.messages import SEMessageSignature
 
 if TYPE_CHECKING:
@@ -15,10 +16,5 @@ async def se_sign_message(ctx: wire.Context, msg: SESignMessage) -> SEMessageSig
 
     await confirm_security_check(ctx)
 
-    import atca  # type: ignore[Import "atca" could not be resolved]
-
-    signature = bytes(64)
-    if atca.se_sign_message(msg.message, len(msg.message), signature):
-        return SEMessageSignature(signature=signature)
-    else:
-        raise wire.ProcessError("se sign failed")
+    signature = se_thd89.sign_message(msg.message)
+    return SEMessageSignature(signature=signature)

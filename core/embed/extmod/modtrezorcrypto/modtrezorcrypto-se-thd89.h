@@ -582,6 +582,41 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(
     mod_trezorcrypto_se_thd89_authorization_clear_obj,
     mod_trezorcrypto_se_thd89_authorization_clear);
 
+/// def read_certificate(
+/// ) -> bytes:
+///     """
+///     Read certificate.
+///     """
+STATIC mp_obj_t mod_trezorcrypto_se_thd89_read_certificate(void) {
+  uint8_t cert[512];
+  uint16_t cert_len = sizeof(cert);
+  if (!se_read_certificate(cert, &cert_len)) {
+    mp_raise_ValueError("read certificate failed");
+  }
+  return mp_obj_new_str_copy(&mp_type_bytes, cert, cert_len);
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorcrypto_se_thd89_read_certificate_obj,
+                                 mod_trezorcrypto_se_thd89_read_certificate);
+
+/// def sign_message(
+/// ) -> bytes:
+///     """
+///     Sign message.
+///     """
+STATIC mp_obj_t mod_trezorcrypto_se_thd89_sign_message(mp_obj_t msg) {
+  uint8_t signature[64];
+  mp_buffer_info_t msg_info = {0};
+  mp_get_buffer_raise(msg, &msg_info, MP_BUFFER_READ);
+  if (!se_sign_message(msg_info.buf, msg_info.len, signature)) {
+    mp_raise_ValueError("sign message failed");
+  }
+  return mp_obj_new_str_copy(&mp_type_bytes, signature, 64);
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorcrypto_se_thd89_sign_message_obj,
+                                 mod_trezorcrypto_se_thd89_sign_message);
+
 STATIC const mp_rom_map_elem_t mod_trezorcrypto_se_thd89_globals_table[] = {
     {MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_se_thd89)},
     {MP_ROM_QSTR(MP_QSTR_check),
@@ -624,6 +659,10 @@ STATIC const mp_rom_map_elem_t mod_trezorcrypto_se_thd89_globals_table[] = {
      MP_ROM_PTR(&mod_trezorcrypto_se_thd89_authorization_get_data_obj)},
     {MP_ROM_QSTR(MP_QSTR_authorization_clear),
      MP_ROM_PTR(&mod_trezorcrypto_se_thd89_authorization_clear_obj)},
+    {MP_ROM_QSTR(MP_QSTR_read_certificate),
+     MP_ROM_PTR(&mod_trezorcrypto_se_thd89_read_certificate_obj)},
+    {MP_ROM_QSTR(MP_QSTR_sign_message),
+     MP_ROM_PTR(&mod_trezorcrypto_se_thd89_sign_message_obj)},
 };
 STATIC MP_DEFINE_CONST_DICT(mod_trezorcrypto_se_thd89_globals,
                             mod_trezorcrypto_se_thd89_globals_table);

@@ -167,3 +167,19 @@ def authorization_clear(
     """
     authorization clear.
     """
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
+def read_certificate(
+) -> bytes:
+    """
+    Read certificate.
+    """
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
+def sign_message(
+) -> bytes:
+    """
+    Sign message.
+    """
