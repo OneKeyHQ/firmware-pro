@@ -53,7 +53,7 @@ CFLAGS += -DSCM_REVISION='\"$(shell git rev-parse HEAD | sed 's:\(..\):\\x\1:g')
 BUILD_DATE=$(shell date "+%m%d")
 
 BOOT_BUILD_VERSION=$(shell ../tools/version.sh ./embed/bootloader/version.h)
-FIRMWARE_BUILD_VERSION=$(shell cat ./embed/firmware/version.h | grep "ONEKEY_VERSION " | awk -F "[\"\"]" '{print $2}')
+FIRMWARE_BUILD_VERSION=$(shell cat ./embed/firmware/version.h | grep "ONEKEY_VERSION " | awk -F "[\"\"]" '{print $$2}')
 ifndef BUILD_ID
 BUILD_COMMIT=$(shell git rev-parse HEAD | cut -c1-7)
 FIRMWARE_BUILD_NAME=touch.$(FIRMWARE_BUILD_VERSION)-Stable-$(BUILD_DATE)-$(BUILD_COMMIT)
