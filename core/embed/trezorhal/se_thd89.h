@@ -92,6 +92,7 @@ int se_get_shared_key(const char *curve, const uint8_t *peer_public_key,
 
 secbool se_derive_tweak_private_keys(const uint8_t *root_hash);
 int se_bip340_sign_digest(const uint8_t *digest, uint8_t sig[64]);
+int se_bch_schnorr_sign_digest(const uint8_t *digest, uint8_t sig[64]);
 
 int se_aes256_encrypt(const uint8_t *data, uint16_t data_len, const uint8_t *iv,
                       uint8_t *value, uint16_t value_len, uint8_t *out);

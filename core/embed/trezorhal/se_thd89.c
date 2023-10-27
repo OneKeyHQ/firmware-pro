@@ -1064,6 +1064,18 @@ int se_bip340_sign_digest(const uint8_t *digest, uint8_t sig[64]) {
   return 0;
 }
 
+int se_bch_schnorr_sign_digest(const uint8_t *digest, uint8_t sig[64]) {
+  uint8_t resp[64];
+  uint16_t resp_len = sizeof(resp);
+  if (!se_transmit_mac(SE_INS_SIGN, 0x00, 0x09, (uint8_t *)digest, 32, resp,
+                       &resp_len)) {
+    return -1;
+  }
+  if (resp_len != 64) return -1;
+  memcpy(sig, resp, resp_len);
+  return 0;
+}
+
 int se_aes256_encrypt(const uint8_t *data, uint16_t data_len, const uint8_t *iv,
                       uint8_t *value, uint16_t value_len, uint8_t *out) {
   uint32_t len = 0;

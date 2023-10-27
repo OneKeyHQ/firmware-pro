@@ -20,6 +20,7 @@
 #include "py/objstr.h"
 
 #include "schnorr_bch.h"
+#include "se_thd89.h"
 #include "vendor/trezor-crypto/secp256k1.h"
 
 /// package: trezorcrypto.schnorr_bch
@@ -45,8 +46,14 @@ STATIC mp_obj_t mod_trezorcrypto_schnorr_bch_sign(mp_obj_t secret_key,
 
   vstr_t sig = {0};
   vstr_init_len(&sig, 64);
-  int ret = schnorr_sign_digest(&secp256k1, (const uint8_t *)sk.buf,
-                                (const uint8_t *)dig.buf, (uint8_t *)sig.buf);
+  int ret;
+#if USE_THD89
+  ret =
+      se_bch_schnorr_sign_digest((const uint8_t *)dig.buf, (uint8_t *)sig.buf);
+#else
+  ret = schnorr_sign_digest(&secp256k1, (const uint8_t *)sk.buf,
+                            (const uint8_t *)dig.buf, (uint8_t *)sig.buf);
+#endif
   if (0 != ret) {
     vstr_clear(&sig);
     mp_raise_ValueError("Signing failed");
