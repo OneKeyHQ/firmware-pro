@@ -1,5 +1,2 @@
-^\./common/
-^\./core/embed/
-^\./crypto/
-^\./legacy/
-^\./storage/
+^\./core/embed/emmc_wrapper
+^\./core/embed/fp_sensor_wrapper
