@@ -27,69 +27,16 @@
 #include "irq.h"
 #include "memzero.h"
 
+#include "i2c.h"
 #include "thd89.h"
 
 #define THD89_ADDRESS (0x10 << 1)
 
-static I2C_HandleTypeDef i2c_handle;
+#define i2c_handle_se i2c_handles[i2c_find_master_by_slave(I2C_SE)]
 
 static uint8_t sw1 = 0, sw2 = 0;
 
-static void _i2c_msp_init(void) {
-  __HAL_RCC_GPIOD_CLK_ENABLE();
-
-  GPIO_InitTypeDef GPIO_InitStructure;
-
-  GPIO_InitStructure.Mode = GPIO_MODE_AF_OD;
-  GPIO_InitStructure.Pull = GPIO_NOPULL;
-  GPIO_InitStructure.Speed =
-      GPIO_SPEED_FREQ_LOW;  // I2C is a KHz bus and low speed is still good
-                            // into the low MHz
-  GPIO_InitStructure.Alternate = GPIO_AF4_I2C4;
-  GPIO_InitStructure.Pin = GPIO_PIN_12 | GPIO_PIN_13;
-  HAL_GPIO_Init(GPIOD, &GPIO_InitStructure);
-
-  __HAL_RCC_I2C4_CLK_ENABLE();
-  // __HAL_RCC_I2C4_FORCE_RESET();
-  // __HAL_RCC_I2C4_RELEASE_RESET();
-}
-
-static void _i2c_init(void) {
-  if (i2c_handle.Instance) {
-    return;
-  }
-  i2c_handle.Instance = I2C4;
-
-  i2c_handle.Init.Timing = 0x10C0ECff;
-  i2c_handle.Init.OwnAddress1 = 0;  // master
-  i2c_handle.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
-  i2c_handle.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
-  i2c_handle.Init.OwnAddress2 = 0;
-  i2c_handle.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
-  i2c_handle.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
-  i2c_handle.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
-
-  if (HAL_OK != HAL_I2C_Init(&i2c_handle)) {
-    ensure(secfalse, NULL);
-    return;
-  }
-
-  if (HAL_I2CEx_ConfigAnalogFilter(&i2c_handle, I2C_ANALOGFILTER_ENABLE) !=
-      HAL_OK) {
-    ensure(secfalse, NULL);
-    return;
-  } else {
-    if (HAL_I2CEx_ConfigDigitalFilter(&i2c_handle, 0) != HAL_OK) {
-      ensure(secfalse, NULL);
-      return;
-    }
-  }
-}
-
-void thd89_init(void) {
-  _i2c_msp_init();
-  _i2c_init();
-}
+void thd89_init(void) { i2c_init_by_device(I2C_SE); }
 
 static uint8_t xor_check(uint8_t init, uint8_t *data, uint16_t len) {
   uint16_t i;
@@ -552,12 +499,12 @@ int i2c_master_recive(I2C_HandleTypeDef *hi2c, uint16_t DevAddress,
 secbool thd89_transmit(uint8_t *cmd, uint16_t len, uint8_t *resp,
                        uint16_t *resp_len) {
   int ret = 0;
-  if (i2c_master_send(&i2c_handle, THD89_ADDRESS, cmd, len, 500) != HAL_OK) {
+  if (i2c_master_send(&i2c_handle_se, THD89_ADDRESS, cmd, len, 500) != HAL_OK) {
     ensure(secfalse, "se send error");
     return secfalse;
   }
   hal_delay(1);
-  ret = i2c_master_recive(&i2c_handle, THD89_ADDRESS, resp, resp_len,
+  ret = i2c_master_recive(&i2c_handle_se, THD89_ADDRESS, resp, resp_len,
                           I2C_RECV_TIMEOUT);
   if (ret != HAL_OK) {
     if (ret == I2C_RECV_BUFFER_TOO_SMALL) {

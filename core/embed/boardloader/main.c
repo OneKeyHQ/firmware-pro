@@ -28,6 +28,7 @@
 #include "flash.h"
 #include "image.h"
 #include "mipi_lcd.h"
+#include "i2c.h"
 #include "rng.h"
 #ifdef TREZOR_MODEL_T
 #include "sdcard.h"

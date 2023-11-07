@@ -126,7 +126,7 @@ int32_t spi_slave_init() {
     gpio.Pull = GPIO_NOPULL;
     gpio.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     gpio.Alternate = GPIO_AF5_SPI2;
-    gpio.Pin = GPIO_PIN_9 | GPIO_PIN_11;
+    gpio.Pin = GPIO_PIN_12 | GPIO_PIN_11;
     HAL_GPIO_Init(GPIOA, &gpio);
   }
 

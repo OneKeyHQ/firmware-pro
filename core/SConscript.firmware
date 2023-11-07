@@ -396,7 +396,9 @@ if PRODUCTION_MODEL == 'H':
     SOURCE_STMHAL = [
         'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal.c',
         'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_cortex.c',
+        'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dcmi.c',
         'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dma.c',
+        'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dma_ex.c',
         'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_flash.c',
         'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_flash_ex.c',
         'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_gpio.c',
@@ -445,6 +447,10 @@ if PRODUCTION_MODEL == 'H':
         'embed/trezorhal/image.c',
         'embed/trezorhal/emmc.c',
         'embed/trezorhal/flash.c',
+        'embed/trezorhal/i2c.c',
+        'embed/trezorhal/camera.c',
+        'embed/trezorhal/nfc.c',
+        'embed/trezorhal/pn532.c',
         'embed/trezorhal/heap_4.c',
         'embed/trezorhal/qspi_flash.c',
         'embed/trezorhal/mini_printf.c',
@@ -540,6 +546,9 @@ elif TREZOR_MODEL in ('1',):
         'embed/trezorhal/button.c',
     ]
 
+# fp_sensor wrapper
+SOURCE_FP_SENSOR_WRAPPER = []
+SOURCE_FP_SENSOR_WRAPPER.extend(Glob('embed/fp_sensor_wrapper/*.c'))
 
 #if DMA2D:
 #CPPDEFINES_MOD += [
@@ -630,19 +639,23 @@ if PRODUCTION_MODEL == 'H':
         '-fstack-protector-all '
         + CPU_CCFLAGS + CCFLAGS_MOD,
         CCFLAGS_QSTR='-DNO_QSTR -DN_X64 -DN_X86 -DN_THUMB',
-        LINKFLAGS='-T embed/firmware/memory_H%s.ld -Wl,--gc-sections -Wl,-Map=build/firmware/firmware.map -Wl,--warn-common' % LD_VARIANT,
+        LINKFLAGS='-T embed/firmware/memory_H%s.ld -Wl,--gc-sections -Wl,-Map=build/firmware/firmware.map -Wl,--warn-common -Wl,-L embed/fp_sensor_wrapper -Wl,-whole-archive -Wl,-lFpalgorithm -Wl,-no-whole-archive' % LD_VARIANT,
+        INC = f' -Iembed/emmc_wrapper -Iembed/fp_sensor_wrapper',
         CPPPATH=[
             '.',
             'embed/rust',
             'embed/firmware',
             'embed/trezorhal',
             'embed/trezorhal/fatfs',
+            'embed/trezorhal/fp',
             'embed/extmod/modtrezorui',
             'vendor/micropython',
             'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Inc',
             'vendor/micropython/lib/stm32lib/CMSIS/STM32H7xx/Include',
             'vendor/micropython/lib/cmsis/inc',
             'embed/lvgl',
+            'embed/emmc_wrapper',
+            'embed/fp_sensor_wrapper',
             'vendor/lvgl_mp/lvgl',
         ] + CPPPATH_MOD,
         CPPDEFINES=[
@@ -1012,6 +1025,8 @@ env.Append(LINKFLAGS=f' -l{RUST_LIB}')
 #
 
 obj_program = []
+obj_program += env.Object(source=SOURCE_FP_SENSOR_WRAPPER)
+
 obj_program.extend(env.Object(source=SOURCE_MOD))
 if FEATURE_FLAGS["SECP256K1_ZKP"]:
     obj_program.extend(env.Object(source=SOURCE_MOD_SECP256K1_ZKP, CCFLAGS='$CCFLAGS -Wno-unused-function'))
