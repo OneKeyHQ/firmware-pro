@@ -1,10 +1,20 @@
 #include "i2c.h"
 
+#define ExecuteCheck_ADV_I2C(func_call, expected_result, on_false) \
+    {                                                              \
+        if ( (func_call) != (expected_result) )                    \
+        {                                                          \
+            on_false                                               \
+        }                                                          \
+    }
+
+#define ExecuteCheck_HAL_OK(func_call) ExecuteCheck_ADV_I2C(func_call, HAL_OK, { return false; })
+
 // handles
-I2C_HandleTypeDef i2c_handles[I2C_MASTER_TOTAL];
+I2C_HandleTypeDef i2c_handles[I2C_CHANNEL_TOTAL];
 
 // init status
-bool i2c_status[I2C_MASTER_TOTAL];
+bool i2c_status[I2C_CHANNEL_TOTAL];
 
 // init function and arrays
 bool I2C_1_INIT()
@@ -110,21 +120,21 @@ bool I2C_4_DEINIT()
     return true;
 }
 
-i2c_init_function_t i2c_init_function[I2C_MASTER_TOTAL] = {
+i2c_init_function_t i2c_init_function[I2C_CHANNEL_TOTAL] = {
     &I2C_1_INIT,
     &I2C_4_INIT,
 };
 
-i2c_deinit_function_t i2c_deinit_function[I2C_MASTER_TOTAL] = {
+i2c_deinit_function_t i2c_deinit_function[I2C_CHANNEL_TOTAL] = {
     &I2C_1_DEINIT,
     &I2C_4_DEINIT,
 };
 
 // helper functions
 
-i2c_master i2c_find_master_by_slave(i2c_slave slave)
+i2c_channel i2c_find_channel_by_device(i2c_device device)
 {
-    switch ( slave )
+    switch ( device )
     {
     case I2C_TOUCHPANEL:
         return I2C_1;
@@ -138,27 +148,27 @@ i2c_master i2c_find_master_by_slave(i2c_slave slave)
     }
 }
 
-bool is_i2c_initialized_by_device(i2c_slave slave)
+bool is_i2c_initialized_by_device(i2c_device device)
 {
-    i2c_master master = i2c_find_master_by_slave(slave);
+    i2c_channel master = i2c_find_channel_by_device(device);
     if ( master == I2C_UNKNOW )
         return false;
 
     return i2c_status[master];
 }
 
-bool i2c_init_by_device(i2c_slave slave)
+bool i2c_init_by_device(i2c_device device)
 {
-    i2c_master master = i2c_find_master_by_slave(slave);
+    i2c_channel master = i2c_find_channel_by_device(device);
     if ( master == I2C_UNKNOW )
         return false;
 
     return i2c_init_function[master]();
 }
 
-bool i2c_deinit_by_device(i2c_slave slave)
+bool i2c_deinit_by_device(i2c_device device)
 {
-    i2c_master master = i2c_find_master_by_slave(slave);
+    i2c_channel master = i2c_find_channel_by_device(device);
     if ( master == I2C_UNKNOW )
         return false;
 

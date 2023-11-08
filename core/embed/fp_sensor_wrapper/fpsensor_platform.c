@@ -19,7 +19,6 @@ uint8_t fpsensor_gpio_init()
     GPIO_InitTypeDef GPIO_InitStruct = {0};
 
     __HAL_RCC_GPIOB_CLK_ENABLE();
-    __HAL_RCC_GPIOD_CLK_ENABLE();
 
     // MISC
 

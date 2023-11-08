@@ -190,6 +190,7 @@ SOURCE_TREZORHAL = [
     'embed/trezorhal/usbd_desc.c',
     'embed/trezorhal/trans_fifo.c',
     'embed/trezorhal/i2c.c',
+    'embed/trezorhal/spi.c',
     'embed/trezorhal/spi_legacy.c',
     'embed/trezorhal/usart.c',
     'embed/trezorhal/ble.c',
@@ -207,8 +208,8 @@ SOURCE_TREZORHAL = [
     'embed/trezorhal/util.s',
     'embed/trezorhal/vectortable.s',
     'embed/trezorhal/camera.c',
-    'embed/trezorhal/nfc.c',
     'embed/trezorhal/pn532.c',
+    'embed/trezorhal/nfc.c',
 
 ]
 

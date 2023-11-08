@@ -50,9 +50,10 @@
 #include "bootui.h"
 #include "device.h"
 #include "i2c.h"
+#include "spi.h"
+#include "spi_legacy.h"
 #include "messages.h"
 #include "mpu.h"
-#include "spi_legacy.h"
 #include "sys.h"
 #include "usart.h"
 
@@ -155,22 +156,24 @@ static void nfc_test()
 {
   display_printf("TouchPro Demo Mode\n");\
   display_printf("======================\n\n");
+
   display_printf("NFC PN532 Init...");
-  if(nfc_init())display_printf("ERR\n");
-  else display_printf("OK\n");
+  nfc_init();
+  PN532_LibrarySetup();
+
   unsigned char buff[4];
-  if(PN532_GetFirmwareVersion(&pn532, buff)<0){
+  if(PN532_GetFirmwareVersion(&nfc_pn532, buff)<0){
     display_printf("NFC PN532 FirmwareVersion Error!\n");
   }else{
     display_printf("Found PN532 with firmware v%d.%d\n", buff[1], buff[2]);
     display_printf("PN532 IC:  0x%x\n",buff[0]);
   }
-  PN532_SamConfiguration(&pn532);
+  PN532_SamConfiguration(&nfc_pn532);
   display_printf("Waiting for RFID/NFC card...\r\n");
   unsigned int uid_len;
   unsigned char uid[MIFARE_UID_MAX_LENGTH];
     while (1){
-          uid_len = PN532_ReadPassiveTarget(&pn532, uid, PN532_MIFARE_ISO14443A, 1000);
+          uid_len = PN532_ReadPassiveTarget(&nfc_pn532, uid, PN532_MIFARE_ISO14443A, 1000);
     if (uid_len == PN532_STATUS_ERROR) {
       display_printf(".");
     } else {

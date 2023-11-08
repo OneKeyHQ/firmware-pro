@@ -3,7 +3,7 @@
 #include "i2c.h"
 #include "sdram.h"
 
-#define i2c_handle_camera i2c_handles[i2c_find_master_by_slave(I2C_CAMERA)]
+#define i2c_handle_camera i2c_handles[i2c_find_channel_by_device(I2C_CAMERA)]
 
 DCMI_HandleTypeDef DCMI_Handle;
 DMA_HandleTypeDef DMA_DCMI_Handle;

@@ -32,7 +32,7 @@
 
 #define THD89_ADDRESS (0x10 << 1)
 
-#define i2c_handle_se i2c_handles[i2c_find_master_by_slave(I2C_SE)]
+#define i2c_handle_se i2c_handles[i2c_find_channel_by_device(I2C_SE)]
 
 static uint8_t sw1 = 0, sw2 = 0;
 

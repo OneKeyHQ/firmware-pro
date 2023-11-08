@@ -28,7 +28,7 @@
 #include "i2c.h"
 #include "touch.h"
 
-#define i2c_handle_touchpanel i2c_handles[i2c_find_master_by_slave(I2C_TOUCHPANEL)]
+#define i2c_handle_touchpanel i2c_handles[i2c_find_channel_by_device(I2C_TOUCHPANEL)]
 
 #if defined(STM32H747xx)
 
