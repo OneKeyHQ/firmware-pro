@@ -3,7 +3,7 @@
 #include "nordic_dfu.h"
 #include "common.h"
 #include "display.h"
-#include "spi.h"
+#include "spi_legacy.h"
 #include "usart.h"
 
 #define default_prn 0

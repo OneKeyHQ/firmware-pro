@@ -470,7 +470,7 @@ if PRODUCTION_MODEL == 'H':
         'embed/trezorhal/thd89.c',
         'embed/trezorhal/se_thd89.c',
 	    'embed/trezorhal/trans_fifo.c',
-        'embed/trezorhal/spi.c',
+        'embed/trezorhal/spi_legacy.c',
         'embed/trezorhal/usart.c',
         'embed/trezorhal/sys.c',
         'embed/trezorhal/ble.c',

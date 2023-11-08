@@ -27,7 +27,7 @@
 #include "ble.h"
 #include "nordic_dfu.h"
 #include "sdram.h"
-#include "spi.h"
+#include "spi_legacy.h"
 #include "usb.h"
 
 // protobuf

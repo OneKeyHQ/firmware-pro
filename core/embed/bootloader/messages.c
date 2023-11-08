@@ -38,7 +38,7 @@
 #include "ble.h"
 #include "bootui.h"
 #include "nordic_dfu.h"
-#include "spi.h"
+#include "spi_legacy.h"
 
 #define MSG_HEADER1_LEN 9
 #define MSG_HEADER2_LEN 1

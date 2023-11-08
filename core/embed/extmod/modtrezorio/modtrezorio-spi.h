@@ -18,7 +18,7 @@
  */
 
 #include "embed/extmod/trezorobj.h"
-#include "spi.h"
+#include "spi_legacy.h"
 
 /// package: trezorio.__init__
 

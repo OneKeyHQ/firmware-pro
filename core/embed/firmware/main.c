@@ -56,7 +56,7 @@
 #include "mipi_lcd.h"
 #include "qspi_flash.h"
 #include "se_thd89.h"
-#include "spi.h"
+#include "spi_legacy.h"
 #include "supervise.h"
 #include "thd89.h"
 #include "timer.h"

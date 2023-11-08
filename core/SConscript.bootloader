@@ -190,7 +190,7 @@ SOURCE_TREZORHAL = [
     'embed/trezorhal/usbd_desc.c',
     'embed/trezorhal/trans_fifo.c',
     'embed/trezorhal/i2c.c',
-    'embed/trezorhal/spi.c',
+    'embed/trezorhal/spi_legacy.c',
     'embed/trezorhal/usart.c',
     'embed/trezorhal/ble.c',
     'embed/trezorhal/sys.c',

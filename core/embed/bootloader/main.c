@@ -52,7 +52,7 @@
 #include "i2c.h"
 #include "messages.h"
 #include "mpu.h"
-#include "spi.h"
+#include "spi_legacy.h"
 #include "sys.h"
 #include "usart.h"
 

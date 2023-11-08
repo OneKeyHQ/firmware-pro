@@ -23,7 +23,7 @@
 #include "common.h"
 #include "display.h"
 #include "embed/extmod/trezorobj.h"
-#include "spi.h"
+#include "spi_legacy.h"
 #include "usart.h"
 
 #define SPI_IFACE (6)

@@ -5,7 +5,7 @@
 
 #include "common.h"
 #include "irq.h"
-#include "spi.h"
+#include "spi_legacy.h"
 #include "timer.h"
 
 SPI_HandleTypeDef spi;
