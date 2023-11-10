@@ -178,8 +178,7 @@ def read_certificate(
 
 
 # extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
-def sign_message(
-) -> bytes:
+def sign_message(msg: bytes) -> bytes:
     """
     Sign message.
     """

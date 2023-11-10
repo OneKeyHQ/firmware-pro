@@ -34,7 +34,7 @@ _iface_iter = iter(range(5))
 
 ENABLE_IFACE_DEBUG = __debug__
 # ENABLE_IFACE_WEBAUTHN = not utils.BITCOIN_ONLY
-ENABLE_IFACE_WEBAUTHN = False
+ENABLE_IFACE_WEBAUTHN = False  # not yet implemented
 ENABLE_IFACE_VCP = __debug__
 
 # interface used for trezor wire protocol

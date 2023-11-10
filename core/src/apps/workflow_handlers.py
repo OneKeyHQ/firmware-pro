@@ -113,13 +113,13 @@ def find_message_handler_module(msg_type: int) -> str:
         if msg_type == MessageType.GetNextU2FCounter:
             return "apps.management.get_next_u2f_counter"
 
-        # webauthn
-        if msg_type == MessageType.WebAuthnListResidentCredentials:
-            return "apps.webauthn.list_resident_credentials"
-        if msg_type == MessageType.WebAuthnAddResidentCredential:
-            return "apps.webauthn.add_resident_credential"
-        if msg_type == MessageType.WebAuthnRemoveResidentCredential:
-            return "apps.webauthn.remove_resident_credential"
+        # # webauthn
+        # if msg_type == MessageType.WebAuthnListResidentCredentials:
+        #     return "apps.webauthn.list_resident_credentials"
+        # if msg_type == MessageType.WebAuthnAddResidentCredential:
+        #     return "apps.webauthn.add_resident_credential"
+        # if msg_type == MessageType.WebAuthnRemoveResidentCredential:
+        #     return "apps.webauthn.remove_resident_credential"
 
         # ethereum
         if msg_type == MessageType.EthereumGetAddress:
@@ -157,21 +157,21 @@ def find_message_handler_module(msg_type: int) -> str:
         if msg_type == MessageType.EthereumSignTypedHashOneKey:
             return "apps.ethereum.onekey.sign_typed_data_hash"
 
-        # monero
-        if msg_type == MessageType.MoneroGetAddress:
-            return "apps.monero.get_address"
-        if msg_type == MessageType.MoneroGetWatchKey:
-            return "apps.monero.get_watch_only"
-        if msg_type == MessageType.MoneroTransactionInitRequest:
-            return "apps.monero.sign_tx"
-        if msg_type == MessageType.MoneroKeyImageExportInitRequest:
-            return "apps.monero.key_image_sync"
-        if msg_type == MessageType.MoneroGetTxKeyRequest:
-            return "apps.monero.get_tx_keys"
-        if msg_type == MessageType.MoneroLiveRefreshStartRequest:
-            return "apps.monero.live_refresh"
-        if __debug__ and msg_type == MessageType.DebugMoneroDiagRequest:
-            return "apps.monero.diag"
+        # # monero
+        # if msg_type == MessageType.MoneroGetAddress:
+        #     return "apps.monero.get_address"
+        # if msg_type == MessageType.MoneroGetWatchKey:
+        #     return "apps.monero.get_watch_only"
+        # if msg_type == MessageType.MoneroTransactionInitRequest:
+        #     return "apps.monero.sign_tx"
+        # if msg_type == MessageType.MoneroKeyImageExportInitRequest:
+        #     return "apps.monero.key_image_sync"
+        # if msg_type == MessageType.MoneroGetTxKeyRequest:
+        #     return "apps.monero.get_tx_keys"
+        # if msg_type == MessageType.MoneroLiveRefreshStartRequest:
+        #     return "apps.monero.live_refresh"
+        # if __debug__ and msg_type == MessageType.DebugMoneroDiagRequest:
+        #     return "apps.monero.diag"
 
         # nem
         if msg_type == MessageType.NEMGetAddress:

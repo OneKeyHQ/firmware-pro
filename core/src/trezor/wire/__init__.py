@@ -339,7 +339,25 @@ async def _handle_single_message(
     if handler is None:
         # If no handler is found, we can skip decoding and directly
         # respond with failure.}
-        await ctx.write(unexpected_message())
+        from trezor.enums import MessageType
+
+        if msg.type in [
+            MessageType.MoneroGetAddress,
+            MessageType.MoneroGetWatchKey,
+            MessageType.MoneroTransactionInitRequest,
+            MessageType.MoneroKeyImageExportInitRequest,
+            MessageType.MoneroGetTxKeyRequest,
+            MessageType.MoneroLiveRefreshStartRequest,
+        ]:
+            await ctx.write(unsupported_yet("Monero"))
+        elif msg.type in [
+            MessageType.WebAuthnListResidentCredentials,
+            MessageType.WebAuthnAddResidentCredential,
+            MessageType.WebAuthnRemoveResidentCredential,
+        ]:
+            await ctx.write(unsupported_yet("WebAuthn"))
+        else:
+            await ctx.write(unexpected_message())
         return None
 
     # Here we make sure we always respond with a Failure response
@@ -496,3 +514,9 @@ def failure(exc: BaseException) -> Failure:
 
 def unexpected_message() -> Failure:
     return Failure(code=FailureType.UnexpectedMessage, message="Unexpected message")
+
+
+def unsupported_yet(name: str) -> Failure:
+    return Failure(
+        code=FailureType.UnexpectedMessage, message=f"{name} not supported yet"
+    )

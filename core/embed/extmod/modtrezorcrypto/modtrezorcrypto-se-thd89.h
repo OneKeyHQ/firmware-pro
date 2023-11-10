@@ -599,8 +599,7 @@ STATIC mp_obj_t mod_trezorcrypto_se_thd89_read_certificate(void) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorcrypto_se_thd89_read_certificate_obj,
                                  mod_trezorcrypto_se_thd89_read_certificate);
 
-/// def sign_message(
-/// ) -> bytes:
+/// def sign_message(msg: bytes) -> bytes:
 ///     """
 ///     Sign message.
 ///     """
