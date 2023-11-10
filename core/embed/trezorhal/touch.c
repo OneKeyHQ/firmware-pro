@@ -25,12 +25,64 @@
 #include "secbool.h"
 
 #include "display.h"
+#include "gt911.h"
 #include "i2c.h"
 #include "touch.h"
 
-#define i2c_handle_touchpanel i2c_handles[i2c_find_channel_by_device(I2C_TOUCHPANEL)]
-
 #if defined(STM32H747xx)
+
+#if defined(GT911)
+
+void touch_init(void) { gt911_init(); }
+
+uint32_t touch_click(void) {
+    uint32_t r = 0;
+  // flush touch events if any
+  while (touch_read()) {
+  }
+  // wait for TOUCH_START
+  while ((touch_read() & TOUCH_START) == 0) {
+  }
+  // wait for TOUCH_END
+  while (((r = touch_read()) & TOUCH_END) == 0) {
+  }
+  // flush touch events if any
+  while (touch_read()) {
+  }
+  // return last touch coordinate
+  return r;
+}
+
+uint32_t touch_read(void) { 
+  static uint32_t xy, last_xy=0;
+  static int touching=0;
+
+  xy = gt911_read_location();
+
+  if(xy){
+    xy = touch_pack_xy(xy>>16,xy&0xffff);
+  }
+
+  if(xy!=0 && touching==0){
+    touching=1;
+    last_xy = xy;
+    return TOUCH_START | xy;
+  }
+  if(xy!=0 && touching==1){
+    last_xy = xy;
+    return TOUCH_MOVE | xy;
+  }
+  if(xy==0 && touching==1){
+    touching=0;
+    return TOUCH_END | last_xy;
+  }
+  return 0;;
+
+}
+
+#else
+
+static I2C_HandleTypeDef *i2c_handle_touchpanel = NULL;
 
 #define TOUCH_ADDRESS \
   (0x1AU << 1)  // the HAL requires the 7-bit address to be shifted by one bit
@@ -77,10 +129,13 @@ static void touch_gpio_init(void) {
 
 void touch_init(void) {
   uint8_t id;
-  i2c_init_by_device(I2C_TOUCHPANEL);
+  i2c_handle_touchpanel =
+      &i2c_handles[i2c_find_channel_by_device(I2C_TOUCHPANEL)];
   touch_gpio_init();
-  if (HAL_I2C_Mem_Read(&i2c_handle_touchpanel, TOUCH_ADDRESS, 0xa8, 1, &id, 1, 1000) ==
-      HAL_OK) {
+  i2c_init_by_device(I2C_TOUCHPANEL);
+
+  if (HAL_I2C_Mem_Read(i2c_handle_touchpanel, TOUCH_ADDRESS, 0xa8, 1, &id, 1,
+                       1000) == HAL_OK) {
   }
 }
 
@@ -91,10 +146,10 @@ void touch_power_off(void) { i2c_deinit_by_device(I2C_TOUCHPANEL); }
 void touch_sensitivity(uint8_t value) {
   // set panel threshold (TH_GROUP) - default value is 0x12
   uint8_t touch_panel_threshold[] = {0x80, value};
-  ensure(sectrue *
-             (HAL_OK == HAL_I2C_Master_Transmit(
-                            &i2c_handle_touchpanel, TOUCH_ADDRESS, touch_panel_threshold,
-                            sizeof(touch_panel_threshold), 10)),
+  ensure(sectrue * (HAL_OK == HAL_I2C_Master_Transmit(
+                                  i2c_handle_touchpanel, TOUCH_ADDRESS,
+                                  touch_panel_threshold,
+                                  sizeof(touch_panel_threshold), 10)),
          NULL);
 }
 
@@ -103,7 +158,7 @@ uint32_t touch_is_detected(void) {
   // the line goes low when a touch event is actively detected.
   // reference section 1.2 of "Application Note for FT6x06 CTPM".
   // we configure the touch controller to use "interrupt polling mode".
-    return GPIO_PIN_RESET == HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_2);
+  return GPIO_PIN_RESET == HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_2);
 }
 #if 0
 uint32_t touch_read(void) {
@@ -114,7 +169,7 @@ uint32_t touch_read(void) {
     return 0;
   }
   display_printf("touch detected\n");
-  if (HAL_I2C_Mem_Read(&i2c_handle_touchpanel, TOUCH_ADDRESS, 0xD000, 2, touch_data, 7,
+  if (HAL_I2C_Mem_Read(i2c_handle_touchpanel, TOUCH_ADDRESS, 0xD000, 2, touch_data, 7,
                        1000) != HAL_OK) {
     return 0;
   }
@@ -127,7 +182,7 @@ uint32_t touch_read(void) {
   if (touch_data[0] == 0x06 && touch_data[5] == 0x01) {
     HAL_Delay(5);
     while (1) {
-      if (HAL_I2C_Mem_Read(&i2c_handle_touchpanel, TOUCH_ADDRESS, 0xD000, 2, touch_data, 7,
+      if (HAL_I2C_Mem_Read(i2c_handle_touchpanel, TOUCH_ADDRESS, 0xD000, 2, touch_data, 7,
                            1000) != HAL_OK) {
         return 0;
       }
@@ -164,8 +219,8 @@ uint32_t touch_read(void) {
 
 uint32_t touch_num_detected(void) {
   uint8_t touch_data[TOUCH_PACKET_SIZE] = {0};
-  if (HAL_I2C_Mem_Read(&i2c_handle_touchpanel, TOUCH_ADDRESS, 0xD000, 2, touch_data, 7,
-                       1000) != HAL_OK) {
+  if (HAL_I2C_Mem_Read(i2c_handle_touchpanel, TOUCH_ADDRESS, 0xD000, 2,
+                       touch_data, 7, 1000) != HAL_OK) {
     return 0;
   }
   if (touch_data[6] != 0xAB) {
@@ -193,8 +248,8 @@ uint32_t touch_read(void) {
   // }
 
   memset(touch_data, 0x00, sizeof(touch_data));
-  if (HAL_I2C_Mem_Read(&i2c_handle_touchpanel, TOUCH_ADDRESS, 0xD000, 2, touch_data, 7,
-                       50) != HAL_OK) {
+  if (HAL_I2C_Mem_Read(i2c_handle_touchpanel, TOUCH_ADDRESS, 0xD000, 2,
+                       touch_data, 7, 50) != HAL_OK) {
     return 0;
   }
 
@@ -291,6 +346,7 @@ void touch_test(void) {
     i++;
   }
 }
+#endif
 
 #else
 
