@@ -1,4 +1,4 @@
-#include "emmc_debug_utils.h"
+#include "debug_utils.h"
 
 void __debug_print(bool wait_click, const char* file, int line, const char* func, const char* fmt, ...)
 {
@@ -29,18 +29,17 @@ void __debug_print(bool wait_click, const char* file, int line, const char* func
 
 bool buffer_to_hex_string(const void* buff, size_t buff_len, char* str, size_t str_len, size_t* processed)
 {
-    size_t byte_str_len = sizeof("xx ");
+    const size_t byte_str_len = 2; // "xx"
 
-    if ( (buff_len * (byte_str_len - 1)) + 1 > str_len )
+    if ( (buff_len * byte_str_len) + 1 > str_len )
         return false;
 
-    const uint8_t* u8_buff = buff;
+    char* string_p = str;
 
     for ( size_t i = 0; i < buff_len; i++ )
     {
-        char tmp_char[byte_str_len];
-        snprintf(tmp_char, byte_str_len, "%02X ", u8_buff[i]);
-        strncat(str, tmp_char, byte_str_len);
+        snprintf(string_p, byte_str_len + 1, "%02X", *((uint8_t*)(buff) + i));
+        string_p += byte_str_len;
         *processed = i + 1;
     }
 

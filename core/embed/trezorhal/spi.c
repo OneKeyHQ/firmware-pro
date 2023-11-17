@@ -1,12 +1,12 @@
 #include "spi.h"
 
 #define ExecuteCheck_ADV_SPI(func_call, expected_result, on_false) \
+  {                                                                \
+    if ( (func_call) != (expected_result) )                        \
     {                                                              \
-        if ( (func_call) != (expected_result) )                    \
-        {                                                          \
-            on_false                                               \
-        }                                                          \
-    }
+      on_false                                                     \
+    }                                                              \
+  }
 
 #define ExecuteCheck_HAL_OK(func_call) ExecuteCheck_ADV_SPI(func_call, HAL_OK, { return false; })
 

@@ -1,5 +1,5 @@
 #include "emmc_fs.h"
-#include "emmc_debug_utils.h"
+#include "debug_utils.h"
 
 EMMC_WRAPPER_STATUS emmc_wrapper_status = {0};
 

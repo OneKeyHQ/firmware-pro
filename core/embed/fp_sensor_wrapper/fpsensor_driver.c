@@ -43,7 +43,7 @@ uint8_t fpsensor_init(void)
 
     // status |= fpsensor_hard_reset(); // 开发板使用
     status |= fpsensor_read_irq_with_clear(buffer, sizeof(buffer));
-    
+
     buffer[0] = FPSENSOR_REG_FINGER_DRIVE_CONF;
     buffer[1] = 0x12;
     status |= fpsensor_spi_transceive(buffer, 2);

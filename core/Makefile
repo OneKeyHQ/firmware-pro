@@ -279,6 +279,9 @@ flash_firmware_jlink: $(FIRMWARE_BUILD_DIR)/firmware.bin ## flash firmware using
 # flash_firmware_t1_jlink: $(FIRMWARE_BUILD_DIR)/firmware.bin ## flash T1 core port via JLink
 # 	JLinkExe -nogui 1 -commanderscript embed/firmware/firmware_flash_t1.jlink
 
+reboot_device_jlink: ## cause a system reset using JLink
+	JLinkExe -nogui 1 -commanderscript embed/debugger_scripts/jlink/reboot_device.jlink
+
 ## openocd debug commands:
 
 openocd: ## start openocd which connects to the device

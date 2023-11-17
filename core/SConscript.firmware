@@ -547,6 +547,10 @@ elif TREZOR_MODEL in ('1',):
         'embed/trezorhal/button.c',
     ]
 
+# debug utils
+SOURCE_DEBUG_UTILS = []
+SOURCE_DEBUG_UTILS.extend(Glob('embed/debug_utils/*.c'))
+
 # fp_sensor wrapper
 SOURCE_FP_SENSOR_WRAPPER = []
 SOURCE_FP_SENSOR_WRAPPER.extend(Glob('embed/fp_sensor_wrapper/*.c'))
@@ -641,7 +645,7 @@ if PRODUCTION_MODEL == 'H':
         + CPU_CCFLAGS + CCFLAGS_MOD,
         CCFLAGS_QSTR='-DNO_QSTR -DN_X64 -DN_X86 -DN_THUMB',
         LINKFLAGS='-T embed/firmware/memory_H%s.ld -Wl,--gc-sections -Wl,-Map=build/firmware/firmware.map -Wl,--warn-common -Wl,-L embed/fp_sensor_wrapper -Wl,-whole-archive -Wl,-lFpalgorithm -Wl,-no-whole-archive' % LD_VARIANT,
-        INC = f' -Iembed/emmc_wrapper -Iembed/fp_sensor_wrapper',
+        INC = f' -Iembed/debug_utils -Iembed/emmc_wrapper -Iembed/fp_sensor_wrapper',
         CPPPATH=[
             '.',
             'embed/rust',
@@ -655,6 +659,7 @@ if PRODUCTION_MODEL == 'H':
             'vendor/micropython/lib/stm32lib/CMSIS/STM32H7xx/Include',
             'vendor/micropython/lib/cmsis/inc',
             'embed/lvgl',
+            'embed/debug_utils',
             'embed/emmc_wrapper',
             'embed/fp_sensor_wrapper',
             'vendor/lvgl_mp/lvgl',
@@ -1026,6 +1031,7 @@ env.Append(LINKFLAGS=f' -l{RUST_LIB}')
 #
 
 obj_program = []
+obj_program += env.Object(source=SOURCE_DEBUG_UTILS)
 obj_program += env.Object(source=SOURCE_FP_SENSOR_WRAPPER)
 
 obj_program.extend(env.Object(source=SOURCE_MOD))

@@ -13,6 +13,7 @@ FixNamespaceComments: true
 SortUsingDeclarations: true
 BreakInheritanceList: BeforeComma
 AlignAfterOpenBracket: BlockIndent
+SortIncludes: Never
 # AlignArrayOfStructures: Left
 # AlignConsecutiveAssignments:
 #   Enabled: true

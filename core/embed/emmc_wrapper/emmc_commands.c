@@ -784,7 +784,7 @@ int process_msg_FirmwareUpdateEmmc(uint8_t iface_num, uint32_t msg_size, uint8_t
 
         strncpy(boot_ver, se_get_version(), sizeof(boot_ver));
 
-        if ( !se_verify_firmware(bl_buffer->misc_buff, IMAGE_HEADER_SIZE))
+        if ( !se_verify_firmware(bl_buffer->misc_buff, IMAGE_HEADER_SIZE) )
         {
             send_failure(iface_num, FailureType_Failure_ProcessError, "SE verify header error");
             return -1;
@@ -813,7 +813,10 @@ int process_msg_FirmwareUpdateEmmc(uint8_t iface_num, uint32_t msg_size, uint8_t
         ui_fadein();
 
         // install
-        if(!se_update_firmware(bl_buffer->misc_buff + IMAGE_HEADER_SIZE, thd89_hdr.codelen,ui_screen_install_progress_upload))
+        if ( !se_update_firmware(
+                 bl_buffer->misc_buff + IMAGE_HEADER_SIZE, thd89_hdr.codelen,
+                 ui_screen_install_progress_upload
+             ) )
         {
             send_failure(iface_num, FailureType_Failure_ProcessError, "SE update error");
             return -1;

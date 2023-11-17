@@ -4,8 +4,8 @@
 #include STM32_HAL_H
 
 #include <stdint.h>
+#include "debug_utils.h"
 #include "sdram.h"
-#include "emmc_debug_utils.h"
 
 // #define SPI_FP_USE_HW_CS
 
@@ -18,15 +18,15 @@
 // RSTn        FP_RST      PB14
 
 #define ExecuteCheck_ADV_FP(func_call, expected_result, on_false) \
+  {                                                               \
+    uint8_t FP_ret = (func_call);                                 \
+    if ( FP_ret != (expected_result) )                            \
     {                                                             \
-        uint8_t FP_ret = (func_call);                             \
-        if ( FP_ret != (expected_result) )                        \
-        {                                                         \
-            on_false                                              \
-        }                                                         \
-    }
+      on_false                                                    \
+    }                                                             \
+  }
 
 #define ExecuteCheck_FPSENSOR_OK(func_call) \
-    ExecuteCheck_ADV_FP(func_call, 0, { return false; }) // 0 = FPSENSOR_OK
+  ExecuteCheck_ADV_FP(func_call, 0, { return false; }) // 0 = FPSENSOR_OK
 
 #endif //_FP_SENSOR_HAL_H_

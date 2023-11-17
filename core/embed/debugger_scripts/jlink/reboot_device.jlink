@@ -1,7 +1,5 @@
 device STM32H747XI_M7
 if swd
 speed 50000
-Erase 0x08040000 0x08040600
 rx 100
-go
 exit

@@ -1,5 +1,5 @@
 #include "camera.h"
-#include "emmc_debug_utils.h"
+#include "debug_utils.h"
 #include "i2c.h"
 #include "sdram.h"
 

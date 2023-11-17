@@ -1,2 +1,8 @@
+^\./core/embed/debug_utils
 ^\./core/embed/emmc_wrapper
+^\./core/embed/pn532
 ^\./core/embed/fp_sensor_wrapper
+^\./core/embed/trezorhal/spi.*
+^\./core/embed/trezorhal/i2c.*
+^\./core/embed/trezorhal/camera.*
+^\./core/embed/trezorhal/nfc.*

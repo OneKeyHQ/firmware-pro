@@ -9,16 +9,18 @@
 
 #define I2C_CHANNEL_TOTAL 2
 
-typedef enum I2C_DEVICE {
-  I2C_TOUCHPANEL,
-  I2C_SE,
-  I2C_CAMERA,
+typedef enum I2C_DEVICE
+{
+    I2C_TOUCHPANEL,
+    I2C_SE,
+    I2C_CAMERA,
 } i2c_device;
 
-typedef enum I2C_CHANNEL {
-  I2C_1,  // TOUCHPANEL
-  I2C_4,  // SE and CAMERA
-  I2C_UNKNOW = -1,
+typedef enum I2C_CHANNEL
+{
+    I2C_1, // TOUCHPANEL
+    I2C_4, // SE and CAMERA
+    I2C_UNKNOW = -1,
 } i2c_channel;
 
 // handles
@@ -46,4 +48,4 @@ bool is_i2c_initialized_by_device(i2c_device device);
 bool i2c_init_by_device(i2c_device device);
 bool i2c_deinit_by_device(i2c_device device); // make sure you understand what you doing!
 
-#endif  // __I2C_H__
+#endif // __I2C_H__

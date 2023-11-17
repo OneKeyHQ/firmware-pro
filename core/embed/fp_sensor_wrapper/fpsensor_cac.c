@@ -5,7 +5,7 @@
 #define R_FULL 200.0 // Glass Cover Modules
 
 #if 1
-    /************/
+/************/
   #define R_MID       150.0
   #define R_MID_TH_L  (R_MID - 25) // 110
   #define R_MID_TH_H  (R_MID + 25) // 140
@@ -13,7 +13,7 @@
   #define R_GAIN_TH_L 0.8
   #define R_GAIN_TH_H 1.0
 #else
-    /*Docment Parameter*/
+/*Docment Parameter*/
   #define R_MID       140.0
   #define R_MID_TH_L  (R_MID - 25) // 100
   #define R_MID_TH_H  (R_MID + 25) // 150
