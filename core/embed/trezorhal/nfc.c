@@ -1,9 +1,12 @@
 
+#include <display.h>
 #include <nfc.h>
 
-static const uint32_t NFC_SPI_TIMEOUT = 10;
+static const uint32_t NFC_SPI_TIMEOUT = 0xffff;
 
-static void nfc_gpio_init(void)
+static PN532_INTERFACE _pn532_interface; // the actuall handle
+
+static void nfc_lowlevel_gpio_init(void)
 {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
 
@@ -27,120 +30,92 @@ static void nfc_gpio_init(void)
     HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 }
 
-void nfc_reset(void)
+static void nfc_lowlevel_reset_ctl(bool ctl)
 {
-    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_5, GPIO_PIN_SET);
-    HAL_Delay(50);
-    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_5, GPIO_PIN_RESET);
-    HAL_Delay(50);
+    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_5, (ctl ? GPIO_PIN_SET : GPIO_PIN_RESET));
 }
 
-static void nfc_chip_sel(bool sel)
+static void nfc_lowlevel_chip_sel_ctl(bool ctl)
 {
-    HAL_GPIO_WritePin(GPIOJ, GPIO_PIN_4, (sel ? GPIO_PIN_SET : GPIO_PIN_RESET));
+    HAL_GPIO_WritePin(GPIOJ, GPIO_PIN_4, (ctl ? GPIO_PIN_SET : GPIO_PIN_RESET));
+}
+
+static bool nfc_lowlevel_irq_get()
+{
+    return HAL_GPIO_ReadPin(GPIOJ, GPIO_PIN_4) == GPIO_PIN_SET;
+}
+
+static bool nfc_lowlevel_spi_rw(uint8_t* w_data, uint16_t w_count, uint8_t* r_data, uint16_t r_count)
+{
+    bool result = true;
+
+    nfc_lowlevel_chip_sel_ctl(false);
+    HAL_Delay(1);
+
+    if ( w_data != NULL )
+        if ( HAL_SPI_Transmit(&spi_handle_nfc, w_data, w_count, NFC_SPI_TIMEOUT) != HAL_OK )
+            result = false;
+    if ( r_data != NULL )
+        if ( HAL_SPI_Receive(&spi_handle_nfc, r_data, r_count, NFC_SPI_TIMEOUT) != HAL_OK )
+        {
+            if ( spi_handle_nfc.ErrorCode != HAL_SPI_ERROR_TIMEOUT )
+            {
+                result = false;
+            }
+        }
+
+    HAL_Delay(1);
+    nfc_lowlevel_chip_sel_ctl(true);
+
+    return result;
+}
+
+static void nfc_lowlevel_delay_ms(uint16_t timeout)
+{
+    HAL_Delay(timeout);
+}
+
+// use display_printf instead!
+// static void nfc_lowlevel_log(const char *fmt, ...)
+// {
+//     va_list va;
+//     va_start(va, fmt);
+//     char buf[256] = {0};
+//     int len = vsnprintf(buf, sizeof(buf), fmt, va);
+//     display_print(buf, len);
+//     va_end(va);
+// }
+
+static bool nfc_lowlevel_init()
+{
+    return spi_init_by_device(SPI_NFC);
+}
+
+static bool nfc_lowlevel_deinit()
+{
+    return spi_deinit_by_device(SPI_NFC);
 }
 
 void nfc_init(void)
 {
-    spi_init_by_device(SPI_NFC);
+    nfc_lowlevel_gpio_init();
 
-    nfc_gpio_init();
-    nfc_reset();
-}
+    _pn532_interface.bus_init = nfc_lowlevel_init;
+    _pn532_interface.bus_deinit = nfc_lowlevel_deinit;
+    _pn532_interface.reset_ctl = nfc_lowlevel_reset_ctl;
+    _pn532_interface.chip_sel_ctl = nfc_lowlevel_chip_sel_ctl;
+    _pn532_interface.irq_read = nfc_lowlevel_irq_get;
+    _pn532_interface.rw = nfc_lowlevel_spi_rw;
+    _pn532_interface.delay_ms = nfc_lowlevel_delay_ms;
+    _pn532_interface.log = display_printf;
 
-static int nfc_spi_rw(uint8_t* data, uint8_t count)
-{
-    char ret = PN532_STATUS_OK;
-    nfc_chip_sel(false);
-    HAL_Delay(1);
-    if ( HAL_SPI_TransmitReceive(&spi_handle_nfc, data, data, count, NFC_SPI_TIMEOUT) != HAL_OK )
-        ret = PN532_STATUS_ERROR;
-    HAL_Delay(1);
-    nfc_chip_sel(true);
-    return ret;
-}
-
-// library
-PN532 nfc_pn532;
-
-static const uint8_t _SPI_STATREAD = 0x02;
-static const uint8_t _SPI_DATAWRITE = 0x01;
-static const uint8_t _SPI_DATAREAD = 0x03;
-static const uint8_t _SPI_READY = 0x01;
-
-int PN532_Reset(void)
-{
-    nfc_reset();
-    return PN532_STATUS_OK;
-}
-
-int PN532_SPI_ReadData(uint8_t* data, uint16_t count)
-{
-    int ret = PN532_STATUS_OK;
-    uint8_t frame[count + 1];
-    frame[0] = _SPI_DATAREAD;
-    HAL_Delay(5);
-    ret = nfc_spi_rw(frame, count + 1);
-    for ( uint8_t i = 0; i < count; i++ )
+    if ( !PN532_InterfaceSetup(&_pn532_interface) )
     {
-        data[i] = frame[i + 1];
+        // this should never happen as long as above filled all members of
+        // pn532_interface
+        display_printf("PN532_InterfaceSetup failed!");
+        return;
     }
-    return ret;
-}
 
-int PN532_SPI_WriteData(uint8_t* data, uint16_t count)
-{
-    int ret = PN532_STATUS_OK;
-    uint8_t frame[count + 1];
-    frame[0] = _SPI_DATAWRITE;
-    for ( uint8_t i = 0; i < count; i++ )
-    {
-        frame[i + 1] = data[i];
-    }
-    ret = nfc_spi_rw(frame, count + 1);
-    return ret;
-}
-
-bool PN532_SPI_WaitReady(uint32_t timeout)
-{
-    uint8_t status[] = {_SPI_STATREAD, 0x00};
-    uint32_t tickstart = HAL_GetTick();
-    while ( HAL_GetTick() - tickstart < timeout )
-    {
-        HAL_Delay(10);
-        nfc_spi_rw(status, sizeof(status));
-        if ( status[1] == _SPI_READY )
-        {
-            return true;
-        }
-        else
-        {
-            HAL_Delay(5);
-        }
-    }
-    return false;
-}
-
-int PN532_SPI_Wakeup(void)
-{
-    // Send any special commands/data to wake up PN532
-    uint8_t data[] = {0x00};
-    nfc_spi_rw(data, 1);
-    return PN532_STATUS_OK;
-}
-
-void PN532_Log(const char* log)
-{
-    // display_printf("%s\n", log);
-    return;
-}
-
-void PN532_LibrarySetup(void)
-{
-    nfc_pn532.reset = PN532_Reset;
-    nfc_pn532.read_data = PN532_SPI_ReadData;
-    nfc_pn532.write_data = PN532_SPI_WriteData;
-    nfc_pn532.wait_ready = PN532_SPI_WaitReady;
-    nfc_pn532.wakeup = PN532_SPI_Wakeup;
-    nfc_pn532.log = PN532_Log;
+    PN532_LibrarySetup();
 }

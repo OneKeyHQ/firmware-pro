@@ -208,7 +208,6 @@ SOURCE_TREZORHAL = [
     'embed/trezorhal/util.s',
     'embed/trezorhal/vectortable.s',
     'embed/trezorhal/camera.c',
-    'embed/trezorhal/pn532.c',
     'embed/trezorhal/nfc.c',
     'embed/trezorhal/gt911.c',
 
@@ -227,6 +226,10 @@ SOURCE_DEBUG_UTILS.extend(Glob('embed/debug_utils/*.c'))
 # emmc wrapper
 SOURCE_EMMC_WRAPPER = []
 SOURCE_EMMC_WRAPPER.extend(Glob('embed/emmc_wrapper/*.c'))
+
+# pn532 wrapper
+SOURCE_PN532_WRAPPER = []
+SOURCE_PN532_WRAPPER.extend(Glob('embed/pn532/*.c'))
 
 # fp_sensor wrapper
 SOURCE_FP_SENSOR_WRAPPER = []
@@ -277,21 +280,26 @@ if PRODUCTION_MODEL == 'H':
         '-fstack-protector-all '
         + CPU_CCFLAGS + CCFLAGS_MOD,
         CCFLAGS_QSTR='-DNO_QSTR -DN_X64 -DN_X86 -DN_THUMB',
-        LINKFLAGS='-T embed/bootloader/memory.ld -Wl,--gc-sections -Wl,-Map=build/bootloader/bootloader.map -Wl,--warn-common -Wl,-L embed/fp_sensor_wrapper -Wl,-whole-archive -Wl,-lFpalgorithm -Wl,-no-whole-archive ',
-        INC = f' -Iembed/debug_utils -Iembed/emmc_wrapper -Iembed/fp_sensor_wrapper',
+        LINKFLAGS='-T embed/bootloader/memory.ld -Wl,--gc-sections -Wl,-Map=build/bootloader/bootloader.map -Wl,--warn-common '
+        '-Wl,-L embed/fp_sensor_wrapper -Wl,-whole-archive -Wl,-lFpalgorithm -Wl,-no-whole-archive',
+        INC = 
+        '-Iembed/debug_utils '
+        '-Iembed/emmc_wrapper '
+        '-Iembed/pn532 '
+        '-Iembed/fp_sensor_wrapper ',
         CPPPATH=[
             'embed/bootloader',
             'embed/bootloader/nanopb',
             'embed/bootloader/protob',
             'embed/trezorhal',
             'embed/trezorhal/fatfs',
-            'embed/trezorhal/fp',
             'embed/extmod/modtrezorui',
             'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Inc',
             'vendor/micropython/lib/stm32lib/CMSIS/STM32H7xx/Include',
             'vendor/micropython/lib/cmsis/inc',
             'embed/debug_utils',
             'embed/emmc_wrapper',
+            'embed/pn532',
             'embed/fp_sensor_wrapper',
             'vendor/nanopb',
         ] + CPPPATH_MOD,
@@ -362,6 +370,7 @@ obj_program += env.Object(source=SOURCE_STMHAL)
 obj_program += env.Object(source=SOURCE_TREZORHAL)
 obj_program += env.Object(source=SOURCE_DEBUG_UTILS)
 obj_program += env.Object(source=SOURCE_EMMC_WRAPPER)
+obj_program += env.Object(source=SOURCE_PN532_WRAPPER)
 obj_program += env.Object(source=SOURCE_FP_SENSOR_WRAPPER)
 
 program_elf = env.Command(

@@ -36,7 +36,7 @@
 void touch_init(void) { gt911_init(); }
 
 uint32_t touch_click(void) {
-    uint32_t r = 0;
+  uint32_t r = 0;
   // flush touch events if any
   while (touch_read()) {
   }
@@ -53,31 +53,39 @@ uint32_t touch_click(void) {
   return r;
 }
 
-uint32_t touch_read(void) { 
-  static uint32_t xy, last_xy=0;
-  static int touching=0;
+uint32_t touch_read(void) {
+  static uint32_t xy, last_xy = 0;
+  static int touching = 0;
 
   xy = gt911_read_location();
 
-  if(xy){
-    xy = touch_pack_xy(xy>>16,xy&0xffff);
+  if (xy) {
+    xy = touch_pack_xy(xy >> 16, xy & 0xffff);
   }
 
-  if(xy!=0 && touching==0){
-    touching=1;
+  if (xy != 0 && touching == 0) {
+    touching = 1;
     last_xy = xy;
     return TOUCH_START | xy;
   }
-  if(xy!=0 && touching==1){
+  if (xy != 0 && touching == 1) {
     last_xy = xy;
     return TOUCH_MOVE | xy;
   }
-  if(xy==0 && touching==1){
-    touching=0;
+  if (xy == 0 && touching == 1) {
+    touching = 0;
     return TOUCH_END | last_xy;
   }
-  return 0;;
+  return 0;
+  ;
+}
 
+uint32_t touch_is_detected(void) {
+  // check the interrupt line coming in from the CTPM.
+  // the line goes low when a touch event is actively detected.
+  // reference section 1.2 of "Application Note for FT6x06 CTPM".
+  // we configure the touch controller to use "interrupt polling mode".
+  return GPIO_PIN_RESET == HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_2);
 }
 
 #else
