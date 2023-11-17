@@ -277,7 +277,6 @@ void device_test(bool force) {
                  COLOR_BLACK);
   }
 
-  qspi_flash_init();
   if (qspi_flash_read_id() == 0) {
     display_text(0, 50, "SPI-FLASH test faild", -1, FONT_NORMAL, COLOR_RED,
                  COLOR_BLACK);
@@ -288,8 +287,6 @@ void device_test(bool force) {
                  COLOR_BLACK);
   }
 
-  emmc_init();
-
   if (emmc_get_capacity_in_bytes() == 0) {
     display_text(0, 80, "EMMC test faild", -1, FONT_NORMAL, COLOR_RED,
                  COLOR_BLACK);
@@ -299,29 +296,6 @@ void device_test(bool force) {
     display_text(0, 80, "EMMC test done", -1, FONT_NORMAL, COLOR_WHITE,
                  COLOR_BLACK);
   }
-
-  buzzer_init();
-  buzzer_ctrl(1);
-  hal_delay(1000);
-  buzzer_ctrl(0);
-  hal_delay(1000);
-  buzzer_ctrl(1);
-  hal_delay(1000);
-  buzzer_ctrl(0);
-
-  ui_generic_confirm_simple("BEEP test");
-  if (ui_response()) {
-    display_text(0, 110, "BEEP test done", -1, FONT_NORMAL, COLOR_WHITE,
-                 COLOR_BLACK);
-  } else {
-    display_text(0, 110, "BEEP test faild", -1, FONT_NORMAL, COLOR_RED,
-                 COLOR_BLACK);
-    while (1)
-      ;
-  }
-  display_bar(0, 130, DISPLAY_RESX, DISPLAY_RESY - 100, COLOR_BLACK);
-
-  motor_init();
 
   motor_ctrl(MOTOR_REVERSE);
   hal_delay(2000);
@@ -414,8 +388,6 @@ void device_burnin_test(bool force) {
   UINT br, bw;
   test_result test_res = {0};
 
-  emmc_init();
-
   res = f_mount(&fs_instance, "", 1);
   if (res != FR_OK) {
     display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY / 2,
@@ -445,11 +417,7 @@ void device_burnin_test(bool force) {
     return;
   }
 
-  qspi_flash_init();
   timer_init();
-  jpeg_init();
-  buzzer_init();
-  motor_init();
 
   if (test_res.flag == TEST_TESTING) {
     start = test_res.time;

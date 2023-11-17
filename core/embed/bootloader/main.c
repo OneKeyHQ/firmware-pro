@@ -50,10 +50,10 @@
 #include "bootui.h"
 #include "device.h"
 #include "i2c.h"
-#include "spi.h"
-#include "spi_legacy.h"
 #include "messages.h"
 #include "mpu.h"
+#include "spi.h"
+#include "spi_legacy.h"
 #include "sys.h"
 #include "usart.h"
 
@@ -96,12 +96,11 @@ const uint8_t * const BOOTLOADER_KEYS[] = {
 
 #if !PRODUCTION
 
-
 static void camera_test() {
   display_printf("TouchPro Demo Mode\n");
   display_printf("======================\n\n");
   display_printf("GC2145 Init...");
-  dbgprintf_Wait("%d, %s", __LINE__, (camera_init()==0) ? "success" : "fail");
+  dbgprintf_Wait("%d, %s", __LINE__, (camera_init() == 0) ? "success" : "fail");
 
   unsigned int tcnt = 0;
   unsigned short* tbuf = (unsigned short*)0xD0200000;
@@ -152,115 +151,155 @@ static void camera_test() {
   }
 }
 
-static void nfc_test()
-{
-  display_printf("TouchPro Demo Mode\n");\
+static void nfc_test() {
+  display_printf("TouchPro Demo Mode\n");
   display_printf("======================\n\n");
 
-  display_printf("NFC PN532 Init...");
+  display_printf("NFC PN532 Library Init...");
   nfc_init();
-  PN532_LibrarySetup();
+  display_printf("Done\n");
 
-  unsigned char buff[4];
-  if(PN532_GetFirmwareVersion(&nfc_pn532, buff)<0){
-    display_printf("NFC PN532 FirmwareVersion Error!\n");
-  }else{
-    display_printf("Found PN532 with firmware v%d.%d\n", buff[1], buff[2]);
-    display_printf("PN532 IC:  0x%x\n",buff[0]);
+  pn532->PowerOn();
+
+  PN532_FW_VER fw_ver;
+  display_printf("NFC PN532 Get FW Ver...");
+  if (!pn532->GetFirmwareVersion(&fw_ver)) {
+    display_printf("Fail\n");
+    while (true)
+      ;  // die here
   }
-  PN532_SamConfiguration(&nfc_pn532);
-  display_printf("Waiting for RFID/NFC card...\r\n");
-  unsigned int uid_len;
-  unsigned char uid[MIFARE_UID_MAX_LENGTH];
-    while (1){
-          uid_len = PN532_ReadPassiveTarget(&nfc_pn532, uid, PN532_MIFARE_ISO14443A, 1000);
-    if (uid_len == PN532_STATUS_ERROR) {
-      display_printf(".");
-    } else {
-      display_printf("Found card with UID: ");
-      for (uint8_t i = 0; i < uid_len; i++) {
-        display_printf("%02x ", uid[i]);
+  display_printf("Success\n");
+  display_printf("IC:0x%02X, Ver:0x%02X, Rev:0x%02X, Support:0x%02X \n",
+                 fw_ver.IC, fw_ver.Ver, fw_ver.Rev, fw_ver.Support);
+
+  display_printf("NFC PN532 Config...");
+  if (!pn532->SAMConfiguration(PN532_SAM_Normal, 0x14, true)) {
+    display_printf("Fail\n");
+    while (true)
+      ;  // die here
+  }
+  display_printf("Success\n");
+
+  // card cmd define
+  uint8_t capdu_getSN[] = {0x80, 0xcb, 0x80, 0x00, 0x05,
+                           0xdf, 0xff, 0x02, 0x81, 0x01};
+  // uint8_t capdu_getBackupState[] = {0x80, 0x6a, 0x00, 0x00};
+  // uint8_t capdu_getPINState[] = {0x80, 0xcb, 0x80, 0x00, 0x05, 0xdf, 0xff,
+  // 0x02, 0x81, 0x05};
+
+  // InListPassiveTarget
+  PN532_InListPassiveTarget_Params ILPT_params = {
+      .MaxTg = 1,
+      .BrTy = PN532_InListPassiveTarget_BrTy_106k_typeA,
+      .InitiatorData_len = 0,
+  };
+  PN532_InListPassiveTarget_Results ILPT_result = {0};
+
+  // InDataExchange
+  uint8_t InDataExchange_status = 0xff;
+  uint8_t buf_rapdu[PN532_InDataExchange_BUFF_SIZE];
+  uint16_t len_rapdu = PN532_InDataExchange_BUFF_SIZE;
+
+  while (true) {
+    // detect card
+    display_printf("Checking for card...");
+    if (pn532->InListPassiveTarget(ILPT_params, &ILPT_result) &&
+        ILPT_result.NbTg == 1) {
+      display_printf("Detected\n");
+      if (pn532->InDataExchange(1, capdu_getSN, sizeof(capdu_getSN),
+                                &InDataExchange_status, buf_rapdu,
+                                &len_rapdu)) {
+        display_printf("DataExchanging...");
+        if (InDataExchange_status == 0x00) {
+          display_printf("Success\n");
+          display_printf("CardSN: %s\n", (char*)buf_rapdu);
+          print_buffer(buf_rapdu, len_rapdu);
+        } else {
+          display_printf("Fail\n");
+        }
       }
-      display_printf("\r\n");
+      break;
+    } else {
+      display_printf("LS Timeout\n");
     }
-    }
+
+    hal_delay(300);
+  }
+
+  while (true)
+    ;
 }
 
 // static void fp_display_image(uint8_t *pu8ImageBuf)
 // {
 // }
 
-static void fp_test()
-{
-    display_printf("TouchPro Demo Mode\n");
-    display_printf("======================\n\n");
-    char fpver[32];
-    FpLibVersion(fpver);
-    display_printf("FP Lib - %s\n", fpver);
-    display_printf("FP Init...");
+static void fp_test() {
+  display_printf("TouchPro Demo Mode\n");
+  display_printf("======================\n\n");
+  char fpver[32];
+  FpLibVersion(fpver);
+  display_printf("FP Lib - %s\n", fpver);
+  display_printf("FP Init...");
 
-    ExecuteCheck_ADV_FP(fpsensor_gpio_init(), FPSENSOR_OK, { dbgprintf_Wait("err=%d", FP_ret); });
-    ExecuteCheck_ADV_FP(fpsensor_spi_init(), FPSENSOR_OK, { dbgprintf_Wait("err=%d", FP_ret); });
-    ExecuteCheck_ADV_FP(fpsensor_hard_reset(), FPSENSOR_OK, { dbgprintf_Wait("err=%d", FP_ret); });
-    ExecuteCheck_ADV_FP(fpsensor_init(), FPSENSOR_OK, { dbgprintf_Wait("err=%d", FP_ret); });
-    ExecuteCheck_ADV_FP(fpsensor_adc_init(12, 12, 16, 3), FPSENSOR_OK, { dbgprintf_Wait("err=%d", FP_ret); });
-    ExecuteCheck_ADV_FP(fpsensor_set_config_param(0xC0, 8), FPSENSOR_OK, {
-        dbgprintf_Wait("err=%d", FP_ret);
-    });
-    ExecuteCheck_ADV_FP(FpAlgorithmInit(TEMPLATE_ADDR_START), FPSENSOR_OK, {
-        dbgprintf_Wait("err=%d", FP_ret);
-    });
+  ExecuteCheck_ADV_FP(fpsensor_gpio_init(), FPSENSOR_OK,
+                      { dbgprintf_Wait("err=%d", FP_ret); });
+  ExecuteCheck_ADV_FP(fpsensor_spi_init(), FPSENSOR_OK,
+                      { dbgprintf_Wait("err=%d", FP_ret); });
+  ExecuteCheck_ADV_FP(fpsensor_hard_reset(), FPSENSOR_OK,
+                      { dbgprintf_Wait("err=%d", FP_ret); });
+  ExecuteCheck_ADV_FP(fpsensor_init(), FPSENSOR_OK,
+                      { dbgprintf_Wait("err=%d", FP_ret); });
+  ExecuteCheck_ADV_FP(fpsensor_adc_init(12, 12, 16, 3), FPSENSOR_OK,
+                      { dbgprintf_Wait("err=%d", FP_ret); });
+  ExecuteCheck_ADV_FP(fpsensor_set_config_param(0xC0, 8), FPSENSOR_OK,
+                      { dbgprintf_Wait("err=%d", FP_ret); });
+  ExecuteCheck_ADV_FP(FpAlgorithmInit(TEMPLATE_ADDR_START), FPSENSOR_OK,
+                      { dbgprintf_Wait("err=%d", FP_ret); });
 
-    display_printf("done\n");
+  display_printf("done\n");
 
-    uint8_t image_data[88 * 112 + 2];
-    memzero(image_data, sizeof(image_data));
-    uint32_t wrote_bytes = 0;
+  uint8_t image_data[88 * 112 + 2];
+  memzero(image_data, sizeof(image_data));
+  uint32_t wrote_bytes = 0;
 
-    while ( wrote_bytes == 0 )
-    {
-        if ( FpsDetectFinger() == 1 )
-        {
-            display_printf("finger detected\n");
+  while (wrote_bytes == 0) {
+    if (FpsDetectFinger() == 1) {
+      display_printf("finger detected\n");
 
-            switch ( FpsGetImageData(image_data) )
-            {
-            case 0:
-                if ( emmc_fs_file_write(
-                         "0:imagedata.bin", 0, image_data, 88 * 112 + 2, &wrote_bytes, true, false
-                     ) )
-                {
-                    display_printf("image write success\n");
-                }
-                else
-                {
-                    display_printf("image write fail\n");
-                }
-                break;
-            case 1:
-                display_printf("no fingerprint\n");
-                break;
-            case 2:
-                display_printf("fingerprint too small\n");
-                break;
-            default:
-                display_printf("unknow error\n");
-                break;
-            }
-        }
-
-        fpsensor_delay_ms(100);
+      switch (FpsGetImageData(image_data)) {
+        case 0:
+          if (emmc_fs_file_write("0:imagedata.bin", 0, image_data, 88 * 112 + 2,
+                                 &wrote_bytes, true, false)) {
+            display_printf("image write success\n");
+          } else {
+            display_printf("image write fail\n");
+          }
+          break;
+        case 1:
+          display_printf("no fingerprint\n");
+          break;
+        case 2:
+          display_printf("fingerprint too small\n");
+          break;
+        default:
+          display_printf("unknow error\n");
+          break;
+      }
     }
 
-    dbgprintf("wrote %lu bytes", wrote_bytes);
-    dbgprintf_Wait("fp_test exiting...");
+    fpsensor_delay_ms(100);
+  }
+
+  dbgprintf("wrote %lu bytes", wrote_bytes);
+  dbgprintf_Wait("fp_test exiting...");
 }
 #endif
 
 // this is mainly for ignore/supress faults during flash read (for check
 // purpose). if bus fault enabled, it will catched by BusFault_Handler, then we
-// could ignore it. if bus fault disabled, it will elevate to hard fault, this is
-// not what we want
+// could ignore it. if bus fault disabled, it will elevate to hard fault, this
+// is not what we want
 static secbool handle_flash_ecc_error = secfalse;
 static void set_handle_flash_ecc_error(secbool val) {
   handle_flash_ecc_error = val;
@@ -650,10 +689,10 @@ static secbool check_vendor_header_lock(const vendor_header* const vhdr) {
   return sectrue * (0 == memcmp(lock, hash, 32));
 }
 
-// protection against bootloader downgrade
 
 #if PRODUCTION
 
+// protection against bootloader downgrade
 static void check_bootloader_version(void) {
   uint8_t bits[FLASH_OTP_BLOCK_SIZE];
   for (int i = 0; i < FLASH_OTP_BLOCK_SIZE * 8; i++) {
@@ -718,67 +757,30 @@ int main(void) {
   volatile uint32_t stay_in_bootloader_flag = *STAY_IN_FLAG_ADDR;
 
   SystemCoreClockUpdate();
+  mpu_config_bootloader();
 
+  // user interface
   lcd_para_init(DISPLAY_RESX, DISPLAY_RESY, LCD_PIXEL_FORMAT_RGB565);
   lcd_pwm_init();
-
-#if defined TREZOR_MODEL_T
-  // display_set_little_endian();
   touch_init();
-  touch_power_on();
-#endif
 
-  thd89_init();
-  se_reset_se();
-  hal_delay(500);  // time for se to reset
+  // fault handler
+  bus_fault_enable(); // it's here since requires user interface
 
-  random_delays_init();
-
-  ble_usart_init();
-
-  device_para_init();
-
-#if defined TREZOR_MODEL_R
-  button_init();
-  rgb_led_init();
-#endif
-
-  bus_fault_enable();
-  device_test(false);
-
-  bool serial_set = false, cert_set = false;
-
-  if (!serial_set) {
-    serial_set = device_serial_set();
-  }
-
-  if (!cert_set) {
-    cert_set = se_has_cerrificate();
-  }
-
-  if (!serial_set || !cert_set) {
-    display_clear();
-    device_set_factory_mode(true);
-    ui_bootloader_factory();
-    if (bootloader_usb_loop_factory(NULL, NULL) != sectrue) {
-      return 1;
-    }
-  }
-
-  device_burnin_test(false);
-
+  // storages
   qspi_flash_init();
   qspi_flash_config();
   qspi_flash_memory_mapped();
-
-  mpu_config_bootloader();
-
-#if PRODUCTION
-  check_bootloader_version();
-#endif
-
   ensure_emmcfs(emmc_fs_init(), "emmc_fs_init");
   ensure_emmcfs(emmc_fs_mount(true, false), "emmc_fs_mount");
+
+  // bt/pm
+  ble_usart_init();
+  spi_slave_init();
+
+  // misc/feedback
+  random_delays_init();
+  // motor_init(); //need to be refactored as motor type changed
 
 #if !PRODUCTION
   // write_dev_dummy_config();
@@ -800,12 +802,45 @@ int main(void) {
   UNUSED(fp_test);
 #endif
 
-
-  motor_init();
-  spi_slave_init();
-
+  // se
+  thd89_init();
+  se_reset_se();
+  hal_delay(500);  // time for se to reset
   uint8_t se_state;
   ensure(se_get_state(&se_state) ? sectrue : secfalse, "get se state failed");
+
+  device_para_init();
+
+  bool serial_set = false, cert_set = false;
+
+  if (!serial_set) {
+    serial_set = device_serial_set();
+  }
+
+  if (!cert_set) {
+    cert_set = se_has_cerrificate();
+  }
+
+  if (!serial_set || !cert_set) {
+    display_clear();
+    device_set_factory_mode(true);
+    ui_bootloader_factory();
+    if (bootloader_usb_loop_factory(NULL, NULL) != sectrue) {
+      return 1;
+    }
+  }
+
+#if PRODUCTION
+  // device function test
+  device_test(false);
+
+  // burnin test
+  jpeg_init();
+  device_burnin_test(false);
+
+  // check bootloader downgrade
+  check_bootloader_version();
+#endif
 
   secbool stay_in_bootloader = secfalse;  // flag to stay in bootloader
 
@@ -820,7 +855,6 @@ int main(void) {
   // delay to detect touch or skip if we know we are staying in bootloader
   // anyway
   uint32_t touched = 0;
-#if defined TREZOR_MODEL_T
   if (stay_in_bootloader != sectrue) {
     for (int i = 0; i < 100; i++) {
       touched = touch_is_detected() | touch_read();
@@ -830,12 +864,6 @@ int main(void) {
       hal_delay(1);
     }
   }
-#elif defined TREZOR_MODEL_R
-  button_read();
-  if (button_state_left() == 1) {
-    touched = 1;
-  }
-#endif
 
   vendor_header vhdr;
   image_header hdr;
@@ -905,10 +933,12 @@ int main(void) {
     display_clear();
   }
 
-  // mpu_config_firmware();
   // jump_to_unprivileged(FIRMWARE_START + vhdr.hdrlen + IMAGE_HEADER_SIZE);
+
   bus_fault_disable();
+
   mpu_config_off();
+
   jump_to(FIRMWARE_START + vhdr.hdrlen + IMAGE_HEADER_SIZE);
 
   return 0;
