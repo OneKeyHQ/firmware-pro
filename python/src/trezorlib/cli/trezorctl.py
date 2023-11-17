@@ -63,6 +63,7 @@ from . import (
     with_client,
     kaspa,
     nexa,
+    ur,
 )
 
 F = TypeVar("F", bound=Callable)
@@ -107,6 +108,7 @@ COMMAND_ALIASES = {
     "polkadot": polkadot.cli,
     "kaspa": kaspa.cli,
     "nexa": nexa.cli,
+    "ur": ur.cli,
     # firmware aliases:
     "fw": firmware.cli,
     "update-firmware": firmware.update,
