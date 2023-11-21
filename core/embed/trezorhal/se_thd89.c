@@ -86,7 +86,11 @@ secbool se_reset_se(void) {
   uint8_t cmd[5] = {0x00, 0xF0, 0x00, 0x00, 0x00};
   uint16_t resp_len;
 
-  return thd89_transmit(cmd, sizeof(cmd), NULL, &resp_len);
+  secbool result = thd89_transmit(cmd, sizeof(cmd), NULL, &resp_len);
+
+  hal_delay(400);  // time for se to power up
+
+  return result;
 }
 
 static void cal_mac(uint8_t *data, uint32_t len, uint8_t *mac) {

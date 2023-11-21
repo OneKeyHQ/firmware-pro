@@ -1,12 +1,12 @@
 #include "i2c.h"
 
 #define ExecuteCheck_ADV_I2C(func_call, expected_result, on_false) \
-  {                                                                \
-    if ( (func_call) != (expected_result) )                        \
     {                                                              \
-      on_false                                                     \
-    }                                                              \
-  }
+        if ( (func_call) != (expected_result) )                    \
+        {                                                          \
+            on_false                                               \
+        }                                                          \
+    }
 
 #define ExecuteCheck_HAL_OK(func_call) ExecuteCheck_ADV_I2C(func_call, HAL_OK, { return false; })
 
@@ -88,7 +88,7 @@ bool I2C_4_INIT()
 
     // I2C4 Peripherals Configuration
     i2c_handles[I2C_4].Instance = I2C4;
-    i2c_handles[I2C_4].Init.Timing = 0x03401242;
+    i2c_handles[I2C_4].Init.Timing = 0x10C0ECFF;
     i2c_handles[I2C_4].Init.OwnAddress1 = 0; // master
     i2c_handles[I2C_4].Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
     i2c_handles[I2C_4].Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;

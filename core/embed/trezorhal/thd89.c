@@ -36,7 +36,25 @@
 
 static uint8_t sw1 = 0, sw2 = 0;
 
-void thd89_init(void) { i2c_init_by_device(I2C_SE); }
+static void thd89_io_init(void) {
+  __HAL_RCC_GPIOD_CLK_ENABLE();
+  GPIO_InitTypeDef GPIO_InitStructure;
+  /* Configure the GPIO Reset pin */
+  GPIO_InitStructure.Pin = GPIO_PIN_4;
+  GPIO_InitStructure.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStructure.Pull = GPIO_PULLUP;
+  GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStructure);
+  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_4, GPIO_PIN_SET);
+}
+
+void thd89_init(void) {
+  thd89_io_init();
+  hal_delay(30);
+  i2c_init_by_device(I2C_SE);
+
+  hal_delay(400);  // time for se to power up
+}
 
 static uint8_t xor_check(uint8_t init, uint8_t *data, uint16_t len) {
   uint16_t i;
@@ -499,7 +517,8 @@ int i2c_master_recive(I2C_HandleTypeDef *hi2c, uint16_t DevAddress,
 secbool thd89_transmit(uint8_t *cmd, uint16_t len, uint8_t *resp,
                        uint16_t *resp_len) {
   int ret = 0;
-  if (i2c_master_send(&i2c_handle_se, THD89_ADDRESS, cmd, len, 500) != HAL_OK) {
+  HAL_StatusTypeDef result = i2c_master_send(&i2c_handle_se, THD89_ADDRESS, cmd, len, 500);
+  if (result != HAL_OK) {
     ensure(secfalse, "se send error");
     return secfalse;
   }

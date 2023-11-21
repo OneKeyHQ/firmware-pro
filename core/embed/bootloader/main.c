@@ -804,8 +804,6 @@ int main(void) {
 
   // se
   thd89_init();
-  se_reset_se();
-  hal_delay(500);  // time for se to reset
   uint8_t se_state;
   ensure(se_get_state(&se_state) ? sectrue : secfalse, "get se state failed");
 
