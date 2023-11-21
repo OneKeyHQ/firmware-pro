@@ -1,0 +1,7 @@
+device STM32H747XI_M7
+if swd
+speed 50000
+Erase 0x08020000 0x08020600
+rx 100
+go
+exit

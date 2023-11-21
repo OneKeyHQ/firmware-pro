@@ -127,7 +127,7 @@ void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef* hdcmi)
     CameraFrameCnt++;
 }
 
-static void camera_io_init()
+void camera_io_init()
 {
     __HAL_RCC_GPIOD_CLK_ENABLE();
     __HAL_RCC_GPIOJ_CLK_ENABLE();
@@ -203,7 +203,7 @@ char camera_init(void)
 
     camera_io_init();
 
-    unsigned char ret = 0;
+    volatile unsigned char ret = 0;
     for ( int i = 0; default_regs[i][0]; i++ )
     {
         unsigned char temp = default_regs[i][1];

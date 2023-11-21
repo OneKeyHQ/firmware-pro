@@ -21,6 +21,7 @@ extern unsigned short CameraFrameCnt;
 HAL_DCMI_StateTypeDef dcmi_get_state();
 uint32_t dcmi_get_error();
 
+void camera_io_init();
 char camera_init(void);
 unsigned char camera_sccb_read_reg(unsigned char reg_addr, unsigned char* data);
 unsigned char camera_sccb_write_reg(unsigned char reg_addr, unsigned char* data);

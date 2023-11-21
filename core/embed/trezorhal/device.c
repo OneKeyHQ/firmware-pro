@@ -298,8 +298,9 @@ void device_test(bool force) {
   }
 
   motor_ctrl(MOTOR_REVERSE);
-  hal_delay(2000);
+  hal_delay(50);
   motor_ctrl(MOTOR_BRAKE);
+  hal_delay(50);
 
   ui_generic_confirm_simple("MOTOR test");
   if (ui_response()) {
