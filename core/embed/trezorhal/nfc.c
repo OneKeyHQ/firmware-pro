@@ -119,3 +119,10 @@ void nfc_init(void)
 
     PN532_LibrarySetup();
 }
+
+NFC_STATUS nfc_send_recv_apdu(
+    uint8_t* send, uint8_t sendLength, uint8_t* response, uint8_t* responseLength, uint32_t timeout_ms
+)
+{
+    return NFC_STATUS_SUCCESS;
+}

@@ -10,10 +10,13 @@
 // own header
 #include "pn532.h"
 
+static PN532 _pn532;
 PN532* pn532 = NULL;
 
 void PN532_LibrarySetup()
 {
+    pn532 = &_pn532;
+
     pn532->PowerOn = power_on;
     pn532->PowerOff = power_off;
 
