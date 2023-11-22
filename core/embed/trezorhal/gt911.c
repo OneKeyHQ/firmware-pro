@@ -70,15 +70,15 @@ void gt911_write(uint16_t reg_addr, uint8_t *buf, uint16_t len) {
 
 // return one point data only
 uint32_t gt911_read_location(void) {
-  uint8_t point_data[10]={0};
+  uint8_t point_data[10] = {0};
   uint8_t point_num;
   uint16_t x = 0, y = 0;
-  static uint32_t xy=0;
+  static uint32_t xy = 0;
 
   static uint8_t last_point_num = 0;
 
   gt911_read(GTP_READ_COOR_ADDR, point_data, 10);
-  if (point_data[0] == 0x00) {    
+  if (point_data[0] == 0x00) {
     return xy;
   }
 
@@ -86,7 +86,7 @@ uint32_t gt911_read_location(void) {
     point_data[0] = 0;
     gt911_write(GTP_READ_COOR_ADDR, point_data, 1);
     last_point_num = 0;
-    xy=0;
+    xy = 0;
     return 0;
   }
   point_num = point_data[0] & 0x0f;
@@ -98,13 +98,12 @@ uint32_t gt911_read_location(void) {
   if (point_num && last_point_num == 1) {
     x = point_data[2] | (point_data[3] << 8);
     y = point_data[4] | (point_data[5] << 8);
-
   }
 
   point_data[0] = 0;
   gt911_write(GTP_READ_COOR_ADDR, point_data, 1);
 
-  xy= x << 16 | y;
+  xy = x << 16 | y;
 
   return xy;
 }

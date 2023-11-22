@@ -35,13 +35,13 @@ uint8_t FpAlgorithmInit(uint32_t addr);
  */
 uint8_t FpsDetectFinger(void);
 /*
-* Function：     FpsGetImageData
-* Description：  检测手指并获取指纹图像数据。
-* Input：        无。
-* Output：       pu8ImageBuf ： 采集图像数据放到该缓冲区中，缓冲区应大于等于 112 *88 + 2。 图像数据保存在缓冲区前112 * 88个字节中，缓冲区最后两字节仅采图过程中使用，采图完成后为无效数据。
-* Return:        0-成功，其他-传感器上无指纹(1)，或指纹面积太小(2)。
-* Others:        无。
-*/
+ * Function：     FpsGetImageData
+ * Description：  检测手指并获取指纹图像数据。
+ * Input：        无。
+ * Output：       pu8ImageBuf ： 采集图像数据放到该缓冲区中，缓冲区应大于等于 112 *88 + 2。
+ * 图像数据保存在缓冲区前112 * 88个字节中，缓冲区最后两字节仅采图过程中使用，采图完成后为无效数据。 Return:
+ * 0-成功，其他-传感器上无指纹(1)，或指纹面积太小(2)。 Others:        无。
+ */
 uint8_t FpsGetImageData(uint8_t* pu8ImageBuf);
 /*
  * Function：     FpsGetImage
