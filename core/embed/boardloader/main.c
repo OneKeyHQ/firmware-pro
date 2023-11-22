@@ -417,7 +417,6 @@ void show_poweron_bar(void) {
 
 int main(void) {
   volatile uint32_t startup_mode_flag = *STAY_IN_FLAG_ADDR;
-  pcb_version = PCB_VERSION_2_1_0;
 
   reset_flags_reset();
 

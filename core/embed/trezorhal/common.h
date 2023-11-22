@@ -50,9 +50,6 @@
   })
 #endif
 
-typedef enum { PCB_VERSION_1_0_0 = 0, PCB_VERSION_2_1_0 = 1 } PCB_VERSION;
-extern PCB_VERSION pcb_version;
-
 #define STAY_IN_FLAG_ADDR ((uint32_t *)(0x30040000 - 4))
 #define STAY_IN_BOARDLOADER_FLAG 0x64616F62
 #define STAY_IN_BOOTLOADER_FLAG 0x746F6F62

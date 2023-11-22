@@ -53,7 +53,6 @@ static const uint8_t toi_icon_warning[] = {
 };
 // clang-format on
 
-PCB_VERSION pcb_version;
 volatile uint32_t system_reset = 0;
 
 // from util.s

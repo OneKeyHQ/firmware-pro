@@ -92,8 +92,6 @@ int main(void) {
 
   device_para_init();
 
-  pcb_version = PCB_VERSION_2_1_0;
-
   // Enable MPU
   mpu_config_firmware();
 
@@ -151,7 +149,6 @@ int main(void) {
   // display_init_seq();
   // sdcard_init();
   touch_init();
-  touch_power_on();
   spi_slave_init();
 
   thd89_init();

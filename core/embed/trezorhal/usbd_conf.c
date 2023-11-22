@@ -139,52 +139,7 @@ void HAL_PCD_MspInit(PCD_HandleTypeDef *hpcd)
 #if defined(USE_USB_HS)
   else if(hpcd->Instance == USB_OTG_HS)
   {
-#if defined(STM32H747xx)
-    uint32_t pin_alternate = GPIO_AF12_OTG1_FS;
-#else
-    uint32_t pin_alternate = GPIO_AF12_OTG_HS_FS;
-#endif
 
-  if (PCB_VERSION_1_0_0 == pcb_version) {
-    /* Configure USB FS GPIOs */
-    __HAL_RCC_GPIOB_CLK_ENABLE();
-
-    /* Configure DM DP Pins */
-    GPIO_InitStruct.Pin = (GPIO_PIN_14 | GPIO_PIN_15);
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-    GPIO_InitStruct.Alternate = pin_alternate;
-    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-#if defined(MICROPY_HW_USB_VBUS_DETECT_PIN)
-    /* Configure VBUS Pin */
-    GPIO_InitStruct.Pin = GPIO_PIN_13;
-    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-    GPIO_InitStruct.Alternate = pin_alternate;
-    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-#endif
-
-#if defined(MICROPY_HW_USB_OTG_ID_PIN)
-    /* Configure ID pin */
-    GPIO_InitStruct.Pin = GPIO_PIN_12;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
-    GPIO_InitStruct.Pull = GPIO_PULLUP;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-    GPIO_InitStruct.Alternate = pin_alternate;
-    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-#endif
-    /*
-    * Enable calling WFI and correct
-    * function of the embedded USB_FS_IN_HS phy
-    */
-    __OTGHSULPI_CLK_SLEEP_DISABLE();
-    __OTGHS_CLK_SLEEP_ENABLE();
-    /* Enable USB HS Clocks */
-    __USB_OTG_HS_CLK_ENABLE();
-  }else{
     /* Configure USB HS GPIOs */
     __HAL_RCC_GPIOA_CLK_ENABLE();
     __HAL_RCC_GPIOB_CLK_ENABLE();
@@ -240,7 +195,7 @@ void HAL_PCD_MspInit(PCD_HandleTypeDef *hpcd)
     /* Enable USB HS Clocks */
     __HAL_RCC_USB_OTG_HS_CLK_ENABLE();
     __HAL_RCC_USB_OTG_HS_ULPI_CLK_ENABLE();
-  }
+  
 
     /* Set USBHS Interrupt to the lowest priority */
     svc_setpriority(OTG_HS_IRQn, IRQ_PRI_OTG_HS);
@@ -465,18 +420,7 @@ USBD_StatusTypeDef  USBD_LL_Init (USBD_HandleTypeDef *pdev)
 #if defined(USE_USB_HS)
   // Trezor T uses the OTG_HS peripheral
   if (pdev->id == USB_PHY_HS_ID) {
-    if (PCB_VERSION_1_0_0 == pcb_version) {
-      /* Set LL Driver parameters */
-      pcd_hs_handle.Instance = USB_OTG_HS;
-      pcd_hs_handle.Init.dev_endpoints = 6;
-      pcd_hs_handle.Init.use_dedicated_ep1 = 0;
-      pcd_hs_handle.Init.ep0_mps = 0x40;
-      pcd_hs_handle.Init.dma_enable = 0;
-      pcd_hs_handle.Init.low_power_enable = 0;
-      pcd_hs_handle.Init.phy_itface = PCD_PHY_EMBEDDED;
-      pcd_hs_handle.Init.Sof_enable = 1;
-      pcd_hs_handle.Init.speed = PCD_SPEED_HIGH_IN_FULL;
-    }else{
+
       /* Set LL Driver parameters */
       pcd_hs_handle.Instance = USB_OTG_HS;
       pcd_hs_handle.Init.dev_endpoints = 6;
@@ -487,7 +431,7 @@ USBD_StatusTypeDef  USBD_LL_Init (USBD_HandleTypeDef *pdev)
       pcd_hs_handle.Init.phy_itface = PCD_PHY_ULPI;
       pcd_hs_handle.Init.Sof_enable = 1;
       pcd_hs_handle.Init.speed = PCD_SPEED_HIGH;
-    }    
+     
     // Trezor T hardware has PB13 connected to HS_VBUS
     // but we leave vbus sensing disabled because
     // we don't use it for anything. the device is a bus powered peripheral.

@@ -455,8 +455,6 @@ USBD_StatusTypeDef USBD_LL_Reset(USBD_HandleTypeDef  *pdev)
 }
 
 
-
-
 /**
 * @brief  USBD_LL_Reset
 *         Handle Reset event

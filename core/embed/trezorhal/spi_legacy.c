@@ -133,26 +133,13 @@ int32_t spi_slave_init()
     HAL_GPIO_WritePin(GPIOK, GPIO_PIN_5, GPIO_PIN_SET);
     HAL_GPIO_WritePin(GPIOK, GPIO_PIN_6, GPIO_PIN_SET);
 
-    if ( PCB_VERSION_1_0_0 == pcb_version )
-    {
-        // SPI2: PB12(NSS),PB13(SCK)
-        gpio.Mode = GPIO_MODE_AF_PP;
-        gpio.Pull = GPIO_NOPULL;
-        gpio.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-        gpio.Alternate = GPIO_AF5_SPI2;
-        gpio.Pin = GPIO_PIN_12 | GPIO_PIN_13;
-        HAL_GPIO_Init(GPIOB, &gpio);
-    }
-    else
-    {
-        // SPI2: PA11(NSS),PA9(SCK)
-        gpio.Mode = GPIO_MODE_AF_PP;
-        gpio.Pull = GPIO_NOPULL;
-        gpio.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-        gpio.Alternate = GPIO_AF5_SPI2;
-        gpio.Pin = GPIO_PIN_12 | GPIO_PIN_11;
-        HAL_GPIO_Init(GPIOA, &gpio);
-    }
+    // SPI2: PA11(NSS),PA9(SCK)
+    gpio.Mode = GPIO_MODE_AF_PP;
+    gpio.Pull = GPIO_NOPULL;
+    gpio.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    gpio.Alternate = GPIO_AF5_SPI2;
+    gpio.Pin = GPIO_PIN_12 | GPIO_PIN_11;
+    HAL_GPIO_Init(GPIOA, &gpio);
 
     // SPI2: PC2(MISO), PC3(MOSI)
     gpio.Mode = GPIO_MODE_AF_PP;
