@@ -15,9 +15,9 @@ void power_on()
 
     // reset
     pn532_interface->reset_ctl(false);
-    pn532_interface->delay_ms(1);
+    pn532_interface->delay_ms(5);
     pn532_interface->reset_ctl(true);
-    pn532_interface->delay_ms(2);
+    pn532_interface->delay_ms(5);
 }
 
 void power_off()

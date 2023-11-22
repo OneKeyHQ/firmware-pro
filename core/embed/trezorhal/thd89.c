@@ -36,7 +36,7 @@
 
 static uint8_t sw1 = 0, sw2 = 0;
 
-static void thd89_io_init(void) {
+void thd89_io_init(void) {
   __HAL_RCC_GPIOD_CLK_ENABLE();
   GPIO_InitTypeDef GPIO_InitStructure;
   /* Configure the GPIO Reset pin */
@@ -517,7 +517,8 @@ int i2c_master_recive(I2C_HandleTypeDef *hi2c, uint16_t DevAddress,
 secbool thd89_transmit(uint8_t *cmd, uint16_t len, uint8_t *resp,
                        uint16_t *resp_len) {
   int ret = 0;
-  HAL_StatusTypeDef result = i2c_master_send(&i2c_handle_se, THD89_ADDRESS, cmd, len, 500);
+  HAL_StatusTypeDef result =
+      i2c_master_send(&i2c_handle_se, THD89_ADDRESS, cmd, len, 500);
   if (result != HAL_OK) {
     ensure(secfalse, "se send error");
     return secfalse;

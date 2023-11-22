@@ -2,8 +2,8 @@
 #include <display.h>
 #include <nfc.h>
 
-static const uint32_t NFC_SPI_TIMEOUT = 0xffff;
-
+static const uint32_t NFC_SPI_TIMEOUT = 0x0000ffff;
+static bool nfc_powered_on = false;
 static PN532_INTERFACE _pn532_interface; // the actuall handle
 
 static void nfc_lowlevel_gpio_init(void)
@@ -120,9 +120,198 @@ void nfc_init(void)
     PN532_LibrarySetup();
 }
 
-NFC_STATUS nfc_send_recv_apdu(
-    uint8_t* send, uint8_t sendLength, uint8_t* response, uint8_t* responseLength, uint32_t timeout_ms
+NFC_STATUS nfc_pwr_ctl(bool on_off)
+{
+    // sanity check
+    if ( pn532 == NULL )
+    {
+        return NFC_STATUS_NOT_INITIALIZED;
+    }
+
+    NFC_STATUS result = NFC_STATUS_UNDEFINED_ERROR;
+
+    // switch nfc
+    if ( on_off )
+    {
+        pn532->PowerOn();
+        result =
+            (pn532->SAMConfiguration(PN532_SAM_Normal, 0x14, true) ? NFC_STATUS_OPERACTION_SUCCESS
+                                                                   : NFC_STATUS_OPERACTION_FAILED);
+    }
+    else
+    {
+        pn532->PowerOff();
+        result = NFC_STATUS_OPERACTION_SUCCESS;
+    }
+
+    // update state
+    if ( result == NFC_STATUS_OPERACTION_SUCCESS )
+    {
+        nfc_powered_on = on_off;
+    }
+
+    return result;
+}
+
+NFC_STATUS nfc_wait_card(uint32_t timeout_ms)
+{
+    // sanity check
+    if ( pn532 == NULL || !nfc_powered_on )
+    {
+        return NFC_STATUS_NOT_INITIALIZED;
+    }
+    if ( timeout_ms < NFC_TIMEOUT_COUNT_STEP_MS )
+    {
+        return NFC_STATUS_INVALID_USAGE;
+    }
+
+    NFC_STATUS result = NFC_STATUS_UNDEFINED_ERROR;
+
+    // InListPassiveTarget
+    PN532_InListPassiveTarget_Params ILPT_params = {
+        .MaxTg = 1,
+        .BrTy = PN532_InListPassiveTarget_BrTy_106k_typeA,
+        .InitiatorData_len = 0,
+    };
+    PN532_InListPassiveTarget_Results ILPT_result = {0};
+
+    uint32_t time_passed_ms = 0;
+    while ( true )
+    {
+        // detect card
+        if ( pn532->InListPassiveTarget(ILPT_params, &ILPT_result) )
+        {
+            // detected
+            // only allow a single card
+            if ( ILPT_result.NbTg == 1 )
+            {
+                result = NFC_STATUS_OPERACTION_SUCCESS;
+            }
+            else
+            {
+                result = NFC_STATUS_OPERACTION_FAILED;
+            }
+            break;
+        }
+
+        if ( time_passed_ms < timeout_ms )
+        {
+            hal_delay(NFC_TIMEOUT_COUNT_STEP_MS);
+            time_passed_ms += NFC_TIMEOUT_COUNT_STEP_MS;
+            continue;
+        }
+        else
+        {
+            result = NFC_STATUS_OPERACTION_TIMEOUT;
+            break;
+        }
+    }
+
+    return result;
+}
+
+NFC_STATUS nfc_send_recv(uint8_t* send, uint16_t sendLength, uint8_t* response, uint16_t* responseLength)
+{
+    // sanity check
+    if ( pn532 == NULL || !nfc_powered_on )
+    {
+        return NFC_STATUS_NOT_INITIALIZED;
+    }
+    if ( sendLength > PN532_InDataExchange_BUFF_SIZE )
+    {
+        return NFC_STATUS_INVALID_USAGE;
+    }
+
+    NFC_STATUS result = NFC_STATUS_UNDEFINED_ERROR;
+
+    // InDataExchange
+    uint8_t InDataExchange_status = 0xff;
+
+    if ( pn532->InDataExchange(1, send, sendLength, &InDataExchange_status, response, responseLength) )
+    {
+        if ( InDataExchange_status == 0x00 )
+        {
+            result = NFC_STATUS_OPERACTION_SUCCESS;
+        }
+        else
+        {
+            result = NFC_STATUS_OPERACTION_FAILED;
+        }
+    }
+
+    return result;
+}
+
+NFC_STATUS nfc_send_recv_aio(
+    uint8_t* send, uint16_t sendLength, uint8_t* response, uint16_t* responseLength, uint32_t timeout_ms
 )
 {
-    return NFC_STATUS_SUCCESS;
+    // sanity check
+    if ( pn532 == NULL || !nfc_powered_on )
+    {
+        return NFC_STATUS_NOT_INITIALIZED;
+    }
+    if ( sendLength > PN532_InDataExchange_BUFF_SIZE || timeout_ms < NFC_TIMEOUT_COUNT_STEP_MS )
+    {
+        return NFC_STATUS_INVALID_USAGE;
+    }
+
+    NFC_STATUS result = NFC_STATUS_UNDEFINED_ERROR;
+
+    // InListPassiveTarget
+    PN532_InListPassiveTarget_Params ILPT_params = {
+        .MaxTg = 1,
+        .BrTy = PN532_InListPassiveTarget_BrTy_106k_typeA,
+        .InitiatorData_len = 0,
+    };
+    PN532_InListPassiveTarget_Results ILPT_result = {0};
+    // InDataExchange
+    uint8_t InDataExchange_status = 0xff;
+
+    uint32_t time_passed_ms = 0;
+    while ( true )
+    {
+        // detect card
+        if ( pn532->InListPassiveTarget(ILPT_params, &ILPT_result) )
+        {
+            // found card
+
+            if ( ILPT_result.NbTg == 1 )
+            {
+
+                if ( pn532->InDataExchange(
+                         1, send, sendLength, &InDataExchange_status, response, responseLength
+                     ) )
+                {
+                    if ( InDataExchange_status == 0x00 )
+                    {
+                        result = NFC_STATUS_OPERACTION_SUCCESS;
+                    }
+                    else
+                    {
+                        result = NFC_STATUS_OPERACTION_FAILED;
+                    }
+                }
+            }
+            else
+            {
+                result = NFC_STATUS_INVALID_USAGE;
+            }
+            break;
+        }
+
+        if ( time_passed_ms < timeout_ms )
+        {
+            hal_delay(NFC_TIMEOUT_COUNT_STEP_MS);
+            time_passed_ms += NFC_TIMEOUT_COUNT_STEP_MS;
+            continue;
+        }
+        else
+        {
+            result = NFC_STATUS_OPERACTION_TIMEOUT;
+            break;
+        }
+    }
+
+    return result;
 }
