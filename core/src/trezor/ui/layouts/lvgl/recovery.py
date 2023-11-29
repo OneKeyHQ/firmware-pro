@@ -32,7 +32,7 @@ async def request_word(
     ctx: wire.GenericContext, word_index: int, word_count: int, is_slip39: bool
 ) -> str:
     assert is_slip39 is False
-    title = _(i18n_keys.TITLE__ENTER_WORD_STR).format(word_index + 1)
+    title = _(i18n_keys.TITLE__ENTER_WORD_STR).format(word_index + 1) + ":"
     screen = WordEnter(title)
     word: str = await raise_if_cancelled(screen.request())
     await loop.sleep(240)

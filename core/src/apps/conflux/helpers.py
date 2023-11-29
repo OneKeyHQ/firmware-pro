@@ -142,7 +142,7 @@ def address_from_hex(hex_address: str, chain_id: int, is_sign: bool = False) -> 
     network_prefix = "cfx"
     if chain_id == 1:
         network_prefix = "cfxtest"
-    if is_sign is False:
+    if not is_sign:
         eth_addr = eth_address_to_cfx(hex_address)
     else:
         eth_addr = hex_address

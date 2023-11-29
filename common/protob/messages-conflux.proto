@@ -36,16 +36,16 @@ message ConfluxAddress {
  */
 message ConfluxSignTx {
     repeated uint32 address_n = 1;          // BIP-32 path to derive the key from master node
-    optional bytes nonce = 2;               // <=256 bit unsigned big endian
-    optional bytes gas_price = 3;           // <=256 bit unsigned big endian (in wei)
-    optional bytes gas_limit = 4;           // <=256 bit unsigned big endian
-    optional string to = 5;                // recipient address
-    optional bytes value = 6;
-    optional bytes epoch_height = 7;
-    optional bytes storage_limit = 8;              // <=256 bit unsigned big endian (in wei)
-    optional bytes data_initial_chunk = 9;  // The initial data chunk (<= 1024 bytes)
-    optional uint32 data_length = 10;        // Length of transaction payload
-    optional uint32 chain_id = 11;           // Chain Id for EIP 155
+    required bytes nonce = 2;               // <=256 bit unsigned big endian
+    required bytes gas_price = 3;           // <=256 bit unsigned big endian (in wei)
+    required bytes gas_limit = 4;           // <=256 bit unsigned big endian
+    optional string to = 5 [default=''];                // recipient address
+    optional bytes value = 6 [default=''];
+    optional bytes epoch_height = 7 [default=''];
+    optional bytes storage_limit = 8 [default=''];              // <=256 bit unsigned big endian (in wei)
+    optional bytes data_initial_chunk = 9 [default=''];  // The initial data chunk (<= 1024 bytes)
+    optional uint32 data_length = 10 [default=0];        // Length of transaction payload
+    optional uint32 chain_id = 11 [default=1029];           // Chain Id for EIP 155
 }
 
 /**

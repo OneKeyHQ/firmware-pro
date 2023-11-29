@@ -2091,24 +2091,24 @@ if TYPE_CHECKING:
 
     class ConfluxSignTx(protobuf.MessageType):
         address_n: "list[int]"
-        nonce: "bytes | None"
-        gas_price: "bytes | None"
-        gas_limit: "bytes | None"
-        to: "str | None"
-        value: "bytes | None"
-        epoch_height: "bytes | None"
-        storage_limit: "bytes | None"
-        data_initial_chunk: "bytes | None"
-        data_length: "int | None"
-        chain_id: "int | None"
+        nonce: "bytes"
+        gas_price: "bytes"
+        gas_limit: "bytes"
+        to: "str"
+        value: "bytes"
+        epoch_height: "bytes"
+        storage_limit: "bytes"
+        data_initial_chunk: "bytes"
+        data_length: "int"
+        chain_id: "int"
 
         def __init__(
             self,
             *,
+            nonce: "bytes",
+            gas_price: "bytes",
+            gas_limit: "bytes",
             address_n: "list[int] | None" = None,
-            nonce: "bytes | None" = None,
-            gas_price: "bytes | None" = None,
-            gas_limit: "bytes | None" = None,
             to: "str | None" = None,
             value: "bytes | None" = None,
             epoch_height: "bytes | None" = None,

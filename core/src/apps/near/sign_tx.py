@@ -30,12 +30,13 @@ async def sign_tx(
     except BaseException as e:
         raise wire.DataError(f"Invalid message {e}")
 
+    from trezor.ui.layouts.lvgl import confirm_final
+
     if tx.action.action_type == Action_Transfer:
-        from trezor.ui.layouts.lvgl import confirm_final
 
         await require_confirm_tx(ctx, tx.receiverId, tx.action.amount)
     else:
-        from trezor.ui.layouts.lvgl import confirm_blind_sign_common, confirm_final
+        from trezor.ui.layouts.lvgl import confirm_blind_sign_common
 
         await confirm_blind_sign_common(ctx, address, msg.raw_tx)
 

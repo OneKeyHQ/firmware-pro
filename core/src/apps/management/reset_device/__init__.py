@@ -8,10 +8,11 @@ from trezor.enums import BackupType
 from trezor.lvglui.i18n import gettext as _, i18n_refresh, keys as i18n_keys
 from trezor.messages import EntropyAck, EntropyRequest, Success
 from trezor.ui.layouts import (
+    backup_with_keytag,
+    backup_with_lite,
     confirm_backup,
     confirm_reset_device,
     request_strength,
-    show_bip39_dotmap,
     show_onekey_app_guide,
 )
 
@@ -120,7 +121,8 @@ async def reset_device(ctx: wire.Context, msg: ResetDevice) -> Success:
         # if we backed up the wallet, show success message
         if perform_backup:
             if not __debug__:
-                await show_bip39_dotmap(ctx, secret)
+                await backup_with_keytag(ctx, secret)
+                await backup_with_lite(ctx, secret)
             await layout.show_backup_success(ctx)
         if isinstance(ctx, wire.DummyContext):
             utils.make_show_app_guide()

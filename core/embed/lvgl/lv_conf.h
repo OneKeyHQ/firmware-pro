@@ -377,23 +377,18 @@
  *You can use these fonts as default font too and they will be available globally.
  *E.g. #define LV_FONT_CUSTOM_DECLARE   LV_FONT_DECLARE(my_font_1) LV_FONT_DECLARE(my_font_2)*/
 #define LV_FONT_CUSTOM_DECLARE \
-    LV_FONT_DECLARE(lv_font_pljs_bold_24) \
-    LV_FONT_DECLARE(lv_font_pljs_bold_36) \
-    LV_FONT_DECLARE(lv_font_pljs_regular_24) \
-    LV_FONT_DECLARE(lv_font_scs_bold_26) \
-    LV_FONT_DECLARE(lv_font_scs_bold_30) \
-    LV_FONT_DECLARE(lv_font_scs_bold_38) \
-    LV_FONT_DECLARE(lv_font_scs_reg_26) \
-    LV_FONT_DECLARE(lv_font_scs_reg_30) \
-    LV_FONT_DECLARE(lv_font_scs_bold_72) \
-    LV_FONT_DECLARE(lv_font_mix_bold_24) \
-    LV_FONT_DECLARE(lv_font_mix_title_bold_36) \
-    LV_FONT_DECLARE(lv_font_mono_reg_28) \
-    LV_FONT_DECLARE(lv_font_status_bar) \
-    LV_FONT_DECLARE(lv_font_pljs_bold_48)
+    LV_FONT_DECLARE(lv_font_geist_semibold_64) \
+    LV_FONT_DECLARE(lv_font_geist_semibold_48) \
+    LV_FONT_DECLARE(lv_font_geist_semibold_38) \
+    LV_FONT_DECLARE(lv_font_geist_semibold_30) \
+    LV_FONT_DECLARE(lv_font_geist_semibold_26) \
+    LV_FONT_DECLARE(lv_font_geist_regular_30) \
+    LV_FONT_DECLARE(lv_font_geist_regular_26) \
+    LV_FONT_DECLARE(lv_font_geist_regular_20) \
+    LV_FONT_DECLARE(lv_font_geist_mono_28)
 
 /*Always set a default font*/
-#define LV_FONT_DEFAULT &lv_font_scs_reg_26
+#define LV_FONT_DEFAULT &lv_font_geist_regular_26
 
 /*Enable handling large font and/or fonts with a lot of characters.
  *The limit depends on the font size, font face and bpp.
@@ -423,7 +418,7 @@
 #define LV_TXT_ENC LV_TXT_ENC_UTF8
 
 /*Can break (wrap) texts on these chars*/
-#define LV_TXT_BREAK_CHARS " ,.;-_"
+#define LV_TXT_BREAK_CHARS " ,;"
 
 /*If a word is at least this long, will break wherever "prettiest"
  *To disable, set to a value <= 0*/

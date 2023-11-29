@@ -314,7 +314,7 @@ fail:
 int camera_qr_decode(uint32_t x, uint32_t y, uint8_t* data, uint32_t data_len)
 {
 
-    int len = 0;   
+    int len = 0;
 
     camera_start((uint8_t*)CAM_BUF_ADDRESS, DCMI_MODE_SNAPSHOT);
 

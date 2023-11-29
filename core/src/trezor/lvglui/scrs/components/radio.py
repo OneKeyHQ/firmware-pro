@@ -1,4 +1,4 @@
-from .. import font_MONO28, font_PJSBOLD30, font_PJSREG30, lv, lv_colors
+from .. import font_GeistSemiBold30, lv, lv_colors
 from ..widgets.style import StyleWrapper
 from .container import ContainerFlexCol
 from .transition import DefaultTransition
@@ -56,14 +56,14 @@ class Radio:
         ) -> None:
             super().__init__(parent)
             self.content = text
-            self.set_size(464, 94)
+            self.set_size(456, 94)
             self.add_style(
                 StyleWrapper()
                 .bg_color(lv_colors.BLACK)
                 .bg_opa()
                 .radius(0)
-                .pad_hor(8)
-                .text_font(font_PJSREG30)
+                .pad_hor(24)
+                .text_font(font_GeistSemiBold30)
                 .text_color(lv_colors.WHITE_2)
                 .text_align_left(),
                 0,
@@ -81,7 +81,7 @@ class Radio:
                 self.set_style_bg_color(lv_colors.ONEKEY_BLACK_1, 0)
                 self.set_style_text_color(lv_colors.WHITE, 0)
                 if not change_color_only:
-                    self.set_style_text_font(font_PJSBOLD30, 0)
+                    self.set_style_text_font(font_GeistSemiBold30, 0)
 
         def set_uncheck(self, change_color_only: bool = False):
             if self.checked:
@@ -89,21 +89,21 @@ class Radio:
                 self.set_style_bg_color(lv_colors.BLACK, 0)
                 self.set_style_text_color(lv_colors.WHITE_2, 0)
                 if not change_color_only:
-                    self.set_style_text_font(font_PJSREG30, 0)
+                    self.set_style_text_font(font_GeistSemiBold30, 0)
 
         def get_text(self) -> str:
             return self.content
 
 
 class RadioTrigger:
-    def __init__(self, parent, options, font=font_MONO28) -> None:
+    def __init__(self, parent, options) -> None:
         self.parent = parent
         self.container = ContainerFlexCol(parent, None, padding_row=2)
         self.items: list[RadioTrigger.RadioItem] = []
         self.check_index = 0
         self.choices = options.split("\n")
         for _idx, choice in enumerate(self.choices):
-            item = RadioTrigger.RadioItem(self.container, choice, font=font)
+            item = RadioTrigger.RadioItem(self.container, choice)
             self.items.append(item)
         self.container.add_event_cb(self.on_selected_changed, lv.EVENT.CLICKED, None)
 
@@ -127,16 +127,16 @@ class RadioTrigger:
         return self.items[self.check_index].get_text()
 
     class RadioItem(lv.btn):
-        def __init__(self, parent, text: str, font=font_MONO28) -> None:
+        def __init__(self, parent, text: str, font=font_GeistSemiBold30) -> None:
             super().__init__(parent)
             self.content = text
-            self.set_size(464, 94)
+            self.set_size(456, 94)
             self.add_style(
                 StyleWrapper()
                 .bg_color(lv_colors.ONEKEY_BLACK_1)
                 .bg_opa()
                 .radius(0)
-                .pad_hor(8)
+                .pad_hor(24)
                 .text_font(font)
                 .text_color(lv_colors.WHITE)
                 .text_align_left(),

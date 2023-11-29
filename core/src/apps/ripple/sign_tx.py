@@ -35,15 +35,17 @@ async def sign_tx(
 
     check_fee(msg.fee)
     ctx.primary_color, ctx.icon_path = lv.color_hex(PRIMARY_COLOR), ICON
-    await layout.require_confirm_tx(ctx, msg.payment.destination, msg.payment.amount)
-    await layout.require_confirm_fee(
-        ctx,
-        source_address,
-        msg.payment.destination,
-        msg.fee,
-        msg.payment.amount,
-        msg.payment.destination_tag,
-    )
+    if await layout.require_should_show_more(
+        ctx, msg.payment.destination, msg.payment.amount
+    ):
+        await layout.require_confirm_fee(
+            ctx,
+            source_address,
+            msg.payment.destination,
+            msg.fee,
+            msg.payment.amount,
+            msg.payment.destination_tag,
+        )
     signature = ecdsa_sign(node.private_key(), first_half_of_sha512(to_sign))
     await confirm_final(ctx, "XRP")
     tx = serialize(msg, source_address, pubkey=node.public_key(), signature=signature)

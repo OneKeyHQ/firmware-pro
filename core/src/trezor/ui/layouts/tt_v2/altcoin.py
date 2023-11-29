@@ -2,12 +2,7 @@ from typing import TYPE_CHECKING
 
 from trezor import wire
 from trezor.enums import ButtonRequestType
-from trezor.ui.layouts import (
-    confirm_amount,
-    confirm_blob,
-    confirm_output,
-    confirm_total,
-)
+from trezor.ui.layouts import confirm_blob, confirm_output
 
 if TYPE_CHECKING:
     from typing import Sequence
@@ -15,22 +10,22 @@ if TYPE_CHECKING:
     pass
 
 
-async def confirm_total_ethereum(
-    ctx: wire.GenericContext, total_amount: str, gas_price: str, fee_max: str
-) -> None:
-    await confirm_amount(
-        ctx,
-        title="Confirm fee",
-        description="Gas price:",
-        amount=gas_price,
-    )
-    await confirm_total(
-        ctx,
-        total_amount=total_amount,
-        fee_amount=fee_max,
-        total_label="Amount sent:",
-        fee_label="Maximum fee:",
-    )
+# async def confirm_total_ethereum(
+#     ctx: wire.GenericContext, total_amount: str, gas_price: str, fee_max: str
+# ) -> None:
+#     await confirm_amount(
+#         ctx,
+#         title="Confirm fee",
+#         description="Gas price:",
+#         amount=gas_price,
+#     )
+#     await confirm_total(
+#         ctx,
+#         total_amount=total_amount,
+#         fee_amount=fee_max,
+#         total_label="Amount sent:",
+#         fee_label="Maximum fee:",
+#     )
 
 
 async def confirm_total_ripple(

@@ -10,7 +10,7 @@ from trezor.messages import (
     EthereumStructMember,
     EthereumStructMemberOneKey,
 )
-from trezor.strings import format_amount
+from trezor.strings import format_amount, strip_amount
 from trezor.ui.layouts import (
     confirm_action,
     confirm_address,
@@ -64,7 +64,6 @@ def require_confirm_tx(
 
 def require_show_overview(
     ctx: Context,
-    network: str,
     to_bytes: bytes,
     value: int,
     chain_id: int,
@@ -75,11 +74,13 @@ def require_show_overview(
         to_str = address_from_bytes(to_bytes, networks.by_chain_id(chain_id))
     else:
         to_str = _(i18n_keys.LIST_VALUE__NEW_CONTRACT)
+
     return should_show_details(
         ctx,
-        title=_(i18n_keys.TITLE__STR_TRANSACTION).format(network),
+        title=_(i18n_keys.TITLE__SEND_MULTILINE).format(
+            strip_amount(format_ethereum_amount(value, token, chain_id, is_nft))[0]
+        ),
         address=to_str,
-        amount=format_ethereum_amount(value, token, chain_id, is_nft),
         br_code=ButtonRequestType.SignTx,
     )
 

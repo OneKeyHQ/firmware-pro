@@ -1,0 +1,8 @@
+class LV_SYMBOLS:
+
+    LV_SYMBOL_ANGLE_DOUBLE_DOWN = "\uf103"
+    LV_SYMBOL_LIGHTBULB = "\uf0eb"
+    LV_SYMBOL_TRASH = "\uf1f8"
+    LV_SYMBOL_TRFFIC_LIGHT = "\uf637"
+    LV_SYMBOL_EYE = "\uf06e"
+    LV_SYMBOL_EYE_SLASH = "\uf070"

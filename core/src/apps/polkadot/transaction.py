@@ -1,10 +1,7 @@
 from typing import TYPE_CHECKING
 from ubinascii import hexlify
 
-from trezor import ui
-from trezor.enums import ButtonRequestType
 from trezor.strings import format_amount
-from trezor.ui.layouts import confirm_output
 
 from . import codec, helper
 
@@ -232,14 +229,7 @@ class BalancesTransfer(Transaction):
         from trezor.ui.layouts import confirm_polkadot_balances
 
         balance = self.balance if self.balance is not None else 0
-        await confirm_output(
-            ctx,
-            address=self.dest,
-            amount=f"{format_amount(balance, decimal)} {symbol}",
-            font_amount=ui.BOLD,
-            color_to=ui.GREY,
-            br_code=ButtonRequestType.SignTx,
-        )
+
         await confirm_polkadot_balances(
             ctx,
             chain_name=chain_name,
@@ -274,14 +264,7 @@ class BalancesForceTransfer(Transaction):
         from trezor.ui.layouts import confirm_polkadot_balances
 
         balance = self.balance if self.balance is not None else 0
-        await confirm_output(
-            ctx,
-            address=self.dest,
-            amount=f"{format_amount(balance, decimal)} {symbol}",
-            font_amount=ui.BOLD,
-            color_to=ui.GREY,
-            br_code=ButtonRequestType.SignTx,
-        )
+
         await confirm_polkadot_balances(
             ctx,
             chain_name=chain_name,
@@ -314,14 +297,7 @@ class BalancesTransferKeepAlive(Transaction):
         from trezor.ui.layouts import confirm_polkadot_balances
 
         balance = self.balance if self.balance is not None else 0
-        await confirm_output(
-            ctx,
-            address=self.dest,
-            amount=f"{format_amount(self.balance, decimal)} {symbol}",
-            font_amount=ui.BOLD,
-            color_to=ui.GREY,
-            br_code=ButtonRequestType.SignTx,
-        )
+
         await confirm_polkadot_balances(
             ctx,
             chain_name=chain_name,
@@ -357,14 +333,7 @@ class BalancesTransferAll(Transaction):
             keep_alive = "False"
         else:
             keep_alive = "True"
-        await confirm_output(
-            ctx,
-            address=self.dest,
-            amount="all",
-            font_amount=ui.BOLD,
-            color_to=ui.GREY,
-            br_code=ButtonRequestType.SignTx,
-        )
+
         await confirm_polkadot_balances(
             ctx,
             chain_name=chain_name,
@@ -373,7 +342,7 @@ class BalancesTransferAll(Transaction):
             sender=sender,
             dest=self.dest,
             source=None,
-            balance=None,
+            balance="All",
             tip=f"{format_amount(self.tip, decimal)} {symbol}"
             if self.tip != 0
             else None,

@@ -13,10 +13,9 @@ from apps.common.keychain import Keychain, auto_keychain
 from . import ICON, PRIMARY_COLOR, tokens
 from .helpers import address_from_bytes, address_from_hex, bytes_from_address
 from .layout import (
-    require_confirm_data,
     require_confirm_fee,
-    require_confirm_tx,
     require_confirm_unknown_token,
+    require_show_overview,
 )
 
 
@@ -30,103 +29,75 @@ async def sign_tx(
     await paths.validate_path(ctx, keychain, msg.address_n)
     node = keychain.derive(msg.address_n)
 
-    if (
-        msg.gas_limit is None
-        or msg.gas_price is None
-        or msg.epoch_height is None
-        or msg.storage_limit is None
-    ):
-        raise wire.DataError("Invalid params")
-
     owner_address = address_from_bytes(node.ethereum_pubkeyhash(), None)
-    value = msg.value if msg.value is not None else b""
-    gas_price = msg.gas_price if msg.gas_price is not None else b""
-    gas_limit = msg.gas_limit if msg.gas_limit is not None else b""
-    to = msg.to if msg.to is not None else ""
-    storage_limit = msg.storage_limit if msg.storage_limit is not None else b""
-    epoch_height = msg.epoch_height if msg.epoch_height is not None else b""
-    nonce = msg.nonce if msg.nonce is not None else b""
-    chain_id = msg.chain_id if msg.chain_id is not None else 1029
-    data_initial_chunk = (
-        msg.data_initial_chunk if msg.data_initial_chunk is not None else b""
-    )
+    chain_id = msg.chain_id
+
+    ctx.primary_color, ctx.icon_path = lv.color_hex(PRIMARY_COLOR), ICON
+    recipient = address_from_hex(msg.to, chain_id, True)
     owner_cfx_address = address_from_hex(owner_address, chain_id)
-    if len(to) > 0:
-        cfx_to = address_from_hex(to, chain_id, True)
-        token = None
-        # detect ERC-20 like token
-        if (
-            len(value) == 0
-            and data_total == 68
-            and len(data_initial_chunk) == 68
-            and data_initial_chunk[:16]
-            == b"\xa9\x05\x9c\xbb\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-        ):
-            amount = int.from_bytes(data_initial_chunk[36:68], "big")
-            address = address_from_hex(
-                address_from_bytes(data_initial_chunk[16:36], None), chain_id
-            )
-            token = tokens.token_by_address("CRC20", cfx_to)
-            if token == tokens.UNKNOWN_TOKEN:
-                await require_confirm_unknown_token(ctx, cfx_to)
-        else:
-            amount = int.from_bytes(value, "big")
-            address = cfx_to
-        ctx.primary_color, ctx.icon_path = lv.color_hex(PRIMARY_COLOR), ICON
-        await require_confirm_tx(ctx, address, amount, token)
-        if data_total > 0:
-            await require_confirm_data(ctx, data_initial_chunk, data_total)
-        await require_confirm_fee(
-            ctx,
-            from_address=owner_cfx_address,
-            to_address=address,
-            value=amount,
-            gas_price=int.from_bytes(gas_price, "big"),
-            gas_limit=int.from_bytes(gas_limit, "big"),
-            network="CFX",
-            token=token,
+    token = None
+    amount = int.from_bytes(msg.value, "big")
+    if (
+        len(msg.value) == 0
+        and data_total == 68
+        and len(msg.data_initial_chunk) == 68
+        and msg.data_initial_chunk[:16]
+        == b"\xa9\x05\x9c\xbb\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    ):
+        amount = int.from_bytes(msg.data_initial_chunk[36:68], "big")
+        token = tokens.token_by_address("CRC20", recipient)
+        if token == tokens.UNKNOWN_TOKEN:
+            await require_confirm_unknown_token(ctx, recipient)
+        recipient = address_from_hex(
+            address_from_bytes(msg.data_initial_chunk[16:36], None), chain_id
         )
-    else:
-        address = "new contract?"
-        await require_confirm_tx(ctx, address, int.from_bytes(value, "big"), None)
-        if data_total > 0:
-            await require_confirm_data(ctx, data_initial_chunk, data_total)
+
+    show_details = await require_show_overview(
+        ctx,
+        recipient,
+        amount,
+        token,
+    )
+    if show_details:
+        has_raw_data = True if token is None and msg.data_length > 0 else False
+
         await require_confirm_fee(
             ctx,
             from_address=owner_cfx_address,
-            to_address=address,
-            value=int.from_bytes(value, "big"),
-            gas_price=int.from_bytes(gas_price, "big"),
-            gas_limit=int.from_bytes(gas_limit, "big"),
-            network="CFX",
+            to_address=recipient,
+            value=amount,
+            gas_price=int.from_bytes(msg.gas_price, "big"),
+            gas_limit=int.from_bytes(msg.gas_limit, "big"),
+            token=token,
+            raw_data=msg.data_initial_chunk if has_raw_data else None,
         )
 
     data = bytearray()
-    data += data_initial_chunk
-    data_left = data_total - len(data_initial_chunk)
+    data += msg.data_initial_chunk
+    data_left = data_total - len(msg.data_initial_chunk)
 
     total_length = get_total_length(
-        value=value,
-        gas_price=gas_price,
-        gas_limit=gas_limit,
-        to=to,
-        storage_limit=storage_limit,
-        epoch_height=epoch_height,
-        nonce=nonce,
+        value=msg.value,
+        gas_price=msg.gas_price,
+        gas_limit=msg.gas_limit,
+        to=msg.to,
+        storage_limit=msg.storage_limit,
+        epoch_height=msg.epoch_height,
+        nonce=msg.nonce,
         chain_id=chain_id,
-        data_initial_chunk=data_initial_chunk,
+        data_initial_chunk=msg.data_initial_chunk,
         data_total=data_total,
     )
 
     sha = HashWriter(sha3_256(keccak=True))
     rlp.write_header(sha, total_length, rlp.LIST_HEADER_BYTE)
-    rlp.write(sha, nonce)
-    rlp.write(sha, gas_price)
-    rlp.write(sha, gas_limit)
-    rlp.write(sha, bytes_from_address(to))
-    rlp.write(sha, value)
-    rlp.write(sha, storage_limit)
-    rlp.write(sha, epoch_height)
+    rlp.write(sha, msg.nonce)
+    rlp.write(sha, msg.gas_price)
+    rlp.write(sha, msg.gas_limit)
+    rlp.write(sha, bytes_from_address(msg.to))
+    rlp.write(sha, msg.value)
+    rlp.write(sha, msg.storage_limit)
+    rlp.write(sha, msg.epoch_height)
     rlp.write(sha, chain_id)
 
     if data_left == 0:

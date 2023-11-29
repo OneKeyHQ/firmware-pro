@@ -4,7 +4,7 @@ from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
 from trezor.lvglui.scrs.components.container import ContainerFlexCol, ContainerGrid
 from trezor.lvglui.scrs.components.listitem import ListItemWithLeadingCheckbox
 
-from . import font_MONO28, font_PJSREG24, lv, lv_colors
+from . import font_GeistMono28, font_GeistRegular26, lv, lv_colors
 from .common import FullSizeWindow
 from .components.radio import RadioTrigger
 from .widgets.style import StyleWrapper
@@ -31,8 +31,8 @@ class MnemonicDisplay(FullSizeWindow):
         row_dsc.append(lv.GRID_TEMPLATE.LAST)
         # 3 columns
         col_dsc = [
-            231,
-            231,
+            226,
+            226,
             lv.GRID_TEMPLATE.LAST,
         ]
         self.container = ContainerGrid(
@@ -40,28 +40,25 @@ class MnemonicDisplay(FullSizeWindow):
             row_dsc=row_dsc,
             col_dsc=col_dsc,
             align_base=self.subtitle,
-            pos=(-8, 40),
+            pos=(-12, 40),
+            pad_gap=4,
         )
         word_style = (
             StyleWrapper()
-            .width(231)
-            .height(58)
-            .pad_left(8)
+            .pad_hor(8)
+            .pad_ver(12)
+            .radius(40)
             .bg_color(lv_colors.ONEKEY_GRAY_3)
             .bg_opa(lv.OPA.COVER)
             .text_align_left()
         )
         self.container.add_style(
-            StyleWrapper()
-            .pad_gap(2)
-            .width(464)
-            .text_font(font_MONO28)
-            .text_color(lv_colors.WHITE),
+            StyleWrapper().text_font(font_GeistMono28).text_color(lv_colors.WHITE),
             0,
         )
         self.clear_flag(lv.obj.FLAG.SCROLLABLE)
         self.content_area.set_scroll_dir(lv.DIR.VER)
-        self.set_grid_align(lv.GRID_ALIGN.CENTER, lv.GRID_ALIGN.CENTER)
+        # self.set_grid_align(lv.GRID_ALIGN.STRETCH, lv.GRID_ALIGN.STRETCH)
         half = word_count // 2
         for i in range(word_count):
             col = 0 if i < half else 1
@@ -89,7 +86,7 @@ class MnemonicDisplay(FullSizeWindow):
         # self.word_col1.set_size(lv.pct(50), lv.SIZE.CONTENT)
         # self.word_col1.set_recolor(True)
         # self.word_col1.align(lv.ALIGN.TOP_LEFT, 0, 0)
-        # self.word_col1.set_style_text_font(font_MONO28, 0)
+        # self.word_col1.set_style_text_font(font_GeistMono28, 0)
         # self.word_col1.set_style_text_align(lv.TEXT_ALIGN.LEFT, 0)
         # self.word_col1.set_style_pad_hor(5, 0)
         # self.word_col1.set_style_text_line_space(18, 0)
@@ -98,7 +95,7 @@ class MnemonicDisplay(FullSizeWindow):
         # self.word_col2.set_size(lv.pct(50), lv.SIZE.CONTENT)
         # self.word_col2.set_recolor(True)
         # self.word_col2.align(lv.ALIGN.TOP_RIGHT, 0, 0)
-        # self.word_col2.set_style_text_font(font_MONO28, 0)
+        # self.word_col2.set_style_text_font(font_GeistMono28, 0)
         # self.word_col2.set_style_text_align(lv.TEXT_ALIGN.LEFT, 0)
         # self.word_col2.set_style_pad_hor(5, 0)
         # self.word_col2.set_style_text_line_space(18, 0)
@@ -151,20 +148,27 @@ class BackupTips(FullSizeWindow):
             _(i18n_keys.BUTTON__BACK_UP),
         )
         self.container = ContainerFlexCol(
-            self.content_area, self.subtitle, pos=(0, 40), padding_row=10
+            self.content_area,
+            self.subtitle,
+            pos=(0, 40),
+            padding_row=10,
+            clip_corner=False,
         )
         self.container.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
         self.item1 = ListItemWithLeadingCheckbox(
             self.container,
             _(i18n_keys.CHECK__DEVICE_BACK_UP_RECOVERY_PHRASE_1),
+            radius=40,
         )
         self.item2 = ListItemWithLeadingCheckbox(
             self.container,
             _(i18n_keys.CHECK__DEVICE_BACK_UP_RECOVERY_PHRASE_2),
+            radius=40,
         )
         self.item3 = ListItemWithLeadingCheckbox(
             self.container,
             _(i18n_keys.CHECK__DEVICE_BACK_UP_RECOVERY_PHRASE_3),
+            radius=40,
         )
         self.btn_yes.disable()
         self.container.add_event_cb(self.on_event, lv.EVENT.VALUE_CHANGED, None)
@@ -218,10 +222,10 @@ class CheckWord(FullSizeWindow):
         self.tip.set_recolor(True)
         self.tip.set_text("")
         self.tip_panel.add_style(
-            StyleWrapper().text_font(font_PJSREG24).text_align_center(),
+            StyleWrapper().text_font(font_GeistRegular26).text_align_center(),
             0,
         )
-        self.tip_panel.align_to(self.choices.container, lv.ALIGN.OUT_TOP_MID, 8, -14)
+        self.tip_panel.align_to(self.choices.container, lv.ALIGN.OUT_TOP_MID, 12, -14)
 
         self.add_event_cb(self.on_ready, lv.EVENT.READY, None)
 
@@ -231,13 +235,13 @@ class CheckWord(FullSizeWindow):
         # self.destroy()
 
     def tip_correct(self):
-        self.tip_img.set_src("A:/res/feedback_correct.png")
+        self.tip_img.set_src("A:/res/feedback-correct.png")
         self.tip.set_text(f"#00FF33 {_(i18n_keys.MSG__CORRECT__EXCLAMATION)}#")
         self.tip.align_to(self.tip_img, lv.ALIGN.OUT_RIGHT_MID, 4, 0)
         # self.tip.clear_flag(lv.obj.FLAG.HIDDEN)
 
     def tip_incorrect(self):
-        self.tip_img.set_src("A:/res/feedback_incorrect.png")
+        self.tip_img.set_src("A:/res/feedback-incorrect.png")
         self.tip.set_text(f"#FF1100 {_(i18n_keys.MSG__INCORRECT__EXCLAMATION)}#")
         self.tip.align_to(self.tip_img, lv.ALIGN.OUT_RIGHT_MID, 4, 0)
         # self.tip.clear_flag(lv.obj.FLAG.HIDDEN)

@@ -1,4 +1,4 @@
-from .. import font_PJSREG24, lv, lv_colors
+from .. import font_GeistRegular26, lv, lv_colors
 from ..widgets.style import StyleWrapper
 
 
@@ -16,17 +16,17 @@ class Banner(lv.obj):
         bg_color, text_color, icon_path = get_style(level)
         self.add_style(
             StyleWrapper()
-            .width(464)
+            .width(456)
             .height(lv.SIZE.CONTENT)
-            .text_font(font_PJSREG24)
+            .text_font(font_GeistRegular26)
             .text_color(text_color)
             .text_letter_space(-1)
             .bg_color(bg_color)
             .bg_opa()
-            .radius(0)
+            .radius(40)
             .border_width(0)
-            .pad_hor(8)
-            .pad_ver(12),
+            .pad_hor(24)
+            .pad_ver(16),
             0,
         )
         self.align(lv.ALIGN.BOTTOM_MID, 0, -8)
@@ -34,9 +34,9 @@ class Banner(lv.obj):
         self.lead_icon.set_src(icon_path)
         self.lead_icon.set_align(lv.ALIGN.TOP_LEFT)
         self.banner_desc = lv.label(self)
-        self.banner_desc.set_size(408, lv.SIZE.CONTENT)
+        self.banner_desc.set_size(368, lv.SIZE.CONTENT)
         self.banner_desc.set_long_mode(lv.label.LONG.WRAP)
-        self.banner_desc.align_to(self.lead_icon, lv.ALIGN.OUT_RIGHT_TOP, 4, 3)
+        self.banner_desc.align_to(self.lead_icon, lv.ALIGN.OUT_RIGHT_TOP, 8, 3)
         self.banner_desc.set_text(text)
 
 
@@ -61,7 +61,7 @@ def get_style(level: int):
         )
     else:
         return (
-            lv_colors.ONEKEY_GRAY_3,
+            lv_colors.ONEKEY_BLACK_3,
             lv_colors.LIGHT_GRAY,
             "A:/res/banner-icon-gray.png",
         )

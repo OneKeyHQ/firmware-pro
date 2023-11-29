@@ -4,12 +4,12 @@ from trezor.crypto import bip39, random
 from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
 
 from .. import (
-    font_MONO24,
-    font_PJSBOLD30,
-    font_PJSBOLD36,
-    font_PJSBOLD48,
-    font_PJSREG24,
-    font_STATUS_BAR,
+    font_GeistMono28,
+    font_GeistRegular20,
+    font_GeistRegular26,
+    font_GeistSemiBold30,
+    font_GeistSemiBold38,
+    font_GeistSemiBold48,
     lv,
     lv_colors,
 )
@@ -38,7 +38,7 @@ def change_key_bg(
     allow_empty: bool = False,
 ) -> None:
     if dsc.id in (id1, id2):
-        dsc.label_dsc.font = font_PJSBOLD48
+        dsc.label_dsc.font = font_GeistSemiBold48
     if enabled:
         if dsc.id == id1:
             dsc.rect_dsc.bg_color = lv_colors.ONEKEY_RED_1
@@ -65,14 +65,17 @@ class BIP39Keyboard(lv.keyboard):
         super().__init__(parent)
         self.parent = parent
         self.ta = lv.textarea(parent)
-        self.ta.align(lv.ALIGN.TOP_LEFT, 0, 188)
-        self.ta.set_size(448, lv.SIZE.CONTENT)
+        self.ta.align(lv.ALIGN.TOP_LEFT, 12, 177)
+        self.ta.set_size(456, lv.SIZE.CONTENT)
         self.ta.add_style(
             StyleWrapper()
-            .border_width(0)
-            .radius(0)
-            .bg_color(lv_colors.BLACK)
-            .text_font(font_PJSBOLD36)
+            .border_width(1)
+            .border_color(lv_colors.ONEKEY_GRAY_2)
+            .radius(40)
+            .min_height(288)
+            .pad_all(24)
+            .bg_color(lv_colors.ONEKEY_BLACK_3)
+            .text_font(font_GeistSemiBold48)
             .text_color(lv_colors.WHITE)
             .text_align_left(),
             0,
@@ -198,13 +201,21 @@ class BIP39Keyboard(lv.keyboard):
         self.set_mode(lv.keyboard.MODE.TEXT_LOWER)
         self.set_width(lv.pct(100))
 
-        self.add_style(StyleWrapper().bg_color(lv_colors.BLACK).pad_gap(2), 0)
         self.add_style(
             StyleWrapper()
-            .bg_color(lv_colors.ONEKEY_BLACK)
+            .bg_color(lv_colors.BLACK)
+            .pad_gap(2)
+            .pad_top(8)
+            .pad_bottom(1)
+            .height(229),
+            0,
+        )
+        self.add_style(
+            StyleWrapper()
+            .bg_color(lv_colors.ONEKEY_BLACK_3)
             .bg_opa()
-            .text_font(font_MONO24)
-            .radius(2),
+            .text_font(font_GeistMono28)
+            .radius(16),
             lv.PART.ITEMS | lv.STATE.DEFAULT,
         )
         self.add_style(
@@ -217,22 +228,23 @@ class BIP39Keyboard(lv.keyboard):
             .text_color(lv_colors.GRAY_1),
             lv.PART.ITEMS | lv.STATE.DISABLED,
         )
-        self.set_height(220)
+        # self.set_height(229)
         self.align(lv.ALIGN.BOTTOM_MID, 0, 0)
         self.set_popovers(True)
         self.set_textarea(self.ta)
         self.add_event_cb(self.event_cb, lv.EVENT.DRAW_PART_BEGIN, None)
         self.add_event_cb(self.event_cb, lv.EVENT.VALUE_CHANGED, None)
         self.mnemonic_prompt = lv.obj(parent)
-        self.mnemonic_prompt.set_size(lv.pct(100), 66)
-        self.mnemonic_prompt.align_to(self, lv.ALIGN.OUT_TOP_LEFT, 0, -4)
+        self.mnemonic_prompt.set_size(lv.pct(100), 74)
+        self.mnemonic_prompt.align_to(self, lv.ALIGN.OUT_TOP_LEFT, 0, 0)
         self.mnemonic_prompt.add_style(
             StyleWrapper()
             .border_width(0)
             .bg_color(lv_colors.BLACK)
-            .pad_all(0)
+            .pad_hor(1)
+            .pad_ver(4)
             .bg_opa()
-            .radius(0)
+            .radius(16)
             .pad_column(2),
             0,
         )
@@ -247,16 +259,16 @@ class BIP39Keyboard(lv.keyboard):
     def tip_submitted(self):
         self.tip_panel = lv.obj(self.parent)
         self.tip_panel.remove_style_all()
-        self.tip_panel.set_size(lv.pct(100), lv.SIZE.CONTENT)
+        self.tip_panel.set_size(lv.pct(80), lv.SIZE.CONTENT)
         self.tip_img = lv.img(self.tip_panel)
         self.tip_img.set_align(lv.ALIGN.LEFT_MID)
-        self.tip_img.set_src("A:/res/feedback_correct.png")
+        self.tip_img.set_src("A:/res/feedback-correct.png")
         self.tip = lv.label(self.tip_panel)
         self.tip.set_recolor(True)
         self.tip.align_to(self.tip_img, lv.ALIGN.OUT_RIGHT_MID, 4, 0)
         self.tip_panel.add_style(
             StyleWrapper()
-            .text_font(font_PJSREG24)
+            .text_font(font_GeistRegular26)
             .text_color(lv_colors.ONEKEY_GREEN)
             .text_align_left(),
             0,
@@ -309,11 +321,11 @@ class BIP39Keyboard(lv.keyboard):
                 candidates = words.rstrip().split() if words else []
                 btn_style_default = (
                     StyleWrapper()
-                    .bg_color(lv_colors.ONEKEY_BLACK)
+                    .bg_color(lv_colors.ONEKEY_BLACK_3)
                     .bg_opa()
                     .pad_all(16)
-                    .radius(2)
-                    .text_font(font_PJSBOLD30)
+                    .radius(16)
+                    .text_font(font_GeistSemiBold30)
                     .text_color(lv_colors.WHITE)
                 )
                 btn_style_pressed = (
@@ -358,7 +370,7 @@ class BIP39Keyboard(lv.keyboard):
 class NumberKeyboard(lv.keyboard):
     """number keyboard with textarea."""
 
-    def __init__(self, parent) -> None:
+    def __init__(self, parent, max_len: int = 50, min_len: int = 4) -> None:
         super().__init__(parent)
         self.ta = lv.textarea(parent)
         self.ta.align(lv.ALIGN.TOP_MID, 0, 188)
@@ -369,15 +381,17 @@ class NumberKeyboard(lv.keyboard):
             .border_width(0)
             .width(lv.SIZE.CONTENT)
             .max_width(432)
-            .text_font(font_PJSBOLD48)
+            .text_font(font_GeistSemiBold48)
             .text_color(lv_colors.WHITE)
-            .text_letter_space(12)
+            .text_letter_space(6)
             .text_align_center(),
             0,
         )
         self.ta.set_one_line(True)
         self.ta.set_accepted_chars("0123456789")
-        self.ta.set_max_length(50)
+        self.ta.set_max_length(max_len)
+        self.max_len = max_len
+        self.min_len = min_len
         self.ta.set_password_mode(True)
         self.ta.clear_flag(lv.obj.FLAG.CLICKABLE)
         self.ta.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
@@ -433,16 +447,16 @@ class NumberKeyboard(lv.keyboard):
         )
         self.set_map(lv.keyboard.MODE.NUMBER, self.dummy_btnm_map, self.ctrl_map)
         self.set_mode(lv.keyboard.MODE.NUMBER)
-        self.set_size(lv.pct(100), 362)
+        self.set_size(lv.pct(100), 472)
 
         self.add_style(
-            StyleWrapper().bg_color(lv_colors.BLACK).pad_hor(4).pad_gap(2), 0
+            StyleWrapper().bg_color(lv_colors.BLACK).pad_hor(4).pad_gap(4), 0
         )
         self.add_style(
             StyleWrapper()
             .bg_color(lv_colors.ONEKEY_BLACK)
-            .radius(2)
-            .text_font(font_PJSBOLD48),
+            .radius(40)
+            .text_font(font_GeistSemiBold48),
             lv.PART.ITEMS | lv.STATE.DEFAULT,
         )
         self.add_style(StyleWrapper(), 0)
@@ -466,10 +480,10 @@ class NumberKeyboard(lv.keyboard):
         self.set_textarea(self.ta)
 
         self.input_count_tips = lv.label(parent)
-        self.input_count_tips.align(lv.ALIGN.BOTTOM_MID, 0, -378)
+        self.input_count_tips.align(lv.ALIGN.BOTTOM_MID, 0, -512)
         self.input_count_tips.add_style(
             StyleWrapper()
-            .text_font(font_STATUS_BAR)
+            .text_font(font_GeistRegular20)
             .text_letter_space(1)
             .text_color(lv_colors.LIGHT_GRAY),
             0,
@@ -485,8 +499,8 @@ class NumberKeyboard(lv.keyboard):
     def update_count_tips(self):
         """Update/show tips only when input length larger than 10"""
         input_len = len(self.ta.get_text())
-        if input_len >= 10:
-            self.input_count_tips.set_text(f"{len(self.ta.get_text())}/50")
+        if input_len >= self.max_len // 5 if self.max_len != 6 else 0:
+            self.input_count_tips.set_text(f"{len(self.ta.get_text())}/{self.max_len}")
             if self.input_count_tips.has_flag(lv.obj.FLAG.HIDDEN):
                 self.input_count_tips.clear_flag(lv.obj.FLAG.HIDDEN)
         else:
@@ -529,7 +543,7 @@ class NumberKeyboard(lv.keyboard):
         self.ta.clear_flag(lv.obj.FLAG.HIDDEN)
         if code == lv.EVENT.DRAW_PART_BEGIN:
             dsc = lv.obj_draw_part_dsc_t.__cast__(event.get_param())
-            if input_len > 3:
+            if input_len >= self.min_len:
                 change_key_bg(dsc, 9, 11, True)
             elif input_len > 0:
                 change_key_bg(dsc, 9, 11, True, False)
@@ -543,7 +557,7 @@ class NumberKeyboard(lv.keyboard):
             motor.vibrate()
             # if input_len > 10:
             #     self.ta.set_cursor_pos(lv.TEXTAREA_CURSOR.LAST)
-            if input_len >= 50:
+            if input_len >= self.max_len:
                 # disable number keys
                 self.toggle_number_input_keys(False)
             elif input_len > 0:
@@ -563,19 +577,20 @@ class PassphraseKeyboard(lv.btnmatrix):
     def __init__(self, parent, max_len) -> None:
         super().__init__(parent)
         self.ta = lv.textarea(parent)
-        self.ta.align(lv.ALIGN.TOP_MID, 0, 180)
-        self.ta.set_size(464, 264)
+        self.ta.align(lv.ALIGN.TOP_MID, 0, 177)
+        self.ta.set_size(456, lv.SIZE.CONTENT)
         self.ta.add_style(
             StyleWrapper()
             .bg_color(lv_colors.ONEKEY_BLACK_3)
             .bg_opa()
             .border_width(1)
             .border_color(lv_colors.ONEKEY_GRAY_2)
-            .text_font(font_PJSBOLD36)
+            .text_font(font_GeistSemiBold38)
             .text_color(lv_colors.WHITE)
             .text_align_left()
-            .radius(0)
-            .pad_ver(8),
+            .min_height(288)
+            .radius(40)
+            .pad_all(24),
             0,
         )
         # self.ta.set_one_line(True)
@@ -784,7 +799,7 @@ class PassphraseKeyboard(lv.btnmatrix):
         self.set_map(self.btn_map_text_lower)
         self.set_ctrl_map(self.ctrl_map)
         self.set_size(lv.pct(100), 294)
-        self.align(lv.ALIGN.BOTTOM_MID, 0, 0)
+        self.align(lv.ALIGN.BOTTOM_MID, 0, -1)
         self.add_style(
             StyleWrapper()
             .bg_color(lv_colors.BLACK)
@@ -795,9 +810,9 @@ class PassphraseKeyboard(lv.btnmatrix):
         )
         self.add_style(
             StyleWrapper()
-            .bg_color(lv_colors.ONEKEY_BLACK)
-            .radius(2)
-            .text_font(font_MONO24)
+            .bg_color(lv_colors.ONEKEY_BLACK_3)
+            .radius(16)
+            .text_font(font_GeistMono28)
             .text_letter_space(-1),
             lv.PART.ITEMS | lv.STATE.DEFAULT,
         )
@@ -807,11 +822,14 @@ class PassphraseKeyboard(lv.btnmatrix):
         )
 
         self.input_count_tips = lv.label(parent)
-        self.input_count_tips.align_to(self, lv.ALIGN.OUT_TOP_MID, 0, -8)
+        self.input_count_tips.set_size(lv.pct(100), 38)
+        self.input_count_tips.align_to(self, lv.ALIGN.OUT_TOP_MID, 0, 0)
         self.input_count_tips.add_style(
             StyleWrapper()
-            .text_font(font_STATUS_BAR)
+            .text_font(font_GeistRegular20)
             .text_letter_space(1)
+            .pad_all(8)
+            .text_align_center()
             .text_color(lv_colors.LIGHT_GRAY),
             0,
         )

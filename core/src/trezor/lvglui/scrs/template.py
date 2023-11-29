@@ -1,15 +1,21 @@
 from trezor import utils
 from trezor.lvglui.scrs.components.button import NormalButton
 from trezor.lvglui.scrs.components.pageable import PageAbleMessage
-from trezor.lvglui.scrs.components.transition import BtnClickTransition
 
 from ..i18n import gettext as _, keys as i18n_keys
 from ..lv_colors import lv_colors
-from . import font_MONO24, font_PJSBOLD36, font_PJSBOLD48, font_STATUS_BAR
+from ..lv_symbols import LV_SYMBOLS
+from . import (
+    font_GeistMono28,
+    font_GeistRegular20,
+    font_GeistSemiBold26,
+    font_GeistSemiBold38,
+    font_GeistSemiBold48,
+)
 from .common import FullSizeWindow, lv
 from .components.banner import Banner
 from .components.container import ContainerFlexCol
-from .components.listitem import DisplayItemNoBgc
+from .components.listitem import CardHeader, CardItem, DisplayItem
 from .components.qrcode import QRCode
 from .widgets.style import StyleWrapper
 
@@ -34,7 +40,7 @@ class Address(FullSizeWindow):
     ):
         super().__init__(
             title,
-            address,
+            None,
             confirm_text=_(i18n_keys.BUTTON__DONE),
             cancel_text=_(i18n_keys.BUTTON__QRCODE),
             anim_dir=2,
@@ -49,15 +55,7 @@ class Address(FullSizeWindow):
         self.addr_type = addr_type
         if primary_color:
             self.title.add_style(StyleWrapper().text_color(primary_color), 0)
-        if __debug__:
-            self.subtitle.add_style(
-                StyleWrapper().text_font(font_PJSBOLD36).text_color(lv_colors.WHITE), 0
-            )
-        else:
-            self.subtitle.add_style(
-                StyleWrapper().text_font(font_PJSBOLD48).text_color(lv_colors.WHITE), 0
-            )
-        self.subtitle.align_to(self.title, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 48)
+
         self.show_address(evm_chain_id=evm_chain_id)
 
     def show_address(self, evm_chain_id: int | None = None):
@@ -66,33 +64,50 @@ class Address(FullSizeWindow):
             self.qr.delete()
             del self.qr
         self.btn_no.label.set_text(_(i18n_keys.BUTTON__QRCODE))
-        self.container = ContainerFlexCol(
-            self.content_area, self.subtitle, pos=(0, 16), padding_row=8
+
+        self.item_addr = DisplayItem(self.content_area, None, self.address, radius=40)
+        self.item_addr.add_style(StyleWrapper().pad_ver(24), 0)
+        self.item_addr.label.add_style(
+            StyleWrapper()
+            .text_font(font_GeistSemiBold48)
+            .text_line_space(-2)
+            .text_color(lv_colors.LIGHT_GRAY),
+            0,
         )
+        self.item_addr.align_to(self.title, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 40)
+
+        self.container = ContainerFlexCol(
+            self.content_area, self.item_addr, pos=(0, 8), padding_row=0
+        )
+        self.container.add_dummy()
         if self.addr_type:
-            self.item1_0 = DisplayItemNoBgc(
+            self.item_type = DisplayItem(
                 self.container, _(i18n_keys.LIST_KEY__TYPE__COLON), self.addr_type
             )
         if evm_chain_id:
-            self.item2 = DisplayItemNoBgc(
+            self.item_chin_id = DisplayItem(
                 self.container,
                 _(i18n_keys.LIST_KEY__CHAIN_ID__COLON),
                 str(evm_chain_id),
             )
-        self.item1 = DisplayItemNoBgc(
+        self.item_path = DisplayItem(
             self.container, _(i18n_keys.LIST_KEY__PATH__COLON), self.path
         )
-        # if xpubs:
-        #     self.title.align(lv.ALIGN.TOP_MID, 0, 100)
-        #     self.btn_yes.align(lv.ALIGN.BOTTOM_MID, 0, -30)
-        self.current = 0
+        self.container.add_dummy()
+        self.xpub_group = ContainerFlexCol(
+            self.content_area,
+            self.container,
+            pos=(0, 8),
+            clip_corner=False,
+        )
         for i, xpub in enumerate(self.xpubs or []):
-            self.item3 = DisplayItemNoBgc(
-                self.container,
+            self.item3 = CardItem(
+                self.xpub_group,
                 _(i18n_keys.LIST_KEY__XPUB_STR_MINE__COLON).format(i + 1)
                 if i == self.multisig_index
                 else _(i18n_keys.LIST_KEY__XPUB_STR_COSIGNER__COLON).format(i + 1),
                 xpub,
+                "A:/res/group-icon-more.png",
             )
 
     def show_qr_code(self):
@@ -100,13 +115,16 @@ class Address(FullSizeWindow):
         if hasattr(self, "container"):
             self.container.delete()
             del self.container
+        if hasattr(self, "xpub_group"):
+            self.xpub_group.delete()
+            del self.xpub_group
         self.btn_no.label.set_text(_(i18n_keys.BUTTON__ADDRESS))
         self.qr = QRCode(
             self.content_area,
             self.address if self.address_qr is None else self.address_qr,
             self.icon,
         )
-        self.qr.align_to(self.title, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 16)
+        self.qr.align_to(self.title, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 30)
 
     def eventhandler(self, event_obj):
         code = event_obj.code
@@ -137,19 +155,23 @@ class XpubOrPub(FullSizeWindow):
             primary_color=primary_color,
         )
         self.title.add_style(StyleWrapper().text_color(primary_color), 0)
-        self.container = ContainerFlexCol(
-            self.content_area, self.title, pos=(0, 40), padding_row=16
-        )
-        self.item1 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__PATH__COLON), path
-        )
-        self.item2 = DisplayItemNoBgc(
-            self.container,
+        self.item_xpub_or_pub = CardItem(
+            self.content_area,
             _(i18n_keys.LIST_KEY__XPUB__COLON)
             if xpub
             else _(i18n_keys.LIST_KEY__PUBLIC_KEY__COLON),
             xpub or pubkey,
+            "A:/res/group-icon-more.png",
         )
+        self.item_xpub_or_pub.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, 40)
+        self.container = ContainerFlexCol(
+            self.content_area, self.item_xpub_or_pub, pos=(0, 16), padding_row=0
+        )
+        self.container.add_dummy()
+        self.item_path = DisplayItem(
+            self.container, _(i18n_keys.LIST_KEY__PATH__COLON), path
+        )
+        self.container.add_dummy()
 
 
 class Message(FullSizeWindow):
@@ -173,59 +195,65 @@ class Message(FullSizeWindow):
             icon_path=icon_path,
         )
         self.primary_color = primary_color
-        self.container = ContainerFlexCol(
-            self.content_area, self.title, pos=(0, 40), padding_row=8
+        self.long_message = False
+        self.full_message = message
+        if len(message) > 225:
+            self.message = message[:222] + "..."
+            self.long_message = True
+        else:
+            self.message = message
+        self.item_message = CardItem(
+            self.content_area,
+            _(i18n_keys.LIST_KEY__MESSAGE__COLON),
+            self.message,
+            "A:/res/group-icon-data.png",
         )
+        self.item_message.align_to(self.title, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 40)
+        if self.long_message:
+            self.show_full_message = NormalButton(
+                self.item_message.content, _(i18n_keys.BUTTON__VIEW_DATA)
+            )
+            self.show_full_message.set_size(185, 77)
+            self.show_full_message.add_style(
+                StyleWrapper().text_font(font_GeistSemiBold26), 0
+            )
+            self.show_full_message.align(lv.ALIGN.CENTER, 0, 0)
+            self.show_full_message.remove_style(None, lv.PART.MAIN | lv.STATE.PRESSED)
+            self.show_full_message.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
+        self.container = ContainerFlexCol(
+            self.content_area, self.item_message, pos=(0, 8), padding_row=0
+        )
+        self.container.add_dummy()
         if evm_chain_id:
-            self.item3 = DisplayItemNoBgc(
+            self.item_chain_id = DisplayItem(
                 self.container,
                 _(i18n_keys.LIST_KEY__CHAIN_ID__COLON),
                 str(evm_chain_id),
             )
-        self.item1 = DisplayItemNoBgc(
+        self.item_addr = DisplayItem(
             self.container, _(i18n_keys.LIST_KEY__ADDRESS__COLON), address
         )
-        self.long_message = False
-        if len(message) > 80:
-            # self.show_full_message = NormalButton(
-            #     self, _(i18n_keys.BUTTON__VIEW_FULL_MESSAGE)
-            # )
-            # self.show_full_message.align_to(self.item2, lv.ALIGN.OUT_BOTTOM_MID, 0, 32)
-            # self.show_full_message.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
-            self.message = message
-            self.long_message = True
-            self.btn_yes.label.set_text(_(i18n_keys.BUTTON__VIEW))
-        else:
-            self.item2 = DisplayItemNoBgc(
-                self.container, _(i18n_keys.LIST_KEY__MESSAGE__COLON), message
-            )
+        self.container.add_dummy()
 
-    def eventhandler(self, event_obj):
+    def on_click(self, event_obj):
         code = event_obj.code
         target = event_obj.get_target()
         if code == lv.EVENT.CLICKED:
-            if target == self.btn_yes:
-                if self.long_message:
-                    PageAbleMessage(
-                        _(i18n_keys.LIST_KEY__MESSAGE__COLON)[:-1],
-                        self.message,
-                        self.channel,
-                        primary_color=self.primary_color,
-                        confirm_text=_(i18n_keys.BUTTON__SIGN),
-                    )
-                    self.destroy()
-                else:
-                    self.show_unload_anim()
-                    self.channel.publish(1)
-            elif target == self.btn_no:
-                self.show_dismiss_anim()
-                self.channel.publish(0)
+            if target == self.show_full_message:
+                PageAbleMessage(
+                    _(i18n_keys.TITLE__STR_MESSAGE).format(""),
+                    self.full_message,
+                    None,
+                    primary_color=self.primary_color,
+                    page_size=405,
+                    font=font_GeistMono28,
+                    confirm_text=None,
+                    cancel_text=None,
+                )
 
 
 class TransactionOverview(FullSizeWindow):
-    def __init__(
-        self, title, amount, address, primary_color, icon_path, has_details=None
-    ):
+    def __init__(self, title, address, primary_color, icon_path, has_details=None):
         if __debug__:
             self.layout_address = address
 
@@ -236,29 +264,33 @@ class TransactionOverview(FullSizeWindow):
             _(i18n_keys.BUTTON__REJECT),
             anim_dir=2,
             primary_color=primary_color,
-            icon_path=icon_path,
+            icon_path="A:/res/icon-send.png",
+            sub_icon_path=icon_path or "A:/res/evm-eth.png",
         )
-        self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
-        self.item1 = DisplayItemNoBgc(
-            self.container,
-            f"#FFFFFF {_(i18n_keys.INSERT__SEND)}#  {amount}  #FFFFFF {_(i18n_keys.INSERT__TO)}#",
+        self.group_directions = ContainerFlexCol(
+            self.content_area, self.title, pos=(0, 40), padding_row=0
+        )
+        self.item_group_header = CardHeader(
+            self.group_directions,
+            _(i18n_keys.FORM__DIRECTIONS),
+            "A:/res/group-icon-directions.png",
+        )
+        self.item_group_body_to = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__TO__COLON),
             address,
         )
-        self.item1.label_top.add_style(
-            StyleWrapper().text_color(lv.color_hex(0xE1E1E1)), 0
-        )
+        self.group_directions.add_dummy()
+
         if has_details:
             self.view_btn = NormalButton(
-                self.content_area, _(i18n_keys.BUTTON__VIEW_DETAILS)
+                self.content_area,
+                f"{LV_SYMBOLS.LV_SYMBOL_ANGLE_DOUBLE_DOWN}  {_(i18n_keys.BUTTON__DETAILS)}",
             )
-            self.view_btn.add_style(
-                StyleWrapper()
-                .border_width(2)
-                .border_color(lv_colors.ONEKEY_GRAY_1)
-                .bg_color(lv_colors.ONEKEY_BLACK_3),
-                0,
-            )
-            self.view_btn.align_to(self.container, lv.ALIGN.OUT_BOTTOM_MID, 0, 16)
+            self.view_btn.set_size(456, 82)
+            self.view_btn.add_style(StyleWrapper().text_font(font_GeistSemiBold26), 0)
+            self.view_btn.enable()
+            self.view_btn.align_to(self.group_directions, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
             self.view_btn.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
 
     def on_click(self, event_obj):
@@ -297,6 +329,8 @@ class TransactionDetailsETH(FullSizeWindow):
         token_id=None,
         evm_chain_id=None,
         raw_data=None,
+        sub_icon_path=None,
+        striped=False,
     ):
         super().__init__(
             title,
@@ -304,60 +338,73 @@ class TransactionDetailsETH(FullSizeWindow):
             _(i18n_keys.BUTTON__CONTINUE),
             _(i18n_keys.BUTTON__REJECT),
             primary_color=primary_color,
+            icon_path="A:/res/icon-send.png",
+            sub_icon_path=sub_icon_path,
         )
+        self.primary_color = primary_color
         self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
-        if evm_chain_id:
-            self.item0_1 = DisplayItemNoBgc(
-                self.container,
-                _(i18n_keys.LIST_KEY__CHAIN_ID__COLON),
-                str(evm_chain_id),
+        if striped:
+            self.group_amounts = ContainerFlexCol(
+                self.container, None, padding_row=0, no_align=True
             )
+            self.item_group_header = CardHeader(
+                self.group_amounts,
+                _(i18n_keys.LIST_KEY__AMOUNT__COLON),
+                "A:/res/group-icon-amount.png",
+            )
+            self.group_body_amount = DisplayItem(
+                self.group_amounts,
+                None,
+                amount,
+            )
+            self.group_amounts.add_dummy()
 
-        self.item1 = DisplayItemNoBgc(
-            self.container,
-            _(i18n_keys.LIST_KEY__AMOUNT__COLON),
-            amount,
+        self.group_directions = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
         )
-        self.item4 = DisplayItemNoBgc(
-            self.container,
+        self.item_group_header = CardHeader(
+            self.group_directions,
+            _(i18n_keys.FORM__DIRECTIONS),
+            "A:/res/group-icon-directions.png",
+        )
+        self.item_group_body_to_addr = DisplayItem(
+            self.group_directions,
             _(i18n_keys.LIST_KEY__TO__COLON),
             address_to,
         )
-        self.item5 = DisplayItemNoBgc(
-            self.container,
+        self.item_group_body_from_addr = DisplayItem(
+            self.group_directions,
             _(i18n_keys.LIST_KEY__FROM__COLON),
             address_from,
         )
-        if contract_addr:
-            self.item0 = DisplayItemNoBgc(
-                self.container,
-                _(i18n_keys.LIST_KEY__CONTRACT_ADDRESS__COLON),
-                contract_addr,
-            )
-            self.item1 = DisplayItemNoBgc(
-                self.container,
-                _(i18n_keys.LIST_KEY__TOKEN_ID__COLON),
-                token_id,
-            )
-        self.item3 = DisplayItemNoBgc(
-            self.container,
+        self.group_directions.add_dummy()
+
+        self.group_fees = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_fees, _(i18n_keys.FORM__FEES), "A:/res/group-icon-fees.png"
+        )
+        self.item_group_body_fee_max = DisplayItem(
+            self.group_fees,
             _(i18n_keys.LIST_KEY__MAXIMUM_FEE__COLON),
             fee_max,
         )
         if not is_eip1559:
-            self.item2 = DisplayItemNoBgc(
-                self.container,
-                _(i18n_keys.LIST_KEY__GAS_PRICE__COLON),
-                gas_price,
-            )
+            if gas_price:
+                self.item_group_body_gas_price = DisplayItem(
+                    self.group_fees,
+                    _(i18n_keys.LIST_KEY__GAS_PRICE__COLON),
+                    gas_price,
+                )
         else:
-            self.item2 = DisplayItemNoBgc(
-                self.container,
+            self.item_group_body_priority_fee_per_gas = DisplayItem(
+                self.group_fees,
                 _(i18n_keys.LIST_KEY__PRIORITY_FEE_PER_GAS__COLON),
                 max_priority_fee_per_gas,
             )
-            self.item2_1 = DisplayItemNoBgc(
-                self.container,
+            self.item_group_body_max_fee_per_gas = DisplayItem(
+                self.group_fees,
                 _(i18n_keys.LIST_KEY__MAXIMUM_FEE_PER_GAS__COLON),
                 max_fee_per_gas,
             )
@@ -366,83 +413,84 @@ class TransactionDetailsETH(FullSizeWindow):
                 total_amount = f"{amount}\n{fee_max}"
             else:  # nft transfer
                 total_amount = f"{fee_max}"
-        self.item6 = DisplayItemNoBgc(
-            self.container,
+        self.item_group_body_total_amount = DisplayItem(
+            self.group_fees,
             _(i18n_keys.LIST_KEY__TOTAL_AMOUNT__COLON),
             total_amount,
         )
+        self.group_fees.add_dummy()
+
+        if contract_addr or evm_chain_id:
+            self.group_more = ContainerFlexCol(
+                self.container, None, padding_row=0, no_align=True
+            )
+            self.item_group_header = CardHeader(
+                self.group_more, _(i18n_keys.FORM__MORE), "A:/res/group-icon-more.png"
+            )
+            if evm_chain_id:
+                self.item_group_body_chain_id = DisplayItem(
+                    self.group_more,
+                    _(i18n_keys.LIST_KEY__CHAIN_ID__COLON),
+                    str(evm_chain_id),
+                )
+            if contract_addr:
+                self.item_group_body_contract_addr = DisplayItem(
+                    self.group_more,
+                    _(i18n_keys.LIST_KEY__CONTRACT_ADDRESS__COLON),
+                    contract_addr,
+                )
+                self.item_group_body_token_id = DisplayItem(
+                    self.group_more,
+                    _(i18n_keys.LIST_KEY__TOKEN_ID__COLON),
+                    token_id,
+                )
+            self.group_more.add_dummy()
+
         if raw_data:
-            self.item7 = DisplayItemNoBgc(
+            try:
+                self.data_str = raw_data.decode()
+            except UnicodeError:
+                from binascii import hexlify
+
+                self.data_str = f"0x{hexlify(raw_data).decode()}"
+            self.long_data = False
+            if len(self.data_str) > 225:
+                self.long_data = True
+                self.data = self.data_str[:222] + "..."
+            else:
+                self.data = self.data_str
+            self.item_data = CardItem(
                 self.container,
                 _(i18n_keys.LIST_KEY__DATA__COLON),
-                _(i18n_keys.SUBTITLE__STR_BYTES).format(len(raw_data)),
+                self.data,
+                "A:/res/group-icon-data.png",
             )
-            self.panel = lv.obj(self.content_area)
-            self.panel.clear_flag(lv.obj.FLAG.SCROLLABLE)
-            self.panel.add_style(
-                StyleWrapper()
-                .width(464)
-                .height(lv.SIZE.CONTENT)
-                .bg_color(lv_colors.ONEKEY_BLACK_3)
-                .bg_opa()
-                .border_width(1)
-                .border_color(lv_colors.ONEKEY_GRAY_1)
-                .pad_all(8)
-                .radius(0)
-                .max_height(256)
-                .text_font(font_MONO24)
-                .text_color(lv_colors.LIGHT_GRAY)
-                .text_align_left()
-                .text_letter_space(-1),
-                0,
-            )
-            self.panel.align_to(self.container, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
-            self.content = lv.label(self.panel)
-            self.content.set_align(lv.ALIGN.TOP_LEFT)
-            self.content.set_size(lv.pct(100), lv.SIZE.CONTENT)
-            from binascii import hexlify
-
-            self.data_str = f"0x{hexlify(raw_data).decode()}"
-            if len(self.data_str) > 216:
-                self.content.set_long_mode(lv.label.LONG.WRAP)
-                self.content.set_text(self.data_str[:213] + "...")
-                self.view_btn = NormalButton(self.panel, _(i18n_keys.BUTTON__VIEW))
-                self.view_btn.set_width(246)
-                self.view_btn.align(lv.ALIGN.CENTER, 0, 0)
-                self.view_btn.add_style(
-                    StyleWrapper()
-                    .bg_color(lv_colors.ONEKEY_BLACK_3)
-                    .border_width(2)
-                    .border_color(lv_colors.ONEKEY_GRAY_1),
-                    0,
+            if self.long_data:
+                self.show_full_data = NormalButton(
+                    self.item_data.content, _(i18n_keys.BUTTON__VIEW_DATA)
                 )
-                self.view_btn.add_style(
-                    StyleWrapper()
-                    .bg_opa(lv.OPA.COVER)
-                    .bg_color(lv_colors.ONEKEY_GRAY_3)
-                    .transform_height(-2)
-                    .transform_width(-2)
-                    .transition(BtnClickTransition()),
-                    lv.PART.MAIN | lv.STATE.PRESSED,
+                self.show_full_data.set_size(185, 77)
+                self.show_full_data.add_style(
+                    StyleWrapper().text_font(font_GeistSemiBold26), 0
                 )
-
-                self.view_btn.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
-            else:
-                self.content.set_text(self.data_str)
+                self.show_full_data.align(lv.ALIGN.CENTER, 0, 0)
+                self.show_full_data.remove_style(None, lv.PART.MAIN | lv.STATE.PRESSED)
+                self.show_full_data.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
 
     def on_click(self, event_obj):
         code = event_obj.code
         target = event_obj.get_target()
         if code == lv.EVENT.CLICKED:
-            if target == self.view_btn:
+            if target == self.show_full_data:
                 PageAbleMessage(
                     _(i18n_keys.TITLE__VIEW_DATA),
                     self.data_str,
-                    channel=None,
-                    cancel_text=_(i18n_keys.BUTTON__CLOSE),
-                    confirm_text=None,
+                    None,
+                    primary_color=self.primary_color,
                     page_size=405,
-                    font=font_MONO24,
+                    font=font_GeistMono28,
+                    confirm_text=None,
+                    cancel_text=None,
                 )
 
 
@@ -456,41 +504,56 @@ class ContractDataOverview(FullSizeWindow):
             primary_color=primary_color,
         )
         self.primary_color = primary_color
-        self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
-        self.item1 = DisplayItemNoBgc(
+        self.container = ContainerFlexCol(
+            self.content_area, self.title, pos=(0, 40), padding_row=0
+        )
+        self.container.add_dummy()
+        self.item_size = DisplayItem(
             self.container, _(i18n_keys.LIST_KEY__SIZE__COLON), description
         )
-        self.long_data = False
-        if len(data) > 80:
-            self.data = data
-            self.long_data = True
-            self.btn_yes.label.set_text(_(i18n_keys.BUTTON__VIEW))
-        else:
-            self.item2 = DisplayItemNoBgc(
-                self.container, _(i18n_keys.LIST_KEY__DATA__COLON), data
-            )
+        self.container.add_dummy()
 
-    def eventhandler(self, event_obj):
+        self.data_str = data
+        self.long_data = False
+        if len(self.data_str) > 225:
+            self.long_data = True
+            self.data = self.data_str[:222] + "..."
+        else:
+            self.data = self.data_str
+        self.item_data = CardItem(
+            self.content_area,
+            _(i18n_keys.LIST_KEY__DATA__COLON),
+            self.data,
+            "A:/res/group-icon-data.png",
+        )
+        self.item_data.align_to(self.container, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
+        if self.long_data:
+            self.show_full_data = NormalButton(
+                self.item_data.content, _(i18n_keys.BUTTON__VIEW_DATA)
+            )
+            self.show_full_data.set_size(185, 77)
+            self.show_full_data.add_style(
+                StyleWrapper().text_font(font_GeistSemiBold26), 0
+            )
+            self.show_full_data.align(lv.ALIGN.CENTER, 0, 0)
+            self.show_full_data.remove_style(None, lv.PART.MAIN | lv.STATE.PRESSED)
+            self.show_full_data.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
+
+    def on_click(self, event_obj):
         code = event_obj.code
         target = event_obj.get_target()
         if code == lv.EVENT.CLICKED:
-            if target == self.btn_yes:
-                if self.long_data:
-                    PageAbleMessage(
-                        _(i18n_keys.TITLE__VIEW_DATA),
-                        self.data,
-                        self.channel,
-                        primary_color=self.primary_color,
-                        font=font_MONO24,
-                        page_size=405,
-                    )
-                    self.destroy()
-                else:
-                    self.show_unload_anim()
-                    self.channel.publish(1)
-            elif target == self.btn_no:
-                self.show_dismiss_anim()
-                self.channel.publish(0)
+            if target == self.show_full_data:
+                PageAbleMessage(
+                    _(i18n_keys.TITLE__VIEW_DATA),
+                    self.data_str,
+                    None,
+                    primary_color=self.primary_color,
+                    page_size=405,
+                    font=font_GeistMono28,
+                    confirm_text=None,
+                    cancel_text=None,
+                )
 
 
 class BlobDisPlay(FullSizeWindow):
@@ -513,8 +576,12 @@ class BlobDisPlay(FullSizeWindow):
             primary_color=primary_color or lv_colors.ONEKEY_GREEN,
         )
         self.primary_color = primary_color
-        self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
-        self.item1 = DisplayItemNoBgc(self.container, description, content)
+        self.container = ContainerFlexCol(
+            self.content_area, self.title, pos=(0, 40), padding_row=0
+        )
+        self.container.add_dummy()
+        self.item_data = DisplayItem(self.container, description, content)
+        self.container.add_dummy()
         self.long_message = False
         if len(content) > 240:
             self.long_message = True
@@ -558,9 +625,11 @@ class ConfirmMetaData(FullSizeWindow):
 
         if description:
             self.container = ContainerFlexCol(
-                self.content_area, self.subtitle, pos=(0, 40)
+                self.content_area, self.subtitle, pos=(0, 40), padding_row=0
             )
-            self.item1 = DisplayItemNoBgc(self.container, description, data)
+            self.container.add_dummy()
+            self.item1 = DisplayItem(self.container, description, data)
+            self.container.add_dummy()
 
     if __debug__:
 
@@ -573,24 +642,60 @@ class ConfirmMetaData(FullSizeWindow):
 
 
 class TransactionDetailsBTC(FullSizeWindow):
-    def __init__(self, title: str, amount: str, fee: str, total: str, primary_color):
+    def __init__(
+        self,
+        title: str,
+        amount: str,
+        fee: str,
+        total: str,
+        primary_color,
+        icon_path: str,
+        striped=False,
+    ):
         super().__init__(
             title,
             None,
             _(i18n_keys.BUTTON__CONTINUE),
             _(i18n_keys.BUTTON__REJECT),
             primary_color=primary_color,
+            icon_path="A:/res/icon-send.png",
+            sub_icon_path=icon_path,
         )
-        self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
-        self.item1 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__AMOUNT__COLON), amount
+        self.container = ContainerFlexCol(
+            self.content_area, self.title, pos=(0, 40), padding_row=8
         )
-        self.item2 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__FEE__COLON), fee
+        if striped:
+            self.group_amounts = ContainerFlexCol(
+                self.container, None, padding_row=0, no_align=True
+            )
+            self.item_group_header = CardHeader(
+                self.group_amounts,
+                _(i18n_keys.LIST_KEY__AMOUNT__COLON),
+                "A:/res/group-icon-amount.png",
+            )
+            self.group_body_amount = DisplayItem(
+                self.group_amounts,
+                None,
+                amount,
+            )
+            self.group_amounts.add_dummy()
+        self.group_fees = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
         )
-        self.item3 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__TOTAL_AMOUNT__COLON), total
+        self.item_group_header = CardHeader(
+            self.group_fees, _(i18n_keys.FORM__FEES), "A:/res/group-icon-fees.png"
         )
+        self.item_group_body_fee = DisplayItem(
+            self.group_fees,
+            _(i18n_keys.LIST_KEY__FEE__COLON),
+            fee,
+        )
+        self.item_group_body_total_amount = DisplayItem(
+            self.group_fees,
+            _(i18n_keys.LIST_KEY__TOTAL_AMOUNT__COLON),
+            total,
+        )
+        self.group_fees.add_dummy()
 
 
 class JointTransactionDetailsBTC(FullSizeWindow):
@@ -602,13 +707,17 @@ class JointTransactionDetailsBTC(FullSizeWindow):
             _(i18n_keys.BUTTON__REJECT),
             primary_color=primary_color,
         )
-        self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
-        self.item1 = DisplayItemNoBgc(
+        self.container = ContainerFlexCol(
+            self.content_area, self.title, pos=(0, 40), padding_row=0
+        )
+        self.container.add_dummy()
+        self.item_spend = DisplayItem(
             self.container, _(i18n_keys.LIST_KEY__AMOUNT_YOU_SPEND__COLON), amount
         )
-        self.item3 = DisplayItemNoBgc(
+        self.item_total = DisplayItem(
             self.container, _(i18n_keys.LIST_KEY__TOTAL_AMOUNT__COLON), total
         )
+        self.container.add_dummy()
 
 
 class ModifyFee(FullSizeWindow):
@@ -620,11 +729,15 @@ class ModifyFee(FullSizeWindow):
             _(i18n_keys.BUTTON__REJECT),
             primary_color=primary_color,
         )
-        self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
-        self.item1 = DisplayItemNoBgc(self.container, description, fee_change)
-        self.item2 = DisplayItemNoBgc(
+        self.container = ContainerFlexCol(
+            self.content_area, self.title, pos=(0, 40), padding_row=0
+        )
+        self.container.add_dummy()
+        self.item_fee_change = DisplayItem(self.container, description, fee_change)
+        self.item_fee_new = DisplayItem(
             self.container, _(i18n_keys.LIST_KEY__NEW_FEE__COLON), fee_new
         )
+        self.container.add_dummy()
 
 
 class ModifyOutput(FullSizeWindow):
@@ -643,18 +756,24 @@ class ModifyOutput(FullSizeWindow):
             _(i18n_keys.BUTTON__REJECT),
             primary_color=primary_Color,
         )
-        self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
-        self.item1 = DisplayItemNoBgc(
+        self.container = ContainerFlexCol(
+            self.content_area, self.title, pos=(0, 40), padding_row=0
+        )
+        self.container.add_dummy()
+        self.item_addr = DisplayItem(
             self.container, _(i18n_keys.LIST_KEY__ADDRESS__COLON), address
         )
-        self.item2 = DisplayItemNoBgc(self.container, description, amount_change)
-        self.item3 = DisplayItemNoBgc(
+        self.item_amount_change = DisplayItem(
+            self.container, description, amount_change
+        )
+        self.item_amount_new = DisplayItem(
             self.container, _(i18n_keys.LIST_KEY__NEW_AMOUNT__COLON), amount_new
         )
+        self.container.add_dummy()
 
 
 class ConfirmReplacement(FullSizeWindow):
-    def __init__(self, title: str, txid: str, primary_color):
+    def __init__(self, title: str, txids: list[str], primary_color):
         super().__init__(
             title,
             None,
@@ -663,9 +782,21 @@ class ConfirmReplacement(FullSizeWindow):
             primary_color=primary_color,
         )
         self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
-        self.item1 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__TRANSACTION_ID__COLON), txid
+        self.group_directions = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
         )
+        self.item_group_header = CardHeader(
+            self.group_directions,
+            _(i18n_keys.FORM__DIRECTIONS),
+            "A:/res/group-icon-directions.png",
+        )
+        for txid in txids:
+            self.item_body_tx_id = DisplayItem(
+                self.group_directions,
+                _(i18n_keys.LIST_KEY__TRANSACTION_ID__COLON),
+                txid,
+            )
+        self.group_directions.add_dummy()
 
 
 class ConfirmPaymentRequest(FullSizeWindow):
@@ -677,13 +808,17 @@ class ConfirmPaymentRequest(FullSizeWindow):
             _(i18n_keys.BUTTON__REJECT),
             primary_color=primary_color,
         )
-        self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
-        self.item1 = DisplayItemNoBgc(
+        self.container = ContainerFlexCol(
+            self.content_area, self.title, pos=(0, 40), padding_row=0
+        )
+        self.container.add_dummy()
+        self.item_to_addr = DisplayItem(
             self.container, _(i18n_keys.LIST_KEY__TO__COLON), to_addr
         )
-        self.item2 = DisplayItemNoBgc(
+        self.item_amount = DisplayItem(
             self.container, _(i18n_keys.LIST_KEY__AMOUNT__COLON), amount
         )
+        self.container.add_dummy()
 
 
 class ConfirmDecredSstxSubmission(FullSizeWindow):
@@ -697,13 +832,17 @@ class ConfirmDecredSstxSubmission(FullSizeWindow):
             _(i18n_keys.BUTTON__REJECT),
             primary_color=primary_color,
         )
-        self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
-        self.item1 = DisplayItemNoBgc(
+        self.container = ContainerFlexCol(
+            self.content_area, self.title, pos=(0, 40), padding_row=0
+        )
+        self.container.add_dummy()
+        self.item_amount = DisplayItem(
             self.container, _(i18n_keys.LIST_KEY__AMOUNT__COLON), amount
         )
-        self.item2 = DisplayItemNoBgc(
+        self.item_to_addr = DisplayItem(
             self.container, _(i18n_keys.LIST_KEY__TO__COLON), to_addr
         )
+        self.container.add_dummy()
 
 
 class ConfirmCoinJoin(FullSizeWindow):
@@ -722,18 +861,22 @@ class ConfirmCoinJoin(FullSizeWindow):
             _(i18n_keys.BUTTON__REJECT),
             primary_color=primary_color,
         )
-        self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
-        self.item1 = DisplayItemNoBgc(
+        self.container = ContainerFlexCol(
+            self.content_area, self.title, pos=(0, 40), padding_row=0
+        )
+        self.container.add_dummy()
+        self.item_coin_name = DisplayItem(
             self.container, _(i18n_keys.LIST_KEY__COIN_NAME__COLON), coin_name
         )
-        self.item2 = DisplayItemNoBgc(
+        self.item_mrc = DisplayItem(
             self.container, _(i18n_keys.LIST_KEY__MAXIMUM_ROUNDS__COLON), max_rounds
         )
-        self.item3 = DisplayItemNoBgc(
+        self.item_fee_rate = DisplayItem(
             self.container,
             _(i18n_keys.LIST_KEY__MAXIMUM_MINING_FEE__COLON),
             max_fee_per_vbyte,
         )
+        self.container.add_dummy()
 
 
 class ConfirmSignIdentity(FullSizeWindow):
@@ -746,10 +889,14 @@ class ConfirmSignIdentity(FullSizeWindow):
             primary_color=primary_color,
         )
         align_base = self.title if subtitle is None else self.subtitle
-        self.container = ContainerFlexCol(self.content_area, align_base, pos=(0, 40))
-        self.item1 = DisplayItemNoBgc(
+        self.container = ContainerFlexCol(
+            self.content_area, align_base, pos=(0, 40), padding_row=0
+        )
+        self.container.add_dummy()
+        self.item_id = DisplayItem(
             self.container, _(i18n_keys.LIST_KEY__IDENTITY__COLON), identity
         )
+        self.container.add_dummy()
 
 
 class ConfirmProperties(FullSizeWindow):
@@ -761,9 +908,13 @@ class ConfirmProperties(FullSizeWindow):
             _(i18n_keys.BUTTON__CANCEL),
             primary_color=primary_color,
         )
-        self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
+        self.container = ContainerFlexCol(
+            self.content_area, self.title, pos=(0, 40), padding_row=0
+        )
+        self.container.add_dummy()
         for key, value in properties:
-            self.item = DisplayItemNoBgc(self.container, f"{key.upper()}", value)
+            self.item = DisplayItem(self.container, f"{key.upper()}", value)
+        self.container.add_dummy()
 
 
 class ConfirmTransferBinance(FullSizeWindow):
@@ -776,15 +927,19 @@ class ConfirmTransferBinance(FullSizeWindow):
             primary_color=primary_color,
             icon_path=icon_path,
         )
-        self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
+        self.container = ContainerFlexCol(
+            self.content_area, self.title, pos=(0, 40), padding_row=0
+        )
+        self.container.add_dummy()
         for key, value, address in items:
-            self.item1 = DisplayItemNoBgc(self.container, key, "")
-            self.item2 = DisplayItemNoBgc(
+            self.item_key = DisplayItem(self.container, key, "")
+            self.item_amount = DisplayItem(
                 self.container, _(i18n_keys.LIST_KEY__AMOUNT__COLON), value
             )
-            self.item3 = DisplayItemNoBgc(
+            self.item_to_addr = DisplayItem(
                 self.container, _(i18n_keys.LIST_KEY__TO__COLON), address
             )
+        self.container.add_dummy()
 
 
 class ShouldShowMore(FullSizeWindow):
@@ -798,8 +953,12 @@ class ShouldShowMore(FullSizeWindow):
             _(i18n_keys.BUTTON__CANCEL),
             primary_color=primary_color,
         )
-        self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
-        self.item = DisplayItemNoBgc(self.container, f"{key}:", value)
+        self.container = ContainerFlexCol(
+            self.content_area, self.title, pos=(0, 40), padding_row=0
+        )
+        self.container.add_dummy()
+        self.item = DisplayItem(self.container, f"{key}:", value)
+        self.container.add_dummy()
         self.show_more = NormalButton(self.content_area, button_text)
         self.show_more.align_to(self.container, lv.ALIGN.OUT_BOTTOM_MID, 0, 32)
         self.show_more.add_event_cb(self.on_show_more, lv.EVENT.CLICKED, None)
@@ -825,29 +984,33 @@ class EIP712DOMAIN(FullSizeWindow):
             primary_color=primary_color,
             icon_path=icon_path,
         )
-        self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
+        self.container = ContainerFlexCol(
+            self.content_area, self.title, pos=(0, 40), padding_row=0
+        )
+        self.container.add_dummy()
         if kwargs.get("name"):
-            self.item1 = DisplayItemNoBgc(
+            self.item_name = DisplayItem(
                 self.container, "name (string):", kwargs.get("name")
             )
         if kwargs.get("version"):
-            self.item2 = DisplayItemNoBgc(
+            self.item_version = DisplayItem(
                 self.container, "version (string):", kwargs.get("version")
             )
         if kwargs.get("chainId"):
-            self.item3 = DisplayItemNoBgc(
+            self.item_chain_id = DisplayItem(
                 self.container, "chainId (uint256):", kwargs.get("chainId")
             )
         if kwargs.get("verifyingContract"):
-            self.item4 = DisplayItemNoBgc(
+            self.item_vfc = DisplayItem(
                 self.container,
                 "verifyingContract (address):",
                 kwargs.get("verifyingContract"),
             )
         if kwargs.get("salt"):
-            self.item5 = DisplayItemNoBgc(
+            self.item_salt = DisplayItem(
                 self.container, "salt (bytes32):", kwargs.get("salt")
             )
+        self.container.add_dummy()
 
 
 class TransactionDetailsTRON(FullSizeWindow):
@@ -859,7 +1022,9 @@ class TransactionDetailsTRON(FullSizeWindow):
         amount,
         fee_max,
         primary_color,
+        icon_path,
         total_amount=None,
+        striped=False,
     ):
         super().__init__(
             title,
@@ -867,25 +1032,63 @@ class TransactionDetailsTRON(FullSizeWindow):
             _(i18n_keys.BUTTON__CONTINUE),
             _(i18n_keys.BUTTON__REJECT),
             primary_color=primary_color,
+            icon_path="A:/res/icon-send.png",
+            sub_icon_path=icon_path,
         )
         self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
-        self.item1 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__AMOUNT__COLON), amount
+
+        if striped:
+            self.group_amounts = ContainerFlexCol(
+                self.container, None, padding_row=0, no_align=True
+            )
+            self.item_group_header = CardHeader(
+                self.group_amounts,
+                _(i18n_keys.LIST_KEY__AMOUNT__COLON),
+                "A:/res/group-icon-amount.png",
+            )
+            self.group_body_amount = DisplayItem(
+                self.group_amounts,
+                None,
+                amount,
+            )
+            self.group_amounts.add_dummy()
+        self.group_directions = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
         )
-        self.item2 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__MAXIMUM_FEE__COLON), fee_max
+        self.item_group_header = CardHeader(
+            self.group_directions,
+            _(i18n_keys.FORM__DIRECTIONS),
+            "A:/res/group-icon-directions.png",
         )
-        self.item3 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__TO__COLON), address_to
+        self.item_group_body_to_addr = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__TO__COLON),
+            address_to,
         )
-        self.item4 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__FROM__COLON), address_from
+        self.item_group_body_from_addr = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__FROM__COLON),
+            address_from,
+        )
+        self.group_directions.add_dummy()
+
+        self.group_fees = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_fees, _(i18n_keys.FORM__FEES), "A:/res/group-icon-fees.png"
+        )
+        self.item_group_body_fee_max = DisplayItem(
+            self.group_fees,
+            _(i18n_keys.LIST_KEY__MAXIMUM_FEE__COLON),
+            fee_max,
         )
         if total_amount is None:
             total_amount = f"{amount}\n{fee_max}"
-        self.item5 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__TOTAL_AMOUNT__COLON), total_amount
+        self.item_group_body_total = DisplayItem(
+            self.group_fees, _(i18n_keys.LIST_KEY__TOTAL_AMOUNT__COLON), total_amount
         )
+        self.group_fees.add_dummy()
 
 
 class SecurityCheck(FullSizeWindow):
@@ -912,7 +1115,7 @@ class PassphraseDisplayConfirm(FullSizeWindow):
 
         self.panel = lv.obj(self.content_area)
         self.panel.remove_style_all()
-        self.panel.set_size(464, 264)
+        self.panel.set_size(456, 272)
         self.panel.align_to(self.subtitle, lv.ALIGN.OUT_BOTTOM_MID, 0, 40)
 
         self.panel.add_style(
@@ -920,11 +1123,12 @@ class PassphraseDisplayConfirm(FullSizeWindow):
             .bg_color(lv_colors.ONEKEY_BLACK_3)
             .bg_opa()
             .border_width(0)
-            .text_font(font_PJSBOLD36)
+            .text_font(font_GeistSemiBold38)
             .text_color(lv_colors.LIGHT_GRAY)
             .text_align_left()
-            .pad_all(8)
-            .radius(0),
+            .pad_ver(16)
+            .pad_hor(24)
+            .radius(40),
             0,
         )
         self.content = lv.label(self.panel)
@@ -932,10 +1136,10 @@ class PassphraseDisplayConfirm(FullSizeWindow):
         self.content.set_text(passphrase)
         self.content.set_long_mode(lv.label.LONG.WRAP)
         self.input_count_tips = lv.label(self.content_area)
-        self.input_count_tips.align_to(self.panel, lv.ALIGN.OUT_BOTTOM_LEFT, 8, 8)
+        self.input_count_tips.align_to(self.panel, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
         self.input_count_tips.add_style(
             StyleWrapper()
-            .text_font(font_STATUS_BAR)
+            .text_font(font_GeistRegular20)
             .text_letter_space(-1)
             .text_align_left()
             .text_color(lv_colors.LIGHT_GRAY),
@@ -954,44 +1158,115 @@ class SolBlindingSign(FullSizeWindow):
             primary_color=primary_color,
             icon_path=icon_path,
         )
-        self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
-        self.item1 = DisplayItemNoBgc(
-            self.container,
+        self.warning_banner = Banner(
+            self.content_area, 2, _(i18n_keys.TITLE__UNKNOWN_TRANSACTION)
+        )
+        self.warning_banner.algin(lv.ALIGN.TOP_MID, 0, 40)
+        self.container = ContainerFlexCol(self.content_area, self.title)
+        self.container.align_to(self.warning_banner, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
+
+        self.group_directions = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_directions,
+            _(i18n_keys.FORM__DIRECTIONS),
+            "A:/res/group-icon-directions.png",
+        )
+        self.item_group_body_fee_payer = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__FEE_PAYER__COLON),
+            fee_payer,
+        )
+        self.group_directions.add_dummy()
+
+        self.group_more = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_more, _(i18n_keys.FORM__MORE), "A:/res/group-icon-more.png"
+        )
+        self.item_group_body_format = DisplayItem(
+            self.group_more,
             _(i18n_keys.LIST_KEY__FORMAT__COLON),
             _(i18n_keys.LIST_VALUE__UNKNOWN__COLON),
         )
-        self.item2 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__MESSAGE_HASH__COLON), message_hex
+        self.item_group_body_message_hex = DisplayItem(
+            self.group_more,
+            _(i18n_keys.LIST_KEY__MESSAGE_HASH__COLON),
+            message_hex,
         )
-        self.item3 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__FEE_PAYER__COLON), fee_payer
-        )
+        self.group_more.add_dummy()
 
 
 class SolTransfer(FullSizeWindow):
     def __init__(
-        self, from_addr: str, fee_payer: str, to_addr: str, amount: str, primary_color
+        self,
+        title,
+        from_addr: str,
+        fee_payer: str,
+        to_addr: str,
+        amount: str,
+        primary_color,
+        icon_path,
+        striped: bool = False,
     ):
         super().__init__(
-            title=_(i18n_keys.TITLE__STR_TRANSFER).format("SOL"),
+            title=title,
             subtitle=None,
             confirm_text=_(i18n_keys.BUTTON__CONTINUE),
             cancel_text=_(i18n_keys.BUTTON__REJECT),
             primary_color=primary_color,
+            icon_path="A:/res/icon-send.png",
+            sub_icon_path=icon_path,
         )
         self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
-        self.item1 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__AMOUNT__COLON), amount
+        if striped:
+            self.group_amounts = ContainerFlexCol(
+                self.container, None, padding_row=0, no_align=True
+            )
+            self.item_group_header = CardHeader(
+                self.group_amounts,
+                _(i18n_keys.LIST_KEY__AMOUNT__COLON),
+                "A:/res/group-icon-amount.png",
+            )
+            self.group_body_amount = DisplayItem(
+                self.group_amounts,
+                None,
+                amount,
+            )
+            self.group_amounts.add_dummy()
+
+        self.group_directions = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
         )
-        self.item2 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__TO__COLON), to_addr
+        self.item_group_header = CardHeader(
+            self.group_directions,
+            _(i18n_keys.FORM__DIRECTIONS),
+            "A:/res/group-icon-directions.png",
         )
-        self.item3 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__FROM__COLON), from_addr
+        self.item_group_body_to_addr = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__TO__COLON),
+            to_addr,
         )
-        self.item4 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__FEE_PAYER__COLON), fee_payer
+        self.item_group_body_from_addr = DisplayItem(
+            self.group_directions, _(i18n_keys.LIST_KEY__FROM__COLON), from_addr
         )
+        self.group_directions.add_dummy()
+
+        self.group_fees = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_fees, _(i18n_keys.FORM__FEES), "A:/res/group-icon-fees.png"
+        )
+        self.item_group_body_fee_payer = DisplayItem(
+            self.group_fees,
+            _(i18n_keys.LIST_KEY__FEE_PAYER__COLON),
+            fee_payer,
+        )
+        self.group_fees.add_dummy()
 
 
 class SolCreateAssociatedTokenAccount(FullSizeWindow):
@@ -1012,63 +1287,131 @@ class SolCreateAssociatedTokenAccount(FullSizeWindow):
             primary_color=primary_color,
         )
         self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
-        self.item1 = DisplayItemNoBgc(
-            self.container,
+        self.group_directions = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_directions,
+            _(i18n_keys.FORM__DIRECTIONS),
+            "A:/res/group-icon-directions.png",
+        )
+        self.item_body_ata = DisplayItem(
+            self.group_directions,
             _(i18n_keys.LIST_KEY__NEW_TOKEN_ACCOUNT),
             associated_token_account,
         )
-        self.item2 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__OWNER), wallet_address
+        self.item_body_owner = DisplayItem(
+            self.group_directions, _(i18n_keys.LIST_KEY__OWNER), wallet_address
         )
-        self.item3 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__MINT_ADDRESS), token_mint
+        self.item_body_mint_addr = DisplayItem(
+            self.group_directions, _(i18n_keys.LIST_KEY__MINT_ADDRESS), token_mint
         )
-        self.item4 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__FUNDED_BY__COLON), funding_account
+        self.item_body_founder = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__FUNDED_BY__COLON),
+            funding_account,
         )
-        self.item5 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__FEE_PAYER__COLON), fee_payer
-        )  # _(i18n_keys.LIST_KEY__FEE_PAYER__COLON)
+        self.group_directions.add_dummy()
+
+        self.group_fees = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_fees, _(i18n_keys.FORM__FEES), "A:/res/group-icon-fees.png"
+        )
+        self.item_group_body_fee_payer = DisplayItem(
+            self.group_fees,
+            _(i18n_keys.LIST_KEY__FEE_PAYER__COLON),
+            fee_payer,
+        )
+        self.group_fees.add_dummy()
 
 
 class SolTokenTransfer(FullSizeWindow):
     def __init__(
         self,
+        title,
         from_addr: str,
         to: str,
         amount: str,
         source_owner: str,
         fee_payer: str,
         primary_color,
+        icon_path,
         token_mint: str | None = None,
+        striped: bool = False,
     ):
         super().__init__(
-            title=_(i18n_keys.TITLE__TOKEN_TRANSFER),
+            title,
             subtitle=None,
             confirm_text=_(i18n_keys.BUTTON__CONTINUE),
             cancel_text=_(i18n_keys.BUTTON__REJECT),
             primary_color=primary_color,
+            icon_path="A:/res/icon-send.png",
+            sub_icon_path=icon_path,
         )
         self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
-        self.item1 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__AMOUNT__COLON), amount
+        if striped:
+            self.group_amounts = ContainerFlexCol(
+                self.container, None, padding_row=0, no_align=True
+            )
+            self.item_group_header = CardHeader(
+                self.group_amounts,
+                _(i18n_keys.LIST_KEY__AMOUNT__COLON),
+                "A:/res/group-icon-amount.png",
+            )
+            self.group_body_amount = DisplayItem(
+                self.group_amounts,
+                None,
+                amount,
+            )
+            self.group_amounts.add_dummy()
+
+        self.group_directions = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
         )
-        self.item2 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__TO_TOKEN_ACCOUNT__COLON), to
+        self.item_group_header = CardHeader(
+            self.group_directions,
+            _(i18n_keys.FORM__DIRECTIONS),
+            "A:/res/group-icon-directions.png",
         )
-        self.item3 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__FROM_TOKEN_ACCOUNT__COLON), from_addr
+        self.item_group_body_to_ata_addr = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__TO_TOKEN_ACCOUNT__COLON),
+            to,
         )
-        self.item4 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__SIGNER__COLON), source_owner
+        self.item_group_body_from_ata_addr = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__FROM_TOKEN_ACCOUNT__COLON),
+            from_addr,
         )
-        self.item5 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__FEE_PAYER__COLON), fee_payer
+        self.group_directions.add_dummy()
+
+        self.group_fees = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_fees, _(i18n_keys.FORM__FEES), "A:/res/group-icon-fees.png"
+        )
+        self.item_group_body_fee_payer = DisplayItem(
+            self.group_fees, _(i18n_keys.LIST_KEY__FEE_PAYER__COLON), fee_payer
+        )
+        self.group_fees.add_dummy()
+
+        self.group_more = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_more, _(i18n_keys.FORM__MORE), "A:/res/group-icon-more.png"
+        )
+        self.item_group_body_signer = DisplayItem(
+            self.group_more, _(i18n_keys.LIST_KEY__SIGNER__COLON), source_owner
         )
         if token_mint:
-            self.item6 = DisplayItemNoBgc(
-                self.container, _(i18n_keys.LIST_KEY__MINT_ADDRESS), token_mint
+            self.item_group_body_mint_addr = DisplayItem(
+                self.group_more, _(i18n_keys.LIST_KEY__MINT_ADDRESS), token_mint
             )
+        self.group_more.add_dummy()
 
 
 class BlindingSignCommon(FullSizeWindow):
@@ -1081,15 +1424,22 @@ class BlindingSignCommon(FullSizeWindow):
             primary_color=primary_color,
             icon_path=icon_path,
         )
-        self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
-        self.item1 = DisplayItemNoBgc(
+        self.warning_banner = Banner(
+            self.content_area, 2, _(i18n_keys.TITLE__UNKNOWN_TRANSACTION)
+        )
+        self.warning_banner.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, 40)
+        self.container = ContainerFlexCol(self.content_area, self.title, padding_row=0)
+        self.container.align_to(self.warning_banner, lv.ALIGN.OUT_BOTTOM_MID, 0, 24)
+        self.container.add_dummy()
+        self.item_format = DisplayItem(
             self.container,
             _(i18n_keys.LIST_KEY__FORMAT__COLON),
             _(i18n_keys.LIST_VALUE__UNKNOWN__COLON),
         )
-        self.item2 = DisplayItemNoBgc(
+        self.item_signer = DisplayItem(
             self.container, _(i18n_keys.LIST_KEY__SIGNER__COLON), signer
         )
+        self.container.add_dummy()
 
 
 class Modal(FullSizeWindow):
@@ -1117,17 +1467,22 @@ class AlgoCommon(FullSizeWindow):
             primary_color=primary_color,
             icon_path=icon_path,
         )
-        self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
-        self.item1 = DisplayItemNoBgc(
+        self.container = ContainerFlexCol(
+            self.content_area, self.title, pos=(0, 40), padding_row=0
+        )
+        self.container.add_dummy()
+        self.item_type = DisplayItem(
             self.container,
             _(i18n_keys.LIST_KEY__TYPE__COLON),
             type,
         )
+        self.container.add_dummy()
 
 
 class AlgoPayment(FullSizeWindow):
     def __init__(
         self,
+        title,
         sender,
         receiver,
         close_to,
@@ -1137,43 +1492,94 @@ class AlgoPayment(FullSizeWindow):
         fee,
         amount,
         primary_color,
+        icon_path,
+        striped=False,
     ):
         super().__init__(
-            _(i18n_keys.TITLE__SIGN_STR_TRANSACTION).format("ALGO"),
+            title,
             None,
             _(i18n_keys.BUTTON__CONTINUE),
             _(i18n_keys.BUTTON__REJECT),
             primary_color=primary_color,
+            icon_path="A:/res/icon-send.png",
+            sub_icon_path=icon_path,
         )
         self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
-        self.item1 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__AMOUNT__COLON), amount
+        if striped:
+            self.group_amounts = ContainerFlexCol(
+                self.container, None, padding_row=0, no_align=True
+            )
+            self.item_group_header = CardHeader(
+                self.group_amounts,
+                _(i18n_keys.LIST_KEY__AMOUNT__COLON),
+                "A:/res/group-icon-amount.png",
+            )
+            self.item_group_body_amount = DisplayItem(self.group_amounts, None, amount)
+            self.group_amounts.add_dummy()
+
+        self.group_directions = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
         )
-        self.item2 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__TO__COLON), receiver
+        self.item_group_header = CardHeader(
+            self.group_directions,
+            _(i18n_keys.FORM__DIRECTIONS),
+            "A:/res/group-icon-directions.png",
         )
-        self.item3 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__FROM__COLON), sender
+        self.item_group_body_to_addr = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__TO__COLON),
+            receiver,
         )
-        self.item4 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__MAXIMUM_FEE__COLON), fee
+        self.item_group_body_from_addr = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__FROM__COLON),
+            sender,
         )
+        self.group_directions.add_dummy()
+
+        self.group_fees = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_fees, _(i18n_keys.FORM__FEES), "A:/res/group-icon-fees.png"
+        )
+        self.item_group_body_fee = DisplayItem(
+            self.group_fees,
+            _(i18n_keys.LIST_KEY__MAXIMUM_FEE__COLON),
+            fee,
+        )
+        self.group_fees.add_dummy()
+
         if note is not None:
-            self.item5 = DisplayItemNoBgc(
-                self.container, _(i18n_keys.LIST_KEY__NOTE__COLON), note
-            )
-        if close_to is not None:
-            self.item6 = DisplayItemNoBgc(
+            self.item_note = CardItem(
                 self.container,
-                _(i18n_keys.LIST_KEY__CLOSE_REMAINDER_TO__COLON),
-                close_to,
+                _(i18n_keys.LIST_KEY__NOTE__COLON),
+                note,
+                "A:/res/group-icon-data.png",
             )
-        if rekey_to is not None:
-            self.item7 = DisplayItemNoBgc(
-                self.container, _(i18n_keys.LIST_KEY__REKEY_TO__COLON), rekey_to
+
+        if any([close_to, rekey_to, genesis_id]):
+            self.group_more = ContainerFlexCol(
+                self.container, None, padding_row=0, no_align=True
             )
-        if genesis_id is not None:
-            self.item8 = DisplayItemNoBgc(self.container, "GENESIS ID:", genesis_id)
+            self.item_group_header = CardHeader(
+                self.group_more, _(i18n_keys.FORM__MORE), "A:/res/group-icon-more.png"
+            )
+            if close_to is not None:
+                self.item_close_reminder_to = DisplayItem(
+                    self.group_more,
+                    _(i18n_keys.LIST_KEY__CLOSE_REMAINDER_TO__COLON),
+                    close_to,
+                )
+            if rekey_to is not None:
+                self.item_rekey_to = DisplayItem(
+                    self.group_more, _(i18n_keys.LIST_KEY__REKEY_TO__COLON), rekey_to
+                )
+            if genesis_id is not None:
+                self.item_genesis_id = DisplayItem(
+                    self.group_more, "GENESIS ID:", genesis_id
+                )
+            self.group_more.add_dummy()
 
 
 class AlgoAssetFreeze(FullSizeWindow):
@@ -1198,40 +1604,76 @@ class AlgoAssetFreeze(FullSizeWindow):
         )
         self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
 
-        self.item1 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__FROM__COLON), sender
+        self.group_directions = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
         )
-        self.item2 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__FREEZE_ACCOUNT__COLON), target
+        self.item_group_header = CardHeader(
+            self.group_directions,
+            _(i18n_keys.FORM__DIRECTIONS),
+            "A:/res/group-icon-directions.png",
         )
-        self.item3 = DisplayItemNoBgc(
-            self.container,
+        self.item_group_body_from_addr = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__FROM__COLON),
+            sender,
+        )
+        self.group_directions.add_dummy()
+
+        self.group_fees = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_fees, _(i18n_keys.FORM__FEES), "A:/res/group-icon-fees.png"
+        )
+        self.item_group_body_fee = DisplayItem(
+            self.group_fees,
+            _(i18n_keys.LIST_KEY__MAXIMUM_FEE__COLON),
+            fee,
+        )
+        self.group_fees.add_dummy()
+
+        if note is not None:
+            self.item_note = CardItem(
+                self.container,
+                _(i18n_keys.LIST_KEY__NOTE__COLON),
+                note,
+                "A:/res/group-icon-data.png",
+            )
+
+        self.group_more = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_more, _(i18n_keys.FORM__MORE), "A:/res/group-icon-more.png"
+        )
+        self.item_group_body_asset_freeze_state = DisplayItem(
+            self.group_more,
             _(i18n_keys.LIST_KEY__FREEZE_ASSET_ID__COLON),
             _(i18n_keys.LIST_VALUE__TRUE)
             if new_freeze_state is True
             else _(i18n_keys.LIST_VALUE__FALSE),
         )
-        self.item4 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__ASSET_ID__COLON), index
+        self.item_group_freeze_account = DisplayItem(
+            self.group_more, _(i18n_keys.LIST_KEY__FREEZE_ACCOUNT__COLON), target
         )
-        self.item5 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__MAXIMUM_FEE__COLON), fee
+        self.item_group_body_asset_id = DisplayItem(
+            self.group_more, _(i18n_keys.LIST_KEY__ASSET_ID__COLON), index
         )
-        if note is not None:
-            self.item6 = DisplayItemNoBgc(
-                self.container, _(i18n_keys.LIST_KEY__NOTE__COLON), note
-            )
         if rekey_to is not None:
-            self.item7 = DisplayItemNoBgc(
-                self.container, _(i18n_keys.LIST_KEY__REKEY_TO__COLON), rekey_to
+            self.item_rekey_to = DisplayItem(
+                self.group_more, _(i18n_keys.LIST_KEY__REKEY_TO__COLON), rekey_to
             )
         if genesis_id is not None:
-            self.item8 = DisplayItemNoBgc(self.container, "GENESIS ID:", genesis_id)
+            self.item_genesis_id = DisplayItem(
+                self.group_more, "GENESIS ID:", genesis_id
+            )
+        self.group_more.add_dummy()
 
 
 class AlgoAssetXfer(FullSizeWindow):
     def __init__(
         self,
+        title,
         sender,
         receiver,
         index,
@@ -1243,52 +1685,102 @@ class AlgoAssetXfer(FullSizeWindow):
         genesis_id,
         note,
         primary_color,
+        icon_path,
+        striped=False,
     ):
         super().__init__(
-            _(i18n_keys.TITLE__SIGN_STR_TRANSACTION).format("ALGO"),
+            title,
             None,
             _(i18n_keys.BUTTON__CONTINUE),
             _(i18n_keys.BUTTON__REJECT),
             primary_color=primary_color,
+            icon_path="A:/res/icon-send.png",
+            sub_icon_path=icon_path,
         )
         self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
-        self.item1 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__AMOUNT__COLON), amount
+        if striped:
+            self.group_amounts = ContainerFlexCol(
+                self.container, None, padding_row=0, no_align=True
+            )
+            self.item_group_header = CardHeader(
+                self.group_amounts,
+                _(i18n_keys.LIST_KEY__AMOUNT__COLON),
+                "A:/res/group-icon-amount.png",
+            )
+            self.item_group_body_amount = DisplayItem(self.group_amounts, None, amount)
+            self.group_amounts.add_dummy()
+
+        self.group_directions = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
         )
-        self.item2 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__FROM__COLON), sender
+        self.item_group_header = CardHeader(
+            self.group_directions,
+            _(i18n_keys.FORM__DIRECTIONS),
+            "A:/res/group-icon-directions.png",
         )
-        self.item3 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__TO__COLON), receiver
+        self.item_group_body_to_addr = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__TO__COLON),
+            receiver,
+        )
+        self.item_group_body_from_addr = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__FROM__COLON),
+            sender,
+        )
+        self.group_directions.add_dummy()
+
+        self.group_fees = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_fees, _(i18n_keys.FORM__FEES), "A:/res/group-icon-fees.png"
+        )
+        self.item_group_body_fee = DisplayItem(
+            self.group_fees,
+            _(i18n_keys.LIST_KEY__MAXIMUM_FEE__COLON),
+            fee,
+        )
+        self.group_fees.add_dummy()
+
+        if note is not None:
+            self.item_note = CardItem(
+                self.container,
+                _(i18n_keys.LIST_KEY__NOTE__COLON),
+                note,
+                "A:/res/group-icon-data.png",
+            )
+
+        self.group_more = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_more, _(i18n_keys.FORM__MORE), "A:/res/group-icon-more.png"
         )
         if revocation_target is not None:
-            self.item4 = DisplayItemNoBgc(
-                self.container,
+            self.item_group_body_revocation_addr = DisplayItem(
+                self.group_more,
                 _(i18n_keys.LIST_KEY__REVOCATION_ADDRESS__COLON),
                 revocation_target,
             )
-        self.item5 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__ASSET_ID__COLON), index
+        self.item_group_body_asset_id = DisplayItem(
+            self.group_more, _(i18n_keys.LIST_KEY__ASSET_ID__COLON), index
         )
-        self.item6 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__MAXIMUM_FEE__COLON), fee
-        )
-        if note is not None:
-            self.item7 = DisplayItemNoBgc(
-                self.container, _(i18n_keys.LIST_KEY__NOTE__COLON), note
-            )
         if rekey_to is not None:
-            self.item8 = DisplayItemNoBgc(
-                self.container, _(i18n_keys.LIST_KEY__REKEY_TO__COLON), rekey_to
+            self.item_rekey_to = DisplayItem(
+                self.group_more, _(i18n_keys.LIST_KEY__REKEY_TO__COLON), rekey_to
             )
         if close_assets_to is not None:
-            self.item9 = DisplayItemNoBgc(
-                self.container,
+            self.item_close_assets_to = DisplayItem(
+                self.group_more,
                 _(i18n_keys.LIST_KEY__CLOSE_ASSET_TO__COLON),
                 close_assets_to,
             )
         if genesis_id is not None:
-            self.item10 = DisplayItemNoBgc(self.container, "GENESIS ID:", genesis_id)
+            self.item_genesis_id = DisplayItem(
+                self.group_more, "GENESIS ID:", genesis_id
+            )
+        self.group_more.add_dummy()
 
 
 class AlgoAssetCfg(FullSizeWindow):
@@ -1321,79 +1813,150 @@ class AlgoAssetCfg(FullSizeWindow):
             primary_color=primary_color,
         )
         self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
-
-        self.item1 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__FROM__COLON), sender
-        )
-        if asset_name is not None:
-            self.item2 = DisplayItemNoBgc(
-                self.container, _(i18n_keys.LIST_KEY__ASSET_NAME__COLON), asset_name
-            )
-        if index is not None and index != "0":
-            self.item3 = DisplayItemNoBgc(
-                self.container, _(i18n_keys.LIST_KEY__ASSET_ID__COLON), index
-            )
         if url is not None:
-            self.item14 = DisplayItemNoBgc(
-                self.container, _(i18n_keys.LIST_KEY__URL__COLON), url
+            self.banner = Banner(
+                self.content_area, 0, _(i18n_keys.LIST_KEY__INTERACT_WITH).format(url)
             )
-        if manager is not None:
-            self.item5 = DisplayItemNoBgc(
-                self.container, _(i18n_keys.LIST_KEY__MANAGER_ADDRESS__COLON), manager
-            )
-        if reserve is not None:
-            self.item6 = DisplayItemNoBgc(
-                self.container, _(i18n_keys.LIST_KEY__RESERVE_ADDRESS__COLON), reserve
-            )
-        if clawback is not None:
-            self.item7 = DisplayItemNoBgc(
-                self.container,
-                _(i18n_keys.LIST_KEY__CLAW_BACK_ADDRESS__COLON),
-                clawback,
-            )
-        if default_frozen is not None:
-            self.item8 = DisplayItemNoBgc(
-                self.container,
-                _(i18n_keys.LIST_KEY__FREEZE_ADDRESS__QUESTION),
-                _(i18n_keys.LIST_VALUE__TRUE)
-                if default_frozen is True
-                else _(i18n_keys.LIST_VALUE__FALSE),
-            )
-        if freeze is not None:
-            self.item9 = DisplayItemNoBgc(
-                self.container, _(i18n_keys.LIST_KEY__FREEZE_ADDRESS__COLON), freeze
-            )
-        if total is not None:
-            self.item10 = DisplayItemNoBgc(
-                self.container, _(i18n_keys.LIST_KEY__TOTAL__COLON), total
-            )
-        if decimals is not None and decimals != "0":
-            self.item11 = DisplayItemNoBgc(
-                self.container, _(i18n_keys.LIST_KEY__DECIMALS__COLON), decimals
-            )
-        if unit_name is not None:
-            self.item12 = DisplayItemNoBgc(
-                self.container, _(i18n_keys.LIST_KEY__UNIT_NAME__COLON), unit_name
-            )
-        if metadata_hash is not None:
-            self.item13 = DisplayItemNoBgc(
-                self.container,
-                _(i18n_keys.LIST_KEY__METADATA_HASH__COLON),
-                metadata_hash,
-            )
-        self.item14 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__MAXIMUM_FEE__COLON), fee
+            self.banner.align(self.lv.ALIGN.TOP_MID, 0, 40)
+            self.container.align_to(self.banner, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
+
+        self.group_directions = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
         )
+        self.item_group_header = CardHeader(
+            self.group_directions,
+            _(i18n_keys.FORM__DIRECTIONS),
+            "A:/res/group-icon-directions.png",
+        )
+        self.item_group_body_from_addr = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__FROM__COLON),
+            sender,
+        )
+        self.group_directions.add_dummy()
+
+        self.group_fees = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_fees, _(i18n_keys.FORM__FEES), "A:/res/group-icon-fees.png"
+        )
+        self.item_group_body_fee = DisplayItem(
+            self.group_fees,
+            _(i18n_keys.LIST_KEY__MAXIMUM_FEE__COLON),
+            fee,
+        )
+        self.group_fees.add_dummy()
+
         if note is not None:
-            self.item15 = DisplayItemNoBgc(
-                self.container, _(i18n_keys.LIST_KEY__NOTE__COLON), note
+            self.item_note = CardItem(
+                self.container,
+                _(i18n_keys.LIST_KEY__NOTE__COLON),
+                note,
+                "A:/res/group-icon-data.png",
             )
-        if rekey_to is not None:
-            self.item16 = DisplayItemNoBgc(
-                self.container, _(i18n_keys.LIST_KEY__REKEY_TO__COLON), rekey_to
+
+        if any(
+            [
+                asset_name,
+                index,
+                manager,
+                reserve,
+                freeze,
+                clawback,
+                default_frozen,
+                freeze,
+                total,
+                decimals,
+                unit_name,
+                metadata_hash,
+                rekey_to,
+                genesis_id,
+            ]
+        ):
+            self.group_more = ContainerFlexCol(
+                self.container, None, padding_row=0, no_align=True
             )
-        if genesis_id is not None:
-            self.item17 = DisplayItemNoBgc(self.container, "GENESIS ID:", genesis_id)
+            self.item_group_header = CardHeader(
+                self.group_more, _(i18n_keys.FORM__MORE), "A:/res/group-icon-more.png"
+            )
+            if asset_name is not None:
+                self.item_group_body_asset_name = DisplayItem(
+                    self.group_more,
+                    _(i18n_keys.LIST_KEY__ASSET_NAME__COLON),
+                    asset_name,
+                )
+            if unit_name is not None:
+                self.item_group_body_unit_name = DisplayItem(
+                    self.group_more,
+                    _(i18n_keys.LIST_KEY__UNIT_NAME__COLON),
+                    unit_name,
+                )
+            if index is not None and index != "0":
+                self.item_group_body_asset_id = DisplayItem(
+                    self.group_more,
+                    _(i18n_keys.LIST_KEY__ASSET_ID__COLON),
+                    index,
+                )
+            if clawback is not None:
+                self.item_group_body_clawback_addr = DisplayItem(
+                    self.group_more,
+                    _(i18n_keys.LIST_KEY__CLAW_BACK_ADDRESS__COLON),
+                    clawback,
+                )
+            if manager is not None:
+                self.item_group_body_manager_addr = DisplayItem(
+                    self.group_more,
+                    _(i18n_keys.LIST_KEY__MANAGER_ADDRESS__COLON),
+                    manager,
+                )
+            if reserve is not None:
+                self.item_group_body_reserve_addr = DisplayItem(
+                    self.group_more,
+                    _(i18n_keys.LIST_KEY__RESERVE_ADDRESS__COLON),
+                    reserve,
+                )
+            if default_frozen is not None:
+                self.item_group_body_default_frozen = DisplayItem(
+                    self.group_more,
+                    _(i18n_keys.LIST_KEY__FREEZE_ADDRESS__QUESTION),
+                    _(i18n_keys.LIST_VALUE__TRUE)
+                    if default_frozen is True
+                    else _(i18n_keys.LIST_VALUE__FALSE),
+                )
+            if freeze is not None:
+                self.item_group_body_freeze_addr = DisplayItem(
+                    self.group_more,
+                    _(i18n_keys.LIST_KEY__FREEZE_ADDRESS__COLON),
+                    freeze,
+                )
+            if decimals is not None and decimals != "0":
+                self.item_group_body_decimals = DisplayItem(
+                    self.group_more,
+                    _(i18n_keys.LIST_KEY__DECIMALS__COLON),
+                    decimals,
+                )
+            if total is not None:
+                self.item_group_body_total = DisplayItem(
+                    self.group_more,
+                    _(i18n_keys.LIST_KEY__TOTAL__COLON),
+                    total,
+                )
+            if metadata_hash is not None:
+                self.item_group_body_metadata_hash = DisplayItem(
+                    self.group_more,
+                    _(i18n_keys.LIST_KEY__METADATA_HASH__COLON),
+                    metadata_hash,
+                )
+            if rekey_to is not None:
+                self.item_rekey_to = DisplayItem(
+                    self.group_more, _(i18n_keys.LIST_KEY__REKEY_TO__COLON), rekey_to
+                )
+            if genesis_id is not None:
+                self.item_genesis_id = DisplayItem(
+                    self.group_more, "GENESIS ID:", genesis_id
+                )
+            self.group_more.add_dummy()
 
 
 class AlgoKeyregOnline(FullSizeWindow):
@@ -1418,34 +1981,73 @@ class AlgoKeyregOnline(FullSizeWindow):
         )
         self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
 
-        self.item1 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__FROM__COLON), sender
+        self.group_directions = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
         )
-        self.item2 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__VRF_PUBLIC_KEY__COLON), selkey
+        self.item_group_header = CardHeader(
+            self.group_directions,
+            _(i18n_keys.FORM__DIRECTIONS),
+            "A:/res/group-icon-directions.png",
         )
-        self.item3 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__VOTE_PUBLIC_KEY__COLON), votekey
+        self.item_group_body_from_addr = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__FROM__COLON),
+            sender,
+        )
+        self.group_directions.add_dummy()
+
+        self.group_fees = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_fees, _(i18n_keys.FORM__FEES), "A:/res/group-icon-fees.png"
+        )
+        self.item_group_body_fee = DisplayItem(
+            self.group_fees,
+            _(i18n_keys.LIST_KEY__MAXIMUM_FEE__COLON),
+            fee,
+        )
+        self.group_fees.add_dummy()
+
+        if note is not None:
+            self.item_note = CardItem(
+                self.container,
+                _(i18n_keys.LIST_KEY__NOTE__COLON),
+                note,
+                "A:/res/group-icon-data.png",
+            )
+
+        self.group_more = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_more, _(i18n_keys.FORM__MORE), "A:/res/group-icon-more.png"
+        )
+        self.item_group_body_vrf_public_key = DisplayItem(
+            self.group_more,
+            _(i18n_keys.LIST_KEY__VRF_PUBLIC_KEY__COLON),
+            selkey,
+        )
+        self.item_group_body_vote_public_key = DisplayItem(
+            self.group_more,
+            _(i18n_keys.LIST_KEY__VOTE_PUBLIC_KEY__COLON),
+            votekey,
         )
         if sprfkey is not None:
-            self.item4 = DisplayItemNoBgc(
-                self.container,
+            self.item_group_body_sprf_public_key = DisplayItem(
+                self.group_more,
                 _(i18n_keys.LIST_KEY__STATE_PROOF_PUBLIC_KEY__COLON),
                 sprfkey,
             )
-        self.item5 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__MAXIMUM_FEE__COLON), fee
-        )
-        if note is not None:
-            self.item6 = DisplayItemNoBgc(
-                self.container, _(i18n_keys.LIST_KEY__NOTE__COLON), note
-            )
         if rekey_to is not None:
-            self.item7 = DisplayItemNoBgc(
-                self.container, _(i18n_keys.LIST_KEY__REKEY_TO__COLON), rekey_to
+            self.item_rekey_to = DisplayItem(
+                self.group_more, _(i18n_keys.LIST_KEY__REKEY_TO__COLON), rekey_to
             )
         if genesis_id is not None:
-            self.item8 = DisplayItemNoBgc(self.container, "GENESIS ID:", genesis_id)
+            self.item_genesis_id = DisplayItem(
+                self.group_more, "GENESIS ID:", genesis_id
+            )
+        self.group_more.add_dummy()
 
 
 class AlgoKeyregNonp(FullSizeWindow):
@@ -1458,28 +2060,60 @@ class AlgoKeyregNonp(FullSizeWindow):
             primary_color=primary_color,
         )
         self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
+        self.group_directions = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_directions,
+            _(i18n_keys.FORM__DIRECTIONS),
+            "A:/res/group-icon-directions.png",
+        )
+        self.item_group_body_from_addr = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__FROM__COLON),
+            sender,
+        )
+        self.group_directions.add_dummy()
 
-        self.item1 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__FROM__COLON), sender
+        self.group_fees = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
         )
-        self.item2 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__MAXIMUM_FEE__COLON), fee
+        self.item_group_header = CardHeader(
+            self.group_fees, _(i18n_keys.FORM__FEES), "A:/res/group-icon-fees.png"
         )
+        self.item_group_body_fee = DisplayItem(
+            self.group_fees,
+            _(i18n_keys.LIST_KEY__MAXIMUM_FEE__COLON),
+            fee,
+        )
+        self.group_fees.add_dummy()
+
         if note is not None:
-            self.item3 = DisplayItemNoBgc(
-                self.container, _(i18n_keys.LIST_KEY__NOTE__COLON), note
+            self.item_note = CardItem(
+                self.container,
+                _(i18n_keys.LIST_KEY__NOTE__COLON),
+                note,
+                "A:/res/group-icon-data.png",
             )
-        self.item4 = DisplayItemNoBgc(
-            self.container,
+
+        self.group_more = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_more, _(i18n_keys.FORM__MORE), "A:/res/group-icon-more.png"
+        )
+        self.item_group_body_nonpart = DisplayItem(
+            self.group_more,
             _(i18n_keys.LIST_KEY__NONPARTICIPATION__COLON),
             _(i18n_keys.LIST_VALUE__FALSE)
             if nonpart is True
             else _(i18n_keys.LIST_VALUE__TRUE),
         )
         if rekey_to is not None:
-            self.item5 = DisplayItemNoBgc(
-                self.container, _(i18n_keys.LIST_KEY__REKEY_TO__COLON), rekey_to
+            self.item_rekey_to = DisplayItem(
+                self.group_more, _(i18n_keys.LIST_KEY__REKEY_TO__COLON), rekey_to
             )
+        self.group_more.add_dummy()
 
 
 class AlgoApplication(FullSizeWindow):
@@ -1492,15 +2126,19 @@ class AlgoApplication(FullSizeWindow):
             primary_color=primary_color,
             icon_path=icon_path,
         )
-        self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
-        self.item1 = DisplayItemNoBgc(
+        self.container = ContainerFlexCol(
+            self.content_area, self.title, pos=(0, 40), padding_row=0
+        )
+        self.container.add_dummy()
+        self.item1 = DisplayItem(
             self.container,
             _(i18n_keys.LIST_KEY__FORMAT__COLON),
             "Application",
         )
-        self.item2 = DisplayItemNoBgc(
+        self.item2 = DisplayItem(
             self.container, _(i18n_keys.LIST_KEY__SIGNER__COLON), signer
         )
+        self.container.add_dummy()
 
 
 class RipplePayment(FullSizeWindow):
@@ -1514,6 +2152,8 @@ class RipplePayment(FullSizeWindow):
         total_amount=None,
         tag=None,
         primary_color=None,
+        icon_path=None,
+        striped=False,
     ):
         super().__init__(
             title,
@@ -1521,29 +2161,79 @@ class RipplePayment(FullSizeWindow):
             _(i18n_keys.BUTTON__CONTINUE),
             _(i18n_keys.BUTTON__REJECT),
             primary_color=primary_color,
+            icon_path="A:/res/icon-send.png",
+            sub_icon_path=icon_path,
         )
         self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
-        self.item1 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__AMOUNT__COLON), amount
-        )
-        self.item2 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__TO__COLON), address_to
-        )
-        self.item3 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__FROM__COLON), address_from
-        )
-        if tag is not None:
-            self.item4 = DisplayItemNoBgc(
-                self.container, _(i18n_keys.LIST_KEY__DESTINATION_TAG__COLON), tag
+        if striped:
+            self.group_amounts = ContainerFlexCol(
+                self.container, None, padding_row=0, no_align=True
             )
-        self.item5 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__MAXIMUM_FEE__COLON), fee_max
+            self.item_group_header = CardHeader(
+                self.group_amounts,
+                _(i18n_keys.LIST_KEY__AMOUNT__COLON),
+                "A:/res/group-icon-amount.png",
+            )
+            self.item_group_body_amount = DisplayItem(
+                self.group_amounts,
+                None,
+                amount,
+            )
+            self.group_amounts.add_dummy()
+
+        self.group_directions = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_directions,
+            _(i18n_keys.FORM__DIRECTIONS),
+            "A:/res/group-icon-directions.png",
+        )
+        self.item_group_body_to_addr = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__TO__COLON),
+            address_to,
+        )
+        self.item_group_body_from_addr = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__FROM__COLON),
+            address_from,
+        )
+        self.group_directions.add_dummy()
+
+        self.group_fees = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_fees, _(i18n_keys.FORM__FEES), "A:/res/group-icon-fees.png"
+        )
+        self.item_group_body_fee = DisplayItem(
+            self.group_fees,
+            _(i18n_keys.LIST_KEY__MAXIMUM_FEE__COLON),
+            fee_max,
         )
         if total_amount is None:
             total_amount = f"{amount}\n{fee_max}"
-        self.item6 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__TOTAL_AMOUNT__COLON), total_amount
+        self.item_group_body_total_amount = DisplayItem(
+            self.group_fees,
+            _(i18n_keys.LIST_KEY__TOTAL_AMOUNT__COLON),
+            total_amount,
         )
+        self.group_fees.add_dummy()
+
+        if tag:
+            self.group_more = ContainerFlexCol(
+                self.container, None, padding_row=0, no_align=True
+            )
+            self.item_group_header = CardHeader(
+                self.group_more, _(i18n_keys.FORM__MORE), "A:/res/group-icon-more.png"
+            )
+            self.item_group_body_tag = DisplayItem(
+                self.group_more,
+                _(i18n_keys.LIST_KEY__DESTINATION_TAG__COLON),
+                tag,
+            )
+            self.group_more.add_dummy()
 
 
 class NftRemoveConfirm(FullSizeWindow):
@@ -1574,6 +2264,8 @@ class FilecoinPayment(FullSizeWindow):
         gaspremium=None,
         total_amount=None,
         primary_color=None,
+        icon_path=None,
+        striped=False,
     ):
         super().__init__(
             title,
@@ -1581,59 +2273,156 @@ class FilecoinPayment(FullSizeWindow):
             _(i18n_keys.BUTTON__CONTINUE),
             _(i18n_keys.BUTTON__REJECT),
             primary_color=primary_color,
+            icon_path="A:/res/icon-send.png",
+            sub_icon_path=icon_path,
         )
         self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
-        self.item1 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__AMOUNT__COLON), amount
+        if striped:
+            self.group_amounts = ContainerFlexCol(
+                self.container, None, padding_row=0, no_align=True
+            )
+            self.item_group_header = CardHeader(
+                self.group_amounts,
+                _(i18n_keys.LIST_KEY__AMOUNT__COLON),
+                "A:/res/group-icon-amount.png",
+            )
+            self.item_group_body_amount = DisplayItem(
+                self.group_amounts,
+                None,
+                amount,
+            )
+            self.group_amounts.add_dummy()
+
+        self.group_directions = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
         )
-        self.item2 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__TO__COLON), address_to
+        self.item_group_header = CardHeader(
+            self.group_directions,
+            _(i18n_keys.FORM__DIRECTIONS),
+            "A:/res/group-icon-directions.png",
         )
-        self.item3 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__FROM__COLON), address_from
+        self.item_group_body_to_addr = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__TO__COLON),
+            address_to,
         )
-        self.item4 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__GAS_LIMIT__COLON), gaslimit
+        self.item_group_body_from_addr = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__FROM__COLON),
+            address_from,
         )
-        self.item5 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__GAS_FEE_CAP__COLON), gasfeecap
+        self.group_directions.add_dummy()
+
+        self.group_fees = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
         )
-        self.item6 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__GAS_PREMIUM__COLON), gaspremium
+        self.item_group_header = CardHeader(
+            self.group_fees, _(i18n_keys.FORM__FEES), "A:/res/group-icon-fees.png"
         )
-        self.item6 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__TOTAL_AMOUNT__COLON), total_amount
+        self.item_group_body_gas_limit = DisplayItem(
+            self.group_fees,
+            _(i18n_keys.LIST_KEY__GAS_LIMIT__COLON),
+            gaslimit,
         )
+        self.item_group_body_gas_cap = DisplayItem(
+            self.group_fees,
+            _(i18n_keys.LIST_KEY__GAS_FEE_CAP__COLON),
+            gasfeecap,
+        )
+        self.item_group_body_gas_premium = DisplayItem(
+            self.group_fees,
+            _(i18n_keys.LIST_KEY__GAS_PREMIUM__COLON),
+            gaspremium,
+        )
+        self.item_group_body_total_amount = DisplayItem(
+            self.group_fees,
+            _(i18n_keys.LIST_KEY__TOTAL_AMOUNT__COLON),
+            total_amount,
+        )
+        self.group_fees.add_dummy()
 
 
 class CosmosTransactionOverview(FullSizeWindow):
-    def __init__(self, title, type, value, amount, address, primary_color, icon_path):
+    def __init__(
+        self,
+        title,
+        types,
+        value,
+        amount,
+        address,
+        primary_color,
+        icon_path,
+        striped=False,
+    ):
         super().__init__(
             title,
             None,
-            _(i18n_keys.BUTTON__VIEW),
+            _(i18n_keys.BUTTON__CONTINUE),
             _(i18n_keys.BUTTON__REJECT),
             anim_dir=2,
             primary_color=primary_color,
-            icon_path=icon_path,
+            icon_path="A:/res/icon-send.png" if types is None else icon_path,
+            sub_icon_path=icon_path if types is None else None,
         )
         self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
-        if type == _(i18n_keys.TITLE__SEND):
-            self.item1 = DisplayItemNoBgc(
-                self.container,
-                f"#878787 {_(i18n_keys.INSERT__SEND)}#  {amount}  #878787 {_(i18n_keys.INSERT__TO)}#",
+
+        if types is None:
+            if striped:
+                self.group_amounts = ContainerFlexCol(
+                    self.container, None, padding_row=0, no_align=True
+                )
+                self.item_group_header = CardHeader(
+                    self.group_amounts,
+                    _(i18n_keys.LIST_KEY__AMOUNT__COLON),
+                    "A:/res/group-icon-amount.png",
+                )
+                self.item_group_body_amount = DisplayItem(
+                    self.group_amounts,
+                    None,
+                    amount,
+                )
+                self.group_amounts.add_dummy()
+
+            self.group_directions = ContainerFlexCol(
+                self.container, None, padding_row=0, no_align=True
+            )
+            self.item_group_header = CardHeader(
+                self.group_directions,
+                _(i18n_keys.FORM__DIRECTIONS),
+                "A:/res/group-icon-directions.png",
+            )
+            self.item_group_body_to_addr = DisplayItem(
+                self.group_directions,
+                _(i18n_keys.LIST_KEY__TO__COLON),
                 address,
             )
-            self.item1.label_top.set_recolor(True)
-            self.item1.set_style_bg_color(lv_colors.BLACK, 0)
+            self.group_directions.add_dummy()
         else:
-            self.item1 = DisplayItemNoBgc(
+            self.container.add_dummy()
+            self.item_type = DisplayItem(
                 self.container,
-                f"#878787 {_(i18n_keys.LIST_KEY__TYPE__COLON)}#",
+                _(i18n_keys.LIST_KEY__TYPE__COLON),
                 value,
             )
-            self.item1.label_top.set_recolor(True)
-            self.item1.set_style_bg_color(lv_colors.BLACK, 0)
+            self.container.add_dummy()
+
+        self.view_btn = NormalButton(
+            self.content_area,
+            f"{LV_SYMBOLS.LV_SYMBOL_ANGLE_DOUBLE_DOWN}  {_(i18n_keys.BUTTON__DETAILS)}",
+        )
+        self.view_btn.set_size(456, 82)
+        self.view_btn.add_style(StyleWrapper().text_font(font_GeistSemiBold26), 0)
+        self.view_btn.enable()
+        self.view_btn.align_to(self.container, lv.ALIGN.OUT_BOTTOM_MID, 0, 16)
+        self.view_btn.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
+
+    def on_click(self, event_obj):
+        code = event_obj.code
+        target = event_obj.get_target()
+        if code == lv.EVENT.CLICKED:
+            if target == self.view_btn:
+                self.destroy(400)
+                self.channel.publish(2)
 
 
 class CosmosSend(FullSizeWindow):
@@ -1646,7 +2435,10 @@ class CosmosSend(FullSizeWindow):
         address_to,
         amount,
         fee,
+        memo,
         primary_color=None,
+        icon_path=None,
+        striped=False,
     ):
         super().__init__(
             title,
@@ -1654,28 +2446,83 @@ class CosmosSend(FullSizeWindow):
             _(i18n_keys.BUTTON__CONTINUE),
             _(i18n_keys.BUTTON__REJECT),
             primary_color=primary_color,
+            icon_path="A:/res/icon-send.png",
+            sub_icon_path=icon_path,
         )
         self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
-        self.item1 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__AMOUNT__COLON), amount
+        if striped:
+            self.group_amounts = ContainerFlexCol(
+                self.container, None, padding_row=0, no_align=True
+            )
+            self.item_group_header = CardHeader(
+                self.group_amounts,
+                _(i18n_keys.LIST_KEY__AMOUNT__COLON),
+                "A:/res/group-icon-amount.png",
+            )
+            self.item_group_body_amount = DisplayItem(
+                self.group_amounts,
+                None,
+                amount,
+            )
+            self.group_amounts.add_dummy()
+
+        self.group_directions = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
         )
-        self.item2 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__TO__COLON), address_to
+        self.item_group_header = CardHeader(
+            self.group_directions,
+            _(i18n_keys.FORM__DIRECTIONS),
+            "A:/res/group-icon-directions.png",
         )
-        self.item3 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__FROM__COLON), address_from
+        self.item_group_body_to_addr = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__TO__COLON),
+            address_to,
         )
-        self.item4 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__FEE__COLON), fee
+        self.item_group_body_from_addr = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__FROM__COLON),
+            address_from,
         )
-        if chain_name is not None:
-            self.item1 = DisplayItemNoBgc(
-                self.container, _(i18n_keys.LIST_KEY__CHAIN_NAME__COLON), chain_name
+        self.group_directions.add_dummy()
+
+        if fee:
+            self.group_fees = ContainerFlexCol(
+                self.container, None, padding_row=0, no_align=True
+            )
+            self.item_group_header = CardHeader(
+                self.group_fees, _(i18n_keys.FORM__FEES), "A:/res/group-icon-fees.png"
+            )
+            self.item_group_body_fee = DisplayItem(
+                self.group_fees,
+                _(i18n_keys.LIST_KEY__FEE__COLON),
+                fee,
+            )
+            self.group_fees.add_dummy()
+
+        self.group_more = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_more, _(i18n_keys.FORM__MORE), "A:/res/group-icon-more.png"
+        )
+        if chain_name:
+            self.item_group_body_chain_name = DisplayItem(
+                self.group_more,
+                _(i18n_keys.LIST_KEY__CHAIN_NAME__COLON),
+                chain_name,
             )
         else:
-            self.item1 = DisplayItemNoBgc(
-                self.container, _(i18n_keys.LIST_KEY__CHAIN_ID__COLON), chain_id
+            self.item_group_body_chain_id = DisplayItem(
+                self.group_more, _(i18n_keys.LIST_KEY__CHAIN_ID__COLON), chain_id
             )
+        if memo:
+            self.item_group_body_memo = DisplayItem(
+                self.group_more,
+                _(i18n_keys.LIST_KEY__MEMO__COLON),
+                memo,
+            )
+        self.group_more.add_dummy()
 
 
 class CosmosDelegate(FullSizeWindow):
@@ -1688,6 +2535,7 @@ class CosmosDelegate(FullSizeWindow):
         validator,
         amount,
         fee,
+        memo,
         primary_color=None,
     ):
         super().__init__(
@@ -1698,26 +2546,69 @@ class CosmosDelegate(FullSizeWindow):
             primary_color=primary_color,
         )
         self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
-        self.item1 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__AMOUNT__COLON), amount
+        self.group_amounts = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
         )
-        self.item2 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__DELEGATOR__COLON), delegator
+        self.item_group_header = CardHeader(
+            self.group_amounts,
+            _(i18n_keys.LIST_KEY__AMOUNT__COLON),
+            "A:/res/group-icon-amount.png",
         )
-        self.item3 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__VALIDATOR__COLON), validator
+        self.item_group_body_amount = DisplayItem(
+            self.group_amounts,
+            None,
+            amount,
         )
-        self.item4 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__FEE__COLON), fee
+        self.group_amounts.add_dummy()
+
+        if fee:
+            self.group_fees = ContainerFlexCol(
+                self.container, None, padding_row=0, no_align=True
+            )
+            self.item_group_header = CardHeader(
+                self.group_fees, _(i18n_keys.FORM__FEES), "A:/res/group-icon-fees.png"
+            )
+            self.item_group_body_fee = DisplayItem(
+                self.group_fees,
+                _(i18n_keys.LIST_KEY__FEE__COLON),
+                fee,
+            )
+            self.group_fees.add_dummy()
+
+        self.group_more = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
         )
-        if chain_name is not None:
-            self.item1 = DisplayItemNoBgc(
-                self.container, _(i18n_keys.LIST_KEY__CHAIN_NAME__COLON), chain_name
+        self.item_group_header = CardHeader(
+            self.group_more, _(i18n_keys.FORM__MORE), "A:/res/group-icon-more.png"
+        )
+        self.item_group_body_delegator = DisplayItem(
+            self.group_more,
+            _(i18n_keys.LIST_KEY__DELEGATOR__COLON),
+            delegator,
+        )
+        self.item_group_body_validator = DisplayItem(
+            self.group_more,
+            _(i18n_keys.LIST_KEY__VALIDATOR__COLON),
+            validator,
+        )
+
+        if chain_name:
+            self.item_group_body_chain_name = DisplayItem(
+                self.group_more,
+                _(i18n_keys.LIST_KEY__CHAIN_NAME__COLON),
+                chain_name,
             )
         else:
-            self.item1 = DisplayItemNoBgc(
-                self.container, _(i18n_keys.LIST_KEY__CHAIN_ID__COLON), chain_id
+            self.item_group_body_chain_id = DisplayItem(
+                self.group_more, _(i18n_keys.LIST_KEY__CHAIN_ID__COLON), chain_id
             )
+        if memo:
+            self.item_group_body_memo = DisplayItem(
+                self.group_more,
+                _(i18n_keys.LIST_KEY__MEMO__COLON),
+                memo,
+            )
+        self.group_more.add_dummy()
 
 
 class CosmosSignCommon(FullSizeWindow):
@@ -1729,50 +2620,98 @@ class CosmosSignCommon(FullSizeWindow):
         fee: str,
         title: str,
         value: str,
+        memo,
+        primary_color,
     ):
         super().__init__(
             title,
             None,
             _(i18n_keys.BUTTON__CONTINUE),
             _(i18n_keys.BUTTON__CANCEL),
+            primary_color=primary_color,
         )
-        self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 48))
-        if chain_name is not None:
-            self.item1 = DisplayItemNoBgc(
-                self.container, _(i18n_keys.LIST_KEY__CHAIN_NAME__COLON), chain_name
+        self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
+        if signer:
+            self.group_directions = ContainerFlexCol(
+                self.container, None, padding_row=0, no_align=True
+            )
+            self.item_group_header = CardHeader(
+                self.group_directions,
+                _(i18n_keys.FORM__DIRECTIONS),
+                "A:/res/group-icon-directions.png",
+            )
+            self.item_group_body_signer = DisplayItem(
+                self.group_directions,
+                _(i18n_keys.LIST_KEY__SIGNER__COLON),
+                signer,
+            )
+            self.group_directions.add_dummy()
+
+        if fee:
+            self.group_fees = ContainerFlexCol(
+                self.container, None, padding_row=0, no_align=True
+            )
+            self.item_group_header = CardHeader(
+                self.group_fees, _(i18n_keys.FORM__FEES), "A:/res/group-icon-fees.png"
+            )
+            self.item_group_body_fee = DisplayItem(
+                self.group_fees,
+                _(i18n_keys.LIST_KEY__FEE__COLON),
+                fee,
+            )
+            self.group_fees.add_dummy()
+
+        self.group_more = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_more, _(i18n_keys.FORM__MORE), "A:/res/group-icon-more.png"
+        )
+        if chain_name:
+            self.item_group_body_chain_name = DisplayItem(
+                self.group_more,
+                _(i18n_keys.LIST_KEY__CHAIN_NAME__COLON),
+                chain_name,
             )
         else:
-            self.item1 = DisplayItemNoBgc(
-                self.container, _(i18n_keys.LIST_KEY__CHAIN_ID__COLON), chain_id
+            self.item_group_body_chain_id = DisplayItem(
+                self.group_more, _(i18n_keys.LIST_KEY__CHAIN_ID__COLON), chain_id
             )
-        if signer:
-            self.item2 = DisplayItemNoBgc(
-                self.container, _(i18n_keys.LIST_KEY__SIGNER__COLON), signer
-            )
-        self.item3 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__TYPE__COLON), value
+        self.item_group_body_type = DisplayItem(
+            self.group_more,
+            _(i18n_keys.LIST_KEY__TYPE__COLON),
+            value,
         )
-        if fee is not None:
-            self.item4 = DisplayItemNoBgc(
-                self.container, _(i18n_keys.LIST_KEY__FEE__COLON), fee
+        if memo:
+            self.item_group_body_memo = DisplayItem(
+                self.group_more,
+                _(i18n_keys.LIST_KEY__MEMO__COLON),
+                memo,
             )
+        self.group_more.add_dummy()
 
 
 class CosmosSignContent(FullSizeWindow):
     def __init__(
         self,
         msgs_item: dict,
+        primary_color,
     ):
         super().__init__(
             _(i18n_keys.TITLE__CONTENT),
             None,
             _(i18n_keys.BUTTON__CONTINUE),
             _(i18n_keys.BUTTON__CANCEL),
+            primary_color=primary_color,
         )
-        self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 48))
+        self.container = ContainerFlexCol(
+            self.content_area, self.title, pos=(0, 40), padding_row=0
+        )
+        self.container.add_dummy()
         for key, value in msgs_item.items():
             if len(value) <= 80:
-                self.item2 = DisplayItemNoBgc(self.container, key, value)
+                self.item = DisplayItem(self.container, key, value)
+        self.container.add_dummy()
 
 
 class CosmosLongValue(FullSizeWindow):
@@ -1800,7 +2739,7 @@ class CosmosLongValue(FullSizeWindow):
 
 
 class CosmosSignCombined(FullSizeWindow):
-    def __init__(self, chain_id: str, signer: str, fee: str, msgs: str, primary_color):
+    def __init__(self, chain_id: str, signer: str, fee: str, data: str, primary_color):
         super().__init__(
             _(i18n_keys.TITLE__VIEW_TRANSACTION),
             None,
@@ -1809,34 +2748,87 @@ class CosmosSignCombined(FullSizeWindow):
             primary_color=primary_color,
         )
         self.primary_color = primary_color
-        self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 48))
-        self.item1 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__CHAIN_ID__COLON), chain_id
-        )
+        self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
         if signer:
-            self.item2 = DisplayItemNoBgc(
-                self.container, _(i18n_keys.LIST_KEY__SIGNER__COLON), signer
+            self.group_directions = ContainerFlexCol(
+                self.container, None, padding_row=0, no_align=True
             )
-        self.item3 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__FEE__COLON), fee
+            self.item_group_header = CardHeader(
+                self.group_directions,
+                _(i18n_keys.FORM__DIRECTIONS),
+                "A:/res/group-icon-directions.png",
+            )
+            self.item_group_body_signer = DisplayItem(
+                self.group_directions,
+                _(i18n_keys.LIST_KEY__SIGNER__COLON),
+                signer,
+            )
+            self.group_directions.add_dummy()
+
+        if fee:
+            self.group_fees = ContainerFlexCol(
+                self.container, None, padding_row=0, no_align=True
+            )
+            self.item_group_header = CardHeader(
+                self.group_fees, _(i18n_keys.FORM__FEES), "A:/res/group-icon-fees.png"
+            )
+            self.item_group_body_fee = DisplayItem(
+                self.group_fees,
+                _(i18n_keys.LIST_KEY__FEE__COLON),
+                fee,
+            )
+            self.group_fees.add_dummy()
+
+        self.group_more = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
         )
-        self.show_full_message = NormalButton(
-            self, _(i18n_keys.BUTTON__VIEW_FULL_MESSAGE)
+        self.item_group_header = CardHeader(
+            self.group_more, _(i18n_keys.FORM__MORE), "A:/res/group-icon-more.png"
         )
-        self.show_full_message.align_to(self.item3, lv.ALIGN.OUT_BOTTOM_MID, 0, 32)
-        self.show_full_message.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
-        self.message = msgs
+        self.item_group_body_chain_id = DisplayItem(
+            self.group_more, _(i18n_keys.LIST_KEY__CHAIN_ID__COLON), chain_id
+        )
+        self.group_more.add_dummy()
+
+        self.long_data = False
+        self.data_str = data
+        if len(data) > 225:
+            self.long_data = True
+            self.data = data[:222] + "..."
+        else:
+            self.data = data
+        self.item_data = CardItem(
+            self.container,
+            _(i18n_keys.LIST_KEY__DATA__COLON),
+            self.data,
+            "A:/res/group-icon-data.png",
+        )
+        if self.long_data:
+            self.show_full_data = NormalButton(
+                self.item_data.content, _(i18n_keys.BUTTON__VIEW_DATA)
+            )
+            self.show_full_data.set_size(185, 82)
+            self.show_full_data.add_style(
+                StyleWrapper().text_font(font_GeistSemiBold26), 0
+            )
+            self.show_full_data.align(lv.ALIGN.CENTER, 0, 0)
+            self.show_full_data.remove_style(None, lv.PART.MAIN | lv.STATE.PRESSED)
+            self.show_full_data.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
 
     def on_click(self, event_obj):
         code = event_obj.code
         target = event_obj.get_target()
         if code == lv.EVENT.CLICKED:
-            if target == self.show_full_message:
+            if target == self.show_full_data:
                 PageAbleMessage(
-                    _(i18n_keys.BUTTON__VIEW_FULL_MESSAGE),
-                    self.message,
-                    self.channel,
+                    _(i18n_keys.TITLE__VIEW_DATA),
+                    self.data_str,
+                    None,
                     primary_color=self.primary_color,
+                    page_size=405,
+                    font=font_GeistMono28,
+                    confirm_text=None,
+                    cancel_text=None,
                 )
 
 
@@ -1854,23 +2846,27 @@ class ConfirmTypedHash(FullSizeWindow):
         self.banner = Banner(
             self.content_area, 2, _(i18n_keys.MSG__SIGNING_MSG_MAY_HAVE_RISK)
         )
-        self.banner.align(lv.ALIGN.TOP_LEFT, 8, 8)
-        self.icon.align_to(self.banner, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 16)
-        self.title.align_to(self.icon, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 16)
-        self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
-        self.item1 = DisplayItemNoBgc(
+        self.banner.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, 40)
+        self.container = ContainerFlexCol(self.content_area, self.title, padding_row=0)
+        self.container.align_to(self.banner, lv.ALIGN.OUT_BOTTOM_MID, 0, 24)
+        self.container.add_dummy()
+        self.item_separator_hash = DisplayItem(
             self.container,
             _(i18n_keys.LIST_KEY__DOMAIN_SEPARATOR_HASH__COLON),
             domain_hash,
         )
-        self.item2 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__MESSAGE_HASH__COLON), message_hash
+        self.item_message_hash = DisplayItem(
+            self.container,
+            _(i18n_keys.LIST_KEY__MESSAGE_HASH__COLON),
+            message_hash,
         )
+        self.container.add_dummy()
 
 
 class PolkadotBalances(FullSizeWindow):
     def __init__(
         self,
+        title,
         chain_name,
         module,
         method,
@@ -1881,41 +2877,106 @@ class PolkadotBalances(FullSizeWindow):
         tip,
         keep_alive,
         primary_color,
+        icon_path,
+        striped=False,
     ):
         super().__init__(
-            _(i18n_keys.TITLE__VIEW_TRANSACTION),
+            title,
             None,
             _(i18n_keys.BUTTON__CONTINUE),
             _(i18n_keys.BUTTON__CANCEL),
             primary_color=primary_color,
+            icon_path="A:/res/icon-send.png",
+            sub_icon_path=icon_path,
         )
         self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 48))
-        if balance:
-            self.item1 = DisplayItemNoBgc(
-                self.container, _(i18n_keys.LIST_KEY__AMOUNT__COLON), balance
+        if striped:
+            self.group_amounts = ContainerFlexCol(
+                self.container, None, padding_row=0, no_align=True
             )
-        self.item2 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__TO__COLON), dest
+            self.item_group_header = CardHeader(
+                self.group_amounts,
+                _(i18n_keys.LIST_KEY__AMOUNT__COLON),
+                "A:/res/group-icon-amount.png",
+            )
+            self.item_group_body_amount = DisplayItem(
+                self.group_amounts,
+                None,
+                balance,
+            )
+            self.group_amounts.add_dummy()
+
+        self.group_directions = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
         )
-        self.item3 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__SIGNER__COLON), sender
+        self.item_group_header = CardHeader(
+            self.group_directions,
+            _(i18n_keys.FORM__DIRECTIONS),
+            "A:/res/group-icon-directions.png",
         )
-        self.item4 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__CHAIN_NAME__COLON), chain_name
+        self.item_group_body_to_addr = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__TO__COLON),
+            dest,
         )
-        # self.item5 = DisplayItemNoBgc(self.container, module, method)
+
+        self.item_group_body_signer = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__SIGNER__COLON),
+            sender,
+        )
+        self.group_directions.add_dummy()
+
+        if tip:
+            self.group_fees = ContainerFlexCol(
+                self.container, None, padding_row=0, no_align=True
+            )
+            self.item_group_header = CardHeader(
+                self.group_fees, _(i18n_keys.FORM__FEES), "A:/res/group-icon-fees.png"
+            )
+            self.item_group_body_fee = DisplayItem(
+                self.group_fees,
+                _(i18n_keys.LIST_KEY__TIP__COLON),
+                tip,
+            )
+            self.group_fees.add_dummy()
+
+        self.group_more = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_more, _(i18n_keys.FORM__MORE), "A:/res/group-icon-more.png"
+        )
+        self.item_group_body_chain_name = DisplayItem(
+            self.group_more,
+            _(i18n_keys.LIST_KEY__CHAIN_NAME__COLON),
+            chain_name,
+        )
         if source:
-            self.item6 = DisplayItemNoBgc(
-                self.container, _(i18n_keys.LIST_KEY__SOURCE_COLON), source
+            self.item_group_body_source = DisplayItem(
+                self.group_more,
+                _(i18n_keys.LIST_KEY__SOURCE_COLON),
+                source,
             )
-        if tip is not None:
-            self.item7 = DisplayItemNoBgc(
-                self.container, _(i18n_keys.LIST_KEY__TIP_COLON), tip
-            )
+        # if module:
+        #     self.item_group_body_module = DisplayItem(
+        #         self.group_more,
+        #         _(i18n_keys.LIST_KEY__MODULE_COLON),
+        #         module,
+        #     )
+        # if method:
+        #     self.item_group_body_method = DisplayItem(
+        #         self.group_more,
+        #         _(i18n_keys.LIST_KEY__METHOD_COLON),
+        #         method,
+        #     )
         if keep_alive is not None:
-            self.item8 = DisplayItemNoBgc(
-                self.container, _(i18n_keys.LIST_KEY__KEEP_ALIVE_COLON), keep_alive
+            self.item_group_body_keep_alive = DisplayItem(
+                self.group_more,
+                _(i18n_keys.LIST_KEY__KEEP_ALIVE_COLON),
+                keep_alive,
             )
+        self.group_more.add_dummy()
 
 
 class TronAssetFreeze(FullSizeWindow):
@@ -1939,33 +3000,56 @@ class TronAssetFreeze(FullSizeWindow):
         )
         self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
 
-        self.item1 = DisplayItemNoBgc(
-            self.container, _(i18n_keys.LIST_KEY__FROM__COLON), sender
+        self.group_directions = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_directions,
+            _(i18n_keys.FORM__DIRECTIONS),
+            "A:/res/group-icon-directions.png",
+        )
+        self.item_group_body_from_addr = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__FROM__COLON),
+            sender,
+        )
+        self.group_directions.add_dummy()
+
+        self.group_more = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_more, _(i18n_keys.FORM__MORE), "A:/res/group-icon-more.png"
         )
         if resource is not None:
-            self.item2 = DisplayItemNoBgc(
-                self.container, _(i18n_keys.LIST_KEY__RESOURCE_COLON), resource
+            self.item_body_resource = DisplayItem(
+                self.group_more, _(i18n_keys.LIST_KEY__RESOURCE_COLON), resource
             )
         if balance:
             if is_freeze:
-                self.item3 = DisplayItemNoBgc(
-                    self.container, _(i18n_keys.LIST_KEY__FROZEN_BALANCE_COLON), balance
+                self.item_body_freeze_balance = DisplayItem(
+                    self.group_more,
+                    _(i18n_keys.LIST_KEY__FROZEN_BALANCE_COLON),
+                    balance,
                 )
             else:
-                self.item3 = DisplayItemNoBgc(
-                    self.container, _(i18n_keys.LIST_KEY__AMOUNT__COLON), balance
+                self.item_body_balance = DisplayItem(
+                    self.group_more,
+                    _(i18n_keys.LIST_KEY__AMOUNT__COLON),
+                    balance,
                 )
         if duration:
-            self.item4 = DisplayItemNoBgc(
-                self.container,
+            self.item_body_duration = DisplayItem(
+                self.group_more,
                 _(i18n_keys.LIST_KEY__FROZEN_DURATION_COLON),
                 duration,
             )
         if receiver is not None:
-            self.item5 = DisplayItemNoBgc(
-                self.container, _(i18n_keys.LIST_KEY__RECEIVER_ADDRESS_COLON), receiver
+            self.item_body_receiver = DisplayItem(
+                self.group_more, _(i18n_keys.LIST_KEY__RECEIVER_ADDRESS_COLON), receiver
             )
         if lock is not None:
-            self.item6 = DisplayItemNoBgc(
-                self.container, _(i18n_keys.LIST_KEY__LOCK_COLON), lock
+            self.item_body_lock = DisplayItem(
+                self.group_more, _(i18n_keys.LIST_KEY__LOCK_COLON), lock
             )
+        self.group_more.add_dummy()

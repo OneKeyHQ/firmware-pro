@@ -1,4 +1,4 @@
-from .. import font_PJSBOLD24, lv, lv_colors
+from .. import font_GeistSemiBold26, lv, lv_colors
 
 
 class Roller(lv.roller):
@@ -11,7 +11,7 @@ class Roller(lv.roller):
         self.set_style_text_opa(255, lv.PART.MAIN | lv.STATE.DEFAULT)
         self.set_style_text_letter_space(0, lv.PART.MAIN | lv.STATE.DEFAULT)
         self.set_style_text_line_space(40, lv.PART.MAIN | lv.STATE.DEFAULT)
-        self.set_style_text_font(font_PJSBOLD24, lv.PART.MAIN | lv.STATE.DEFAULT)
+        self.set_style_text_font(font_GeistSemiBold26, lv.PART.MAIN | lv.STATE.DEFAULT)
         self.set_style_radius(24, lv.PART.MAIN | lv.PART.SELECTED | lv.STATE.DEFAULT)
         # self.set_style_radius(24, lv.PART.SELECTED | lv.STATE.DEFAULT)
         self.set_style_bg_color(lv_colors.BLACK, lv.PART.MAIN | lv.STATE.DEFAULT)

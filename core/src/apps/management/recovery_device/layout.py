@@ -6,8 +6,9 @@ from trezor.enums import ButtonRequestType
 from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
 from trezor.lvglui.lv_colors import lv_colors
 from trezor.ui.layouts import (
+    backup_with_keytag,
+    backup_with_lite,
     confirm_action,
-    show_bip39_dotmap,
     show_success,
     show_warning,
 )
@@ -119,7 +120,8 @@ async def show_dry_run_result(
             header=_(i18n_keys.TITLE__CORRECT),
         )
         if not is_slip39 and not __debug__:
-            await show_bip39_dotmap(ctx, mnemonics, recovery_check=True)
+            await backup_with_keytag(ctx, mnemonics, recovery_check=True)
+            await backup_with_lite(ctx, mnemonics, recovery_check=True)
     else:
         if is_slip39:
             raise

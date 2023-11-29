@@ -94,7 +94,6 @@ async def sign_tx_eip1559(
             from_addr, recipient, token_id, value = res
     show_details = await require_show_overview(
         ctx,
-        get_display_network_name(network),
         recipient,
         value,
         msg.chain_id,

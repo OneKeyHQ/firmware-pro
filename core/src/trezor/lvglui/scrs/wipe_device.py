@@ -27,7 +27,7 @@ class WipeDevice(FullSizeWindow):
             StyleWrapper()
             .bg_opa()
             .align(lv.ALIGN.TOP_LEFT)
-            .bg_img_src("A:/res/warning_bar.png"),
+            .bg_img_src("A:/res/warning-bar.png"),
             0,
         )
 
@@ -46,15 +46,20 @@ class WipeDeviceTips(FullSizeWindow):
             hold_confirm=True,
         )
         self.container = ContainerFlexCol(
-            self.content_area, self.subtitle, padding_row=10
+            self.content_area,
+            self.subtitle,
+            padding_row=8,
+            clip_corner=False,
         )
         self.item1 = ListItemWithLeadingCheckbox(
             self.container,
             _(i18n_keys.CHECK__DEVICE_WIPE_DEVICE_FACTORY_RESET_1),
+            radius=40,
         )
         self.item2 = ListItemWithLeadingCheckbox(
             self.container,
             _(i18n_keys.CHECK__DEVICE_WIPE_DEVICE_FACTORY_RESET_2),
+            radius=40,
         )
         self.slider_enable(False)
         self.container.add_event_cb(self.on_value_changed, lv.EVENT.VALUE_CHANGED, None)

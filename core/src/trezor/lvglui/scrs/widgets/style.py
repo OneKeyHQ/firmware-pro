@@ -198,6 +198,10 @@ class StyleWrapper(lv.style_t):
         self.set_grid_row_dsc_array(arr)
         return self
 
+    def clip_corner(self, clip_corner: bool) -> "StyleWrapper":
+        self.set_clip_corner(clip_corner)
+        return self
+
     # def size(self, width=lv.pct(100), height=lv.SIZE.CONTENT) -> "StyleWrapper":
     #     self.set_size(width, height)
     #     return self

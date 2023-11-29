@@ -64,7 +64,6 @@ async def sign_tx(
 
     show_details = await require_show_overview(
         ctx,
-        get_display_network_name(network),
         recipient,
         value,
         msg.chain_id,

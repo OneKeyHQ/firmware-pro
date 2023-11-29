@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Literal
 
-from trezor import messages, ui
+from trezor import messages
 from trezor.enums import (
     ButtonRequestType,
     CardanoAddressType,
@@ -16,7 +16,6 @@ from trezor.ui.layouts import (
     confirm_path_warning,
     confirm_properties,
     confirm_text,
-    should_show_more,
     show_address,
 )
 
@@ -189,21 +188,22 @@ async def show_script_hash(
 
 
 async def show_tx_init(ctx: Context, title: str) -> bool:
-    should_show_details = await should_show_more(
-        ctx,
-        TITLE,
-        (
-            (
-                ui.BOLD,
-                title,
-            ),
-            (ui.NORMAL, "Choose level of details:"),
-        ),
-        "Show All",
-        br_type="Show Simple",
-    )
+    # should_show_details = await should_show_more(
+    #     ctx,
+    #     TITLE,
+    #     (
+    #         (
+    #             ui.BOLD,
+    #             title,
+    #         ),
+    #         (ui.NORMAL, "Choose level of details:"),
+    #     ),
+    #     "Show All",
+    #     br_type="Show Simple",
+    # )
 
-    return should_show_details
+    # return should_show_details
+    return True
 
 
 async def confirm_input(ctx: wire.Context, input: messages.CardanoTxInput) -> None:

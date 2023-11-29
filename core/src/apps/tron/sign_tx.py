@@ -48,12 +48,10 @@ async def sign_tx(
 
 
 async def _require_confirm_by_type(ctx, transaction, owner_address):
-    # Confirm extra data if exist
-    if transaction.data:
-        await layout.require_confirm_data(ctx, transaction.data, len(transaction.data))
 
     # Confirm transaction
     contract = transaction.contract
+    skip_view_data = False
     if contract.transfer_contract:
         if contract.transfer_contract.amount is None:
             raise wire.DataError("Invalid Tron transfer amount")
@@ -88,23 +86,35 @@ async def _require_confirm_by_type(ctx, transaction, owner_address):
             )
             recipient = _address_base58(b"\x41" + data[16:36])
             value = int.from_bytes(data[36:68], "big")
-            await layout.require_confirm_trigger_trc20(
-                ctx,
-                False if token is tokens.UNKNOWN_TOKEN else True,
-                contract.trigger_smart_contract.contract_address,
-                value,
-                token,
-                recipient,
-            )
+
+            if token is tokens.UNKNOWN_TOKEN:
+                # unknown token, confirm contract address
+                await layout.require_confirm_unknown_token(
+                    ctx, contract.trigger_smart_contract.contract_address
+                )
+
             if transaction.fee_limit:
-                await layout.require_confirm_fee(
+                from .layout import format_amount_trx
+
+                if await layout.require_confirm_show_more(
+                    ctx, format_amount_trx(value, token), recipient
+                ):
+                    await layout.require_confirm_fee(
+                        ctx,
+                        token,
+                        from_address=owner_address,
+                        to_address=recipient,
+                        value=value,
+                        fee_limit=transaction.fee_limit,
+                    )
+                else:
+                    skip_view_data = True
+            else:
+                await layout.require_confirm_tx(
                     ctx,
+                    recipient,
+                    value,
                     token,
-                    from_address=owner_address,
-                    to_address=recipient,
-                    value=value,
-                    fee_limit=transaction.fee_limit,
-                    network="TRON",
                 )
         else:
             from trezor.ui.layouts.lvgl import confirm_blind_sign_common
@@ -171,6 +181,10 @@ async def _require_confirm_by_type(ctx, transaction, owner_address):
         )
     else:
         raise wire.DataError("Invalid transaction type")
+
+    # Confirm extra data if exist
+    if transaction.data and not skip_view_data:
+        await layout.require_confirm_data(ctx, transaction.data, len(transaction.data))
 
     await confirm_final(ctx, "TRON")
 

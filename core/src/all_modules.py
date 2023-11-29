@@ -167,6 +167,8 @@ trezor.lvglui.i18n.locales.zh_hk
 import trezor.lvglui.i18n.locales.zh_hk
 trezor.lvglui.lv_colors
 import trezor.lvglui.lv_colors
+trezor.lvglui.lv_symbols
+import trezor.lvglui.lv_symbols
 trezor.lvglui.scrs
 import trezor.lvglui.scrs
 trezor.lvglui.scrs.app_guide
@@ -177,6 +179,8 @@ trezor.lvglui.scrs.ble
 import trezor.lvglui.scrs.ble
 trezor.lvglui.scrs.bootscreen
 import trezor.lvglui.scrs.bootscreen
+trezor.lvglui.scrs.charging
+import trezor.lvglui.scrs.charging
 trezor.lvglui.scrs.common
 import trezor.lvglui.scrs.common
 trezor.lvglui.scrs.components
@@ -213,12 +217,16 @@ trezor.lvglui.scrs.components.theme
 import trezor.lvglui.scrs.components.theme
 trezor.lvglui.scrs.components.transition
 import trezor.lvglui.scrs.components.transition
+trezor.lvglui.scrs.fingerprint
+import trezor.lvglui.scrs.fingerprint
 trezor.lvglui.scrs.homescreen
 import trezor.lvglui.scrs.homescreen
 trezor.lvglui.scrs.initscreen
 import trezor.lvglui.scrs.initscreen
 trezor.lvglui.scrs.lockscreen
 import trezor.lvglui.scrs.lockscreen
+trezor.lvglui.scrs.nfc
+import trezor.lvglui.scrs.nfc
 trezor.lvglui.scrs.passphrase
 import trezor.lvglui.scrs.passphrase
 trezor.lvglui.scrs.pinscreen

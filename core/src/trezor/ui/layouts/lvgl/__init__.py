@@ -65,7 +65,8 @@ __all__ = (
     "request_pin_tips",
     "confirm_remove_nft",
     "confirm_collect_nft",
-    "show_bip39_dotmap",
+    "backup_with_keytag",
+    "backup_with_lite",
     "confirm_sign_typed_hash",
     "confirm_polkadot_balances",
     "should_show_details",
@@ -484,15 +485,13 @@ async def confirm_output(
     icon: str = ui.ICON_SEND,
 ) -> None:
     from trezor.lvglui.scrs.template import TransactionOverview
+    from trezor.strings import strip_amount
 
     await raise_if_cancelled(
         interact(
             ctx,
             TransactionOverview(
-                _(i18n_keys.TITLE__VIEW_TRANSACTION)
-                if subtitle is None
-                else _(i18n_keys.TITLE__STR_TRANSACTION).format(subtitle),
-                amount,
+                _(i18n_keys.TITLE__SEND_MULTILINE).format(strip_amount(amount)[0]),
                 address,
                 primary_color=ctx.primary_color,
                 icon_path=ctx.icon_path,
@@ -506,7 +505,6 @@ async def confirm_output(
 async def should_show_details(
     ctx: wire.GenericContext,
     address: str,
-    amount: str,
     title: str,
     br_code: ButtonRequestType = ButtonRequestType.ConfirmOutput,
 ) -> bool:
@@ -516,7 +514,6 @@ async def should_show_details(
         ctx,
         TransactionOverview(
             title,
-            amount,
             address,
             primary_color=ctx.primary_color,
             icon_path=ctx.icon_path,
@@ -760,24 +757,28 @@ async def confirm_total(
     ctx: wire.GenericContext,
     total_amount: str,
     fee_amount: str,
+    amount: str,
     title: str = "Confirm transaction",
     total_label: str = "Total amount:\n",
     fee_label: str = "\nincluding fee:\n",
     icon_color: int = ui.GREEN,
     br_type: str = "confirm_total",
     br_code: ButtonRequestType = ButtonRequestType.SignTx,
-    amount: str | None = None,
     coin_shortcut: str = "BTC",
     fee_rate_amount: str | None = None,
 ) -> None:
     from trezor.lvglui.scrs.template import TransactionDetailsBTC
+    from trezor.strings import strip_amount
 
+    striped_amount, striped = strip_amount(amount)
     screen = TransactionDetailsBTC(
-        _(i18n_keys.TITLE__SIGN_STR_TRANSACTION).format(coin_shortcut),
+        _(i18n_keys.TITLE__SEND_MULTILINE).format(striped_amount),
         amount,
         fee_amount,
         total_amount,
         primary_color=ctx.primary_color,
+        icon_path=ctx.icon_path,
+        striped=striped,
     )
     await raise_if_cancelled(interact(ctx, screen, br_type, br_code))
 
@@ -831,11 +832,11 @@ async def confirm_metadata(
 
 
 async def confirm_replacement(
-    ctx: wire.GenericContext, description: str, txid: str
+    ctx: wire.GenericContext, description: str, txids: list[str]
 ) -> None:
     from trezor.lvglui.scrs.template import ConfirmReplacement
 
-    screen = ConfirmReplacement(description, txid, ctx.primary_color)
+    screen = ConfirmReplacement(description, txids, ctx.primary_color)
     await raise_if_cancelled(
         interact(ctx, screen, "confirm_replacement", ButtonRequestType.SignTx)
     )
@@ -1103,18 +1104,26 @@ async def confirm_sol_blinding_sign(
 async def confirm_sol_transfer(
     ctx: wire.GenericContext, from_addr: str, to_addr: str, fee_payer: str, amount: str
 ) -> None:
-    from trezor.lvglui.scrs.template import SolTransfer
+    from trezor.strings import strip_amount
 
-    screen = SolTransfer(
-        from_addr=from_addr,
-        to_addr=to_addr,
-        fee_payer=fee_payer,
-        amount=amount,
-        primary_color=ctx.primary_color,
-    )
-    await raise_if_cancelled(
-        interact(ctx, screen, "sol_transfer", ButtonRequestType.ProtectCall)
-    )
+    striped_amount, striped = strip_amount(amount)
+    title = _(i18n_keys.TITLE__SEND_MULTILINE).format(striped_amount)
+    if should_show_details(ctx, to_addr, title):
+        from trezor.lvglui.scrs.template import SolTransfer
+
+        screen = SolTransfer(
+            title,
+            from_addr=from_addr,
+            to_addr=to_addr,
+            fee_payer=fee_payer,
+            amount=amount,
+            primary_color=ctx.primary_color,
+            icon_path=ctx.icon_path,
+            striped=striped,
+        )
+        await raise_if_cancelled(
+            interact(ctx, screen, "sol_transfer", ButtonRequestType.ProtectCall)
+        )
 
 
 async def confirm_sol_create_ata(
@@ -1149,20 +1158,28 @@ async def confirm_sol_token_transfer(
     fee_payer: str,
     token_mint: str = None,
 ):
-    from trezor.lvglui.scrs.template import SolTokenTransfer
+    from trezor.strings import strip_amount
 
-    screen = SolTokenTransfer(
-        from_addr,
-        to_addr,
-        amount,
-        source_owner,
-        fee_payer,
-        primary_color=ctx.primary_color,
-        token_mint=token_mint,
-    )
-    await raise_if_cancelled(
-        interact(ctx, screen, "sol_token_transfer", ButtonRequestType.ProtectCall)
-    )
+    striped_amount, striped = strip_amount(amount)
+    title = _(i18n_keys.TITLE__SEND_MULTILINE).format(striped_amount)
+    if should_show_details(ctx, to_addr, title):
+        from trezor.lvglui.scrs.template import SolTokenTransfer
+
+        screen = SolTokenTransfer(
+            title,
+            from_addr,
+            to_addr,
+            amount,
+            source_owner,
+            fee_payer,
+            primary_color=ctx.primary_color,
+            icon_path=ctx.icon_path,
+            token_mint=token_mint,
+            striped=striped,
+        )
+        await raise_if_cancelled(
+            interact(ctx, screen, "sol_token_transfer", ButtonRequestType.ProtectCall)
+        )
 
 
 async def confirm_sol_memo(
@@ -1189,7 +1206,7 @@ async def confirm_final(ctx: wire.Context, chain_name: str) -> None:
         verb=_(i18n_keys.BUTTON__SLIDE_TO_SIGN),
         hold=True,
         anim_dir=0,
-        icon=None,
+        icon=ctx.icon_path,
     )
     await show_popup(
         _(i18n_keys.TITLE__TRANSACTION_SIGNED),
@@ -1302,8 +1319,8 @@ async def confirm_remove_nft(ctx, confirm_callback, icon_path):
 
 async def confirm_algo_payment(
     ctx: wire.GenericContext,
-    sender: str | None = None,
-    receiver: str | None = None,
+    sender: str,
+    receiver: str,
     close_to: str | None = None,
     rekey_to: str | None = None,
     genesis_id: str | None = None,
@@ -1311,26 +1328,29 @@ async def confirm_algo_payment(
     fee: str = 0,
     amount: str = 0,
 ) -> None:
-    from trezor.lvglui.scrs.template import AlgoPayment, AlgoCommon
+    from trezor.lvglui.scrs.template import AlgoPayment
+    from trezor.strings import strip_amount
 
-    screen = AlgoCommon("Payment", ctx.primary_color, ctx.icon_path)
-    await raise_if_cancelled(
-        interact(ctx, screen, "algo_payment", ButtonRequestType.ProtectCall)
-    )
-    screen = AlgoPayment(
-        sender,
-        receiver,
-        close_to,
-        rekey_to,
-        genesis_id,
-        note,
-        fee,
-        amount,
-        ctx.primary_color,
-    )
-    await raise_if_cancelled(
-        interact(ctx, screen, "algo_payment", ButtonRequestType.ProtectCall)
-    )
+    striped_amount, striped = strip_amount(amount)
+    title = _(i18n_keys.TITLE__SEND_MULTILINE).format(striped_amount)
+    if await should_show_details(ctx, receiver, title):
+        screen = AlgoPayment(
+            title,
+            sender,
+            receiver,
+            close_to,
+            rekey_to,
+            genesis_id,
+            note,
+            fee,
+            amount,
+            ctx.primary_color,
+            ctx.icon_path,
+            striped=striped,
+        )
+        await raise_if_cancelled(
+            interact(ctx, screen, "algo_payment", ButtonRequestType.ProtectCall)
+        )
 
 
 async def confirm_algo_asset_freeze(
@@ -1368,8 +1388,8 @@ async def confirm_algo_asset_freeze(
 
 async def confirm_algo_asset_xfer(
     ctx: wire.GenericContext,
-    sender: str | None = None,
-    receiver: str | None = None,
+    sender: str,
+    receiver: str,
     index: str = 0,
     fee: str = 0,
     amount: str = 0,
@@ -1379,28 +1399,31 @@ async def confirm_algo_asset_xfer(
     genesis_id: str | None = None,
     note: str | None = None,
 ) -> None:
-    from trezor.lvglui.scrs.template import AlgoAssetXfer, AlgoCommon
+    from trezor.lvglui.scrs.template import AlgoAssetXfer
+    from trezor.strings import strip_amount
 
-    screen = AlgoCommon("ASSET TRANSFER", ctx.primary_color, ctx.icon_path)
-    await raise_if_cancelled(
-        interact(ctx, screen, "algo_asset_transfer", ButtonRequestType.ProtectCall)
-    )
-    screen = AlgoAssetXfer(
-        sender,
-        receiver,
-        index,
-        fee,
-        amount,
-        close_assets_to,
-        revocation_target,
-        rekey_to,
-        genesis_id,
-        note,
-        ctx.primary_color,
-    )
-    await raise_if_cancelled(
-        interact(ctx, screen, "algo_asset_transfer", ButtonRequestType.ProtectCall)
-    )
+    striped_amount, striped = strip_amount(amount)
+    title = _(i18n_keys.TITLE__SEND_MULTILINE).format(striped_amount)
+    if await should_show_details(ctx, receiver, title):
+        screen = AlgoAssetXfer(
+            title,
+            sender,
+            receiver,
+            index,
+            fee,
+            amount,
+            close_assets_to,
+            revocation_target,
+            rekey_to,
+            genesis_id,
+            note,
+            ctx.primary_color,
+            ctx.icon_path,
+            striped=striped,
+        )
+        await raise_if_cancelled(
+            interact(ctx, screen, "algo_asset_transfer", ButtonRequestType.ProtectCall)
+        )
 
 
 async def confirm_algo_asset_cfg(
@@ -1535,17 +1558,19 @@ async def confirm_algo_app(ctx: wire.Context, signer: str, raw_message: bytes) -
 
 async def confirm_ripple_payment(
     ctx: wire.GenericContext,
+    title,
     sender: str | None = None,
     receiver: str | None = None,
     amount: str = 0,
     fee: str = 0,
     total: str | None = None,
     tag: str | None = None,
+    striped: bool = False,
 ) -> None:
     from trezor.lvglui.scrs.template import RipplePayment
 
     screen = RipplePayment(
-        _(i18n_keys.TITLE__SIGN_STR_TRANSACTION).format("XRP"),
+        title,
         sender,
         receiver,
         amount,
@@ -1553,38 +1578,17 @@ async def confirm_ripple_payment(
         total,
         tag,
         primary_color=ctx.primary_color,
+        icon_path=ctx.icon_path,
+        striped=striped,
     )
     await raise_if_cancelled(
         interact(ctx, screen, "ripple_payment", ButtonRequestType.ProtectCall)
     )
 
 
-async def confirm_filecoin_tx(
-    ctx: wire.GenericContext,
-    address: str,
-    amount: str,
-    br_code: ButtonRequestType = ButtonRequestType.ConfirmOutput,
-) -> None:
-    from trezor.lvglui.scrs.template import TransactionOverview
-
-    await raise_if_cancelled(
-        interact(
-            ctx,
-            TransactionOverview(
-                _(i18n_keys.TITLE__STR_TRANSACTION).format("Filecoin"),
-                amount,
-                address,
-                primary_color=ctx.primary_color,
-                icon_path=ctx.icon_path,
-            ),
-            "confirm_output",
-            br_code,
-        )
-    )
-
-
 async def confirm_filecoin_payment(
     ctx: wire.GenericContext,
+    title,
     sender: str | None = None,
     receiver: str | None = None,
     amount: str | None = None,
@@ -1592,11 +1596,12 @@ async def confirm_filecoin_payment(
     gasfeecap: str | None = None,
     gaspremium: str | None = None,
     total_amount: str | None = None,
+    striped: bool = False,
 ) -> None:
     from trezor.lvglui.scrs.template import FilecoinPayment
 
     screen = FilecoinPayment(
-        _(i18n_keys.TITLE__VIEW_TRANSACTION),
+        title,
         sender,
         receiver,
         amount,
@@ -1605,60 +1610,84 @@ async def confirm_filecoin_payment(
         gaspremium,
         total_amount,
         primary_color=ctx.primary_color,
+        icon_path=ctx.icon_path,
+        striped=striped,
     )
     await raise_if_cancelled(
         interact(ctx, screen, "filecoin_payment", ButtonRequestType.ProtectCall)
     )
 
 
-async def confirm_cosmos_tx(
+async def cosmos_require_show_more(
     ctx: wire.GenericContext,
-    title: str | None,
+    types: str | None,
     value: str | None,
     address: str | None,
     amount: str | None,
     br_code: ButtonRequestType = ButtonRequestType.ConfirmOutput,
-) -> None:
+) -> bool:
     from trezor.lvglui.scrs.template import CosmosTransactionOverview
+    from trezor.strings import strip_amount
 
-    await raise_if_cancelled(
-        interact(
-            ctx,
-            CosmosTransactionOverview(
-                _(i18n_keys.TITLE__STR_TRANSACTION).format("Cosmos"),
-                title,
-                value,
-                amount,
-                address,
-                primary_color=ctx.primary_color,
-                icon_path=ctx.icon_path,
-            ),
-            "confirm_output",
-            br_code,
-        )
+    striped = False
+    if types is None and value is None:
+        assert amount is not None
+        striped_amount, striped = strip_amount(amount)
+        title = _(i18n_keys.TITLE__SEND_MULTILINE).format(striped_amount)
+    else:
+        title = _(i18n_keys.TITLE__SIGN_STR_TRANSACTION).format("Cosmos")
+    res = await interact(
+        ctx,
+        CosmosTransactionOverview(
+            title,
+            types,
+            value,
+            amount if striped else None,
+            address,
+            primary_color=ctx.primary_color,
+            icon_path=ctx.icon_path,
+        ),
+        "confirm_output",
+        br_code,
     )
+    if not res:
+        from trezor import loop
+
+        await loop.sleep(300)
+        raise wire.ActionCancelled()
+    elif res == 2:  # show more
+        return True
+    else:  # confirm
+        return False
 
 
 async def confirm_cosmos_send(
     ctx: wire.GenericContext,
     fee: str,
     chain_id: str,
+    amount: str,
     chain_name: str | None,
     sender: str | None = None,
     receiver: str | None = None,
-    amount: str | None = None,
+    memo: str | None = None,
 ) -> None:
     from trezor.lvglui.scrs.template import CosmosSend
+    from trezor.strings import strip_amount
+
+    striped_amount, striped = strip_amount(amount)
 
     screen = CosmosSend(
-        _(i18n_keys.TITLE__SEND),
+        _(i18n_keys.TITLE__SEND_MULTILINE).format(striped_amount),
         chain_id,
         chain_name,
         sender,
         receiver,
         amount,
         fee,
+        memo,
         primary_color=ctx.primary_color,
+        icon_path=ctx.icon_path,
+        striped=striped,
     )
     await raise_if_cancelled(
         interact(ctx, screen, "cosmos_send", ButtonRequestType.ProtectCall)
@@ -1673,6 +1702,7 @@ async def confirm_cosmos_delegate(
     delegator: str | None = None,
     validator: str | None = None,
     amount: str | None = None,
+    memo: str | None = None,
 ) -> None:
     from trezor.lvglui.scrs.template import CosmosDelegate
 
@@ -1684,6 +1714,7 @@ async def confirm_cosmos_delegate(
         validator,
         amount,
         fee,
+        memo,
         primary_color=ctx.primary_color,
     )
     await raise_if_cancelled(
@@ -1700,6 +1731,7 @@ async def confirm_cosmos_sign_common(
     msgs_item: dict,
     title: str,
     value: str,
+    memo: str | None = None,
 ) -> None:
     from trezor.lvglui.scrs.template import (
         CosmosSignCommon,
@@ -1707,11 +1739,13 @@ async def confirm_cosmos_sign_common(
         CosmosLongValue,
     )
 
-    screen = CosmosSignCommon(chain_id, chain_name, signer, fee, title, value)
+    screen = CosmosSignCommon(
+        chain_id, chain_name, signer, fee, title, value, memo, ctx.primary_color
+    )
     await raise_if_cancelled(
         interact(ctx, screen, "cosmos_sign_common", ButtonRequestType.ProtectCall)
     )
-    screen = CosmosSignContent(msgs_item)
+    screen = CosmosSignContent(msgs_item, primary_color=ctx.primary_color)
     await raise_if_cancelled(
         interact(ctx, screen, "cosmos_sign_common", ButtonRequestType.ProtectCall)
     )
@@ -1731,7 +1765,9 @@ async def confirm_cosmos_memo(
 ) -> None:
     from trezor.lvglui.scrs.template import BlobDisPlay
 
-    screen = BlobDisPlay(title, description, memo, None)
+    screen = BlobDisPlay(
+        title, description, memo, None, primary_color=ctx.primary_color
+    )
     await raise_if_cancelled(
         interact(ctx, screen, "cosmos_memo", ButtonRequestType.ProtectCall)
     )
@@ -1771,10 +1807,10 @@ async def confirm_sign_typed_hash(
     )
 
 
-async def show_bip39_dotmap(
+async def backup_with_keytag(
     ctx: wire.GenericContext, mnemonics: bytes, recovery_check: bool = False
 ) -> None:
-    from trezor.lvglui.scrs.common import FullSizeWindow, lv
+    from trezor.lvglui.scrs.common import FullSizeWindow
 
     while True:
         ask_screen = FullSizeWindow(
@@ -1782,20 +1818,17 @@ async def show_bip39_dotmap(
             _(i18n_keys.SUBTITLE__BACK_UP_WITH_KEYTAG),
             confirm_text=_(i18n_keys.BUTTON__BACKUP),
             cancel_text=_(i18n_keys.BUTTON__NOT_NOW),
-            icon_path="A:/res/icon_dotmap.png",
+            icon_path="A:/res/icon-dotmap.png",
             anim_dir=0,
         )
-        ask_screen.btn_no.set_size(464, 98)
-        ask_screen.btn_no.align(lv.ALIGN.BOTTOM_MID, 0, -8)
-        ask_screen.btn_yes.set_size(464, 98)
-        ask_screen.btn_yes.align_to(ask_screen.btn_no, lv.ALIGN.OUT_TOP_MID, 0, -8)
-        if await ask_screen.request():
+        ask_screen.btn_layout_ver()
+        if await ctx.wait(ask_screen.request()):
             while True:
                 from trezor.lvglui.scrs.bip39_dotmap import Bip39DotMap
 
                 screen = Bip39DotMap(len(mnemonics.decode().split()))
                 screen.show(mnemonics.decode())
-                if await screen.request():
+                if await ctx.wait(screen.request()):
                     if recovery_check:
                         break
                     final_confirm = FullSizeWindow(
@@ -1803,25 +1836,57 @@ async def show_bip39_dotmap(
                         _(i18n_keys.SUBTITLE__FINISH_KEYTAG_BACKUP),
                         confirm_text=_(i18n_keys.BUTTON__DONE),
                         cancel_text=_(i18n_keys.BUTTON__CANCEL),
-                        icon_path="A:/res/icon_tips_blue.png",
+                        icon_path="A:/res/icon-tips-blue.png",
                         anim_dir=0,
                     )
-                    if await final_confirm.request():
+                    if await ctx.wait(final_confirm.request()):
                         break
             break
         else:
-            if recovery_check:
-                break
-            confirm_screen = FullSizeWindow(
-                _(i18n_keys.TITLE__SKIP_BACKUP),
-                _(i18n_keys.SUBTITLE__SKIP_BACKUP),
-                confirm_text=_(i18n_keys.BUTTON__SKIP),
-                cancel_text=_(i18n_keys.BUTTON__CANCEL),
-                icon_path="A:/res/icon_tips_blue.png",
-                anim_dir=0,
-            )
-            if await confirm_screen.request():
-                break
+            break
+
+
+async def backup_with_lite(
+    ctx: wire.GenericContext, mnemonics: bytes, recovery_check: bool = False
+):
+    from trezor.lvglui.scrs.common import FullSizeWindow, lv
+    from trezor.lvglui.scrs.pinscreen import InputLitePin
+
+    # not support now
+    return
+    while True:
+        ask_screen = FullSizeWindow(
+            _(i18n_keys.TITLE__BACK_UP_WITH_LITE),
+            _(i18n_keys.TITLE__BACK_UP_WITH_LITE_DESC),
+            confirm_text=_(i18n_keys.BUTTON__BACKUP),
+            cancel_text=_(i18n_keys.BUTTON__NOT_NOW),
+            icon_path="A:/res/icon-lite.png",
+            anim_dir=0,
+        )
+        ask_screen.btn_layout_ver()
+        if await ctx.wait(ask_screen.request()):
+            while True:
+                start_scr = FullSizeWindow(
+                    _(i18n_keys.TITLE__GET_STARTED),
+                    _(i18n_keys.CONTENT__PLACE_LITE_DEVICE_FIGURE_CLICK_CONTINUE),
+                    confirm_text=_(i18n_keys.BUTTON__CONTINUE),
+                    cancel_text=_(i18n_keys.BUTTON__BACK),
+                    anim_dir=0,
+                )
+                start_scr.img = lv.img(start_scr)
+                start_scr.img.set_src("A:/res/nfc-start.png")
+                start_scr.img.align_to(
+                    start_scr.subtitle, lv.ALIGN.OUT_BOTTOM_MID, 0, 52
+                )
+                if await ctx.wait(start_scr.request()):
+                    pin = await ctx.wait(InputLitePin().request())
+                    if not pin:
+                        continue
+
+                else:
+                    break
+        else:
+            break
 
 
 async def confirm_polkadot_balances(
@@ -1831,28 +1896,35 @@ async def confirm_polkadot_balances(
     method: str,
     sender: str,
     dest: str,
+    balance: str,
     source: str | None = None,
-    balance: str | None = None,
     tip: str | None = None,
     keep_alive: str | None = None,
 ) -> None:
     from trezor.lvglui.scrs.template import PolkadotBalances
+    from trezor.strings import strip_amount
 
-    screen = PolkadotBalances(
-        chain_name,
-        module,
-        method,
-        sender,
-        dest,
-        source,
-        balance,
-        tip,
-        keep_alive,
-        ctx.primary_color,
-    )
-    await raise_if_cancelled(
-        interact(ctx, screen, "polkadot_balance", ButtonRequestType.ProtectCall)
-    )
+    striped_amount, striped = strip_amount(balance)
+    title = _(i18n_keys.TITLE__SEND_MULTILINE).format(striped_amount)
+    if await should_show_details(ctx, dest, title):
+        screen = PolkadotBalances(
+            title,
+            chain_name,
+            module,
+            method,
+            sender,
+            dest,
+            source,
+            balance,
+            tip,
+            keep_alive,
+            ctx.primary_color,
+            ctx.icon_path,
+            striped=striped,
+        )
+        await raise_if_cancelled(
+            interact(ctx, screen, "polkadot_balance", ButtonRequestType.ProtectCall)
+        )
 
 
 async def confirm_tron_freeze(

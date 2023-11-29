@@ -2,8 +2,7 @@ import ustruct
 from micropython import const
 from typing import TYPE_CHECKING
 
-from storage import device
-from trezor import io, loop, ui, utils
+from trezor import io, loop, utils
 
 if TYPE_CHECKING:
     from trezorio import WireInterface
@@ -40,8 +39,9 @@ async def read_message(iface: WireInterface, buffer: utils.BufferType) -> Messag
     # wait for initial report
     report = await read
     # if the screen is turn off then turn on it
-    if not ui.display.backlight():
-        ui.display.backlight(device.get_brightness())
+    # if not ui.display.backlight():
+    #     ui.display.backlight(device.get_brightness())
+    utils.turn_on_lcd_if_possible()
 
     if report[0] != _REP_MARKER:
         raise CodecError("Invalid magic")

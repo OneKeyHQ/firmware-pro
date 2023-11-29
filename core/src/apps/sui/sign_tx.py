@@ -1,11 +1,13 @@
 from trezor import wire
 from trezor.crypto.curve import ed25519
 from trezor.crypto.hashlib import blake2b
+from trezor.lvglui.scrs import lv
 from trezor.messages import SuiSignedTx, SuiSignTx
 
 from apps.common import paths, seed
 from apps.common.keychain import Keychain, auto_keychain
 
+from . import ICON, PRIMARY_COLOR
 from .helper import INTENT_BYTES, sui_address_from_pubkey
 
 
@@ -18,6 +20,7 @@ async def sign_tx(ctx: wire.Context, msg: SuiSignTx, keychain: Keychain) -> SuiS
     pub_key_bytes = seed.remove_ed25519_prefix(node.public_key())
     address = sui_address_from_pubkey(pub_key_bytes)
 
+    ctx.primary_color, ctx.icon_path = lv.color_hex(PRIMARY_COLOR), ICON
     from trezor.ui.layouts import confirm_blind_sign_common, confirm_final
 
     intent = msg.raw_tx[:3]

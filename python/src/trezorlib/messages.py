@@ -3314,9 +3314,9 @@ class ConfluxSignTx(protobuf.MessageType):
     MESSAGE_WIRE_TYPE = 10114
     FIELDS = {
         1: protobuf.Field("address_n", "uint32", repeated=True, required=False),
-        2: protobuf.Field("nonce", "bytes", repeated=False, required=False),
-        3: protobuf.Field("gas_price", "bytes", repeated=False, required=False),
-        4: protobuf.Field("gas_limit", "bytes", repeated=False, required=False),
+        2: protobuf.Field("nonce", "bytes", repeated=False, required=True),
+        3: protobuf.Field("gas_price", "bytes", repeated=False, required=True),
+        4: protobuf.Field("gas_limit", "bytes", repeated=False, required=True),
         5: protobuf.Field("to", "string", repeated=False, required=False),
         6: protobuf.Field("value", "bytes", repeated=False, required=False),
         7: protobuf.Field("epoch_height", "bytes", repeated=False, required=False),
@@ -3329,17 +3329,17 @@ class ConfluxSignTx(protobuf.MessageType):
     def __init__(
         self,
         *,
+        nonce: "bytes",
+        gas_price: "bytes",
+        gas_limit: "bytes",
         address_n: Optional[Sequence["int"]] = None,
-        nonce: Optional["bytes"] = None,
-        gas_price: Optional["bytes"] = None,
-        gas_limit: Optional["bytes"] = None,
-        to: Optional["str"] = None,
-        value: Optional["bytes"] = None,
-        epoch_height: Optional["bytes"] = None,
-        storage_limit: Optional["bytes"] = None,
-        data_initial_chunk: Optional["bytes"] = None,
-        data_length: Optional["int"] = None,
-        chain_id: Optional["int"] = None,
+        to: Optional["str"] = '',
+        value: Optional["bytes"] = b'',
+        epoch_height: Optional["bytes"] = b'',
+        storage_limit: Optional["bytes"] = b'',
+        data_initial_chunk: Optional["bytes"] = b'',
+        data_length: Optional["int"] = 0,
+        chain_id: Optional["int"] = 1029,
     ) -> None:
         self.address_n: Sequence["int"] = address_n if address_n is not None else []
         self.nonce = nonce

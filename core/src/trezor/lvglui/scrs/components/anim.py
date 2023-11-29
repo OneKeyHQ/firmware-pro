@@ -21,7 +21,7 @@ class Anim(lv.anim_t):
         self.set_path_cb(path_cb)
         self.set_delay(delay)
         self.set_custom_exec_cb(
-            lambda anim, val: (exec_cb(0, val) if y_axis else exec_cb(val, 0))
+            lambda _anim, val: (exec_cb(0, val) if y_axis else exec_cb(val, 0))
         )
         if start_cb:
             self.set_start_cb(start_cb)

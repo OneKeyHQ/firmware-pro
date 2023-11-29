@@ -1,8 +1,7 @@
 from ..i18n import gettext as _, keys as i18n_keys
-from . import font_PJSBOLD24, font_PJSREG30
+from . import font_GeistSemiBold26
 from .common import FullSizeWindow, lv, lv_colors
 from .components.keyboard import BIP39Keyboard
-from .components.navigation import Navigation
 from .components.radio import RadioTrigger
 from .widgets.style import StyleWrapper
 
@@ -10,11 +9,10 @@ from .widgets.style import StyleWrapper
 class WordEnter(FullSizeWindow):
     def __init__(self, title):
         super().__init__(title, None, anim_dir=0)
-        self.nav_back = Navigation(self)
-        self.content_area.align_to(self.nav_back, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 24)
+        self.add_nav_back()
         self.title.add_style(
             StyleWrapper()
-            .text_font(font_PJSBOLD24)
+            .text_font(font_GeistSemiBold26)
             .text_color(lv_colors.WHITE_2)
             .text_align_left()
             .text_letter_space(-1),
@@ -62,8 +60,7 @@ class SelectWordCounter(FullSizeWindow):
         super().__init__(
             title, _(i18n_keys.SUBTITLE__DEVICE_RECOVER_READY_TO_RESTORE), anim_dir=0
         )
-        self.nav_back = Navigation(self)
-        self.content_area.align_to(self.nav_back, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 0)
+        self.add_nav_back()
         optional_str = (
             _(i18n_keys.OPTION__STR_WRODS).format(12)
             + "\n"
@@ -71,7 +68,7 @@ class SelectWordCounter(FullSizeWindow):
             + "\n"
             + _(i18n_keys.OPTION__STR_WRODS).format(24)
         )
-        self.choices = RadioTrigger(self, optional_str, font_PJSREG30)
+        self.choices = RadioTrigger(self, optional_str)
         self.add_event_cb(self.on_ready, lv.EVENT.READY, None)
         self.add_event_cb(self.on_back, lv.EVENT.CLICKED, None)
         self.add_event_cb(self.on_nav_back, lv.EVENT.GESTURE, None)

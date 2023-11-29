@@ -35,7 +35,12 @@ class Screen(lv.obj):
         self.content_area.align(lv.ALIGN.TOP_MID, 0, 0)
         self.content_area.set_scrollbar_mode(lv.SCROLLBAR_MODE.ACTIVE)
         self.content_area.add_style(
-            StyleWrapper().bg_opa(lv.OPA.TRANSP).pad_all(0).border_width(0).radius(0),
+            StyleWrapper()
+            .bg_opa(lv.OPA.TRANSP)
+            .pad_all(0)
+            .border_width(0)
+            .radius(0)
+            .pad_bottom(24),
             0,
         )
         self.content_area.add_style(
@@ -53,16 +58,16 @@ class Screen(lv.obj):
             self.icon = lv.img(self.content_area)
             self.icon.set_src(kwargs["icon_path"])
             if hasattr(self, "nav_back"):
-                self.icon.align_to(self.nav_back, lv.ALIGN.OUT_BOTTOM_LEFT, 8, 8)
+                self.icon.align_to(self.nav_back, lv.ALIGN.OUT_BOTTOM_LEFT, 12, 8)
             else:
-                self.icon.align(lv.ALIGN.TOP_LEFT, 8, 52)
+                self.icon.align(lv.ALIGN.TOP_LEFT, 12, 56)
         # title
         if "title" in kwargs:
             self.title = Title(self.content_area, None, (), kwargs["title"])
             if hasattr(self, "icon"):
-                self.title.align_to(self.icon, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 22)
+                self.title.align_to(self.icon, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 16)
             elif hasattr(self, "nav_back"):
-                self.title.align_to(self.nav_back, lv.ALIGN.OUT_BOTTOM_LEFT, 8, 8)
+                self.title.align_to(self.nav_back, lv.ALIGN.OUT_BOTTOM_LEFT, 12, 12)
         # subtitle
         if "subtitle" in kwargs:
             self.subtitle = SubTitle(
@@ -70,7 +75,7 @@ class Screen(lv.obj):
             )
         # btn
         if "btn_text" in kwargs:
-            self.btn = NormalButton(self.content_area, kwargs["btn_text"])
+            self.btn = NormalButton(self, kwargs["btn_text"])
             self.btn.enable(lv_colors.ONEKEY_GREEN)
         self.add_event_cb(self.eventhandler, lv.EVENT.CLICKED, None)
 
@@ -169,6 +174,7 @@ class FullSizeWindow(lv.obj):
         auto_close_ms: int = 0,
         anim_dir: int = ANIM_DIRS.HOR,
         primary_color=lv_colors.ONEKEY_GREEN,
+        sub_icon_path: str | None = None,
     ):
         super().__init__(lv.scr_act())
 
@@ -198,6 +204,7 @@ class FullSizeWindow(lv.obj):
             StyleWrapper()
             .bg_color(lv_colors.BLACK)
             .pad_all(0)
+            .pad_bottom(24)
             .border_width(0)
             .radius(0),
             0,
@@ -210,10 +217,18 @@ class FullSizeWindow(lv.obj):
         if icon_path:
             self.icon = lv.img(self.content_area)
             self.icon.remove_style_all()
+            self.icon.set_size(lv.SIZE.CONTENT, lv.SIZE.CONTENT)
             self.icon.set_src(icon_path)
-            self.icon.align(lv.ALIGN.TOP_LEFT, 8, 8)
+            self.icon.align(lv.ALIGN.TOP_LEFT, 12, 12)
+            if sub_icon_path:
+                self.sub_icon = lv.img(self.content_area)
+                self.sub_icon.remove_style_all()
+                self.sub_icon.set_src(sub_icon_path)
+                self.sub_icon.set_zoom(107)
+                self.sub_icon.align_to(self.icon, lv.ALIGN.BOTTOM_RIGHT, 28, 28)
+
         if title:
-            self.title = Title(self.content_area, None, (), title, pos_y=8)
+            self.title = Title(self.content_area, None, (), title, pos_y=12)
             if icon_path:
                 self.title.align_to(self.icon, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 16)
             if subtitle is not None:
@@ -233,7 +248,7 @@ class FullSizeWindow(lv.obj):
             self.btn_no = NormalButton(self, cancel_text)
             if confirm_text:
                 if not self.hold_confirm:
-                    self.btn_no.set_size(231, 98)
+                    self.btn_no.set_size(224, 98)
                 else:
                     self.btn_no.add_style(StyleWrapper().bg_color(lv_colors.BLACK), 0)
                     self.btn_no.add_style(
@@ -242,18 +257,18 @@ class FullSizeWindow(lv.obj):
                     )
                     self.btn_no.clear_flag(lv.obj.FLAG.CLICKABLE)
                     self.btn_no.click_mask.add_flag(lv.obj.FLAG.CLICKABLE)
-                self.btn_no.align(lv.ALIGN.BOTTOM_LEFT, 8, -8)
+                self.btn_no.align(lv.ALIGN.BOTTOM_LEFT, 12, -8)
                 # else:
                 #     self.btn_no.align(lv.ALIGN.BOTTOM_LEFT, 8, -8)
         if confirm_text:
             if cancel_text:
                 if self.hold_confirm:
-                    self.content_area.set_style_max_height(528, 0)
+                    self.content_area.set_style_max_height(520, 0)
                     self.slider = slider.Slider(self, confirm_text)
                 else:
                     self.btn_yes = NormalButton(self, confirm_text)
-                    self.btn_yes.set_size(231, 98)
-                    self.btn_yes.align_to(self, lv.ALIGN.BOTTOM_RIGHT, -8, -8)
+                    self.btn_yes.set_size(224, 98)
+                    self.btn_yes.align_to(self, lv.ALIGN.BOTTOM_RIGHT, -12, -8)
             else:
                 self.btn_yes = NormalButton(self, confirm_text)
             if self.hold_confirm:
@@ -267,6 +282,18 @@ class FullSizeWindow(lv.obj):
 
         if __debug__:
             self.notify_change()
+
+    def btn_layout_ver(self):
+        if not all([hasattr(self, "btn_no"), hasattr(self, "btn_yes")]):
+            return
+        self.btn_no.set_size(456, 98)
+        self.btn_no.align(lv.ALIGN.BOTTOM_MID, 0, -8)
+        self.btn_yes.set_size(456, 98)
+        self.btn_yes.align_to(self.btn_no, lv.ALIGN.OUT_TOP_MID, 0, -8)
+
+    def add_nav_back(self):
+        self.nav_back = Navigation(self)
+        self.content_area.align_to(self.nav_back, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 0)
 
     def eventhandler(self, event_obj):
         code = event_obj.code

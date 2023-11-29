@@ -33,7 +33,8 @@ async def require_confirm_tx(ctx: Context, to: str, value: int) -> None:
 async def require_confirm_fee(ctx: Context, value: int, fee: int) -> None:
     await confirm_total(
         ctx,
-        total_amount=format_tezos_amount(value),
+        total_amount=format_tezos_amount(value + fee),
+        amount=format_tezos_amount(value),
         total_label="Amount:\n",
         fee_amount=format_tezos_amount(fee),
         fee_label="\nFee:\n",

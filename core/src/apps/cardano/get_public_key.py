@@ -22,7 +22,10 @@ async def get_public_key(
         # path must match the PUBKEY schema
         SCHEMA_PUBKEY.match(address_n) or SCHEMA_MINT.match(address_n),
     )
+    from . import ICON, PRIMARY_COLOR
+    from trezor.lvglui.scrs import lv
 
+    ctx.primary_color, ctx.icon_path = lv.color_hex(PRIMARY_COLOR), ICON
     try:
         key = _get_public_key(keychain, address_n)
     except ValueError as e:
@@ -31,7 +34,12 @@ async def get_public_key(
         raise wire.ProcessError("Deriving public key failed")
 
     if msg.show_display:
-        await show_pubkey(ctx, hexlify(key.node.public_key).decode())
+        await show_pubkey(
+            ctx,
+            hexlify(key.node.public_key).decode(),
+            path=paths.address_n_to_str(msg.address_n),
+            network="Cardano",
+        )
     return key
 
 

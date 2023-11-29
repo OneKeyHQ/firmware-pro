@@ -2,7 +2,7 @@ from trezor import utils
 from trezor.crypto import bip39
 from trezor.errors import MnemonicError
 from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
-from trezor.lvglui.scrs import font_PJSREG24
+from trezor.lvglui.scrs import font_GeistRegular26
 from trezor.lvglui.scrs.components.button import NormalButton
 
 from . import lv, lv_colors
@@ -38,14 +38,14 @@ class Bip39DotMap(FullSizeWindow):
             .border_width(0)
             .radius(0)
             .pad_all(0)
-            .bg_img_src("A:/res/dotmap_front.png")
+            .bg_img_src("A:/res/dotmap-front.png")
             .bg_color(lv_colors.BLACK),
             0,
         )
 
         self.tag_label = lv.label(self.content_area)
         self.tag_label.add_style(
-            StyleWrapper().text_font(font_PJSREG24).text_align_center(), 0
+            StyleWrapper().text_font(font_GeistRegular26).text_align_center(), 0
         )
         self.tag_label.set_text(_(i18n_keys.CONTENT__FRONT_STR).format(1, 12))
         self.tag_label.align_to(self.panel, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
@@ -123,7 +123,7 @@ class Bip39DotMap(FullSizeWindow):
         self.tag_label.set_text(
             _(i18n_keys.CONTENT__BACK_STR).format(13, self.word_cnt)
         )
-        self.panel.set_style_bg_img_src("A:/res/dotmap_back.png", 0)
+        self.panel.set_style_bg_img_src("A:/res/dotmap-back.png", 0)
         self.matrix.clean()
         for i in range(12):
             index = self.BinaryWordIndex(self.matrix)

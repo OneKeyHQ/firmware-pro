@@ -119,11 +119,13 @@ async def confirm_payment_request(
     )
 
 
-async def confirm_replacement(ctx: wire.Context, description: str, txid: bytes) -> None:
+async def confirm_replacement(
+    ctx: wire.Context, description: str, txids: list[bytes]
+) -> None:
     await layouts.confirm_replacement(
         ctx,
         description,
-        hexlify(txid).decode(),
+        [hexlify(txid).decode() for txid in txids],
     )
 
 

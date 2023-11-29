@@ -4,7 +4,7 @@ from trezor import ui
 from trezor.enums import ButtonRequestType, TronResourceCode
 from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
 from trezor.strings import format_amount
-from trezor.ui.layouts import confirm_address, confirm_output
+from trezor.ui.layouts import confirm_address, confirm_output, should_show_details
 from trezor.ui.layouts.lvgl.altcoin import confirm_total_tron
 from trezor.utils import chunks
 
@@ -32,38 +32,20 @@ def require_confirm_tx(
     ctx: Context,
     to: str,
     value: int,
+    token: tokens.TokenInfo | None = None,
 ) -> Awaitable[None]:
-    to_str = to
     return confirm_output(
         ctx,
-        address=to_str,
-        amount=format_amount_trx(value, None),
+        address=to,
+        amount=format_amount_trx(value, token),
         font_amount=ui.BOLD,
         color_to=ui.GREY,
         br_code=ButtonRequestType.SignTx,
     )
 
 
-def require_confirm_trigger_trc20(
-    ctx: Context,
-    verified: bool,
-    contract_address: str,
-    amount: int,
-    token: tokens.TokenInfo,
-    toAddress: str,
-) -> Awaitable[None]:
-    if verified:
-        return confirm_output(
-            ctx,
-            address=toAddress,
-            amount=format_amount_trx(amount, token),
-            font_amount=ui.BOLD,
-            color_to=ui.GREY,
-            br_code=ButtonRequestType.SignTx,
-        )
-
-    # Unknown token
-    return confirm_address(
+async def require_confirm_unknown_token(ctx: Context, contract_address: str) -> None:
+    await confirm_address(
         ctx,
         _(i18n_keys.TITLE__UNKNOWN_TOKEN),
         contract_address,
@@ -75,6 +57,20 @@ def require_confirm_trigger_trc20(
     )
 
 
+async def require_confirm_show_more(
+    ctx: Context,
+    amount: str,
+    toAddress: str,
+) -> bool:
+    from trezor.strings import strip_amount
+
+    return await should_show_details(
+        ctx,
+        toAddress,
+        _(i18n_keys.TITLE__SEND_MULTILINE).format(strip_amount(amount)[0]),
+    )
+
+
 def require_confirm_fee(
     ctx: Context,
     token: tokens.TokenInfo | None = None,
@@ -82,20 +78,26 @@ def require_confirm_fee(
     to_address: str | None = None,
     value: int = 0,
     fee_limit: int = 0,
-    network: str | None = None,
 ) -> Awaitable[None]:
+    from trezor.strings import strip_amount
+
+    amount = format_amount_trx(value, token)
+    striped_amount, striped = strip_amount(amount)
+    fee_max = format_amount_trx(fee_limit, None)
     if token is None:
         total_amount = format_amount_trx(value + fee_limit, None)
     else:
         total_amount = None
+
     return confirm_total_tron(
         ctx,
+        _(i18n_keys.TITLE__SEND_MULTILINE).format(striped_amount),
         from_address,
         to_address,
-        format_amount_trx(value, token),
-        format_amount_trx(fee_limit, None),
+        amount,
+        fee_max,
         total_amount,
-        network,
+        striped=striped,
     )
 
 

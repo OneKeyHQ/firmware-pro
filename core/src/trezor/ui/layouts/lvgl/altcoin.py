@@ -3,6 +3,7 @@ from typing import Sequence
 from trezor import wire
 from trezor.enums import ButtonRequestType
 from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
+from trezor.strings import strip_amount
 
 from .common import interact, raise_if_cancelled
 
@@ -10,27 +11,21 @@ from .common import interact, raise_if_cancelled
 async def confirm_total_ethereum(
     ctx: wire.GenericContext,
     amount: str,
-    gas_price: str,
+    gas_price: str | None,
     fee_max: str,
     from_address: str | None,
     to_address: str | None,
     total_amount: str | None,
-    contract_addr: str | None,
-    token_id: int | None,
-    evm_chain_id: int | None,
+    contract_addr: str | None = None,
+    token_id: int | None = None,
+    evm_chain_id: int | None = None,
     raw_data: bytes | None = None,
 ) -> None:
     from trezor.lvglui.scrs.template import TransactionDetailsETH
 
-    # if contract_addr:
-    #     title = _(i18n_keys.TITLE__NFT_TRANSFER)
-    # else:
-    #     if total_amount:
-    #         title = _(i18n_keys.TITLE__SIGN_STR_TRANSACTION).format(network)
-    #     else:
-    #         title = _(i18n_keys.TITLE__TOKEN_TRANSFER)
+    short_amount, striped = strip_amount(amount)
     screen = TransactionDetailsETH(
-        _(i18n_keys.TITLE__TRANSACTION_DETAILS),
+        _(i18n_keys.TITLE__SEND_MULTILINE).format(short_amount),
         from_address,
         to_address,
         amount,
@@ -42,6 +37,8 @@ async def confirm_total_ethereum(
         token_id=str(token_id),
         evm_chain_id=evm_chain_id,
         raw_data=raw_data,
+        sub_icon_path=ctx.icon_path,
+        striped=striped,
     )
     await raise_if_cancelled(
         interact(ctx, screen, "confirm_total", ButtonRequestType.SignTx)
@@ -64,15 +61,9 @@ async def confirm_total_ethereum_eip1559(
 ) -> None:
     from trezor.lvglui.scrs.template import TransactionDetailsETH
 
-    # if contract_addr:
-    #     title = _(i18n_keys.TITLE__NFT_TRANSFER)
-    # else:
-    #     if total_amount:
-    #         title = _(i18n_keys.TITLE__SIGN_STR_TRANSACTION).format(network)
-    #     else:
-    #         title = _(i18n_keys.TITLE__TOKEN_TRANSFER)
+    short_amount, striped = strip_amount(amount)
     screen = TransactionDetailsETH(
-        _(i18n_keys.TITLE__TRANSACTION_DETAILS),
+        _(i18n_keys.TITLE__SEND_MULTILINE).format(short_amount),
         from_address,
         to_address,
         amount,
@@ -86,6 +77,8 @@ async def confirm_total_ethereum_eip1559(
         token_id=str(token_id),
         evm_chain_id=evm_chain_id,
         raw_data=raw_data,
+        sub_icon_path=ctx.icon_path,
+        striped=striped,
     )
     await raise_if_cancelled(
         interact(ctx, screen, "confirm_total", ButtonRequestType.SignTx)
@@ -139,23 +132,26 @@ async def confirm_decred_sstx_submission(
 
 async def confirm_total_tron(
     ctx: wire.GenericContext,
+    title,
     from_address: str | None,
     to_address: str | None,
-    amount: str,
+    amount: str | None,
     fee_max: str,
     total_amount: str | None,
-    network: str | None,
+    striped: bool = False,
 ) -> None:
     from trezor.lvglui.scrs.template import TransactionDetailsTRON
 
     screen = TransactionDetailsTRON(
-        _(i18n_keys.TITLE__SIGN_STR_TRANSACTION).format(network),
+        title,
         from_address,
         to_address,
         amount,
         fee_max,
         primary_color=ctx.primary_color,
+        icon_path=ctx.icon_path,
         total_amount=total_amount,
+        striped=striped,
     )
     await raise_if_cancelled(
         interact(ctx, screen, "confirm_total", ButtonRequestType.SignTx)

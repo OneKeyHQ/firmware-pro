@@ -11,5 +11,5 @@ def _converter(path_dir: str):
 
 if __name__ == '__main__':
 
-    path_dir = input("Please the file folder of the files to convert: ")
+    path_dir = input("Type the file folder of the files to convert: ")
     _converter(path_dir)

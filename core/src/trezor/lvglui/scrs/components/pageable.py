@@ -1,7 +1,7 @@
 from trezor.lvglui.lv_colors import lv_colors
 
 from ...i18n import gettext as _, keys as i18n_keys
-from .. import font_PJSREG30, lv
+from .. import font_GeistRegular30, lv
 from ..common import FullSizeWindow
 from ..widgets.style import StyleWrapper
 from .container import ContainerFlexRow
@@ -17,7 +17,7 @@ class PageAbleMessage(FullSizeWindow):
         confirm_text=_(i18n_keys.BUTTON__CONTINUE),
         cancel_text=_(i18n_keys.BUTTON__REJECT),
         page_size: int = 240,
-        font=font_PJSREG30,
+        font=font_GeistRegular30,
     ):
         super().__init__(
             title,
@@ -27,29 +27,27 @@ class PageAbleMessage(FullSizeWindow):
             primary_color=primary_color,
             anim_dir=0,
         )
+
         self.content = content
         self.page_size = page_size
         if channel:
             self.channel = channel
-        # self.set_size(lv.pct(100), lv.pct(100))
-        # self.align(lv.ALIGN.TOP_LEFT, 0, 0)
-        # self.set_style_pad_all(0, 0)
-        # self.set_style_bg_opa(255, 0)
-        # self.set_style_bg_color(lv.color_hex(0x000000), 0)
-        # self.set_style_border_width(0, 0)
-        # self.set_style_radius(0, 0)
+        else:
+            self.add_nav_back()
+            self.add_event_cb(self.on_nav_back, lv.EVENT.CLICKED, None)
         self.panel = lv.obj(self.content_area)
         self.panel.clear_flag(lv.obj.FLAG.SCROLLABLE)
         self.panel.add_style(
             StyleWrapper()
-            .width(464)
+            .width(456)
             .height(lv.SIZE.CONTENT)
             .bg_color(lv_colors.ONEKEY_BLACK_3)
             .bg_opa()
             .border_width(0)
-            .pad_all(8)
-            .radius(0)
-            .max_height(492)
+            .pad_ver(16)
+            .pad_hor(24)
+            .radius(40)
+            .max_height(514)
             .text_color(lv_colors.LIGHT_GRAY)
             .text_font(font)
             .text_align_left()
@@ -65,7 +63,7 @@ class PageAbleMessage(FullSizeWindow):
         # # close button
         # self.close = NormalButton(self, cancel_text)
         self.container = ContainerFlexRow(self, None, padding_col=0)
-        self.container.align(lv.ALIGN.BOTTOM_MID, 0, -130)
+        self.container.align(lv.ALIGN.BOTTOM_MID, 0, -20)
         self.pages_size = len(content) // self.page_size + 1
         if self.pages_size > 1:
             # indicator dots
@@ -75,7 +73,6 @@ class PageAbleMessage(FullSizeWindow):
                 self.indicators.append(Indicator(self.container, i))
             self.clear_flag(lv.obj.FLAG.GESTURE_BUBBLE)
             self.add_event_cb(self.on_gesture, lv.EVENT.GESTURE, None)
-        # self.add_event_cb(self.eventhandler, lv.EVENT.CLICKED, None)
 
     def on_gesture(self, event_obj):
         code = event_obj.code
@@ -103,6 +100,12 @@ class PageAbleMessage(FullSizeWindow):
                 ]
             )
 
+    def on_nav_back(self, event_obj):
+        code = event_obj.code
+        target = event_obj.get_target()
+        if code == lv.EVENT.CLICKED and target == self.nav_back.nav_btn:
+            self.destroy(50)
+
 
 class Indicator(lv.btn):
     def __init__(self, parent, index):
@@ -114,7 +117,7 @@ class Indicator(lv.btn):
             .bg_color(lv_colors.ONEKEY_GRAY_1)
             .bg_opa(lv.OPA.COVER)
             .border_width(0)
-            .radius(0),
+            .radius(4),
             0,
         )
         if index == 0:

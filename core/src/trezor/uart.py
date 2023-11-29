@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from storage import device
 from trezor import config, io, log, loop, motor, utils
 from trezor.lvglui import StatusBar
+from trezor.lvglui.scrs.charging import ChargingPromptScr
 from trezor.ui import display
 
 from apps import base
@@ -39,8 +40,11 @@ async def handle_usb_state():
         try:
             usb_state = loop.wait(io.USB_STATE)
             state = await usb_state
-            utils.lcd_resume()
             if state:
+                if display.backlight() == 0:
+                    prompt = ChargingPromptScr.get_instance()
+                    await loop.sleep(300)
+                    prompt.show()
                 StatusBar.get_instance().show_usb(True)
                 # deal with charging state
                 CHARGING = True
@@ -51,6 +55,7 @@ async def handle_usb_state():
                     )
                 motor.vibrate()
             else:
+                utils.lcd_resume()
                 StatusBar.get_instance().show_usb(False)
                 # deal with charging state
                 CHARGING = False
@@ -197,6 +202,7 @@ async def _deal_charging_state(value: bytes) -> None:
         _POWER_STATUS_CHARGING,
     ):
         if res != _POWER_STATUS_CHARGING:
+            print("charging with a charger now .......")
             utils.turn_on_lcd_if_possible()
         if CHARGING:
             return
@@ -336,6 +342,8 @@ def get_ble_name() -> str:
 
 def get_ble_version() -> str:
     """Get ble version."""
+    if utils.EMULATOR:
+        return "1.0.0"
     return NRF_VERSION if NRF_VERSION else ""
 
 

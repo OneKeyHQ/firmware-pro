@@ -1,7 +1,7 @@
 from trezor import utils
 
 from ..i18n import gettext as _, keys as i18n_keys
-from . import font_PJSBOLD30, font_PJSREG24
+from . import font_GeistRegular26, font_GeistSemiBold48
 from .common import FullSizeWindow, lv, lv_colors  # noqa: F401,F403
 from .components.button import NormalButton
 from .components.container import ContainerFlexCol
@@ -18,16 +18,22 @@ class PinTip(FullSizeWindow):
             anim_dir=0,
         )
         self.container = ContainerFlexCol(
-            self.content_area, self.subtitle, pos=(0, 40), padding_row=10
+            self.content_area,
+            self.subtitle,
+            pos=(0, 30),
+            padding_row=10,
+            clip_corner=False,
         )
-        self.container.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
+        # self.container.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
         self.item1 = ListItemWithLeadingCheckbox(
             self.container,
             _(i18n_keys.CHECK__SETUP_SET_A_PIN__1),
+            radius=40,
         )
         self.item2 = ListItemWithLeadingCheckbox(
             self.container,
             _(i18n_keys.CHECK__SETUP_SET_A_PIN__2),
+            radius=40,
         )
         self.btn = NormalButton(self, _(i18n_keys.BUTTON__CONTINUE), False)
         self.container.add_event_cb(self.eventhandler, lv.EVENT.VALUE_CHANGED, None)
@@ -74,7 +80,7 @@ class InputPin(FullSizeWindow):
         )
         self.title.add_style(
             StyleWrapper()
-            .text_font(font_PJSBOLD30)
+            .text_font(font_GeistSemiBold48)
             .text_align_center()
             .text_letter_space(0),
             0,
@@ -82,7 +88,7 @@ class InputPin(FullSizeWindow):
         self.title.align(lv.ALIGN.TOP_MID, 0, 24)
         self.subtitle.add_style(
             StyleWrapper()
-            .text_font(font_PJSREG24)
+            .text_font(font_GeistRegular26)
             .text_color(lv_colors.ONEKEY_RED_1)
             .text_align_center(),
             0,
@@ -104,6 +110,52 @@ class InputPin(FullSizeWindow):
         elif code == lv.EVENT.READY:
             input = self.keyboard.ta.get_text()
             if len(input) < 4:
+                return
+            self.channel.publish(input)
+        elif code == lv.EVENT.CANCEL:
+            self.channel.publish(0)
+
+        self.clean()
+        self.destroy()
+
+
+class InputLitePin(FullSizeWindow):
+    def __init__(self):
+        super().__init__(
+            title=_(i18n_keys.TITLE__ENTER_ONEKEY_LITE_PIN),
+            subtitle=None,
+            anim_dir=0,
+        )
+        self.title.add_style(
+            StyleWrapper()
+            .text_font(font_GeistSemiBold48)
+            .text_align_center()
+            .text_letter_space(0),
+            0,
+        )
+        self.title.align(lv.ALIGN.TOP_MID, 0, 24)
+        self.subtitle.add_style(
+            StyleWrapper()
+            .text_font(font_GeistRegular26)
+            .text_color(lv_colors.ONEKEY_RED_1)
+            .text_align_center(),
+            0,
+        )
+        self.subtitle.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
+        self.clear_flag(lv.obj.FLAG.SCROLLABLE)
+        self.keyboard = NumberKeyboard(self, max_len=6, min_len=6)
+        self.keyboard.add_event_cb(self.on_event, lv.EVENT.READY, None)
+        self.keyboard.add_event_cb(self.on_event, lv.EVENT.CANCEL, None)
+        self.keyboard.add_event_cb(self.on_event, lv.EVENT.VALUE_CHANGED, None)
+
+    def on_event(self, event_obj):
+        code = event_obj.code
+        if code == lv.EVENT.VALUE_CHANGED:
+            utils.lcd_resume()
+            return
+        elif code == lv.EVENT.READY:
+            input = self.keyboard.ta.get_text()
+            if len(input) < 6:
                 return
             self.channel.publish(input)
         elif code == lv.EVENT.CANCEL:

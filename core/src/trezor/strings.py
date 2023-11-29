@@ -21,6 +21,23 @@ def format_amount(amount: int, decimals: int) -> str:
     return s
 
 
+def strip_amount(amount_str: str) -> tuple[str, bool]:
+    amount_value, *suffix = amount_str.split(" ")
+    try:
+        amount_value.index(".")
+    except ValueError:
+        return amount_str, False
+    else:
+        amount_value_i, amount_value_d = amount_value.split(".")
+        amount_value_d_short = amount_value_d[:6]
+        suffix = " ".join(suffix)
+        return (
+            f"{amount_value_i}.{amount_value_d_short}".rstrip("0").rstrip(".")
+            + f" {suffix}",
+            len(amount_value_d) > 6,
+        )
+
+
 def format_ordinal(number: int) -> str:
     return str(number) + {1: "st", 2: "nd", 3: "rd"}.get(
         4 if 10 <= number % 100 < 20 else number % 10, "th"

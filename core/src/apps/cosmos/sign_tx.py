@@ -8,12 +8,11 @@ from trezor.lvglui.scrs import lv
 from trezor.messages import CosmosSignedTx, CosmosSignTx
 from trezor.ui.layouts.lvgl import (
     confirm_cosmos_delegate,
-    confirm_cosmos_memo,
     confirm_cosmos_send,
     confirm_cosmos_sign_combined,
     confirm_cosmos_sign_common,
-    confirm_cosmos_tx,
     confirm_final,
+    cosmos_require_show_more,
 )
 
 import ujson as json
@@ -63,51 +62,54 @@ async def sign_tx(
             to = tx.tx.to if type(tx.tx) is SendTxn else ""
             from_addr = tx.tx.from_address if type(tx.tx) is SendTxn else ""
             amount = tx.tx.amount if type(tx.tx) is SendTxn else ""
-            await confirm_cosmos_tx(ctx, tx.tx.i18n_title, None, to, amount)
-            await confirm_cosmos_send(
-                ctx,
-                fee,
-                tx.chain_id,
-                tx.chain_name,
-                from_addr,
-                to,
-                amount,
-            )
+            if await cosmos_require_show_more(ctx, None, None, to, amount):
+                await confirm_cosmos_send(
+                    ctx,
+                    fee,
+                    tx.chain_id,
+                    amount,
+                    tx.chain_name,
+                    from_addr,
+                    to,
+                    tx.memo,
+                )
         elif type(tx.tx) == DelegateTxn:
             delegator = tx.tx.delegator if type(tx.tx) is DelegateTxn else ""
             validator = tx.tx.validator if type(tx.tx) is DelegateTxn else ""
             amount = tx.tx.amount if type(tx.tx) is DelegateTxn else ""
-            await confirm_cosmos_tx(ctx, tx.tx.i18n_title, tx.tx.i18n_value, None, None)
-            await confirm_cosmos_delegate(
-                ctx,
-                fee,
-                tx.chain_id,
-                tx.chain_name,
-                delegator,
-                validator,
-                amount,
-            )
+            if await cosmos_require_show_more(
+                ctx, tx.tx.i18n_title, tx.tx.i18n_value, None, None
+            ):
+                await confirm_cosmos_delegate(
+                    ctx,
+                    fee,
+                    tx.chain_id,
+                    tx.chain_name,
+                    delegator,
+                    validator,
+                    amount,
+                    tx.memo,
+                )
         else:
-            await confirm_cosmos_tx(ctx, tx.tx.i18n_title, tx.tx.i18n_value, None, None)
-            await confirm_cosmos_sign_common(
-                ctx,
-                tx.chain_id,
-                tx.chain_name,
-                signer,
-                fee,
-                tx.msgs_item,
-                tx.tx.i18n_title,
-                tx.tx.i18n_value,
-            )
+            if await cosmos_require_show_more(
+                ctx, tx.tx.i18n_title, tx.tx.i18n_value, None, None
+            ):
+                await confirm_cosmos_sign_common(
+                    ctx,
+                    tx.chain_id,
+                    tx.chain_name,
+                    signer,
+                    fee,
+                    tx.msgs_item,
+                    tx.tx.i18n_title,
+                    tx.tx.i18n_value,
+                    tx.memo,
+                )
     else:
         await confirm_cosmos_sign_combined(
             ctx, tx.chain_id, signer, fee, json.dumps(tx.msgs)
         )
 
-    if len(tx.memo) > 0:
-        await confirm_cosmos_memo(
-            ctx, _(i18n_keys.TITLE__MEMO), _(i18n_keys.LIST_KEY__MEMO__COLON), tx.memo
-        )
     await confirm_final(ctx, getChainName(tx.chain_id) or "Cosmos")
 
     data_hash = sha256(msg.raw_tx).digest()

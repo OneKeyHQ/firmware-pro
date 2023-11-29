@@ -84,12 +84,12 @@ class UiConfirmPaymentRequest(UiConfirm):
 
 
 class UiConfirmReplacement(UiConfirm):
-    def __init__(self, description: str, txid: bytes):
+    def __init__(self, description: str, txids: list[bytes]):
         self.description = description
-        self.txid = txid
+        self.txids = txids
 
     def confirm_dialog(self, ctx: wire.Context) -> Awaitable[Any]:
-        return layout.confirm_replacement(ctx, self.description, self.txid)
+        return layout.confirm_replacement(ctx, self.description, self.txids)
 
 
 class UiConfirmModifyOutput(UiConfirm):
@@ -229,8 +229,8 @@ def confirm_payment_request(payment_req: TxAckPaymentRequest, coin: CoinInfo, am
     return (yield UiConfirmPaymentRequest(payment_req, coin, amount_unit))
 
 
-def confirm_replacement(description: str, txid: bytes) -> Awaitable[Any]:  # type: ignore [awaitable-is-generator]
-    return (yield UiConfirmReplacement(description, txid))
+def confirm_replacement(description: str, txids: list[bytes]) -> Awaitable[Any]:  # type: ignore [awaitable-is-generator]
+    return (yield UiConfirmReplacement(description, txids))
 
 
 def confirm_modify_output(txo: TxOutput, orig_txo: TxOutput, coin: CoinInfo, amount_unit: AmountUnit) -> Awaitable[Any]:  # type: ignore [awaitable-is-generator]
