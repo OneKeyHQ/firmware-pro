@@ -50,7 +50,7 @@ static void dsi_msp_init(DSI_HandleTypeDef *hdsi) {
   }
 }
 
-#define DSI_FREQ 30000U
+#define DSI_FREQ 34375U
 #define LTDC_FREQ 33000U
 
 HAL_StatusTypeDef dsi_host_init(DSI_HandleTypeDef *hdsi, uint32_t Width,
@@ -62,8 +62,8 @@ HAL_StatusTypeDef dsi_host_init(DSI_HandleTypeDef *hdsi, uint32_t Width,
   hdsi->Init.AutomaticClockLaneControl = DSI_AUTO_CLK_LANE_CTRL_DISABLE;
   hdsi->Init.TXEscapeCkdiv = 4;
   hdsi->Init.NumberOfLanes = DSI_TWO_DATA_LANES;
-  PLLInit.PLLNDIV = 96;
-  PLLInit.PLLIDF = DSI_PLL_IN_DIV5;
+  PLLInit.PLLNDIV = 22;
+  PLLInit.PLLIDF = DSI_PLL_IN_DIV1;
   PLLInit.PLLODF = DSI_PLL_OUT_DIV2;
   if (HAL_DSI_Init(hdsi, &PLLInit) != HAL_OK) {
     return HAL_ERROR;
@@ -445,6 +445,9 @@ void st7701_init_sequence(void) {
   st7701_dsi(0xe8, 0x00, 0x00);
   st7701_dsi(0xff, 0x77, 0x01, 0x00, 0x00, 0x00);
   st7701_dsi(0x36, 0x00);
+  st7701_dsi(MIPI_DCS_SET_TEAR_ON, 0x00);
+  st7701_dsi(MIPI_DCS_WRITE_CONTROL_DISPLAY, 0x2C);
+  st7701_dsi(MIPI_DCS_SET_PIXEL_FORMAT, 0x50);
   st7701_dsi(0x29);
   HAL_Delay(20);
   st7701_dsi(0xff, 0x77, 0x01, 0x00, 0x00, 0x10);

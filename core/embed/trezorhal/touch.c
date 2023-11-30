@@ -36,20 +36,15 @@
 void touch_init(void) { gt911_init(); }
 
 uint32_t touch_click(void) {
-  uint32_t r = 0;
-  // flush touch events if any
-  while (touch_read()) {
+ uint32_t r = 0;
+  r = touch_read();
+  while (r) {
+    r = touch_read();
+    if ((r & TOUCH_END) == TOUCH_END) {
+      break;
+    }
   }
-  // wait for TOUCH_START
-  while ((touch_read() & TOUCH_START) == 0) {
-  }
-  // wait for TOUCH_END
-  while (((r = touch_read()) & TOUCH_END) == 0) {
-  }
-  // flush touch events if any
-  while (touch_read()) {
-  }
-  // return last touch coordinate
+
   return r;
 }
 
