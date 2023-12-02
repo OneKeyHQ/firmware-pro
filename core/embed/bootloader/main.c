@@ -146,61 +146,6 @@ static void write_dev_dummy_config() {
   // }
 }
 
-static void camera_test() {
-  display_printf("TouchPro Demo Mode\n");
-  display_printf("======================\n\n");
-  display_printf("GC2145 Init...");
-  dbgprintf_Wait("%d, %s", __LINE__, (camera_init() == 0) ? "success" : "fail");
-
-  unsigned int tcnt = 0;
-  unsigned short* tbuf = (unsigned short*)0xD0200000;
-  for (tcnt = 0; tcnt < (480 * 800); tcnt++) *(tbuf + tcnt) = COLOR_BLACK;
-  dma2d_copy_buffer((uint32_t*)tbuf, (uint32_t*)DISPLAY_MEMORY_BASE, 0, 0, 480,
-                    800);
-  dbgprintf_Wait("%d", __LINE__);
-  if (camera_is_online()) {
-    display_printf("GC2145 Online @ 0x%x  ID: 0x%x\n", GC2145_ADDR,
-                   camera_get_id());
-  } else
-    display_printf("GC2145 Offline!\n");
-  display_printf("\nOutput: %d x %d", WIN_W, WIN_H);
-
-  unsigned char camera_err = 0;
-
-  unsigned short CameraFrameCnt_last = 0;
-
-#define SHOW_PRINT_FPS 0
-#if SHOW_PRINT_FPS
-  unsigned int time_tick = 0;
-  unsigned char fps;
-  unsigned short CFC_last = 0;
-#endif
-  while (1) {
-#if SHOW_PRINT_FPS
-    if ((HAL_GetTick() - time_tick) > 900) {
-      fps = CameraFrameCnt - CFC_last;
-      CFC_last = CameraFrameCnt;
-      time_tick = HAL_GetTick();
-      display_printf("Frame= %d\n", fps);
-      HAL_Delay(100);
-    }
-#endif
-    if (CameraFrameCnt != CameraFrameCnt_last) {
-      dma2d_copy_buffer((uint32_t*)cam_buf, (uint32_t*)DISPLAY_MEMORY_BASE, 0,
-                        320, WIN_W, WIN_H);
-      CameraFrameCnt_last = CameraFrameCnt;
-    }
-    if ((camera_err == 0) && ((unsigned short)dcmi_get_error())) {
-      camera_err = 1;
-      display_printf("\nstate=%d  err=%d\n", dcmi_get_state(),
-                     (unsigned short)dcmi_get_error());
-      fb_fill_rect(15, 762, 150, 21, COLOR_RED);
-      display_text(15, 780, "camera err!", 11, FONT_NORMAL, COLOR_WHITE,
-                   COLOR_RED);
-    }
-  }
-}
-
 static void nfc_test() {
   display_printf("TouchPro Demo Mode\n");
   display_printf("======================\n\n");
@@ -875,6 +820,7 @@ int main(void) {
   camera_io_init();
 
   // se
+  thd89_reset();
   thd89_init();
   uint8_t se_state;
   ensure(se_get_state(&se_state) ? sectrue : secfalse, "get se state failed");
@@ -891,9 +837,6 @@ int main(void) {
   // dbgprintf_Wait("fp_ver=%s", fp_ver);
   // dbgprintf_Wait("throw back -> %08X", compile_test(TEST_MAGIC_A));
 
-  // camera_test();
-  UNUSED(camera_test);
-
   // nfc_test();
   UNUSED(nfc_test);
   // nfc_test_v2();
@@ -905,8 +848,7 @@ int main(void) {
 
   device_para_init();
 
-  if (!device_serial_set() || !se_has_cerrificate())
-  {
+  if (!device_serial_set() || !se_has_cerrificate()) {
     display_clear();
     device_set_factory_mode(true);
     ui_bootloader_factory();

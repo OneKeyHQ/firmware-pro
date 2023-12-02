@@ -20,3 +20,4 @@
 ^\./core/embed/trezorhal/i2c.*
 ^\./core/embed/trezorhal/camera.*
 ^\./core/embed/trezorhal/nfc.*
+^\./core/embed/quirc

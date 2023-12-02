@@ -14,27 +14,32 @@ extern unsigned short CameraFrameCnt;
 #define GC_MAX_WIN_H (1200)
 
 // camera frame settings, do not change unless initialize config also changed
-#define WIN_W 480
-#define WIN_H 480
+#define WIN_W 320
+#define WIN_H 320
 
 // dcmi
 HAL_DCMI_StateTypeDef dcmi_get_state();
 uint32_t dcmi_get_error();
 
-void camera_io_init();
-char camera_init(void);
+void camera_io_init(void);
+int camera_init(void);
+void camera_start(uint8_t* buffer_address, uint32_t mode);
+void camera_stop(void);
+void camera_suspend(void);
+void camera_resume(void);
 unsigned char camera_sccb_read_reg(unsigned char reg_addr, unsigned char* data);
 unsigned char camera_sccb_write_reg(unsigned char reg_addr, unsigned char* data);
 unsigned short camera_get_id(void);
 unsigned char camera_is_online(void);
+int camera_qr_decode(uint32_t x, uint32_t y, uint8_t* data, uint32_t data_len);
+
+void camera_test(void);
 
 #define camera_enter_sleep_mode() HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11, GPIO_PIN_SET)
 #define camera_exit_sleep_mode()  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11, GPIO_PIN_RESET)
 
 // frame buffer location
-// unsigned short cam_buf[WIN_W * WIN_H] __attribute__((section(".axi")));
-#define cam_buf         (unsigned short*)FMC_SDRAM_BOOLOADER_BUFFER_ADDRESS // SDRAM BUFFER
-#define CAM_BUF_ADDRESS ((uint32_t)FMC_SDRAM_BOOLOADER_BUFFER_ADDRESS)
+#define CAM_BUF_ADDRESS FMC_SDRAM_CAMERA_BUFFER_ADDRESS
 
 // GC2145 initialize configures
 static const unsigned char default_regs[][2] = {
@@ -45,7 +50,7 @@ static const unsigned char default_regs[][2] = {
     {0xf6, 0x00},
     {0xf7, 0x9f},
     {0xf8, 0x85},
-    {0xfa, 0x00},
+    {0xfa, 0x10},
     {0xf9, 0xfe},
     {0xf2, 0x00},
     ///////////////////////////////////////////////
@@ -120,10 +125,10 @@ static const unsigned char default_regs[][2] = {
     {0x93, 0x00}, // X offset
     {0x94, 0x00},
 
-    {0x95, 0x01}, // Window height
-    {0x96, 0xE0},
-    {0x97, 0x01}, // Window width
-    {0x98, 0xE0},
+    {0x95, WIN_H / 256}, // Window height
+    {0x96, WIN_H % 256},
+    {0x97, WIN_W / 256}, // Window width
+    {0x98, WIN_W % 256},
 
     {0x99, 0x22}, // Subsample
     {0x9a, 0x0E}, // Subsample mode

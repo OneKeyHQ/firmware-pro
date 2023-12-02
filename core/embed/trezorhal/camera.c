@@ -1,9 +1,18 @@
+#include <string.h>
+
 #include "camera.h"
-#include "debug_utils.h"
 #include "i2c.h"
 #include "sdram.h"
+#include "common.h"
+#include "display.h"
+#include "mipi_lcd.h"
+#include "quirc.h"
+#include "irq.h"
 
-#define i2c_handle_camera i2c_handles[i2c_find_channel_by_device(I2C_CAMERA)]
+static struct quirc* qr_decoder;
+
+static I2C_HandleTypeDef* i2c_handle_camera = NULL;
+static volatile bool capture_done = false;
 
 DCMI_HandleTypeDef DCMI_Handle;
 DMA_HandleTypeDef DMA_DCMI_Handle;
@@ -71,7 +80,7 @@ static void dcmi_init()
     DCMI_Handle.Init.LineSelectMode = DCMI_LSM_ALL;
     DCMI_Handle.Init.LineSelectStart = DCMI_OELS_ODD;
 
-    HAL_NVIC_SetPriority(DCMI_IRQn, 4, 0);
+    NVIC_SetPriority(DCMI_IRQn, IRQ_PRI_DCMI);
     HAL_NVIC_EnableIRQ(DCMI_IRQn);
     HAL_DCMI_Init(&DCMI_Handle);
 
@@ -84,10 +93,13 @@ static void dcmi_init()
     DMA_DCMI_Handle.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
     DMA_DCMI_Handle.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
     DMA_DCMI_Handle.Init.Mode = DMA_CIRCULAR;
-    DMA_DCMI_Handle.Init.Priority = DMA_PRIORITY_VERY_HIGH;
+    DMA_DCMI_Handle.Init.Priority = DMA_PRIORITY_HIGH;
     DMA_DCMI_Handle.Init.FIFOMode = DMA_FIFOMODE_ENABLE;
+    DMA_DCMI_Handle.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
+    DMA_DCMI_Handle.Init.MemBurst = DMA_MBURST_SINGLE;
+    DMA_DCMI_Handle.Init.PeriphBurst = DMA_PBURST_SINGLE;
 
-    HAL_NVIC_SetPriority(DMA2_Stream1_IRQn, 0, 0);
+    NVIC_SetPriority(DCMI_IRQn, IRQ_PRI_DCMI_DMA);
     HAL_NVIC_EnableIRQ(DMA2_Stream1_IRQn);
     HAL_DMA_Init(&DMA_DCMI_Handle);
 
@@ -120,11 +132,10 @@ void DCMI_IRQHandler(void)
     HAL_DCMI_IRQHandler(&DCMI_Handle);
 }
 
-unsigned short CameraFrameCnt = 0;
-
 void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef* hdcmi)
 {
-    CameraFrameCnt++;
+    // camera_suspend();
+    capture_done = true;
 }
 
 void camera_io_init()
@@ -152,7 +163,7 @@ void camera_io_init()
 unsigned char camera_sccb_read_reg(unsigned char reg_addr, unsigned char* data)
 {
     unsigned char ret = 0;
-    if ( HAL_I2C_Mem_Read(&i2c_handle_camera, GC2145_ADDR, reg_addr, I2C_MEMADD_SIZE_8BIT, data, 1, 1000) !=
+    if ( HAL_I2C_Mem_Read(i2c_handle_camera, GC2145_ADDR, reg_addr, I2C_MEMADD_SIZE_8BIT, data, 1, 1000) !=
          HAL_OK )
         ret = 1;
     return ret;
@@ -161,7 +172,7 @@ unsigned char camera_sccb_read_reg(unsigned char reg_addr, unsigned char* data)
 unsigned char camera_sccb_write_reg(unsigned char reg_addr, unsigned char* data)
 {
     unsigned char ret = 0;
-    if ( HAL_I2C_Mem_Write(&i2c_handle_camera, GC2145_ADDR, reg_addr, I2C_MEMADD_SIZE_8BIT, data, 1, 1000) !=
+    if ( HAL_I2C_Mem_Write(i2c_handle_camera, GC2145_ADDR, reg_addr, I2C_MEMADD_SIZE_8BIT, data, 1, 1000) !=
          HAL_OK )
         ret = 1;
     return ret;
@@ -197,22 +208,148 @@ unsigned char camera_is_online(void)
     return ret;
 }
 
-char camera_init(void)
+void camera_start(uint8_t* buffer_address, uint32_t mode)
 {
+    HAL_DCMI_Start_DMA(&DCMI_Handle, mode, (uint32_t)buffer_address, (WIN_W * WIN_H) / 2);
+}
+
+void camera_stop(void)
+{
+    HAL_DCMI_Stop(&DCMI_Handle);
+    capture_done = false;
+}
+
+void camera_suspend(void)
+{
+    HAL_DCMI_Suspend(&DCMI_Handle);
+}
+
+void camera_resume(void)
+{
+    HAL_DCMI_Resume(&DCMI_Handle);
+}
+
+int camera_init(void)
+{
+    i2c_handle_camera = &i2c_handles[i2c_find_channel_by_device(I2C_CAMERA)];
     i2c_init_by_device(I2C_CAMERA);
 
-    camera_io_init();
+    camera_get_id();
 
     volatile unsigned char ret = 0;
     for ( int i = 0; default_regs[i][0]; i++ )
     {
         unsigned char temp = default_regs[i][1];
         ret = camera_sccb_write_reg(default_regs[i][0], &temp);
+        if ( ret )
+        {
+            ensure_ex(ret, 0, "camera init failed");
+        }
     }
 
     dcmi_init();
 
-    HAL_DCMI_Start_DMA(&DCMI_Handle, DCMI_MODE_CONTINUOUS, CAM_BUF_ADDRESS, (WIN_W * WIN_H) / 2);
-
     return ret;
+}
+
+uint8_t rgb565_to_gray(uint16_t rgb565)
+{
+    // Extract R, G, B values from RGB565
+    int r = ((rgb565 >> 11) & 0x1F) << 3;
+    int g = ((rgb565 >> 5) & 0x3F) << 2;
+    int b = (rgb565 & 0x1F) << 3;
+
+    // Convert RGB to grayscale using fast integer approximation
+    int gray_value = (r * 76 + g * 150 + b * 29) >> 8;
+
+    return gray_value & 0xff;
+}
+
+int quirc_decode_buffer(uint8_t* buffer, uint8_t* out, uint32_t len)
+{
+    uint8_t* image_data;
+    struct quirc_code code;
+    struct quirc_data data = {0};
+    uint16_t* rgb565_value = (uint16_t*)buffer;
+
+    qr_decoder = quirc_new();
+
+    if ( quirc_resize(qr_decoder, WIN_W, WIN_H) < 0 )
+    {
+        goto fail;
+    }
+    image_data = quirc_begin(qr_decoder, NULL, NULL);
+    for ( int i = 0; i < WIN_W * WIN_H; i++ )
+    {
+        image_data[i] = rgb565_to_gray(rgb565_value[i]);
+    }
+    quirc_end(qr_decoder);
+
+    int num_codes = quirc_count(qr_decoder);
+    if ( num_codes != 1 )
+    {
+        goto fail;
+    }
+    quirc_extract(qr_decoder, 0, &code);
+    quirc_decode_error_t err = quirc_decode(&code, &data);
+    if ( err == QUIRC_ERROR_DATA_ECC )
+    {
+        quirc_flip(&code);
+        err = quirc_decode(&code, &data);
+    }
+    if ( err )
+    {
+        goto fail;
+    }
+fail:
+    quirc_destroy(qr_decoder);
+    if ( len >= data.payload_len )
+    {
+        memcpy(out, data.payload, data.payload_len);
+    }
+
+    return data.payload_len;
+}
+
+int camera_qr_decode(uint32_t x, uint32_t y, uint8_t* data, uint32_t data_len)
+{
+
+    int len = 0;   
+
+    camera_start((uint8_t*)CAM_BUF_ADDRESS, DCMI_MODE_SNAPSHOT);
+
+    int32_t tickstart = HAL_GetTick();
+
+    while ( !capture_done )
+    {
+        if ( (HAL_GetTick() - tickstart) > 200 )
+        {
+            camera_stop();
+            return 0;
+        }
+    }
+    camera_stop();
+    dma2d_copy_buffer(
+        (uint32_t*)CAM_BUF_ADDRESS, (uint32_t*)FMC_SDRAM_LTDC_BUFFER_ADDRESS, x, y, WIN_W, WIN_H
+    );
+    len = quirc_decode_buffer((uint8_t*)CAM_BUF_ADDRESS, data, data_len);
+    return len;
+}
+
+void camera_test(void)
+{
+    uint8_t qr_code[256];
+    int len;
+
+    display_clear();
+
+    while ( 1 )
+    {
+        len = camera_qr_decode(80, 80, qr_code, sizeof(qr_code));
+        if ( len )
+        {
+            display_bar(0, 330, 480, 50, COLOR_BLACK);
+            display_text(0, 430, (char*)qr_code, len, FONT_NORMAL, COLOR_WHITE, COLOR_BLACK);
+        }
+    }
 }

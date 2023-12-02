@@ -127,6 +127,13 @@ SOURCE_MOD += [
     'vendor/trezor-crypto/sha512.c',
     'vendor/trezor-crypto/schnorr_bch.c',
 ]
+
+SOURCE_MOD += [
+    'embed/quirc/lib/decode.c',
+    'embed/quirc/lib/identify.c',
+    'embed/quirc/lib/quirc.c',
+    'embed/quirc/lib/version_db.c',
+]
 if EVERYTHING:
     SOURCE_MOD += [
         'vendor/trezor-crypto/cardano.c',
@@ -449,10 +456,9 @@ if PRODUCTION_MODEL == 'H':
         'embed/trezorhal/flash.c',
         'embed/trezorhal/i2c.c',
         'embed/trezorhal/spi.c',
+        'embed/trezorhal/gt911.c',
         'embed/trezorhal/spi_legacy.c',
         'embed/trezorhal/camera.c',
-        'embed/trezorhal/pn532.c',
-        'embed/trezorhal/nfc.c',
         'embed/trezorhal/heap_4.c',
         'embed/trezorhal/qspi_flash.c',
         'embed/trezorhal/mini_printf.c',
@@ -663,6 +669,7 @@ if PRODUCTION_MODEL == 'H':
             'embed/emmc_wrapper',
             'embed/fp_sensor_wrapper',
             'vendor/lvgl_mp/lvgl',
+            'embed/quirc/lib',
         ] + CPPPATH_MOD,
         CPPDEFINES=[
             'TREZOR_MODEL_'+TREZOR_MODEL,
@@ -674,6 +681,7 @@ if PRODUCTION_MODEL == 'H':
             'USE_HAL_DRIVER',
             'LV_LVGL_H_INCLUDE_SIMPLE',
             ('STM32_HAL_H', '"<stm32h7xx.h>"'),
+            ('QUIRC_FLOAT_TYPE', 'float'),
         ] + CPPDEFINES_MOD,
         ASFLAGS=CPU_ASFLAGS,
         ASPPFLAGS='$CFLAGS $CCFLAGS', )

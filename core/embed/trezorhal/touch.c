@@ -36,7 +36,7 @@
 void touch_init(void) { gt911_init(); }
 
 uint32_t touch_click(void) {
- uint32_t r = 0;
+  uint32_t r = 0;
   r = touch_read();
   while (r) {
     r = touch_read();

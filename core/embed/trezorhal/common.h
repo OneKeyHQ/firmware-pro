@@ -78,6 +78,10 @@ void error_pin_max(void);
        ? (void)0          \
        : __fatal_error(#expr, msg, __FILE__, __LINE__, __func__))
 
+#define ensure_ex(expr, ret, msg) \
+  (((expr) == ret) ? (void)0      \
+                   : __fatal_error(#expr, msg, __FILE__, __LINE__, __func__))
+
 void hal_delay(uint32_t ms);
 uint32_t hal_ticks_ms();
 

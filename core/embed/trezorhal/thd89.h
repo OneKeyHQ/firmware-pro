@@ -5,6 +5,8 @@
 
 void thd89_io_init(void);
 void thd89_init(void);
+void thd89_power_up(bool up);
+void thd89_reset(void);
 secbool thd89_transmit(uint8_t *cmd, uint16_t len, uint8_t *resp,
                        uint16_t *resp_len);
 uint16_t thd89_last_error();

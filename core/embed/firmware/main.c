@@ -52,6 +52,7 @@
 #endif
 #include "rng.h"
 // #include "sdcard.h"
+#include "camera.h"
 #include "device.h"
 #include "mipi_lcd.h"
 #include "qspi_flash.h"
@@ -153,6 +154,8 @@ int main(void) {
 
   thd89_init();
   ensure(se_sync_session_key(), "se start up failed");
+
+  camera_init();
 
   emmc_init();
   timer_init();

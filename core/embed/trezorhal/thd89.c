@@ -38,23 +38,35 @@ static uint8_t sw1 = 0, sw2 = 0;
 
 void thd89_io_init(void) {
   __HAL_RCC_GPIOD_CLK_ENABLE();
+
   GPIO_InitTypeDef GPIO_InitStructure;
+
   /* Configure the GPIO Reset pin */
   GPIO_InitStructure.Pin = GPIO_PIN_4;
   GPIO_InitStructure.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStructure.Pull = GPIO_PULLUP;
   GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStructure);
+
   HAL_GPIO_WritePin(GPIOD, GPIO_PIN_4, GPIO_PIN_SET);
 }
 
-void thd89_init(void) {
-  thd89_io_init();
-  hal_delay(30);
-  i2c_init_by_device(I2C_SE);
-
-  hal_delay(400);  // time for se to power up
+void thd89_power_up(bool up) {
+  if (up) {
+    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_4, GPIO_PIN_SET);
+  } else {
+    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_4, GPIO_PIN_RESET);
+  }
 }
+
+void thd89_reset(void) {
+  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_4, GPIO_PIN_RESET);
+  hal_delay(5);
+  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_4, GPIO_PIN_SET);
+  hal_delay(400);
+}
+
+void thd89_init(void) { i2c_init_by_device(I2C_SE); }
 
 static uint8_t xor_check(uint8_t init, uint8_t *data, uint16_t len) {
   uint16_t i;

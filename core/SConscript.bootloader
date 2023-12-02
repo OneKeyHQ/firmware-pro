@@ -43,6 +43,13 @@ SOURCE_MOD += [
     'vendor/trezor-crypto/aes/aestab.c',
 ]
 
+SOURCE_MOD += [
+    'embed/quirc/lib/decode.c',
+    'embed/quirc/lib/identify.c',
+    'embed/quirc/lib/quirc.c',
+    'embed/quirc/lib/version_db.c',
+]
+
 # modtrezorui
 CPPPATH_MOD += [
         'vendor/micropython/lib/uzlib',
@@ -302,6 +309,7 @@ if PRODUCTION_MODEL == 'H':
             'embed/pn532',
             'embed/fp_sensor_wrapper',
             'vendor/nanopb',
+            'embed/quirc/lib',
         ] + CPPPATH_MOD,
         CPPDEFINES=[
             'TREZOR_MODEL_'+TREZOR_MODEL,
@@ -315,6 +323,7 @@ if PRODUCTION_MODEL == 'H':
             'PB_VALIDATE_UTF8',
             'BOOT_ONLY',
             ('STATIC_TABLES', 0),
+            ('QUIRC_FLOAT_TYPE', 'float'),
         ] + CPPDEFINES_MOD,
         ASFLAGS=CPU_ASFLAGS,
         ASPPFLAGS='$CFLAGS $CCFLAGS', )
@@ -377,7 +386,7 @@ program_elf = env.Command(
     target='bootloader.elf',
     source=obj_program,
     action=
-    '$LINK -o $TARGET $CCFLAGS $CFLAGS $LINKFLAGS $SOURCES -Wl,--start-group -lc_nano -lnosys -lgcc -Wl,--end-group',
+    '$LINK -o $TARGET $CCFLAGS $CFLAGS $LINKFLAGS $SOURCES -Wl,--start-group -lc_nano -lnosys -lgcc -lm -Wl,--end-group',
 )
 
 program_bin = env.Command(
