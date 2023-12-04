@@ -207,12 +207,12 @@ static void nfc_test() {
         if (InDataExchange_status == 0x00) {
           display_printf("Success\n");
           display_printf("CardSN: %s\n", (char*)buf_rapdu);
-          print_buffer(buf_rapdu, len_rapdu);
+          print_buffer_Wait(buf_rapdu, len_rapdu);
         } else {
           display_printf("Fail\n");
         }
       }
-      break;
+      // break;
     } else {
       display_printf("LS Timeout\n");
     }
@@ -765,9 +765,9 @@ int main(void) {
 
 #if !PRODUCTION
 
-  // if (!device_serial_set() || !se_has_cerrificate()) {
-  //   write_dev_dummy_config();
-  // }
+  if (!device_serial_set() || !se_has_cerrificate()) {
+    write_dev_dummy_config();
+  }
   UNUSED(write_dev_dummy_config);
 
   // char fp_ver[8];
@@ -779,6 +779,9 @@ int main(void) {
   UNUSED(nfc_test);
   // nfc_test_v2();
   UNUSED(nfc_test_v2);
+
+  // fp_test();
+  UNUSED(fp_test);
 
 #endif
 

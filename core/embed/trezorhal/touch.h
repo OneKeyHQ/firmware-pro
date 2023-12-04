@@ -52,7 +52,7 @@
 void touch_test(void);
 
 void touch_init(void);
-void touch_power_on(void);
+// void touch_power_on(void);
 void touch_power_off(void);
 void touch_sensitivity(uint8_t value);
 uint32_t touch_num_detected(void);
