@@ -7,7 +7,8 @@ MEMORY {
   FLASH2 (r)   : ORIGIN = 0x90000000, LENGTH = 2048K
   AXIRAM (wal) : ORIGIN = 0x24000000, LENGTH = 512K
   SRAM   (wal) : ORIGIN = 0x20000000, LENGTH = 128K
-  SRAM1   (wal) : ORIGIN = 0x30000000, LENGTH = 256K
+  SRAM1   (wal) : ORIGIN = 0x30000000, LENGTH = 128K
+  SRAM2   (wal) : ORIGIN = 0x30020000, LENGTH = 128K
   EXRAM   (wal) : ORIGIN = 0xD1C00000, LENGTH = 2048K
 }
 
@@ -78,6 +79,15 @@ SECTIONS {
   .sram1 : {
 		*(sram1)
 	} >SRAM1
+
+  .bss2 : ALIGN(4) {
+    *(.bss.global_image);
+    *(.bss.global_feature);
+    *(.bss.global_templet);
+    *(.bss.totaledata1);
+    *(.bss.totaledata2);
+    . = ALIGN(4);
+  } >SRAM2
 
   .bss : ALIGN(4) {
     *(.bss*);

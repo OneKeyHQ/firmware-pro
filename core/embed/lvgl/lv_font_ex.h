@@ -8,7 +8,7 @@
 
 #define SRAM1 __attribute__((section("sram1")))
 #define EXRAM __attribute__((section("exram")))
-#define SZ_TBL 5 * 1024
+#define SZ_TBL 3 * 1024
 
 #define LOCA_OFFSET 0x4C
 #define LOCA_VALUE_OFFSET 0x0C

@@ -12,7 +12,7 @@
 
 #include "fp_sensor_hal.h"
 
-#define FINGER_ADDR_START    (FMC_SDRAM_BOOLOADER_BUFFER_ADDRESS) // 存储地址用户根据使用情况分配
+#define FINGER_ADDR_START    (FMC_SDRAM_CAMERA_BUFFER_ADDRESS) // 存储地址用户根据使用情况分配
 #define FINGER_ID_LIST_START (FINGER_ADDR_START + 0x100)
 #define TEMPLATE_ADDR_START  (FINGER_ADDR_START + 0x1000)
 
@@ -26,7 +26,7 @@ uint8_t fpsensor_spi_set_cs(uint8_t level);
 void fpsensor_delay_ms(uint32_t num);
 
 uint8_t SF_Init(uint32_t startAddr, uint32_t ucMmSize);
-uint8_t SF_ReadData(uint8_t* buffer, uint32_t addr, uint32_t length);
-uint8_t SF_WriteData(uint8_t* buffer, uint32_t addr, uint32_t length);
+uint8_t SF_ReadData(uint8_t* buffer, uint32_t offset, uint32_t length);
+uint8_t SF_WriteData(uint8_t* buffer, uint32_t offset, uint32_t length);
 
 #endif
