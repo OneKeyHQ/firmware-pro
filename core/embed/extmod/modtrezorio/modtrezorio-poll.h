@@ -34,8 +34,10 @@
 #define POLL_WRITE (0x0100)
 #define UART_IFACE (127)
 #define USB_STATE_IFACE (128)
+#define LOCAL_IFACE (99)
 
 extern bool usb_connected_previously;
+extern bool local_interface_ready;
 
 /// package: trezorio.__init__
 
@@ -190,6 +192,13 @@ STATIC mp_obj_t mod_trezorio_poll(mp_obj_t ifaces, mp_obj_t list_ref,
               ret->items[1] = mp_obj_new_bytes(buf, len);
               return mp_const_true;
             }
+          }
+        } else if (iface == LOCAL_IFACE) {
+          if (true == local_interface_ready) {
+            ret->items[0] = MP_OBJ_NEW_SMALL_INT(i);
+            ret->items[1] = mp_obj_new_bool(local_interface_ready);
+            local_interface_ready = false;
+            return mp_const_true;
           }
         }  // TODO:FIX IT
         else if (iface == SPI_IFACE) {

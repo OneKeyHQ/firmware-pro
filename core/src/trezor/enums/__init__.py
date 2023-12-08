@@ -357,6 +357,8 @@ if TYPE_CHECKING:
         NexaSignedTx = 11403
         NexaTxInputRequest = 11404
         NexaTxInputAck = 11405
+        URCryptoHdkey = 21000
+        URResponse = 21001
         DeviceBackToBoot = 903
         RebootToBoardloader = 904
         DeviceInfoSettings = 10001
@@ -552,6 +554,17 @@ if TYPE_CHECKING:
         Shamir = 15
         ShamirGroups = 16
         PassphraseEntry = 17
+
+    class OneKeyDeviceType(IntEnum):
+        CLASSIC = 0
+        CLASSIC1S = 1
+        MINI = 2
+        TOUCH = 3
+        TOUCH_PRO = 4
+
+    class OneKeySeType(IntEnum):
+        THD89 = 0
+        SE608A = 1
 
     class SdProtectOperationType(IntEnum):
         DISABLE = 0

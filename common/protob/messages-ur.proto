@@ -1,0 +1,16 @@
+syntax = "proto2";
+package hw.trezor.messages.ur;
+
+// Sugar for easier handling in Java
+option java_package = "com.satoshilabs.trezor.lib.protobuf";
+option java_outer_classname = "TrezorMessageUR";
+
+message URCryptoHdkey {
+    repeated uint32 address_n = 1;
+    optional bool show_display = 2;
+}
+
+message URResponse {
+    optional string data = 1;                // Sui address as hex-encoded string
+}
+

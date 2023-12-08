@@ -13,6 +13,18 @@ Features.serial_no              max_size:32
 Features.bootloader_version     max_size:8
 Features.boardloader_version    max_size:32
 
+Features.onekey_board_version           max_size:16
+Features.onekey_board_hash              max_size:32
+Features.onekey_boot_version            max_size:16
+Features.onekey_boot_hash               max_size:32
+Features.onekey_se_version              max_size:16
+Features.onekey_se_hash                 max_size:32
+Features.onekey_se_build_id             max_size:8
+Features.onekey_firmware_version        max_size:16
+Features.onekey_firmware_hash           max_size:32
+Features.onekey_firmware_build_id       max_size:64
+Features.onekey_serial_no               max_size:32
+
 Ping.message                    max_size:256
 
 Success.message                 max_size:256

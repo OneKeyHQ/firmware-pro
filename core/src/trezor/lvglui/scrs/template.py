@@ -3053,3 +3053,23 @@ class TronAssetFreeze(FullSizeWindow):
                 self.group_more, _(i18n_keys.LIST_KEY__LOCK_COLON), lock
             )
         self.group_more.add_dummy()
+
+
+class Signature(FullSizeWindow):
+    def __init__(
+        self,
+        title,
+        qr_code,
+    ):
+        super().__init__(
+            title,
+            None,
+            confirm_text=_(i18n_keys.BUTTON__DONE),
+            # primary_color=0x000000,
+        )
+        self.qr_code = qr_code
+        self.qr = QRCode(
+            self.content_area,
+            self.qr_code,
+        )
+        self.qr.align_to(self.title, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 16)

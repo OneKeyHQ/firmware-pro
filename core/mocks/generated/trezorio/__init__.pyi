@@ -102,6 +102,23 @@ class HID:
         """
 
 
+# extmod/modtrezorio/modtrezorio-local.h
+class LOCAL_CTL:
+    """
+    """
+
+    def __init__(
+        self,
+    ) -> None:
+        """
+        """
+
+    def ctrl(self, ready: bool) -> None:
+        """
+        Send command to the LOCAL.
+        """
+
+
 # extmod/modtrezorio/modtrezorio-moto.h
 class MOTOR:
     """
@@ -278,6 +295,7 @@ TOUCH_MOVE: int  # event id of touch move event
 TOUCH_END: int  # event id of touch end event
 UART: int  # interface id of the uart events
 USB_STATE: int  # interface id of the usb state events
+LOCAL: int  # interface local
 BUTTON: int  # interface id of button events
 BUTTON_PRESSED: int  # button down event
 BUTTON_RELEASED: int  # button up event

@@ -32,7 +32,7 @@ STATIC mp_obj_t mod_trezorio_camera_scan_qrcode(mp_obj_t x, mp_obj_t y) {
   uint32_t pos_y = trezor_obj_get_uint(y);
 
   vstr_t qr_data = {0};
-  vstr_init_len(&qr_data, 512);
+  vstr_init_len(&qr_data, 1024);
 
   uint32_t qr_len;
 

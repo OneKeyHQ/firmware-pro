@@ -29,6 +29,8 @@ secbool se_reset_storage(void);
 secbool se_set_sn(const char *serial, uint8_t len);
 secbool se_get_sn(char **serial);
 char *se_get_version(void);
+char *se_get_hash(void);
+char *se_get_build_id(void);
 secbool se_isInitialized(void);
 secbool se_hasPin(void);
 secbool se_setPin(const char *pin);

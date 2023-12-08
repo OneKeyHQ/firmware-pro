@@ -109,6 +109,10 @@ trezor.enums.InputScriptType
 import trezor.enums.InputScriptType
 trezor.enums.MessageType
 import trezor.enums.MessageType
+trezor.enums.OneKeyDeviceType
+import trezor.enums.OneKeyDeviceType
+trezor.enums.OneKeySeType
+import trezor.enums.OneKeySeType
 trezor.enums.OutputScriptType
 import trezor.enums.OutputScriptType
 trezor.enums.PinMatrixRequestType
@@ -265,6 +269,8 @@ trezor.pin
 import trezor.pin
 trezor.protobuf
 import trezor.protobuf
+trezor.qr
+import trezor.qr
 trezor.res
 import trezor.res
 trezor.res.resources
@@ -771,6 +777,54 @@ apps.tron.sign_tx
 import apps.tron.sign_tx
 apps.tron.tokens
 import apps.tron.tokens
+apps.ur_registry.account
+import apps.ur_registry.account
+apps.ur_registry.chains.chains
+import apps.ur_registry.chains.chains
+apps.ur_registry.crypto_coin_info
+import apps.ur_registry.crypto_coin_info
+apps.ur_registry.crypto_hd_key
+import apps.ur_registry.crypto_hd_key
+apps.ur_registry.crypto_key_path
+import apps.ur_registry.crypto_key_path
+apps.ur_registry.multi_accounts
+import apps.ur_registry.multi_accounts
+apps.ur_registry.registry_types
+import apps.ur_registry.registry_types
+apps.ur_registry.rlp
+import apps.ur_registry.rlp
+apps.ur_registry.rlp.converters
+import apps.ur_registry.rlp.converters
+apps.ur_registry.rlp.rlp
+import apps.ur_registry.rlp.rlp
+apps.ur_registry.ur_py.ur
+import apps.ur_registry.ur_py.ur
+apps.ur_registry.ur_py.ur.bytewords
+import apps.ur_registry.ur_py.ur.bytewords
+apps.ur_registry.ur_py.ur.cbor_lite
+import apps.ur_registry.ur_py.ur.cbor_lite
+apps.ur_registry.ur_py.ur.constants
+import apps.ur_registry.ur_py.ur.constants
+apps.ur_registry.ur_py.ur.crc32
+import apps.ur_registry.ur_py.ur.crc32
+apps.ur_registry.ur_py.ur.fountain_decoder
+import apps.ur_registry.ur_py.ur.fountain_decoder
+apps.ur_registry.ur_py.ur.fountain_encoder
+import apps.ur_registry.ur_py.ur.fountain_encoder
+apps.ur_registry.ur_py.ur.fountain_utils
+import apps.ur_registry.ur_py.ur.fountain_utils
+apps.ur_registry.ur_py.ur.random_sampler
+import apps.ur_registry.ur_py.ur.random_sampler
+apps.ur_registry.ur_py.ur.ur
+import apps.ur_registry.ur_py.ur.ur
+apps.ur_registry.ur_py.ur.ur_decoder
+import apps.ur_registry.ur_py.ur.ur_decoder
+apps.ur_registry.ur_py.ur.ur_encoder
+import apps.ur_registry.ur_py.ur.ur_encoder
+apps.ur_registry.ur_py.ur.utils
+import apps.ur_registry.ur_py.ur.utils
+apps.ur_registry.ur_py.ur.xoshiro256
+import apps.ur_registry.ur_py.ur.xoshiro256
 apps.workflow_handlers
 import apps.workflow_handlers
 
@@ -1155,6 +1209,20 @@ if not utils.BITCOIN_ONLY:
     import apps.tezos.layout
     apps.tezos.sign_tx
     import apps.tezos.sign_tx
+    apps.ur_registry.chains.ethereum
+    import apps.ur_registry.chains.ethereum
+    apps.ur_registry.chains.ethereum.eip1559_transaction
+    import apps.ur_registry.chains.ethereum.eip1559_transaction
+    apps.ur_registry.chains.ethereum.eth_sign_request
+    import apps.ur_registry.chains.ethereum.eth_sign_request
+    apps.ur_registry.chains.ethereum.eth_signature
+    import apps.ur_registry.chains.ethereum.eth_signature
+    apps.ur_registry.chains.ethereum.legacy_transaction
+    import apps.ur_registry.chains.ethereum.legacy_transaction
+    apps.ur_registry.chains.ethereum.personal_message_transacion
+    import apps.ur_registry.chains.ethereum.personal_message_transacion
+    apps.ur_registry.chains.ethereum.typed_data_transacion
+    import apps.ur_registry.chains.ethereum.typed_data_transacion
     apps.webauthn
     import apps.webauthn
     apps.webauthn.add_resident_credential

@@ -70,6 +70,7 @@ __all__ = (
     "confirm_sign_typed_hash",
     "confirm_polkadot_balances",
     "should_show_details",
+    "show_signature",
 )
 
 
@@ -2024,4 +2025,21 @@ async def confirm_tron_common(
     screen = AlgoCommon(title, ctx.primary_color, ctx.icon_path)
     await raise_if_cancelled(
         interact(ctx, screen, "confirm_tron_common", ButtonRequestType.ProtectCall)
+    )
+
+
+async def show_signature(
+    ctx: wire.GenericContext,
+    qr_code: str,
+) -> None:
+    from trezor.lvglui.scrs.template import Signature
+
+    await interact(
+        ctx,
+        Signature(
+            _(i18n_keys.TITLE__EXPORT_SIGNED_TRANSACTION),
+            qr_code=qr_code,
+        ),
+        "show_signature",
+        ButtonRequestType.SignTx,
     )

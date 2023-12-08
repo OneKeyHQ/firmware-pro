@@ -215,6 +215,9 @@ static secbool _send_msg(uint8_t iface_num, uint16_t msg_id,
 #define MSG_SEND(TYPE) \
   _send_msg(iface_num, MessageType_MessageType_##TYPE, TYPE##_fields, &msg_send)
 
+#define STR(X) #X
+#define VERSTR(X) STR(X)
+
 typedef struct {
   uint8_t iface_num;
   uint8_t packet_index;
@@ -360,6 +363,10 @@ static void send_msg_features(uint8_t iface_num,
       MSG_SEND_ASSIGN_STRING_LEN(fw_vendor, vhdr->vstr, vhdr->vstr_len);
       const char *ver_str = format_ver("%d.%d.%d", hdr->onekey_version);
       MSG_SEND_ASSIGN_STRING_LEN(onekey_version, ver_str, 5);
+      MSG_SEND_ASSIGN_STRING_LEN(onekey_firmware_version, ver_str, 5);
+
+      uint8_t *fimware_hash = get_firmware_hash(hdr);
+      MSG_SEND_ASSIGN_BYTES(onekey_firmware_hash, fimware_hash, 32);
     } else {
       MSG_SEND_ASSIGN_VALUE(firmware_present, false);
     }
@@ -375,15 +382,41 @@ static void send_msg_features(uint8_t iface_num,
     char *se_version = se_get_version();
     if (se_version) {
       MSG_SEND_ASSIGN_STRING_LEN(se_ver, se_version, strlen(se_version));
+      MSG_SEND_ASSIGN_STRING_LEN(onekey_se_version, se_version,
+                                 strlen(se_version));
+    }
+    char *se_hash = se_get_hash();
+    if (se_hash) {
+      MSG_SEND_ASSIGN_BYTES(onekey_se_hash, se_hash, 32);
+    }
+    char *se_build_id = se_get_build_id();
+    if (se_build_id) {
+      MSG_SEND_ASSIGN_STRING_LEN(onekey_se_build_id, se_build_id,
+                                 strlen(se_build_id));
     }
 
     char *serial = NULL;
     if (device_get_serial(&serial)) {
       MSG_SEND_ASSIGN_STRING_LEN(serial_no, serial, strlen(serial));
+      MSG_SEND_ASSIGN_STRING_LEN(onekey_serial_no, serial, strlen(serial));
     }
     char *board_version = get_boardloader_version();
     MSG_SEND_ASSIGN_STRING_LEN(boardloader_version, board_version,
                                strlen(board_version));
+    uint8_t *board_hash = get_boardloader_hash();
+    MSG_SEND_ASSIGN_BYTES(onekey_board_hash, board_hash, 32);
+
+    int boot_version_len = strlen((VERSTR(VERSION_MAJOR) "." VERSTR(
+        VERSION_MINOR) "." VERSTR(VERSION_PATCH)));
+    MSG_SEND_ASSIGN_STRING_LEN(onekey_boot_version,
+                               (VERSTR(VERSION_MAJOR) "." VERSTR(
+                                   VERSION_MINOR) "." VERSTR(VERSION_PATCH)),
+                               boot_version_len);
+    uint8_t *boot_hash = get_bootloader_hash();
+    MSG_SEND_ASSIGN_BYTES(onekey_boot_hash, boot_hash, 32);
+
+    MSG_SEND_ASSIGN_VALUE(onekey_device_type, OneKeyDeviceType_TOUCH_PRO);
+    MSG_SEND_ASSIGN_VALUE(onekey_se_type, OneKeySeType_THD89);
   }
 
   MSG_SEND(Features);

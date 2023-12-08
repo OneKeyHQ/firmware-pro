@@ -9,6 +9,7 @@ from trezor.lvglui.i18n import gettext as _, i18n_refresh, keys as i18n_keys
 from trezor.lvglui.lv_colors import lv_colors
 from trezor.lvglui.scrs.components.pageable import Indicator
 from trezor.lvglui.scrs.components.qrcode import QRCode
+from trezor.qr import close_camera, get_hd_key, save_app_obj, scan_qr
 from trezor.ui import display, style
 
 import ujson as json
@@ -107,6 +108,7 @@ class MainScreen(Screen):
         )
         self.apps = self.AppDrawer(self)
         self.add_event_cb(self.on_slide_up, lv.EVENT.GESTURE, None)
+        save_app_obj(self)
 
     def hidden_titles(self, hidden: bool = True):
         if hidden:
@@ -901,13 +903,25 @@ class WalletList(Screen):
 
         self.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
 
+        async def init_hd_key(obj):
+            from trezor.qr import gen_hd_key
+
+            await gen_hd_key()
+            area = lv.area_t()
+            area.x1 = 0
+            area.y1 = 0
+            area.x2 = 480
+            area.y2 = 800
+            obj.invalidate_area(area)
+
+        workflow.spawn(init_hd_key(self))
+
     def on_click(self, event_obj):
         code = event_obj.code
         target = event_obj.get_target()
         if code == lv.EVENT.CLICKED:
             if target == self.onekey:
-                # TODO: prepare qr data
-                qr_data = "UR:CRYPTO-HDKEY/PTAOWKAXHDCLAOVSBAPEJOLYSNPRTYSGATEEBAJLDYBKMKVSPRWNGMAHJTSTPRMHYTHKAXCEIAFEGWAAHDCXJPMHURTLNNYKHGZCOTTIJEFNCPROPYDYLKGSCSMKAYSTRLBGJLGSGLVODPPAWFVLAHTAADEHOEADCSFNAOAEAMTAADDYOTADLNCSDWYKCSFNYKAEYKAOCYTIZSYLCNAXAXATTAADDYOEADLRAEWKLAWKAXAEAYCYTENNASHHASISGRIHKKJKJYJLJTIHBKJOHSIAIAJLKPJTJYDMJKJYHSJTIEHSJPIEGHRKHEGL"
+                qr_data = get_hd_key()
                 ConnectWallet(
                     self,
                     _(i18n_keys.ITEM__ONEKEY_WALLET),
@@ -916,8 +930,8 @@ class WalletList(Screen):
                     "A:/res/ok-logo-96.png",
                 )
             elif target == self.mm:
-                # TODO: prepare qr data
-                qr_data = "UR:CRYPTO-HDKEY/PTAOWKAXHDCLAOVSBAPEJOLYSNPRTYSGATEEBAJLDYBKMKVSPRWNGMAHJTSTPRMHYTHKAXCEIAFEGWAAHDCXJPMHURTLNNYKHGZCOTTIJEFNCPROPYDYLKGSCSMKAYSTRLBGJLGSGLVODPPAWFVLAHTAADEHOEADCSFNAOAEAMTAADDYOTADLNCSDWYKCSFNYKAEYKAOCYTIZSYLCNAXAXATTAADDYOEADLRAEWKLAWKAXAEAYCYTENNASHHASISGRIHKKJKJYJLJTIHBKJOHSIAIAJLKPJTJYDMJKJYHSJTIEHSJPIEGHRKHEGL"
+                qr_data = get_hd_key()
+                print("mm: ", qr_data)
                 ConnectWallet(
                     self,
                     _(i18n_keys.ITEM__METAMASK_WALLET),
@@ -926,8 +940,7 @@ class WalletList(Screen):
                     "A:/res/mm-logo-96.png",
                 )
             elif target == self.okx:
-                # TODO: prepare qr data
-                qr_data = "UR:CRYPTO-HDKEY/PTAOWKAXHDCLAOVSBAPEJOLYSNPRTYSGATEEBAJLDYBKMKVSPRWNGMAHJTSTPRMHYTHKAXCEIAFEGWAAHDCXJPMHURTLNNYKHGZCOTTIJEFNCPROPYDYLKGSCSMKAYSTRLBGJLGSGLVODPPAWFVLAHTAADEHOEADCSFNAOAEAMTAADDYOTADLNCSDWYKCSFNYKAEYKAOCYTIZSYLCNAXAXATTAADDYOEADLRAEWKLAWKAXAEAYCYTENNASHHASISGRIHKKJKJYJLJTIHBKJOHSIAIAJLKPJTJYDMJKJYHSJTIEHSJPIEGHRKHEGL"
+                qr_data = get_hd_key()
                 ConnectWallet(
                     self,
                     _(i18n_keys.ITEM__OKX_WALLET),
@@ -1093,7 +1106,8 @@ class ScanScreen(Screen):
         )
         self.btn.clear_state(lv.STATE.CHECKED)
         self.add_event_cb(self.on_event, lv.EVENT.CLICKED, None)
-        # TODO: open camera to scan
+
+        scan_qr(self)
 
     def on_event(self, event_obj):
         code = event_obj.code
@@ -1115,9 +1129,7 @@ class ScanScreen(Screen):
                     self.btn.enable()
                     self.btn.add_state(lv.STATE.CHECKED)
             elif target == self.nav_back.nav_btn:
-                # TODO: close camera
-                if __debug__:
-                    print("need to close camera")
+                close_camera()
 
     def _load_scr(self, scr: "Screen", back: bool = False) -> None:
         lv.scr_load(scr)

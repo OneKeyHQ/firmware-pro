@@ -15,7 +15,7 @@ USE_THD89 = ARGUMENTS.get('USE_THD89', '0')
 FEATURE_FLAGS = {
     "RDI": True,
     "SECP256K1_ZKP": True,  # required for trezor.crypto.curve.bip340 (BIP340/Taproot)
-    "SYSTEM_VIEW": False,
+    "SYSTEM_VIEW": True,
 }
 
 CCFLAGS_MOD = ''
@@ -23,7 +23,7 @@ CPPPATH_MOD = []
 CPPDEFINES_MOD = []
 SOURCE_MOD = []
 
-PYOPT = ARGUMENTS.get('PYOPT', '1')
+PYOPT = ARGUMENTS.get('PYOPT', '0')
 FROZEN = True
 
 if TREZOR_MODEL in ('1', 'R'):
@@ -945,6 +945,10 @@ if FROZEN:
         SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'apps/kaspa/*.py'))
         SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'apps/nexa/*.py'))
         SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'trezor/enums/Zcash*.py'))
+
+        SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'apps/ur_registry/*.py'))
+        SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'apps/ur_registry/*/*.py'))
+        SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'apps/ur_registry/*/*/*.py'))
 
     source_mpy = env.FrozenModule(source=SOURCE_PY, source_dir=SOURCE_PY_DIR, bitcoin_only=BITCOIN_ONLY)
 

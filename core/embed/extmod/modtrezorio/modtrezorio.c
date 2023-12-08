@@ -34,6 +34,8 @@
 // Whether USB data pins were connected on last check (USB configured)
 bool usb_connected_previously = true;
 
+bool local_interface_ready = false;
+
 #define CHECK_PARAM_RANGE(value, minimum, maximum)  \
   if (value < minimum || value > maximum) {         \
     mp_raise_ValueError(#value " is out of range"); \
@@ -52,6 +54,7 @@ bool usb_connected_previously = true;
 #include "modtrezorio-buz.h"
 #include "modtrezorio-camera.h"
 #include "modtrezorio-fatfs.h"
+#include "modtrezorio-local.h"
 #include "modtrezorio-moto.h"
 #include "modtrezorio-sbu.h"
 #include "modtrezorio-sdcard.h"
@@ -71,6 +74,7 @@ bool usb_connected_previously = true;
 
 /// UART: int  # interface id of the uart events
 /// USB_STATE: int  # interface id of the usb state events
+/// LOCAL: int  # interface local
 
 /// BUTTON: int  # interface id of button events
 /// BUTTON_PRESSED: int  # button down event
@@ -119,6 +123,9 @@ STATIC const mp_rom_map_elem_t mp_module_trezorio_globals_table[] = {
     {MP_ROM_QSTR(MP_QSTR_poll), MP_ROM_PTR(&mod_trezorio_poll_obj)},
     {MP_ROM_QSTR(MP_QSTR_POLL_READ), MP_ROM_INT(POLL_READ)},
     {MP_ROM_QSTR(MP_QSTR_POLL_WRITE), MP_ROM_INT(POLL_WRITE)},
+
+    {MP_ROM_QSTR(MP_QSTR_LOCAL), MP_ROM_INT(LOCAL_IFACE)},
+    {MP_ROM_QSTR(MP_QSTR_LOCAL_CTL), MP_ROM_PTR(&mod_trezorio_LOCAL_CTL_type)},
 
     {MP_ROM_QSTR(MP_QSTR_USB_CHECK), MP_ROM_INT(USB_DATA_IFACE)},
 };

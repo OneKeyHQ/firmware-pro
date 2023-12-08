@@ -89,9 +89,44 @@ def boot_version() -> str:
 
 
 # extmod/modtrezorutils/modtrezorutils.c
+def boot_hash() -> bytes:
+    """
+    Returns the bootloader hash string.
+    """
+
+
+# extmod/modtrezorutils/modtrezorutils.c
 def board_version() -> str:
     """
     Returns the bootloader version string.
+    """
+
+
+# extmod/modtrezorutils/modtrezorutils.c
+def board_hash() -> bytes:
+    """
+    Returns the boardloader hash.
+    """
+
+
+# extmod/modtrezorutils/modtrezorutils.c
+def se_version() -> str:
+    """
+    Returns the se version string.
+    """
+
+
+# extmod/modtrezorutils/modtrezorutils.c
+def se_hash() -> bytes:
+    """
+    Returns the se hash.
+    """
+
+
+# extmod/modtrezorutils/modtrezorutils.c
+def se_build_id() -> str:
+    """
+    Returns the se build id string.
     """
 
 

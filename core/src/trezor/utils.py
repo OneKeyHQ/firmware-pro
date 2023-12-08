@@ -24,6 +24,11 @@ from trezorutils import (  # noqa: F401; FIRMWARE_SECTORS_COUNT,; firmware_secto
     reboot_to_bootloader,
     reset,
     usb_data_connected,
+    board_hash,
+    boot_hash,
+    se_version,
+    se_hash,
+    se_build_id,
 )
 
 if not EMULATOR:

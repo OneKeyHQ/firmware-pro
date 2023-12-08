@@ -49,7 +49,7 @@ def get_features() -> Features:
     import storage  # workaround for https://github.com/microsoft/pyright/issues/2685
 
     from trezor import sdcard
-    from trezor.enums import Capability
+    from trezor.enums import Capability, OneKeyDeviceType, OneKeySeType
     from trezor.messages import Features
     from trezor import uart
     from apps.common import mnemonic, safety_checks
@@ -75,6 +75,18 @@ def get_features() -> Features:
         bootloader_version=utils.boot_version(),
         boardloader_version=utils.board_version(),
         busy=busy_expiry_ms() > 0,
+        onekey_device_type=OneKeyDeviceType.TOUCH_PRO,
+        onekey_se_type=OneKeySeType.THD89,
+        onekey_board_version=utils.board_version(),
+        onekey_board_hash=utils.board_hash(),
+        onekey_boot_version=utils.boot_version(),
+        onekey_boot_hash=utils.boot_hash(),
+        onekey_se_version=utils.se_version(),
+        onekey_se_hash=utils.se_hash(),
+        onekey_se_build_id=utils.se_build_id(),
+        onekey_firmware_version=utils.ONEKEY_VERSION,
+        onekey_firmware_build_id=str(utils.BUILD_ID),
+        onekey_serial_no=storage.device.get_serial(),
     )
 
     if utils.BITCOIN_ONLY:
@@ -131,7 +143,9 @@ def get_features() -> Features:
     return f
 
 
-async def handle_Initialize(ctx: wire.Context, msg: Initialize) -> Features:
+async def handle_Initialize(
+    ctx: wire.Context | wire.QRContext, msg: Initialize
+) -> Features:
     session_id = storage.cache.start_session(msg.session_id)
 
     if not utils.BITCOIN_ONLY:

@@ -339,6 +339,8 @@ if not utils.BITCOIN_ONLY:
     NexaSignedTx = 11403
     NexaTxInputRequest = 11404
     NexaTxInputAck = 11405
+    URCryptoHdkey = 21000
+    URResponse = 21001
     DeviceBackToBoot = 903
     RebootToBoardloader = 904
     DeviceInfoSettings = 10001

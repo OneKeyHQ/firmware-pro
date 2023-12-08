@@ -20,11 +20,13 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "blake2s.h"
 #include "br_check.h"
-#include "image.h"
+#include "flash.h"
 #include "sha2.h"
 
 static char boardloader_version[32] = {0};
+#define FW_CHUNK_SIZE 65536
 
 #if PRODUCTION
 
@@ -112,4 +114,50 @@ char *get_boardloader_version(void) {
   }
 
   return boardloader_version;
+}
+
+uint8_t *get_boardloader_hash(void) {
+  static uint8_t boardloader_hash[32] = {0};
+
+  sha256_Raw((uint8_t *)BOARDLOADER_START, BOOTLOADER_START - BOARDLOADER_START,
+             boardloader_hash);
+  sha256_Raw(boardloader_hash, 32, boardloader_hash);
+
+  return boardloader_hash;
+}
+
+uint8_t *get_bootloader_hash(void) {
+  static uint8_t bootloader_hash[32] = {0};
+
+  sha256_Raw((uint8_t *)BOOTLOADER_START, FIRMWARE_START - BOOTLOADER_START,
+             bootloader_hash);
+  sha256_Raw(bootloader_hash, 32, bootloader_hash);
+
+  return bootloader_hash;
+}
+
+uint8_t *get_firmware_hash(const image_header *hdr) {
+  static uint8_t onekey_firmware_hash[32] = {0};
+  static bool onekey_firmware_hash_cached = false;
+  if (!onekey_firmware_hash_cached) {
+    onekey_firmware_hash_cached = true;
+
+    BLAKE2S_CTX ctx;
+    blake2s_Init(&ctx, BLAKE2S_DIGEST_LENGTH);
+    for (int i = 0; i < FIRMWARE_SECTORS_COUNT; i++) {
+      uint8_t sector = FIRMWARE_SECTORS[i];
+      uint32_t size = flash_sector_size(sector);
+      const void *data = flash_get_address(sector, 0, size);
+      if (data == NULL) {
+        return NULL;
+      }
+      blake2s_Update(&ctx, data, size);
+    }
+
+    if (blake2s_Final(&ctx, onekey_firmware_hash, BLAKE2S_DIGEST_LENGTH) != 0) {
+      return NULL;
+    }
+  }
+
+  return onekey_firmware_hash;
 }

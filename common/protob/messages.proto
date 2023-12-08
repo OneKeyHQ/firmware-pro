@@ -496,6 +496,10 @@ enum MessageType {
     MessageType_NexaTxInputRequest = 11404 [(wire_out) = true];
     MessageType_NexaTxInputAck = 11405 [(wire_in) = true];
 
+    // Uniform Resources [21000:22000]
+    MessageType_URCryptoHdkey = 21000 [(wire_in) = true];
+    MessageType_URResponse = 21001 [(wire_out) = true];
+    
     //onekey
     MessageType_DeviceBackToBoot = 903 [(wire_in) = true];
     MessageType_RebootToBoardloader = 904 [(wire_in) = true];

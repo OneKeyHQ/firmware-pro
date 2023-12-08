@@ -1,3 +1,5 @@
 ^legacy/firmware/protob/messages_pb2\.py
 ^legacy/firmware/protob/messages_nem_pb2\.py
 ^legacy/vendor
+^core/src/apps/ur_registry/ur_py
+^core/src/apps/ur_registry/rlp
