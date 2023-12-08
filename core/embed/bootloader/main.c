@@ -65,7 +65,6 @@
 
 #include "camera.h"
 #include "emmc_wrapper.h"
-#include "fp_sensor_wrapper.h"
 #include "nfc.h"
 
 #if PRODUCTION
@@ -263,70 +262,6 @@ static void nfc_test_v2() {
     ;
 }
 
-// static void fp_display_image(uint8_t *pu8ImageBuf)
-// {
-// }
-
-static void fp_test() {
-  display_printf("TouchPro Demo Mode\n");
-  display_printf("======================\n\n");
-  char fpver[32];
-  FpLibVersion(fpver);
-  display_printf("FP Lib - %s\n", fpver);
-  display_printf("FP Init...");
-
-  ExecuteCheck_ADV_FP(fpsensor_gpio_init(), FPSENSOR_OK,
-                      { dbgprintf_Wait("err=%d", FP_ret); });
-  ExecuteCheck_ADV_FP(fpsensor_spi_init(), FPSENSOR_OK,
-                      { dbgprintf_Wait("err=%d", FP_ret); });
-  ExecuteCheck_ADV_FP(fpsensor_hard_reset(), FPSENSOR_OK,
-                      { dbgprintf_Wait("err=%d", FP_ret); });
-  ExecuteCheck_ADV_FP(fpsensor_init(), FPSENSOR_OK,
-                      { dbgprintf_Wait("err=%d", FP_ret); });
-  ExecuteCheck_ADV_FP(fpsensor_adc_init(12, 12, 16, 3), FPSENSOR_OK,
-                      { dbgprintf_Wait("err=%d", FP_ret); });
-  ExecuteCheck_ADV_FP(fpsensor_set_config_param(0xC0, 8), FPSENSOR_OK,
-                      { dbgprintf_Wait("err=%d", FP_ret); });
-  ExecuteCheck_ADV_FP(FpAlgorithmInit(TEMPLATE_ADDR_START), FPSENSOR_OK,
-                      { dbgprintf_Wait("err=%d", FP_ret); });
-
-  display_printf("done\n");
-
-  uint8_t image_data[88 * 112 + 2];
-  memzero(image_data, sizeof(image_data));
-  uint32_t wrote_bytes = 0;
-
-  while (wrote_bytes == 0) {
-    if (FpsDetectFinger() == 1) {
-      display_printf("finger detected\n");
-
-      switch (FpsGetImageData(image_data)) {
-        case 0:
-          if (emmc_fs_file_write("0:imagedata.bin", 0, image_data, 88 * 112 + 2,
-                                 &wrote_bytes, true, false)) {
-            display_printf("image write success\n");
-          } else {
-            display_printf("image write fail\n");
-          }
-          break;
-        case 1:
-          display_printf("no fingerprint\n");
-          break;
-        case 2:
-          display_printf("fingerprint too small\n");
-          break;
-        default:
-          display_printf("unknow error\n");
-          break;
-      }
-    }
-
-    fpsensor_delay_ms(100);
-  }
-
-  dbgprintf("wrote %lu bytes", wrote_bytes);
-  dbgprintf_Wait("fp_test exiting...");
-}
 #endif
 
 // this is mainly for ignore/supress faults during flash read (for check
@@ -842,8 +777,6 @@ int main(void) {
   // nfc_test_v2();
   UNUSED(nfc_test_v2);
 
-  // fp_test();
-  UNUSED(fp_test);
 #endif
 
   device_para_init();

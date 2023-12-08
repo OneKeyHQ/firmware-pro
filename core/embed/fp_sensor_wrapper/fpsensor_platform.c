@@ -2,6 +2,7 @@
 #include "fpsensor_driver.h"
 
 SPI_HandleTypeDef spi_fp;
+static uint32_t fp_data_address = 0;
 
 /*
 * Function：    fpsensor_gpio_init
@@ -214,6 +215,11 @@ void fpsensor_delay_ms(uint32_t Timeout)
     HAL_Delay(Timeout);
 }
 
+// #include "secbool.h"
+
+// extern secbool se_fp_write(uint16_t offset, const void *val_dest, uint16_t len);
+// extern secbool se_fp_read(uint16_t offset, void *val_dest, uint16_t len); 
+
 /*
 * Function：    SF_Init
 * Description： 申请起始地址为startAddr，大小为ucMmSize字节大小。
@@ -225,7 +231,8 @@ void fpsensor_delay_ms(uint32_t Timeout)
 */
 uint8_t SF_Init(uint32_t startAddr, uint32_t ucMmSize)
 {
-    memset((void*)startAddr, 0x00, ucMmSize);
+    (void)ucMmSize;
+    fp_data_address = startAddr;
     return FPSENSOR_OK;
 }
 /*
@@ -236,9 +243,10 @@ uint8_t SF_Init(uint32_t startAddr, uint32_t ucMmSize)
  * Return:       0-成功。
  * Others:       无。
  */
-uint8_t SF_WriteData(uint8_t* buffer, uint32_t addr, uint32_t length)
+uint8_t SF_WriteData(uint8_t* buffer, uint32_t offset, uint32_t length)
 {
-    memcpy((void*)addr, buffer, length);
+    memcpy((void*)(offset + fp_data_address), buffer, length);
+    // se_fp_write(offset , buffer, length);
     return FPSENSOR_OK;
 }
 /*
@@ -249,9 +257,10 @@ uint8_t SF_WriteData(uint8_t* buffer, uint32_t addr, uint32_t length)
  * Return:       0-成功。
  * Others:       无。
  */
-uint8_t SF_ReadData(uint8_t* buffer, uint32_t addr, uint32_t length)
+uint8_t SF_ReadData(uint8_t* buffer, uint32_t offset, uint32_t length)
 {
-    memcpy(buffer, (void*)addr, length);
+    memcpy(buffer, (void*)(offset + fp_data_address), length);
+    // se_fp_read(offset, buffer, length);
     return FPSENSOR_OK;
 }
 
