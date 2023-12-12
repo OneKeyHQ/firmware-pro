@@ -38,6 +38,7 @@
  */
 #include <stdint.h>
 #include <stddef.h>
+#include <string.h>
 
 /* Defining MPU_WRAPPERS_INCLUDED_FROM_API_FILE prevents task.h from redefining
  * all the API functions to use the MPU wrappers.  That should only be done when
@@ -281,8 +282,28 @@ void * pvPortMalloc( size_t xWantedSize )
 /*-----------------------------------------------------------*/
 
 void * pvPortReMalloc( void * pv , size_t xWantedSize ){
-    vPortFree( pv );
-    return pvPortMalloc( xWantedSize );
+    if ( xWantedSize == 0 ){
+        vPortFree( pv );
+        return NULL;
+    }
+    void * pvNew = pvPortMalloc( xWantedSize );
+
+    if ( pvNew == NULL ){
+        return NULL;
+    }
+
+    if ( pv != NULL ){
+        memcpy( pvNew, pv, xWantedSize );
+        vPortFree( pv );
+    }
+
+    return pvNew;
+}
+
+void * pvPortCalloc( size_t num, size_t size ){
+    void * pv = pvPortMalloc( num * size );
+    memset( pv, 0, num * size );
+    return pv;
 }
 
 void vPortFree( void * pv )

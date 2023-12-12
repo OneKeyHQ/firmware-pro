@@ -459,6 +459,7 @@ if PRODUCTION_MODEL == 'H':
         'embed/trezorhal/gt911.c',
         'embed/trezorhal/spi_legacy.c',
         'embed/trezorhal/camera.c',
+        'embed/trezorhal/camera_qrcode.c',
         'embed/trezorhal/heap_4.c',
         'embed/trezorhal/qspi_flash.c',
         'embed/trezorhal/mini_printf.c',
@@ -572,6 +573,20 @@ SOURCE_FP_SENSOR_WRAPPER.extend(Glob('embed/fp_sensor_wrapper/*.c'))
 #        'vendor/micropython/lib/stm32lib/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma2d.c',
 #    ]
 
+SOURCE_ZBAR = [
+    'embed/zbar/config.c',
+    'embed/zbar/decoder.c',
+    'embed/zbar/error.c',
+    'embed/zbar/image.c',
+    'embed/zbar/img_scanner.c',
+    'embed/zbar/refcnt.c',
+    'embed/zbar/scanner.c',
+    'embed/zbar/symbol.c',
+    'embed/zbar/zbar_malloc.c',
+    'embed/zbar/decoder/qr_finder.c',
+]
+SOURCE_ZBAR.extend(Glob('embed/zbar/qrcode/*.c'))
+
 CPPDEFINES_MOD += ['USE_SVC_SHUTDOWN']
 
 if FEATURE_FLAGS["RDI"]:
@@ -670,6 +685,9 @@ if PRODUCTION_MODEL == 'H':
             'embed/fp_sensor_wrapper',
             'vendor/lvgl_mp/lvgl',
             'embed/quirc/lib',
+            'embed/zbar',
+            'embed/zbar/qrcode',
+            'embed/zbar/decoder',  
         ] + CPPPATH_MOD,
         CPPDEFINES=[
             'TREZOR_MODEL_'+TREZOR_MODEL,
@@ -1060,6 +1078,32 @@ if FROZEN:
 
 VENDORHEADER = 'embed/vendorheader/vendorheader_' + ('onekey_test_signed.bin' if ARGUMENTS.get('PRODUCTION', '0') == '0' else 'onekey_signed.bin')
 
+zbar_env = env.Clone()
+zbar_archive = zbar_env.Object(source=SOURCE_ZBAR)
+
+zbar_env.Replace(CCFLAGS='$COPT '
+        '-g3 '
+        '-nostdlib '
+        '-std=gnu99 -Wall -Wdouble-promotion -Wpointer-arith -Wno-missing-braces -Wno-error=parentheses -fno-common '
+        '-fsingle-precision-constant -fdata-sections -ffunction-sections '
+        '-ffreestanding '
+        '-fstack-protector-all '
+        + CPU_CCFLAGS + CCFLAGS_MOD,)
+
+#zbar_env.Append(CPPDEFINES=[
+#            ('malloc', 'pvPortMalloc'),
+#            ('free', 'vPortFree'),
+#            ('calloc', 'pvPortCalloc'),
+#            ('realloc', 'pvPortReMalloc'),
+#        ])
+
+program_lib = zbar_env.Command(
+    target='libzbar',
+    source=zbar_archive,
+    action=
+    '$AR rcs $TARGET $SOURCES',
+)
+
 obj_program.extend(
     env.Command(
         target='embed/firmware/vendorheader.o',
@@ -1080,7 +1124,7 @@ env.Depends(obj_program, qstr_generated)
 
 program_elf = env.Command(
     target='firmware.elf',
-    source=obj_program,
+    source=[obj_program, program_lib],
     action=
     '$LINK -o $TARGET $CCFLAGS $CFLAGS $SOURCES $LINKFLAGS -lc_nano -lnosys -lm -lgcc',
 )

@@ -6,13 +6,13 @@
 #include "common.h"
 #include "display.h"
 #include "mipi_lcd.h"
-#include "quirc.h"
 #include "irq.h"
 
-static struct quirc* qr_decoder;
+#define CAMERA_CAPTURE_MODE 0 // 0: snapshot mode, 1: continuous mode
 
 static I2C_HandleTypeDef* i2c_handle_camera = NULL;
 static volatile bool capture_done = false;
+static volatile bool camera_opened = false;
 
 DCMI_HandleTypeDef DCMI_Handle;
 DMA_HandleTypeDef DMA_DCMI_Handle;
@@ -134,7 +134,11 @@ void DCMI_IRQHandler(void)
 
 void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef* hdcmi)
 {
-    // camera_suspend();
+#if CAMERA_CAPTURE_MODE == 0
+    camera_stop();
+#else
+    camera_suspend();
+#endif
     capture_done = true;
 }
 
@@ -210,13 +214,18 @@ unsigned char camera_is_online(void)
 
 void camera_start(uint8_t* buffer_address, uint32_t mode)
 {
+    if ( camera_opened )
+    {
+        camera_resume();
+        return;
+    }
     HAL_DCMI_Start_DMA(&DCMI_Handle, mode, (uint32_t)buffer_address, (WIN_W * WIN_H) / 2);
 }
 
 void camera_stop(void)
 {
     HAL_DCMI_Stop(&DCMI_Handle);
-    capture_done = false;
+    camera_opened = false;
 }
 
 void camera_suspend(void)
@@ -227,6 +236,31 @@ void camera_suspend(void)
 void camera_resume(void)
 {
     HAL_DCMI_Resume(&DCMI_Handle);
+}
+
+void camera_capture_start(void)
+{
+#if CAMERA_CAPTURE_MODE == 0
+    camera_start((uint8_t*)CAM_BUF_ADDRESS, DCMI_MODE_SNAPSHOT);
+#else
+    camera_start((uint8_t*)CAM_BUF_ADDRESS, DCMI_MODE_CONTINUOUS);
+#endif
+}
+
+int camera_capture_done(void)
+{
+    int32_t tickstart = HAL_GetTick();
+
+    while ( !capture_done )
+    {
+        if ( (HAL_GetTick() - tickstart) > 200 )
+        {
+            camera_stop();
+            return 0;
+        }
+    }
+    capture_done = false;
+    return 1;
 }
 
 int camera_init(void)
@@ -250,106 +284,4 @@ int camera_init(void)
     dcmi_init();
 
     return ret;
-}
-
-uint8_t rgb565_to_gray(uint16_t rgb565)
-{
-    // Extract R, G, B values from RGB565
-    int r = ((rgb565 >> 11) & 0x1F) << 3;
-    int g = ((rgb565 >> 5) & 0x3F) << 2;
-    int b = (rgb565 & 0x1F) << 3;
-
-    // Convert RGB to grayscale using fast integer approximation
-    int gray_value = (r * 76 + g * 150 + b * 29) >> 8;
-
-    return gray_value & 0xff;
-}
-
-int quirc_decode_buffer(uint8_t* buffer, uint8_t* out, uint32_t len)
-{
-    uint8_t* image_data;
-    struct quirc_code code;
-    struct quirc_data data = {0};
-    uint16_t* rgb565_value = (uint16_t*)buffer;
-
-    qr_decoder = quirc_new();
-
-    if ( quirc_resize(qr_decoder, WIN_W, WIN_H) < 0 )
-    {
-        goto fail;
-    }
-    image_data = quirc_begin(qr_decoder, NULL, NULL);
-    for ( int i = 0; i < WIN_W * WIN_H; i++ )
-    {
-        image_data[i] = rgb565_to_gray(rgb565_value[i]);
-    }
-    quirc_end(qr_decoder);
-
-    int num_codes = quirc_count(qr_decoder);
-    if ( num_codes != 1 )
-    {
-        goto fail;
-    }
-    quirc_extract(qr_decoder, 0, &code);
-    quirc_decode_error_t err = quirc_decode(&code, &data);
-    if ( err == QUIRC_ERROR_DATA_ECC )
-    {
-        quirc_flip(&code);
-        err = quirc_decode(&code, &data);
-    }
-    if ( err )
-    {
-        goto fail;
-    }
-fail:
-    quirc_destroy(qr_decoder);
-    if ( len >= data.payload_len )
-    {
-        memcpy(out, data.payload, data.payload_len);
-    }
-
-    return data.payload_len;
-}
-
-int camera_qr_decode(uint32_t x, uint32_t y, uint8_t* data, uint32_t data_len)
-{
-
-    int len = 0;
-
-    camera_start((uint8_t*)CAM_BUF_ADDRESS, DCMI_MODE_SNAPSHOT);
-
-    int32_t tickstart = HAL_GetTick();
-
-    while ( !capture_done )
-    {
-        if ( (HAL_GetTick() - tickstart) > 200 )
-        {
-            camera_stop();
-            return 0;
-        }
-    }
-    camera_stop();
-    dma2d_copy_buffer(
-        (uint32_t*)CAM_BUF_ADDRESS, (uint32_t*)FMC_SDRAM_LTDC_BUFFER_ADDRESS, x, y, WIN_W, WIN_H
-    );
-    len = quirc_decode_buffer((uint8_t*)CAM_BUF_ADDRESS, data, data_len);
-    return len;
-}
-
-void camera_test(void)
-{
-    uint8_t qr_code[256];
-    int len;
-
-    display_clear();
-
-    while ( 1 )
-    {
-        len = camera_qr_decode(80, 80, qr_code, sizeof(qr_code));
-        if ( len )
-        {
-            display_bar(0, 330, 480, 50, COLOR_BLACK);
-            display_text(0, 430, (char*)qr_code, len, FONT_NORMAL, COLOR_WHITE, COLOR_BLACK);
-        }
-    }
 }

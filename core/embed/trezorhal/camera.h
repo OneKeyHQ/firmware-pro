@@ -31,9 +31,8 @@ unsigned char camera_sccb_read_reg(unsigned char reg_addr, unsigned char* data);
 unsigned char camera_sccb_write_reg(unsigned char reg_addr, unsigned char* data);
 unsigned short camera_get_id(void);
 unsigned char camera_is_online(void);
-int camera_qr_decode(uint32_t x, uint32_t y, uint8_t* data, uint32_t data_len);
-
-void camera_test(void);
+void camera_capture_start(void);
+int camera_capture_done(void);
 
 #define camera_enter_sleep_mode() HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11, GPIO_PIN_SET)
 #define camera_exit_sleep_mode()  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11, GPIO_PIN_RESET)
@@ -49,7 +48,7 @@ static const unsigned char default_regs[][2] = {
     {0xfc, 0x06},
     {0xf6, 0x00},
     {0xf7, 0x9f},
-    {0xf8, 0x85},
+    {0xf8, 0x84},
     {0xfa, 0x00},
     {0xf9, 0xfe},
     {0xf2, 0x00},

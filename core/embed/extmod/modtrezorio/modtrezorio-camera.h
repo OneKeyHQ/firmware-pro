@@ -20,6 +20,7 @@
 #include "embed/extmod/trezorobj.h"
 
 #include "camera.h"
+#include "camera_qrcode.h"
 
 /// package: trezorio.camera
 

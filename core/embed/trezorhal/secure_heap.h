@@ -80,6 +80,8 @@ void * pvPortMalloc( size_t xWantedSize );
 
 void * pvPortReMalloc( void * pv , size_t xWantedSize );
 
+void * pvPortCalloc( size_t num, size_t size );
+
 /**
  * @brief Frees the previously allocated memory.
  *
