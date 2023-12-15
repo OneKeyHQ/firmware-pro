@@ -182,3 +182,24 @@ def sign_message(msg: bytes) -> bytes:
     """
     Sign message.
     """
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
+def fingerprint_is_unlocked() -> bool:
+    """
+    Returns True if fingerprint is unlocked, False otherwise.
+    """
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
+def fingerprint_lock() -> None:
+    """
+    fingerprint lock.
+    """
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
+def fingerprint_unlock() -> None:
+    """
+    fingerprint unlock.
+    """

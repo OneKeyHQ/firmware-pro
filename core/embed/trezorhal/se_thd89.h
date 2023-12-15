@@ -117,4 +117,8 @@ secbool se_authorization_get_data(uint8_t *authorization_data,
                                   uint32_t *authorization_len);
 void se_authorization_clear(void);
 
+secbool se_fingerprint_state(void);
+secbool se_fingerprint_lock(void);
+secbool se_fingerprint_unlock(void);
+
 #endif

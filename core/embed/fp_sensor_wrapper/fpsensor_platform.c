@@ -218,7 +218,7 @@ void fpsensor_delay_ms(uint32_t Timeout)
 // #include "secbool.h"
 
 // extern secbool se_fp_write(uint16_t offset, const void *val_dest, uint16_t len);
-// extern secbool se_fp_read(uint16_t offset, void *val_dest, uint16_t len); 
+// extern secbool se_fp_read(uint16_t offset, void *val_dest, uint16_t len);
 
 /*
 * Function：    SF_Init

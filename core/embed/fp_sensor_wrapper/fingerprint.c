@@ -25,7 +25,8 @@ int fingerprint_detect(void)
 
 int fingerprint_enroll(uint8_t counter)
 {
-    if(FpsDetectFinger() != 1){
+    if ( FpsDetectFinger() != 1 )
+    {
         return -1;
     }
     if ( FpsGetImage() != 0 )
@@ -37,17 +38,17 @@ int fingerprint_enroll(uint8_t counter)
     {
         return -1;
     }
-   if ( FpaMergeFeatureToTemplate(counter) != 0 )
-        {
-           return -1;
-        }
+    if ( FpaMergeFeatureToTemplate(counter) != 0 )
+    {
+        return -1;
+    }
 
-    return 0;    
+    return 0;
 }
 
 int fingerprint_save(uint8_t id)
 {
-    if (id > MAX_USER_COUNT-1)
+    if ( id > MAX_USER_COUNT - 1 )
     {
         return -1;
     }
@@ -56,7 +57,8 @@ int fingerprint_save(uint8_t id)
 
 int fingerprint_match(uint8_t* match_id)
 {
-    if(FpsDetectFinger() != 1){
+    if ( FpsDetectFinger() != 1 )
+    {
         return -1;
     }
     if ( FpsGetImage() != 0 )
@@ -78,7 +80,7 @@ int fingerprint_match(uint8_t* match_id)
 
 int fingerprint_delete(uint8_t id)
 {
-    if (id > MAX_USER_COUNT-1)
+    if ( id > MAX_USER_COUNT - 1 )
     {
         return -1;
     }
@@ -95,19 +97,21 @@ int fingerprint_get_count(uint8_t* count)
     return FpaGetTemplateNum(count);
 }
 
-int fingerprint_get_list(uint8_t *list,uint8_t len)
+int fingerprint_get_list(uint8_t* list, uint8_t len)
 {
     uint8_t fp_list[32];
-    if(FpaGetTemplateIDlist(fp_list) != 0){
+    if ( FpaGetTemplateIDlist(fp_list) != 0 )
+    {
         return -1;
     }
-    
+
     len = len > 32 ? 32 : len;
-    memcpy(list,fp_list,len);
+    memcpy(list, fp_list, len);
     return 0;
 }
 
-void fp_test(void){
+void fp_test(void)
+{
     display_printf("TouchPro Demo Mode\n");
     display_printf("======================\n\n");
 
@@ -115,8 +119,9 @@ void fp_test(void){
     uint8_t fp_list[32];
 
     // register
-    for(int m = 0;m<5;m++){
-        display_printf("Finger registre %d...\n",m);
+    for ( int m = 0; m < 3; m++ )
+    {
+        display_printf("Finger registre %d...\n", m);
         for ( int i = 0; i < 5; i++ )
         {
             display_printf("Finger Detecting...\n");
@@ -144,10 +149,11 @@ void fp_test(void){
     fingerprint_get_count(&count);
     display_printf("fp count: %d\n", count);
 
-    fingerprint_get_list(fp_list,32);
+    fingerprint_get_list(fp_list, 32);
     display_printf("fp list: ");
-    for(int i=0;i<10;i++){
-        display_printf("%x ",fp_list[i]);
+    for ( int i = 0; i < 10; i++ )
+    {
+        display_printf("%x ", fp_list[i]);
     }
 
     // match

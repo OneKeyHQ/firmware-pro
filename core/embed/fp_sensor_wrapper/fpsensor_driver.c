@@ -390,3 +390,9 @@ uint8_t fpsensor_read_irq_no_clear(uint8_t* buffer, uint32_t length)
     buffer[1] = 0x00;
     return fpsensor_spi_transceive(buffer, 2);
 }
+
+uint8_t fpsensor_active_deep_sleep_mode(void)
+{
+    uint8_t buffer[1] = {FPSENSOR_CMD_ACTIVATE_DEEP_SLEEP_MODE};
+    return fpsensor_spi_transceive(buffer, sizeof(buffer));
+}

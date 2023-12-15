@@ -32,6 +32,7 @@
 #define SE_INS_COINJOIN 0xEC
 #define SE_INS_HASHR 0xED
 #define SE_INS_HASHRAM 0xEE
+#define SE_INS_FINGERPRINT 0xEF
 
 #define SESSION_KEYLEN (16)
 
@@ -1249,4 +1250,34 @@ secbool se_authorization_get_data(uint8_t *authorization_data,
 
 void se_authorization_clear(void) {
   se_transmit_mac(SE_INS_COINJOIN, 0x00, 0x03, NULL, 0, NULL, NULL);
+}
+
+secbool se_fingerprint_state(void) {
+  uint8_t state = 0xff;
+  uint16_t recv_len = sizeof(state);
+  if (!se_transmit_mac(SE_INS_FINGERPRINT, 0x00, 0x00, NULL, 0, &state,
+                       &recv_len)) {
+    return secfalse;
+  }
+  // 0x55 is verified pin 0x00 is not verified pin
+  return sectrue * (state == 0x55);
+}
+
+secbool se_fingerprint_lock(void) {
+  uint16_t recv_len = 0;
+  if (!se_transmit_mac(SE_INS_FINGERPRINT, 0x00, 0x01, NULL, 0, NULL, &recv_len)) {
+    return secfalse;
+  }
+
+  return sectrue;
+}
+
+secbool se_fingerprint_unlock(void) {
+  uint16_t recv_len = 0;
+  uint8_t state = 0x01;
+  if (!se_transmit_mac(SE_INS_FINGERPRINT, 0x00, 0x02, &state, 1, NULL, &recv_len)) {
+    return secfalse;
+  }
+
+  return sectrue;
 }
