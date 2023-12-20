@@ -1,8 +1,10 @@
 #include "fpsensor_platform.h"
 #include "fpsensor_driver.h"
+#include "irq.h"
 
 SPI_HandleTypeDef spi_fp;
 static uint32_t fp_data_address = 0;
+static bool fp_touched = false;
 
 /*
 * Function：    fpsensor_gpio_init
@@ -25,9 +27,9 @@ uint8_t fpsensor_gpio_init()
 
     // SPI_INT     FP_IRQ      PB15
     GPIO_InitStruct.Pin = GPIO_PIN_15;
-    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-    GPIO_InitStruct.Pull = GPIO_PULLUP;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+    GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     GPIO_InitStruct.Alternate = 0; // ignored
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
@@ -35,12 +37,55 @@ uint8_t fpsensor_gpio_init()
     GPIO_InitStruct.Pin = GPIO_PIN_14;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     GPIO_InitStruct.Alternate = 0; // ignored
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
+    NVIC_SetPriority(EXTI15_10_IRQn, IRQ_PRI_GPIO);
+
     return FPSENSOR_OK;
 }
+
+void EXTI15_10_IRQHandler(void)
+{
+    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_15);
+}
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+    uint8_t irq_status[2];
+    if ( GPIO_Pin == GPIO_PIN_15 )
+    {
+        fpsensor_read_irq_with_clear(irq_status, 2);
+        if ( irq_status[1] & 0x01 )
+        {
+            fp_touched = true;
+            HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);
+        }
+    }
+}
+
+void fpsensor_irq_enable(void)
+{
+    fp_touched = false;
+    HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+}
+
+void fpsensor_irq_disable(void)
+{
+    fp_touched = false;
+    HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);
+}
+
+int fpsensor_detect(void)
+{
+    if(fp_touched){
+        fp_touched = false;
+        return 1;
+    }
+    return 0;
+}
+
 /*
 * Function：    fpsensor_spi_init
 * Description： 检测手指并获取指纹图像数据。

@@ -2,6 +2,8 @@
 #include "fp_sensor_wrapper.h"
 #include "fingerprint.h"
 
+extern uint8_t MAX_USER_COUNT;
+
 void fingerprint_get_version(char* version)
 {
     FpLibVersion(version);
@@ -16,6 +18,14 @@ void fingerprint_init(void)
     ensure_ex(fpsensor_adc_init(12, 12, 16, 3), FPSENSOR_OK, "fpsensor_adc_init failed");
     ensure_ex(fpsensor_set_config_param(0xC0, 8), FPSENSOR_OK, "fpsensor_set_config_param failed");
     ensure_ex(FpAlgorithmInit(TEMPLATE_ADDR_START), FPSENSOR_OK, "FpAlgorithmInit failed");
+    MAX_USER_COUNT = MAX_FINGERPRINT_COUNT;
+    fingerprint_enter_sleep();
+}
+
+void fingerprint_enter_sleep(void)
+{
+    FpsSleep(256);
+    fpsensor_irq_enable();
 }
 
 int fingerprint_detect(void)

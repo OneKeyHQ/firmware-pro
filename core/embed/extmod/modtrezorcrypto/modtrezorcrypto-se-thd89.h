@@ -626,8 +626,9 @@ STATIC mp_obj_t mod_trezorcrypto_se_fingerprint_is_unlocked(void) {
   }
   return mp_const_true;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorcrypto_se_fingerprint_is_unlocked_obj,
-                                 mod_trezorcrypto_se_fingerprint_is_unlocked);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(
+    mod_trezorcrypto_se_fingerprint_is_unlocked_obj,
+    mod_trezorcrypto_se_fingerprint_is_unlocked);
 
 /// def fingerprint_lock() -> None:
 ///     """

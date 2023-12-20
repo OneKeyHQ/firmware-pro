@@ -61,6 +61,7 @@
 #include "supervise.h"
 #include "thd89.h"
 #include "timer.h"
+#include "fingerprint.h"
 #include "touch.h"
 #ifdef USE_SECP256K1_ZKP
 #include "zkp_context.h"
@@ -159,6 +160,8 @@ int main(void) {
 
   emmc_init();
   timer_init();
+
+  fingerprint_init();
 
   copyflash2sdram();
 #endif

@@ -3,7 +3,8 @@
 
 #include <stdint.h>
 
-#define MAX_USER_COUNT 5
+#define MAX_FINGERPRINT_COUNT 3
+#define TEMPLATE_LENGTH       (12 * 1024)
 
 /*
  * Function：     FpLibVersion
@@ -63,7 +64,7 @@ uint8_t FpsGetImage(void);
 * Others:        指纹传感器进入休眠后会定期唤醒扫描是否有指纹按下，若有则唤醒并产生中断信号。
                                  注意休眠前手指应离开传感器表面，否则传感器无法休眠成功。
 */
-uint8_t FpsSleep(uint32_t u32DectPeriod, uint8_t u8Threshold);
+uint8_t FpsSleep(uint32_t u32DectPeriod);
 
 /*
  * Function：     FpaExtractfeature

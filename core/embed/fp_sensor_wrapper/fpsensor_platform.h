@@ -25,6 +25,10 @@ uint8_t fpsensor_spi_set_cs(uint8_t level);
 
 void fpsensor_delay_ms(uint32_t num);
 
+void fpsensor_irq_enable(void);
+void fpsensor_irq_disable(void);
+int fpsensor_detect(void);
+
 uint8_t SF_Init(uint32_t startAddr, uint32_t ucMmSize);
 uint8_t SF_ReadData(uint8_t* buffer, uint32_t offset, uint32_t length);
 uint8_t SF_WriteData(uint8_t* buffer, uint32_t offset, uint32_t length);
