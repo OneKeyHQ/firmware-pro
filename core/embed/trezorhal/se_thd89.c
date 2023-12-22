@@ -1265,7 +1265,8 @@ secbool se_fingerprint_state(void) {
 
 secbool se_fingerprint_lock(void) {
   uint16_t recv_len = 0;
-  if (!se_transmit_mac(SE_INS_FINGERPRINT, 0x00, 0x01, NULL, 0, NULL, &recv_len)) {
+  if (!se_transmit_mac(SE_INS_FINGERPRINT, 0x00, 0x01, NULL, 0, NULL,
+                       &recv_len)) {
     return secfalse;
   }
 
@@ -1275,7 +1276,8 @@ secbool se_fingerprint_lock(void) {
 secbool se_fingerprint_unlock(void) {
   uint16_t recv_len = 0;
   uint8_t state = 0x01;
-  if (!se_transmit_mac(SE_INS_FINGERPRINT, 0x00, 0x02, &state, 1, NULL, &recv_len)) {
+  if (!se_transmit_mac(SE_INS_FINGERPRINT, 0x00, 0x02, &state, 1, NULL,
+                       &recv_len)) {
     return secfalse;
   }
 
