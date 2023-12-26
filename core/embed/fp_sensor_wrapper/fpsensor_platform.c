@@ -3,8 +3,17 @@
 #include "irq.h"
 
 SPI_HandleTypeDef spi_fp;
-static uint32_t fp_data_address = 0;
 static bool fp_touched = false;
+static uint8_t* fp_data_cache = (uint8_t*)0x38000000;
+static bool fp_data_sync = false;
+
+typedef struct
+{
+    bool list_data_valid;
+    uint8_t template_data_valid[MAX_FINGERPRINT_COUNT];
+} fpsensor_data_cache;
+
+static fpsensor_data_cache fpsensor_cache = {0};
 
 /*
 * Function：    fpsensor_gpio_init
@@ -79,7 +88,8 @@ void fpsensor_irq_disable(void)
 
 int fpsensor_detect(void)
 {
-    if(fp_touched){
+    if ( fp_touched )
+    {
         fp_touched = false;
         return 1;
     }
@@ -260,10 +270,10 @@ void fpsensor_delay_ms(uint32_t Timeout)
     HAL_Delay(Timeout);
 }
 
-// #include "secbool.h"
+#include "secbool.h"
 
-// extern secbool se_fp_write(uint16_t offset, const void *val_dest, uint16_t len);
-// extern secbool se_fp_read(uint16_t offset, void *val_dest, uint16_t len);
+extern secbool se_fp_write(uint16_t offset, const void* val_dest, uint16_t len);
+extern secbool se_fp_read(uint16_t offset, void* val_dest, uint16_t len);
 
 /*
 * Function：    SF_Init
@@ -277,7 +287,8 @@ void fpsensor_delay_ms(uint32_t Timeout)
 uint8_t SF_Init(uint32_t startAddr, uint32_t ucMmSize)
 {
     (void)ucMmSize;
-    fp_data_address = startAddr;
+    // fp_data_address = startAddr;
+    memset(fp_data_cache, 0, FINGER_DATA_TOTAL_SIZE);
     return FPSENSOR_OK;
 }
 /*
@@ -290,8 +301,23 @@ uint8_t SF_Init(uint32_t startAddr, uint32_t ucMmSize)
  */
 uint8_t SF_WriteData(uint8_t* buffer, uint32_t offset, uint32_t length)
 {
-    memcpy((void*)(offset + fp_data_address), buffer, length);
+    // memcpy((void*)(offset + fp_data_address), buffer, length);
     // se_fp_write(offset , buffer, length);
+    memcpy((void*)(offset + fp_data_cache), buffer, length);
+    if ( offset == FINGER_ID_LIST_OFFSET )
+    {
+        fpsensor_cache.list_data_valid = true;
+    }
+    else
+    {
+        for ( uint8_t i = 0; i < MAX_FINGERPRINT_COUNT; i++ )
+        {
+            if ( offset == TEMPLATE_ADDR_OFFSET + i * TEMPLATE_LENGTH )
+            {
+                fpsensor_cache.template_data_valid[i] = true;
+            }
+        }
+    }
     return FPSENSOR_OK;
 }
 /*
@@ -304,8 +330,7 @@ uint8_t SF_WriteData(uint8_t* buffer, uint32_t offset, uint32_t length)
  */
 uint8_t SF_ReadData(uint8_t* buffer, uint32_t offset, uint32_t length)
 {
-    memcpy(buffer, (void*)(offset + fp_data_address), length);
-    // se_fp_read(offset, buffer, length);
+    memcpy(buffer, (void*)(offset + fp_data_cache), length);
     return FPSENSOR_OK;
 }
 
@@ -319,3 +344,40 @@ uint8_t SF_ReadData(uint8_t* buffer, uint32_t offset, uint32_t length)
 // SF_ReadData
 // 用途：我们从Flash里读我们存储的模板信息，进行比对
 // 对于Flash空间，使用Flash还是内存映射还是安全芯片。。。等等，你们来定。
+
+void fpsensor_data_set_sync(bool sync)
+{
+    fp_data_sync = sync;
+}
+
+bool fpsensor_data_init(void)
+{
+    uint8_t* p_data;
+    for ( uint8_t i = 0; i < MAX_FINGERPRINT_COUNT; i++ )
+    {
+        p_data = fp_data_cache + TEMPLATE_ADDR_OFFSET + i * TEMPLATE_LENGTH;
+        se_fp_read(TEMPLATE_ADDR_OFFSET + i * TEMPLATE_LENGTH, p_data, 2);
+        if ( p_data[0] == 0x32 && p_data[1] == 0x34 )
+        {
+            se_fp_read(TEMPLATE_ADDR_OFFSET + i * TEMPLATE_LENGTH, p_data, TEMPLATE_LENGTH);
+        }
+    }
+    return true;
+}
+
+bool fpsensor_data_save(void)
+{
+    uint8_t* p_data;
+    for ( uint8_t i = 0; i < MAX_FINGERPRINT_COUNT; i++ )
+    {
+        p_data = fp_data_cache + TEMPLATE_ADDR_OFFSET + i * TEMPLATE_LENGTH;
+        if ( fpsensor_cache.template_data_valid[i] )
+        {
+            ensure(
+                se_fp_write(TEMPLATE_ADDR_OFFSET + i * TEMPLATE_LENGTH, p_data, TEMPLATE_LENGTH),
+                "se_fp_write failed"
+            );
+        }
+    }
+    return true;
+}

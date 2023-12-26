@@ -74,7 +74,8 @@ typedef struct {
   uint32_t version;
   uint32_t fix_version;
   uint32_t hw_model;
-  uint8_t __reserved1[4];
+  uint8_t i2c_address;
+  uint8_t __reserved1[3];
   uint8_t hashes[512];
   uint8_t sig1[64];
   uint8_t sig2[64];
@@ -85,7 +86,7 @@ typedef struct {
   uint8_t __reserved2[220];
   uint8_t __sigmask;
   uint8_t __sig[64];
-} __attribute__((packed)) image_header_old;
+} __attribute__((packed)) image_header_th89;
 
 #define MAX_VENDOR_PUBLIC_KEYS 8
 
@@ -125,7 +126,7 @@ secbool __wur load_ble_image_header(const uint8_t *const data,
 secbool __wur load_thd89_image_header(const uint8_t *const data,
                                       const uint32_t magic,
                                       const uint32_t maxsize,
-                                      image_header_old *const hdr);
+                                      image_header_th89 *const hdr);
 
 secbool __wur load_vendor_header(const uint8_t *const data, uint8_t key_m,
                                  uint8_t key_n, const uint8_t *const *keys,

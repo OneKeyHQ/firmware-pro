@@ -135,7 +135,7 @@ secbool load_ble_image_header(const uint8_t *const data, const uint32_t magic,
 
 secbool load_thd89_image_header(const uint8_t *const data, const uint32_t magic,
                                 const uint32_t maxsize,
-                                image_header_old *const hdr) {
+                                image_header_th89 *const hdr) {
   memcpy(&hdr->magic, data, 4);
   if (hdr->magic != magic) return secfalse;
 
@@ -147,6 +147,8 @@ secbool load_thd89_image_header(const uint8_t *const data, const uint32_t magic,
   // devices won't accept expiring bootloaders (due to boardloader write
   // protection).
   // if (hdr->expiry != 0) return secfalse;
+
+  memcpy(&hdr->i2c_address, data + 28, 1);
 
   memcpy(&hdr->codelen, data + 12, 4);
 

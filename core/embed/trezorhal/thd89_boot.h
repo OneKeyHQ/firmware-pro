@@ -9,7 +9,11 @@
 #define THD89_STATE_NOT_ACTIVATED 0x33
 #define THD89_STATE_APP 0x55
 
+void thd89_boot_set_address(uint8_t addr);
 bool se_get_state(uint8_t *state);
+bool se_fp_get_state(uint8_t *state);
+bool se_get_state_ex(uint8_t *state);
+char *se_get_version_ex(void);
 bool se_back_to_boot(void);
 bool se_active_app(void);
 bool se_update(uint8_t step, uint8_t *data, uint16_t data_len);

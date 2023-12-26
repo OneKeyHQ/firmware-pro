@@ -121,4 +121,7 @@ secbool se_fingerprint_state(void);
 secbool se_fingerprint_lock(void);
 secbool se_fingerprint_unlock(void);
 
+secbool se_fp_write(uint16_t offset, const void *val_dest, uint16_t len);
+secbool se_fp_read(uint16_t offset, void *val_dest, uint16_t len);
+
 #endif

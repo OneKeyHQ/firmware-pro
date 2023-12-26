@@ -30,15 +30,13 @@
 #include "i2c.h"
 #include "thd89.h"
 
-#define THD89_ADDRESS (0x10 << 1)
-
 #define i2c_handle_se i2c_handles[i2c_find_channel_by_device(I2C_SE)]
 
 static uint8_t sw1 = 0, sw2 = 0;
 
 static void delay_ms(uint32_t ms) {
-  while(ms--){
-    for(uint32_t i = 0; i < 200000; i++){
+  while (ms--) {
+    for (volatile uint32_t i = 0; i < 200000; i++) {
       __NOP();
     }
   }
@@ -429,7 +427,7 @@ int i2c_master_recive(I2C_HandleTypeDef *hi2c, uint16_t DevAddress,
 
     /* Init tickstart for timeout management*/
     // tickstart = HAL_GetTick();
-    uint32_t timeout_counter = Timeout * 1000;
+    uint32_t timeout_counter = Timeout;
     while (1) {
       timeout_counter--;
       /* Check for the Timeout */
@@ -544,12 +542,12 @@ int i2c_master_recive(I2C_HandleTypeDef *hi2c, uint16_t DevAddress,
   }
 }
 
-secbool thd89_transmit(uint8_t *cmd, uint16_t len, uint8_t *resp,
-                       uint16_t *resp_len) {
+secbool thd89_transmit_ex(uint8_t addr, uint8_t *cmd, uint16_t len,
+                          uint8_t *resp, uint16_t *resp_len) {
   int ret = 0;
   uint32_t irq = disable_irq();
   HAL_StatusTypeDef result =
-      i2c_master_send(&i2c_handle_se, THD89_ADDRESS, cmd, len, 500);
+      i2c_master_send(&i2c_handle_se, addr, cmd, len, 500);
   enable_irq(irq);
   if (result != HAL_OK) {
     ensure(secfalse, "se send error");
@@ -558,8 +556,8 @@ secbool thd89_transmit(uint8_t *cmd, uint16_t len, uint8_t *resp,
 
   delay_ms(1);
   irq = disable_irq();
-  ret = i2c_master_recive(&i2c_handle_se, THD89_ADDRESS, resp, resp_len,
-                          I2C_RECV_TIMEOUT);
+  ret =
+      i2c_master_recive(&i2c_handle_se, addr, resp, resp_len, I2C_RECV_TIMEOUT);
   enable_irq(irq);
   if (ret != HAL_OK) {
     if (ret == I2C_RECV_BUFFER_TOO_SMALL) {
@@ -574,6 +572,16 @@ secbool thd89_transmit(uint8_t *cmd, uint16_t len, uint8_t *resp,
   }
 
   return sectrue;
+}
+
+secbool thd89_transmit(uint8_t *cmd, uint16_t len, uint8_t *resp,
+                       uint16_t *resp_len) {
+  return thd89_transmit_ex(THD89_MASTER_ADDRESS, cmd, len, resp, resp_len);
+}
+
+secbool thd89_fp_transmit(uint8_t *cmd, uint16_t len, uint8_t *resp,
+                          uint16_t *resp_len) {
+  return thd89_transmit_ex(THD89_FINGER_ADDRESS, cmd, len, resp, resp_len);
 }
 
 uint16_t thd89_last_error() { return sw1 << 8 | sw2; }

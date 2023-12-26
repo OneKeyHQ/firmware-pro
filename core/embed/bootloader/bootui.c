@@ -868,6 +868,15 @@ void ui_bootloader_first(const image_header *const hdr) {
     }
   }
 
+  if (se_fp_get_state(&se_state)) {
+    if (se_state == THD89_STATE_BOOT) {
+      display_text_center(DISPLAY_RESX / 2, 400, "se_fp in bootloader state",
+                          -1, FONT_NORMAL, COLOR_BL_SUBTITLE, COLOR_BL_BG);
+      display_text_center(DISPLAY_RESX / 2, 430, "please install se firmware",
+                          -1, FONT_NORMAL, COLOR_BL_SUBTITLE, COLOR_BL_BG);
+    }
+  }
+
   display_bar(8, 694, 464, 98, COLOR_BL_ICON);
   display_text_center(DISPLAY_RESX / 2, 755, "View Details", -1,
                       FONT_PJKS_BOLD_26, COLOR_BL_FG, COLOR_BL_ICON);

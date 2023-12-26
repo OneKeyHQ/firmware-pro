@@ -757,8 +757,11 @@ int main(void) {
   // se
   thd89_reset();
   thd89_init();
-  uint8_t se_state;
+  uint8_t se_state, se_fp_state;
+
   ensure(se_get_state(&se_state) ? sectrue : secfalse, "get se state failed");
+  ensure(se_fp_get_state(&se_fp_state) ? sectrue : secfalse,
+         "get se fp state failed");
 
 #if !PRODUCTION
 
@@ -808,7 +811,7 @@ int main(void) {
     *STAY_IN_FLAG_ADDR = 0;
     stay_in_bootloader = sectrue;
   }
-  if (se_state == THD89_STATE_BOOT) {
+  if (se_state == THD89_STATE_BOOT || se_fp_state == THD89_STATE_BOOT) {
     stay_in_bootloader = sectrue;
   }
 

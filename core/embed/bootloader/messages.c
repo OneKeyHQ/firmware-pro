@@ -661,7 +661,7 @@ int process_msg_FirmwareUpload(uint8_t iface_num, uint32_t msg_size,
   }
 
   static image_header hdr, ble_hdr;
-  static image_header_old thd89_hdr;
+  static image_header_th89 thd89_hdr;
   static secbool is_upgrade = secfalse;
   static secbool is_downgrade_wipe = secfalse;
 
@@ -675,15 +675,18 @@ int process_msg_FirmwareUpload(uint8_t iface_num, uint32_t msg_size,
                        "Invalid firmware header");
           return -3;
         }
+        if (thd89_hdr.i2c_address != 0) {
+          thd89_boot_set_address(thd89_hdr.i2c_address);
+        }
         char se_ver[16] = {0}, boot_ver[16] = {0};
-        strncpy(se_ver, se_get_version(), sizeof(se_ver));
+        strncpy(se_ver, se_get_version_ex(), sizeof(se_ver));
         if (!se_back_to_boot_progress()) {
           send_failure(iface_num, FailureType_Failure_ProcessError,
                        "SE back to boot error");
           return -1;
         }
 
-        strncpy(boot_ver, se_get_version(), sizeof(boot_ver));
+        strncpy(boot_ver, se_get_version_ex(), sizeof(boot_ver));
 
         if (!se_verify_firmware(chunk_buffer, IMAGE_HEADER_SIZE)) {
           send_failure(iface_num, FailureType_Failure_ProcessError,

@@ -650,7 +650,7 @@ int process_msg_FirmwareUpdateEmmc(uint8_t iface_num, uint32_t msg_size, uint8_t
 
     vendor_header file_vhdr;
     image_header file_hdr;
-    image_header_old thd89_hdr;
+    image_header_th89 thd89_hdr;
 
     // detect firmware type
     if ( memcmp(bl_buffer->misc_buff, "5283", 4) == 0 )

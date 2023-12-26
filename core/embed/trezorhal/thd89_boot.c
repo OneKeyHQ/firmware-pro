@@ -3,11 +3,15 @@
 #include "rand.h"
 #include "thd89.h"
 
-bool se_get_state(uint8_t *state) {
+static uint8_t device_addr = THD89_MASTER_ADDRESS;
+
+void thd89_boot_set_address(uint8_t addr) { device_addr = addr; }
+
+static bool _se_get_state(uint8_t addr, uint8_t *state) {
   uint8_t cmd[5] = {0x80, 0xca, 0x00, 00, 0x00};
   uint16_t resp_len = 1;
 
-  if (!thd89_transmit(cmd, sizeof(cmd), state, &resp_len)) {
+  if (!thd89_transmit_ex(addr, cmd, sizeof(cmd), state, &resp_len)) {
     return false;
   }
 
@@ -18,10 +22,35 @@ bool se_get_state(uint8_t *state) {
   return true;
 }
 
+char *se_get_version_ex(void) {
+  uint8_t get_ver[5] = {0x00, 0xf7, 0x00, 00, 0x00};
+  static char ver[16] = {0};
+  uint16_t ver_len = sizeof(ver);
+
+  if (!thd89_transmit_ex(device_addr, get_ver, sizeof(get_ver), (uint8_t *)ver,
+                         &ver_len)) {
+    return NULL;
+  }
+
+  return ver;
+}
+
+bool se_get_state(uint8_t *state) {
+  return _se_get_state(THD89_MASTER_ADDRESS, state);
+}
+
+bool se_fp_get_state(uint8_t *state) {
+  return _se_get_state(THD89_FINGER_ADDRESS, state);
+}
+
+bool se_get_state_ex(uint8_t *state) {
+  return _se_get_state(device_addr, state);
+}
+
 bool se_back_to_boot(void) {
   uint8_t cmd[5] = {0x80, 0xfc, 0x00, 0xff, 0x00};
   uint16_t resp_len = 0;
-  if (!thd89_transmit(cmd, sizeof(cmd), NULL, &resp_len)) {
+  if (!thd89_transmit_ex(device_addr, cmd, sizeof(cmd), NULL, &resp_len)) {
     return false;
   }
   return true;
@@ -30,7 +59,7 @@ bool se_back_to_boot(void) {
 bool se_active_app(void) {
   uint8_t cmd[5] = {0x80, 0xfc, 0x00, 0x04, 0x00};
   uint16_t resp_len = 0;
-  if (!thd89_transmit(cmd, sizeof(cmd), NULL, &resp_len)) {
+  if (!thd89_transmit_ex(device_addr, cmd, sizeof(cmd), NULL, &resp_len)) {
     return false;
   }
   return true;
@@ -64,7 +93,7 @@ bool se_update(uint8_t step, uint8_t *data, uint16_t data_len) {
     memcpy(cmd + 7, data, 512);
     cmd_len += 2 + 512;
   }
-  if (!thd89_transmit(cmd, cmd_len, NULL, &resp_len)) {
+  if (!thd89_transmit_ex(device_addr, cmd, cmd_len, NULL, &resp_len)) {
     return false;
   }
   return true;
@@ -72,13 +101,13 @@ bool se_update(uint8_t step, uint8_t *data, uint16_t data_len) {
 
 bool se_back_to_boot_progress(void) {
   uint8_t state;
-  if (!se_get_state(&state)) {
+  if (!se_get_state_ex(&state)) {
     return false;
   }
   if (state == THD89_STATE_APP) {
     se_back_to_boot();
     hal_delay(1000);
-    se_get_state(&state);
+    se_get_state_ex(&state);
   }
   if (state != THD89_STATE_BOOT) {
     return false;

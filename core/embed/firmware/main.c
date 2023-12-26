@@ -54,6 +54,7 @@
 // #include "sdcard.h"
 #include "camera.h"
 #include "device.h"
+#include "fingerprint.h"
 #include "mipi_lcd.h"
 #include "qspi_flash.h"
 #include "se_thd89.h"
@@ -61,7 +62,6 @@
 #include "supervise.h"
 #include "thd89.h"
 #include "timer.h"
-#include "fingerprint.h"
 #include "touch.h"
 #ifdef USE_SECP256K1_ZKP
 #include "zkp_context.h"
@@ -162,7 +162,7 @@ int main(void) {
   timer_init();
 
   fingerprint_init();
-
+  
   copyflash2sdram();
 #endif
 

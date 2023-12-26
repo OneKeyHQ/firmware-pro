@@ -42,7 +42,9 @@
 #define SE_BUF_MAX_LEN (1024 + 64)
 
 static uint8_t se_session_key[SESSION_KEYLEN];
+static uint8_t se_fp_session_key[SESSION_KEYLEN];
 static bool se_session_init = false;
+static bool se_fp_session_init = false;
 
 static uint8_t se_send_buffer[SE_BUF_MAX_LEN];
 static uint8_t se_recv_buffer[SE_BUF_MAX_LEN];
@@ -70,7 +72,7 @@ static void xor_cal(uint8_t *data1, uint8_t *data2, uint16_t len,
 
 void se_set_ui_callback(UI_WAIT_CALLBACK callback) { ui_callback = callback; }
 
-secbool se_get_rand(uint8_t *rand, uint8_t rand_len) {
+static secbool se_get_rand_ex(uint8_t addr, uint8_t *rand, uint8_t rand_len) {
   uint8_t rand_cmd[7] = {0x00, 0x84, 0x00, 0x00, 0x02};
   uint16_t resp_len = rand_len;
 
@@ -80,21 +82,34 @@ secbool se_get_rand(uint8_t *rand, uint8_t rand_len) {
 
   rand_cmd[5] = (rand_len >> 8) & 0xff;
   rand_cmd[6] = rand_len & 0xff;
-  return thd89_transmit(rand_cmd, sizeof(rand_cmd), rand, &resp_len);
+  return thd89_transmit_ex(addr, rand_cmd, sizeof(rand_cmd), rand, &resp_len);
 }
 
-secbool se_reset_se(void) {
+secbool se_get_rand(uint8_t *rand, uint8_t rand_len) {
+  return se_get_rand_ex(THD89_MASTER_ADDRESS, rand, rand_len);
+}
+
+secbool se_fp_get_rand(uint8_t *rand, uint8_t rand_len) {
+  return se_get_rand_ex(THD89_FINGER_ADDRESS, rand, rand_len);
+}
+
+static secbool se_reset_se_ex(uint8_t addr) {
   uint8_t cmd[5] = {0x00, 0xF0, 0x00, 0x00, 0x00};
   uint16_t resp_len;
 
-  secbool result = thd89_transmit(cmd, sizeof(cmd), NULL, &resp_len);
+  secbool result = thd89_transmit_ex(addr, cmd, sizeof(cmd), NULL, &resp_len);
 
   hal_delay(400);  // time for se to power up
 
   return result;
 }
 
-static void cal_mac(uint8_t *data, uint32_t len, uint8_t *mac) {
+secbool se_reset_se(void) { return se_reset_se_ex(THD89_MASTER_ADDRESS); }
+
+secbool se_fp_reset_se(void) { return se_reset_se_ex(THD89_FINGER_ADDRESS); }
+
+static void cal_mac(uint8_t *session_key, uint8_t *data, uint32_t len,
+                    uint8_t *mac) {
   uint8_t pad_buf[16], mac_buf[16], iv[16];
   uint32_t pad_len, res_len;
   aes_encrypt_ctx ctxe;
@@ -110,7 +125,7 @@ static void cal_mac(uint8_t *data, uint32_t len, uint8_t *mac) {
   }
 
   pad_buf[res_len] = 0x80;
-  aes_encrypt_key128(se_session_key, &ctxe);
+  aes_encrypt_key128(session_key, &ctxe);
   len += pad_len;
   for (uint32_t i = 0; i < (len - AES_BLOCK_SIZE); i += AES_BLOCK_SIZE) {
     aes_cbc_encrypt(data + i, mac_buf, AES_BLOCK_SIZE, iv, &ctxe);
@@ -120,8 +135,10 @@ static void cal_mac(uint8_t *data, uint32_t len, uint8_t *mac) {
   memcpy(mac, mac_buf, 4);
 }
 
-secbool se_transmit_mac(uint8_t ins, uint8_t p1, uint8_t p2, uint8_t *data,
-                        uint16_t data_len, uint8_t *recv, uint16_t *recv_len) {
+static secbool se_transmit_mac_ex(uint8_t addr, uint8_t *session_key,
+                                  uint8_t ins, uint8_t p1, uint8_t p2,
+                                  uint8_t *data, uint16_t data_len,
+                                  uint8_t *recv, uint16_t *recv_len) {
   uint8_t mac[4], iv_random[16];
   uint16_t pad_len;
   APDU_CLA = 0x84;
@@ -130,7 +147,7 @@ secbool se_transmit_mac(uint8_t ins, uint8_t p1, uint8_t p2, uint8_t *data,
   APDU_P2 = p2;
   APDU_P3 = 0x00;
 
-  if (!se_get_rand(iv_random, 16)) {
+  if (!se_get_rand_ex(addr, iv_random, 16)) {
     return secfalse;
   }
 
@@ -149,7 +166,7 @@ secbool se_transmit_mac(uint8_t ins, uint8_t p1, uint8_t p2, uint8_t *data,
     aes_encrypt_ctx ctxe;
     uint8_t iv[16];
     memcpy(iv, iv_random, 16);
-    aes_encrypt_key128(se_session_key, &ctxe);
+    aes_encrypt_key128(session_key, &ctxe);
     aes_cbc_encrypt(APDU_DATA, se_recv_buffer, data_len, iv, &ctxe);
 
     if (data_len > 255) {
@@ -165,14 +182,14 @@ secbool se_transmit_mac(uint8_t ins, uint8_t p1, uint8_t p2, uint8_t *data,
       memcpy(APDU_DATA, se_recv_buffer, data_len);
     }
 
-    cal_mac(APDU, data_len, mac);
+    cal_mac(session_key, APDU, data_len, mac);
     memcpy(APDU + data_len, mac, 4);
     data_len += 4;
   } else {
     data_len = 5;
   }
   se_recv_len = sizeof(se_recv_buffer);
-  if (!thd89_transmit(APDU, data_len, se_recv_buffer, &se_recv_len)) {
+  if (!thd89_transmit_ex(addr, APDU, data_len, se_recv_buffer, &se_recv_len)) {
     memset(APDU, 0x00, sizeof(APDU));
     return secfalse;
   }
@@ -181,7 +198,7 @@ secbool se_transmit_mac(uint8_t ins, uint8_t p1, uint8_t p2, uint8_t *data,
       return secfalse;
     }
 
-    cal_mac(se_recv_buffer, se_recv_len - 4, mac);
+    cal_mac(session_key, se_recv_buffer, se_recv_len - 4, mac);
     if (memcmp(mac, se_recv_buffer + se_recv_len - 4, 4) != 0) {
       return secfalse;
     }
@@ -191,7 +208,7 @@ secbool se_transmit_mac(uint8_t ins, uint8_t p1, uint8_t p2, uint8_t *data,
     aes_decrypt_ctx dtxe;
     uint8_t iv[16];
     memcpy(iv, iv_random, 16);
-    aes_decrypt_key128(se_session_key, &dtxe);
+    aes_decrypt_key128(session_key, &dtxe);
     aes_cbc_decrypt(se_recv_buffer, APDU, se_recv_len, iv, &dtxe);
     pad_len = 1;
     for (uint8_t i = 0; i < 16; i++) {
@@ -223,6 +240,19 @@ secbool se_transmit_mac(uint8_t ins, uint8_t p1, uint8_t p2, uint8_t *data,
   return sectrue;
 }
 
+secbool se_transmit_mac(uint8_t ins, uint8_t p1, uint8_t p2, uint8_t *data,
+                        uint16_t data_len, uint8_t *recv, uint16_t *recv_len) {
+  return se_transmit_mac_ex(THD89_MASTER_ADDRESS, se_session_key, ins, p1, p2,
+                            data, data_len, recv, recv_len);
+}
+
+secbool se_fp_transmit_mac(uint8_t ins, uint8_t p1, uint8_t p2, uint8_t *data,
+                           uint16_t data_len, uint8_t *recv,
+                           uint16_t *recv_len) {
+  return se_transmit_mac_ex(THD89_FINGER_ADDRESS, se_fp_session_key, ins, p1,
+                            p2, data, data_len, recv, recv_len);
+}
+
 secbool se_random_encrypted(uint8_t *rand, uint16_t len) {
   uint8_t data[2];
   uint16_t recv_len = len;
@@ -234,7 +264,7 @@ secbool se_random_encrypted(uint8_t *rand, uint16_t len) {
   return sectrue;
 }
 
-secbool se_sync_session_key(void) {
+static secbool se_sync_session_key_ex(uint8_t addr, uint8_t *session_key) {
   uint8_t r1[16], r2[16], r3[32];
   uint8_t default_key[16] = {0xff};
 
@@ -249,7 +279,7 @@ secbool se_sync_session_key(void) {
          NULL);
 
   // get random from se
-  se_get_rand(r1, 16);
+  se_get_rand_ex(addr, r1, 16);
   // get random itself
   random_buffer(r2, 16);
   // organization data1
@@ -265,26 +295,48 @@ secbool se_sync_session_key(void) {
   memcpy(r3 + 16, default_key, 16);
   sha256_Raw(r3, 32, hash_buf);
   // use session key organization data2
-  memcpy(se_session_key, hash_buf, 16);
-  aes_encrypt_key128(se_session_key, &en_ctxe);
+  memcpy(session_key, hash_buf, 16);
+  aes_encrypt_key128(session_key, &en_ctxe);
   aes_ecb_encrypt(r1, data_buf + 32, sizeof(r1), &en_ctxe);
   // send data1 + data2 to se and recv returned result
   memcpy(sync_cmd + 5, data_buf, 48);
-  if (!thd89_transmit(sync_cmd, sizeof(sync_cmd), data_buf, &recv_len)) {
-    memset(se_session_key, 0x00, SESSION_KEYLEN);
+  if (!thd89_transmit_ex(addr, sync_cmd, sizeof(sync_cmd), data_buf,
+                         &recv_len)) {
+    memset(session_key, 0x00, SESSION_KEYLEN);
     return secfalse;
   }
 
   // handle the returned data
-  aes_decrypt_key128(se_session_key, &de_ctxe);
+  aes_decrypt_key128(session_key, &de_ctxe);
   aes_ecb_decrypt(data_buf, r3, recv_len, &de_ctxe);
   if (memcmp(r2, r3, sizeof(r2)) != 0) {
-    memset(se_session_key, 0x00, SESSION_KEYLEN);
+    memset(session_key, 0x00, SESSION_KEYLEN);
     return secfalse;
   }
 
-  se_session_init = true;
+  return sectrue;
+}
 
+static secbool _se_sync_session_key(void) {
+  if (sectrue == se_sync_session_key_ex(THD89_MASTER_ADDRESS, se_session_key)) {
+    se_session_init = true;
+    return sectrue;
+  }
+  return secfalse;
+}
+
+static secbool _se_fp_sync_session_key(void) {
+  if (sectrue ==
+      se_sync_session_key_ex(THD89_FINGER_ADDRESS, se_fp_session_key)) {
+    se_fp_session_init = true;
+    return sectrue;
+  }
+  return secfalse;
+}
+
+secbool se_sync_session_key(void) {
+  ensure(_se_sync_session_key(), "se sync session key failed");
+  ensure(_se_fp_sync_session_key(), "se fp sync session key failed");
   return sectrue;
 }
 
@@ -315,7 +367,7 @@ secbool se_derive_keys(HDNode *out, const char *curve,
   return sectrue;
 }
 
-secbool se_reset_storage(void) {
+static secbool _se_reset_storage(void) {
   uint8_t rand[16];
 
   if (!se_get_rand(rand, sizeof(rand))) {
@@ -323,12 +375,35 @@ secbool se_reset_storage(void) {
   }
 
   if (!se_session_init) {
-    ensure(se_sync_session_key(), "se sync session key failed");
+    ensure(_se_sync_session_key(), "se sync session key failed");
   }
 
   if (!se_transmit_mac(0xE1, 0x00, 0x00, rand, sizeof(rand), NULL, NULL)) {
     return secfalse;
   }
+  return sectrue;
+}
+
+secbool se_fp_reset_storage(void) {
+  uint8_t rand[16];
+
+  if (!se_get_rand(rand, sizeof(rand))) {
+    return secfalse;
+  }
+
+  if (!se_fp_session_init) {
+    ensure(_se_fp_sync_session_key(), "se sync session key failed");
+  }
+
+  if (!se_fp_transmit_mac(0xE1, 0x00, 0x00, rand, sizeof(rand), NULL, NULL)) {
+    return secfalse;
+  }
+  return sectrue;
+}
+
+secbool se_reset_storage(void) {
+  _se_reset_storage();
+  se_fp_reset_storage();
   return sectrue;
 }
 
@@ -395,6 +470,18 @@ char *se_get_build_id(void) {
   return build_id;
 }
 
+char *se_fp_get_version(void) {
+  uint8_t get_ver[5] = {0x00, 0xf7, 0x00, 00, 0x00};
+  static char ver[8] = {0};
+  uint16_t ver_len = sizeof(ver);
+
+  if (!thd89_fp_transmit(get_ver, sizeof(get_ver), (uint8_t *)ver, &ver_len)) {
+    return NULL;
+  }
+
+  return ver;
+}
+
 secbool se_get_pubkey(uint8_t *public_key) {
   uint8_t cmd[5] = {0x00, 0xF5, 0x00, 0x01, 0x00};
   uint16_t resp_len = 64;
@@ -444,11 +531,19 @@ secbool se_sign_message(uint8_t *msg, uint32_t msg_len, uint8_t *signature) {
   return thd89_transmit(sign, sizeof(sign), signature, &signature_len);
 }
 
-secbool se_set_session_key(const uint8_t *session_key) {
+static secbool se_set_session_key_ex(uint8_t addr, const uint8_t *session_key) {
   uint8_t cmd[32] = {0x00, 0xF6, 0x00, 0x02, 0x10};
   uint16_t resp_len = 0;
   memcpy(cmd + 5, session_key, SESSION_KEYLEN);
-  return thd89_transmit(cmd, 21, NULL, &resp_len);
+  return thd89_transmit_ex(addr, cmd, 21, NULL, &resp_len);
+}
+
+secbool se_set_session_key(const uint8_t *session_key) {
+  // ensure(se_set_session_key_ex(THD89_MASTER_ADDRESS, session_key),
+  //        "se set session key failed");
+  ensure(se_set_session_key_ex(THD89_FINGER_ADDRESS, session_key),
+         "se fp set session key failed");
+  return sectrue;
 }
 
 secbool se_isInitialized(void) {
@@ -461,11 +556,12 @@ secbool se_isInitialized(void) {
   return sectrue * (init == 0x55);
 }
 
-secbool se_hasPin(void) {
+static secbool se_hasPin_ex(uint8_t addr, uint8_t *session_key) {
   uint8_t hasPin = 0xff;
   uint16_t len = sizeof(hasPin);
 
-  if (!se_transmit_mac(SE_INS_PIN, 0x00, 0x00, NULL, 0, &hasPin, &len)) {
+  if (!se_transmit_mac_ex(addr, session_key, SE_INS_PIN, 0x00, 0x00, NULL, 0,
+                          &hasPin, &len)) {
     return secfalse;
   }
 
@@ -473,14 +569,65 @@ secbool se_hasPin(void) {
   return sectrue * (hasPin == 0x55);
 }
 
-secbool se_verifyPin(const char *pin) {
+secbool se_hasPin(void) {
+  secbool result = se_hasPin_ex(THD89_MASTER_ADDRESS, se_session_key);
+  secbool fp_result = se_hasPin_ex(THD89_FINGER_ADDRESS, se_fp_session_key);
+
+  if (result == sectrue && fp_result == secfalse) {
+    ensure(se_fp_reset_storage(), "reset fp storage failed");
+    return sectrue;
+  }
+  return result;
+}
+
+secbool se_fp_hasPin(void) {
+  return se_hasPin_ex(THD89_FINGER_ADDRESS, se_fp_session_key);
+}
+
+static secbool se_setPin_ex(uint8_t addr, uint8_t *session_key,
+                            const char *pin) {
+  uint8_t pin_buf[64] = {0};
+
+  pin_buf[0] = strlen(pin);
+  memcpy(pin_buf + 1, pin, strlen(pin));
+
+  if (!se_transmit_mac_ex(addr, session_key, SE_INS_PIN, 0x00, 0x01, pin_buf,
+                          pin_buf[0] + 1, NULL, NULL)) {
+    memset(pin_buf, 0, sizeof(pin_buf));
+    return secfalse;
+  }
+  memset(pin_buf, 0, sizeof(pin_buf));
+  return sectrue;
+}
+
+static secbool se_fp_setPin(const char *pin) {
+  return se_setPin_ex(THD89_FINGER_ADDRESS, se_fp_session_key, pin);
+}
+
+secbool se_setPin(const char *pin) {
+  secbool result = se_setPin_ex(THD89_MASTER_ADDRESS, se_session_key, pin);
+  if (result == sectrue) {
+    secbool fp_result =
+        se_setPin_ex(THD89_FINGER_ADDRESS, se_fp_session_key, pin);
+
+    if (fp_result == sectrue) {
+      return sectrue;
+    } else {
+    }
+  }
+
+  return secfalse;
+}
+
+static secbool se_verifyPin_ex(uint8_t addr, uint8_t *session_key,
+                               const char *pin) {
   uint8_t pin_buf[50 + 1] = {0};
 
   pin_buf[0] = strlen(pin);
   memcpy(pin_buf + 1, pin, strlen(pin));
 
-  if (!se_transmit_mac(SE_INS_PIN, 0x00, 0x03, pin_buf, pin_buf[0] + 1, NULL,
-                       NULL)) {
+  if (!se_transmit_mac_ex(addr, session_key, SE_INS_PIN, 0x00, 0x03, pin_buf,
+                          pin_buf[0] + 1, NULL, NULL)) {
     memset(pin_buf, 0, sizeof(pin_buf));
     if (0x6f80 == thd89_last_error()) {
       error_reset("You have entered the", "wipe code. All private",
@@ -493,22 +640,31 @@ secbool se_verifyPin(const char *pin) {
   return sectrue;
 }
 
-secbool se_setPin(const char *pin) {
-  uint8_t pin_buf[64] = {0};
-
-  pin_buf[0] = strlen(pin);
-  memcpy(pin_buf + 1, pin, strlen(pin));
-
-  if (!se_transmit_mac(SE_INS_PIN, 0x00, 0x01, pin_buf, pin_buf[0] + 1, NULL,
-                       NULL)) {
-    memset(pin_buf, 0, sizeof(pin_buf));
-    return secfalse;
-  }
-  memset(pin_buf, 0, sizeof(pin_buf));
-  return sectrue;
+static secbool se_fp_verifyPin(const char *pin) {
+  return se_verifyPin_ex(THD89_FINGER_ADDRESS, se_fp_session_key, pin);
 }
 
-secbool se_changePin(const char *oldpin, const char *newpin) {
+secbool se_verifyPin(const char *pin) {
+  secbool result = se_verifyPin_ex(THD89_MASTER_ADDRESS, se_session_key, pin);
+  if (result == sectrue) {
+    secbool fp_result =
+        se_verifyPin_ex(THD89_FINGER_ADDRESS, se_fp_session_key, pin);
+    if (fp_result == sectrue) {
+      return sectrue;
+    } else {
+      if (se_fp_hasPin()) {
+        ensure(se_fp_reset_storage(), "reset fp storage failed");
+      }
+      ensure(se_fp_setPin(pin), "set fp pin failed");
+      ensure(se_fp_verifyPin(pin), "verify fp pin failed");
+      return sectrue;
+    }
+  }
+  return secfalse;
+}
+
+static secbool se_changePin_ex(uint8_t addr, uint8_t *session_key,
+                               const char *oldpin, const char *newpin) {
   uint8_t pin_buff[110];
 
   pin_buff[0] = strlen(oldpin);
@@ -516,13 +672,33 @@ secbool se_changePin(const char *oldpin, const char *newpin) {
   pin_buff[strlen(oldpin) + 1] = strlen(newpin);
   memcpy(pin_buff + strlen(oldpin) + 2, (uint8_t *)newpin, strlen(newpin));
 
-  if (!se_transmit_mac(SE_INS_PIN, 0x00, 0x02, pin_buff,
-                       strlen(oldpin) + strlen(newpin) + 2, NULL, NULL)) {
+  if (!se_transmit_mac_ex(addr, session_key, SE_INS_PIN, 0x00, 0x02, pin_buff,
+                          strlen(oldpin) + strlen(newpin) + 2, NULL, NULL)) {
     memset(pin_buff, 0, sizeof(pin_buff));
     return secfalse;
   }
   memset(pin_buff, 0, sizeof(pin_buff));
   return sectrue;
+}
+
+secbool se_changePin(const char *oldpin, const char *newpin) {
+  secbool result =
+      se_changePin_ex(THD89_MASTER_ADDRESS, se_session_key, oldpin, newpin);
+  if (result == sectrue) {
+    secbool fp_result = se_changePin_ex(THD89_FINGER_ADDRESS, se_fp_session_key,
+                                        oldpin, newpin);
+    if (fp_result == sectrue) {
+      return sectrue;
+    } else {
+      if (se_fp_hasPin()) {
+        ensure(se_fp_reset_storage(), "reset fp storage failed");
+      }
+      ensure(se_fp_setPin(newpin), "set fp pin failed");
+      ensure(se_fp_verifyPin(newpin), "verify fp pin failed");
+      return sectrue;
+    }
+  }
+  return secfalse;
 }
 
 uint32_t se_pinFailedCounter(void) {
@@ -534,41 +710,78 @@ uint32_t se_pinFailedCounter(void) {
   return (uint32_t)(SE_PIN_RETRY_MAX - retry_cnts);
 }
 
-secbool se_getRetryTimes(uint8_t *ptimes) {
+static secbool se_getRetryTimes_ex(uint8_t addr, uint8_t *session_key,
+                                   uint8_t *ptimes) {
   uint8_t remain;
   uint16_t recv_len = 1;
 
-  if (!se_transmit_mac(SE_INS_PIN, 0x00, 0x05, NULL, 0, &remain, &recv_len)) {
+  if (!se_transmit_mac_ex(addr, session_key, SE_INS_PIN, 0x00, 0x05, NULL, 0,
+                          &remain, &recv_len)) {
     return secfalse;
   }
   *ptimes = remain;
 
-  if (remain == 0) {
+  return sectrue;
+}
+
+secbool se_getRetryTimes(uint8_t *ptimes) {
+  uint8_t retry_cnts = 0, fp_retry_cnts = 0;
+  ensure(se_getRetryTimes_ex(THD89_MASTER_ADDRESS, se_session_key, &retry_cnts),
+         "get master retry times failed");
+  ensure(se_getRetryTimes_ex(THD89_FINGER_ADDRESS, se_fp_session_key,
+                             &fp_retry_cnts),
+         "get fp retry times failed");
+
+  *ptimes = retry_cnts > fp_retry_cnts ? fp_retry_cnts : retry_cnts;
+  if (*ptimes == 0) {
+    se_reset_storage();
+    se_fp_reset_storage();
     se_reset_se();
+    se_fp_reset_se();
     error_pin_max();
+  }
+  return sectrue;
+}
+
+static secbool se_clearSecsta_ex(uint8_t addr, uint8_t *session_key) {
+  uint16_t recv_len = 0;
+  if (!se_transmit_mac_ex(addr, session_key, SE_INS_PIN, 0x00, 0x06, NULL, 0,
+                          NULL, &recv_len)) {
+    return secfalse;
   }
 
   return sectrue;
 }
 
 secbool se_clearSecsta(void) {
-  uint16_t recv_len = 0;
-  if (!se_transmit_mac(SE_INS_PIN, 0x00, 0x06, NULL, 0, NULL, &recv_len)) {
-    return secfalse;
-  }
-
+  ensure(se_clearSecsta_ex(THD89_MASTER_ADDRESS, se_session_key),
+         "clear master secsta failed");
+  ensure(se_clearSecsta_ex(THD89_FINGER_ADDRESS, se_fp_session_key),
+         "clear fp secsta failed");
   return sectrue;
 }
 
-secbool se_getSecsta(void) {
+static secbool se_getSecsta_ex(uint8_t addr, uint8_t *session_key) {
   uint8_t cur_secsta = 0xff;
   uint16_t recv_len = sizeof(cur_secsta);
-  if (!se_transmit_mac(SE_INS_PIN, 0x00, 0x04, NULL, 0, &cur_secsta,
-                       &recv_len)) {
+  if (!se_transmit_mac_ex(addr, session_key, SE_INS_PIN, 0x00, 0x04, NULL, 0,
+                          &cur_secsta, &recv_len)) {
     return secfalse;
   }
   // 0x55 is verified pin 0x00 is not verified pin
   return sectrue * (cur_secsta == 0x55);
+}
+
+secbool se_getSecsta(void) {
+  secbool result = se_getSecsta_ex(THD89_MASTER_ADDRESS, se_session_key);
+  if (result == sectrue) {
+    secbool fp_result =
+        se_getSecsta_ex(THD89_FINGER_ADDRESS, se_fp_session_key);
+    if (fp_result == sectrue) {
+      return sectrue;
+    }
+  }
+  return secfalse;
 }
 
 secbool se_set_u2f_counter(uint32_t u2fcounter) { return sectrue; }
@@ -1281,5 +1494,51 @@ secbool se_fingerprint_unlock(void) {
     return secfalse;
   }
 
+  return sectrue;
+}
+
+secbool se_fp_write(uint16_t offset, const void *val_dest, uint16_t len) {
+  uint8_t cmd[4] = {0};
+  uint16_t packet_len = 0;
+  uint16_t packet_offset = 0;
+  while (len) {
+    packet_len = len > SE_DATA_MAX_LEN ? SE_DATA_MAX_LEN : len;
+    cmd[0] = ((packet_offset + offset) >> 8) & 0xFF;
+    cmd[1] = (packet_offset + offset) & 0xFF;
+    cmd[2] = (packet_len >> 8) & 0xFF;
+    cmd[3] = packet_len & 0xFF;
+    memcpy(APDU_DATA, cmd, 4);
+    memcpy(APDU_DATA + 4, (uint8_t *)val_dest + packet_offset, packet_len);
+    if (!se_fp_transmit_mac(SE_INS_WRITE_DATA, 0x00, 0x02, APDU_DATA,
+                            4 + packet_len, NULL, NULL)) {
+      return secfalse;
+    }
+    packet_offset += packet_len;
+    len -= packet_len;
+  }
+
+  return sectrue;
+}
+
+secbool se_fp_read(uint16_t offset, void *val_dest, uint16_t len) {
+  uint8_t cmd[4] = {0};
+
+  uint16_t packet_len = 0;
+  uint16_t packet_offset = 0;
+
+  while (len) {
+    packet_len = len > SE_DATA_MAX_LEN ? SE_DATA_MAX_LEN : len;
+    cmd[0] = ((packet_offset + offset) >> 8) & 0xFF;
+    cmd[1] = (packet_offset + offset) & 0xFF;
+    cmd[2] = (packet_len >> 8) & 0xFF;
+    cmd[3] = packet_len & 0xFF;
+
+    if (!se_fp_transmit_mac(SE_INS_READ_DATA, 0x00, 0x02, cmd, 4,
+                            (uint8_t *)val_dest + packet_offset, &packet_len)) {
+      return secfalse;
+    }
+    packet_offset += packet_len;
+    len -= packet_len;
+  }
   return sectrue;
 }

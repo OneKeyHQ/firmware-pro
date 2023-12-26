@@ -20,6 +20,7 @@ void fingerprint_init(void)
     ensure_ex(FpAlgorithmInit(TEMPLATE_ADDR_START), FPSENSOR_OK, "FpAlgorithmInit failed");
     MAX_USER_COUNT = MAX_FINGERPRINT_COUNT;
     fingerprint_enter_sleep();
+    fpsensor_data_init();
 }
 
 void fingerprint_enter_sleep(void)
@@ -58,11 +59,17 @@ int fingerprint_enroll(uint8_t counter)
 
 int fingerprint_save(uint8_t id)
 {
-    if ( id > MAX_USER_COUNT - 1 )
+    if ( id > MAX_FINGERPRINT_COUNT - 1 )
     {
         return -1;
     }
-    return FpaEnrollTemplatesave(id);
+    if ( FpaEnrollTemplatesave(id) == 0 )
+    {
+
+        return -1;
+    }
+    fpsensor_data_save();
+    return 0;
 }
 
 int fingerprint_match(uint8_t* match_id)
@@ -90,16 +97,27 @@ int fingerprint_match(uint8_t* match_id)
 
 int fingerprint_delete(uint8_t id)
 {
-    if ( id > MAX_USER_COUNT - 1 )
+    if ( id > MAX_FINGERPRINT_COUNT - 1 )
     {
         return -1;
     }
-    return FpaDeleteTemplateId(id);
+    if ( FpaDeleteTemplateId(id) != 0 )
+    {
+
+        return -1;
+    }
+    fpsensor_data_save();
+    return 0;
 }
 
 int fingerprint_delete_all(void)
 {
-    return FpaClearTemplate();
+    if ( FpaClearTemplate() != 0 )
+    {
+        return -1;
+    }
+    fpsensor_data_save();
+    return 0;
 }
 
 int fingerprint_get_count(uint8_t* count)
