@@ -124,13 +124,13 @@ static inline void restore_irq_pri(uint32_t state) {
 // The following interrupts are arranged from highest priority to lowest
 // priority to make it a bit easier to figure out.
 
-#define  IRQ_PRI_SYSTICK         NVIC_EncodePriority(NVIC_PRIORITYGROUP_4, 0, 0)
+#define  IRQ_PRI_SYSTICK         NVIC_EncodePriority(NVIC_PRIORITYGROUP_4, 1, 0)
 
 // The UARTs have no FIFOs, so if they don't get serviced quickly then characters
 // get dropped. The handling for each character only consumes about 0.5 usec
 #define IRQ_PRI_UART            NVIC_EncodePriority(NVIC_PRIORITYGROUP_4, 1, 0)
-#define IRQ_PRI_DCMI            NVIC_EncodePriority(NVIC_PRIORITYGROUP_4, 1, 0)
-#define IRQ_PRI_DCMI_DMA        NVIC_EncodePriority(NVIC_PRIORITYGROUP_4, 1, 0)
+#define IRQ_PRI_DCMI            NVIC_EncodePriority(NVIC_PRIORITYGROUP_4, 0, 0)
+#define IRQ_PRI_DCMI_DMA        NVIC_EncodePriority(NVIC_PRIORITYGROUP_4, 0, 0)
 
 // SDIO must be higher priority than DMA for SDIO DMA transfers to work.
 #define IRQ_PRI_SDIO            NVIC_EncodePriority(NVIC_PRIORITYGROUP_4, 4, 0)
