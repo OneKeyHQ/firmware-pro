@@ -20,7 +20,9 @@ async def get(ctx: wire.Context) -> str:
 
 async def _request_from_user(ctx: wire.Context) -> str:
     workflow.close_others()  # request exclusive UI access
-    if storage.device.get_passphrase_always_on_device():
+    if storage.device.get_passphrase_always_on_device() or issubclass(
+        ctx.__class__, wire.DummyContext
+    ):
         from trezor.ui.layouts import request_passphrase_on_device
 
         passphrase = await request_passphrase_on_device(ctx, _MAX_PASSPHRASE_LEN)

@@ -34,6 +34,86 @@ NRF_VERSION: str | None = None
 BLE_CTRL = io.BLE()
 
 
+async def handle_fingerprint():
+    from trezorio import fingerprint
+    from trezor.lvglui.scrs import fingerprints
+
+    while True:
+        fingerprint.sleep()
+        state = await loop.wait(io.FINGERPRINT_STATE)
+        print(f"state == {state}")
+
+        if any(
+            (
+                not fingerprints.has_fingerprints(),
+                not device.is_fingerprint_unlock_enabled(),
+                not config.is_unlocked(),
+                fingerprints.is_unlocked(),
+                utils.is_collecting_fingerprint(),
+                display.backlight() == 0,
+            )
+        ):
+            await loop.sleep(2000)
+            fingerprint.sleep()
+            continue
+
+        try:
+            detected = fingerprint.detect()
+            if detected:
+                await loop.sleep(100)
+                if not fingerprint.detect():
+                    continue
+                print(f"finger detected ....")
+                try:
+                    match_id = fingerprint.match()
+                    assert match_id in fingerprint.list_template()
+                except Exception as e:
+                    if __debug__:
+                        log.exception(__name__, e)
+                    print(f"fingerprint mismatch")
+                    # increase failed count
+                    failed_count = device.finger_failed_count()
+                    if failed_count < 5:
+                        device.finger_failed_count_incr()
+                    else:
+                        if config.is_unlocked():
+                            config.lock()
+
+                    warning_level = 1 if failed_count < 5 else 2
+                    from trezor.lvglui.scrs.lockscreen import LockScreen
+
+                    # failed prompt
+                    visible, scr = LockScreen.retrieval()
+                    if visible and scr is not None:
+                        scr.show_tips(warning_level)
+                        scr.show_finger_mismatch_anim()
+                    await loop.sleep(500)
+                else:
+                    print(f"fingerprint match {match_id}")
+                    # # 1. publish signal
+
+                    from trezor.lvglui.scrs import fingerprints
+
+                    if fingerprints.has_takers():
+                        print(f"publish signal")
+                        fingerprints.signal_match()
+                    else:
+                        # 2. unlock
+                        print(f"unlock device......")
+                        res = fingerprints.unlock()
+                        print(f"uart unlock result {res}")
+                        await base.unlock_device()
+                    await loop.sleep(2000)
+                    continue
+            else:
+                await loop.sleep(200)
+        except Exception as e:
+            if __debug__:
+                log.exception(__name__, e)
+            loop.clear()
+            return  # pylint: disable=lost-exception
+
+
 async def handle_usb_state():
     global CHARGING
     while True:
@@ -64,10 +144,16 @@ async def handle_usb_state():
                     StatusBar.get_instance().set_battery_img(
                         utils.BATTERY_CAP, CHARGING
                     )
+                    _request_charging_status()
             usb_auto_lock = device.is_usb_lock_enabled()
             if usb_auto_lock and device.is_initialized() and config.has_pin():
+                from trezor.lvglui.scrs import fingerprints
+
                 if config.is_unlocked():
-                    config.lock()
+                    if fingerprints.is_available() and fingerprints.is_unlocked():
+                        fingerprints.lock()
+                    else:
+                        config.lock()
                     await safe_reloop()
                     # single to restart the main loop
                     raise loop.TASK_CLOSED
@@ -166,13 +252,26 @@ async def _deal_button_press(value: bytes) -> None:
     res = ustruct.unpack(">B", value)[0]
     if res == _PRESS_SHORT:
         if display.backlight():
+            if utils.is_collecting_fingerprint():
+                from trezor.lvglui.scrs.fingerprints import (
+                    CollectFingerprintProgress,
+                )
+
+                if CollectFingerprintProgress.has_instance():
+                    CollectFingerprintProgress.get_instance().prompt_tips()
+                    return
             display.backlight(0)
             if device.is_initialized():
                 if utils.is_initialization_processing():
                     return
                 utils.AUTO_POWER_OFF = True
+                from trezor.lvglui.scrs import fingerprints
+
                 if config.has_pin() and config.is_unlocked():
-                    config.lock()
+                    if fingerprints.is_available() and fingerprints.is_unlocked():
+                        fingerprints.lock()
+                    else:
+                        config.lock()
                 await loop.race(safe_reloop(), loop.sleep(200))
                 # single to restart the main loop
                 raise loop.TASK_CLOSED
@@ -182,7 +281,7 @@ async def _deal_button_press(value: bytes) -> None:
         from trezor.lvglui.scrs.homescreen import PowerOff
 
         PowerOff(
-            re_loop=True
+            True
             if not utils.is_initialization_processing() and device.is_initialized()
             else False
         )
@@ -202,7 +301,6 @@ async def _deal_charging_state(value: bytes) -> None:
         _POWER_STATUS_CHARGING,
     ):
         if res != _POWER_STATUS_CHARGING:
-            print("charging with a charger now .......")
             utils.turn_on_lcd_if_possible()
         if CHARGING:
             return

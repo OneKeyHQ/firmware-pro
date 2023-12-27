@@ -616,6 +616,7 @@ STATIC mp_obj_t mod_trezorcrypto_se_thd89_sign_message(mp_obj_t msg) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorcrypto_se_thd89_sign_message_obj,
                                  mod_trezorcrypto_se_thd89_sign_message);
 
+
 /// def fingerprint_is_unlocked() -> bool:
 ///     """
 ///     Returns True if fingerprint is unlocked, False otherwise.
@@ -626,9 +627,8 @@ STATIC mp_obj_t mod_trezorcrypto_se_fingerprint_is_unlocked(void) {
   }
   return mp_const_true;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(
-    mod_trezorcrypto_se_fingerprint_is_unlocked_obj,
-    mod_trezorcrypto_se_fingerprint_is_unlocked);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorcrypto_se_fingerprint_is_unlocked_obj,
+                                 mod_trezorcrypto_se_fingerprint_is_unlocked);
 
 /// def fingerprint_lock() -> None:
 ///     """
@@ -641,13 +641,15 @@ STATIC mp_obj_t mod_trezorcrypto_se_fingerprint_lock(void) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorcrypto_se_fingerprint_lock_obj,
                                  mod_trezorcrypto_se_fingerprint_lock);
 
-/// def fingerprint_unlock() -> None:
+/// def fingerprint_unlock() -> bool:
 ///     """
 ///     fingerprint unlock.
 ///     """
 STATIC mp_obj_t mod_trezorcrypto_se_fingerprint_unlock(void) {
-  se_fingerprint_unlock();
-  return mp_const_none;
+  if (sectrue != se_fingerprint_unlock()) {
+      return mp_const_false;
+  }
+  return mp_const_true;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorcrypto_se_fingerprint_unlock_obj,
                                  mod_trezorcrypto_se_fingerprint_unlock);

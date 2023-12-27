@@ -8,6 +8,13 @@ from .widgets.style import StyleWrapper
 
 
 class LockScreen(Screen):
+    @classmethod
+    def retrieval(cls) -> tuple[bool, "LockScreen" | None]:
+        if hasattr(cls, "_instance") and cls._instance.is_visible():
+            return True, cls._instance
+        else:
+            return False, None
+
     def __init__(self, device_name, ble_name="", dev_state=None):
         lockscreen = device.get_homescreen()
         if not hasattr(self, "_init"):
@@ -26,6 +33,7 @@ class LockScreen(Screen):
                 .bg_img_opa(int(lv.OPA.COVER * 0.72)),
                 0,
             )
+            self.show_tips()
             return
         self.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
         self.title.align_to(self.content_area, lv.ALIGN.TOP_MID, 0, 76)
@@ -36,7 +44,34 @@ class LockScreen(Screen):
         )
         self.tap_tip = lv.label(self.content_area)
         self.tap_tip.set_long_mode(lv.label.LONG.WRAP)
-        self.tap_tip.set_text(_(i18n_keys.MSG__USE_FINGERPRINT_OR_SWIPE_UP_TO_UNLOCK))
+        self.show_tips()
+        self.lock_state = lv.img(self.content_area)
+        self.lock_state.set_src("A:/res/lock.png")
+        self.lock_state.align_to(self.tap_tip, lv.ALIGN.OUT_TOP_MID, 0, -16)
+        self.add_event_cb(self.on_slide_up, lv.EVENT.GESTURE, None)
+
+    def show_tips(self, level: int = 0):
+        if level:
+            if level == 1:
+                self.tap_tip.set_text(
+                    _(i18n_keys.MSG__INVALID_FINGERPRINT_PLEASE_RETRY)
+                )
+            elif level == 2:
+                self.tap_tip.set_text(
+                    _(
+                        i18n_keys.MSG__YOUR_PIN_CODE_REQUIRED_TO_ENABLE_FINGERPRINT_UNLOCK
+                    )
+                )
+        else:
+            from trezor.lvglui.scrs import fingerprints
+
+            if fingerprints.is_available():
+                self.tap_tip.set_text(
+                    _(i18n_keys.MSG__USE_FINGERPRINT_OR_SWIPE_UP_TO_UNLOCK)
+                )
+                # self._show_fingerprint_prompt_if_necessary()
+            else:
+                self.tap_tip.set_text(_(i18n_keys.MSG__SWIPE_UP_TO_UNLOCK))
         self.tap_tip.align(lv.ALIGN.BOTTOM_MID, 0, -24)
         self.tap_tip.add_style(
             StyleWrapper()
@@ -46,10 +81,50 @@ class LockScreen(Screen):
             .text_align_center(),
             0,
         )
-        self.lock_state = lv.img(self.content_area)
-        self.lock_state.set_src("A:/res/lock.png")
-        self.lock_state.align_to(self.tap_tip, lv.ALIGN.OUT_TOP_MID, 0, -16)
-        self.add_event_cb(self.on_slide_up, lv.EVENT.GESTURE, None)
+
+    def show_finger_mismatch_anim(self):
+        self.anim_right = lv.anim_t()
+        self.anim_right.init()
+        self.anim_right.set_var(self.lock_state)
+        self.anim_right.set_values(220, 230)
+        self.anim_right.set_time(100)
+        self.anim_right.set_playback_delay(50)
+        self.anim_right.set_playback_time(100)
+        self.anim_right.set_repeat_delay(50)
+        self.anim_right.set_repeat_count(1)
+        self.anim_right.set_path_cb(lv.anim_t.path_linear)
+        self.anim_right.set_custom_exec_cb(lambda _a, val: self.anim_set_x(val))
+
+        self.anim_left = lv.anim_t()
+        self.anim_left.init()
+        self.anim_left.set_var(self.lock_state)
+        self.anim_left.set_values(220, 210)
+        self.anim_left.set_time(100)
+        self.anim_left.set_playback_delay(50)
+        self.anim_left.set_playback_time(100)
+        self.anim_left.set_repeat_delay(50)
+        self.anim_left.set_repeat_count(1)
+        self.anim_left.set_path_cb(lv.anim_t.path_linear)
+        self.anim_left.set_custom_exec_cb(lambda _a, val: self.anim_set_x(val))
+        self.anim_left.set_deleted_cb(lambda _a: lv.anim_t.start(self.anim_right))
+
+        lv.anim_t.start(self.anim_left)
+
+    def anim_set_x(self, x):
+        try:
+            self.lock_state.set_x(x)
+        except Exception:
+            pass
+
+    def _show_fingerprint_prompt_if_necessary(self):
+        if device.has_prompted_fingerprint():
+            if hasattr(self, "fingerprint_prompt"):
+                self.fingerprint_prompt.delete()
+            return
+        self.fingerprint_prompt = lv.img(self.content_area)
+        self.fingerprint_prompt.set_src("A:/res/fingerprint-prompt.png")
+        self.fingerprint_prompt.set_pos(424, 28)
+        device.set_fingerprint_prompted()
 
     def eventhandler(self, event_obj: lv.event_t):
         code = event_obj.code

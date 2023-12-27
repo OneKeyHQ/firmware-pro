@@ -60,7 +60,7 @@ async def boot_animation() -> None:
     loop.close(lvgl_task)
     if not utils.USE_THD89:
         if not can_lock_device():
-            await verify_user_pin()
+            await verify_user_pin(allow_fingerprint=False)
             storage.init_unlocked()
 
 

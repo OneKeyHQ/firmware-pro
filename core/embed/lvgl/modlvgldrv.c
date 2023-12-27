@@ -23,7 +23,7 @@ static mp_obj_t mp_disp_drv_framebuffer(mp_obj_t n_obj) {
     static lv_color_t *lv_disp_buf =
         (lv_color_t *)(FMC_SDRAM_LVGL_BUFFER_ADDRESS);
     ;
-    fb[n] = MP_STATE_PORT(disp_drv_fb[n]) = lv_disp_buf;
+    fb[n] = MP_STATE_PORT(disp_drv_fb[n]) = lv_disp_buf + 480 * 800 * n;
   }
   return mp_obj_new_bytearray_by_ref(sizeof(lv_color_t) * 480 * 800,
                                      (void *)fb[n]);
@@ -39,31 +39,21 @@ static void mp_disp_drv_flush(lv_disp_drv_t *disp_drv, const lv_area_t *area,
 
 static bool mp_ts_read(struct _lv_indev_drv_t *indev_drv,
                        lv_indev_data_t *data) {
-  static lv_coord_t last_x = 0;
-  static lv_coord_t last_y = 0;
+  int pos = touch_read();
 
-  int pos;
-  pos = touch_read();
-  /*Save the pressed coordinates and the state*/
-  if (pos & TOUCH_START) {
-    last_x = (pos >> 12) & 0xfff;
-    last_y = pos & 0xfff;
+  /* Save the pressed coordinates and the state */
+  if (pos & TOUCH_START || pos & TOUCH_MOVE) {
     data->state = LV_INDEV_STATE_PR;
   } else if (pos & TOUCH_END) {
-    last_x = (pos >> 12) & 0xfff;
-    last_y = pos & 0xfff;
     data->state = LV_INDEV_STATE_REL;
-  } else if (pos & TOUCH_MOVE) {
-    last_x = (pos >> 12) & 0xfff;
-    last_y = pos & 0xfff;
-    data->state = LV_INDEV_STATE_PR;
   } else {
     data->state = LV_INDEV_STATE_REL;
   }
 
-  /*Set the last pressed coordinates*/
-  data->point.x = last_x;
-  data->point.y = last_y;
+  /* Set the last pressed coordinates */
+  data->point.x = (pos >> 12) & 0xfff;
+  data->point.y = pos & 0xfff;
+
   return false;
 }
 

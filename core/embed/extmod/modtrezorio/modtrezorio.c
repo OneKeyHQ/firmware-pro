@@ -55,6 +55,7 @@ bool local_interface_ready = false;
 #include "modtrezorio-camera.h"
 #include "modtrezorio-fatfs.h"
 #include "modtrezorio-local.h"
+#include "modtrezorio-fingerprint.h"
 #include "modtrezorio-moto.h"
 #include "modtrezorio-sbu.h"
 #include "modtrezorio-sdcard.h"
@@ -93,6 +94,8 @@ STATIC const mp_rom_map_elem_t mp_module_trezorio_globals_table[] = {
     {MP_ROM_QSTR(MP_QSTR_SBU), MP_ROM_PTR(&mod_trezorio_SBU_type)},
     {MP_ROM_QSTR(MP_QSTR_sdcard), MP_ROM_PTR(&mod_trezorio_sdcard_module)},
     {MP_ROM_QSTR(MP_QSTR_camera), MP_ROM_PTR(&mod_trezorio_camera_module)},
+    {MP_ROM_QSTR(MP_QSTR_fingerprint),
+     MP_ROM_PTR(&mod_trezorio_fingerprint_module)},
 
     {MP_ROM_QSTR(MP_QSTR_TOUCH), MP_ROM_INT(TOUCH_IFACE)},
     {MP_ROM_QSTR(MP_QSTR_TOUCH_START), MP_ROM_INT((TOUCH_START >> 24) & 0xFFU)},

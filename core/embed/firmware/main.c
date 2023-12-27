@@ -160,6 +160,7 @@ int main(void) {
 
   emmc_init();
   timer_init();
+  fingerprint_init();
 
   fingerprint_init();
   

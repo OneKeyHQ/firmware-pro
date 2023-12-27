@@ -1,7 +1,12 @@
 from trezor import log, loop, utils
 from trezor.lvglui import lvgl_tick
 from trezor.qr import handle_qr_ctx, handle_qr_task
-from trezor.uart import handle_ble_info, handle_uart, handle_usb_state
+from trezor.uart import (
+    handle_ble_info,
+    handle_fingerprint,
+    handle_uart,
+    handle_usb_state,
+)
 
 import apps.base
 import usb
@@ -30,6 +35,7 @@ loop.schedule(handle_usb_state())
 loop.schedule(handle_qr_ctx())
 loop.schedule(handle_qr_task())
 
+loop.schedule(handle_fingerprint())
 loop.schedule(lvgl_tick())
 
 utils.set_up()

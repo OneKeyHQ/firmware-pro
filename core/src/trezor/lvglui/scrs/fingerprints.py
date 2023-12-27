@@ -1,0 +1,305 @@
+from trezorio import fingerprint
+
+from storage import device
+from trezor import config, loop, utils
+from trezor.crypto import se_thd89
+
+from ..i18n import gettext as _, keys as i18n_keys
+from ..lv_colors import lv_colors
+from . import font_GeistRegular30, lv
+from .common import FullSizeWindow
+from .widgets.style import StyleWrapper
+
+match_chan = loop.chan()
+
+
+def request():
+    return match_chan.take()
+
+
+def signal_match():
+    match_chan.publish(1)
+
+
+def has_takers():
+    return len(match_chan.takers) > 0
+
+
+def is_available() -> bool:
+    return (
+        device.is_fingerprint_unlock_enabled()
+        and config.is_unlocked()
+        and has_fingerprints()
+        and failed_count() < 5
+    )
+
+
+def failed_count() -> int:
+    return device.finger_failed_count()
+
+
+def has_fingerprints() -> bool:
+    return fingerprint.get_template_count() > 0
+
+
+def lock():
+    se_thd89.fingerprint_lock()
+
+
+def unlock():
+    se_thd89.fingerprint_unlock()
+
+
+def is_unlocked() -> bool:
+    return se_thd89.fingerprint_is_unlocked()
+
+
+class RequestAddFingerprintScreen(FullSizeWindow):
+    def __init__(self):
+        super().__init__(
+            _(i18n_keys.TITLE__FINGERPRINT),
+            _(i18n_keys.TITLE__FINGERPRINT_DESC),
+            _(i18n_keys.BUTTON__ADD_FINGERPRINT),
+            _(i18n_keys.BUTTON__CLOSE),
+            icon_path="A:/res/fingerprint.png",
+        )
+        self.btn_layout_ver()
+
+
+class CollectFingerprintStart(FullSizeWindow):
+    def __init__(self):
+        super().__init__(
+            title=_(i18n_keys.TITLE__GET_STARTED),
+            subtitle=_(
+                i18n_keys.CONTENT__PLACE_YOUR_FINGER_ON_THE_SENSOR_LOCATED_ON_THE_SIDE_OF_THE_PHONE
+            ),
+            cancel_text=_(i18n_keys.BUTTON__CANCEL),
+        )
+        self.img = lv.img(self.content_area)
+        self.img.remove_style_all()
+        self.img.set_src("A:/res/finger-start.png")
+        self.img.align_to(self.subtitle, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 86)
+
+        self.arrow = lv.img(self.content_area)
+        self.arrow.remove_style_all()
+        self.arrow.set_src("A:/res/finger-start-arrow.png")
+        self.arrow.align_to(self.subtitle, lv.ALIGN.OUT_BOTTOM_RIGHT, 0, 220)
+
+        self.anim = lv.anim_t()
+        self.anim.init()
+        self.anim.set_var(self.arrow)
+        self.anim.set_values(372, 278)
+        self.anim.set_time(400)
+        self.anim.set_playback_delay(100)
+        self.anim.set_playback_time(400)
+        self.anim.set_repeat_delay(100)
+        self.anim.set_repeat_count(0xFFFF)  # infinite
+        self.anim.set_path_cb(lv.anim_t.path_ease_in_out)
+        self.anim.set_custom_exec_cb(lambda _a, val: self.anim_set_x(val))
+        lv.anim_t.start(self.anim)
+
+    def anim_set_x(self, x):
+        try:
+            self.arrow.set_x(x)
+        except Exception:
+            pass
+
+
+class CollectFingerprintProgress(FullSizeWindow):
+    _instance = None
+
+    @staticmethod
+    def get_instance():
+        if CollectFingerprintProgress._instance is None:
+            CollectFingerprintProgress._instance = CollectFingerprintProgress()
+        return CollectFingerprintProgress._instance
+
+    @staticmethod
+    def has_instance():
+        return CollectFingerprintProgress._instance is not None
+
+    @staticmethod
+    def reset():
+        CollectFingerprintProgress._instance = None
+
+    def __init__(self):
+        super().__init__(
+            title=_(i18n_keys.TITLE__PLACE_FINGER),
+            subtitle=_(i18n_keys.TITLE__PLACE_FINGER_DESC),
+            cancel_text=_(i18n_keys.BUTTON__CANCEL),
+            anim_dir=0,
+        )
+        self.img = lv.img(self.content_area)
+        self.img.remove_style_all()
+        self.img.set_src("A:/res/fingerprint-process-0.png")
+        self.img.align_to(self.subtitle, lv.ALIGN.OUT_BOTTOM_MID, 0, 85)
+
+        self.tips = lv.label(self)
+        self.tips.set_long_mode(lv.label.LONG.WRAP)
+        self.tips.set_text("")
+        self.tips.add_style(
+            StyleWrapper()
+            .text_font(font_GeistRegular30)
+            .width(456)
+            .text_color(lv_colors.ONEKEY_YELLOW)
+            .text_letter_space(-1)
+            .text_align_center()
+            .pad_ver(16)
+            .pad_hor(12),
+            0,
+        )
+        self.tips.align_to(self.btn_no, lv.ALIGN.OUT_TOP_MID, 0, -61)
+
+    def update_progress(self, progress):
+        self.img.set_src(f"A:/res/fingerprint-process-{progress}.png")
+
+    def prompt_tips(self, text: str | None = None):
+        if text:
+            self.tips.set_text(text)
+        else:
+            self.tips.set_text(_(i18n_keys.MSG__DO_NOT_PRESS_THE_POWER_BUTTON))
+        self.tips.align_to(self.btn_no, lv.ALIGN.OUT_TOP_MID, 0, -61)
+
+    def prompt_tips_clear(self):
+        self.tips.set_text("")
+
+
+async def request_enroll(i) -> None:
+
+    while fingerprint.detect():
+        if i != 0:
+            if __debug__:
+                print("move finger away")
+            await loop.sleep(100)
+        else:
+            break
+
+    while not fingerprint.enroll(i):
+        if __debug__:
+            print("fingerprint enroll failed")
+        await loop.sleep(300)
+
+
+async def request_add_fingerprint() -> None:
+    while True:
+        scr = RequestAddFingerprintScreen()
+        if await scr.request():
+            success = await add_fingerprint(0)
+            if success:
+                break
+        else:
+            break
+
+
+async def add_fingerprint(ids, callback=None) -> bool:
+
+    abort = False
+    success = True
+    processes = [12.5, 25, 50, 75, 87.5, 100]
+    utils.mark_collecting_fingerprint()
+    while True:
+        scr = CollectFingerprintStart()
+        while True:
+            if fingerprint.detect():
+                scr.destroy(50)
+                progress = CollectFingerprintProgress.get_instance()
+                for i in range(6):
+                    progress.prompt_tips_clear()
+                    enroll_task = request_enroll(i)
+                    cancel_task = progress.request()
+                    racer = loop.race(enroll_task, cancel_task)
+                    await racer
+                    if cancel_task in racer.finished:
+                        abort = True
+                        CollectFingerprintProgress.reset()
+                        break
+                    progress.update_progress(processes[i])
+                    # await loop.sleep(400)
+                fingerprint.save(ids)
+                progress.destroy(50)
+                CollectFingerprintProgress.reset()
+                break
+            else:
+                idle = loop.sleep(100)
+                cancel = scr.request()
+                racer = loop.race(idle, cancel)
+                await racer
+                if idle in racer.finished:
+                    continue
+                elif cancel in racer.finished:
+                    success = False
+                    abort = False
+                    break
+        if not abort:
+            break
+    utils.mark_collecting_fingerprint_done()
+    if success:
+        await FullSizeWindow(
+            title=_(i18n_keys.TITLE__FINGERPRINT_ADDED),
+            subtitle=_(i18n_keys.TITLE__FINGERPRINT_ADDED_DESC).format(
+                _(i18n_keys.FORM__FINGER_STR).format(ids + 1)
+            ),
+            confirm_text=_(i18n_keys.BUTTON__CONTINUE),
+            icon_path="A:/res/success.png",
+            anim_dir=0,
+        ).request()
+        if callback and callable(callback):
+            callback()
+    return success
+
+
+async def request_delete_fingerprint(fingerprint_name: str, on_remove) -> None:
+    confirmed = await RequestRemoveFingerprint(fingerprint_name).request()
+    if confirmed:
+        confirmed = await ConfirmRemoveFingerprint().request()
+        if confirmed:
+            await on_remove()
+
+
+class RequestRemoveFingerprint(FullSizeWindow):
+    def __init__(self, fingerprint_name: str):
+        super().__init__(
+            fingerprint_name,
+            None,
+            confirm_text=_(i18n_keys.BUTTON__REMOVE),
+            icon_path="A:/res/fingerprint.png",
+        )
+        self.add_nav_back()
+        self.btn_yes.add_style(StyleWrapper().bg_color(lv_colors.ONEKEY_RED_1), 0)
+
+        self.add_event_cb(self.on_nav_back, lv.EVENT.CLICKED, None)
+
+    def on_nav_back(self, event_obj):
+        code = event_obj.code
+        target = event_obj.get_target()
+        if code == lv.EVENT.CLICKED:
+            if target == self.nav_back.nav_btn:
+                self.destroy(50)
+
+    def show_unload_anim(self):
+        # if self.anim_dir == ANIM_DIRS.HOR:
+        #     Anim(0, -480, self.set_pos, time=200, y_axis=False, delay=200, del_cb=self._delete).start()
+        # else:
+        #     self.show_dismiss_anim()
+        self.destroy(100)
+
+
+class ConfirmRemoveFingerprint(FullSizeWindow):
+    def __init__(self):
+        super().__init__(
+            _(i18n_keys.TITLE__REMOVE_THIS_FINGERPRINT),
+            _(i18n_keys.TITLE__REMOVE_THIS_FINGERPRINT_DESC),
+            confirm_text=_(i18n_keys.BUTTON__REMOVE),
+            cancel_text=_(i18n_keys.BUTTON__CANCEL),
+            icon_path="A:/res/fingerprint.png",
+        )
+        self.add_nav_back()
+        self.btn_yes.add_style(StyleWrapper().bg_color(lv_colors.ONEKEY_RED_1), 0)
+        self.add_event_cb(self.on_nav_back, lv.EVENT.CLICKED, None)
+
+    def on_nav_back(self, event_obj):
+        code = event_obj.code
+        target = event_obj.get_target()
+        if code == lv.EVENT.CLICKED:
+            if target == self.nav_back.nav_btn:
+                self.destroy(50)

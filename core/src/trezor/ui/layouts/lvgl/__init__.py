@@ -1025,8 +1025,12 @@ async def request_pin_on_device(
     prompt: str,
     attempts_remaining: int | None,
     allow_cancel: bool,
+    allow_fingerprint: bool,
+    close_others: bool = True,
 ) -> str:
-    await button_request(ctx, "pin_device", code=ButtonRequestType.PinEntry)
+    await button_request(
+        ctx, "pin_device", code=ButtonRequestType.PinEntry, close_others=close_others
+    )
     from storage import device
 
     if attempts_remaining is None or attempts_remaining == device.PIN_MAX_ATTEMPTS:
@@ -1037,7 +1041,9 @@ async def request_pin_on_device(
         subprompt = f"{_(i18n_keys.MSG__INCORRECT_PIN_STR_ATTEMPTS_LEFT).format(attempts_remaining)}"
     from trezor.lvglui.scrs.pinscreen import InputPin
 
-    pinscreen = InputPin(title=prompt, subtitle=subprompt)
+    pinscreen = InputPin(
+        title=prompt, subtitle=subprompt, allow_fingerprint=allow_fingerprint
+    )
     result = await ctx.wait(pinscreen.request())
     if not result:
         if not allow_cancel:
@@ -2038,6 +2044,9 @@ async def show_signature(
         ctx,
         Signature(
             _(i18n_keys.TITLE__EXPORT_SIGNED_TRANSACTION),
+            _(
+                i18n_keys.CONTENT__RETUNRN_TO_THE_APP_AND_SCAN_THE_SIGNED_TX_QR_CODE_BELOW
+            ),
             qr_code=qr_code,
         ),
         "show_signature",

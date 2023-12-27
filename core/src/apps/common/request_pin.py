@@ -6,6 +6,7 @@ import storage.sd_salt
 from trezor import config, loop, wire
 from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
 from trezor.lvglui.lv_colors import lv_colors
+from trezor.lvglui.scrs import fingerprints
 
 from .sdcard import SdCardUnavailable, request_sd_salt
 
@@ -20,11 +21,14 @@ async def request_pin(
     prompt: str = "",
     attempts_remaining: int | None = None,
     allow_cancel: bool = True,
+    allow_fingerprint: bool = True,
     **kwargs: Any,
 ) -> str:
     from trezor.ui.layouts import request_pin_on_device
 
-    return await request_pin_on_device(ctx, prompt, attempts_remaining, allow_cancel)
+    return await request_pin_on_device(
+        ctx, prompt, attempts_remaining, allow_cancel, allow_fingerprint
+    )
 
 
 async def request_pin_confirm(ctx: wire.Context, *args: Any, **kwargs: Any) -> str:
@@ -61,9 +65,12 @@ async def request_pin_and_sd_salt(
     ctx: wire.Context,
     prompt: str = "",
     allow_cancel: bool = True,
+    allow_fingerprint: bool = True,
 ) -> tuple[str, bytearray | None]:
     if config.has_pin():
-        pin = await request_pin(ctx, prompt, config.get_pin_rem(), allow_cancel)
+        pin = await request_pin(
+            ctx, prompt, config.get_pin_rem(), allow_cancel, allow_fingerprint
+        )
         config.ensure_not_wipe_code(pin)
     else:
         pin = ""
@@ -90,6 +97,8 @@ async def verify_user_pin(
     cache_time_ms: int = 0,
     re_loop: bool = False,
     callback=None,
+    allow_fingerprint: bool = True,
+    close_others: bool = True,
 ) -> None:
     last_unlock = _get_last_unlock_time()
     if (
@@ -97,6 +106,7 @@ async def verify_user_pin(
         and last_unlock
         and utime.ticks_ms() - last_unlock <= cache_time_ms
         and config.is_unlocked()
+        and fingerprints.is_unlocked()
     ):
         return
 
@@ -104,7 +114,12 @@ async def verify_user_pin(
         from trezor.ui.layouts import request_pin_on_device
 
         pin = await request_pin_on_device(
-            ctx, prompt, config.get_pin_rem(), allow_cancel
+            ctx,
+            prompt,
+            config.get_pin_rem(),
+            allow_cancel,
+            allow_fingerprint,
+            close_others=close_others,
         )
 
         config.ensure_not_wipe_code(pin)
@@ -114,7 +129,12 @@ async def verify_user_pin(
         salt = await request_sd_salt(ctx)
     except SdCardUnavailable:
         raise wire.PinCancelled("SD salt is unavailable")
-    if config.unlock(pin, salt):
+
+    if not config.is_unlocked():
+        verified = config.unlock(pin, salt)
+    else:
+        verified = config.check_pin(pin, salt)
+    if verified:
         if re_loop:
             loop.clear()
         elif callback:
@@ -126,9 +146,18 @@ async def verify_user_pin(
     while retry:
         pin_rem = config.get_pin_rem()
         pin = await request_pin_on_device(  # type: ignore ["request_pin_on_device" is possibly unbound]
-            ctx, _(i18n_keys.TITLE__ENTER_PIN), pin_rem, allow_cancel
+            ctx,
+            _(i18n_keys.TITLE__ENTER_PIN),
+            pin_rem,
+            allow_cancel,
+            allow_fingerprint,
+            close_others=close_others,
         )
-        if config.unlock(pin, salt):
+        if not config.is_unlocked():
+            verified = config.unlock(pin, salt)
+        else:
+            verified = config.check_pin(pin, salt)
+        if verified:
             if re_loop:
                 loop.clear()
             elif callback:
@@ -137,6 +166,22 @@ async def verify_user_pin(
             return
 
     raise wire.PinInvalid
+
+
+async def verify_user_fingerprint(
+    ctx: wire.GenericContext = wire.DUMMY_CONTEXT,
+    re_loop: bool = False,
+    callback=None,
+):
+    if fingerprints.is_unlocked():
+        return
+    if await fingerprints.request():
+        fingerprints.unlock()
+        if re_loop:
+            loop.clear()
+        elif callback:
+            callback()
+        _set_last_unlock_time
 
 
 async def error_pin_invalid(ctx: wire.Context) -> NoReturn:

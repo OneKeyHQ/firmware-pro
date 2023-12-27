@@ -48,11 +48,13 @@ BLE_NAME: str | None = None
 DISABLE_ANIMATION = 0
 BLE_CONNECTED: bool | None = None
 BATTERY_CAP: int | None = None
-SHORT_AUTO_LOCK_TIME_MS = 10 * 1000
+SHORT_AUTO_LOCK_TIME_MS = 20 * 1000
 DEFAULT_LABEL = "OneKey Pro"
 AUTO_POWER_OFF = False
 _SHOW_APP_GUIDE = False
 _INITIALIZATION_PROCESSING = False
+_COLLECTING_FINGERPRINT = False
+_PIN_VERIFIED_SINCE_BOOT = False
 if __debug__:
     if EMULATOR:
         import uos
@@ -104,6 +106,16 @@ def try_remove_scr(screen):
         SCREENS.remove(screen)
     except Exception:
         pass
+
+
+def pin_verified_since_boot() -> bool:
+    return _PIN_VERIFIED_SINCE_BOOT
+
+
+def mark_pin_verified() -> None:
+    global _PIN_VERIFIED_SINCE_BOOT
+    if not _PIN_VERIFIED_SINCE_BOOT:
+        _PIN_VERIFIED_SINCE_BOOT = True
 
 
 def turn_on_lcd_if_possible() -> bool:
@@ -182,6 +194,20 @@ def is_initialization_processing():
 def mark_initialization_done():
     global _INITIALIZATION_PROCESSING
     _INITIALIZATION_PROCESSING = False
+
+
+def mark_collecting_fingerprint():
+    global _COLLECTING_FINGERPRINT
+    _COLLECTING_FINGERPRINT = True
+
+
+def is_collecting_fingerprint():
+    return _COLLECTING_FINGERPRINT
+
+
+def mark_collecting_fingerprint_done():
+    global _COLLECTING_FINGERPRINT
+    _COLLECTING_FINGERPRINT = False
 
 
 def unimport_begin() -> set[str]:

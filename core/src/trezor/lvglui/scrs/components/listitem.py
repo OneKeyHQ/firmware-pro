@@ -272,7 +272,7 @@ class ImgGridItem(lv.img):
         self.zoom_path = path_dir + file_name
         self.set_src(self.zoom_path)
         self.set_style_radius(40, 0)
-        self.set_style_clip_corner(True, 0)
+        # self.set_style_clip_corner(True, 0)
         self.img_path = self.zoom_path.replace("zoom-", "")
         self.check = lv.img(self)
         self.check.set_src(img_path_other)

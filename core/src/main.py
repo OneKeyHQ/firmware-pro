@@ -49,8 +49,8 @@ import usb
 
 # start the USB
 import storage.device
-
-usb.bus.open(storage.device.get_device_id())
+if not storage.device.is_airgap_mode():
+    usb.bus.open(storage.device.get_device_id())
 
 # initialize the status bar
 StatusBar.get_instance()

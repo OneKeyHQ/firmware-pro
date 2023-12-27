@@ -13,7 +13,7 @@ class QRTask:
         self.resp = None
         self.scanning = False
         self.callback_obj = None
-        self.hd_key = ""
+        self.hd_key = None
 
     def get_hd_key(self) -> str:
         return self.hd_key
@@ -116,6 +116,10 @@ def scan_qr(callback_obj):
         qr_task.set_camera_state(True)
         qr_task.set_callback_obj(callback_obj)
         while True:
+            if qr_task.get_camera_state() is False:
+                camera.stop()
+                # await qr_task.callback_finish()
+                break
             qr_data = camera.scan_qrcode(80, 180)
             if qr_data:
                 print(qr_data.decode("utf-8"))
@@ -125,10 +129,6 @@ def scan_qr(callback_obj):
                     if type(decoder.result) is UR:
                         await handle_qr(decoder.result)
                     break
-            if qr_task.get_camera_state() is False:
-                camera.stop()
-                await qr_task.callback_finish()
-                break
             await loop.sleep(1)
 
     workflow.spawn(camear_scan())
@@ -142,7 +142,7 @@ def get_hd_key():
     return qr_task.get_hd_key()
 
 
-async def gen_hd_key():
+async def gen_hd_key(callback=None):
     global qr_task
     if qr_task.get_hd_key() is not None:
         return
@@ -150,8 +150,10 @@ async def gen_hd_key():
     from apps.ur_registry.crypto_hd_key import genCryptoHDKeyForETHStandard
 
     await handle_Initialize(wire.QR_CONTEXT, messages.Initialize())
-    ur = await genCryptoHDKeyForETHStandard()
+    ur = await genCryptoHDKeyForETHStandard(wire.QR_CONTEXT)
     qr_task.set_hd_key(ur)
+    if callback is not None:
+        callback()
 
 
 async def handle_qr_task():

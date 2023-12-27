@@ -6,6 +6,7 @@ from trezor import config, loop, utils, wire
 from trezor.crypto import bip39, hashlib, random, slip39
 from trezor.enums import BackupType
 from trezor.lvglui.i18n import gettext as _, i18n_refresh, keys as i18n_keys
+from trezor.lvglui.scrs import fingerprints
 from trezor.messages import EntropyAck, EntropyRequest, Success
 from trezor.ui.layouts import (
     backup_with_keytag,
@@ -68,7 +69,8 @@ async def reset_device(ctx: wire.Context, msg: ResetDevice) -> Success:
             newpin = await request_pin_confirm(ctx)
             if not config.change_pin("", newpin, None, None):
                 raise wire.ProcessError("Failed to set PIN")
-
+        if not __debug__:
+            await fingerprints.request_add_fingerprint()
         # generate and display internal entropy
         int_entropy = random.bytes(32)
         if __debug__:

@@ -332,7 +332,7 @@ static void usb_init_all(secbool usb21_landing) {
       .product_id = 0x4F4A,
       .release_num = 0x0200,
       .manufacturer = "OneKey",
-      .product = "ONEKEY Touch Boot",
+      .product = "ONEKEY Pro Boot",
       .serial_number = "000000000000000000000000",
       .interface = "ONEKEY Interface",
       .usb21_enabled = sectrue,
