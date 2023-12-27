@@ -24,7 +24,7 @@
 
 /// package: trezorio.camera
 
-/// def scan_qrcode(x: int, y: int) -> bytes::
+/// def scan_qrcode(x: int, y: int) -> bytes:
 ///     """
 ///     Returns qr data.
 ///     """

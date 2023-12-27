@@ -9,16 +9,23 @@ def get_product_id():
     return 0x53C1 if storage.device.is_trezor_compatible() else 0x4F4B
 
 
-bus = io.USB(
-    vendor_id=0x1209,
-    product_id=get_product_id(),
-    release_num=0x0200,
-    manufacturer="OneKey",
-    product="OneKey Touch",
-    interface="OneKey Interface",
-    usb21_landing=False,
-)
+active_iface = []
 
+
+def init() -> io.USB:
+    bus = io.USB(
+        vendor_id=0x1209,
+        product_id=get_product_id(),
+        release_num=0x0200,
+        manufacturer="OneKey",
+        product="OneKey Pro",
+        interface="OneKey Interface",
+        usb21_landing=False,
+    )
+    return bus
+
+
+bus = init()
 UDP_PORT = 0
 WIRE_PORT_OFFSET = const(0)
 DEBUGLINK_PORT_OFFSET = const(1)
@@ -47,6 +54,7 @@ iface_wire = io.WebUSB(
     emu_port=UDP_PORT + WIRE_PORT_OFFSET,
 )
 bus.add(iface_wire)
+active_iface.append(iface_wire)
 
 # XXXXXXXXXXXXXXXXXXX
 #
@@ -69,6 +77,7 @@ if __debug__ and ENABLE_IFACE_DEBUG:
         emu_port=UDP_PORT + DEBUGLINK_PORT_OFFSET,
     )
     bus.add(iface_debug)
+    active_iface.append(iface_debug)
 
 if not utils.BITCOIN_ONLY and ENABLE_IFACE_WEBAUTHN:
     # interface used for FIDO/U2F and FIDO2/WebAuthn HID transport
@@ -100,6 +109,7 @@ if not utils.BITCOIN_ONLY and ENABLE_IFACE_WEBAUTHN:
         # fmt: on
     )
     bus.add(iface_webauthn)
+    active_iface.append(iface_webauthn)
 
 if __debug__ and ENABLE_IFACE_VCP:
     # interface used for cdc/vcp console emulation (debug messages)
@@ -114,3 +124,4 @@ if __debug__ and ENABLE_IFACE_VCP:
         emu_port=UDP_PORT + VCP_PORT_OFFSET,
     )
     bus.add(iface_vcp)
+    active_iface.append(iface_vcp)

@@ -5,6 +5,7 @@ import storage.recovery
 from trezor import config, loop, utils, wire
 from trezor.enums import ButtonRequestType
 from trezor.lvglui.i18n import gettext as _, i18n_refresh, keys as i18n_keys
+from trezor.lvglui.scrs import fingerprints
 from trezor.messages import Success
 from trezor.ui.layouts import confirm_action, confirm_reset_device
 
@@ -58,7 +59,7 @@ async def recovery_device(ctx: wire.Context, msg: RecoveryDevice) -> Success:
         # for dry run pin needs to be entered
         if msg.dry_run:
             curpin, salt = await request_pin_and_sd_salt(
-                ctx, _(i18n_keys.TITLE__ENTER_PIN)
+                ctx, _(i18n_keys.TITLE__ENTER_PIN), allow_fingerprint=False
             )
             if not config.check_pin(curpin, salt):
                 await error_pin_invalid(ctx)
@@ -69,7 +70,8 @@ async def recovery_device(ctx: wire.Context, msg: RecoveryDevice) -> Success:
             if msg.pin_protection:
                 newpin = await request_pin_confirm(ctx, allow_cancel=False)
                 # config.change_pin("", newpin, None, None)
-
+            if not __debug__:
+                await fingerprints.request_add_fingerprint()
             storage.device.set_passphrase_enabled(bool(msg.passphrase_protection))
             if msg.u2f_counter is not None:
                 storage.device.set_u2f_counter(msg.u2f_counter)

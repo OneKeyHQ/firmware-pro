@@ -79,7 +79,7 @@
 
 /*Number of the intermediate memory buffer used during rendering and other internal processing mechanisms.
  *You will see an error log message if there wasn't enough buffers. */
-#define LV_MEM_BUF_MAX_NUM 16
+#define LV_MEM_BUF_MAX_NUM 32
 
 /*Use the standard `memcpy` and `memset` instead of LVGL's own functions. (Might or might not be faster).*/
 #define LV_MEMCPY_MEMSET_STD 0
@@ -128,7 +128,7 @@
     * The circumference of 1/4 circle are saved for anti-aliasing
     * radius * 4 bytes are used per circle (the most often used radiuses are saved)
     * 0: to disable caching */
-    #define LV_CIRCLE_CACHE_SIZE 4
+    #define LV_CIRCLE_CACHE_SIZE 40
 #endif /*LV_DRAW_COMPLEX*/
 
 /*Default image cache size. Image caching keeps the images opened.
@@ -366,7 +366,7 @@
 /*Demonstrate special features*/
 #define LV_FONT_MONTSERRAT_12_SUBPX      0
 #define LV_FONT_MONTSERRAT_28_COMPRESSED 0  /*bpp = 3*/
-#define LV_FONT_DEJAVU_16_PERSIAN_HEBREW 1  /*Hebrew, Arabic, Perisan letters and all their forms*/
+#define LV_FONT_DEJAVU_16_PERSIAN_HEBREW 0  /*Hebrew, Arabic, Perisan letters and all their forms*/
 #define LV_FONT_SIMSUN_16_CJK            0  /*1000 most common CJK radicals*/
 
 /*Pixel perfect monospace fonts*/
@@ -438,7 +438,7 @@
 /*Support bidirectional texts. Allows mixing Left-to-Right and Right-to-Left texts.
  *The direction will be processed according to the Unicode Bidirectional Algorithm:
  *https://www.w3.org/International/articles/inline-bidi-markup/uba-basics*/
-#define LV_USE_BIDI 1
+#define LV_USE_BIDI 0
 #if LV_USE_BIDI
     /*Set the default direction. Supported values:
     *`LV_BASE_DIR_LTR` Left-to-Right
@@ -449,7 +449,7 @@
 
 /*Enable Arabic/Persian processing
  *In these languages characters should be replaced with an other form based on their position in the text*/
-#define LV_USE_ARABIC_PERSIAN_CHARS 1
+#define LV_USE_ARABIC_PERSIAN_CHARS 0
 
 /*==================
  *  WIDGET USAGE
@@ -459,7 +459,7 @@
 
 #define LV_USE_ARC        1
 
-#define LV_USE_ANIMIMG    1
+#define LV_USE_ANIMIMG    0
 
 #define LV_USE_BAR        1
 
@@ -471,13 +471,13 @@
 
 #define LV_USE_CHECKBOX   1
 
-#define LV_USE_DROPDOWN   1   /*Requires: lv_label*/
+#define LV_USE_DROPDOWN   0   /*Requires: lv_label*/
 
 #define LV_USE_IMG        1   /*Requires: lv_label*/
 
 #define LV_USE_LABEL      1
 #if LV_USE_LABEL
-    #define LV_LABEL_TEXT_SELECTION 1 /*Enable selecting text of the label*/
+    #define LV_LABEL_TEXT_SELECTION 0 /*Enable selecting text of the label*/
     #define LV_LABEL_LONG_TXT_HINT 1  /*Store some extra info in labels to speed up drawing of very long texts*/
 #endif
 
@@ -520,7 +520,7 @@
     #define LV_USE_CALENDAR_HEADER_DROPDOWN 1
 #endif  /*LV_USE_CALENDAR*/
 
-#define LV_USE_CHART      1
+#define LV_USE_CHART      0
 
 #define LV_USE_COLORWHEEL 0
 
@@ -544,11 +544,11 @@
 
 #define LV_USE_TABVIEW    0
 
-#define LV_USE_TILEVIEW   1
+#define LV_USE_TILEVIEW   0
 
 #define LV_USE_WIN        1
 
-#define LV_USE_SPAN       1
+#define LV_USE_SPAN       0
 #if LV_USE_SPAN
     /*A line text can contain maximum num of span descriptor */
     #define LV_SPAN_SNIPPET_STACK_SIZE 64
@@ -573,10 +573,10 @@
 #endif /*LV_USE_THEME_DEFAULT*/
 
 /*A very simple theme that is a good starting point for a custom theme*/
-#define LV_USE_THEME_BASIC 1
+#define LV_USE_THEME_BASIC 0
 
 /*A theme designed for monochrome displays*/
-#define LV_USE_THEME_MONO 1
+#define LV_USE_THEME_MONO 0
 
 /*-----------
  * Layouts
@@ -683,13 +683,13 @@
  *----------*/
 
 /*1: Enable API to take snapshot for object*/
-#define LV_USE_SNAPSHOT 1
+#define LV_USE_SNAPSHOT 0
 
 /*1: Enable Monkey test*/
 #define LV_USE_MONKEY   0
 
 /*1: Enable grid navigation*/
-#define LV_USE_GRIDNAV  1
+#define LV_USE_GRIDNAV  0
 
 /*==================
 * EXAMPLES

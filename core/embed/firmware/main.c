@@ -62,6 +62,7 @@
 #include "se_thd89.h"
 #include "spi_legacy.h"
 #include "supervise.h"
+#include "systick.h"
 #include "thd89.h"
 #include "timer.h"
 #include "touch.h"
@@ -163,7 +164,6 @@ int main(void) {
 
   emmc_init();
   timer_init();
-
   fingerprint_init();
 
   copyflash2sdram();

@@ -34,6 +34,7 @@
 #include "random_delays.h"
 #include "se_thd89.h"
 #include "secbool.h"
+#include "systick.h"
 #include "thd89.h"
 #include "thd89_boot.h"
 #ifdef TREZOR_MODEL_T
@@ -330,7 +331,7 @@ static void usb_init_all(secbool usb21_landing) {
       .product_id = 0x4F4A,
       .release_num = 0x0200,
       .manufacturer = "OneKey",
-      .product = "ONEKEY Touch Boot",
+      .product = "ONEKEY Pro Boot",
       .serial_number = "000000000000000000000000",
       .interface = "ONEKEY Interface",
       .usb21_enabled = sectrue,
@@ -723,7 +724,7 @@ int main(void) {
 
   SystemCoreClockUpdate();
   mpu_config_bootloader();
-
+  dwt_init();
   // user interface
   lcd_para_init(DISPLAY_RESX, DISPLAY_RESY, LCD_PIXEL_FORMAT_RGB565);
   lcd_pwm_init();

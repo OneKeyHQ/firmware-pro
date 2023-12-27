@@ -113,8 +113,8 @@ STATIC mp_obj_t mod_trezorconfig_unlock(mp_obj_t pin, mp_obj_t ext_salt) {
       mp_raise_msg(&mp_type_ValueError, "Invalid length of external salt.");
   }
 
-  display_clear();
-  display_loader_ex(0, false, 0, 0xFFFF, 0x0000, NULL, 0, 0);
+  // display_clear();
+  // display_loader_ex(0, false, 0, 0xFFFF, 0x0000, NULL, 0, 0);
   secbool ret = secfalse;
 
   // verify se pin first when not in emulator

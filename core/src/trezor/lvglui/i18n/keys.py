@@ -1544,45 +1544,69 @@ LIST_KEY__SUPPORTED_CHAINS = 706
 LIST_VALUE__ETH_MATIC_AVALANCHE_BASE_AND_OTHER_EVM_NETWORKS = 707
 # Ethereum, Bitcoin, Polygon, Solana, OKT Chain, TRON and other networks
 LIST_VALUE__ETH_BTC_MATIC_SOL_OKTCHAIN_TRON_AND_OTHER_NETWORKS = 708
-# Scan the unsigned transaction QR code displayed on the app
-CONTENT__SCAN_THE_UNSIGNED_TX_QR_CODE_DISPLAYED_ON_THE_APP = 709
 # Torch On
-BUTTON__TORCH_ON = 710
+BUTTON__TORCH_ON = 709
 # Torch Off
-BUTTON__TORCH_OFF = 711
+BUTTON__TORCH_OFF = 710
 # Export Signed Transaction
-TITLE__EXPORT_SIGNED_TRANSACTION = 712
-# Return to the app, and scan the signed transaction QR code above.
-CONTENT__RETUNRN_TO_THE_APP_AND_SCAN_THE_SIGNED_TX_QR_CODE_ABOVE = 713
+TITLE__EXPORT_SIGNED_TRANSACTION = 711
 # Air Gap Mode
-ITEM__AIR_GAP_MODE = 714
-TITLE__AIR_GAP_MODE = 714
+ITEM__AIR_GAP_MODE = 712
+TITLE__AIR_GAP_MODE = 712
 # After enabling the Air Gap, Bluetooth, USB and NFC transfer function will be
 # disabled simultaneously.
-CONTENT__AFTER_ENABLING_THE_AIRGAP_BLUETOOTH_USB_AND_NFC_TRANSFER_WILL_BE_DISABLED_SIMULTANEOUSLY = 715
+CONTENT__AFTER_ENABLING_THE_AIRGAP_BLUETOOTH_USB_AND_NFC_TRANSFER_WILL_BE_DISABLED_SIMULTANEOUSLY = 713
 # Air Gap
-ITEM__AIR_GAP = 716
+ITEM__AIR_GAP = 714
 # Bluetooth, USB and NFC transfer functions have been disabled.
-CONTENT__BLUETOOTH_USB_AND_NFT_TRANSFER_FUNCTIONS_HAVE_BEEN_DISABLED = 717
+CONTENT__BLUETOOTH_USB_AND_NFT_TRANSFER_FUNCTIONS_HAVE_BEEN_DISABLED = 715
 # Enable Air Gap
-TITLE__ENABLE_AIR_GAP = 718
+TITLE__ENABLE_AIR_GAP = 716
 # Are you sure to enable Air Gap mode? After enabled, operations such as conne
 # cting software wallets and signing transactions will be performed offline th
 # rough scanning QR codes.
-CONTENT__ARE_YOU_SURE_TO_ENABLE_AIRGAP_MODE = 719
+CONTENT__ARE_YOU_SURE_TO_ENABLE_AIRGAP_MODE = 717
 # Air Gap is a security measure that prevents the intermediate transmission me
 # dia attacks.\nAfter enabling Air Gap, OneKey Pro will disable all wired and
 # wireless communication modules and maintain strict physical isolation from e
 # xternal devices or untrusted networks.
-CONTENT__WHAT_DOES_AIR_GAP_MEANS = 720
+CONTENT__WHAT_DOES_AIR_GAP_MEANS = 718
 # OKX Wallet
-ITEM__OKX_WALLET = 721
+ITEM__OKX_WALLET = 719
 # MetaMask
-ITEM__METAMASK_WALLET = 722
+ITEM__METAMASK_WALLET = 720
 # OneKey Wallet
-ITEM__ONEKEY_WALLET = 723
+ITEM__ONEKEY_WALLET = 721
 # Finger {}
-FORM__FINGER_STR = 724
+FORM__FINGER_STR = 722
 # Charging
-MSG__CHARGING = 725
+MSG__CHARGING = 723
+# Scan the QR Code displayed\non the app
+CONTENT__SCAN_THE_QR_CODE_DISPLAYED_ON_THE_APP = 724
+# Unsupported data format
+TITLE__DATA_FORMAT_NOT_SUPPORT = 725
+# QR code type not support, please try again.
+CONTENT__QR_CODE_TYPE_NOT_SUPPORT_PLEASE_TRY_AGAIN = 726
+# Invalid Transaction
+TITLE__INVALID_TRANSACTION = 727
+# Transaction data is incorrect, please try again
+CONTENT__TX_DATA_IS_INCORRECT_PLEASE_TRY_AGAIN = 728
+# Encrypt {} Message
+TITLE__ENCRYPT_STR_MESSAGE = 729
+# Decrypt {} Message
+TITLE__DECRYPT_STR_MESSAGE = 730
+# Export Signature
+TITLE__EXPORT_SIGNED_SIGNATURE = 731
+# Return to the app, and scan the signed signature QR code below.
+CONTENT__RETUNRN_TO_THE_APP_AND_SCAN_THE_SIGNED_TX_QR_CODE_BELOW = 732
+# Encrypt
+ACTION__ENCRYPT = 733
+# Decrypt
+ACTION__DECRYPT = 734
+# Lift and fine-tune the position, then touch power button again.
+MSG__LIFT_AND_FINE_TUNE_THE_POSITION_THEN_TOUCH_POWER_BUTTON_AGAIN = 735
+# Clean power button and try again.
+MSG__CLEAN_FINGERPRINT_SENSOR_AND_TRY_AGAIN = 736
+# Put finger on the power button and keep in place.
+MSG__PUT_FINGER_ON_THE_FINGERPRINT = 737
 # fmt: on

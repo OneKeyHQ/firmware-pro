@@ -261,7 +261,8 @@ class FountainDecoder:
             assert False
 
     def print_part(self, p):
-        print("part indexes: {}".format(self.indexes_to_string(p.indexes)))
+        if __debug__:
+            print("part indexes: {}".format(self.indexes_to_string(p.indexes)))
 
     def print_part_end(self):
         expected = (
@@ -270,14 +271,15 @@ class FountainDecoder:
             else "None"
         )
         percent = int(round(self.estimated_percent_complete() * 100))
-        print(
-            "processed: {}, expected: {}, received: {}, percent: {}%".format(
-                self.processed_parts_count,
-                expected,
-                len(self.received_part_indexes),
-                percent,
+        if __debug__:
+            print(
+                "processed: {}, expected: {}, received: {}, percent: {}%".format(
+                    self.processed_parts_count,
+                    expected,
+                    len(self.received_part_indexes),
+                    percent,
+                )
             )
-        )
 
     def print_state(self):
         parts = (
@@ -293,11 +295,12 @@ class FountainDecoder:
         mixed_s = "[{}]".format(", ".join(mixed))
         queued = len(self.queued_parts)
         res = self.result_description()
-        print(
-            "parts: {}, received: {}, mixed: {}, queued: {}, result: {}".format(
-                parts, received, mixed_s, queued, res
+        if __debug__:
+            print(
+                "parts: {}, received: {}, mixed: {}, queued: {}, result: {}".format(
+                    parts, received, mixed_s, queued, res
+                )
             )
-        )
 
 
 # pyright: on

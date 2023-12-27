@@ -33,6 +33,21 @@ def brightness2_percent_str(brightness: int) -> str:
 GRID_CELL_SIZE_ROWS = const(240)
 GRID_CELL_SIZE_COLS = const(144)
 
+if __debug__:
+    APP_DRAWER_UP_TIME = 50
+    APP_DRAWER_DOWN_TIME = 150
+    APP_DRAWER_UP_DELAY = 15
+    APP_DRAWER_DOWN_DELAY = 0
+    PATH_OVER_SHOOT = lv.anim_t.path_overshoot
+    PATH_BOUNCE = lv.anim_t.path_bounce
+    PATH_LINEAR = lv.anim_t.path_linear
+    PATH_EASE_IN_OUT = lv.anim_t.path_ease_in_out
+    PATH_EASE_IN = lv.anim_t.path_ease_in
+    PATH_EASE_OUT = lv.anim_t.path_ease_out
+    PATH_STEP = lv.anim_t.path_step
+    APP_DRAWER_UP_PATH_CB = PATH_EASE_OUT
+    APP_DRAWER_DOWN_PATH_CB = PATH_EASE_IN_OUT
+
 
 def change_state(is_busy: bool = False):
     if hasattr(MainScreen, "_instance"):
@@ -80,10 +95,7 @@ class MainScreen(Screen):
             StyleWrapper().bg_img_src(homescreen).bg_img_opa(int(lv.OPA.COVER * 0.92)),
             0,
         )
-        # self.add_style(StyleWrapper()
-        #     .transform_zoom(512)
-        #     , lv.PART.MAIN | lv.STATE.USER_1
-        #     )
+
         self.clear_flag(lv.obj.FLAG.SCROLLABLE)
 
         self.bottom_bar = lv.btn(self)
@@ -92,7 +104,7 @@ class MainScreen(Screen):
         self.bottom_bar.align(lv.ALIGN.BOTTOM_MID, 0, 0)
 
         self.up_arrow = lv.img(self)
-        self.up_arrow.set_src("A:/res/sweep-up.png")
+        self.up_arrow.set_src("A:/res/up-home.png")
         self.up_arrow.align_to(self.bottom_bar, lv.ALIGN.OUT_TOP_MID, 0, -8)
 
         self.bottom_tips = lv.label(self.bottom_bar)
@@ -110,25 +122,27 @@ class MainScreen(Screen):
         self.add_event_cb(self.on_slide_up, lv.EVENT.GESTURE, None)
         save_app_obj(self)
 
-    def hidden_titles(self, hidden: bool = True):
+    def hidden_others(self, hidden: bool = True):
         if hidden:
-            self.subtitle.add_flag(lv.obj.FLAG.HIDDEN)
-            self.title.add_flag(lv.obj.FLAG.HIDDEN)
+            # self.subtitle.add_flag(lv.obj.FLAG.HIDDEN)
+            # self.title.add_flag(lv.obj.FLAG.HIDDEN)
+            self.bottom_bar.add_flag(lv.obj.FLAG.HIDDEN)
 
         else:
-            self.subtitle.clear_flag(lv.obj.FLAG.HIDDEN)
-            self.title.clear_flag(lv.obj.FLAG.HIDDEN)
+            # self.subtitle.clear_flag(lv.obj.FLAG.HIDDEN)
+            # self.title.clear_flag(lv.obj.FLAG.HIDDEN)
+            self.bottom_bar.clear_flag(lv.obj.FLAG.HIDDEN)
 
     def change_state(self, busy: bool):
         if busy:
             self.clear_flag(lv.obj.FLAG.CLICKABLE)
             self.bottom_bar.clear_flag(lv.obj.FLAG.CLICKABLE)
-            # self.up_arrow.add_flag(lv.obj.FLAG.HIDDEN)
+            self.up_arrow.add_flag(lv.obj.FLAG.HIDDEN)
             self.bottom_tips.set_text(_(i18n_keys.BUTTON__PROCESSING))
         else:
             self.add_flag(lv.obj.FLAG.CLICKABLE)
             self.bottom_bar.add_flag(lv.obj.FLAG.CLICKABLE)
-            # self.up_arrow.clear_flag(lv.obj.FLAG.HIDDEN)
+            self.up_arrow.clear_flag(lv.obj.FLAG.HIDDEN)
             self.bottom_tips.set_text(_(i18n_keys.BUTTON__SWIPE_TO_SHOW_APPS))
 
     def on_slide_up(self, event_obj):
@@ -140,7 +154,7 @@ class MainScreen(Screen):
                 if self.get_child_cnt() > 5:
                     return
                 if self.is_visible():
-                    # self.hidden_titles()
+                    # self.hidden_others()
                     # if hasattr(self, "dev_state"):
                     #     self.dev_state.hidden()
                     self.apps.show()
@@ -196,23 +210,9 @@ class MainScreen(Screen):
                 StyleWrapper().bg_color(lv_colors.BLACK).bg_opa().border_width(0),
                 0,
             )
-
-            # self.tips = lv.label(self)
-            # self.tips.set_long_mode(lv.label.LONG.WRAP)
-            # self.tips.add_style(
-            #     StyleWrapper()
-            #     .text_font(font_GeistRegular26)
-            #     .max_width(456)
-            #     .text_color(lv_colors.ONEKEY_GRAY_4)
-            #     .text_align_center(),
-            #     0,
-            # )
-            # self.tips.set_text(_(i18n_keys.CONTENT__SWIPE_DOWN_TO_CLOSE))
-            # self.tips.align(lv.ALIGN.TOP_MID, 0, 52)
-
             self.img_down = lv.imgbtn(self)
             self.img_down.set_size(40, 40)
-            self.img_down.set_style_bg_img_src("A:/res/slide-down.png", 0)
+            self.img_down.set_style_bg_img_src("A:/res/slide-down.jpg", 0)
             self.img_down.align(lv.ALIGN.TOP_MID, 0, 64)
             self.img_down.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
             self.img_down.set_ext_click_area(100)
@@ -299,6 +299,8 @@ class MainScreen(Screen):
             self.nft_desc.add_style(default_desc_style, 0)
             self.nft_desc.add_style(pressed_desc_style, lv.PART.MAIN | lv.STATE.PRESSED)
             self.nft_desc.align_to(self.nft, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
+            self.nft.add_flag(lv.obj.FLAG.HIDDEN)
+            self.nft_desc.add_flag(lv.obj.FLAG.HIDDEN)
 
             self.backup = lv.imgbtn(self)
             self.backup.set_size(216, 216)
@@ -313,15 +315,34 @@ class MainScreen(Screen):
                 pressed_desc_style, lv.PART.MAIN | lv.STATE.PRESSED
             )
             self.backup_desc.align_to(self.backup, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
-
+            self.backup.add_flag(lv.obj.FLAG.HIDDEN)
+            self.backup_desc.add_flag(lv.obj.FLAG.HIDDEN)
             self.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
             self.add_event_cb(self.on_pressed, lv.EVENT.PRESSED, None)
             self.add_event_cb(self.on_released, lv.EVENT.RELEASED, None)
             self.show_anim = Anim(
-                800, 0, self.set_pos, start_cb=self.anim_start_cb, delay=10
+                800,
+                0,
+                self.set_position,
+                start_cb=self.show_anim_start_cb,
+                delay=15 if not __debug__ else APP_DRAWER_UP_DELAY,
+                del_cb=self.show_anim_del_cb,
+                time=50 if not __debug__ else APP_DRAWER_UP_TIME,
+                path_cb=lv.anim_t.path_ease_out
+                if not __debug__
+                else APP_DRAWER_UP_PATH_CB,
             )
             self.dismiss_anim = Anim(
-                0, 800, self.set_pos, path_cb=lv.anim_t.path_ease_in, time=300
+                0,
+                800,
+                self.set_position,
+                path_cb=lv.anim_t.path_ease_in_out
+                if not __debug__
+                else APP_DRAWER_DOWN_PATH_CB,
+                time=150 if not __debug__ else APP_DRAWER_DOWN_TIME,
+                start_cb=self.dismiss_anim_start_cb,
+                del_cb=self.dismiss_anim_del_cb,
+                delay=0 if not __debug__ else APP_DRAWER_DOWN_DELAY,
             )
             self.slide = False
             self.visible = False
@@ -335,7 +356,29 @@ class MainScreen(Screen):
                 self.indicators.append(Indicator(self.container, i))
             self.clear_flag(lv.obj.FLAG.GESTURE_BUBBLE)
             self.add_event_cb(self.on_gesture, lv.EVENT.GESTURE, None)
-            self.show_page(self.select_page_index)
+            self.group_1 = [
+                self.container,
+                self.settings,
+                self.settings_desc,
+                self.scan,
+                self.scan_desc,
+                self.connect,
+                self.connect_desc,
+                self.guide,
+                self.guide_desc,
+                self.img_down,
+            ]
+            self.group_2 = [
+                self.container,
+                self.nft,
+                self.nft_desc,
+                self.backup,
+                self.backup_desc,
+                self.img_down,
+            ]
+
+        def set_position(self, val):
+            self.set_y(val)
 
         def on_gesture(self, event_obj):
             code = event_obj.code
@@ -363,36 +406,40 @@ class MainScreen(Screen):
 
         def show_page(self, index: int):
             if index == 0:
-                self.nft.add_flag(lv.obj.FLAG.HIDDEN)
-                self.nft_desc.add_flag(lv.obj.FLAG.HIDDEN)
-                self.backup.add_flag(lv.obj.FLAG.HIDDEN)
-                self.backup_desc.add_flag(lv.obj.FLAG.HIDDEN)
-                self.settings.clear_flag(lv.obj.FLAG.HIDDEN)
-                self.settings_desc.clear_flag(lv.obj.FLAG.HIDDEN)
-                self.guide.clear_flag(lv.obj.FLAG.HIDDEN)
-                self.guide_desc.clear_flag(lv.obj.FLAG.HIDDEN)
-                self.scan.clear_flag(lv.obj.FLAG.HIDDEN)
-                self.scan_desc.clear_flag(lv.obj.FLAG.HIDDEN)
-                self.connect.clear_flag(lv.obj.FLAG.HIDDEN)
-                self.connect_desc.clear_flag(lv.obj.FLAG.HIDDEN)
+                for obj in self.group_2:
+                    obj.add_flag(lv.obj.FLAG.HIDDEN)
+                for obj in self.group_1:
+                    obj.clear_flag(lv.obj.FLAG.HIDDEN)
             elif index == 1:
-                self.nft.clear_flag(lv.obj.FLAG.HIDDEN)
-                self.nft_desc.clear_flag(lv.obj.FLAG.HIDDEN)
-                self.backup.clear_flag(lv.obj.FLAG.HIDDEN)
-                self.backup_desc.clear_flag(lv.obj.FLAG.HIDDEN)
-                self.settings.add_flag(lv.obj.FLAG.HIDDEN)
-                self.settings_desc.add_flag(lv.obj.FLAG.HIDDEN)
-                self.guide.add_flag(lv.obj.FLAG.HIDDEN)
-                self.guide_desc.add_flag(lv.obj.FLAG.HIDDEN)
-                self.scan.add_flag(lv.obj.FLAG.HIDDEN)
-                self.scan_desc.add_flag(lv.obj.FLAG.HIDDEN)
-                self.connect.add_flag(lv.obj.FLAG.HIDDEN)
-                self.connect_desc.add_flag(lv.obj.FLAG.HIDDEN)
-            else:
-                raise
+                for obj in self.group_1:
+                    obj.add_flag(lv.obj.FLAG.HIDDEN)
+                for obj in self.group_2:
+                    obj.clear_flag(lv.obj.FLAG.HIDDEN)
 
-        def anim_start_cb(self, _anim):
+        def hidden_page(self, index: int):
+            # if index == 0:
+            #     for obj in self.group_1:
+            #         # obj.add_flag(lv.obj.FLAG.HIDDEN)
+            #         pass
+            # elif index == 1:
+            #     for obj in self.group_2:
+            #         # obj.add_flag(lv.obj.FLAG.HIDDEN)
+            #         pass
+            pass
+
+        def show_anim_start_cb(self, _anim):
+            self.parent.hidden_others()
+            self.hidden_page(self.select_page_index)
             self.parent.clear_state(lv.STATE.USER_1)
+
+        def show_anim_del_cb(self, _anim):
+            self.show_page(self.select_page_index)
+
+        def dismiss_anim_start_cb(self, _anim):
+            self.hidden_page(self.select_page_index)
+
+        def dismiss_anim_del_cb(self, _anim):
+            self.parent.hidden_others(False)
 
         def show(self):
             if self.visible:
@@ -407,7 +454,7 @@ class MainScreen(Screen):
         def dismiss(self):
             if not self.visible:
                 return
-            self.parent.hidden_titles(False)
+            # self.parent.hidden_others(False)
             if hasattr(self.parent, "dev_state"):
                 self.parent.dev_state.show()
             # self.header.add_flag(lv.obj.FLAG.HIDDEN)
@@ -643,7 +690,7 @@ class NftManager(Screen):
         self.icon.align_to(self.nav_back, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 8)
         self.title.align_to(self.icon, lv.ALIGN.OUT_BOTTOM_LEFT, 8, 16)
         self.subtitle.align_to(self.title, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 16)
-        self.icon.add_style(StyleWrapper().radius(40).clip_corner(True), 0)
+        # self.icon.add_style(StyleWrapper().radius(40).clip_corner(True), 0)
         self.btn_yes = NormalButton(self.content_area)
         self.btn_yes.set_size(456, 98)
         self.btn_yes.enable(lv_colors.ONEKEY_PURPLE, lv_colors.BLACK)
@@ -749,6 +796,14 @@ class SettingsScreen(Screen):
         # if __debug__:
         #     self.add_style(StyleWrapper().bg_color(lv_colors.ONEKEY_GREEN_1), 0)
         self.container = ContainerFlexCol(self.content_area, self.title, padding_row=2)
+        if __debug__:
+            # self.test = ListItemBtn(self.container, "UI test")
+            self.anim_test = ListItemBtn(
+                self.container,
+                "Animation test",
+                left_img_src="A:/res/about.png",
+                has_next=False,
+            )
         self.general = ListItemBtn(
             self.container,
             _(i18n_keys.ITEM__GENERAL),
@@ -793,7 +848,6 @@ class SettingsScreen(Screen):
             _(i18n_keys.ITEM__DEVELOPER_OPTIONS),
             left_img_src="A:/res/developer.png",
         )
-
         self.power = ListItemBtn(
             self.content_area,
             _(i18n_keys.ITEM__POWER_OFF),
@@ -849,10 +903,12 @@ class SettingsScreen(Screen):
                 PowerOff()
             elif target == self.air_gap:
                 AirGapSetting(self)
-            # else:
-            #     if __debug__:
-            #         if target == self.test:
-            #             UITest()
+            else:
+                if __debug__:
+                    # if target == self.test:
+                    #     UITest()
+                    if target == self.anim_test:
+                        AnimationSettings(self)
 
     def _load_scr(self, scr: "Screen", back: bool = False) -> None:
         lv.scr_load(scr)
@@ -903,25 +959,26 @@ class WalletList(Screen):
 
         self.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
 
-        async def init_hd_key(obj):
-            from trezor.qr import gen_hd_key
+        from trezor.qr import gen_hd_key
 
-            await gen_hd_key()
-            area = lv.area_t()
-            area.x1 = 0
-            area.y1 = 0
-            area.x2 = 480
-            area.y2 = 800
-            obj.invalidate_area(area)
-
-        workflow.spawn(init_hd_key(self))
+        if not get_hd_key():
+            workflow.spawn(gen_hd_key(self.refresh))
 
     def on_click(self, event_obj):
         code = event_obj.code
         target = event_obj.get_target()
         if code == lv.EVENT.CLICKED:
+            if target not in [self.onekey, self.mm, self.okx]:
+                return
+            qr_data = get_hd_key()
+            if qr_data is None:
+                from trezor.qr import gen_hd_key
+
+                workflow.spawn(
+                    gen_hd_key(lambda: lv.event_send(target, lv.EVENT.CLICKED, None))
+                )
+                return
             if target == self.onekey:
-                qr_data = get_hd_key()
                 ConnectWallet(
                     self,
                     _(i18n_keys.ITEM__ONEKEY_WALLET),
@@ -930,8 +987,6 @@ class WalletList(Screen):
                     "A:/res/ok-logo-96.png",
                 )
             elif target == self.mm:
-                qr_data = get_hd_key()
-                print("mm: ", qr_data)
                 ConnectWallet(
                     self,
                     _(i18n_keys.ITEM__METAMASK_WALLET),
@@ -940,7 +995,6 @@ class WalletList(Screen):
                     "A:/res/mm-logo-96.png",
                 )
             elif target == self.okx:
-                qr_data = get_hd_key()
                 ConnectWallet(
                     self,
                     _(i18n_keys.ITEM__OKX_WALLET),
@@ -1096,15 +1150,13 @@ class ScanScreen(Screen):
             .text_align_center(),
             0,
         )
-        self.desc.set_text(
-            _(i18n_keys.CONTENT__SCAN_THE_UNSIGNED_TX_QR_CODE_DISPLAYED_ON_THE_APP)
-        )
+        self.desc.set_text(_(i18n_keys.CONTENT__SCAN_THE_QR_CODE_DISPLAYED_ON_THE_APP))
         self.desc.align_to(self.camera_bg, lv.ALIGN.OUT_BOTTOM_MID, 0, 14)
 
         self.btn = NormalButton(
             self, f"{LV_SYMBOLS.LV_SYMBOL_LIGHTBULB}  {_(i18n_keys.BUTTON__TORCH_ON)}"
         )
-        self.btn.clear_state(lv.STATE.CHECKED)
+        self.btn.add_state(lv.STATE.CHECKED)
         self.add_event_cb(self.on_event, lv.EVENT.CLICKED, None)
 
         scan_qr(self)
@@ -1136,6 +1188,7 @@ class ScanScreen(Screen):
 
 
 if __debug__:
+    from .common import SETTINGS_MOVE_TIME, SETTINGS_MOVE_DELAY
 
     class UITest(lv.obj):
         def __init__(self) -> None:
@@ -1153,6 +1206,481 @@ if __debug__:
 
         def on_click(self, _event_obj):
             self.delete()
+
+    class AnimationSettings(Screen):
+        def __init__(self, prev_scr=None):
+            if not hasattr(self, "_init"):
+                self._init = True
+                kwargs = {
+                    "prev_scr": prev_scr,
+                    "nav_back": True,
+                }
+                super().__init__(**kwargs)
+            else:
+                return
+
+            # region
+            self.app_drawer_up = lv.label(self.content_area)
+            self.app_drawer_up.set_size(456, lv.SIZE.CONTENT)
+            self.app_drawer_up.add_style(
+                StyleWrapper()
+                .pad_all(12)
+                .text_font(font_GeistRegular30)
+                .text_color(lv_colors.WHITE),
+                0,
+            )
+            self.app_drawer_up.set_text("主页上滑动画时间:")
+            self.app_drawer_up.align_to(self.nav_back, lv.ALIGN.OUT_BOTTOM_LEFT, 12, 20)
+
+            self.slider = lv.slider(self.content_area)
+            self.slider.set_size(456, 80)
+            self.slider.set_ext_click_area(20)
+            self.slider.set_range(20, 400)
+            self.slider.set_value(APP_DRAWER_UP_TIME, lv.ANIM.OFF)
+            self.slider.align_to(self.app_drawer_up, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 20)
+
+            self.slider.add_style(
+                StyleWrapper().border_width(0).radius(40).bg_color(lv_colors.GRAY_1), 0
+            )
+            self.slider.add_style(
+                StyleWrapper().bg_color(lv_colors.WHITE).pad_all(-50), lv.PART.KNOB
+            )
+            self.slider.add_style(
+                StyleWrapper().radius(0).bg_color(lv_colors.WHITE), lv.PART.INDICATOR
+            )
+            self.percent = lv.label(self.slider)
+            self.percent.align(lv.ALIGN.CENTER, 0, 0)
+            self.percent.add_style(
+                StyleWrapper()
+                .text_font(font_GeistRegular30)
+                .text_color(lv_colors.BLUE),
+                0,
+            )
+            self.percent.set_text(f"{APP_DRAWER_UP_TIME} ms")
+            self.slider.clear_flag(lv.obj.FLAG.GESTURE_BUBBLE)
+            self.slider.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
+
+            self.app_drawer_up_delay = lv.label(self.content_area)
+            self.app_drawer_up_delay.set_size(456, lv.SIZE.CONTENT)
+            self.app_drawer_up_delay.add_style(
+                StyleWrapper()
+                .pad_all(12)
+                .text_font(font_GeistRegular30)
+                .text_color(lv_colors.WHITE),
+                0,
+            )
+            self.app_drawer_up_delay.set_text("主页上滑动画延时:")
+            self.app_drawer_up_delay.align_to(
+                self.slider, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 20
+            )
+
+            self.slider1 = lv.slider(self.content_area)
+            self.slider1.set_size(456, 80)
+            self.slider1.set_ext_click_area(20)
+            self.slider1.set_range(0, 80)
+            self.slider1.set_value(APP_DRAWER_UP_DELAY, lv.ANIM.OFF)
+            self.slider1.align_to(
+                self.app_drawer_up_delay, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 20
+            )
+
+            self.slider1.add_style(
+                StyleWrapper().border_width(0).radius(40).bg_color(lv_colors.GRAY_1), 0
+            )
+            self.slider1.add_style(
+                StyleWrapper().bg_color(lv_colors.WHITE).pad_all(-50), lv.PART.KNOB
+            )
+            self.slider1.add_style(
+                StyleWrapper().radius(0).bg_color(lv_colors.WHITE), lv.PART.INDICATOR
+            )
+            self.percent1 = lv.label(self.slider1)
+            self.percent1.align(lv.ALIGN.CENTER, 0, 0)
+            self.percent1.add_style(
+                StyleWrapper()
+                .text_font(font_GeistRegular30)
+                .text_color(lv_colors.BLUE),
+                0,
+            )
+            self.percent1.set_text(f"{APP_DRAWER_UP_DELAY} ms")
+            self.slider1.clear_flag(lv.obj.FLAG.GESTURE_BUBBLE)
+            self.slider1.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
+            # endregion
+            # region
+
+            self.app_drawer_down = lv.label(self.content_area)
+            self.app_drawer_down.set_size(456, lv.SIZE.CONTENT)
+            self.app_drawer_down.add_style(
+                StyleWrapper()
+                .pad_all(12)
+                .text_font(font_GeistRegular30)
+                .text_color(lv_colors.WHITE),
+                0,
+            )
+            self.app_drawer_down.set_text("主页下滑动画时间:")
+            self.app_drawer_down.align_to(self.slider1, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 20)
+
+            self.slider2 = lv.slider(self.content_area)
+            self.slider2.set_size(456, 80)
+            self.slider2.set_ext_click_area(20)
+            self.slider2.set_range(20, 400)
+            self.slider2.set_value(APP_DRAWER_DOWN_TIME, lv.ANIM.OFF)
+            self.slider2.align_to(self.app_drawer_down, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 20)
+
+            self.slider2.add_style(
+                StyleWrapper().border_width(0).radius(40).bg_color(lv_colors.GRAY_1), 0
+            )
+            self.slider2.add_style(
+                StyleWrapper().bg_color(lv_colors.WHITE).pad_all(-50), lv.PART.KNOB
+            )
+            self.slider2.add_style(
+                StyleWrapper().radius(0).bg_color(lv_colors.WHITE), lv.PART.INDICATOR
+            )
+            self.percent2 = lv.label(self.slider2)
+            self.percent2.align(lv.ALIGN.CENTER, 0, 0)
+            self.percent2.add_style(
+                StyleWrapper()
+                .text_font(font_GeistRegular30)
+                .text_color(lv_colors.BLUE),
+                0,
+            )
+            self.percent2.set_text(f"{APP_DRAWER_DOWN_TIME} ms")
+            self.slider2.clear_flag(lv.obj.FLAG.GESTURE_BUBBLE)
+            self.slider2.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
+
+            self.app_drawer_down_delay = lv.label(self.content_area)
+            self.app_drawer_down_delay.set_size(456, lv.SIZE.CONTENT)
+            self.app_drawer_down_delay.add_style(
+                StyleWrapper()
+                .pad_all(12)
+                .text_font(font_GeistRegular30)
+                .text_color(lv_colors.WHITE),
+                0,
+            )
+            self.app_drawer_down_delay.set_text("主页下滑动画延时:")
+            self.app_drawer_down_delay.align_to(
+                self.slider2, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 20
+            )
+
+            self.slider3 = lv.slider(self.content_area)
+            self.slider3.set_size(456, 80)
+            self.slider3.set_ext_click_area(20)
+            self.slider3.set_range(0, 80)
+            self.slider3.set_value(APP_DRAWER_DOWN_DELAY, lv.ANIM.OFF)
+            self.slider3.align_to(
+                self.app_drawer_down_delay, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 20
+            )
+
+            self.slider3.add_style(
+                StyleWrapper().border_width(0).radius(40).bg_color(lv_colors.GRAY_1), 0
+            )
+            self.slider3.add_style(
+                StyleWrapper().bg_color(lv_colors.WHITE).pad_all(-50), lv.PART.KNOB
+            )
+            self.slider3.add_style(
+                StyleWrapper().radius(0).bg_color(lv_colors.WHITE), lv.PART.INDICATOR
+            )
+            self.percent3 = lv.label(self.slider3)
+            self.percent3.align(lv.ALIGN.CENTER, 0, 0)
+            self.percent3.add_style(
+                StyleWrapper()
+                .text_font(font_GeistRegular30)
+                .text_color(lv_colors.BLUE),
+                0,
+            )
+            self.percent3.set_text(f"{APP_DRAWER_DOWN_DELAY} ms")
+            self.slider3.clear_flag(lv.obj.FLAG.GESTURE_BUBBLE)
+            self.slider3.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
+            # endregion
+            # region
+            self.cur_up_path_cb_type = lv.label(self.content_area)
+            self.cur_up_path_cb_type.set_size(456, lv.SIZE.CONTENT)
+            self.cur_up_path_cb_type.add_style(
+                StyleWrapper()
+                .pad_all(12)
+                .text_font(font_GeistRegular30)
+                .text_color(lv_colors.WHITE),
+                0,
+            )
+            self.set_cur_path_cb_type(0)
+            self.cur_up_path_cb_type.align_to(
+                self.slider3, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 20
+            )
+
+            self.cur_sown_path_cb_type = lv.label(self.content_area)
+            self.cur_sown_path_cb_type.set_size(456, lv.SIZE.CONTENT)
+            self.cur_sown_path_cb_type.add_style(
+                StyleWrapper()
+                .pad_all(12)
+                .text_font(font_GeistRegular30)
+                .text_color(lv_colors.WHITE),
+                0,
+            )
+            self.set_cur_path_cb_type(1)
+            self.cur_sown_path_cb_type.align_to(
+                self.cur_up_path_cb_type, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 20
+            )
+
+            self.container = ContainerFlexCol(
+                self.content_area,
+                self.cur_sown_path_cb_type,
+                padding_row=2,
+                pos=(0, 20),
+            )
+
+            from .components.listitem import ListItemWithLeadingCheckbox
+
+            self.path_up = ListItemWithLeadingCheckbox(
+                self.container,
+                "修改主页上滑动画类型",
+            )
+            self.path_up.enable_bg_color(False)
+            self.path_down = ListItemWithLeadingCheckbox(
+                self.container,
+                "修改主页下滑动画类型",
+            )
+            self.path_down.enable_bg_color(False)
+            self.path_liner = ListItemBtn(
+                self.container,
+                "path liner",
+            )
+            self.path_ease_in = ListItemBtn(
+                self.container,
+                "path ease in(slow at the beginning)",
+            )
+            self.path_ease_out = ListItemBtn(
+                self.container,
+                "path ease out(slow at the end)",
+            )
+            self.path_ease_in_out = ListItemBtn(
+                self.container,
+                "path ease in out(slow at the beginning and end)",
+            )
+            self.path_over_shoot = ListItemBtn(
+                self.container,
+                "path over shoot(overshoot the end value)",
+            )
+            self.path_bounce = ListItemBtn(
+                self.container,
+                "path bounce(bounce back a little from the end value (like hitting a wall))",
+            )
+            self.path_step = ListItemBtn(
+                self.container,
+                "path step(change in one step at the end)",
+            )
+            # endregion
+
+            # region
+            self.setting_scr = lv.label(self.content_area)
+            self.setting_scr.set_size(456, lv.SIZE.CONTENT)
+            self.setting_scr.add_style(
+                StyleWrapper()
+                .pad_all(12)
+                .text_font(font_GeistRegular30)
+                .text_color(lv_colors.WHITE),
+                0,
+            )
+            self.setting_scr.set_text("设置页面动画时间:")
+            self.setting_scr.align_to(self.container, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 40)
+
+            self.slider4 = lv.slider(self.content_area)
+            self.slider4.set_size(456, 80)
+            self.slider4.set_ext_click_area(20)
+            self.slider4.set_range(20, 400)
+
+            self.slider4.set_value(SETTINGS_MOVE_TIME, lv.ANIM.OFF)
+            self.slider4.align_to(self.setting_scr, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 20)
+
+            self.slider4.add_style(
+                StyleWrapper().border_width(0).radius(40).bg_color(lv_colors.GRAY_1), 0
+            )
+            self.slider4.add_style(
+                StyleWrapper().bg_color(lv_colors.WHITE).pad_all(-50), lv.PART.KNOB
+            )
+            self.slider4.add_style(
+                StyleWrapper().radius(0).bg_color(lv_colors.WHITE), lv.PART.INDICATOR
+            )
+            self.percent4 = lv.label(self.slider4)
+            self.percent4.align(lv.ALIGN.CENTER, 0, 0)
+            self.percent4.add_style(
+                StyleWrapper()
+                .text_font(font_GeistRegular30)
+                .text_color(lv_colors.BLUE),
+                0,
+            )
+            self.percent4.set_text(f"{SETTINGS_MOVE_TIME} ms")
+            self.slider4.clear_flag(lv.obj.FLAG.GESTURE_BUBBLE)
+            self.slider4.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
+
+            self.setting_scr_delay = lv.label(self.content_area)
+            self.setting_scr_delay.set_size(456, lv.SIZE.CONTENT)
+            self.setting_scr_delay.add_style(
+                StyleWrapper()
+                .pad_all(12)
+                .text_font(font_GeistRegular30)
+                .text_color(lv_colors.WHITE),
+                0,
+            )
+            self.setting_scr_delay.set_text("设置页面动画延时:")
+            self.setting_scr_delay.align_to(
+                self.slider4, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 20
+            )
+
+            self.slider5 = lv.slider(self.content_area)
+            self.slider5.set_size(456, 80)
+            self.slider5.set_ext_click_area(20)
+            self.slider5.set_range(0, 80)
+            self.slider5.set_value(SETTINGS_MOVE_DELAY, lv.ANIM.OFF)
+            self.slider5.align_to(
+                self.setting_scr_delay, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 20
+            )
+
+            self.slider5.add_style(
+                StyleWrapper().border_width(0).radius(40).bg_color(lv_colors.GRAY_1), 0
+            )
+            self.slider5.add_style(
+                StyleWrapper().bg_color(lv_colors.WHITE).pad_all(-50), lv.PART.KNOB
+            )
+            self.slider5.add_style(
+                StyleWrapper().radius(0).bg_color(lv_colors.WHITE), lv.PART.INDICATOR
+            )
+            self.percent5 = lv.label(self.slider5)
+            self.percent5.align(lv.ALIGN.CENTER, 0, 0)
+            self.percent5.add_style(
+                StyleWrapper()
+                .text_font(font_GeistRegular30)
+                .text_color(lv_colors.BLUE),
+                0,
+            )
+            self.percent5.set_text(f"{SETTINGS_MOVE_DELAY} ms")
+            self.slider5.clear_flag(lv.obj.FLAG.GESTURE_BUBBLE)
+            self.slider5.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
+            # endregion
+
+            self.add_event_cb(self.on_value_changed, lv.EVENT.VALUE_CHANGED, None)
+            self.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
+
+        def on_nav_back(self, event_obj):
+            pass
+
+        def on_click(self, event_obj):
+            global APP_DRAWER_UP_PATH_CB, APP_DRAWER_DOWN_PATH_CB
+            # _code = event_obj.code
+            target = event_obj.get_target()
+            if target == self.path_liner:
+                print("path_liner clicked")
+                if self.path_up.checkbox.get_state() & lv.STATE.CHECKED:
+                    print("path_up checked")
+                    APP_DRAWER_UP_PATH_CB = PATH_LINEAR
+                if self.path_down.checkbox.get_state() & lv.STATE.CHECKED:
+                    APP_DRAWER_DOWN_PATH_CB = PATH_LINEAR
+            elif target == self.path_ease_in:
+                print("path_ease_in clicked")
+                if self.path_up.checkbox.get_state() & lv.STATE.CHECKED:
+                    APP_DRAWER_UP_PATH_CB = PATH_EASE_IN
+                if self.path_down.checkbox.get_state() & lv.STATE.CHECKED:
+                    APP_DRAWER_DOWN_PATH_CB = PATH_EASE_IN
+            elif target == self.path_ease_out:
+                print("path_ease_out clicked")
+                if self.path_up.checkbox.get_state() & lv.STATE.CHECKED:
+                    APP_DRAWER_UP_PATH_CB = PATH_EASE_OUT
+                if self.path_down.checkbox.get_state() & lv.STATE.CHECKED:
+                    APP_DRAWER_DOWN_PATH_CB = PATH_EASE_OUT
+            elif target == self.path_ease_in_out:
+                print("path_ease_in_out clicked")
+                if self.path_up.checkbox.get_state() & lv.STATE.CHECKED:
+                    APP_DRAWER_UP_PATH_CB = PATH_EASE_IN_OUT
+                if self.path_down.checkbox.get_state() & lv.STATE.CHECKED:
+                    APP_DRAWER_DOWN_PATH_CB = PATH_EASE_IN_OUT
+            elif target == self.path_over_shoot:
+                print("path_over_shoot clicked")
+                if self.path_up.checkbox.get_state() & lv.STATE.CHECKED:
+                    APP_DRAWER_UP_PATH_CB = PATH_OVER_SHOOT
+                if self.path_down.checkbox.get_state() & lv.STATE.CHECKED:
+                    APP_DRAWER_DOWN_PATH_CB = PATH_OVER_SHOOT
+            elif target == self.path_bounce:
+                print("path_bounce clicked")
+                if self.path_up.checkbox.get_state() & lv.STATE.CHECKED:
+                    APP_DRAWER_UP_PATH_CB = PATH_BOUNCE
+                if self.path_down.checkbox.get_state() & lv.STATE.CHECKED:
+                    APP_DRAWER_DOWN_PATH_CB = PATH_BOUNCE
+            elif target == self.path_step:
+                print("path_step clicked")
+                if self.path_up.checkbox.get_state() & lv.STATE.CHECKED:
+                    APP_DRAWER_UP_PATH_CB = PATH_STEP
+                if self.path_down.checkbox.get_state() & lv.STATE.CHECKED:
+                    APP_DRAWER_DOWN_PATH_CB = PATH_STEP
+
+            if self.path_up.checkbox.get_state() & lv.STATE.CHECKED:
+                self.set_cur_path_cb_type(0)
+                MainScreen._instance.apps.show_anim.set_path_cb(APP_DRAWER_UP_PATH_CB)
+            if self.path_down.checkbox.get_state() & lv.STATE.CHECKED:
+                self.set_cur_path_cb_type(1)
+                MainScreen._instance.apps.dismiss_anim.set_path_cb(
+                    APP_DRAWER_DOWN_PATH_CB
+                )
+
+        def get_path_cb_str(self, path_cb):
+            if path_cb is PATH_LINEAR:
+                return "path_linear"
+            elif path_cb is PATH_EASE_IN:
+                return "path_ease_in"
+            elif path_cb is PATH_EASE_OUT:
+                return "path_ease_out"
+            elif path_cb is PATH_EASE_IN_OUT:
+                return "path_ease_in_out"
+            elif path_cb is PATH_OVER_SHOOT:
+                return "path_overshoot"
+            elif path_cb is PATH_BOUNCE:
+                return "path_bounce"
+            elif path_cb is PATH_STEP:
+                return "path_step"
+            else:
+                return "path_linear"
+
+        def set_cur_path_cb_type(self, type: int):
+            global APP_DRAWER_UP_PATH_CB, APP_DRAWER_DOWN_PATH_CB
+            if type == 0:
+                self.cur_up_path_cb_type.set_text(
+                    f"current up anim type : {self.get_path_cb_str(APP_DRAWER_UP_PATH_CB)}"
+                )
+            elif type == 1:
+                self.cur_sown_path_cb_type.set_text(
+                    f"current down anim type: {self.get_path_cb_str(APP_DRAWER_DOWN_PATH_CB)}"
+                )
+            else:
+                raise ValueError("type is not valid")
+
+        def on_value_changed(self, event_obj):
+            global APP_DRAWER_UP_TIME, APP_DRAWER_UP_DELAY, APP_DRAWER_DOWN_TIME, APP_DRAWER_DOWN_DELAY, SETTINGS_MOVE_TIME, SETTINGS_MOVE_DELAY
+
+            target = event_obj.get_target()
+            if target == self.slider:
+                value = target.get_value()
+                APP_DRAWER_UP_TIME = value
+                MainScreen._instance.apps.show_anim.set_time(value)
+                self.percent.set_text(f"{value} ms")
+            elif target == self.slider1:
+                value = target.get_value()
+                APP_DRAWER_UP_DELAY = value
+                MainScreen._instance.apps.show_anim.set_delay(value)
+                self.percent1.set_text(f"{value} ms")
+            elif target == self.slider2:
+                value = target.get_value()
+                APP_DRAWER_DOWN_TIME = value
+                MainScreen._instance.apps.dismiss_anim.set_time(value)
+                self.percent2.set_text(f"{value} ms")
+            elif target == self.slider3:
+                value = target.get_value()
+                APP_DRAWER_DOWN_DELAY = value
+                MainScreen._instance.apps.dismiss_anim.set_delay(value)
+                self.percent3.set_text(f"{value} ms")
+            elif target == self.slider4:
+                value = target.get_value()
+                SETTINGS_MOVE_TIME = value
+                self.percent4.set_text(f"{value} ms")
+            elif target == self.slider5:
+                value = target.get_value()
+                SETTINGS_MOVE_DELAY = value
+                self.percent5.set_text(f"{value} ms")
 
 
 class GeneralScreen(Screen):
@@ -1869,10 +2397,12 @@ class AirGapSetting(Screen):
             self._init = True
         else:
             return
-        super().__init__(prev_scr=prev_scr, title="Air Gap Mode", nav_back=True)
+        super().__init__(
+            prev_scr=prev_scr, title=_(i18n_keys.ITEM__AIR_GAP_MODE), nav_back=True
+        )
 
         self.container = ContainerFlexCol(self.content_area, self.title)
-        self.air_gap = ListItemBtnWithSwitch(self.container, "Air Gap")
+        self.air_gap = ListItemBtnWithSwitch(self.container, _(i18n_keys.ITEM__AIR_GAP))
 
         self.description = lv.label(self.content_area)
         self.description.set_size(456, lv.SIZE.CONTENT)
@@ -1881,15 +2411,21 @@ class AirGapSetting(Screen):
         self.description.set_style_text_font(font_GeistRegular26, lv.STATE.DEFAULT)
         self.description.set_style_text_line_space(3, 0)
         self.description.align_to(self.container, lv.ALIGN.OUT_BOTTOM_LEFT, 8, 16)
-        # TODO: Read the saved flag from storage
-        air_gap_enabled = False
+
+        air_gap_enabled = device.is_airgap_mode()
         if air_gap_enabled:
             self.air_gap.add_state()
-            self.description.set_text("已禁用蓝牙传输、USB 传输和 NFC 传输功能。enable")
+            self.description.set_text(
+                _(
+                    i18n_keys.CONTENT__BLUETOOTH_USB_AND_NFT_TRANSFER_FUNCTIONS_HAVE_BEEN_DISABLED
+                )
+            )
         else:
             self.air_gap.clear_state()
             self.description.set_text(
-                "开启 Air Gap 功能后，将同时禁用蓝牙传输、USB 传输和 NFC 传输功能。disable"
+                _(
+                    i18n_keys.CONTENT__AFTER_ENABLING_THE_AIRGAP_BLUETOOTH_USB_AND_NFC_TRANSFER_WILL_BE_DISABLED_SIMULTANEOUSLY
+                )
             )
         # self.usb = ListItemBtnWithSwitch(self.container, _(i18n_keys.ITEM__USB))
         self.add_event_cb(self.on_event, lv.EVENT.VALUE_CHANGED, None)
@@ -1902,15 +2438,34 @@ class AirGapSetting(Screen):
         if code == lv.EVENT.VALUE_CHANGED:
             if target == self.air_gap.switch:
                 if target.has_state(lv.STATE.CHECKED):
-                    # TODO: Show the tips
                     AirGapOpenTips(self)
                 else:
                     self.description.set_text(
-                        "开启 Air Gap 功能后，将同时禁用蓝牙传输、USB 传输和 NFC 传输功能。disable"
+                        _(
+                            i18n_keys.CONTENT__AFTER_ENABLING_THE_AIRGAP_BLUETOOTH_USB_AND_NFC_TRANSFER_WILL_BE_DISABLED_SIMULTANEOUSLY
+                        )
                     )
+                device.enable_airgap_mode(False)
+                uart.ctrl_ble(enable=True)
+                import usb
+
+                if usb.bus.state() == 0:
+                    usb.bus = usb.init()
+                    for iface in usb.active_iface:
+                        usb.bus.add(iface)
+                    usb.bus.open(device.get_device_id())
         elif code == lv.EVENT.READY:
-            self.description.set_text("已禁用蓝牙传输、USB 传输和 NFC 传输功能。enable")
-            # TODO: Save the flag to storage
+            self.description.set_text(
+                _(
+                    i18n_keys.CONTENT__BLUETOOTH_USB_AND_NFT_TRANSFER_FUNCTIONS_HAVE_BEEN_DISABLED
+                )
+            )
+            device.enable_airgap_mode(True)
+            uart.ctrl_ble(enable=False)
+            import usb
+
+            if usb.bus.state() == 1:
+                usb.bus.close()
         elif code == lv.EVENT.CANCEL:
             self.air_gap.clear_state()
 
@@ -1918,9 +2473,9 @@ class AirGapSetting(Screen):
 class AirGapOpenTips(FullSizeWindow):
     def __init__(self, callback_obj):
         super().__init__(
-            title="Enable Air Gap Mod ?",
-            subtitle="确定要开启 Air Gap 模式吗？启用后，连接软件钱包、签署交易等操作都将在离线环境下通过扫描二维码来完成。",
-            confirm_text="Enable",
+            title=_(i18n_keys.TITLE__ENABLE_AIR_GAP),
+            subtitle=_(i18n_keys.CONTENT__ARE_YOU_SURE_TO_ENABLE_AIRGAP_MODE),
+            confirm_text=_(i18n_keys.BUTTON__ENABLE),
             cancel_text=_(i18n_keys.BUTTON__CANCEL),
             anim_dir=2,
         )
@@ -2237,6 +2792,12 @@ class PowerOff(FullSizeWindow):
 
         self.has_pin = config.has_pin()
         if self.has_pin and device.is_initialized():
+            # from trezor.lvglui.scrs import fingerprints
+
+            # if fingerprints.is_available() and fingerprints.is_unlocked():
+            #         fingerprints.lock()
+            # else:
+            #     config.lock()
             config.lock()
 
     def back(self):
@@ -2264,6 +2825,7 @@ class PowerOff(FullSizeWindow):
                             re_loop=self.re_loop,
                             allow_cancel=False,
                             callback=self.back,
+                            allow_fingerprint=False,
                         )
                     )
                 else:
@@ -2412,6 +2974,9 @@ class HomeScreenSetting(Screen):
                         is_internal=wp.is_internal,
                     )
 
+    def _load_scr(self, scr: "Screen", back: bool = False) -> None:
+        lv.scr_load(scr)
+
 
 class WallPaperManage(Screen):
     def __init__(
@@ -2437,9 +3002,9 @@ class WallPaperManage(Screen):
             0,
         )
         if not is_internal:
-            self.icon.add_style(StyleWrapper().radius(40).clip_corner(True), 0)
-            self.icon.set_style_radius(40, 0)
-            self.icon.set_style_clip_corner(True, 0)
+            # self.icon.add_style(StyleWrapper().radius(40).clip_corner(True), 0)
+            # self.icon.set_style_radius(40, 0)
+            # self.icon.set_style_clip_corner(True, 0)
             self.btn_yes.set_size(224, 98)
             self.btn_yes.align_to(self.content_area, lv.ALIGN.BOTTOM_RIGHT, -12, -8)
             self.btn_del = NormalButton(self.content_area, "")
@@ -2547,9 +3112,9 @@ class SecurityScreen(Screen):
             elif target == self.usb_lock:
                 UsbLockSetting(self)
             elif target == self.fingerprint:
-                # TODO: Read the saved flag from storage
-                fingerprint_present = True
-                if fingerprint_present:
+                from trezor.lvglui.scrs import fingerprints
+
+                if fingerprints.has_fingerprints():
                     from trezor import config
 
                     if config.has_pin():
@@ -2561,12 +3126,16 @@ class SecurityScreen(Screen):
                                 re_loop=False,
                                 allow_cancel=False,
                                 callback=lambda: FingerprintSetting(self),
+                                allow_fingerprint=False,
                             )
                         )
                 else:
-                    from core.src.trezor.lvglui.scrs import fingerprint
 
-                    workflow.spawn(fingerprint.add_fingerprint())
+                    workflow.spawn(
+                        fingerprints.add_fingerprint(
+                            0, callback=lambda: FingerprintSetting(self)
+                        )
+                    )
             else:
                 if __debug__:
                     print("unknown")
@@ -2632,20 +3201,38 @@ class FingerprintSetting(Screen):
         )
 
         self.container = ContainerFlexCol(self.content_area, self.title, padding_row=2)
-        # TODO: query the added fingerprint number from storage
-        number = 2
+        self.fresh_show()
+        self.add_event_cb(self.on_value_changed, lv.EVENT.VALUE_CHANGED, None)
+        self.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
+
+    def fresh_show(self):
+        self.container.clean()
+        if hasattr(self, "container_fun"):
+            self.container_fun.delete()
+            self.tips.delete()
+
+        from trezorio import fingerprint
+
+        self.fingerprint_list = fingerprint.list_template() or []
+
+        if __debug__:
+            print("self.fingerprint_list", self.fingerprint_list)
+        counter = fingerprint.get_template_count()
         self.added_fingerprints = []
-        for i in range(number):
-            self.added_fingerprints.append(
-                ListItemBtn(
-                    self.container,
-                    _(i18n_keys.FORM__FINGER_STR).format(i + 1),
-                    left_img_src="A:/res/settings-fingerprint.png",
-                    has_next=False,
+        if counter > 0:
+            for ids in self.fingerprint_list:
+                self.added_fingerprints.append(
+                    ListItemBtn(
+                        self.container,
+                        _(i18n_keys.FORM__FINGER_STR).format(ids + 1),
+                        left_img_src="A:/res/settings-fingerprint.png",
+                        has_next=False,
+                    )
+                    if ids is not None
+                    else None
                 )
-            )
         self.add_fingerprint = None
-        if number < 3:
+        if counter < 3:
             self.add_fingerprint = ListItemBtn(
                 self.container,
                 _(i18n_keys.BUTTON__ADD_FINGERPRINT),
@@ -2677,44 +3264,61 @@ class FingerprintSetting(Screen):
         self.unlock = ListItemBtnWithSwitch(
             self.container_fun, _(i18n_keys.FORM__UNLOCK_DEVICE)
         )
-        self.add_event_cb(self.on_value_changed, lv.EVENT.VALUE_CHANGED, None)
-        self.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
+        if not device.is_fingerprint_unlock_enabled():
+            self.unlock.clear_state()
 
     async def on_remove(self, i):
         self.added_fingerprints.pop(i).delete()
-        # TODO: request to delete the fingerprint
+        from trezorio import fingerprint
+
+        if self.fingerprint_list[i] is not None:
+            # pyright: off
+            fingerprint.remove(self.fingerprint_list[i])
+            # pyright: on
+        else:
+            assert False
+        self.fresh_show()
 
     def on_click(self, event_obj):
         code = event_obj.code
         target = event_obj.get_target()
         if code == lv.EVENT.CLICKED:
-            from trezor.lvglui.scrs import fingerprint
+            from trezor.lvglui.scrs import fingerprints
 
             if target == self.add_fingerprint:
-                workflow.spawn(fingerprint.add_fingerprint())
+                workflow.spawn(
+                    fingerprints.add_fingerprint(
+                        self.fingerprint_list.index(None)
+                        if self.fingerprint_list
+                        else 0,
+                        callback=lambda: self.fresh_show(),
+                    )
+                )
             elif target in self.added_fingerprints:
                 for i, finger in enumerate(self.added_fingerprints):
                     if target == finger:
+                        select_index = i
+                        # pyright: off
                         workflow.spawn(
-                            fingerprint.request_delete_fingerprint(
-                                _(i18n_keys.FORM__FINGER_STR).format(i + 1),
-                                on_remove=lambda: self.on_remove(i),
+                            fingerprints.request_delete_fingerprint(
+                                _(i18n_keys.FORM__FINGER_STR).format(
+                                    self.fingerprint_list[select_index] + 1
+                                ),
+                                on_remove=lambda: self.on_remove(select_index),
                             )
                         )
+                        # pyright: on
 
     def on_value_changed(self, event_obj):
         code = event_obj.code
         target = event_obj.get_target()
         if code == lv.EVENT.VALUE_CHANGED:
             if target == self.unlock.switch:
+
                 if target.has_state(lv.STATE.CHECKED):
-                    # TODO: enable fingerprint unlock
-                    pass
-                    # device.set_fingerprint_unlock_enable(True)
+                    device.enable_fingerprint_unlock(True)
                 else:
-                    # TODO: disable fingerprint unlock
-                    pass
-                    # device.set_fingerprint_unlock_enable(False)
+                    device.enable_fingerprint_unlock(False)
 
 
 class SafetyCheckSetting(Screen):

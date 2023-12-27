@@ -148,7 +148,8 @@ class CryptoHDKey:
         return base58.encode_check(bytes(output))
 
     def get_account_index(self):
-        print("todo - get_account_index")
+        if __debug__:
+            print("todo - get_account_index")
 
     def get_map_size(self):
         size = 1 + sum(
@@ -307,14 +308,14 @@ def generateCryptoHDKeyForETHStandard(pubkey, masterfingerprint):
     return encoded.upper()
 
 
-async def genCryptoHDKeyForETHStandard() -> str:
+async def genCryptoHDKeyForETHStandard(ctx: wire.Context) -> str:
     from trezor.messages import GetPublicKey
     from apps.bitcoin import get_public_key as bitcoin_get_public_key
     from apps.common import paths
     from apps.common.keychain import get_keychain
-    import usb
 
-    ctx = wire.Context(usb.iface_wire, 0, wire.WIRE_BUFFER)
+    # import usb
+
     # "m/44'/60'/0'"
     btc_pubkey_msg = GetPublicKey(address_n=[2147483692, 2147483708, 2147483648])
     resp = await bitcoin_get_public_key.get_public_key(ctx, btc_pubkey_msg)

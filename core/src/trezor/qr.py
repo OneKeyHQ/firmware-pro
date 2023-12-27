@@ -13,9 +13,9 @@ class QRTask:
         self.resp = None
         self.scanning = False
         self.callback_obj = None
-        self.hd_key = ""
+        self.hd_key = None
 
-    def get_hd_key(self) -> str:
+    def get_hd_key(self) -> str | None:
         return self.hd_key
 
     def set_hd_key(self, hd_key: str):
@@ -77,7 +77,8 @@ class QRTask:
 
     async def push(self, ur: UR):
         self.ur = ur
-        print("push: ", self.ur.type)
+        if __debug__:
+            print("push: ", self.ur.type)
         if ur.type == "eth-sign-request":
             from apps.ur_registry.chains.ethereum.eth_sign_request import (
                 EthSignRequest,
@@ -88,11 +89,14 @@ class QRTask:
             if eth_req.get_data_type() == RequestType_TypedData:
                 self.mulit_pkg = True
             self.req = await EthSignRequest.gen_transaction(ur)
-            print("req: ", type(self.req))
+            if __debug__:
+                print("req: ", type(self.req))
         elif ur.type == "crypto-psbt":
-            print("TODO crypto-psbt")
+            if __debug__:
+                print("TODO crypto-psbt")
         else:
-            print("TODO unsupport")
+            if __debug__:
+                print("TODO unsupport")
 
 
 qr_task = QRTask()
@@ -116,19 +120,20 @@ def scan_qr(callback_obj):
         qr_task.set_camera_state(True)
         qr_task.set_callback_obj(callback_obj)
         while True:
+            if qr_task.get_camera_state() is False:
+                camera.stop()
+                # await qr_task.callback_finish()
+                break
             qr_data = camera.scan_qrcode(80, 180)
             if qr_data:
-                print(qr_data.decode("utf-8"))
+                if __debug__:
+                    print(qr_data.decode("utf-8"))
                 decoder.receive_part(qr_data.decode("utf-8"))
                 if decoder.is_complete():
                     camera.stop()
                     if type(decoder.result) is UR:
                         await handle_qr(decoder.result)
                     break
-            if qr_task.get_camera_state() is False:
-                camera.stop()
-                await qr_task.callback_finish()
-                break
             await loop.sleep(1)
 
     workflow.spawn(camear_scan())
@@ -142,16 +147,20 @@ def get_hd_key():
     return qr_task.get_hd_key()
 
 
-async def gen_hd_key():
+async def gen_hd_key(callback=None):
     global qr_task
     if qr_task.get_hd_key() is not None:
         return
     from apps.base import handle_Initialize
     from apps.ur_registry.crypto_hd_key import genCryptoHDKeyForETHStandard
 
+    # pyright: off
     await handle_Initialize(wire.QR_CONTEXT, messages.Initialize())
-    ur = await genCryptoHDKeyForETHStandard()
+    ur = await genCryptoHDKeyForETHStandard(wire.QR_CONTEXT)
+    # pyright: on
     qr_task.set_hd_key(ur)
+    if callback is not None:
+        callback()
 
 
 async def handle_qr_task():
@@ -163,10 +172,12 @@ async def handle_qr_task():
 
                 await handle_Initialize(wire.QR_CONTEXT, messages.Initialize())
                 if qr_task.is_mulit_pkg() is True:
-                    print("qr_task.initial_tx()...")
+                    if __debug__:
+                        print("qr_task.initial_tx()...")
                     await qr_task.initial_tx()
                 else:
-                    print("qr_task.run()...")
+                    if __debug__:
+                        print("qr_task.run()...")
                     await qr_task.run()
                 await qr_task.finish()
         except Exception as exec:

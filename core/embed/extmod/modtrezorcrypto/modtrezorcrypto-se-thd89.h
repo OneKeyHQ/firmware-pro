@@ -630,24 +630,28 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(
     mod_trezorcrypto_se_fingerprint_is_unlocked_obj,
     mod_trezorcrypto_se_fingerprint_is_unlocked);
 
-/// def fingerprint_lock() -> None:
+/// def fingerprint_lock() -> bool:
 ///     """
 ///     fingerprint lock.
 ///     """
 STATIC mp_obj_t mod_trezorcrypto_se_fingerprint_lock(void) {
-  se_fingerprint_lock();
-  return mp_const_none;
+  if (sectrue != se_fingerprint_lock()) {
+    return mp_const_false;
+  }
+  return mp_const_true;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorcrypto_se_fingerprint_lock_obj,
                                  mod_trezorcrypto_se_fingerprint_lock);
 
-/// def fingerprint_unlock() -> None:
+/// def fingerprint_unlock() -> bool:
 ///     """
 ///     fingerprint unlock.
 ///     """
 STATIC mp_obj_t mod_trezorcrypto_se_fingerprint_unlock(void) {
-  se_fingerprint_unlock();
-  return mp_const_none;
+  if (sectrue != se_fingerprint_unlock()) {
+    return mp_const_false;
+  }
+  return mp_const_true;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorcrypto_se_fingerprint_unlock_obj,
                                  mod_trezorcrypto_se_fingerprint_unlock);

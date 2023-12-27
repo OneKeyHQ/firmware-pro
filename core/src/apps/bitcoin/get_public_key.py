@@ -14,7 +14,9 @@ if TYPE_CHECKING:
 
 
 async def get_public_key(
-    ctx: wire.Context, msg: GetPublicKey, auth_msg: MessageType | None = None
+    ctx: wire.Context,
+    msg: GetPublicKey,
+    auth_msg: MessageType | None = None,
 ) -> PublicKey:
     coin_name = msg.coin_name or "Bitcoin"
     script_type = msg.script_type or InputScriptType.SPENDADDRESS

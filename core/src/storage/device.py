@@ -38,6 +38,10 @@ _UNFINISHED_BACKUP_VALUE: bool | None = None
 _NO_BACKUP_VALUE: bool | None = None
 _BACKUP_TYPE_VALUE: int | None = None
 _SAFETY_CHECK_LEVEL_VALUE: int | None = None
+_USE_FINGERPRINT_UNLOCK_VALUE: bool | None = None
+_AIRGAP_MODE_VALUE: bool | None = None
+_HAS_PROMPTED_FINGERPRINT_VALUE: bool | None = None
+_FINGER_FAILED_COUNT_VALUE: int | None = None
 
 if utils.USE_THD89:
     import uctypes
@@ -173,6 +177,15 @@ if utils.USE_THD89:
     offset += uctypes.sizeof(struct_uint32, uctypes.LITTLE_ENDIAN)
     struct_public["slip39_group_count"] = (offset, struct_uint32)
     offset += uctypes.sizeof(struct_uint32, uctypes.LITTLE_ENDIAN)
+    struct_public["use_fingerprint_unlock"] = (offset, struct_bool)
+    offset += uctypes.sizeof(struct_bool, uctypes.LITTLE_ENDIAN)
+    struct_public["airgap_mode"] = (offset, struct_bool)
+    offset += uctypes.sizeof(struct_bool, uctypes.LITTLE_ENDIAN)
+    struct_public["has_prompted_fingerprint"] = (offset, struct_bool)
+    offset += uctypes.sizeof(struct_bool, uctypes.LITTLE_ENDIAN)
+    struct_public["finger_failed_count"] = (offset, struct_uint32)
+    offset += uctypes.sizeof(struct_uint32, uctypes.LITTLE_ENDIAN)
+
     # public_field = uctypes.struct(0, struct_public, uctypes.LITTLE_ENDIAN)
     assert (
         uctypes.sizeof(struct_public, uctypes.LITTLE_ENDIAN) < _PUBLIC_REGION_SIZE
@@ -225,6 +238,10 @@ if utils.USE_THD89:
     _ROTATION = struct_public["rotation"][0]
     _SLIP39_IDENTIFIER_DEVICE = struct_public["slip39_identifier_device"][0]
     _SLIP39_ITERATION_E_DEVICE = struct_public["slip39_iteration_e_device"][0]
+    _USE_FINGERPRINT_UNLOCK = struct_public["use_fingerprint_unlock"][0]
+    _AIRGAP_MODE = struct_public["airgap_mode"][0]
+    _HAS_PROMPTED_FINGERPRINT = struct_public["has_prompted_fingerprint"][0]
+    _FINGER_FAILED_COUNT = struct_public["finger_failed_count"][0]
 
     U2F_COUNTER = 0x00  # u2f counter
 
@@ -286,6 +303,10 @@ else:
     _TAP_AWAKE = (0x89)  # bool
     _ANIMATION = (0x8A)  # bool
     _TREZOR_COMPATIBLE = (0x8B)
+    _USE_FINGERPRINT_UNLOCK = (0x8C)  # bool
+    _AIRGAP_MODE = (0x8D)  # bool
+    _HAS_PROMPTED_FINGERPRINT = (0x8E)  # bool
+    _FINGER_FAILED_COUNT = (0x8F)  # int
     # fmt: on
 SAFETY_CHECK_LEVEL_STRICT: Literal[0] = const(0)
 SAFETY_CHECK_LEVEL_PROMPT: Literal[1] = const(1)
@@ -398,7 +419,9 @@ def get_serial() -> str:
 
 def set_brightness(brightness: int) -> None:
     # valid value range  0-255
+    global _BRIGHTNESS_VALUE
     common.set(_NAMESPACE, _BRIGHTNESS, brightness.to_bytes(2, "big"), public=True)
+    _BRIGHTNESS_VALUE = brightness
 
 
 def get_brightness() -> int:
@@ -445,11 +468,69 @@ def set_usb_lock_enable(enable: bool) -> None:
     _USE_USB_PROTECT_VALUE = enable
 
 
+def enable_fingerprint_unlock(enable: bool) -> None:
+
+    global _USE_FINGERPRINT_UNLOCK_VALUE
+    common.set_bool(_NAMESPACE, _USE_FINGERPRINT_UNLOCK, enable, public=True)
+    _USE_FINGERPRINT_UNLOCK_VALUE = enable
+
+
+def is_fingerprint_unlock_enabled() -> bool:
+    global _USE_FINGERPRINT_UNLOCK_VALUE
+    if _USE_FINGERPRINT_UNLOCK_VALUE is None:
+        _USE_FINGERPRINT_UNLOCK_VALUE = common.get_bool(
+            _NAMESPACE, _USE_FINGERPRINT_UNLOCK, public=True
+        )
+    return _USE_FINGERPRINT_UNLOCK_VALUE
+
+
 def is_tap_awake_enabled() -> bool:
     global _TAP_AWAKE_VALUE
     if _TAP_AWAKE_VALUE is None:
         _TAP_AWAKE_VALUE = common.get_bool(_NAMESPACE, _TAP_AWAKE, public=True)
     return _TAP_AWAKE_VALUE
+
+
+def has_prompted_fingerprint() -> bool:
+    global _HAS_PROMPTED_FINGERPRINT_VALUE
+    if _HAS_PROMPTED_FINGERPRINT_VALUE is None:
+        _HAS_PROMPTED_FINGERPRINT_VALUE = common.get_bool(
+            _NAMESPACE, _HAS_PROMPTED_FINGERPRINT, public=True
+        )
+    return _HAS_PROMPTED_FINGERPRINT_VALUE
+
+
+def set_fingerprint_prompted() -> None:
+    global _HAS_PROMPTED_FINGERPRINT_VALUE
+    common.set_bool(_NAMESPACE, _HAS_PROMPTED_FINGERPRINT, True, public=True)
+    _HAS_PROMPTED_FINGERPRINT_VALUE = True
+
+
+def finger_failed_count() -> int:
+    global _FINGER_FAILED_COUNT_VALUE
+    if _FINGER_FAILED_COUNT_VALUE is None:
+        failed_count = common.get(_NAMESPACE, _FINGER_FAILED_COUNT, public=True)
+        if failed_count is None:
+            _FINGER_FAILED_COUNT_VALUE = 0
+        else:
+            _FINGER_FAILED_COUNT_VALUE = int.from_bytes(failed_count, "big")
+    return _FINGER_FAILED_COUNT_VALUE
+
+
+def finger_failed_count_incr() -> None:
+    global _FINGER_FAILED_COUNT_VALUE
+    cur = finger_failed_count()
+    if cur >= utils.MAX_FP_ATTEMPTS:
+        raise ValueError("finger_failed_count is too large")
+    count = cur + 1
+    common.set(_NAMESPACE, _FINGER_FAILED_COUNT, count.to_bytes(1, "big"), public=True)
+    _FINGER_FAILED_COUNT_VALUE = count
+
+
+def finger_failed_count_reset() -> None:
+    global _FINGER_FAILED_COUNT_VALUE
+    common.set(_NAMESPACE, _FINGER_FAILED_COUNT, b"\x00", public=True)
+    _FINGER_FAILED_COUNT_VALUE = 0
 
 
 def set_tap_awake_enable(enable: bool) -> None:
@@ -661,7 +742,7 @@ def get_homescreen() -> str | None:
     if _HOMESCREEN_VALUE is None:
         homescreen = common.get(_NAMESPACE, _HOMESCREEN, public=True)
         _HOMESCREEN_VALUE = (
-            homescreen.decode() if homescreen else "A:/res/wallpaper-1.png"
+            homescreen.decode() if homescreen else "A:/res/wallpaper-1.jpg"
         )
     return _HOMESCREEN_VALUE
 
@@ -950,6 +1031,24 @@ def enable_trezor_compatible(enable: bool) -> None:
     )
 
 
+def is_airgap_mode() -> bool:
+    global _AIRGAP_MODE_VALUE
+    if _AIRGAP_MODE_VALUE is None:
+        _AIRGAP_MODE_VALUE = common.get_bool(_NAMESPACE, _AIRGAP_MODE, public=True)
+    return _AIRGAP_MODE_VALUE
+
+
+def enable_airgap_mode(enable: bool) -> None:
+    global _AIRGAP_MODE_VALUE
+    common.set_bool(
+        _NAMESPACE,
+        _AIRGAP_MODE,
+        enable,
+        public=True,
+    )
+    _AIRGAP_MODE_VALUE = enable
+
+
 def clear_global_cache() -> None:
     global _LANGUAGE_VALUE
     global _LABEL_VALUE
@@ -976,6 +1075,10 @@ def clear_global_cache() -> None:
     global _NO_BACKUP_VALUE
     global _BACKUP_TYPE_VALUE
     global _SAFETY_CHECK_LEVEL_VALUE
+    global _AIRGAP_MODE_VALUE
+    global _USE_FINGERPRINT_UNLOCK_VALUE
+    global _HAS_PROMPTED_FINGERPRINT_VALUE
+    global _FINGER_FAILED_COUNT_VALUE
 
     _LANGUAGE_VALUE = None
     _LABEL_VALUE = None
@@ -1002,3 +1105,7 @@ def clear_global_cache() -> None:
     _NO_BACKUP_VALUE = None
     _BACKUP_TYPE_VALUE = None
     _SAFETY_CHECK_LEVEL_VALUE = None
+    _AIRGAP_MODE_VALUE = None
+    _USE_FINGERPRINT_UNLOCK_VALUE = None
+    _HAS_PROMPTED_FINGERPRINT_VALUE = None
+    _FINGER_FAILED_COUNT_VALUE = None

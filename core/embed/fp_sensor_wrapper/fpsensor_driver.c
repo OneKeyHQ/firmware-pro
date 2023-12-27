@@ -15,7 +15,9 @@
 
 #include "fpsensor_driver.h"
 #include "fpsensor_common.h"
-
+#if SYSTEM_VIEW
+  #include "systemview.h"
+#endif
 // 超时时间
 int16_t g_i16ImageTimeout = 10;
 
@@ -230,7 +232,7 @@ uint8_t fpsensor_finger_down(void)
 {
     uint8_t sum = fpsensor_finger_status_statistics();
     fpsensor_delay_ms(1);
-    return sum > g_u16FingerArea ? 1 : 0;
+    return sum >= g_u16FingerArea ? 1 : 0;
 }
 
 uint8_t fpsensor_finger_off(void)

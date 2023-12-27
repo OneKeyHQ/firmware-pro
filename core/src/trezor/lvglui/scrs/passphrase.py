@@ -41,3 +41,4 @@ class PassphraseRequest(FullSizeWindow):
         target = event_obj.get_target()
         if target == self.nav_back.nav_btn:
             self.channel.publish(None)
+            self.destroy()

@@ -59,29 +59,30 @@ static const uint8_t *__user_font_get_bitmap(const lv_font_t *font,
   if (unicode_letter > __g_xbf_hd.max || unicode_letter < __g_xbf_hd.min) {
     return NULL;
   }
-  uint8_t *font_data = NULL;
-  uint32_t data_len = 0;
-  font_data = font_cache_get_letter(&font_cache, unicode_letter, &data_len);
+
+  uint8_t *font_data = font_cache_get_letter(&font_cache, unicode_letter, NULL);
   if (font_data) {
     return font_data + sizeof(glyph_dsc_t);
-  } else {
-    uint32_t unicode_offset = (unicode_letter - __g_xbf_hd.min + 1) * 4;
-    uint32_t len = 0;
-    uint8_t buf[8] = {0};
-    __user_font_getdata(buf, unicode_offset + LOCA_OFFSET + LOCA_VALUE_OFFSET,
-                        8);
-    uint32_t *p_pos = (uint32_t *)buf;
-    if (p_pos[0] != 0) {
-      len = p_pos[1] - p_pos[0];
-      font_data = font_malloc(len);
-      if (__user_font_getdata(font_data, glyph_location + p_pos[0], len) != 0) {
-        return NULL;
-      }
-      font_cache_add_letter(&font_cache, unicode_letter, font_data, len);
-      return font_data + sizeof(glyph_dsc_t);
-    } else {
+  }
+
+  uint32_t unicode_offset = (unicode_letter - __g_xbf_hd.min + 1) * 4;
+  uint32_t len = 0;
+  uint8_t buf[8] = {0};
+  if (__user_font_getdata(buf, unicode_offset + LOCA_OFFSET + LOCA_VALUE_OFFSET,
+                          8) != 0) {
+    return NULL;
+  }
+
+  uint32_t *p_pos = (uint32_t *)buf;
+  if (p_pos[0] != 0) {
+    len = p_pos[1] - p_pos[0];
+    font_data = font_malloc(len);
+    if (__user_font_getdata(font_data, glyph_location + p_pos[0], len) != 0) {
+      font_free(font_data);
       return NULL;
     }
+    font_cache_add_letter(&font_cache, unicode_letter, font_data, len);
+    return font_data + sizeof(glyph_dsc_t);
   }
 
   return NULL;
@@ -92,39 +93,49 @@ static bool __user_font_get_glyph_dsc(const lv_font_t *font,
                                       uint32_t unicode_letter,
                                       uint32_t unicode_letter_next) {
   if (unicode_letter > __g_xbf_hd.max || unicode_letter < __g_xbf_hd.min) {
-    return NULL;
+    return false;
   }
 
-  uint8_t *font_data = NULL;
-  uint32_t data_len = 0;
-  font_data = font_cache_get_letter(&font_cache, unicode_letter, &data_len);
+  uint8_t *font_data = font_cache_get_letter(&font_cache, unicode_letter, NULL);
   if (font_data) {
-  } else {
-    uint32_t unicode_offset = (unicode_letter - __g_xbf_hd.min + 1) * 4;
-    uint32_t len = 0;
-    uint8_t buf[8] = {0};
-    __user_font_getdata(buf, unicode_offset + LOCA_OFFSET + LOCA_VALUE_OFFSET,
-                        8);
-    uint32_t *p_pos = (uint32_t *)buf;
-    if (p_pos[0] != 0) {
-      len = p_pos[1] - p_pos[0];
-      font_data = font_malloc(len);
-      if (__user_font_getdata(font_data, glyph_location + p_pos[0], len) != 0) {
-        return false;
-      }
-      font_cache_add_letter(&font_cache, unicode_letter, font_data, len);
-    } else {
+    glyph_dsc_t *gdsc = (glyph_dsc_t *)font_data;
+    dsc_out->adv_w = (gdsc->adv_w + (1 << 3)) >> 4;
+    dsc_out->box_h = gdsc->box_h;
+    dsc_out->box_w = gdsc->box_w;
+    dsc_out->ofs_x = gdsc->ofs_x;
+    dsc_out->ofs_y = gdsc->ofs_y;
+    dsc_out->bpp = __g_xbf_hd.bpp;
+    return true;
+  }
+
+  uint32_t unicode_offset = (unicode_letter - __g_xbf_hd.min + 1) * 4;
+  uint32_t len = 0;
+  uint8_t buf[8] = {0};
+  if (__user_font_getdata(buf, unicode_offset + LOCA_OFFSET + LOCA_VALUE_OFFSET,
+                          8) != 0) {
+    return false;
+  }
+
+  uint32_t *p_pos = (uint32_t *)buf;
+  if (p_pos[0] != 0) {
+    len = p_pos[1] - p_pos[0];
+    font_data = font_malloc(len);
+    if (__user_font_getdata(font_data, glyph_location + p_pos[0], len) != 0) {
+      font_free(font_data);
       return false;
     }
+    font_cache_add_letter(&font_cache, unicode_letter, font_data, len);
+    glyph_dsc_t *gdsc = (glyph_dsc_t *)font_data;
+    dsc_out->adv_w = (gdsc->adv_w + (1 << 3)) >> 4;
+    dsc_out->box_h = gdsc->box_h;
+    dsc_out->box_w = gdsc->box_w;
+    dsc_out->ofs_x = gdsc->ofs_x;
+    dsc_out->ofs_y = gdsc->ofs_y;
+    dsc_out->bpp = __g_xbf_hd.bpp;
+    return true;
   }
-  glyph_dsc_t *gdsc = (glyph_dsc_t *)font_data;
-  dsc_out->adv_w = (gdsc->adv_w + (1 << 3)) >> 4;
-  dsc_out->box_h = gdsc->box_h;
-  dsc_out->box_w = gdsc->box_w;
-  dsc_out->ofs_x = gdsc->ofs_x;
-  dsc_out->ofs_y = gdsc->ofs_y;
-  dsc_out->bpp = __g_xbf_hd.bpp;
-  return true;
+
+  return false;
 }
 
 // Noto Sans TC + Geist ,SemiBold, 38

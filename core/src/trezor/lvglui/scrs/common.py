@@ -19,6 +19,10 @@ if TYPE_CHECKING:
 
     pass
 
+if __debug__:
+    SETTINGS_MOVE_TIME = 120
+    SETTINGS_MOVE_DELAY = 80
+
 
 class Screen(lv.obj):
     """Singleton screen object."""
@@ -110,14 +114,22 @@ class Screen(lv.obj):
     async def request(self) -> Any:
         return await self.channel.take()
 
+    def refresh(self):
+        area = lv.area_t()
+        area.x1 = 0
+        area.y1 = 0
+        area.x2 = 480
+        area.y2 = 800
+        self.invalidate_area(area)
+
     def _load_scr(self, scr: "Screen", back: bool = False) -> None:
         # """Load a screen with animation."""
         if device.is_animation_enabled():
             lv.scr_load_anim(
                 scr,
                 lv.SCR_LOAD_ANIM.MOVE_RIGHT if back else lv.SCR_LOAD_ANIM.MOVE_LEFT,
-                180,
-                60,
+                120 if not __debug__ else SETTINGS_MOVE_TIME,
+                80 if not __debug__ else SETTINGS_MOVE_DELAY,
                 False,
             )
         else:
@@ -356,20 +368,43 @@ class FullSizeWindow(lv.obj):
         self.del_delayed(100)
 
     def _load_anim_hor(self):
-        Anim(480, 0, self.set_pos, time=180, y_axis=False, delay=60).start_anim()
+        Anim(
+            480,
+            0,
+            self._set_x,
+            time=120 if not __debug__ else SETTINGS_MOVE_TIME,
+            delay=80 if not __debug__ else SETTINGS_MOVE_DELAY,
+        ).start_anim()
 
     def _load_anim_ver(self):
         self.set_y(800)
-        Anim(800, 0, self.set_pos, time=180, y_axis=True, delay=60).start_anim()
+        Anim(
+            800,
+            0,
+            self._set_y,
+            time=120 if not __debug__ else SETTINGS_MOVE_TIME,
+            delay=80 if not __debug__ else SETTINGS_MOVE_DELAY,
+        ).start_anim()
+
+    def _set_y(self, y):
+        try:
+            self.set_y(y)
+        except Exception:
+            pass
+
+    def _set_x(self, x):
+        try:
+            self.set_x(x)
+        except Exception:
+            pass
 
     def _dismiss_anim_hor(self):
         Anim(
             0,
             480,
-            self.set_pos,
-            time=180,
-            y_axis=False,
-            delay=60,
+            self._set_x,
+            time=120 if not __debug__ else SETTINGS_MOVE_TIME,
+            delay=80 if not __debug__ else SETTINGS_MOVE_DELAY,
             del_cb=self._delete_cb,
         ).start_anim()
 
@@ -377,10 +412,9 @@ class FullSizeWindow(lv.obj):
         Anim(
             0,
             800,
-            self.set_pos,
-            time=180,
-            y_axis=True,
-            delay=60,
+            self._set_y,
+            time=120 if not __debug__ else SETTINGS_MOVE_TIME,
+            delay=80 if not __debug__ else SETTINGS_MOVE_DELAY,
             del_cb=self._delete_cb,
         ).start_anim()
 
@@ -414,3 +448,11 @@ class FullSizeWindow(lv.obj):
         # else:
         #     self.show_dismiss_anim()
         self.destroy(1000)
+
+    def refresh(self):
+        area = lv.area_t()
+        area.x1 = 0
+        area.y1 = 0
+        area.x2 = 480
+        area.y2 = 800
+        self.invalidate_area(area)

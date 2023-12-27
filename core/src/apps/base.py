@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 import storage.cache
 import storage.device
-from trezor import config, ui, utils, wire, workflow
+from trezor import config, loop, ui, utils, wire, workflow
 from trezor.enums import MessageType
 from trezor.messages import Success, UnlockPath
 
@@ -329,20 +329,27 @@ ALLOW_WHILE_LOCKED = (
 
 def set_homescreen() -> None:
     import lvgl as lv  # type: ignore[Import "lvgl" could not be resolved]
+    from trezor.lvglui.scrs import fingerprints
 
     ble_name = storage.device.get_ble_name()
     if storage.device.is_initialized():
         dev_state = get_state()
         device_name = storage.device.get_label()
-        if not config.is_unlocked():
+        if not config.is_unlocked() or (
+            fingerprints.is_available() and not fingerprints.is_unlocked()
+        ):
             if __debug__:
-                print("Device is locked")
+                print(
+                    f"Device is locked by pin {not config.is_unlocked()} === fingerprint {not fingerprints.is_unlocked()}"
+                )
             from trezor.lvglui.scrs.lockscreen import LockScreen
 
             screen = LockScreen(device_name, ble_name, dev_state)
         else:
             if __debug__:
-                print("Device is unlocked")
+                print(
+                    f"Device is unlocked and has fingerprint {fingerprints.is_available() and not fingerprints.is_unlocked()}"
+                )
             from trezor.lvglui.scrs.homescreen import MainScreen
 
             store_ble_name(ble_name)
@@ -384,7 +391,16 @@ def get_state() -> str | None:
 
 def lock_device() -> None:
     if storage.device.is_initialized() and config.has_pin():
-        config.lock()
+        from trezor.lvglui.scrs import fingerprints
+
+        if fingerprints.is_available() and fingerprints.is_unlocked():
+            fingerprints.lock()
+        else:
+            if __debug__:
+                print(
+                    f"pin locked,  finger is available: {fingerprints.is_available} ===== finger is unlocked: {fingerprints.is_unlocked} "
+                )
+            config.lock()
         wire.find_handler = get_pinlocked_handler
         set_homescreen()
         workflow.close_others()
@@ -393,7 +409,6 @@ def lock_device() -> None:
 def lock_device_if_unlocked() -> None:
     if config.is_unlocked():
         lock_device()
-    from trezor import loop
 
     loop.schedule(utils.turn_off_lcd())
 
@@ -422,15 +437,54 @@ async def unlock_device(ctx: wire.GenericContext = wire.DUMMY_CONTEXT) -> None:
     If the storage is locked, attempt to unlock it. Reset the homescreen and the wire
     handler.
     """
-    from apps.common.request_pin import verify_user_pin
+    from apps.common.request_pin import verify_user_pin, verify_user_fingerprint
 
     if not config.is_unlocked():
+        if __debug__:
+            print("pin is locked ")
         # verify_user_pin will raise if the PIN was invalid
-        await verify_user_pin(ctx)
+        await verify_user_pin(ctx, allow_fingerprint=False)
+    else:
+        from trezor.lvglui.scrs import fingerprints
+
+        if not fingerprints.is_unlocked():
+            if __debug__:
+                print("fingerprint is locked")
+            verify_pin = verify_user_pin(ctx, close_others=False)
+            verify_finger = verify_user_fingerprint(ctx)
+            racer = loop.race(verify_pin, verify_finger)
+            await racer
+            if verify_finger in racer.finished:
+                from trezor.lvglui.scrs.pinscreen import InputPin
+
+                pin_wind = InputPin.get_window_if_visible()
+                if pin_wind:
+                    pin_wind.destroy()
+    if storage.device.is_fingerprint_unlock_enabled():
+        storage.device.finger_failed_count_reset()
+
+    utils.mark_pin_verified()
+
     # reset the idle_timer
     reload_settings_from_storage()
     set_homescreen()
     wire.find_handler = workflow_handlers.find_registered_handler
+
+
+# async def auth(ctx: wire.GenericContext = wire.DUMMY_CONTEXT) -> None:
+
+#     from apps.common.request_pin import verify_user_pin, verify_user_fingerprint
+
+#     verify_pin = verify_user_pin(ctx, close_others=False)
+#     verify_finger = verify_user_fingerprint(ctx)
+#     racer = loop.race(verify_pin, verify_finger)
+#     await racer
+#     if verify_finger in racer.finished:
+#         from trezor.lvglui.scrs.pinscreen import InputPin
+
+#         pin_wind = InputPin.get_window_if_visible()
+#         if pin_wind:
+#             pin_wind.destroy()
 
 
 def get_pinlocked_handler(
@@ -492,7 +546,16 @@ def boot() -> None:
     workflow_handlers.register(MessageType.SetBusy, handle_SetBusy)
 
     reload_settings_from_storage()
-    if config.is_unlocked():
+    from trezor.lvglui.scrs import fingerprints
+
+    if __debug__:
+        print(f"fingerprints.is_unlocked(): {fingerprints.is_unlocked()}")
+        print(f"config.is_unlocked(): {config.is_unlocked()}")
+    if config.is_unlocked() and fingerprints.is_unlocked():
+        if __debug__:
+            print("fingerprints is unlocked and config is unlocked")
         wire.find_handler = workflow_handlers.find_registered_handler
     else:
+        if __debug__:
+            print("fingerprints is locked or config is locked")
         wire.find_handler = get_pinlocked_handler

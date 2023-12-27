@@ -38,7 +38,7 @@ reads the message's header. When the message type is known the first handler is 
 from typing import TYPE_CHECKING
 
 from storage.cache import InvalidSessionError
-from trezor import io, log, loop, protobuf, utils, workflow
+from trezor import log, loop, protobuf, utils, workflow
 from trezor.enums import FailureType
 from trezor.messages import Failure
 from trezor.wire import codec_v1
@@ -137,7 +137,7 @@ class DummyContext:
         return await loop.race(*tasks)
 
 
-class QRContext:
+class QRContext(DummyContext):
     def __init__(self) -> None:
         self.primary_color = None
         self.icon_path = ""
@@ -146,78 +146,11 @@ class QRContext:
         self.msg_in = None
         self.ready = False
 
-    async def _call(
-        self,
-        msg: protobuf.MessageType,
-        expected_type: type[LoadedMessageType],
-    ) -> protobuf.MessageType | None:
-        await self.write(msg)
-        del msg
-        return await self.read(expected_type)
-
-    async def call(
-        self,
-        msg: protobuf.MessageType,
-        expected_type: type[LoadedMessageType],
-    ) -> protobuf.MessageType | None:
-        return await loop.race(self._call(msg, expected_type), self.signal())
-
-    async def write(self, msg: protobuf.MessageType) -> None:
-        if __debug__:
-            log.debug(
-                __name__,
-                "write: %s",
-                msg.MESSAGE_NAME,
-            )
-        self.msg_out = msg
-
-    async def read(
-        self, expected_type: type[LoadedMessageType]
-    ) -> protobuf.MessageType | None:
-        if __debug__:
-            log.debug(
-                __name__,
-                "expect: %s",
-                expected_type.MESSAGE_NAME,
-            )
-        local = loop.wait(io.LOCAL)
-        await local
-        self.msg_out = None
-        return self.msg_in
-
-    async def read_any(
-        self, expected_wire_types: Iterable[int]
-    ) -> protobuf.MessageType | None:
-        if __debug__:
-            log.debug(
-                __name__,
-                "expect: %s",
-                expected_wire_types,
-            )
-
-        # Load the full message into a buffer, parse out type and data payload
-        local = loop.wait(io.LOCAL)
-        await local
-        return self.msg_in
-
     async def qr_ctx_resp(self) -> protobuf.MessageType | None:
         return self.msg_out
 
     async def qr_ctx_req(self, msg: protobuf.MessageType) -> None:
         self.msg_in = msg
-
-    async def signal(self):
-        await SIGNAL_CHANNEL.take()
-        await self.write(failure(loop.TASK_CLOSED))
-        SIGNAL_CHANNEL.publish("done")
-
-    def wait(self, *tasks: Awaitable) -> Any:
-        """
-        Wait until one of the passed tasks finishes, and return the result,
-        while servicing the wire context.  If a message comes until one of the
-        tasks ends, `UnexpectedMessageError` is raised.
-        """
-        return loop.race(self.read_any(()), self.signal(), *tasks)
 
 
 QR_CONTEXT = QRContext()

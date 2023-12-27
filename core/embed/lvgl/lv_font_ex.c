@@ -27,11 +27,13 @@ uint8_t *font_cache_get_letter(font_data_cache *font_cache, uint32_t letter,
                                uint32_t *buff_size) {
   uint8_t *data = NULL;
   font_info *f_info = NULL;
-  for (int i = 0; i < font_cache->cache_index; i++) {
+  uint32_t cur_index = font_cache->cache_index;
+  for (int i = 0; i < cur_index; i++) {
     f_info = &font_cache->font_infos[i];
     if (f_info->unicode_letter == letter) {
       data = f_info->data;
       if (buff_size) *buff_size = f_info->data_size;
+      break;  // Exit the loop once the letter is found
     }
   }
   return data;

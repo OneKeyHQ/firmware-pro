@@ -3059,11 +3059,12 @@ class Signature(FullSizeWindow):
     def __init__(
         self,
         title,
+        subtitle,
         qr_code,
     ):
         super().__init__(
             title,
-            None,
+            subtitle,
             confirm_text=_(i18n_keys.BUTTON__DONE),
             # primary_color=0x000000,
         )
@@ -3072,4 +3073,4 @@ class Signature(FullSizeWindow):
             self.content_area,
             self.qr_code,
         )
-        self.qr.align_to(self.title, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 16)
+        self.qr.align_to(self.subtitle, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 30)

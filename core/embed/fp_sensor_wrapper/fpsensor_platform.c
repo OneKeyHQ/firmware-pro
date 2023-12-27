@@ -378,7 +378,10 @@ bool fpsensor_data_init(void)
     for ( uint8_t i = 0; i < counter; i++ )
     {
         p_data = fp_data_cache + TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_LENGTH;
-        ensure(se_fp_read(TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_LENGTH,p_data, TEMPLATE_LENGTH,i, counter), "se_fp_read failed");
+        ensure(
+            se_fp_read(TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_LENGTH, p_data, TEMPLATE_LENGTH, i, counter),
+            "se_fp_read failed"
+        );
     }
     data_inited = true;
     return true;
@@ -401,7 +404,9 @@ bool fpsensor_data_save(void)
     {
         p_data = fp_data_cache + TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_LENGTH;
         ensure(
-            se_fp_write(TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_LENGTH, p_data, TEMPLATE_LENGTH, i, counter),
+            se_fp_write(
+                TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_LENGTH, p_data, TEMPLATE_LENGTH, i, counter
+            ),
             "se_fp_write failed"
         );
     }

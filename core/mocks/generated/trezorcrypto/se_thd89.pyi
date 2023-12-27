@@ -192,14 +192,14 @@ def fingerprint_is_unlocked() -> bool:
 
 
 # extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
-def fingerprint_lock() -> None:
+def fingerprint_lock() -> bool:
     """
     fingerprint lock.
     """
 
 
 # extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
-def fingerprint_unlock() -> None:
+def fingerprint_unlock() -> bool:
     """
     fingerprint unlock.
     """

@@ -398,7 +398,7 @@ static lv_res_t decoder_info(struct _lv_img_decoder_t *decoder, const void *src,
     }
   }
 
-  return LV_RES_INV; /*If didn't succeeded earlier then it's an error*/
+  return LV_RES_INV; /*If didn't succeed earlier then it's an error*/
 }
 
 /**
@@ -431,15 +431,13 @@ static lv_res_t decoder_open(lv_img_decoder_t *decoder,
       }
 
       /* Read from JPG file and fill input buffers */
-      for (uint32_t i = 0; i < 1; i++) {
-        if (lv_fs_read(&f, Jpeg_IN_BufferTab[i].DataBuffer, CHUNK_SIZE_IN,
-                       (uint32_t *)(&Jpeg_IN_BufferTab[i].DataBufferSize)) ==
-            LV_FS_RES_OK) {
-          Jpeg_IN_BufferTab[i].State = JPEG_BUFFER_FULL;
-        } else {
-          return LV_RES_INV;
-        }
+      if (lv_fs_read(&f, Jpeg_IN_BufferTab[0].DataBuffer, CHUNK_SIZE_IN,
+                     (uint32_t *)(&Jpeg_IN_BufferTab[0].DataBufferSize)) !=
+          LV_FS_RES_OK) {
+        lv_fs_close(&f);
+        return LV_RES_INV;
       }
+      Jpeg_IN_BufferTab[0].State = JPEG_BUFFER_FULL;
 
       /* Start JPEG decoding with DMA method */
       HAL_JPEG_Decode_DMA(&JPEG_Handle, Jpeg_IN_BufferTab[0].DataBuffer,

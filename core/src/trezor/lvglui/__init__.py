@@ -11,7 +11,7 @@ async def lvgl_tick():
     while True:
         if utils.EMULATOR:
             lv.tick_inc(10)
-        await loop.sleep(10)
+        await loop.sleep(5)
         lv.timer_handler()
         inactive_time = get_elapsed()
         if inactive_time < inactive_time_bak:
@@ -30,13 +30,16 @@ def init_lvgl() -> None:
         stjpeg.init()
     disp_buf1 = lv.disp_draw_buf_t()
     buf1_1 = lcd.framebuffer(1)
-    disp_buf1.init(buf1_1, None, len(buf1_1) // lv.color_t.__SIZE__)
+    buf2_2 = lcd.framebuffer(2)
+    disp_buf1.init(buf1_1, buf2_2, len(buf1_1))
     disp_drv = lv.disp_drv_t()
     disp_drv.init()
     disp_drv.draw_buf = disp_buf1
     disp_drv.flush_cb = lcd.flush
     disp_drv.hor_res = 480
     disp_drv.ver_res = 800
+    # disp_drv.full_refresh = True
+    # disp_drv.direct_mode = True
     disp_drv.register()
 
     indev_drv = lv.indev_drv_t()

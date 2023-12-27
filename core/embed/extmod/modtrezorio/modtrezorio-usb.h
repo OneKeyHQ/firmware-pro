@@ -275,17 +275,31 @@ STATIC mp_obj_t mod_trezorio_USB___del__(mp_obj_t self) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorio_USB___del___obj,
                                  mod_trezorio_USB___del__);
 
-/// def state(self) -> bool:
+/// def connected(self) -> bool:
 ///     """
-///     Get USB state.
+///     Get USB connect state.
 ///     """
-STATIC mp_obj_t mod_trezorio_USB_state(mp_obj_t self) {
+STATIC mp_obj_t mod_trezorio_USB_connected(mp_obj_t self) {
   if (sectrue == is_usb_connected()) {
     return mp_const_true;
   } else {
     return mp_const_false;
   }
 }
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorio_USB_connected_obj,
+                                 mod_trezorio_USB_connected);
+
+/// def state(self) -> int:
+///   """
+///   Get USB state.
+///   """
+STATIC mp_obj_t mod_trezorio_USB_state(mp_obj_t self) {
+  mp_obj_USB_t *o = MP_OBJ_TO_PTR(self);
+
+  return mp_obj_new_int(o->state);
+}
+
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorio_USB_state_obj,
                                  mod_trezorio_USB_state);
 
@@ -294,6 +308,8 @@ STATIC const mp_rom_map_elem_t mod_trezorio_USB_locals_dict_table[] = {
     {MP_ROM_QSTR(MP_QSTR_open), MP_ROM_PTR(&mod_trezorio_USB_open_obj)},
     {MP_ROM_QSTR(MP_QSTR_close), MP_ROM_PTR(&mod_trezorio_USB_close_obj)},
     {MP_ROM_QSTR(MP_QSTR___del__), MP_ROM_PTR(&mod_trezorio_USB___del___obj)},
+    {MP_ROM_QSTR(MP_QSTR_connected),
+     MP_ROM_PTR(&mod_trezorio_USB_connected_obj)},
     {MP_ROM_QSTR(MP_QSTR_state), MP_ROM_PTR(&mod_trezorio_USB_state_obj)},
 };
 STATIC MP_DEFINE_CONST_DICT(mod_trezorio_USB_locals_dict,

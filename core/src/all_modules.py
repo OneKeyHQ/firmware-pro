@@ -221,8 +221,8 @@ trezor.lvglui.scrs.components.theme
 import trezor.lvglui.scrs.components.theme
 trezor.lvglui.scrs.components.transition
 import trezor.lvglui.scrs.components.transition
-trezor.lvglui.scrs.fingerprint
-import trezor.lvglui.scrs.fingerprint
+trezor.lvglui.scrs.fingerprints
+import trezor.lvglui.scrs.fingerprints
 trezor.lvglui.scrs.homescreen
 import trezor.lvglui.scrs.homescreen
 trezor.lvglui.scrs.initscreen

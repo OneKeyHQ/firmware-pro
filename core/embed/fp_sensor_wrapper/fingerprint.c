@@ -1,23 +1,71 @@
 #include "common.h"
-#include "fp_sensor_wrapper.h"
+#ifndef EMULATOR
+  #include "fp_sensor_wrapper.h"
+#endif
 #include "fingerprint.h"
 #include "irq.h"
-
+#ifdef SYSTEM_VIEW
+  #include "systemview.h"
+#endif
 extern uint8_t MAX_USER_COUNT;
 
+#ifdef EMULATOR
+void fingerprint_get_version(char* version)
+{
+    strcpy(version, "1.0.0");
+}
+int fingerprint_detect(void)
+{
+    return 1;
+}
+int fingerprint_enroll(uint8_t counter)
+{
+    (void)counter;
+    return 0;
+}
+int fingerprint_save(uint8_t id)
+{
+    (void)id;
+    return 0;
+}
+int fingerprint_match(uint8_t* match_id)
+{
+    (void)match_id;
+    return 0;
+}
+int fingerprint_delete(uint8_t id)
+{
+    (void)id;
+    return 0;
+}
+int fingerprint_delete_all(void)
+{
+    return 0;
+}
+int fingerprint_get_count(uint8_t* count)
+{
+    (void)count;
+    return 0;
+}
+int fingerprint_get_list(uint8_t* list, uint8_t len)
+{
+    (void)list;
+    (void)len;
+    return 0;
+}
+#else
 void fingerprint_get_version(char* version)
 {
     FpLibVersion(version);
 }
-
 void fingerprint_init(void)
 {
     ensure_ex(fpsensor_gpio_init(), FPSENSOR_OK, "fpsensor_gpio_init failed");
     ensure_ex(fpsensor_spi_init(), FPSENSOR_OK, "fpsensor_spi_init failed");
     ensure_ex(fpsensor_hard_reset(), FPSENSOR_OK, "fpsensor_hard_reset failed");
     ensure_ex(fpsensor_init(), FPSENSOR_OK, "fpsensor_init failed");
-    ensure_ex(fpsensor_adc_init(12, 12, 16, 3), FPSENSOR_OK, "fpsensor_adc_init failed");
-    ensure_ex(fpsensor_set_config_param(0xC0, 8), FPSENSOR_OK, "fpsensor_set_config_param failed");
+    ensure_ex(fpsensor_adc_init(18, 13, 4, 3), FPSENSOR_OK, "fpsensor_adc_init failed");
+    ensure_ex(fpsensor_set_config_param(0xC0, 10), FPSENSOR_OK, "fpsensor_set_config_param failed");
     ensure_ex(FpAlgorithmInit(TEMPLATE_ADDR_START), FPSENSOR_OK, "FpAlgorithmInit failed");
     MAX_USER_COUNT = MAX_FINGERPRINT_COUNT;
     fingerprint_enter_sleep();
@@ -34,27 +82,42 @@ int fingerprint_detect(void)
     return FpsDetectFinger();
 }
 
-int fingerprint_enroll(uint8_t counter)
+  #include "mipi_lcd.h"
+
+FP_RESULT fingerprint_enroll(uint8_t counter)
 {
+
     if ( FpsDetectFinger() != 1 )
     {
-        return -1;
+        return FP_NO_FP;
     }
-    if ( FpsGetImage() != 0 )
+  #if SYSTEM_VIEW
+    uint8_t image_data[88 * 112 + 2];
+    if ( FpsGetImageData(image_data) != 0 )
     {
         return -1;
     }
 
-    if ( FpaExtractfeature(counter) != 0 )
+    display_fp(300, 600, 88, 112, image_data);
+  #endif
+    if ( FpsGetImage() != 0 )
     {
-        return -1;
+        return FP_GET_IMAGE_FAIL;
+    }
+    uint8_t res = FpaExtractfeature(counter);
+    if ( res == 2 )
+    {
+        return FP_DUPLICATE;
+    }
+    if ( res != 0 )
+    {
+        return FP_EXTRACT_FEATURE_FAIL;
     }
     if ( FpaMergeFeatureToTemplate(counter) != 0 )
     {
-        return -1;
+        return FP_ERROR_OTHER;
     }
-
-    return 0;
+    return FP_OK;
 }
 
 int fingerprint_save(uint8_t id)
@@ -72,34 +135,44 @@ int fingerprint_save(uint8_t id)
     return 0;
 }
 
-int fingerprint_match(uint8_t* match_id)
+FP_RESULT fingerprint_match(uint8_t* match_id)
 {
     volatile int ret = 0;
     uint32_t irq = disable_irq();
-    for ( int i = 0; i < 3; i++ )
+    if ( FpsDetectFinger() != 1 )
     {
-        if ( FpsDetectFinger() == 1 )
-        {
-            if ( FpsGetImage() == 0 )
-            {
-                if ( FpaExtractfeature(0) == 0 )
-                {
-                    ret = FpaIdentify(match_id);
-                    if ( ret == 0 )
-                    {
-                        enable_irq(irq);
-                        return 0;
-                    }
-                    else
-                    {
-                        fpsensor_delay_ms(10);
-                    }
-                }
-            }
-        }
+        enable_irq(irq);
+        return FP_NO_FP;
     }
+  #if SYSTEM_VIEW
+    uint8_t image_data[88 * 112 + 2];
+    if ( FpsGetImageData(image_data) != 0 )
+    {
+        enable_irq(irq);
+        return -1;
+    }
+    else
+    {
+        display_fp(300, 600, 88, 112, image_data);
+    }
+  #endif
+    if ( FpsGetImage() != 0 )
+    {
+        enable_irq(irq);
+        return FP_GET_IMAGE_FAIL;
+    }
+    if ( FpaExtractfeature(0) != 0 )
+    {
+        enable_irq(irq);
+        return FP_EXTRACT_FEATURE_FAIL;
+    }
+    ret = FpaIdentify(match_id);
     enable_irq(irq);
-    return -1;
+    if ( ret != 0 )
+    {
+        return FP_NOT_MATCH;
+    }
+    return FP_OK;
 }
 
 int fingerprint_delete(uint8_t id)
@@ -286,3 +359,4 @@ void fingerprint_test(void)
         display_printf("FpaIdentify matched\n");
     }
 }
+#endif

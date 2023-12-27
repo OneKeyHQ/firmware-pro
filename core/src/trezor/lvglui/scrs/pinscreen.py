@@ -72,12 +72,25 @@ class PinTip(FullSizeWindow):
 
 
 class InputPin(FullSizeWindow):
+
+    _instance = None
+
+    @classmethod
+    def get_window_if_visible(cls) -> "InputPin" | None:
+        return (
+            cls._instance
+            if (cls._instance is not None and cls._instance.is_visible())
+            else None
+        )
+
     def __init__(self, **kwargs):
         super().__init__(
             title=kwargs.get("title") or _(i18n_keys.TITLE__ENTER_PIN),
             subtitle=kwargs.get("subtitle", ""),
             anim_dir=0,
         )
+        self.__class__._instance = self
+        self.allow_fingerprint = kwargs.get("allow_fingerprint", True)
         self.title.add_style(
             StyleWrapper()
             .text_font(font_GeistSemiBold48)
@@ -94,11 +107,31 @@ class InputPin(FullSizeWindow):
             0,
         )
         self.subtitle.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
+        self._show_fingerprint_prompt_if_necessary()
         self.clear_flag(lv.obj.FLAG.SCROLLABLE)
         self.keyboard = NumberKeyboard(self)
         self.keyboard.add_event_cb(self.on_event, lv.EVENT.READY, None)
         self.keyboard.add_event_cb(self.on_event, lv.EVENT.CANCEL, None)
         self.keyboard.add_event_cb(self.on_event, lv.EVENT.VALUE_CHANGED, None)
+
+    def _show_fingerprint_prompt_if_necessary(self):
+        from storage import device
+        from trezorio import fingerprint
+
+        if (
+            self.allow_fingerprint
+            and device.is_fingerprint_unlock_enabled()
+            and utils.pin_verified_since_boot()
+            and fingerprint.get_template_count() > 0
+            and device.finger_failed_count() < 5
+        ):
+            self.fingerprint_prompt = lv.img(self.content_area)
+            self.fingerprint_prompt.set_src("A:/res/fingerprint-prompt.png")
+            self.fingerprint_prompt.set_pos(414, 30)
+
+    def refresh_fingerprint_prompt(self):
+        if hasattr(self, "fingerprint_prompt"):
+            self.fingerprint_prompt.delete()
 
     def on_event(self, event_obj):
         code = event_obj.code
