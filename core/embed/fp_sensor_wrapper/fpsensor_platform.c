@@ -272,8 +272,8 @@ void fpsensor_delay_ms(uint32_t Timeout)
 
 #include "secbool.h"
 
-extern secbool se_fp_write(uint16_t offset, const void* val_dest, uint16_t len);
-extern secbool se_fp_read(uint16_t offset, void* val_dest, uint16_t len);
+extern secbool se_fp_write(uint16_t offset, const void *val_dest, uint16_t len,uint8_t index,uint8_t total);
+extern secbool se_fp_read(uint16_t offset, void *val_dest, uint16_t len,uint8_t index,uint8_t total);
 
 /*
 * Function：    SF_Init
@@ -352,32 +352,56 @@ void fpsensor_data_set_sync(bool sync)
 
 bool fpsensor_data_init(void)
 {
+    static bool data_inited = false;
+
+    if ( data_inited )
+    {
+        return true;
+    }
+
     uint8_t* p_data;
+    uint8_t counter = 0;
+    uint8_t list[MAX_FINGERPRINT_COUNT] = {0};
+
     for ( uint8_t i = 0; i < MAX_FINGERPRINT_COUNT; i++ )
     {
         p_data = fp_data_cache + TEMPLATE_ADDR_OFFSET + i * TEMPLATE_LENGTH;
-        se_fp_read(TEMPLATE_ADDR_OFFSET + i * TEMPLATE_LENGTH, p_data, 2);
+        ensure(se_fp_read(TEMPLATE_ADDR_OFFSET + i * TEMPLATE_LENGTH, p_data, 2, 0, 0), "se_fp_read failed");
         if ( p_data[0] == 0x32 && p_data[1] == 0x34 )
         {
-            se_fp_read(TEMPLATE_ADDR_OFFSET + i * TEMPLATE_LENGTH, p_data, TEMPLATE_LENGTH);
+            list[counter++] = i;
         }
     }
+
+    for ( uint8_t i = 0; i < counter; i++ )
+    {
+        p_data = fp_data_cache + TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_LENGTH;
+        ensure(se_fp_read(TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_LENGTH,p_data, TEMPLATE_LENGTH,i, counter), "se_fp_read failed");
+    }
+    data_inited = true;
     return true;
 }
 
 bool fpsensor_data_save(void)
 {
     uint8_t* p_data;
+    uint8_t list[MAX_FINGERPRINT_COUNT] = {0};
+    uint8_t counter = 0;
     for ( uint8_t i = 0; i < MAX_FINGERPRINT_COUNT; i++ )
     {
-        p_data = fp_data_cache + TEMPLATE_ADDR_OFFSET + i * TEMPLATE_LENGTH;
         if ( fpsensor_cache.template_data_valid[i] )
         {
-            ensure(
-                se_fp_write(TEMPLATE_ADDR_OFFSET + i * TEMPLATE_LENGTH, p_data, TEMPLATE_LENGTH),
-                "se_fp_write failed"
-            );
+            list[counter++] = i;
         }
+    }
+
+    for ( uint8_t i = 0; i < counter; i++ )
+    {
+        p_data = fp_data_cache + TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_LENGTH;
+        ensure(
+            se_fp_write(TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_LENGTH, p_data, TEMPLATE_LENGTH, i, counter),
+            "se_fp_write failed"
+        );
     }
     return true;
 }

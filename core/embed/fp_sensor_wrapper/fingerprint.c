@@ -20,7 +20,6 @@ void fingerprint_init(void)
     ensure_ex(FpAlgorithmInit(TEMPLATE_ADDR_START), FPSENSOR_OK, "FpAlgorithmInit failed");
     MAX_USER_COUNT = MAX_FINGERPRINT_COUNT;
     fingerprint_enter_sleep();
-    fpsensor_data_init();
 }
 
 void fingerprint_enter_sleep(void)

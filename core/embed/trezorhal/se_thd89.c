@@ -539,8 +539,8 @@ static secbool se_set_session_key_ex(uint8_t addr, const uint8_t *session_key) {
 }
 
 secbool se_set_session_key(const uint8_t *session_key) {
-  // ensure(se_set_session_key_ex(THD89_MASTER_ADDRESS, session_key),
-  //        "se set session key failed");
+  ensure(se_set_session_key_ex(THD89_MASTER_ADDRESS, session_key),
+         "se set session key failed");
   ensure(se_set_session_key_ex(THD89_FINGER_ADDRESS, session_key),
          "se fp set session key failed");
   return sectrue;
@@ -1497,10 +1497,28 @@ secbool se_fingerprint_unlock(void) {
   return sectrue;
 }
 
-secbool se_fp_write(uint16_t offset, const void *val_dest, uint16_t len) {
+secbool se_fp_write(uint16_t offset, const void *val_dest, uint16_t len,
+                    uint8_t index, uint8_t total) {
   uint8_t cmd[4] = {0};
   uint16_t packet_len = 0;
   uint16_t packet_offset = 0;
+
+  bool show_progress = false;
+  uint16_t len_bak = len;
+  uint8_t percent = 0;
+
+  if (total == 0) {
+    total = 1;
+  }
+
+  if (len > SE_DATA_MAX_LEN && ui_callback != NULL) {
+    show_progress = true;
+    if(index==0){
+      ui_callback(0, 0, NULL);
+    }
+    
+  }
+
   while (len) {
     packet_len = len > SE_DATA_MAX_LEN ? SE_DATA_MAX_LEN : len;
     cmd[0] = ((packet_offset + offset) >> 8) & 0xFF;
@@ -1515,16 +1533,37 @@ secbool se_fp_write(uint16_t offset, const void *val_dest, uint16_t len) {
     }
     packet_offset += packet_len;
     len -= packet_len;
+
+    if (show_progress && ui_callback != NULL) {
+      percent = (packet_offset * 100) / (len_bak * total)+ (index*100)/total;
+      ui_callback(0, percent * 10, NULL);
+    }
   }
 
   return sectrue;
 }
 
-secbool se_fp_read(uint16_t offset, void *val_dest, uint16_t len) {
+secbool se_fp_read(uint16_t offset, void *val_dest, uint16_t len, uint8_t index,
+                   uint8_t total) {
   uint8_t cmd[4] = {0};
 
   uint16_t packet_len = 0;
   uint16_t packet_offset = 0;
+
+  bool show_progress = false;
+  uint16_t len_bak = len;
+  uint8_t percent = 0;
+
+  if (total == 0) {
+    total = 1;
+  }
+
+  if (len > SE_DATA_MAX_LEN && ui_callback != NULL) {
+    show_progress = true;
+    if(index==0){
+      ui_callback(0, 0, NULL);
+    }
+  }
 
   while (len) {
     packet_len = len > SE_DATA_MAX_LEN ? SE_DATA_MAX_LEN : len;
@@ -1537,8 +1576,13 @@ secbool se_fp_read(uint16_t offset, void *val_dest, uint16_t len) {
                             (uint8_t *)val_dest + packet_offset, &packet_len)) {
       return secfalse;
     }
+
     packet_offset += packet_len;
     len -= packet_len;
+    if (show_progress && ui_callback != NULL) {
+      percent = (packet_offset * 100) / (len_bak * total) + (index*100)/total;
+      ui_callback(0, percent * 10, NULL);
+    }
   }
   return sectrue;
 }

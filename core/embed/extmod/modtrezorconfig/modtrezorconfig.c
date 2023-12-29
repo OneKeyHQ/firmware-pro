@@ -36,6 +36,7 @@
 #include "device.h"
 #include "display.h"
 #include "emmc.h"
+#include "fpsensor_platform.h"
 #include "mini_printf.h"
 #include "se_thd89.h"
 
@@ -121,6 +122,8 @@ STATIC mp_obj_t mod_trezorconfig_unlock(mp_obj_t pin, mp_obj_t ext_salt) {
   if (ret != sectrue) {
     return mp_const_false;
   }
+
+  fpsensor_data_init();
 
   return mp_const_true;
 }
