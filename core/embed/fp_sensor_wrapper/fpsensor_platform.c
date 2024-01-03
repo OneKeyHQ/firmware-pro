@@ -256,6 +256,18 @@ uint8_t fpsensor_hard_reset()
 
     return FPSENSOR_OK;
 }
+
+static void delay_ms(uint32_t ms)
+{
+    while ( ms-- )
+    {
+        for ( volatile uint32_t i = 0; i < 200000; i++ )
+        {
+            __NOP();
+        }
+    }
+}
+
 /*
 * Function：    fpsensor_delay_ms
 * Description： 延时函数。
@@ -267,13 +279,13 @@ uint8_t fpsensor_hard_reset()
 */
 void fpsensor_delay_ms(uint32_t Timeout)
 {
-    HAL_Delay(Timeout);
+    delay_ms(Timeout);
 }
 
 #include "secbool.h"
 
-extern secbool se_fp_write(uint16_t offset, const void *val_dest, uint16_t len,uint8_t index,uint8_t total);
-extern secbool se_fp_read(uint16_t offset, void *val_dest, uint16_t len,uint8_t index,uint8_t total);
+extern secbool se_fp_write(uint16_t offset, const void* val_dest, uint16_t len, uint8_t index, uint8_t total);
+extern secbool se_fp_read(uint16_t offset, void* val_dest, uint16_t len, uint8_t index, uint8_t total);
 
 /*
 * Function：    SF_Init

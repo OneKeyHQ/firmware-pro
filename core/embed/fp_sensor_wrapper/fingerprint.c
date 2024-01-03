@@ -1,6 +1,7 @@
 #include "common.h"
 #include "fp_sensor_wrapper.h"
 #include "fingerprint.h"
+#include "irq.h"
 
 extern uint8_t MAX_USER_COUNT;
 
@@ -58,13 +59,13 @@ int fingerprint_enroll(uint8_t counter)
 
 int fingerprint_save(uint8_t id)
 {
+
     if ( id > MAX_FINGERPRINT_COUNT - 1 )
     {
         return -1;
     }
-    if ( FpaEnrollTemplatesave(id) == 0 )
+    if ( FpaEnrollTemplatesave(id) != 0 )
     {
-
         return -1;
     }
     fpsensor_data_save();
@@ -73,25 +74,32 @@ int fingerprint_save(uint8_t id)
 
 int fingerprint_match(uint8_t* match_id)
 {
-    if ( FpsDetectFinger() != 1 )
+    volatile int ret = 0;
+    uint32_t irq = disable_irq();
+    for ( int i = 0; i < 3; i++ )
     {
-        return -1;
+        if ( FpsDetectFinger() == 1 )
+        {
+            if ( FpsGetImage() == 0 )
+            {
+                if ( FpaExtractfeature(0) == 0 )
+                {
+                    ret = FpaIdentify(match_id);
+                    if ( ret == 0 )
+                    {
+                        enable_irq(irq);
+                        return 0;
+                    }
+                    else
+                    {
+                        fpsensor_delay_ms(10);
+                    }
+                }
+            }
+        }
     }
-    if ( FpsGetImage() != 0 )
-    {
-        return -1;
-    }
-
-    if ( FpaExtractfeature(0) != 0 )
-    {
-        return -1;
-    }
-
-    if ( FpaIdentify(match_id) != 0 )
-    {
-        return -1;
-    }
-    return 0;
+    enable_irq(irq);
+    return -1;
 }
 
 int fingerprint_delete(uint8_t id)
