@@ -20,6 +20,8 @@
 #include "sdram.h"
 #include "usart.h"
 
+#include "emmc_fs.h"
+
 static DeviceInfomation dev_info = {0};
 static bool serial_set = false;
 static bool factory_mode = false;
@@ -682,5 +684,84 @@ void device_burnin_test(bool force) {
   f_write(&fil, &test_res, sizeof(test_res), &bw);
   f_sync(&fil);
   restart();
+}
+#endif
+
+#if !PRODUCTION
+bool device_backup_otp(bool overwrite)
+{
+    uint32_t processed = 0;
+    FlashLockedData otp_data_buffer = {0};
+    FlashLockedData* otp_data_buffer_p = &otp_data_buffer;
+
+    // copy current otp
+    memcpy(otp_data_buffer_p, flash_otp_data, sizeof(FlashLockedData));
+
+    // backup to emmc
+    emmc_fs_file_write("0:otp.bin", 0, otp_data_buffer_p, sizeof(FlashLockedData), &processed, overwrite, false);
+
+    return true;
+}
+bool device_restore_otp()
+{
+    uint32_t processed = 0;
+    FlashLockedData otp_data_buffer = {0};
+    FlashLockedData* otp_data_buffer_p = &otp_data_buffer;
+
+    // restore from emmc
+    emmc_fs_file_read("0:otp.bin", 0, otp_data_buffer_p, sizeof(FlashLockedData), &processed);
+
+    // change and write back
+    ensure(flash_erase(FLASH_SECTOR_OTP_EMULATOR), NULL);
+    ensure(flash_unlock_write(), NULL);
+    for ( size_t j = 0; j < sizeof(FlashLockedData); j += (sizeof(uint32_t) * 8) )
+    {
+        ensure(flash_write_words(FLASH_SECTOR_OTP_EMULATOR, j, (uint32_t*)((uint8_t*)otp_data_buffer_p +j)), NULL);
+    }
+    ensure(flash_lock_write(), NULL);
+
+    // refresh
+    device_para_init();
+
+    return true;
+}
+bool device_overwrite_serial(char* dev_serial)
+{
+    // not set, no need to overwrite
+    if ( device_set_serial(dev_serial) )
+    {
+        return true;
+    }
+
+    // check serial
+    if ( !is_valid_ascii((uint8_t*)dev_serial, FLASH_OTP_BLOCK_SIZE - 1) )
+    {
+        return false;
+    }
+    
+    // copy current otp
+    FlashLockedData otp_data_buffer = {0};
+    FlashLockedData* otp_data_buffer_p = &otp_data_buffer;
+    memcpy(otp_data_buffer_p, flash_otp_data, sizeof(FlashLockedData));
+
+    // backup to emmc (no overwrite)
+    if(!device_backup_otp(false))
+      return false; 
+
+    // change and write back
+    strlcpy((char*)(otp_data_buffer_p->flash_otp[FLASH_OTP_DEVICE_SERIAL]), dev_serial, FLASH_OTP_BLOCK_SIZE);
+
+    ensure(flash_erase(FLASH_SECTOR_OTP_EMULATOR), NULL);
+    ensure(flash_unlock_write(), NULL);
+
+    for ( size_t j = 0; j < sizeof(FlashLockedData); j += (sizeof(uint32_t) * 8) )
+    {
+        ensure(flash_write_words(FLASH_SECTOR_OTP_EMULATOR, j, (uint32_t*)((uint8_t*)otp_data_buffer_p +j)), NULL);
+    }
+
+    ensure(flash_lock_write(), NULL);
+
+    device_para_init();
+    return true;
 }
 #endif

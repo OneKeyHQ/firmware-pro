@@ -98,13 +98,13 @@ const uint8_t * const BOOTLOADER_KEYS[] = {
 // DO NOT USE THIS UNLESS YOU KNOW WHAT YOU ARE DOING
 // Warning: this is for developers to setup a dummy config only!
 // configuration to SE is permanent, there is no way to reset it!
-static void write_dev_dummy_config() {
-  // device serial
+static void write_dev_dummy_serial() {
   if (!device_serial_set()) {
-    device_set_serial("TCTestSerialNumberXXXXXXXXXXXXX");
+    // device_set_serial("TCTestSerialNumberXXXXXXXXXXXXX");
+    device_set_serial("PRA50I0000 ES");
   }
-
-  // se cert
+}
+static void write_dev_dummy_cert() {
   uint8_t dummy_cert[] = {
       0x30, 0x82, 0x01, 0x58, 0x30, 0x82, 0x01, 0x0A, 0xA0, 0x03, 0x02, 0x01,
       0x02, 0x02, 0x08, 0x44, 0x9F, 0x65, 0xB6, 0x90, 0xE4, 0x90, 0x09, 0x30,
@@ -135,15 +135,14 @@ static void write_dev_dummy_config() {
       0x51, 0xCB, 0x85, 0xB7, 0x5F, 0xAF, 0x55, 0xEB, 0x28, 0x9A, 0x66, 0x95,
       0xAA, 0x08, 0x66, 0x8E, 0x84, 0xC1, 0x22, 0x5D, 0x34, 0x75, 0xF3, 0x01,
       0x2F, 0x6D, 0x33, 0x21, 0x35, 0x1E, 0x54, 0xEC, 0x71, 0xEC, 0x3D, 0x04};
-
   UNUSED(dummy_cert);
 
-  // uint32_t cert_len = 0;
-  // if (!se_get_certificate_len(&cert_len)) {
-  //   if (!se_write_certificate(dummy_cert, sizeof(dummy_cert)))
-  //     ensure(secfalse, "set cert failed");
-  // }
+  if (!se_has_cerrificate()) {
+    if (!se_write_certificate(dummy_cert, sizeof(dummy_cert)))
+      ensure(secfalse, "set cert failed");
+  }
 }
+
 
 static void nfc_test() {
   display_printf("TouchPro Demo Mode\n");
@@ -207,7 +206,7 @@ static void nfc_test() {
         if (InDataExchange_status == 0x00) {
           display_printf("Success\n");
           display_printf("CardSN: %s\n", (char*)buf_rapdu);
-          print_buffer_Wait(buf_rapdu, len_rapdu);
+          // print_buffer_Wait(buf_rapdu, len_rapdu);
         } else {
           display_printf("Fail\n");
         }
@@ -765,10 +764,22 @@ int main(void) {
 
 #if !PRODUCTION
 
-  if (!device_serial_set() || !se_has_cerrificate()) {
-    write_dev_dummy_config();
+  if (!device_serial_set()) {
+    write_dev_dummy_serial();
   }
-  UNUSED(write_dev_dummy_config);
+  UNUSED(write_dev_dummy_serial);
+  
+  // if (!se_has_cerrificate()) {
+  //   write_dev_dummy_cert();
+  // }
+  UNUSED(write_dev_dummy_cert);
+
+  // if(!device_overwrite_serial("PRA50I0000 QA"))
+  // {
+  //   dbgprintf_Wait("serial overwrite failed!");
+  // }
+
+  // device_test(true);
 
   // char fp_ver[8];
   // FpAlgorithmLibVer(fp_ver);
@@ -782,6 +793,19 @@ int main(void) {
 
   // fp_test();
   UNUSED(fp_test);
+
+  // restore se session key
+  // if (sectrue == flash_otp_is_locked(FLASH_OTP_BLOCK_THD89_SESSION_KEY)) {
+  //   dbgprintf_Wait("restoring se session key!");
+  //   uint8_t entropy[FLASH_OTP_BLOCK_SIZE];
+  //   ensure(flash_otp_read(FLASH_OTP_BLOCK_THD89_SESSION_KEY, 0, entropy,
+  //                          FLASH_OTP_BLOCK_SIZE),
+  //          NULL);
+  //   ensure(se_set_session_key(entropy), NULL);
+  //   dbgprintf_Wait("se session key restored");
+  // }
+
+  // device_restore_otp();
 
 #endif
 
@@ -806,7 +830,12 @@ int main(void) {
 
   // check bootloader downgrade
   check_bootloader_version();
+
 #endif
+
+  // check se
+  uint8_t se_state;
+  ensure(se_get_state(&se_state) ? sectrue : secfalse, "get se state failed");
 
   secbool stay_in_bootloader = secfalse;  // flag to stay in bootloader
 

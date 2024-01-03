@@ -57,3 +57,11 @@ bool buffer_to_hex_string(const void* buff, size_t buff_len, char* str, size_t s
 //     else
 //         dbgprintf("failed, processed=%lu\n", processed);
 // }
+
+void dead_white(void)
+{
+    display_backlight(255);
+    display_bar(0, 0, 480, 800, COLOR_WHITE);
+    while ( 1 )
+        ;
+}

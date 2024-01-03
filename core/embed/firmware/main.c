@@ -35,6 +35,8 @@
 #include "ports/stm32/gccollect.h"
 #include "ports/stm32/pendsv.h"
 
+#include "debug_utils.h"
+
 #include "bl_check.h"
 #include "board_capabilities.h"
 #include "common.h"

@@ -44,4 +44,6 @@ bool buffer_to_hex_string(const void* buff, size_t buff_len, char* str, size_t s
       dbgprintf("failed, processed=%lu\n", processed);                                         \
   }
 
+void dead_white(void); // screen brighness test
+
 #endif // _DEBUG_UTILS_H_
