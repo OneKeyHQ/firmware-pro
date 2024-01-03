@@ -73,3 +73,54 @@ void SysTick_Handler(void) {
   }
   SEGGER_SYSVIEW_RecordExitISR();
 }
+
+
+// clang-format off
+#define DEMCR                     (*(volatile uint32_t*) (0xE000EDFCuL))   // Debug Exception and Monitor Control Register
+#define TRACEENA_BIT              (1uL << 24)                                   // Trace enable bit
+#define DWT_CTRL                  (*(volatile uint32_t*) (0xE0001000uL))   // DWT Control Register
+#define CYCCNTENA_BIT             (1uL << 0)
+#define DWT_CYCCNT                (*(volatile uint32_t*) (0xE0001004uL))
+// clang-format on
+
+void dwt_init(void) {
+  if ((DEMCR & TRACEENA_BIT) == 0) {
+    DEMCR |= TRACEENA_BIT;
+  }
+
+  if ((DWT_CTRL & CYCCNTENA_BIT) == 0) {  // Cycle counter not enabled?
+    DWT_CTRL |= CYCCNTENA_BIT;            // Enable Cycle counter
+  }
+  DWT_CYCCNT = 0;
+}
+
+// 400MHZ  min 2.5ns,max 10.73s
+void dwt_delay_ns(uint32_t delay_ns) {
+  DWT_CYCCNT = 0;
+  uint32_t start = DWT_CYCCNT;
+  uint32_t count = (delay_ns * (SystemCoreClock / 100000000)) / 10;
+  while ((DWT_CYCCNT - start) < count)
+    ;
+}
+
+void dwt_delay_us(uint32_t delay_us) {
+  DWT_CYCCNT = 0;
+  uint32_t start = DWT_CYCCNT;
+  uint32_t count = delay_us * (SystemCoreClock / 1000000);
+  while ((DWT_CYCCNT - start) < count)
+    ;
+}
+
+static void dwt_delay_1ms(void) {
+  DWT_CYCCNT = 0;
+  uint32_t start = DWT_CYCCNT;
+  uint32_t count = SystemCoreClock / 1000;
+  while ((DWT_CYCCNT - start) < count)
+    ;
+}
+
+void dwt_delay_ms(uint32_t delay_ms) {
+  for (uint32_t i = 0; i < delay_ms; i++) {
+    dwt_delay_1ms();
+  }
+}

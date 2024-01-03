@@ -150,6 +150,7 @@ int main(void) {
 #if defined TREZOR_MODEL_T
   // display_init_seq();
   // sdcard_init();
+  dwt_init();
   touch_init();
   spi_slave_init();
 

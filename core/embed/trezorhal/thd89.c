@@ -28,19 +28,14 @@
 #include "memzero.h"
 
 #include "i2c.h"
+#include "systick.h"
 #include "thd89.h"
 
 #define i2c_handle_se i2c_handles[i2c_find_channel_by_device(I2C_SE)]
 
 static uint8_t sw1 = 0, sw2 = 0;
 
-static void delay_ms(uint32_t ms) {
-  while (ms--) {
-    for (volatile uint32_t i = 0; i < 200000; i++) {
-      __NOP();
-    }
-  }
-}
+static void delay_ms(uint32_t ms) { dwt_delay_ms(ms); }
 
 void thd89_io_init(void) {
   __HAL_RCC_GPIOD_CLK_ENABLE();

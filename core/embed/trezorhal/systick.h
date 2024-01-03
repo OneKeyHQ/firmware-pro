@@ -53,4 +53,7 @@ static inline void systick_disable_dispatch(size_t slot) {
     systick_dispatch_table[slot] = NULL;
 }
 
+void dwt_init(void);
+void dwt_delay_ms(uint32_t delay_ms);
+
 #endif // MICROPY_INCLUDED_STM32_SYSTICK_H
