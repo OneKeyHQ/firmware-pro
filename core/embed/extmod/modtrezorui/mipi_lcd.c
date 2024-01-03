@@ -17,7 +17,7 @@ DSI_HandleTypeDef hlcd_dsi;
 DMA2D_HandleTypeDef hlcd_dma2d;
 LTDC_HandleTypeDef hlcd_ltdc;
 
-static void ltcd_msp_init(LTDC_HandleTypeDef *hltdc) {
+static void ltcd_msp_init(LTDC_HandleTypeDef* hltdc) {
   if (hltdc->Instance == LTDC) {
     /** Enable the LTDC clock */
     __HAL_RCC_LTDC_CLK_ENABLE();
@@ -28,7 +28,7 @@ static void ltcd_msp_init(LTDC_HandleTypeDef *hltdc) {
   }
 }
 
-static void dma2d_msp_init(DMA2D_HandleTypeDef *hdma2d) {
+static void dma2d_msp_init(DMA2D_HandleTypeDef* hdma2d) {
   if (hdma2d->Instance == DMA2D) {
     /** Enable the DMA2D clock */
     __HAL_RCC_DMA2D_CLK_ENABLE();
@@ -39,7 +39,7 @@ static void dma2d_msp_init(DMA2D_HandleTypeDef *hdma2d) {
   }
 }
 
-static void dsi_msp_init(DSI_HandleTypeDef *hdsi) {
+static void dsi_msp_init(DSI_HandleTypeDef* hdsi) {
   if (hdsi->Instance == DSI) {
     /** Enable DSI Host and wrapper clocks */
     __HAL_RCC_DSI_CLK_ENABLE();
@@ -53,7 +53,7 @@ static void dsi_msp_init(DSI_HandleTypeDef *hdsi) {
 #define DSI_FREQ 34375U
 #define LTDC_FREQ 33000U
 
-HAL_StatusTypeDef dsi_host_init(DSI_HandleTypeDef *hdsi, uint32_t Width,
+HAL_StatusTypeDef dsi_host_init(DSI_HandleTypeDef* hdsi, uint32_t Width,
                                 uint32_t Height, uint32_t PixelFormat) {
   DSI_PLLInitTypeDef PLLInit;
   DSI_VidCfgTypeDef VidCfg;
@@ -113,7 +113,7 @@ HAL_StatusTypeDef dsi_host_init(DSI_HandleTypeDef *hdsi, uint32_t Width,
   return HAL_OK;
 }
 
-HAL_StatusTypeDef ltdc_clock_config(LTDC_HandleTypeDef *hltdc) {
+HAL_StatusTypeDef ltdc_clock_config(LTDC_HandleTypeDef* hltdc) {
   RCC_PeriphCLKInitTypeDef PeriphClkInitStruct;
 
   PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_LTDC;
@@ -128,7 +128,7 @@ HAL_StatusTypeDef ltdc_clock_config(LTDC_HandleTypeDef *hltdc) {
   return HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct);
 }
 
-HAL_StatusTypeDef ltdc_init(LTDC_HandleTypeDef *hltdc, uint32_t Width,
+HAL_StatusTypeDef ltdc_init(LTDC_HandleTypeDef* hltdc, uint32_t Width,
                             uint32_t Height) {
   hltdc->Instance = LTDC;
   hltdc->Init.HSPolarity = LTDC_HSPOLARITY_AL;
@@ -156,9 +156,9 @@ HAL_StatusTypeDef ltdc_init(LTDC_HandleTypeDef *hltdc, uint32_t Width,
   return HAL_LTDC_Init(hltdc);
 }
 
-HAL_StatusTypeDef ltdc_layer_config(LTDC_HandleTypeDef *hltdc,
+HAL_StatusTypeDef ltdc_layer_config(LTDC_HandleTypeDef* hltdc,
                                     uint32_t layer_index,
-                                    LTDC_LAYERCONFIG *config) {
+                                    LTDC_LAYERCONFIG* config) {
   LTDC_LayerCfgTypeDef pLayerCfg;
 
   pLayerCfg.WindowX0 = config->x0;
@@ -186,34 +186,30 @@ int32_t bsp_get_tick(void) { return (int32_t)HAL_GetTick(); }
    (((((((Color) >> (5U)) & 0x3FU) * 259U) + 33U) >> (6U)) << (8U)) |   \
    (((((Color)&0x1FU) * 527U) + 23U) >> (6U)) | (0xFF000000U))
 
-void fb_read_pixel(uint32_t x_pos, uint32_t y_pos, uint32_t *color) {
+void fb_read_pixel(uint32_t x_pos, uint32_t y_pos, uint32_t* color) {
   if (lcd_params.pixel_format == LTDC_PIXEL_FORMAT_ARGB8888) {
     /* Read data value from SDRAM memory */
-    *color =
-        *(uint32_t *)(lcd_params.fb_base +
-                      (lcd_params.bbp * (lcd_params.xres * y_pos + x_pos)));
-
+    *color = *(uint32_t*)(lcd_params.fb_base +
+                          (lcd_params.bbp * (lcd_params.xres * y_pos + x_pos)));
   } else {
     /*LTDC_PIXEL_FORMAT_RGB565 */
-    *color =
-        *(uint16_t *)(lcd_params.fb_base +
-                      (lcd_params.bbp * (lcd_params.xres * y_pos + x_pos)));
+    *color = *(uint16_t*)(lcd_params.fb_base +
+                          (lcd_params.bbp * (lcd_params.xres * y_pos + x_pos)));
   }
 }
 
 void fb_write_pixel(uint32_t x_pos, uint32_t y_pos, uint32_t color) {
   if (lcd_params.pixel_format == LTDC_PIXEL_FORMAT_ARGB8888) {
-    *(uint32_t *)(lcd_params.fb_base +
-                  (lcd_params.bbp * (lcd_params.xres * y_pos + x_pos))) = color;
-
+    *(uint32_t*)(lcd_params.fb_base +
+                 (lcd_params.bbp * (lcd_params.xres * y_pos + x_pos))) = color;
   } else {
     /*LTDC_PIXEL_FORMAT_RGB565 */
-    *(uint16_t *)(lcd_params.fb_base +
-                  (lcd_params.bbp * (lcd_params.xres * y_pos + x_pos))) = color;
+    *(uint16_t*)(lcd_params.fb_base +
+                 (lcd_params.bbp * (lcd_params.xres * y_pos + x_pos))) = color;
   }
 }
 
-static void fb_fill_buffer(uint32_t *dest, uint32_t x_size, uint32_t y_size,
+static void fb_fill_buffer(uint32_t* dest, uint32_t x_size, uint32_t y_size,
                            uint32_t offset, uint32_t color) {
   uint32_t output_color_mode, input_color = color;
 
@@ -254,7 +250,7 @@ void fb_fill_rect(uint32_t x_pos, uint32_t y_pos, uint32_t width,
                      ((lcd_params.bbp) * (lcd_params.xres * y_pos + x_pos));
 
   /* Fill the rectangle */
-  fb_fill_buffer((uint32_t *)address, width, height, (lcd_params.xres - width),
+  fb_fill_buffer((uint32_t*)address, width, height, (lcd_params.xres - width),
                  color);
 }
 
@@ -262,17 +258,17 @@ void fb_draw_hline(uint32_t x_pos, uint32_t y_pos, uint32_t len,
                    uint32_t color) {
   uint32_t address = lcd_params.fb_base +
                      ((lcd_params.bbp) * (lcd_params.xres * y_pos + x_pos));
-  fb_fill_buffer((uint32_t *)address, len, 1, 0, color);
+  fb_fill_buffer((uint32_t*)address, len, 1, 0, color);
 }
 
 void fb_draw_vline(uint32_t x_pos, uint32_t y_pos, uint32_t len,
                    uint32_t color) {
   uint32_t address = lcd_params.fb_base +
                      ((lcd_params.bbp) * (lcd_params.xres * y_pos + x_pos));
-  fb_fill_buffer((uint32_t *)address, 1, len, lcd_params.xres - 1, color);
+  fb_fill_buffer((uint32_t*)address, 1, len, lcd_params.xres - 1, color);
 }
 
-void dma2d_copy_buffer(uint32_t *pSrc, uint32_t *pDst, uint16_t x, uint16_t y,
+void dma2d_copy_buffer(uint32_t* pSrc, uint32_t* pDst, uint16_t x, uint16_t y,
                        uint16_t xsize, uint16_t ysize) {
   uint32_t destination =
       (uint32_t)pDst + (y * lcd_params.xres + x) * (lcd_params.bbp);
@@ -314,7 +310,7 @@ void dma2d_copy_buffer(uint32_t *pSrc, uint32_t *pDst, uint16_t x, uint16_t y,
   }
 }
 
-void dma2d_copy_ycbcr_to_rgb(uint32_t *pSrc, uint32_t *pDst, uint16_t xsize,
+void dma2d_copy_ycbcr_to_rgb(uint32_t* pSrc, uint32_t* pDst, uint16_t xsize,
                              uint16_t ysize, uint32_t ChromaSampling) {
   uint32_t cssMode = DMA2D_CSS_420, inputLineOffset = 0;
 
@@ -375,7 +371,7 @@ void dma2d_copy_ycbcr_to_rgb(uint32_t *pSrc, uint32_t *pDst, uint16_t xsize,
       &hlcd_dma2d, 25); /* wait for the previous DMA2D transfer to ends */
 }
 
-void st7701_dsi_write(uint16_t reg, uint8_t *seq, uint16_t len) {
+void st7701_dsi_write(uint16_t reg, uint8_t* seq, uint16_t len) {
   if (len <= 1) {
     HAL_DSI_ShortWrite(&hlcd_dsi, 0, DSI_DCS_SHORT_PKT_WRITE_P1, reg,
                        (uint32_t)seq[0]);
@@ -393,65 +389,83 @@ void st7701_dsi_write(uint16_t reg, uint8_t *seq, uint16_t len) {
   }
 
 void st7701_init_sequence(void) {
-  st7701_dsi(0xff, 0x77, 0x01, 0x00, 0x00, 0x13);
-  st7701_dsi(0xef, 0x08);
-  st7701_dsi(0xff, 0x77, 0x01, 0x00, 0x00, 0x10);
-  st7701_dsi(0xc0, 0x63, 0x00);
-  st7701_dsi(0xc1, 0x14, 0x0C);
-  st7701_dsi(0xc2, 0x37, 0x02);
-  st7701_dsi(0xcc, 0x10);
+  st7701_dsi(0xff, 0x77, 0x01, 0x00, 0x00,
+             0x13);        // CND2BKxSEL select bank3 with cmd2
+  st7701_dsi(0xef, 0x08);  //?
+  st7701_dsi(0xff, 0x77, 0x01, 0x00, 0x00,
+             0x10);  // CND2BKxSEL select bank0 with cmd2
+  st7701_dsi(0xc0, 0x63,
+             0x00);  // LNESET LDE_EN=0, Line=99, NL= (Line+1)*8, Line_delta=0
+  st7701_dsi(0xc1, 0x14, 0x0C);  // PORCTRL VBP=20, VFP=12
+  st7701_dsi(0xc2, 0x37, 0x02);  // INVSET invert column, RTNI=12
+  st7701_dsi(0xcc, 0x10);        // ?
   st7701_dsi(0xB0, 0x06, 0x10, 0x16, 0x0D, 0x11, 0x06, 0x08, 0x07, 0x08, 0x22,
-             0x04, 0x14, 0x0F, 0x29, 0x2F, 0x1F);
+             0x04, 0x14, 0x0F, 0x29, 0x2F,
+             0x1F  // PVGAMCTRL
+  );
   st7701_dsi(0xB1, 0x0F, 0x18, 0x1E, 0x0C, 0x0F, 0x06, 0x08, 0x0A, 0x09, 0x24,
-             0x05, 0x10, 0x11, 0x2A, 0x34, 0x1F);
-  st7701_dsi(0xff, 0x77, 0x01, 0x00, 0x00, 0x11);
-  st7701_dsi(0xb0, 0x4D);
-  st7701_dsi(0xb1, 0x4D);
-  st7701_dsi(0xb2, 0x81);
-  st7701_dsi(0xb3, 0x80);
-  st7701_dsi(0xb5, 0x4E);
-  st7701_dsi(0xb7, 0x85);
-  st7701_dsi(0xb8, 0x32);
-  st7701_dsi(0xBB, 0x03);
-  st7701_dsi(0xc1, 0x08);
-  st7701_dsi(0xc2, 0x08);
-  st7701_dsi(0xd0, 0x88);
-  st7701_dsi(0xe0, 0x00, 0x00, 0x02);
+             0x05, 0x10, 0x11, 0x2A, 0x34,
+             0x1F  // NVGAMCTRL
+  );
+  st7701_dsi(0xff, 0x77, 0x01, 0x00, 0x00,
+             0x11);        // CND2BKxSEL select bank1 with cmd2
+  st7701_dsi(0xb0, 0x4D);  // VRHS VRHA=77
+  st7701_dsi(0xb1, 0x4D);  // VCOMS VCOM=77
+  st7701_dsi(0xb2, 0x81);  // VGHSS VGHSS=12.0v
+  // st7701_dsi(0xb3, 0x80);                         // TESTCMD nothing
+  st7701_dsi(0xb5, 0x4E);  // VGLS VGLS=-12.2v
+  st7701_dsi(0xb7, 0x85);  // PWCTRL1 APOS=Min, APIS=Min, AP=Middle
+  st7701_dsi(0xb8, 0x32);  // PWCTRL2 AVCL=-4.8v, AVDD=6.8v
+  st7701_dsi(0xBB, 0x03);  // PCLKS2 SBSTCKS=10MHz
+  st7701_dsi(0xc1, 0x08);  // SPD1 T2D=1.6uS
+  st7701_dsi(0xc2, 0x08);  // SPD2 TD3=3.2uS
+  st7701_dsi(0xd0, 0x88);  // MIPISET1 EOT_EN=1, ERR_SEL=Disable
+
+  st7701_dsi(0xe0, 0x00, 0x00, 0x02);  // ?
   st7701_dsi(0xE1, 0x06, 0x28, 0x08, 0x28, 0x05, 0x28, 0x07, 0x28, 0x0E, 0x33,
-             0x33);
+             0x33);  // ?
   st7701_dsi(0xE2, 0x30, 0x30, 0x33, 0x33, 0x34, 0x00, 0x00, 0x00, 0x34, 0x00,
-             0x00, 0x00);
-  st7701_dsi(0xe3, 0x00, 0x00, 0x33, 0x33);
-  st7701_dsi(0xe4, 0x44, 0x44);
-  st7701_dsi(0xE5, 0x09, 0x2F, 0x2C, 0x8C, 0x0B, 0x31, 0x2C, 0x8C, 0x0D, 0x33,
-             0x2C, 0x8C, 0x0F, 0x35, 0x2C, 0x8C);
-  st7701_dsi(0xE6, 0x00, 0x00, 0x33, 0x33);
-  st7701_dsi(0xE7, 0x44, 0x44);
-  st7701_dsi(0xE8, 0x08, 0x2E, 0x2C, 0x8C, 0x0A, 0x30, 0x2C, 0x8C, 0x0C, 0x32,
-             0x2C, 0x8C, 0x0E, 0x34, 0x2C, 0x8C);
-  st7701_dsi(0xE9, 0x36, 0x00);
-  st7701_dsi(0xEB, 0x00, 0x01, 0xE4, 0xE4, 0x44, 0x88, 0x40);
+             0x00, 0x00);                    // ?
+  st7701_dsi(0xe3, 0x00, 0x00, 0x33, 0x33);  // ?
+  st7701_dsi(0xe4, 0x44, 0x44);              // ?
+  st7701_dsi(                                // ?
+      0xE5, 0x09, 0x2F, 0x2C, 0x8C, 0x0B, 0x31, 0x2C, 0x8C, 0x0D, 0x33, 0x2C,
+      0x8C, 0x0F, 0x35, 0x2C, 0x8C);
+  st7701_dsi(0xE6, 0x00, 0x00, 0x33, 0x33);  // ?
+  st7701_dsi(0xE7, 0x44, 0x44);              // ?
+  st7701_dsi(                                // ?
+      0xE8, 0x08, 0x2E, 0x2C, 0x8C, 0x0A, 0x30, 0x2C, 0x8C, 0x0C, 0x32, 0x2C,
+      0x8C, 0x0E, 0x34, 0x2C, 0x8C);
+  st7701_dsi(0xE9, 0x36, 0x00);                                // ?
+  st7701_dsi(0xEB, 0x00, 0x01, 0xE4, 0xE4, 0x44, 0x88, 0x40);  // ?
   st7701_dsi(0xED, 0xFF, 0xFC, 0xB2, 0x45, 0x67, 0xFA, 0x01, 0xFF, 0xFF, 0x10,
-             0xAF, 0x76, 0x54, 0x2B, 0xCF, 0xFF);
-  st7701_dsi(0xef, 0x08, 0x08, 0x08, 0x45, 0x3f, 0x54);
-  st7701_dsi(0xff, 0x77, 0x01, 0x00, 0x00, 0x13);
-  st7701_dsi(0xe8, 0x00, 0x0e);
-  st7701_dsi(0xff, 0x77, 0x01, 0x00, 0x00, 0x00);
-  st7701_dsi(0x11);
-  HAL_Delay(120);
-  st7701_dsi(0xff, 0x77, 0x01, 0x00, 0x00, 0x13);
-  st7701_dsi(0xe8, 0x00, 0x0c);
-  HAL_Delay(10);
-  st7701_dsi(0xe8, 0x00, 0x00);
-  st7701_dsi(0xff, 0x77, 0x01, 0x00, 0x00, 0x00);
-  st7701_dsi(0x36, 0x00);
+             0xAF, 0x76, 0x54, 0x2B, 0xCF, 0xFF);        // ?
+  st7701_dsi(0xef, 0x08, 0x08, 0x08, 0x45, 0x3f, 0x54);  // ?
+
+  st7701_dsi(0xff, 0x77, 0x01, 0x00, 0x00,
+             0x13);              // CND2BKxSEL select bank3 with cmd2
+  st7701_dsi(0xe8, 0x00, 0x0e);  // ?
+  st7701_dsi(0xff, 0x77, 0x01, 0x00, 0x00,
+             0x00);  // CND2BKxSEL select bank0 without cmd2
+  st7701_dsi(0x11);  // SLPOUT
+  HAL_Delay(120);    // delay
+  st7701_dsi(0xff, 0x77, 0x01, 0x00, 0x00,
+             0x13);              // CND2BKxSEL select bank3 with cmd2
+  st7701_dsi(0xe8, 0x00, 0x0c);  // ?
+  HAL_Delay(10);                 // delay
+  st7701_dsi(0xe8, 0x00, 0x00);  // ?
+  st7701_dsi(0xff, 0x77, 0x01, 0x00, 0x00,
+             0x00);        // CND2BKxSEL select bank0 without cmd2
+  st7701_dsi(0x36, 0x00);  // MADCTL normal scan, bgr->bgr
+//   st7701_dsi(0x3a, 0x50);  // COLMOD 16bit color
   st7701_dsi(MIPI_DCS_SET_TEAR_ON, 0x00);
   st7701_dsi(MIPI_DCS_WRITE_CONTROL_DISPLAY, 0x2C);
   st7701_dsi(MIPI_DCS_SET_PIXEL_FORMAT, 0x50);
-  st7701_dsi(0x29);
-  HAL_Delay(20);
-  st7701_dsi(0xff, 0x77, 0x01, 0x00, 0x00, 0x10);
-  st7701_dsi(0xe5, 0x00, 0x00);
+  st7701_dsi(0x29);        // DISPON
+  HAL_Delay(20);           // delay
+  st7701_dsi(0xff, 0x77, 0x01, 0x00, 0x00,
+             0x10);              // CND2BKxSEL select bank1 with cmd2
+  st7701_dsi(0xe5, 0x00, 0x00);  // ?
 }
 
 #define LED_PWM_TIM_PERIOD (100)
@@ -534,7 +548,6 @@ void lcd_init(uint32_t lcd_width, uint32_t lcd_height, uint32_t pixel_format) {
     dsi_pixel_format = DSI_RGB565;
     ctrl_pixel_format = ST7701S_FORMAT_RBG565;
     lcd_params.bbp = 2;
-
   } else {
     ltdc_pixel_format = LCD_PIXEL_FORMAT_ARGB8888;
     dsi_pixel_format = DSI_RGB888;
@@ -628,7 +641,6 @@ void lcd_para_init(uint32_t lcd_width, uint32_t lcd_height,
   if (pixel_format == LCD_PIXEL_FORMAT_RGB565) {
     ltdc_pixel_format = LTDC_PIXEL_FORMAT_RGB565;
     lcd_params.bbp = 2;
-
   } else {
     ltdc_pixel_format = LCD_PIXEL_FORMAT_ARGB8888;
     lcd_params.bbp = 4;
@@ -650,5 +662,5 @@ void display_set_window(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1) {}
 int display_get_orientation(void) { return DISPLAY_ORIENTATION; }
 void display_reset_state() {}
 void display_clear_save(void) {}
-const char *display_save(const char *prefix) { return NULL; }
+const char* display_save(const char* prefix) { return NULL; }
 void display_refresh(void) {}
