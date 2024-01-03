@@ -22,7 +22,7 @@ static void nfc_lowlevel_gpio_init(void)
     HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
     // RSTPDn    NFC_RST      PD5
-    GPIO_InitStruct.Pin = GPIO_PIN_14;
+    GPIO_InitStruct.Pin = GPIO_PIN_5;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
