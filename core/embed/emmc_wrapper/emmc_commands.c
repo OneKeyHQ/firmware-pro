@@ -768,6 +768,11 @@ int process_msg_FirmwareUpdateEmmc(uint8_t iface_num, uint32_t msg_size, uint8_t
             }
         );
 
+        if ( thd89_hdr.i2c_address != 0 )
+        {
+            thd89_boot_set_address(thd89_hdr.i2c_address);
+        }
+
         // check file size
         ExecuteCheck_MSGS_ADV((emmc_file_size == thd89_hdr.codelen + IMAGE_HEADER_SIZE), true, {
             emmc_fs_file_delete(msg_recv.path);
@@ -775,14 +780,14 @@ int process_msg_FirmwareUpdateEmmc(uint8_t iface_num, uint32_t msg_size, uint8_t
             return -1;
         });
         char se_ver[16] = {0}, boot_ver[16] = {0};
-        strncpy(se_ver, se_get_version(), sizeof(se_ver));
+        strncpy(se_ver, se_get_version_ex(), sizeof(se_ver));
         if ( !se_back_to_boot_progress() )
         {
             send_failure(iface_num, FailureType_Failure_ProcessError, "SE back to boot error");
             return -1;
         }
 
-        strncpy(boot_ver, se_get_version(), sizeof(boot_ver));
+        strncpy(boot_ver, se_get_version_ex(), sizeof(boot_ver));
 
         if ( !se_verify_firmware(bl_buffer->misc_buff, IMAGE_HEADER_SIZE) )
         {
@@ -819,6 +824,12 @@ int process_msg_FirmwareUpdateEmmc(uint8_t iface_num, uint32_t msg_size, uint8_t
              ) )
         {
             send_failure(iface_num, FailureType_Failure_ProcessError, "SE update error");
+            return -1;
+        }
+
+        if ( !se_check_firmware() )
+        {
+            send_failure(iface_num, FailureType_Failure_ProcessError, "SE firmware check error");
             return -1;
         }
 

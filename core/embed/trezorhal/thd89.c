@@ -561,9 +561,9 @@ secbool thd89_transmit_ex(uint8_t addr, uint8_t *cmd, uint16_t len,
   enable_irq(irq);
   if (ret != HAL_OK) {
     if (ret == I2C_RECV_BUFFER_TOO_SMALL) {
-      ensure(secfalse, "se recive buffer too small");
+      ensure(secfalse, "se receive buffer too small");
     } else {
-      ensure(secfalse, "se recive error");
+      ensure(secfalse, "se receive error");
     }
     return secfalse;
   }

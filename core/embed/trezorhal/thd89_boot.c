@@ -147,7 +147,7 @@ bool se_active_app_progress(void) {
   hal_delay(500);
 
   uint8_t state;
-  if (!se_get_state(&state)) {
+  if (!se_get_state_ex(&state)) {
     return false;
   }
   if (state != THD89_STATE_APP) {
