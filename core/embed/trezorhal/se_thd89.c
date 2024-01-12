@@ -531,7 +531,7 @@ secbool se_sign_message(uint8_t *msg, uint32_t msg_len, uint8_t *signature) {
   return thd89_transmit(sign, sizeof(sign), signature, &signature_len);
 }
 
-static secbool se_set_session_key_ex(uint8_t addr, const uint8_t *session_key) {
+secbool se_set_session_key_ex(uint8_t addr, const uint8_t *session_key) {
   uint8_t cmd[32] = {0x00, 0xF6, 0x00, 0x02, 0x10};
   uint16_t resp_len = 0;
   memcpy(cmd + 5, session_key, SESSION_KEYLEN);
