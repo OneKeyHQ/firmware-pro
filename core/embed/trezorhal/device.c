@@ -10,7 +10,7 @@
 #include "rand.h"
 #include "se_thd89.h"
 #include "sha2.h"
-#include "sys.h"
+#include "motor.h"
 #include "thd89.h"
 #include "touch.h"
 
@@ -215,6 +215,49 @@ void ui_test_input(void) {
   }
 }
 
+#ifdef BOOT_ONLY
+
+static FATFS fs_instance;
+
+typedef struct {
+  uint32_t flag;
+  uint32_t time;
+  uint32_t touch;
+} test_result;
+
+typedef enum {
+  TEST_NULL = 0x00000000,
+  TEST_TESTING = 0x11111111,
+  TEST_PASS = 0x22222222,
+  TEST_FAILED = 0x33333333
+} test_status;
+
+static TIM_HandleTypeDef TimHandle;
+
+static void timer_init(void) {
+  __HAL_RCC_TIM2_CLK_ENABLE();
+  TimHandle.Instance = TIM2;
+  TimHandle.Init.Prescaler = (uint32_t)(SystemCoreClock / (2 * 10000)) - 1;
+  TimHandle.Init.ClockDivision = 0;
+  TimHandle.Init.Period = 0xffffffff;
+  TimHandle.Init.CounterMode = TIM_COUNTERMODE_UP;
+  TimHandle.Init.RepetitionCounter = 0;
+  HAL_TIM_Base_Init(&TimHandle);
+  HAL_TIM_Base_Start(&TimHandle);
+}
+
+static void lock_burnin_test_otp(void) {
+  uint8_t buf[FLASH_OTP_BLOCK_SIZE] = {0};
+  memcpy(buf, "device burn-in test done", strlen("device burn-in test done"));
+  ensure(flash_otp_write(FLASH_OTP_BLOCK_BURNIN_TEST, 0, buf,
+                         FLASH_OTP_BLOCK_SIZE),
+         NULL);
+  ensure(flash_otp_lock(FLASH_OTP_BLOCK_BURNIN_TEST), NULL);
+}
+
+#define TIMER_1S 10000
+#define TEST_DURATION (3 * 60 * 60 * TIMER_1S)  // 3 hours
+
 static void ui_generic_confirm_simple(const char *msg) {
   if (msg == NULL) return;
   display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY / 2, msg, -1, FONT_NORMAL,
@@ -299,10 +342,18 @@ void device_test(bool force) {
                  COLOR_BLACK);
   }
 
-  motor_ctrl(MOTOR_REVERSE);
-  hal_delay(50);
-  motor_ctrl(MOTOR_BRAKE);
-  hal_delay(50);
+  motor_tick();
+  hal_delay(100);
+  motor_tock();
+  hal_delay(100);
+  motor_tick();
+  hal_delay(100);
+  motor_tock();
+  hal_delay(100);
+  motor_tick();
+  hal_delay(100);
+  motor_tock();
+  hal_delay(100);
 
   ui_generic_confirm_simple("MOTOR test");
   if (ui_response()) {
@@ -331,49 +382,6 @@ void device_test(bool force) {
   HAL_NVIC_SystemReset();
 }
 
-#ifdef BOOT_ONLY
-
-static FATFS fs_instance;
-
-typedef struct {
-  uint32_t flag;
-  uint32_t time;
-  uint32_t touch;
-} test_result;
-
-typedef enum {
-  TEST_NULL = 0x00000000,
-  TEST_TESTING = 0x11111111,
-  TEST_PASS = 0x22222222,
-  TEST_FAILED = 0x33333333
-} test_status;
-
-static TIM_HandleTypeDef TimHandle;
-
-static void timer_init(void) {
-  __HAL_RCC_TIM2_CLK_ENABLE();
-  TimHandle.Instance = TIM2;
-  TimHandle.Init.Prescaler = (uint32_t)(SystemCoreClock / (2 * 10000)) - 1;
-  TimHandle.Init.ClockDivision = 0;
-  TimHandle.Init.Period = 0xffffffff;
-  TimHandle.Init.CounterMode = TIM_COUNTERMODE_UP;
-  TimHandle.Init.RepetitionCounter = 0;
-  HAL_TIM_Base_Init(&TimHandle);
-  HAL_TIM_Base_Start(&TimHandle);
-}
-
-static void lock_burnin_test_otp(void) {
-  uint8_t buf[FLASH_OTP_BLOCK_SIZE] = {0};
-  memcpy(buf, "device burn-in test done", strlen("device burn-in test done"));
-  ensure(flash_otp_write(FLASH_OTP_BLOCK_BURNIN_TEST, 0, buf,
-                         FLASH_OTP_BLOCK_SIZE),
-         NULL);
-  ensure(flash_otp_lock(FLASH_OTP_BLOCK_BURNIN_TEST), NULL);
-}
-
-#define TIMER_1S 10000
-#define TEST_DURATION (3 * 60 * 60 * TIMER_1S)  // 3 hours
-
 void device_burnin_test(bool force) {
   uint32_t start = 0, current, remain, previous_remain, previous;
   uint8_t rand_buffer[32];
@@ -383,7 +391,6 @@ void device_burnin_test(bool force) {
   volatile uint32_t flash_id = 0;
   volatile uint32_t index = 0, index_bak = 0xff;
   volatile uint32_t click = 0, click_pre = 0, click_now = 0;
-  volatile uint32_t buzzer_pre = 0, buzzer_now = 0;
 
   FRESULT res;
   FIL fil;
@@ -430,27 +437,21 @@ void device_burnin_test(bool force) {
 
       for (int i = 0; i < 2; i++) {
         display_clear();
-        ui_generic_confirm_simple("BEEP test");
-        buzzer_ctrl(1);
-        hal_delay(1000);
-        buzzer_ctrl(0);
-
-        if (ui_response()) {
-          display_text(0, 110, "BEEP test done", -1, FONT_NORMAL, COLOR_WHITE,
-                       COLOR_BLACK);
-        } else {
-          display_text(0, 110, "BEEP test faild", -1, FONT_NORMAL, COLOR_RED,
-                       COLOR_BLACK);
-          while (1)
-            ;
-        }
-        display_bar(0, 130, DISPLAY_RESX, DISPLAY_RESY - 100, COLOR_BLACK);
 
         ui_generic_confirm_simple("MOTOR test");
 
-        motor_ctrl(MOTOR_REVERSE);
-        hal_delay(2000);
-        motor_ctrl(MOTOR_BRAKE);
+        motor_tick();
+        hal_delay(100);
+        motor_tock();
+        hal_delay(100);
+        motor_tick();
+        hal_delay(100);
+        motor_tock();
+        hal_delay(100);
+        motor_tick();
+        hal_delay(100);
+        motor_tock();
+        hal_delay(100);
 
         if (ui_response()) {
           display_text(0, 140, "MOTOR test done", -1, FONT_NORMAL, COLOR_WHITE,
@@ -592,8 +593,6 @@ void device_burnin_test(bool force) {
             }
           }
 
-          buzzer_pre = buzzer_now = __HAL_TIM_GET_COUNTER(&TimHandle);
-
           break;
         default:
           break;
@@ -638,32 +637,7 @@ void device_burnin_test(bool force) {
         ble_cmd_req(BLE_BT, BLE_BT_STA);
         hal_delay(5);
       }
-
-      if (index == 3) {
-        buzzer_now = __HAL_TIM_GET_COUNTER(&TimHandle);
-        if (buzzer_now - buzzer_pre < (TIMER_1S * 15) / 10) {
-          display_bar(8, 400, 150, 30, COLOR_GREEN);
-          display_text_center(158 / 2, 425, "buzzer on", -1, FONT_PJKS_BOLD_26,
-                              COLOR_WHITE, COLOR_GREEN);
-          display_bar(8, 480, 150, 30, COLOR_RED);
-          display_text_center(158 / 2, 505, "motor off", -1, FONT_PJKS_BOLD_26,
-                              COLOR_WHITE, COLOR_RED);
-          buzzer_ctrl(1);
-          motor_ctrl(MOTOR_BRAKE);
-        } else {
-          display_bar(8, 400, 150, 30, COLOR_RED);
-          display_text_center(158 / 2, 425, "buzzer off", -1, FONT_PJKS_BOLD_26,
-                              COLOR_WHITE, COLOR_RED);
-          display_bar(8, 480, 150, 30, COLOR_GREEN);
-          display_text_center(158 / 2, 505, "motor on", -1, FONT_PJKS_BOLD_26,
-                              COLOR_WHITE, COLOR_GREEN);
-          motor_ctrl(MOTOR_REVERSE);
-          buzzer_ctrl(0);
-        }
-      } else {
-        buzzer_ctrl(0);
-        motor_ctrl(MOTOR_BRAKE);
-      }
+      
     }
 
     if ((current - start) > 15 * 60 * TIMER_1S) {

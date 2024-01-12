@@ -54,7 +54,7 @@
 #include "mpu.h"
 #include "spi.h"
 #include "spi_legacy.h"
-#include "sys.h"
+#include "motor.h"
 #include "usart.h"
 
 #define MSG_NAME_TO_ID(x) MessageType_MessageType_##x
@@ -746,7 +746,7 @@ int main(void) {
 
   // misc/feedback
   random_delays_init();
-  // motor_init(); //need to be refactored as motor type changed
+  motor_init();
 
   // as they using same i2c bus, both needs to be powered up before any
   // communication
@@ -756,11 +756,6 @@ int main(void) {
   // se
   thd89_reset();
   thd89_init();
-  uint8_t se_state, se_fp_state;
-
-  ensure(se_get_state(&se_state) ? sectrue : secfalse, "get se state failed");
-  ensure(se_fp_get_state(&se_fp_state) ? sectrue : secfalse,
-         "get se fp state failed");
 
 #if !PRODUCTION
 
@@ -791,21 +786,40 @@ int main(void) {
   // nfc_test_v2();
   UNUSED(nfc_test_v2);
 
-  // fp_test();
-  UNUSED(fp_test);
 
   // restore se session key
   // if (sectrue == flash_otp_is_locked(FLASH_OTP_BLOCK_THD89_SESSION_KEY)) {
   //   dbgprintf_Wait("restoring se session key!");
-  //   uint8_t entropy[FLASH_OTP_BLOCK_SIZE];
-  //   ensure(flash_otp_read(FLASH_OTP_BLOCK_THD89_SESSION_KEY, 0, entropy,
+  //   uint8_t session_key[FLASH_OTP_BLOCK_SIZE];
+  //   ensure(flash_otp_read(FLASH_OTP_BLOCK_THD89_SESSION_KEY, 0, session_key,
   //                          FLASH_OTP_BLOCK_SIZE),
   //          NULL);
-  //   ensure(se_set_session_key(entropy), NULL);
+  //   if(se_set_session_key_ex(THD89_MASTER_ADDRESS, session_key) != sectrue)
+  //     dbgprintf_Wait("se set session key failed");
+  //   if(se_set_session_key_ex(THD89_FINGER_ADDRESS, session_key) != sectrue)
+  //     dbgprintf_Wait("se fp set session key failed");
+
   //   dbgprintf_Wait("se session key restored");
   // }
 
+  device_backup_otp(false);
   // device_restore_otp();
+
+  // set batch get state
+  // uint8_t se_state_1;
+  // uint8_t se_state_2;
+  // uint8_t se_state_3;
+  // uint8_t se_state_4;
+  
+  // ensure(_se_get_state(THD89_1ST_ADDRESS,&se_state_1) ? sectrue : secfalse, "get se state failed");
+  // ensure(_se_get_state(THD89_2ND_ADDRESS,&se_state_2) ? sectrue : secfalse, "get se state failed");
+  // ensure(_se_get_state(THD89_3RD_ADDRESS,&se_state_3) ? sectrue : secfalse, "get se state failed");
+  // ensure(_se_get_state(THD89_4TH_ADDRESS,&se_state_4) ? sectrue : secfalse, "get se state failed");
+
+  // dbgprintf_Wait(
+  //   "SE_1 = %02X\nSE_2 = %02X\nSE_3 = %02X\nSE_4 = %02X\n",
+  //   se_state_1, se_state_2, se_state_3, se_state_4
+  // );
 
 #endif
 
@@ -834,8 +848,11 @@ int main(void) {
 #endif
 
   // check se
-  uint8_t se_state;
+  uint8_t se_state, se_fp_state;
+
   ensure(se_get_state(&se_state) ? sectrue : secfalse, "get se state failed");
+  ensure(se_fp_get_state(&se_fp_state) ? sectrue : secfalse,
+         "get se fp state failed");
 
   secbool stay_in_bootloader = secfalse;  // flag to stay in bootloader
 

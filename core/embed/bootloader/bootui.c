@@ -53,7 +53,6 @@
 #include "icon_onekey.h"
 #include "image.h"
 #include "se_thd89.h"
-#include "sys.h"
 #include "thd89_boot.h"
 #include "usb.h"
 extern secbool load_vendor_header_keys(const uint8_t *const data,

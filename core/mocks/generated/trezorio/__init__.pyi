@@ -17,24 +17,6 @@ class BLE:
         Send command to the BLE.
         """
 
-
-# extmod/modtrezorio/modtrezorio-buz.h
-class BUZ:
-    """
-    """
-
-    def __init__(
-        self,
-    ) -> None:
-        """
-        """
-
-    def ctrl(self, msg: bytes) -> None:
-        """
-        Start or stop the buzzer.
-        """
-
-
 # extmod/modtrezorio/modtrezorio-flash.h
 class FlashOTP:
     """
@@ -130,11 +112,15 @@ class MOTOR:
         """
         """
 
-    def ctrl(self, cmd: int) -> None:
+    def tick(self) -> None:
         """
-        Control the motor.
+        Strong vibrate
         """
 
+    def tock(self) -> None:
+        """
+        Weak vibrate
+        """
 
 # extmod/modtrezorio/modtrezorio-nfc.h
 class NFC:

@@ -51,7 +51,6 @@ bool local_interface_ready = false;
 // clang-format on
 #if defined TREZOR_MODEL_T
 #include "modtrezorio-ble.h"
-#include "modtrezorio-buz.h"
 #include "modtrezorio-camera.h"
 #include "modtrezorio-fatfs.h"
 #include "modtrezorio-local.h"

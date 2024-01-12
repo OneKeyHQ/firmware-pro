@@ -5,6 +5,9 @@
 #include <stdint.h>
 #include <string.h>
 
+extern uint8_t battery_cap;
+extern uint8_t dev_pwr_sta;
+
 #define BLE_NAME_LEN 16
 
 // BLE send command

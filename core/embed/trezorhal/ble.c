@@ -1,7 +1,6 @@
 #include "ble.h"
 #include "common.h"
 #include "display.h"
-#include "sys.h"
 #include "usart.h"
 
 uint8_t battery_cap = 0xFF;
