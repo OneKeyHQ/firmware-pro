@@ -457,12 +457,12 @@ void st7701_init_sequence(void) {
   st7701_dsi(0xff, 0x77, 0x01, 0x00, 0x00,
              0x00);        // CND2BKxSEL select bank0 without cmd2
   st7701_dsi(0x36, 0x00);  // MADCTL normal scan, bgr->bgr
-//   st7701_dsi(0x3a, 0x50);  // COLMOD 16bit color
+                           //   st7701_dsi(0x3a, 0x50);  // COLMOD 16bit color
   st7701_dsi(MIPI_DCS_SET_TEAR_ON, 0x00);
   st7701_dsi(MIPI_DCS_WRITE_CONTROL_DISPLAY, 0x2C);
   st7701_dsi(MIPI_DCS_SET_PIXEL_FORMAT, 0x50);
-  st7701_dsi(0x29);        // DISPON
-  HAL_Delay(20);           // delay
+  st7701_dsi(0x29);  // DISPON
+  HAL_Delay(20);     // delay
   st7701_dsi(0xff, 0x77, 0x01, 0x00, 0x00,
              0x10);              // CND2BKxSEL select bank1 with cmd2
   st7701_dsi(0xe5, 0x00, 0x00);  // ?

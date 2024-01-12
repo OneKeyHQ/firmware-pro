@@ -690,7 +690,7 @@ int qspi_flash_quit_memory_mapped(void) {
   if (HAL_QSPI_Init(&hqspi) != HAL_OK) {
     return HAL_ERROR;
   }
-    return HAL_OK;
+  return HAL_OK;
 }
 
 /**

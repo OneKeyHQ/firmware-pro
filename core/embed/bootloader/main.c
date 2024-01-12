@@ -51,10 +51,10 @@
 #include "device.h"
 #include "i2c.h"
 #include "messages.h"
+#include "motor.h"
 #include "mpu.h"
 #include "spi.h"
 #include "spi_legacy.h"
-#include "motor.h"
 #include "usart.h"
 
 #define MSG_NAME_TO_ID(x) MessageType_MessageType_##x
@@ -142,7 +142,6 @@ static void write_dev_dummy_cert() {
       ensure(secfalse, "set cert failed");
   }
 }
-
 
 static void nfc_test() {
   display_printf("TouchPro Demo Mode\n");
@@ -763,7 +762,7 @@ int main(void) {
     write_dev_dummy_serial();
   }
   UNUSED(write_dev_dummy_serial);
-  
+
   // if (!se_has_cerrificate()) {
   //   write_dev_dummy_cert();
   // }
@@ -785,7 +784,6 @@ int main(void) {
   UNUSED(nfc_test);
   // nfc_test_v2();
   UNUSED(nfc_test_v2);
-
 
   // restore se session key
   // if (sectrue == flash_otp_is_locked(FLASH_OTP_BLOCK_THD89_SESSION_KEY)) {
@@ -810,11 +808,13 @@ int main(void) {
   // uint8_t se_state_2;
   // uint8_t se_state_3;
   // uint8_t se_state_4;
-  
-  // ensure(_se_get_state(THD89_1ST_ADDRESS,&se_state_1) ? sectrue : secfalse, "get se state failed");
-  // ensure(_se_get_state(THD89_2ND_ADDRESS,&se_state_2) ? sectrue : secfalse, "get se state failed");
-  // ensure(_se_get_state(THD89_3RD_ADDRESS,&se_state_3) ? sectrue : secfalse, "get se state failed");
-  // ensure(_se_get_state(THD89_4TH_ADDRESS,&se_state_4) ? sectrue : secfalse, "get se state failed");
+
+  // ensure(_se_get_state(THD89_1ST_ADDRESS,&se_state_1) ? sectrue : secfalse,
+  // "get se state failed"); ensure(_se_get_state(THD89_2ND_ADDRESS,&se_state_2)
+  // ? sectrue : secfalse, "get se state failed");
+  // ensure(_se_get_state(THD89_3RD_ADDRESS,&se_state_3) ? sectrue : secfalse,
+  // "get se state failed"); ensure(_se_get_state(THD89_4TH_ADDRESS,&se_state_4)
+  // ? sectrue : secfalse, "get se state failed");
 
   // dbgprintf_Wait(
   //   "SE_1 = %02X\nSE_2 = %02X\nSE_3 = %02X\nSE_4 = %02X\n",

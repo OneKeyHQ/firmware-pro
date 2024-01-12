@@ -165,7 +165,7 @@ int main(void) {
   timer_init();
 
   fingerprint_init();
-  
+
   copyflash2sdram();
 #endif
 

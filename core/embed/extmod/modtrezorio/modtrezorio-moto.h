@@ -25,9 +25,8 @@
 /// class MOTOR:
 ///     """
 ///     """
-typedef struct _mp_obj_MOTOR_t
-{
-    mp_obj_base_t base;
+typedef struct _mp_obj_MOTOR_t {
+  mp_obj_base_t base;
 } mp_obj_MOTOR_t;
 
 /// def __init__(
@@ -35,44 +34,45 @@ typedef struct _mp_obj_MOTOR_t
 /// ) -> None:
 ///     """
 ///     """
-STATIC mp_obj_t
-mod_trezorio_MOTOR_make_new(const mp_obj_type_t* type, size_t n_args, size_t n_kw, const mp_obj_t* args)
-{
-    mp_arg_check_num(n_args, n_kw, 0, 0, false);
+STATIC mp_obj_t mod_trezorio_MOTOR_make_new(const mp_obj_type_t* type,
+                                            size_t n_args, size_t n_kw,
+                                            const mp_obj_t* args) {
+  mp_arg_check_num(n_args, n_kw, 0, 0, false);
 
-    mp_obj_MOTOR_t* o = m_new_obj(mp_obj_MOTOR_t);
-    o->base.type = type;
+  mp_obj_MOTOR_t* o = m_new_obj(mp_obj_MOTOR_t);
+  o->base.type = type;
 
-    return MP_OBJ_FROM_PTR(o);
+  return MP_OBJ_FROM_PTR(o);
 }
 
 /// def tick(self) -> None:
 ///     """
 ///     Strong vibrate
 ///     """
-STATIC mp_obj_t mod_trezorio_MOTOR_tick(mp_obj_t self)
-{
-    motor_tick();
-    return mp_const_none;
+STATIC mp_obj_t mod_trezorio_MOTOR_tick(mp_obj_t self) {
+  motor_tick();
+  return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorio_MOTOR_tick_obj, mod_trezorio_MOTOR_tick);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorio_MOTOR_tick_obj,
+                                 mod_trezorio_MOTOR_tick);
 
 /// def tock(self) -> None:
 ///     """
 ///     Weak vibrate
 ///     """
-STATIC mp_obj_t mod_trezorio_MOTOR_tock(mp_obj_t self)
-{
-    motor_tick();
-    return mp_const_none;
+STATIC mp_obj_t mod_trezorio_MOTOR_tock(mp_obj_t self) {
+  motor_tick();
+  return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorio_MOTOR_tock_obj, mod_trezorio_MOTOR_tock);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorio_MOTOR_tock_obj,
+                                 mod_trezorio_MOTOR_tock);
 
 /// def play(self, pattern) -> None:
 ///     """
 ///     Play custom pattern
 ///
-///     Pattern is expacted to be a List that contains multiple Pair of MOTOR_STATE and durnation
+///     Pattern is expacted to be a List that contains multiple Pair of
+///     MOTOR_STATE and durnation
 ///     """
 // STATIC mp_obj_t mod_trezorio_MOTOR_play(mp_obj_t self, mp_obj_t pattern)
 // {
@@ -92,7 +92,8 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorio_MOTOR_tock_obj, mod_trezorio_MOTOR
 
 //     return mp_const_none;
 // }
-// STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_trezorio_MOTOR_play_obj, mod_trezorio_MOTOR_play);
+// STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_trezorio_MOTOR_play_obj,
+// mod_trezorio_MOTOR_play);
 
 STATIC const mp_rom_map_elem_t mod_trezorio_MOTOR_locals_dict_table[] = {
     {MP_ROM_QSTR(MP_QSTR_tick), MP_ROM_PTR(&mod_trezorio_MOTOR_tick_obj)},
@@ -100,7 +101,8 @@ STATIC const mp_rom_map_elem_t mod_trezorio_MOTOR_locals_dict_table[] = {
     // {MP_ROM_QSTR(MP_QSTR_play), MP_ROM_PTR(&mod_trezorio_MOTOR_play_obj)},
 };
 
-STATIC MP_DEFINE_CONST_DICT(mod_trezorio_MOTOR_locals_dict, mod_trezorio_MOTOR_locals_dict_table);
+STATIC MP_DEFINE_CONST_DICT(mod_trezorio_MOTOR_locals_dict,
+                            mod_trezorio_MOTOR_locals_dict_table);
 
 STATIC const mp_obj_type_t mod_trezorio_MOTOR_type = {
     {&mp_type_type},
