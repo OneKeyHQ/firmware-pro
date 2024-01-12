@@ -461,7 +461,6 @@ if PRODUCTION_MODEL == 'H':
         'embed/trezorhal/spi_legacy.c',
         'embed/trezorhal/camera.c',
         'embed/trezorhal/camera_qrcode.c',
-        'embed/trezorhal/gt911.c',
         'embed/trezorhal/nfc.c',
         'embed/trezorhal/heap_4.c',
         'embed/trezorhal/qspi_flash.c',
