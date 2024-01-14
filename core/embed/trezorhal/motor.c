@@ -148,9 +148,17 @@ void motor_init(void) {
   motor_io_init();
   motor_timer_init();
 }
-
+#include "systick.h"
 void motor_tick(void) {
-  motor_timer_play(MAL_tick, sizeof(MAL_tick) / sizeof(MOTOR_ACTION));
+  // motor_timer_play(MAL_tick, sizeof(MAL_tick) / sizeof(MOTOR_ACTION));
+   
+    HAL_GPIO_WritePin(GPIOK, GPIO_PIN_3, GPIO_PIN_SET);
+    while(1){
+      HAL_GPIO_WritePin(GPIOK, GPIO_PIN_2, GPIO_PIN_RESET);
+      dwt_delay_us(2083);
+      HAL_GPIO_WritePin(GPIOK, GPIO_PIN_2, GPIO_PIN_SET);
+      dwt_delay_us(2083);
+    }
 }
 
 void motor_tock(void) {

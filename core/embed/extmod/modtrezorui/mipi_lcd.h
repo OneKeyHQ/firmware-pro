@@ -74,6 +74,9 @@ void lcd_para_init(uint32_t lcd_width, uint32_t lcd_height,
                    uint32_t pixel_format);
 void lcd_pwm_init(void);
 
+void display_fp(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
+                const uint8_t *data);
+
 #ifdef __cplusplus
 }
 #endif

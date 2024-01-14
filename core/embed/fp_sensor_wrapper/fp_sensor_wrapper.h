@@ -53,26 +53,26 @@ int __fastcall Fp_AlgorithmInit(int address)
 }
 #endif
 
-uint8_t fp_init(uint32_t addr)
-{
-    uint8_t result;
-    uint8_t hwid[2];
+// uint8_t fp_init(uint32_t addr)
+// {
+//     uint8_t result;
+//     uint8_t hwid[2];
 
-    result = fpsensor_get_HWID(hwid);
-    if ( result != FPSENSOR_OK )
-        return result;
+//     result = fpsensor_get_HWID(hwid);
+//     if ( result != FPSENSOR_OK )
+//         return result;
 
-    if ( !(hwid[0] == 0x71 && hwid[1] == 0x53) )
-    {
-        result = FPSENSOR_SPI_ERROR;
-        return result;
-    }
+//     if ( !(hwid[0] == 0x71 && hwid[1] == 0x53) )
+//     {
+//         result = FPSENSOR_SPI_ERROR;
+//         return result;
+//     }
 
-    result = SF_Init(addr, 204800);
-    if ( result != FPSENSOR_OK )
-        return result;
+//     result = SF_Init(addr, 204800);
+//     if ( result != FPSENSOR_OK )
+//         return result;
 
-    return 0;
-}
+//     return 0;
+// }
 
 #endif //_FP_SENSOR_WRAPPER_H_

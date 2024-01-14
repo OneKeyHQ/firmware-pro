@@ -7,6 +7,7 @@ SPI_HandleTypeDef spi_fp;
 static bool fp_touched = false;
 static uint8_t* fp_data_cache = (uint8_t*)0x38000000;
 static bool fp_data_sync = false;
+uint32_t fp_data_address = 0;
 
 typedef struct
 {
@@ -289,7 +290,7 @@ extern secbool se_fp_read(uint16_t offset, void* val_dest, uint16_t len, uint8_t
 uint8_t SF_Init(uint32_t startAddr, uint32_t ucMmSize)
 {
     (void)ucMmSize;
-    // fp_data_address = startAddr;
+    fp_data_address = startAddr;
     memset(fp_data_cache, 0, FINGER_DATA_TOTAL_SIZE);
     return FPSENSOR_OK;
 }
@@ -303,23 +304,22 @@ uint8_t SF_Init(uint32_t startAddr, uint32_t ucMmSize)
  */
 uint8_t SF_WriteData(uint8_t* buffer, uint32_t offset, uint32_t length)
 {
-    // memcpy((void*)(offset + fp_data_address), buffer, length);
-    // se_fp_write(offset , buffer, length);
-    memcpy((void*)(offset + fp_data_cache), buffer, length);
-    if ( offset == FINGER_ID_LIST_OFFSET )
-    {
-        fpsensor_cache.list_data_valid = true;
-    }
-    else
-    {
-        for ( uint8_t i = 0; i < MAX_FINGERPRINT_COUNT; i++ )
-        {
-            if ( offset == TEMPLATE_ADDR_OFFSET + i * TEMPLATE_LENGTH )
-            {
-                fpsensor_cache.template_data_valid[i] = true;
-            }
-        }
-    }
+    memcpy((void*)(offset + fp_data_address), buffer, length);
+    // memcpy((void*)(offset + fp_data_cache), buffer, length);
+    // if ( offset == FINGER_ID_LIST_OFFSET )
+    // {
+    //     fpsensor_cache.list_data_valid = true;
+    // }
+    // else
+    // {
+    //     for ( uint8_t i = 0; i < MAX_FINGERPRINT_COUNT; i++ )
+    //     {
+    //         if ( offset == TEMPLATE_ADDR_OFFSET + i * TEMPLATE_LENGTH )
+    //         {
+    //             fpsensor_cache.template_data_valid[i] = true;
+    //         }
+    //     }
+    // }
     return FPSENSOR_OK;
 }
 /*
@@ -332,7 +332,8 @@ uint8_t SF_WriteData(uint8_t* buffer, uint32_t offset, uint32_t length)
  */
 uint8_t SF_ReadData(uint8_t* buffer, uint32_t offset, uint32_t length)
 {
-    memcpy(buffer, (void*)(offset + fp_data_cache), length);
+    memcpy(buffer, (void*)(offset + fp_data_address), length);
+    // memcpy(buffer, (void*)(offset + fp_data_cache), length);
     return FPSENSOR_OK;
 }
 
@@ -378,7 +379,10 @@ bool fpsensor_data_init(void)
     for ( uint8_t i = 0; i < counter; i++ )
     {
         p_data = fp_data_cache + TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_LENGTH;
-        ensure(se_fp_read(TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_LENGTH,p_data, TEMPLATE_LENGTH,i, counter), "se_fp_read failed");
+        ensure(
+            se_fp_read(TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_LENGTH, p_data, TEMPLATE_LENGTH, i, counter),
+            "se_fp_read failed"
+        );
     }
     data_inited = true;
     return true;
@@ -401,7 +405,9 @@ bool fpsensor_data_save(void)
     {
         p_data = fp_data_cache + TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_LENGTH;
         ensure(
-            se_fp_write(TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_LENGTH, p_data, TEMPLATE_LENGTH, i, counter),
+            se_fp_write(
+                TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_LENGTH, p_data, TEMPLATE_LENGTH, i, counter
+            ),
             "se_fp_write failed"
         );
     }

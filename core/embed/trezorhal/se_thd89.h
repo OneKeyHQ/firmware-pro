@@ -21,6 +21,8 @@ secbool se_transmit_mac(uint8_t ins, uint8_t p1, uint8_t p2, uint8_t *data,
 secbool se_get_rand(uint8_t *rand, uint8_t rand_len);
 secbool se_reset_se(void);
 secbool se_random_encrypted(uint8_t *rand, uint16_t len);
+secbool se_random_encrypted_ex(uint8_t addr, uint8_t *session_key,
+                               uint8_t *rand, uint16_t len);
 secbool se_sync_session_key(void);
 secbool se_device_init(uint8_t mode, const char *passphrase);
 secbool se_ecdsa_get_pubkey(uint32_t *address, uint8_t count, uint8_t *pubkey);
@@ -59,6 +61,7 @@ secbool se_set_private_region(uint16_t offset, const void *val_dest,
 secbool se_get_private_region(uint16_t offset, void *val_dest, uint16_t len);
 
 secbool se_get_pubkey(uint8_t *pubkey);
+secbool se_get_ecdh_pubkey(uint8_t addr, uint8_t *key);
 secbool se_write_certificate(const uint8_t *cert, uint16_t cert_len);
 secbool se_read_certificate(uint8_t *cert, uint16_t *cert_len);
 secbool se_has_cerrificate(void);

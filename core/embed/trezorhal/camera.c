@@ -8,7 +8,7 @@
 #include "mipi_lcd.h"
 #include "irq.h"
 
-#define CAMERA_CAPTURE_MODE 0 // 0: snapshot mode, 1: continuous mode
+#define CAMERA_CAPTURE_MODE 1 // 0: snapshot mode, 1: continuous mode
 
 static I2C_HandleTypeDef* i2c_handle_camera = NULL;
 static volatile bool capture_done = false;
@@ -220,6 +220,7 @@ void camera_start(uint8_t* buffer_address, uint32_t mode)
         return;
     }
     HAL_DCMI_Start_DMA(&DCMI_Handle, mode, (uint32_t)buffer_address, (WIN_W * WIN_H) / 2);
+    camera_opened = true;
 }
 
 void camera_stop(void)

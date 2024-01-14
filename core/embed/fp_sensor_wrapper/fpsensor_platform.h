@@ -13,7 +13,7 @@
 #include "fp_sensor_hal.h"
 #include "fpalgorithm_interface.h"
 
-#define FINGER_ADDR_START       0 //(FMC_SDRAM_CAMERA_BUFFER_ADDRESS) // 存储地址用户根据使用情况分配
+#define FINGER_ADDR_START       (FMC_SDRAM_CAMERA_BUFFER_ADDRESS) // 存储地址用户根据使用情况分配
 #define FINGER_ID_LIST_START    (FINGER_ADDR_START + 0x100)
 #define TEMPLATE_ADDR_START     (FINGER_ADDR_START + 0x1000)
 

@@ -664,3 +664,18 @@ void display_reset_state() {}
 void display_clear_save(void) {}
 const char* display_save(const char* prefix) { return NULL; }
 void display_refresh(void) {}
+
+uint16_t grayscale_to_rgb565(uint8_t gray) {
+  uint16_t r = (gray * 31 + 127) / 255;
+  uint16_t g = (gray * 63 + 127) / 255;
+  uint16_t b = (gray * 31 + 127) / 255;
+
+  return (r << 11) | (g << 5) | b;
+}
+
+void display_fp(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
+                const uint8_t* data) {
+  for (uint32_t i = 0; i < w * h; i++) {
+    fb_write_pixel(x + i % w, y + i / w, grayscale_to_rgb565(data[i]));
+  }
+}

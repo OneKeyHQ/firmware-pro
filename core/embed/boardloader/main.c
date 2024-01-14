@@ -17,6 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdio.h>
 #include <string.h>
 
 #include "blake2s.h"
@@ -28,7 +29,9 @@
 #include "flash.h"
 #include "i2c.h"
 #include "image.h"
+#include "mini_printf.h"
 #include "mipi_lcd.h"
+#include "qspi_flash.h"
 #include "rng.h"
 #ifdef TREZOR_MODEL_T
 #include "sdcard.h"
@@ -43,7 +46,15 @@
 #include "memzero.h"
 
 #include "ble.h"
+#include "camera.h"
+#include "fingerprint.h"
+#include "fp_sensor_wrapper.h"
+#include "motor.h"
+#include "thd89_boot.h"
+#include "systick.h"
+#include "thd89.h"
 #include "usart.h"
+#include "nfc.h"
 
 #define BOARD_MODE 1
 #define BOOT_MODE 2
@@ -380,39 +391,708 @@ static secbool copy_sdcard(uint32_t code_len) {
   return sectrue;
 }
 
-void show_poweron_bar(void) {
-  static bool forward = true;
-  static uint32_t step = 0, location = 0, indicator = 0;
+#define COLOR_BL_BG COLOR_BLACK                   // background
+#define COLOR_BL_FG COLOR_WHITE                   // foreground
+#define COLOR_BL_FAIL RGB16(0xFF, 0x00, 0x00)     // red
+#define COLOR_BL_DONE RGB16(0x00, 0xAE, 0x0B)     // green
+#define COLOR_BL_PROCESS RGB16(0x4A, 0x90, 0xE2)  // blue
+#define COLOR_BL_GRAY RGB16(0x99, 0x99, 0x99)     // gray
 
-  if (forward) {
-    step += PIXEL_STEP;
-    if (step <= 90) {
-      indicator += PIXEL_STEP;
-    } else if (step <= 160) {
-      location += PIXEL_STEP;
-    } else if (step < 250) {
-      location += PIXEL_STEP;
-      indicator -= PIXEL_STEP;
-    } else {
-      forward = false;
+typedef enum {
+  SCREEN_TEST = 0,
+  TOUCH_TEST,
+  SE_TEST,
+  SPI_FLASH_TEST,
+  EMMC_TEST,
+  SDRAM_TEST,
+  CAMERA_TEST,
+  MOTOR_TEST,
+  BLE_TEST,
+  FP_TEST,
+  NFC_TEST,
+  FLASHLED_TEST,
+  TEST_NUMS
+} TEST_ITEM;
+
+static uint16_t screen_bg[TEST_NUMS + 1];
+
+static void ui_generic_confirm_simple(const char *msg) {
+  if (msg == NULL) return;
+  display_clear();
+  display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY / 2, msg, -1, FONT_NORMAL,
+                      COLOR_WHITE, COLOR_BLACK);
+
+  display_bar_radius(32, DISPLAY_RESY - 160, 128, 64, COLOR_RED, COLOR_BLACK,
+                     16);
+  display_bar_radius(DISPLAY_RESX - 32 - 128, DISPLAY_RESY - 160, 128, 64,
+                     COLOR_GREEN, COLOR_BLACK, 16);
+  display_text(80, DISPLAY_RESY - 120, "No", -1, FONT_NORMAL, COLOR_WHITE,
+               COLOR_RED);
+  display_text(DISPLAY_RESX - 118, DISPLAY_RESY - 120, "Yes", -1, FONT_NORMAL,
+               COLOR_WHITE, COLOR_GREEN);
+}
+
+static bool ui_response(void) {
+  for (;;) {
+    uint32_t evt = touch_click();
+    uint16_t x = touch_unpack_x(evt);
+    uint16_t y = touch_unpack_y(evt);
+
+    if (!evt) {
+      continue;
     }
+    // clicked on Cancel button
+    if (x >= 32 && x < 32 + 128 && y > DISPLAY_RESY - 160 &&
+        y < DISPLAY_RESY - 160 + 64) {
+      return false;
+    }
+    // clicked on Confirm button
+    if (x >= DISPLAY_RESX - 32 - 128 && x < DISPLAY_RESX - 32 &&
+        y > DISPLAY_RESY - 160 && y < DISPLAY_RESY - 160 + 64) {
+      return true;
+    }
+  }
+}
+
+void screen_test(void) {
+  display_bar(0, 0, MAX_DISPLAY_RESX, MAX_DISPLAY_RESY, COLOR_RED);
+  display_text_center(MAX_DISPLAY_RESX / 2, MAX_DISPLAY_RESY / 2,
+                      "TOUCH SCREEN", -1, FONT_NORMAL, COLOR_BL_FG, COLOR_RED);
+  while (!touch_click()) {
+  }
+
+  display_bar(0, 0, MAX_DISPLAY_RESX, MAX_DISPLAY_RESY, COLOR_GREEN);
+  display_text_center(MAX_DISPLAY_RESX / 2, MAX_DISPLAY_RESY / 2,
+                      "TOUCH SCREEN", -1, FONT_NORMAL, COLOR_BL_FG,
+                      COLOR_GREEN);
+  while (!touch_click()) {
+  }
+  display_bar(0, 0, MAX_DISPLAY_RESX, MAX_DISPLAY_RESY, COLOR_BLUE);
+  display_text_center(MAX_DISPLAY_RESX / 2, MAX_DISPLAY_RESY / 2,
+                      "TOUCH SCREEN", -1, FONT_NORMAL, COLOR_BL_FG, COLOR_BLUE);
+  while (!touch_click()) {
+  }
+  display_bar(0, 0, MAX_DISPLAY_RESX, MAX_DISPLAY_RESY, COLOR_BLACK);
+  display_text_center(MAX_DISPLAY_RESX / 2, MAX_DISPLAY_RESY / 2,
+                      "TOUCH SCREEN", -1, FONT_NORMAL, COLOR_BL_FG,
+                      COLOR_BLACK);
+  while (!touch_click()) {
+  }
+  display_bar(0, 0, MAX_DISPLAY_RESX, MAX_DISPLAY_RESY, COLOR_WHITE);
+  display_text_center(MAX_DISPLAY_RESX / 2, MAX_DISPLAY_RESY / 2,
+                      "TOUCH SCREEN", -1, FONT_NORMAL, COLOR_BLACK,
+                      COLOR_WHITE);
+  while (!touch_click()) {
+  }
+
+  ui_generic_confirm_simple("SCREEN PASS?");
+  if (ui_response()) {
+    screen_bg[SCREEN_TEST] = COLOR_GREEN;
   } else {
-    step -= PIXEL_STEP;
-    if (step > 160) {
-      location -= PIXEL_STEP;
-      indicator += PIXEL_STEP;
-    } else if (step > 90) {
-      location -= PIXEL_STEP;
-    } else if (step > 0) {
-      indicator -= PIXEL_STEP;
-    } else {
-      forward = true;
+    screen_bg[SCREEN_TEST] = COLOR_RED;
+  }
+}
+
+void touch_input_test(void) {
+  display_clear();
+  for (int i = 0; i < 5; i++) {
+    for (int j = 0; j < 6; j++) {
+      display_bar_radius(j * 80, (j % 2) * 80 + i * 160, 80, 80, COLOR_RED,
+                         COLOR_WHITE, 16);
+    }
+  }
+  uint32_t pos = 0;
+  for (;;) {
+    uint32_t evt = touch_read();
+    uint16_t x = touch_unpack_x(evt);
+    uint16_t y = touch_unpack_y(evt);
+
+    if (!evt) {
+      continue;
+    }
+
+    for (int i = 0; i < 5; i++) {
+      for (int j = 0; j < 6; j++) {
+        if (x > (j * 80) && x < (j * 80 + 80) && y > ((j % 2) * 80 + i * 160) &&
+            y < ((j % 2) * 80 + i * 160 + 80)) {
+          display_bar_radius(j * 80, (j % 2) * 80 + i * 160, 80, 80,
+                             COLOR_GREEN, COLOR_WHITE, 16);
+          pos |= 1 << (6 * i + j);
+        }
+        if (pos == 0x3FFFFFFF) {
+          screen_bg[TOUCH_TEST] = COLOR_GREEN;
+          return;
+        }
+      }
+    }
+  }
+}
+
+void camera_test(void) {
+  display_clear();
+
+  display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY / 2, "CAMERA TEST", -1,
+                      FONT_NORMAL, COLOR_WHITE, COLOR_BLACK);
+  display_bar_radius(32, DISPLAY_RESY - 160, 128, 64, COLOR_RED, COLOR_BLACK,
+                     16);
+  display_bar_radius(DISPLAY_RESX - 32 - 128, DISPLAY_RESY - 160, 128, 64,
+                     COLOR_GREEN, COLOR_BLACK, 16);
+  display_text(80, DISPLAY_RESY - 120, "No", -1, FONT_NORMAL, COLOR_WHITE,
+               COLOR_RED);
+  display_text(DISPLAY_RESX - 118, DISPLAY_RESY - 120, "Yes", -1, FONT_NORMAL,
+               COLOR_WHITE, COLOR_GREEN);
+
+  while (1) {
+    camera_capture_start();
+    if (camera_capture_done()) {
+      dma2d_copy_buffer((uint32_t *)CAM_BUF_ADDRESS,
+                        (uint32_t *)FMC_SDRAM_LTDC_BUFFER_ADDRESS, 80, 0, WIN_W,
+                        WIN_H);
+    }
+    uint32_t evt = touch_click();
+
+    if (!evt) {
+      continue;
+    }
+
+    uint16_t x = touch_unpack_x(evt);
+    uint16_t y = touch_unpack_y(evt);
+    // clicked on Cancel button
+    if (x >= 32 && x < 32 + 128 && y > DISPLAY_RESY - 160 &&
+        y < DISPLAY_RESY - 160 + 64) {
+      screen_bg[CAMERA_TEST] = COLOR_RED;
+      return;
+    }
+    // clicked on Confirm button
+    if (x >= DISPLAY_RESX - 32 - 128 && x < DISPLAY_RESX - 32 &&
+        y > DISPLAY_RESY - 160 && y < DISPLAY_RESY - 160 + 64) {
+      screen_bg[CAMERA_TEST] = COLOR_GREEN;
+      return;
+    }
+  }
+}
+
+static void _motor_test(void) {
+  display_clear();
+
+  display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY / 2, "MOTOR TEST", -1,
+                      FONT_NORMAL, COLOR_WHITE, COLOR_BLACK);
+  display_bar_radius(32, DISPLAY_RESY - 160, 128, 64, COLOR_RED, COLOR_BLACK,
+                     16);
+  display_bar_radius(DISPLAY_RESX - 32 - 128, DISPLAY_RESY - 160, 128, 64,
+                     COLOR_GREEN, COLOR_BLACK, 16);
+  display_text(80, DISPLAY_RESY - 120, "No", -1, FONT_NORMAL, COLOR_WHITE,
+               COLOR_RED);
+  display_text(DISPLAY_RESX - 118, DISPLAY_RESY - 120, "Yes", -1, FONT_NORMAL,
+               COLOR_WHITE, COLOR_GREEN);
+
+  HAL_GPIO_WritePin(GPIOK, GPIO_PIN_3, GPIO_PIN_SET);
+  while (1) {
+    
+ 
+      HAL_GPIO_WritePin(GPIOK, GPIO_PIN_2, GPIO_PIN_RESET);
+      dwt_delay_us(2083);
+      HAL_GPIO_WritePin(GPIOK, GPIO_PIN_2, GPIO_PIN_SET);
+      dwt_delay_us(767);
+    
+   
+    uint32_t evt = touch_click();
+
+    if (!evt) {
+      continue;
+    }
+
+    uint16_t x = touch_unpack_x(evt);
+    uint16_t y = touch_unpack_y(evt);
+    // clicked on Cancel button
+    if (x >= 32 && x < 32 + 128 && y > DISPLAY_RESY - 160 &&
+        y < DISPLAY_RESY - 160 + 64) {
+      screen_bg[MOTOR_TEST] = COLOR_RED;
+      return;
+    }
+    // clicked on Confirm button
+    if (x >= DISPLAY_RESX - 32 - 128 && x < DISPLAY_RESX - 32 &&
+        y > DISPLAY_RESY - 160 && y < DISPLAY_RESY - 160 + 64) {
+      screen_bg[MOTOR_TEST] = COLOR_GREEN;
+      return;
+    }
+  }
+}
+
+static void _fp_test(void) {
+  display_clear();
+
+  display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY / 2, "FP TEST", -1,
+                      FONT_NORMAL, COLOR_WHITE, COLOR_BLACK);
+  display_bar_radius(32, DISPLAY_RESY - 160, 128, 64, COLOR_RED, COLOR_BLACK,
+                     16);
+  display_bar_radius(DISPLAY_RESX - 32 - 128, DISPLAY_RESY - 160, 128, 64,
+                     COLOR_GREEN, COLOR_BLACK, 16);
+  display_text(80, DISPLAY_RESY - 120, "No", -1, FONT_NORMAL, COLOR_WHITE,
+               COLOR_RED);
+  display_text(DISPLAY_RESX - 118, DISPLAY_RESY - 120, "Yes", -1, FONT_NORMAL,
+               COLOR_WHITE, COLOR_GREEN);
+  uint8_t image_data[88 * 112 + 2];
+  int ret = 0;
+  bool touched = false;
+  while (1) {
+    if (FpsDetectFinger() == 1) {
+      ret = FpsGetImageData(image_data);
+      if (ret == 0) {
+        display_fp(196, 10, 88, 112, image_data);
+        touched = true;
+      }
+    }
+    if (touched) {
+      uint32_t evt = touch_click();
+
+      if (!evt) {
+        continue;
+      }
+
+      uint16_t x = touch_unpack_x(evt);
+      uint16_t y = touch_unpack_y(evt);
+      // clicked on Cancel button
+      if (x >= 32 && x < 32 + 128 && y > DISPLAY_RESY - 160 &&
+          y < DISPLAY_RESY - 160 + 64) {
+        screen_bg[FP_TEST] = COLOR_RED;
+        return;
+      }
+      // clicked on Confirm button
+      if (x >= DISPLAY_RESX - 32 - 128 && x < DISPLAY_RESX - 32 &&
+          y > DISPLAY_RESY - 160 && y < DISPLAY_RESY - 160 + 64) {
+        screen_bg[FP_TEST] = COLOR_GREEN;
+        return;
+      }
+    }
+  }
+}
+
+static void _nfc_test(void){
+
+  display_clear();
+
+  display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY / 2, "NFC POLLING CARD", -1,
+                      FONT_NORMAL, COLOR_WHITE, COLOR_BLACK);
+  display_bar_radius(32, DISPLAY_RESY - 160, 128, 64, COLOR_RED, COLOR_BLACK,
+                     16);
+  // display_bar_radius(DISPLAY_RESX - 32 - 128, DISPLAY_RESY - 160, 128, 64,
+  //                    COLOR_GREEN, COLOR_BLACK, 16);
+  display_text(80, DISPLAY_RESY - 120, "No", -1, FONT_NORMAL, COLOR_WHITE,
+               COLOR_RED);
+  // display_text(DISPLAY_RESX - 118, DISPLAY_RESY - 120, "Yes", -1, FONT_NORMAL,
+  //              COLOR_WHITE, COLOR_GREEN);
+  pn532->PowerOn();
+  pn532->SAMConfiguration(PN532_SAM_Normal, 0x14, true);
+  // InListPassiveTarget
+  PN532_InListPassiveTarget_Params ILPT_params = {
+      .MaxTg = 1,
+      .BrTy = PN532_InListPassiveTarget_BrTy_106k_typeA,
+      .InitiatorData_len = 0,
+  };
+  PN532_InListPassiveTarget_Results ILPT_result = {0};
+  while(1){
+    if (pn532->InListPassiveTarget(ILPT_params, &ILPT_result) &&
+        ILPT_result.NbTg == 1){
+          screen_bg[NFC_TEST] = COLOR_GREEN;
+          return;
+        
+        }
+    uint32_t evt = touch_click();
+
+    if (!evt) {
+      continue;
+    }
+
+    uint16_t x = touch_unpack_x(evt);
+    uint16_t y = touch_unpack_y(evt);
+    // clicked on Cancel button
+    if (x >= 32 && x < 32 + 128 && y > DISPLAY_RESY - 160 &&
+        y < DISPLAY_RESY - 160 + 64) {
+      screen_bg[NFC_TEST] = COLOR_RED;
+      return;
+    }
+    // // clicked on Confirm button
+    // if (x >= DISPLAY_RESX - 32 - 128 && x < DISPLAY_RESX - 32 &&
+    //     y > DISPLAY_RESY - 160 && y < DISPLAY_RESY - 160 + 64) {
+    //   screen_bg[NFC_TEST] = COLOR_GREEN;
+    //   return;
+    // }
+  }
+}
+
+void flashled_test(void){
+  uint32_t start,current;
+  start = current = HAL_GetTick();
+  uint8_t value=1;
+  display_clear();
+
+  display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY / 2, "FLASHLED TEST", -1,
+                      FONT_NORMAL, COLOR_WHITE, COLOR_BLACK);
+  display_bar_radius(32, DISPLAY_RESY - 160, 128, 64, COLOR_RED, COLOR_BLACK,
+                     16);
+  display_bar_radius(DISPLAY_RESX - 32 - 128, DISPLAY_RESY - 160, 128, 64,
+                     COLOR_GREEN, COLOR_BLACK, 16);
+  display_text(80, DISPLAY_RESY - 120, "No", -1, FONT_NORMAL, COLOR_WHITE,
+               COLOR_RED);
+  display_text(DISPLAY_RESX - 118, DISPLAY_RESY - 120, "Yes", -1, FONT_NORMAL,
+               COLOR_WHITE, COLOR_GREEN);
+  ble_set_flashled(value);
+  while(1){
+    current = HAL_GetTick();
+    if(current - start > 1000){
+      start = current;
+      value = value?0:1;
+      ble_set_flashled(value);
+    }
+    uint32_t evt = touch_click();
+
+    if (!evt) {
+      continue;
+    }
+
+    uint16_t x = touch_unpack_x(evt);
+    uint16_t y = touch_unpack_y(evt);
+    // clicked on Cancel button
+    if (x >= 32 && x < 32 + 128 && y > DISPLAY_RESY - 160 &&
+        y < DISPLAY_RESY - 160 + 64) {
+      screen_bg[FLASHLED_TEST] = COLOR_RED;
+      ble_set_flashled(0);
+      return;
+    }
+    // clicked on Confirm button
+    if (x >= DISPLAY_RESX - 32 - 128 && x < DISPLAY_RESX - 32 &&
+        y > DISPLAY_RESY - 160 && y < DISPLAY_RESY - 160 + 64) {
+      screen_bg[FLASHLED_TEST] = COLOR_GREEN;
+      ble_set_flashled(0);
+      return;
+    }
+  }
+}
+
+void se_test(void) {
+
+  if (se_get_state()!=0) {
+    screen_bg[SE_TEST] = COLOR_RED;
+  } else {
+    screen_bg[SE_TEST] = COLOR_GREEN;
+  }
+}
+
+int spi_flash_test(void) {
+  // if (qspi_flash_read_id() == 0) {
+  //   screen_bg[SPI_FLASH_TEST] = COLOR_RED;
+  // } else {
+  //   screen_bg[SPI_FLASH_TEST] = COLOR_GREEN;
+  // }
+  char show_tip[64] = {0};
+  volatile uint32_t write_start_time, write_end_time;
+  write_start_time = HAL_GetTick();
+
+  uint8_t flash_data[2048] = {0};
+  uint8_t test_data[2048] = {0};
+  for (uint32_t i = 0; i < sizeof(test_data); i++) {
+    test_data[i] = i;
+  }
+
+  for (uint32_t address = 0; address < (1 * 1024 * 1024);
+       address += QSPI_SECTOR_SIZE) {
+    qspi_flash_erase_block_64k(address);
+
+    for (uint32_t offset = 0; offset < QSPI_SECTOR_SIZE;
+         offset += sizeof(flash_data)) {
+      qspi_flash_read_buffer(flash_data, address + offset, sizeof(flash_data));
+      for (uint32_t i = 0; i < sizeof(flash_data); i++) {
+        if (flash_data[i] != 0xFF) {
+          screen_bg[SPI_FLASH_TEST] = COLOR_RED;
+          return 0;
+        }
+      }
+    }
+
+    for (uint32_t offset = 0; offset < QSPI_SECTOR_SIZE;
+         offset += sizeof(test_data)) {
+      qspi_flash_write_buffer_unsafe(test_data, address + offset,
+                                     sizeof(test_data));
+      memset(flash_data, 0x00, sizeof(flash_data));
+      qspi_flash_read_buffer(flash_data, address + offset, sizeof(flash_data));
+      for (uint32_t i = 0; i < sizeof(flash_data); i++) {
+        if (flash_data[i] != i % 256) {
+          screen_bg[SPI_FLASH_TEST] = COLOR_RED;
+          return 0;
+        }
+      }
+    }
+
+    qspi_flash_erase_block_64k(address);
+
+    display_bar(0, 130, 480, 30, COLOR_BL_BG);
+    mini_snprintf(show_tip, sizeof(show_tip), "SPI TEST... %d%%",
+                  (unsigned int)(address * 100) / (1024 * 1024));
+    display_text_center(DISPLAY_RESX / 2, 160, show_tip, -1, FONT_NORMAL,
+                        COLOR_BL_FG, COLOR_BL_BG);
+  }
+
+  display_bar(0, 130, 480, 30, COLOR_BL_BG);
+  display_text_center(DISPLAY_RESX / 2, 160, "SPI TEST... 100%", -1,
+                      FONT_NORMAL, COLOR_BL_FG, COLOR_BL_BG);
+
+  write_end_time = HAL_GetTick();
+  screen_bg[SPI_FLASH_TEST] = COLOR_GREEN;
+  return write_end_time - write_start_time;
+}
+
+void emmc_test(void) {
+  if (emmc_get_capacity_in_bytes() == 0) {
+    screen_bg[EMMC_TEST] = COLOR_RED;
+  } else {
+    screen_bg[EMMC_TEST] = COLOR_GREEN;
+  }
+}
+
+void sdram_test(void) {
+  uint32_t i, j;
+  uint32_t write_start_time, write_end_time, read_start_time, read_end_time;
+  uint32_t *buffer;
+
+  // char write_info[128] = {0};
+  // char read_info[128] = {0};
+
+  write_start_time = HAL_GetTick();
+  j = 0;
+  buffer = (uint32_t *)(FMC_SDRAM_ADDRESS + 1024 * 1024);
+
+  for (i = ((1024 * 1024 / 4) - (1024 * 1024 / 128)); i > 0; i--) {
+    *buffer++ = j++;
+    *buffer++ = j++;
+    *buffer++ = j++;
+    *buffer++ = j++;
+    *buffer++ = j++;
+    *buffer++ = j++;
+    *buffer++ = j++;
+    *buffer++ = j++;
+
+    *buffer++ = j++;
+    *buffer++ = j++;
+    *buffer++ = j++;
+    *buffer++ = j++;
+    *buffer++ = j++;
+    *buffer++ = j++;
+    *buffer++ = j++;
+    *buffer++ = j++;
+
+    *buffer++ = j++;
+    *buffer++ = j++;
+    *buffer++ = j++;
+    *buffer++ = j++;
+    *buffer++ = j++;
+    *buffer++ = j++;
+    *buffer++ = j++;
+    *buffer++ = j++;
+
+    *buffer++ = j++;
+    *buffer++ = j++;
+    *buffer++ = j++;
+    *buffer++ = j++;
+    *buffer++ = j++;
+    *buffer++ = j++;
+    *buffer++ = j++;
+    *buffer++ = j++;
+  }
+  write_end_time = HAL_GetTick();
+
+  j = 0;
+  buffer = (uint32_t *)(FMC_SDRAM_ADDRESS + 1024 * 1024);
+  for (i = 0; i < ((1024 * 1024 * 8) - (1024 * 1024 / 4)); i++) {
+    if (*buffer++ != j++) {
+      screen_bg[SDRAM_TEST] = COLOR_RED;
+      return;
     }
   }
 
-  display_bar_radius(160, 352, 160, 4, COLOR_DARK, COLOR_BLACK, 2);
-  display_bar_radius(160 + location, 352, indicator, 4, COLOR_WHITE,
-                     COLOR_BLACK, 2);
+  volatile uint32_t data;
+  (void)data;
+  buffer = (uint32_t *)FMC_SDRAM_ADDRESS;
+
+  read_start_time = HAL_GetTick();
+  for (i = 1024 * 1024 / 4; i > 0; i--) {
+    data = *buffer++;
+    data = *buffer++;
+    data = *buffer++;
+    data = *buffer++;
+    data = *buffer++;
+    data = *buffer++;
+    data = *buffer++;
+    data = *buffer++;
+
+    data = *buffer++;
+    data = *buffer++;
+    data = *buffer++;
+    data = *buffer++;
+    data = *buffer++;
+    data = *buffer++;
+    data = *buffer++;
+    data = *buffer++;
+
+    data = *buffer++;
+    data = *buffer++;
+    data = *buffer++;
+    data = *buffer++;
+    data = *buffer++;
+    data = *buffer++;
+    data = *buffer++;
+    data = *buffer++;
+
+    data = *buffer++;
+    data = *buffer++;
+    data = *buffer++;
+    data = *buffer++;
+    data = *buffer++;
+    data = *buffer++;
+    data = *buffer++;
+    data = *buffer++;
+  }
+  read_end_time = HAL_GetTick();
+  // display_clear();
+
+  // snprintf(write_info, sizeof(write_info), "write:time = %dms,speed= %dMB/s",
+  //          (unsigned)(write_end_time - write_start_time),
+  //          (unsigned)((32 * 1000) / (write_end_time - write_start_time)));
+  // snprintf(read_info, sizeof(read_info), "read:time = %dms,speed= %dMB/s",
+  //          (unsigned)(read_end_time - read_start_time),
+  //          (unsigned)((32 * 1000) / (read_end_time - read_start_time)));
+
+  // display_text(0, 100, write_info, -1, FONT_NORMAL, COLOR_WHITE,
+  // COLOR_BLACK); display_text(0, 150, read_info, -1, FONT_NORMAL, COLOR_WHITE,
+  // COLOR_BLACK); display_bar_radius(32, DISPLAY_RESY - 160, 128, 64,
+  // COLOR_RED, COLOR_BLACK,
+  //                    16);
+  // display_bar_radius(DISPLAY_RESX - 32 - 128, DISPLAY_RESY - 160, 128, 64,
+  //                    COLOR_GREEN, COLOR_BLACK, 16);
+  // display_text(80, DISPLAY_RESY - 120, "No", -1, FONT_NORMAL, COLOR_WHITE,
+  //              COLOR_RED);
+  // display_text(DISPLAY_RESX - 118, DISPLAY_RESY - 120, "Yes", -1,
+  // FONT_NORMAL,
+  //              COLOR_WHITE, COLOR_GREEN);
+
+  // if (ui_response()) {
+  //   screen_bg[SDRAM_TEST] = COLOR_GREEN;
+  // } else {
+  //   screen_bg[SDRAM_TEST] = COLOR_RED;
+  // }
+
+  if ((31 * 1000) / (write_end_time - write_start_time) > 400 &&
+      (32 * 1000) / (read_end_time - read_start_time) > 200) {
+    screen_bg[SDRAM_TEST] = COLOR_GREEN;
+  } else {
+    screen_bg[SDRAM_TEST] = COLOR_RED;
+  }
+}
+
+void ble_test(void) {
+  if (!ble_name_state()) {
+    ble_cmd_req(BLE_VER, BLE_VER_ADV);
+    hal_delay(5);
+  }
+
+  if (!ble_battery_state()) {
+    ble_cmd_req(BLE_PWR, BLE_PWR_EQ);
+    hal_delay(5);
+  }
+}
+
+uint16_t *p_test_result = (uint16_t *)0x08020000;
+uint16_t test_result[16];
+
+#define OFFSET_Y 80
+#define FONT_OFFSET 30
+
+void test_menu(void) {
+  uint8_t secotrs[1];
+  secotrs[0] = 1;
+
+  memcpy(test_result, screen_bg, sizeof(screen_bg));
+
+  ensure(flash_erase_sectors(secotrs, 1, NULL), "erase data sector 1");
+  ensure(flash_unlock_write(), NULL);
+  ensure(flash_write_words(1, 0, (uint32_t *)test_result), "write test result");
+  ensure(flash_lock_write(), NULL);
+
+  display_clear();
+  display_text_center(DISPLAY_RESX / 2, 100, "DEVICE TEST", -1, FONT_NORMAL,
+                      COLOR_BL_FG, COLOR_BL_BG);
+  for (int i = 0; i < 2; i++) {
+    for (int j = 0; j < 6; j++) {
+      display_bar_radius((i + 1) * 60 + i * 150, 150 + j * OFFSET_Y, 150, 60,
+                         screen_bg[j * 2 + i], COLOR_BLACK, 16);
+    }
+  }
+  display_text_center(135, FONT_OFFSET+OFFSET_Y*2, "SCREEN", -1, FONT_NORMAL, COLOR_BL_FG,
+                      screen_bg[SCREEN_TEST]);
+  display_text_center(345,  FONT_OFFSET+OFFSET_Y*2, "TOUCH", -1, FONT_NORMAL, COLOR_BL_FG,
+                      screen_bg[TOUCH_TEST]);
+  display_text_center(135,  FONT_OFFSET+OFFSET_Y*3, "SE", -1, FONT_NORMAL, COLOR_BL_FG,
+                      screen_bg[SE_TEST]);
+  display_text_center(345,  FONT_OFFSET+OFFSET_Y*3, "SPI-FLASH", -1, FONT_NORMAL, COLOR_BL_FG,
+                      screen_bg[SPI_FLASH_TEST]);
+  display_text_center(135,  FONT_OFFSET+OFFSET_Y*4, "EMMC", -1, FONT_NORMAL, COLOR_BL_FG,
+                      screen_bg[EMMC_TEST]);
+  display_text_center(345,  FONT_OFFSET+OFFSET_Y*4, "SDRAM", -1, FONT_NORMAL, COLOR_BL_FG,
+                      screen_bg[SDRAM_TEST]);
+  display_text_center(135,  FONT_OFFSET+OFFSET_Y*5, "CAMERA", -1, FONT_NORMAL, COLOR_BL_FG,
+                      screen_bg[CAMERA_TEST]);
+  display_text_center(345,  FONT_OFFSET+OFFSET_Y*5, "MOTOR", -1, FONT_NORMAL, COLOR_BL_FG,
+                      screen_bg[MOTOR_TEST]);
+  display_text_center(135,  FONT_OFFSET+OFFSET_Y*6, "BLE", -1, FONT_NORMAL, COLOR_BL_FG,
+                      screen_bg[BLE_TEST]);
+  display_text_center(345,  FONT_OFFSET+OFFSET_Y*6, "FP", -1, FONT_NORMAL, COLOR_BL_FG,
+                      screen_bg[FP_TEST]);
+  display_text_center(135,  FONT_OFFSET+OFFSET_Y*7, "NFC", -1, FONT_NORMAL, COLOR_BL_FG,
+                      screen_bg[NFC_TEST]);
+  display_text_center(345,  FONT_OFFSET+OFFSET_Y*7, "FLASHLED", -1, FONT_NORMAL, COLOR_BL_FG,
+                      screen_bg[FLASHLED_TEST]);
+}
+
+uint16_t pos_x, pos_y;
+uint32_t test_ui_response(void) {
+  uint32_t evt = touch_click();
+  pos_x = touch_unpack_x(evt);
+  pos_y = touch_unpack_y(evt);
+
+  if (!evt) {
+    return 0xFF;
+  }
+
+  for (int i = 0; i < 2; i++) {
+    for (int j = 0; j < 6; j++) {
+      if (pos_x > ((i + 1) * 60 + i * 150) &&
+          pos_x < ((i + 1) * 60 + (i + 1) * 150) && pos_y > (150 + j * OFFSET_Y) &&
+          pos_y < (150 + j * OFFSET_Y + 80)) {
+        return j * 2 + i;
+      }
+    }
+  }
+  return 0xFF;
+}
+
+void ble_response(void) {
+  static bool flag = true;
+  char battery_str[32] = {0};
+  if (ble_name_state()) {
+    display_text(0, 700, ble_get_name(), -1, FONT_NORMAL, COLOR_BL_FG,
+                 COLOR_BL_BG);
+    screen_bg[BLE_TEST] = COLOR_GREEN;
+    if (flag) {
+      flag = false;
+      test_menu();
+    }
+  }
+  if (ble_battery_state()) {
+    mini_snprintf(battery_str, sizeof(battery_str), "battery %d%%",
+                  battery_cap);
+    display_text(0, 730, battery_str, -1, FONT_NORMAL, COLOR_BL_FG,
+                 COLOR_BL_BG);
+  }
 }
 
 int main(void) {
@@ -438,6 +1118,10 @@ int main(void) {
   gpio_init();
 
   sdram_init();
+
+  qspi_flash_init();
+  qspi_flash_config();
+  // qspi_flash_memory_mapped();
 
   mpu_config();
 
@@ -465,7 +1149,114 @@ int main(void) {
   touch_init();
 
   emmc_init();
-  fatfs_init();
+  thd89_io_init();
+  camera_io_init();
+  // se
+  thd89_reset();
+  thd89_init();
+  camera_init();
+  ble_usart_init();
+  motor_init();
+  dwt_init();
+
+  nfc_init();
+
+  fingerprint_init();
+
+  // fatfs_init();
+  memcpy(test_result, p_test_result, 32);
+  for (int i = 0; i < TEST_NUMS; i++) {
+    if (test_result[i] == (COLOR_RED)) {
+      screen_bg[i] = COLOR_RED;
+    } else if (test_result[i] == (COLOR_GREEN)) {
+      screen_bg[i] = COLOR_GREEN;
+    } else {
+      screen_bg[i] = COLOR_BL_GRAY;
+    }
+  }
+
+  screen_bg[TEST_NUMS] = COLOR_BLACK;
+
+  display_clear();
+  display_text_center(DISPLAY_RESX / 2, 100, "AUTO TEST", -1, FONT_NORMAL,
+                      COLOR_BL_FG, COLOR_BL_BG);
+
+  display_text_center(DISPLAY_RESX / 2, 130, "SE TEST...", -1, FONT_NORMAL,
+                      COLOR_BL_FG, COLOR_BL_BG);
+
+  se_test();
+
+  display_text_center(DISPLAY_RESX / 2, 160, "SPI TEST...", -1, FONT_NORMAL,
+                      COLOR_BL_FG, COLOR_BL_BG);
+
+  spi_flash_test();
+
+  display_text_center(DISPLAY_RESX / 2, 190, "EMMC TEST...", -1, FONT_NORMAL,
+                      COLOR_BL_FG, COLOR_BL_BG);
+
+  emmc_test();
+
+  display_text_center(DISPLAY_RESX / 2, 220, "SDRAM TEST...", -1, FONT_NORMAL,
+                      COLOR_BL_FG, COLOR_BL_BG);
+
+  sdram_test();
+
+  display_text_center(DISPLAY_RESX / 2, 250, "BLE TEST...", -1, FONT_NORMAL,
+                      COLOR_BL_FG, COLOR_BL_BG);
+
+  ble_test();
+
+  uint32_t button = 0;
+
+  test_menu();
+  while (1) {
+    ble_uart_poll();
+    ble_response();
+    button = test_ui_response();
+    if (button != 0xFF) {
+      switch (button) {
+        case SCREEN_TEST:
+          screen_test();
+          break;
+        case TOUCH_TEST:
+          touch_input_test();
+          break;
+        case SE_TEST:
+          se_test();
+          break;
+        case SPI_FLASH_TEST:
+          spi_flash_test();
+          break;
+        case EMMC_TEST:
+          emmc_test();
+          break;
+        case SDRAM_TEST:
+          sdram_test();
+          break;
+        case CAMERA_TEST:
+          camera_test();
+          break;
+        case MOTOR_TEST:
+          _motor_test();
+          break;
+        case BLE_TEST:
+          ble_test();
+          break;
+        case FP_TEST:
+          _fp_test();
+          break;
+        case NFC_TEST:
+          _nfc_test();
+          break;
+        case FLASHLED_TEST:
+          flashled_test();
+          break;
+        default:
+          break;
+      }
+      test_menu();
+    }
+  }
 
   uint32_t mode = 0;
   bool factory_mode = false;
@@ -490,10 +1281,6 @@ int main(void) {
 
     for (int timer = 0; timer < 1600; timer++) {
       ble_uart_poll();
-
-      if (timer % 8 == 0) {
-        show_poweron_bar();
-      }
 
       if (ble_power_button_state() == 2) {
         if (touched) {

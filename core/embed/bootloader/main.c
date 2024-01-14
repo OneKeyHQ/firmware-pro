@@ -151,7 +151,7 @@ static void nfc_test() {
   nfc_init();
   display_printf("Done\n");
 
-  pn532->PowerOn();
+    
 
   PN532_FW_VER fw_ver;
   display_printf("NFC PN532 Get FW Ver...");

@@ -44,7 +44,11 @@ typedef enum
     FPSENSOR_NOFNGR_ERROR = 0x20
 } fpsensor_error_t;
 
-#define SLEEP_MODE_CLK 16000
+#define SLEEP_MODE_CLK  16000
+
+#define FPSENSOR_OFFSET 17
+#define FPSENSOR_GAIN   12
+#define FPSENSOR_PIXEL  4
 
 typedef struct fpsensor_iamge
 {
