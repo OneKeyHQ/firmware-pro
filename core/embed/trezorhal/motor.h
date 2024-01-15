@@ -18,11 +18,13 @@ typedef struct __attribute__((__packed__)) {
   uint16_t durnation_us;
 } MOTOR_ACTION;
 
-void motor_init(void);
-
 void motor_ctrl(MOTOR_ACTION* act);
-void motor_timer_play(MOTOR_ACTION* act_list, size_t act_list_len);
 void motor_cpu_play(MOTOR_ACTION* act_list, size_t act_list_len);
+void motor_timer_play(MOTOR_ACTION* act_list, size_t act_list_len);
+void motor_timer_reset(void);
+
+void motor_init(void);
+void motor_reset();
 
 void motor_tick(void);
 void motor_tock(void);

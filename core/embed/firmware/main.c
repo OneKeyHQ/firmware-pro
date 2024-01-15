@@ -41,6 +41,7 @@
 #include "board_capabilities.h"
 #include "common.h"
 #include "compiler_traits.h"
+#include "systick.h"
 #include "display.h"
 #include "emmc.h"
 #include "ff.h"

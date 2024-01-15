@@ -34,6 +34,14 @@ MOTOR_ACTION MAL_relax[] = {
     {.state = MOTOR_COAST, .durnation_us = 1500},  // 0b00
 };
 
+// control status
+static TIM_HandleTypeDef TIM7_Handle;
+static bool motor_busy = false;
+static MOTOR_ACTION* _act_list;
+static size_t _act_list_len = 0;
+static MOTOR_ACTION* _act_list_index = NULL;
+static MOTOR_ACTION* _act_list_index_max = NULL;
+
 static void motor_io_init(void) {
   GPIO_InitTypeDef gpio;
   __HAL_RCC_GPIOK_CLK_ENABLE();
@@ -53,12 +61,6 @@ inline void motor_ctrl(MOTOR_ACTION* act) {
   HAL_GPIO_WritePin(GPIOK, GPIO_PIN_2, ((*act).state & 0b0000001));
   HAL_GPIO_WritePin(GPIOK, GPIO_PIN_3, ((*act).state & 0b0000010));
 }
-
-static TIM_HandleTypeDef TIM7_Handle;
-static MOTOR_ACTION* _act_list;
-static size_t _act_list_len = 0;
-static MOTOR_ACTION* _act_list_index_max = NULL;
-static MOTOR_ACTION* _act_list_index = NULL;
 
 static bool motor_timer_init() {
   // 1000000hz = 1us period
@@ -90,16 +92,23 @@ static bool motor_timer_init() {
 
   return true;
 }
-
 // static bool motor_timer_deinit()
 // {
 //     // tim7
 //     __HAL_RCC_TIM7_CLK_DISABLE();
 //     __HAL_TIM_DISABLE_IT(&TIM7_Handle, TIM_IT_UPDATE);
 //     HAL_NVIC_DisableIRQ(TIM7_IRQn);
-
 //     return true;
 // }
+
+void motor_cpu_play(MOTOR_ACTION* act_list, size_t act_list_len) {
+  MOTOR_ACTION* act_list_index = act_list;
+  while (act_list_index < (act_list + act_list_len)) {
+    motor_ctrl(act_list_index);
+    HAL_Delay((*act_list_index).durnation_us / 1000);
+    act_list_index++;
+  }
+}
 
 void TIM7_IRQHandler() {
   if (__HAL_TIM_GET_FLAG(&TIM7_Handle, TIM_FLAG_UPDATE) != RESET) {
@@ -113,8 +122,7 @@ void TIM7_IRQHandler() {
                                  (*_act_list_index).durnation_us - 1);
         __HAL_TIM_ENABLE(&TIM7_Handle);
       } else {
-        motor_ctrl(MAL_relax);
-        __HAL_TIM_DISABLE(&TIM7_Handle);
+        motor_reset();
         return;
       }
     }
@@ -122,9 +130,9 @@ void TIM7_IRQHandler() {
 }
 
 void motor_timer_play(MOTOR_ACTION* act_list, size_t act_list_len) {
-  if (_act_list_index != _act_list_index_max) return;
-  __HAL_TIM_DISABLE(&TIM7_Handle);
+  if (motor_busy) return;
 
+  __HAL_TIM_DISABLE(&TIM7_Handle);
   _act_list = act_list;
   _act_list_len = act_list_len;
   _act_list_index =
@@ -135,18 +143,26 @@ void motor_timer_play(MOTOR_ACTION* act_list, size_t act_list_len) {
   __HAL_TIM_ENABLE(&TIM7_Handle);
 }
 
-void motor_cpu_play(MOTOR_ACTION* act_list, size_t act_list_len) {
-  MOTOR_ACTION* act_list_index = act_list;
-  while (act_list_index < (act_list + act_list_len)) {
-    motor_ctrl(act_list_index);
-    HAL_Delay((*act_list_index).durnation_us / 1000);
-    act_list_index++;
-  }
+void motor_timer_reset(void)
+{
+  _act_list_len = 0;
+  _act_list = NULL;
+  _act_list_index = NULL;
+  _act_list_index_max = NULL;
 }
 
 void motor_init(void) {
   motor_io_init();
   motor_timer_init();
+  motor_reset();
+}
+
+void motor_reset(void)
+{
+  motor_ctrl(MAL_relax);
+  motor_timer_reset();
+  __HAL_TIM_DISABLE(&TIM7_Handle);
+  motor_busy = false;
 }
 
 void motor_tick(void) {
