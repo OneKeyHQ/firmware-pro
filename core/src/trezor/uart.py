@@ -27,11 +27,13 @@ _CMD_NRF_VERSION = const(5)  # ble firmware version
 _CMD_DEVICE_CHARGING_STATUS = const(8)
 _CMD_BATTERY_STATUS = const(9)
 _CMD_SIDE_BUTTON_PRESS = const(10)
+_CMD_LED_BRIGHTNESS = const(12)
 CHARGING = False
 SCREEN: PairCodeDisplay | None = None
 BLE_ENABLED: bool | None = None
 NRF_VERSION: str | None = None
 BLE_CTRL = io.BLE()
+FLASH_LED_BRIGHTNESS: int | None = None
 
 
 async def handle_fingerprint():
@@ -95,6 +97,7 @@ async def handle_fingerprint():
                     # failed prompt
                     visible, scr = LockScreen.retrieval()
                     if visible and scr is not None:
+                        motor.vibrate()
                         scr.show_tips(warning_level)
                         scr.show_finger_mismatch_anim()
                     await loop.sleep(500)
@@ -243,6 +246,9 @@ async def process_push() -> None:
     elif cmd == _CMD_NRF_VERSION:
         # retrieve nrf version
         _retrieve_nrf_version(value)
+    elif cmd == _CMD_LED_BRIGHTNESS:
+        # retrieve led brightness
+        _retrieve_flashled_brightness(value)
     else:
         if __debug__:
             print("unknown or not care command:", cmd)
@@ -366,6 +372,16 @@ async def _deal_ble_status(value: bytes) -> None:
             device.set_ble_status(enable=False)
 
 
+def _retrieve_flashled_brightness(value: bytes) -> None:
+    if value != b"":
+        global FLASH_LED_BRIGHTNESS
+        flag, FLASH_LED_BRIGHTNESS = ustruct.unpack(">BB", value)
+        if __debug__:
+            print("flag:", flag)
+            print(f"flash led brightness: {FLASH_LED_BRIGHTNESS}")
+        utils.FLASH_LED_BRIGHTNESS = FLASH_LED_BRIGHTNESS
+
+
 def _retrieve_ble_name(value: bytes) -> None:
     if value != b"":
         utils.BLE_NAME = value.decode("utf-8")
@@ -383,27 +399,27 @@ def _retrieve_nrf_version(value: bytes) -> None:
 
 def _request_ble_name():
     """Request ble name."""
-    BLE_CTRL.ctrl(0x83, 0x01)
+    BLE_CTRL.ctrl(0x83, b"\x01")
 
 
 def _request_ble_version():
     """Request ble version."""
-    BLE_CTRL.ctrl(0x83, 0x02)
+    BLE_CTRL.ctrl(0x83, b"\x02")
 
 
 def _request_battery_level():
     """Request battery level."""
-    BLE_CTRL.ctrl(0x82, 0x04)
+    BLE_CTRL.ctrl(0x82, b"\x04")
 
 
 def _request_ble_status():
     """Request current ble status."""
-    BLE_CTRL.ctrl(0x81, 0x04)
+    BLE_CTRL.ctrl(0x81, b"\x04")
 
 
 def _request_charging_status():
     """Request charging status."""
-    BLE_CTRL.ctrl(0x82, 0x05)
+    BLE_CTRL.ctrl(0x82, b"\x05")
 
 
 def fetch_all():
@@ -413,19 +429,20 @@ def fetch_all():
     _request_ble_status()
     _request_battery_level()
     _request_charging_status()
+    _fetch_flashled_brightness()
 
 
 def fetch_ble_info():
     if not utils.BLE_NAME:
-        BLE_CTRL.ctrl(0x83, 0x01)
+        BLE_CTRL.ctrl(0x83, b"\x01")
 
     global NRF_VERSION
     if NRF_VERSION is None:
-        BLE_CTRL.ctrl(0x83, 0x02)
+        BLE_CTRL.ctrl(0x83, b"\x02")
 
     global BLE_ENABLED
     if BLE_ENABLED is None:
-        BLE_CTRL.ctrl(0x81, 0x04)
+        BLE_CTRL.ctrl(0x81, b"\x04")
 
 
 def ctrl_ble(enable: bool) -> None:
@@ -433,14 +450,48 @@ def ctrl_ble(enable: bool) -> None:
     @param enable: True to open, False to close
     """
     if not device.ble_enabled() and enable:
-        BLE_CTRL.ctrl(0x81, 0x01)
+        BLE_CTRL.ctrl(0x81, b"\x01")
     elif device.ble_enabled() and not enable:
-        BLE_CTRL.ctrl(0x81, 0x02)
+        BLE_CTRL.ctrl(0x81, b"\x02")
+
+
+def _ctrl_flashled(enable: bool, brightness=15) -> None:
+    """Request to open or close flashlight.
+    @param enable: True to open, False to close
+    """
+    BLE_CTRL.ctrl(
+        0x85, b"\x01" + (int.to_bytes(brightness, 1, "big") if enable else b"\x00")
+    )
+
+
+def _fetch_flashled_brightness() -> None:
+    """Request to get led brightness."""
+    BLE_CTRL.ctrl(0x85, b"\x02")
+
+
+def flashled_open() -> None:
+    """Request to open led."""
+    utils.FLASH_LED_BRIGHTNESS = 15
+    _ctrl_flashled(True)
+
+
+def flashled_close() -> None:
+    """Request to close led."""
+    utils.FLASH_LED_BRIGHTNESS = 0
+    _ctrl_flashled(False)
+
+
+def is_flashled_opened() -> bool:
+    """Check if led is opened."""
+    if utils.FLASH_LED_BRIGHTNESS is None:
+        _fetch_flashled_brightness()
+        return False
+    return utils.FLASH_LED_BRIGHTNESS > 0
 
 
 def ctrl_power_off() -> None:
     """Request to power off the device."""
-    BLE_CTRL.ctrl(0x82, 0x01)
+    BLE_CTRL.ctrl(0x82, b"\x01")
 
 
 def get_ble_name() -> str:

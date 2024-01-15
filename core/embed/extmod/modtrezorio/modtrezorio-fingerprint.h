@@ -140,7 +140,6 @@ STATIC mp_obj_t mod_trezorio_fingerprint_match(void) {
   FP_RESULT mres = fingerprint_match(&match_id);
   switch (mres) {
     case FP_OK:
-      /* code */
       return mp_obj_new_int_from_uint(match_id);
     case FP_NO_FP: {
       FP_RAISE(NoFp, mres);

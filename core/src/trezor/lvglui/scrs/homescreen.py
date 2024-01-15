@@ -1153,9 +1153,10 @@ class ScanScreen(Screen):
         self.desc.set_text(_(i18n_keys.CONTENT__SCAN_THE_QR_CODE_DISPLAYED_ON_THE_APP))
         self.desc.align_to(self.camera_bg, lv.ALIGN.OUT_BOTTOM_MID, 0, 14)
 
-        self.btn = NormalButton(
-            self, f"{LV_SYMBOLS.LV_SYMBOL_LIGHTBULB}  {_(i18n_keys.BUTTON__TORCH_ON)}"
-        )
+        self.btn = NormalButton(self, f"{LV_SYMBOLS.LV_SYMBOL_LIGHTBULB}")
+        self.btn.set_size(115, 115)
+        self.btn.add_style(StyleWrapper().radius(lv.RADIUS.CIRCLE), 0)
+        self.btn.align(lv.ALIGN.BOTTOM_MID, 0, -8)
         self.btn.add_state(lv.STATE.CHECKED)
         self.add_event_cb(self.on_event, lv.EVENT.CLICKED, None)
 
@@ -1167,20 +1168,17 @@ class ScanScreen(Screen):
         if code == lv.EVENT.CLICKED:
             if target == self.btn:
                 if self.btn.has_state(lv.STATE.CHECKED):
-                    self.btn.label.set_text(
-                        f"{LV_SYMBOLS.LV_SYMBOL_TRFFIC_LIGHT}  {_(i18n_keys.BUTTON__TORCH_OFF)}"
-                    )
+                    self.btn.label.set_text(f"{LV_SYMBOLS.LV_SYMBOL_TRFFIC_LIGHT}")
                     self.btn.enable(bg_color=lv_colors.ONEKEY_BLACK)
                     self.btn.clear_state(lv.STATE.CHECKED)
-                    # TODO: turn on light
+                    uart.flashled_open()
                 else:
-                    # TODO: turn off light
-                    self.btn.label.set_text(
-                        f"{LV_SYMBOLS.LV_SYMBOL_LIGHTBULB}  {_(i18n_keys.BUTTON__TORCH_ON)}"
-                    )
+                    uart.flashled_close()
+                    self.btn.label.set_text(f"{LV_SYMBOLS.LV_SYMBOL_LIGHTBULB}")
                     self.btn.enable()
                     self.btn.add_state(lv.STATE.CHECKED)
             elif target == self.nav_back.nav_btn:
+                uart.flashled_close()
                 close_camera()
 
     def _load_scr(self, scr: "Screen", back: bool = False) -> None:

@@ -1,7 +1,7 @@
 from trezorio import fingerprint
 
 from storage import device
-from trezor import config, loop, utils
+from trezor import config, loop, motor, utils
 from trezor.crypto import se_thd89
 
 from ..i18n import gettext as _, keys as i18n_keys
@@ -10,6 +10,7 @@ from . import font_GeistRegular30, lv
 from .common import FullSizeWindow
 from .widgets.style import StyleWrapper
 
+FP_MAX_COLLECT_COUNT = 6
 match_chan = loop.chan()
 
 
@@ -175,6 +176,7 @@ async def request_enroll(i) -> None:
         if i != 0:
             if __debug__:
                 print("move finger away")
+            motor.vibrate(weak=True)
             await loop.sleep(100)
         else:
             break
@@ -190,6 +192,7 @@ async def request_enroll(i) -> None:
                 from trezor import log
 
                 log.exception(__name__, e)
+            motor.vibrate()
             if isinstance(e, fingerprint.EnrollDuplicate):
                 prompt_text = _(
                     i18n_keys.MSG__LIFT_AND_FINE_TUNE_THE_POSITION_THEN_TOUCH_POWER_BUTTON_AGAIN
@@ -202,6 +205,7 @@ async def request_enroll(i) -> None:
                 CollectFingerprintProgress.get_instance().prompt_tips(prompt_text)
             await loop.sleep(100)
         else:
+            motor.vibrate(weak=True)
             break
 
 
@@ -229,9 +233,10 @@ async def add_fingerprint(ids, callback=None) -> bool:
         while True:
 
             if fingerprint.detect():
+                motor.vibrate(weak=True)
                 scr.destroy(50)
                 progress = CollectFingerprintProgress.get_instance()
-                for i in range(6):
+                for i in range(FP_MAX_COLLECT_COUNT):
                     progress.prompt_tips_clear()
                     enroll_task = request_enroll(i)
                     cancel_task = progress.request()
@@ -242,7 +247,7 @@ async def add_fingerprint(ids, callback=None) -> bool:
                         CollectFingerprintProgress.reset()
                         break
                     progress.update_progress(processes[i])
-                    # await loop.sleep(400)
+
                 progress.destroy(50)
                 if abort:
                     success = False

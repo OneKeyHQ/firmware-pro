@@ -45,13 +45,15 @@ STATIC mp_obj_t mod_trezorio_BLE_make_new(const mp_obj_type_t *type,
   return MP_OBJ_FROM_PTR(o);
 }
 
-/// def ctrl(self, cmd: byte, value: byte) -> None:
+/// def ctrl(self, cmd: byte, value: bytes) -> None:
 ///     """
 ///     Send command to the BLE.
 ///     """
 STATIC mp_obj_t mod_trezorio_BLE_ctrl(mp_obj_t self, mp_obj_t cmd,
                                       mp_obj_t value) {
-  ble_cmd_req(trezor_obj_get_uint8(cmd), trezor_obj_get_uint8(value));
+  mp_buffer_info_t buf = {0};
+  mp_get_buffer_raise(value, &buf, MP_BUFFER_READ);
+  ble_cmd_req_ex(trezor_obj_get_uint8(cmd), (uint8_t *)(buf.buf), buf.len);
   return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_3(mod_trezorio_BLE_ctrl_obj,

@@ -45,6 +45,7 @@ extern uint8_t dev_pwr_sta;
 
 bool ble_connect_state(void);
 void ble_cmd_req(uint8_t cmd, uint8_t value);
+void ble_cmd_req_ex(uint8_t cmd, const uint8_t *value, uint32_t value_len);
 void ble_uart_poll(void);
 
 #if !EMULATOR

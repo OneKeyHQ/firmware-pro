@@ -6,6 +6,10 @@ from . import font_GeistRegular26
 from .common import Screen, lv, lv_colors
 from .widgets.style import StyleWrapper
 
+ANIM_TIME = 20
+ANIM_PLAYBACK_TIME = 20
+ANIM_PLAYBACK_DELAY = 5
+
 
 class LockScreen(Screen):
     @classmethod
@@ -43,6 +47,7 @@ class LockScreen(Screen):
             0,
         )
         self.tap_tip = lv.label(self.content_area)
+        self.tap_tip.set_size(456, lv.SIZE.CONTENT)
         self.tap_tip.set_long_mode(lv.label.LONG.WRAP)
         self.show_tips()
         self.lock_state = lv.img(self.content_area)
@@ -93,24 +98,24 @@ class LockScreen(Screen):
         self.anim_right.init()
         self.anim_right.set_var(self.lock_state)
         self.anim_right.set_values(220, 230)
-        self.anim_right.set_time(100)
-        self.anim_right.set_playback_delay(50)
-        self.anim_right.set_playback_time(100)
-        self.anim_right.set_repeat_delay(50)
+        self.anim_right.set_time(ANIM_TIME)
+        self.anim_right.set_playback_delay(ANIM_PLAYBACK_DELAY)
+        self.anim_right.set_playback_time(ANIM_PLAYBACK_TIME)
+        self.anim_right.set_repeat_delay(5)
         self.anim_right.set_repeat_count(1)
-        self.anim_right.set_path_cb(lv.anim_t.path_linear)
+        self.anim_right.set_path_cb(lv.anim_t.path_ease_in)
         self.anim_right.set_custom_exec_cb(lambda _a, val: self.anim_set_x(val))
 
         self.anim_left = lv.anim_t()
         self.anim_left.init()
         self.anim_left.set_var(self.lock_state)
         self.anim_left.set_values(220, 210)
-        self.anim_left.set_time(100)
-        self.anim_left.set_playback_delay(50)
-        self.anim_left.set_playback_time(100)
-        self.anim_left.set_repeat_delay(50)
+        self.anim_left.set_time(ANIM_TIME)
+        self.anim_left.set_playback_delay(ANIM_PLAYBACK_DELAY)
+        self.anim_left.set_playback_time(ANIM_PLAYBACK_TIME)
+        self.anim_left.set_repeat_delay(5)
         self.anim_left.set_repeat_count(1)
-        self.anim_left.set_path_cb(lv.anim_t.path_linear)
+        self.anim_left.set_path_cb(lv.anim_t.path_ease_in)
         self.anim_left.set_custom_exec_cb(lambda _a, val: self.anim_set_x(val))
         self.anim_left.set_deleted_cb(lambda _a: lv.anim_t.start(self.anim_right))
 

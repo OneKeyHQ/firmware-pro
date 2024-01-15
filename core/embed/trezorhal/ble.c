@@ -51,6 +51,14 @@ void ble_cmd_req(uint8_t cmd, uint8_t value) {
   hal_delay(10);
 }
 
+void ble_cmd_req_ex(uint8_t cmd, const uint8_t *value, uint32_t value_len) {
+  uint8_t buf[64] = {0};
+  buf[0] = cmd;
+  memcpy(buf + 1, value, value_len);
+  ble_cmd_packet(buf, value_len + 1);
+  hal_delay(10);
+}
+
 bool ble_connect_state(void) { return ble_connect; }
 
 bool ble_name_state(void) { return get_ble_name; }

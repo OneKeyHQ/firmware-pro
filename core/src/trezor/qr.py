@@ -115,6 +115,7 @@ def scan_qr(callback_obj):
         from trezorio import camera
         from trezor.qr import handle_qr
         from apps.ur_registry.ur_py.ur.ur_decoder import URDecoder
+        from trezor import motor
 
         decoder = URDecoder()
         qr_task.set_camera_state(True)
@@ -130,6 +131,7 @@ def scan_qr(callback_obj):
                     print(qr_data.decode("utf-8"))
                 decoder.receive_part(qr_data.decode("utf-8"))
                 if decoder.is_complete():
+                    motor.vibrate()
                     camera.stop()
                     if type(decoder.result) is UR:
                         await handle_qr(decoder.result)
