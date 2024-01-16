@@ -67,13 +67,13 @@ STATIC mp_obj_t mod_trezorio_MOTOR_tock(mp_obj_t self) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorio_MOTOR_tock_obj,
                                  mod_trezorio_MOTOR_tock);
 
-/// def play(self, pattern) -> None:
-///     """
-///     Play custom pattern
-///
-///     Pattern is expacted to be a List that contains multiple Pair of
-///     MOTOR_STATE and durnation
-///     """
+// /// def play(self, pattern) -> None:
+// ///     """
+// ///     Play custom pattern
+// ///
+// ///     Pattern is expacted to be a List that contains multiple Pair of
+// ///     MOTOR_STATE and durnation
+// ///     """
 // STATIC mp_obj_t mod_trezorio_MOTOR_play(mp_obj_t self, mp_obj_t pattern)
 // {
 //     // WIP, DO NOT USE!
