@@ -51,6 +51,7 @@
 #include "bootui.h"
 #include "device.h"
 #include "i2c.h"
+#include "jpeg_dma.h"
 #include "messages.h"
 #include "motor.h"
 #include "mpu.h"

@@ -1,4 +1,4 @@
-name: "build-touch1s"
+name: "build-pro"
 
 on:
   schedule:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-touch1s:
+  build-pro:
     runs-on: ubuntu-20.04
 
     steps:
@@ -38,11 +38,11 @@ jobs:
           nix-shell --run "poetry run make -C core build_boardloader"
           nix-shell --run "poetry run make -C core build_bootloader"
           nix-shell --run "poetry run make -C core build_firmware"
-          nix-shell --run "poetry run core/tools/headertool.py -h core/build/firmware/touch*Stable*.bin -S 1:${{ secrets.SECRET_KEY_1 }} -S 2:${{ secrets.SECRET_KEY_2 }}"
+          nix-shell --run "poetry run core/tools/headertool.py -h core/build/firmware/pro*Stable*.bin -S 1:${{ secrets.SECRET_KEY_1 }} -S 2:${{ secrets.SECRET_KEY_2 }}"
           mkdir -p core/build/output/boardloader && mkdir -p core/build/output/bootloader && mkdir -p core/build/output/firmware
           cp ./core/build/boardloader/boardloader.bin core/build/output/boardloader
-          cp ./core/build/bootloader/bootloader*Stable*.bin core/build/output/bootloader
-          cp ./core/build/firmware/touch*Stable*.bin core/build/output/firmware
+          cp ./core/build/bootloader/pro.bootloader*Stable*.bin core/build/output/bootloader
+          cp ./core/build/firmware/pro*Stable*.bin core/build/output/firmware
 
       - name: "Build boardloader bootloader firmware for qa"
         env:
@@ -56,10 +56,10 @@ jobs:
           nix-shell --run "poetry run make -C core build_boardloader"
           nix-shell --run "poetry run make -C core build_bootloader"
           nix-shell --run "poetry run make -C core build_firmware"
-          nix-shell --run "poetry run core/tools/headertool.py -h core/build/bootloader/bootloader*Stable*.bin -S 1:${{ secrets.SECRET_QA_KEY_1 }} -S 2:${{ secrets.SECRET_QA_KEY_2 }}"
-          nix-shell --run "poetry run core/tools/headertool.py -h core/build/firmware/touch*Stable*.bin -S 1:${{ secrets.SECRET_QA_KEY_1 }} -S 2:${{ secrets.SECRET_QA_KEY_2 }}"
+          nix-shell --run "poetry run core/tools/headertool.py -h core/build/bootloader/pro.bootloader*Stable*.bin -S 1:${{ secrets.SECRET_QA_KEY_1 }} -S 2:${{ secrets.SECRET_QA_KEY_2 }}"
+          nix-shell --run "poetry run core/tools/headertool.py -h core/build/firmware/pro*Stable*.bin -S 1:${{ secrets.SECRET_QA_KEY_1 }} -S 2:${{ secrets.SECRET_QA_KEY_2 }}"
           mkdir -p core/build/output/qa
-          cp ./core/build/boardloader/boardloader.bin ./core/build/bootloader/bootloader*Stable*.bin ./core/build/firmware/touch*Stable*.bin core/build/output/qa
+          cp ./core/build/boardloader/boardloader.bin ./core/build/bootloader/pro.bootloader*Stable*.bin ./core/build/firmware/pro*Stable*.bin core/build/output/qa
 
       - name: "Upload Artifacts"
         uses: actions/upload-artifact@v3
@@ -72,9 +72,9 @@ jobs:
         uses: onekeyhq/actions/notice-slack-app-update@main
         with:
           web-hook-url: ${{ secrets.SLACK_DEV_RELEASE_WEBHOOK }}
-          artifact-type: TOUCH1s-FIRMWARE
-          artifact-name: Touch1s-Hardware-Firmware
-          artifact-bundle-id: 'so.onekey.firmware.touch1s'
+          artifact-type: PRO-FIRMWARE
+          artifact-name: Pro-Hardware-Firmware
+          artifact-bundle-id: 'so.onekey.firmware.pro'
           artifact-version-name: '${{ env.FIRMWARE_VERSION }}'
           artifact-version-code: '${{ env.SHORT_HASH }}-${{ env.BUILD_DATE }}'
           artifact-download-url: '${{ env.ARTIFACTS_URL }}'
