@@ -5,7 +5,7 @@
 
 static uint8_t device_addr = THD89_MASTER_ADDRESS;
 
-void thd89_boot_set_address(uint8_t addr) { device_addr = addr; }
+void thd89_boot_set_address(uint8_t addr) { device_addr = (addr << 1); }
 
 static bool _se_get_state(uint8_t addr, uint8_t *state) {
   uint8_t cmd[5] = {0x80, 0xca, 0x00, 00, 0x00};
