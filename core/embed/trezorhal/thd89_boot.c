@@ -37,7 +37,7 @@ char *se_get_version_ex(void) {
 
 uint8_t se_get_state(void) {
   uint8_t state, boot_flag = 0;
-  ensure(_se_get_state(THD89_MASTER_ADDRESS, &state) ? sectrue : secfalse,
+  ensure(_se_get_state(THD89_1ST_ADDRESS, &state) ? sectrue : secfalse,
          "se1 get state failed");
   if (state == THD89_STATE_BOOT) {
     boot_flag |= THD89_1ST_IN_BOOT;
@@ -52,7 +52,7 @@ uint8_t se_get_state(void) {
   if (state == THD89_STATE_BOOT) {
     boot_flag |= THD89_3RD_IN_BOOT;
   }
-  ensure(_se_get_state(THD89_FINGER_ADDRESS, &state) ? sectrue : secfalse,
+  ensure(_se_get_state(THD89_4TH_ADDRESS, &state) ? sectrue : secfalse,
          "se4 get state failed");
   if (state == THD89_STATE_BOOT) {
     boot_flag |= THD89_4TH_IN_BOOT;

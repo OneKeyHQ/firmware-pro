@@ -143,8 +143,7 @@ void motor_timer_play(MOTOR_ACTION* act_list, size_t act_list_len) {
   __HAL_TIM_ENABLE(&TIM7_Handle);
 }
 
-void motor_timer_reset(void)
-{
+void motor_timer_reset(void) {
   _act_list_len = 0;
   _act_list = NULL;
   _act_list_index = NULL;
@@ -157,8 +156,7 @@ void motor_init(void) {
   motor_reset();
 }
 
-void motor_reset(void)
-{
+void motor_reset(void) {
   motor_ctrl(MAL_relax);
   motor_timer_reset();
   __HAL_TIM_DISABLE(&TIM7_Handle);
