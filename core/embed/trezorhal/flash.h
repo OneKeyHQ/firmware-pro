@@ -31,6 +31,7 @@
 #if USE_EXTERN_FLASH
 // 16 internal + 16 external code(2x64K) + 2 external storage(64K)
 #define FLASH_SECTOR_COUNT (34)
+#define FLASH_BOOTLOADER_SECTOR_SIZE (128 * 1024)
 #define FLASH_FIRMWARE_SECTOR_SIZE (128 * 1024)
 #define FLASH_STORAGE_SECTOR_SIZE (64 * 1024)
 #define FLASH_INNER_COUNT 16
@@ -124,8 +125,9 @@
 #define FIRMWARE_SECTORS_COUNT (6 + 7)
 #endif
 
-extern const uint8_t STORAGE_SECTORS[STORAGE_SECTORS_COUNT];
+extern const uint8_t BOOTLOADER_SECTORS[BOOTLOADER_SECTORS_COUNT];
 extern const uint8_t FIRMWARE_SECTORS[FIRMWARE_SECTORS_COUNT];
+extern const uint8_t STORAGE_SECTORS[STORAGE_SECTORS_COUNT];
 
 // note: FLASH_SR_RDERR is STM32F42xxx and STM32F43xxx specific (STM32F427)
 // (reference RM0090 section 3.7.5)

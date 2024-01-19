@@ -33,6 +33,11 @@
 
 FlashLockedData *flash_otp_data = (FlashLockedData *)0x081E0000;
 
+const uint8_t BOOTLOADER_SECTORS[BOOTLOADER_SECTORS_COUNT] = {
+    FLASH_SECTOR_BOOTLOADER_1,
+    FLASH_SECTOR_BOOTLOADER_2,
+};
+
 #if 0
 static const uint32_t FLASH_SECTOR_TABLE[FLASH_SECTOR_COUNT + 2] = {
     [0] = 0x08000000,   // - 0x0801FFFF | 128 KiB
