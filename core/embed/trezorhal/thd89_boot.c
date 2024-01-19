@@ -35,12 +35,30 @@ char *se_get_version_ex(void) {
   return ver;
 }
 
-bool se_get_state(uint8_t *state) {
-  return _se_get_state(THD89_MASTER_ADDRESS, state);
-}
+uint8_t se_get_state(void) {
+  uint8_t state, boot_flag = 0;
+  ensure(_se_get_state(THD89_MASTER_ADDRESS, &state) ? sectrue : secfalse,
+         "se1 get state failed");
+  if (state == THD89_STATE_BOOT) {
+    boot_flag |= THD89_1ST_IN_BOOT;
+  }
+  ensure(_se_get_state(THD89_2ND_ADDRESS, &state) ? sectrue : secfalse,
+         "se2 get state failed");
+  if (state == THD89_STATE_BOOT) {
+    boot_flag |= THD89_2ND_IN_BOOT;
+  }
+  ensure(_se_get_state(THD89_3RD_ADDRESS, &state) ? sectrue : secfalse,
+         "se3 get state failed");
+  if (state == THD89_STATE_BOOT) {
+    boot_flag |= THD89_3RD_IN_BOOT;
+  }
+  ensure(_se_get_state(THD89_FINGER_ADDRESS, &state) ? sectrue : secfalse,
+         "se4 get state failed");
+  if (state == THD89_STATE_BOOT) {
+    boot_flag |= THD89_4TH_IN_BOOT;
+  }
 
-bool se_fp_get_state(uint8_t *state) {
-  return _se_get_state(THD89_FINGER_ADDRESS, state);
+  return boot_flag;
 }
 
 bool se_get_state_ex(uint8_t *state) {

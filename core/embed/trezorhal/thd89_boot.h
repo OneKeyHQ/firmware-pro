@@ -9,9 +9,15 @@
 #define THD89_STATE_NOT_ACTIVATED 0x33
 #define THD89_STATE_APP 0x55
 
+enum {
+  THD89_1ST_IN_BOOT = 0x01,
+  THD89_2ND_IN_BOOT = 0x02,
+  THD89_3RD_IN_BOOT = 0x04,
+  THD89_4TH_IN_BOOT = 0x08
+};
+
 void thd89_boot_set_address(uint8_t addr);
-bool se_get_state(uint8_t *state);
-bool se_fp_get_state(uint8_t *state);
+uint8_t se_get_state(void);
 bool se_get_state_ex(uint8_t *state);
 char *se_get_version_ex(void);
 bool se_back_to_boot(void);

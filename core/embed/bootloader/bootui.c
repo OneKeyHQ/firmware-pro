@@ -840,6 +840,7 @@ void ui_install_thd89_confirm(const char *old_ver, const char *boot_ver) {
 void ui_bootloader_first(const image_header *const hdr) {
   ui_bootloader_page_current = 0;
   uint8_t se_state;
+  char se_info[64] = {0};
 
   ui_title_update();
   ui_logo_center();
@@ -858,24 +859,27 @@ void ui_bootloader_first(const image_header *const hdr) {
     display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY - 125, ver_str, -1,
                         FONT_NORMAL, COLOR_BL_SUBTITLE, COLOR_BL_BG);
   }
-  if (se_get_state(&se_state)) {
-    if (se_state == THD89_STATE_BOOT) {
-      display_text_center(DISPLAY_RESX / 2, 300, "se in bootloader state", -1,
-                          FONT_NORMAL, COLOR_BL_SUBTITLE, COLOR_BL_BG);
-      display_text_center(DISPLAY_RESX / 2, 330, "please install se firmware",
-                          -1, FONT_NORMAL, COLOR_BL_SUBTITLE, COLOR_BL_BG);
+  se_state = se_get_state();
+  if (se_state != 0) {
+    strcat(se_info, "SE ");
+    if (se_state & THD89_1ST_IN_BOOT) {
+      strcat(se_info, "1st ");
     }
-  }
-
-  if (se_fp_get_state(&se_state)) {
-    if (se_state == THD89_STATE_BOOT) {
-      display_text_center(DISPLAY_RESX / 2, 400, "se_fp in bootloader state",
-                          -1, FONT_NORMAL, COLOR_BL_SUBTITLE, COLOR_BL_BG);
-      display_text_center(DISPLAY_RESX / 2, 430, "please install se firmware",
-                          -1, FONT_NORMAL, COLOR_BL_SUBTITLE, COLOR_BL_BG);
+    if (se_state & THD89_2ND_IN_BOOT) {
+      strcat(se_info, "2nd ");
     }
+    if (se_state & THD89_3RD_IN_BOOT) {
+      strcat(se_info, "3rd ");
+    }
+    if (se_state & THD89_4TH_IN_BOOT) {
+      strcat(se_info, "4th ");
+    }
+    strcat(se_info, "in boot");
+    display_text_center(DISPLAY_RESX / 2, 300, se_info, -1, FONT_NORMAL,
+                        COLOR_BL_SUBTITLE, COLOR_BL_BG);
+    display_text_center(DISPLAY_RESX / 2, 330, "please install se firmware", -1,
+                        FONT_NORMAL, COLOR_BL_SUBTITLE, COLOR_BL_BG);
   }
-
   display_bar(8, 694, 464, 98, COLOR_BL_ICON);
   display_text_center(DISPLAY_RESX / 2, 755, "View Details", -1,
                       FONT_PJKS_BOLD_26, COLOR_BL_FG, COLOR_BL_ICON);

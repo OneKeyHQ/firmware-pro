@@ -26,6 +26,7 @@
 #include "common.h"
 #include "irq.h"
 #include "memzero.h"
+#include "mini_printf.h"
 
 #include "i2c.h"
 #include "systick.h"
@@ -540,12 +541,15 @@ int i2c_master_recive(I2C_HandleTypeDef *hi2c, uint16_t DevAddress,
 secbool thd89_transmit_ex(uint8_t addr, uint8_t *cmd, uint16_t len,
                           uint8_t *resp, uint16_t *resp_len) {
   int ret = 0;
+  char err_info[64] = {0};
   uint32_t irq = disable_irq();
   HAL_StatusTypeDef result =
       i2c_master_send(&i2c_handle_se, addr, cmd, len, 500);
   enable_irq(irq);
   if (result != HAL_OK) {
-    ensure(secfalse, "se send error");
+    mini_snprintf(err_info, sizeof(err_info), "se 0x%02x send error",
+                  addr >> 1);
+    ensure(secfalse, err_info);
     return secfalse;
   }
 
@@ -556,9 +560,13 @@ secbool thd89_transmit_ex(uint8_t addr, uint8_t *cmd, uint16_t len,
   enable_irq(irq);
   if (ret != HAL_OK) {
     if (ret == I2C_RECV_BUFFER_TOO_SMALL) {
-      ensure(secfalse, "se receive buffer too small");
+      mini_snprintf(err_info, sizeof(err_info),
+                    "se 0x%02x receive buffer too small", addr >> 1);
+      ensure(secfalse, err_info);
     } else {
-      ensure(secfalse, "se receive error");
+      mini_snprintf(err_info, sizeof(err_info), "se 0x%02x receive error",
+                    addr >> 1);
+      ensure(secfalse, err_info);
     }
     return secfalse;
   }

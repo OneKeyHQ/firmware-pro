@@ -47,14 +47,67 @@ void device_para_init(void) {
   dev_info.st_id[1] = HAL_GetUIDw1();
   dev_info.st_id[2] = HAL_GetUIDw2();
 
-  if (secfalse == flash_otp_is_locked(FLASH_OTP_BLOCK_THD89_SESSION_KEY)) {
-    uint8_t entropy[FLASH_OTP_BLOCK_SIZE];
-    random_buffer(entropy, FLASH_OTP_BLOCK_SIZE);
-    ensure(se_set_session_key(entropy), NULL);
-    ensure(flash_otp_write(FLASH_OTP_BLOCK_THD89_SESSION_KEY, 0, entropy,
+  // if (secfalse == flash_otp_is_locked(FLASH_OTP_BLOCK_THD89_SESSION_KEY)) {
+  //   uint8_t entropy[FLASH_OTP_BLOCK_SIZE];
+  //   random_buffer(entropy, FLASH_OTP_BLOCK_SIZE);
+  //   ensure(se_set_session_key(entropy), NULL);
+  //   ensure(flash_otp_write(FLASH_OTP_BLOCK_THD89_SESSION_KEY, 0, entropy,
+  //                          FLASH_OTP_BLOCK_SIZE),
+  //          NULL);
+  //   ensure(flash_otp_lock(FLASH_OTP_BLOCK_THD89_SESSION_KEY), NULL);
+  // }
+
+  uint8_t pubkey[FLASH_OTP_BLOCK_SIZE];
+  if (secfalse == flash_otp_is_locked(FLASH_OTP_BLOCK_THD89_1_PUBKEY1) ||
+      secfalse == flash_otp_is_locked(FLASH_OTP_BLOCK_THD89_1_PUBKEY2)) {
+    ensure(se_get_ecdh_pubkey(THD89_MASTER_ADDRESS, pubkey), NULL);
+    ensure(flash_otp_write(FLASH_OTP_BLOCK_THD89_1_PUBKEY1, 0, pubkey,
                            FLASH_OTP_BLOCK_SIZE),
            NULL);
-    ensure(flash_otp_lock(FLASH_OTP_BLOCK_THD89_SESSION_KEY), NULL);
+    ensure(flash_otp_write(FLASH_OTP_BLOCK_THD89_1_PUBKEY2, 0, pubkey + 32,
+                           FLASH_OTP_BLOCK_SIZE),
+           NULL);
+    ensure(flash_otp_lock(FLASH_OTP_BLOCK_THD89_1_PUBKEY1), NULL);
+    ensure(flash_otp_lock(FLASH_OTP_BLOCK_THD89_1_PUBKEY2), NULL);
+  }
+
+  if (secfalse == flash_otp_is_locked(FLASH_OTP_BLOCK_THD89_2_PUBKEY1) ||
+      secfalse == flash_otp_is_locked(FLASH_OTP_BLOCK_THD89_2_PUBKEY2)) {
+    ensure(se_get_ecdh_pubkey(THD89_2ND_ADDRESS, pubkey), NULL);
+    ensure(flash_otp_write(FLASH_OTP_BLOCK_THD89_2_PUBKEY1, 0, pubkey,
+                           FLASH_OTP_BLOCK_SIZE),
+           NULL);
+    ensure(flash_otp_write(FLASH_OTP_BLOCK_THD89_2_PUBKEY2, 0, pubkey + 32,
+                           FLASH_OTP_BLOCK_SIZE),
+           NULL);
+    ensure(flash_otp_lock(FLASH_OTP_BLOCK_THD89_2_PUBKEY1), NULL);
+    ensure(flash_otp_lock(FLASH_OTP_BLOCK_THD89_2_PUBKEY2), NULL);
+  }
+
+  if (secfalse == flash_otp_is_locked(FLASH_OTP_BLOCK_THD89_3_PUBKEY1) ||
+      secfalse == flash_otp_is_locked(FLASH_OTP_BLOCK_THD89_3_PUBKEY2)) {
+    ensure(se_get_ecdh_pubkey(THD89_3RD_ADDRESS, pubkey), NULL);
+    ensure(flash_otp_write(FLASH_OTP_BLOCK_THD89_3_PUBKEY1, 0, pubkey,
+                           FLASH_OTP_BLOCK_SIZE),
+           NULL);
+    ensure(flash_otp_write(FLASH_OTP_BLOCK_THD89_3_PUBKEY2, 0, pubkey + 32,
+                           FLASH_OTP_BLOCK_SIZE),
+           NULL);
+    ensure(flash_otp_lock(FLASH_OTP_BLOCK_THD89_3_PUBKEY1), NULL);
+    ensure(flash_otp_lock(FLASH_OTP_BLOCK_THD89_3_PUBKEY2), NULL);
+  }
+
+  if (secfalse == flash_otp_is_locked(FLASH_OTP_BLOCK_THD89_4_PUBKEY1) ||
+      secfalse == flash_otp_is_locked(FLASH_OTP_BLOCK_THD89_4_PUBKEY2)) {
+    ensure(se_get_ecdh_pubkey(THD89_FINGER_ADDRESS, pubkey), NULL);
+    ensure(flash_otp_write(FLASH_OTP_BLOCK_THD89_4_PUBKEY1, 0, pubkey,
+                           FLASH_OTP_BLOCK_SIZE),
+           NULL);
+    ensure(flash_otp_write(FLASH_OTP_BLOCK_THD89_4_PUBKEY2, 0, pubkey + 32,
+                           FLASH_OTP_BLOCK_SIZE),
+           NULL);
+    ensure(flash_otp_lock(FLASH_OTP_BLOCK_THD89_4_PUBKEY1), NULL);
+    ensure(flash_otp_lock(FLASH_OTP_BLOCK_THD89_4_PUBKEY2), NULL);
   }
 
   if (!flash_otp_is_locked(FLASH_OTP_RANDOM_KEY)) {

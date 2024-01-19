@@ -159,7 +159,7 @@ bool flash_clear_ecc_fault(uint32_t address);
 bool flash_fix_ecc_fault_FIRMWARE(uint32_t address);
 bool flash_fix_ecc_fault_FIRMWARE_v2(uint32_t address);
 
-#define FLASH_OTP_NUM_BLOCKS 16
+#define FLASH_OTP_NUM_BLOCKS 32
 #define FLASH_OTP_BLOCK_SIZE 32
 
 typedef struct __attribute__((packed)) {
@@ -181,6 +181,18 @@ typedef struct __attribute__((packed)) {
 #define FLASH_OTP_FACTORY_TEST 13
 #define FLASH_OTP_RANDOM_KEY 14
 #define FLASH_OTP_CPU_FIRMWARE_INFO 15
+
+#define FLASH_OTP_BLOCK_THD89_1_PUBKEY1 16
+#define FLASH_OTP_BLOCK_THD89_1_PUBKEY2 17
+
+#define FLASH_OTP_BLOCK_THD89_2_PUBKEY1 18
+#define FLASH_OTP_BLOCK_THD89_2_PUBKEY2 19
+
+#define FLASH_OTP_BLOCK_THD89_3_PUBKEY1 20
+#define FLASH_OTP_BLOCK_THD89_3_PUBKEY2 21
+
+#define FLASH_OTP_BLOCK_THD89_4_PUBKEY1 22
+#define FLASH_OTP_BLOCK_THD89_4_PUBKEY2 23
 
 extern FlashLockedData *flash_otp_data;
 

@@ -57,6 +57,7 @@
 #include "mpu.h"
 #include "spi.h"
 #include "spi_legacy.h"
+#include "systick.h"
 #include "usart.h"
 
 #define MSG_NAME_TO_ID(x) MessageType_MessageType_##x
