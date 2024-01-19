@@ -185,9 +185,6 @@ void send_failure_detailed(uint8_t iface_num, FailureType type, const char* fmt,
 void send_user_abort_nocheck(uint8_t iface_num, const char* msg);
 
 // int version_compare(uint32_t vera, uint32_t verb)
-// secbool check_image_contents_ram(
-//     const image_header* const hdr, const uint8_t* const buffer, size_t code_offset, size_t blocks
-// );
 
 int process_msg_FirmwareUpdateEmmc(uint8_t iface_num, uint32_t msg_size, uint8_t* buf);
 int process_msg_EmmcFixPermission(uint8_t iface_num, uint32_t msg_size, uint8_t* buf);

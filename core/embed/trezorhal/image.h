@@ -144,4 +144,8 @@ secbool __wur check_image_contents(const image_header *const hdr,
                                    uint32_t firstskip, const uint8_t *sectors,
                                    int blocks);
 
+secbool __wur check_image_contents_ram(const image_header *const hdr,
+                                       const uint8_t *const buffer,
+                                       size_t code_offset, size_t blocks);
+
 #endif

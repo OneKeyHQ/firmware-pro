@@ -318,6 +318,55 @@ secbool check_image_contents(const image_header *const hdr, uint32_t firstskip,
   }
   return sectrue;
 }
+
+secbool check_image_contents_ram(const image_header *const hdr,
+                                 const uint8_t *const buffer,
+                                 size_t code_offset, size_t blocks) {
+  if (hdr == NULL || buffer == NULL || (code_offset <= 0) || (blocks <= 0)) {
+    return false;
+  }
+
+  secbool result = secfalse;
+
+  const uint8_t *code_data = buffer + code_offset;
+  const size_t code_len = hdr->codelen;
+  const size_t hash_chunk_size = IMAGE_CHUNK_SIZE * 2;
+
+  size_t processed_size = 0;
+  size_t block = 0;
+  size_t process_size = 0;
+
+  while (true) {
+    if (processed_size >= code_len || block >= blocks) {
+      // make sure we actually checked something
+      if (processed_size > 0)
+        // flag set to valid
+        result = sectrue;
+
+      // normal exit, no error found
+      break;
+    }
+
+    if (processed_size == 0)
+      process_size =
+          MIN((code_len - processed_size), (hash_chunk_size - code_offset));
+    else
+      process_size = MIN((code_len - processed_size), (hash_chunk_size));
+
+    if (sectrue == check_single_hash(hdr->hashes + block * 32,
+                                     code_data + processed_size,
+                                     process_size)) {
+      block++;
+      processed_size += process_size;
+    } else {
+      // error exit, hash mismatch
+      break;
+    }
+  }
+
+  return result;
+}
+
 #else
 secbool check_image_contents(const image_header *const hdr, uint32_t firstskip,
                              const uint8_t *sectors, int blocks) {

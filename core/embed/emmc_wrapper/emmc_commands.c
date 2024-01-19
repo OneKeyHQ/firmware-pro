@@ -514,59 +514,6 @@ static int version_compare(uint32_t vera, uint32_t verb)
 //     // not implemented yet
 // }
 
-static secbool check_image_contents_ram(
-    const image_header* const hdr, const uint8_t* const buffer, size_t code_offset, size_t blocks
-)
-{
-    if ( hdr == NULL || buffer == NULL || (code_offset <= 0) || (blocks <= 0) )
-    {
-        return false;
-    }
-
-    secbool result = secfalse;
-
-    const uint8_t* code_data = buffer + code_offset;
-    const size_t code_len = hdr->codelen;
-    const size_t hash_chunk_size = IMAGE_CHUNK_SIZE * 2;
-
-    size_t processed_size = 0;
-    size_t block = 0;
-    size_t process_size = 0;
-
-    while ( true )
-    {
-        if ( processed_size >= code_len || block >= blocks )
-        {
-            // make sure we actually checked something
-            if ( processed_size > 0 )
-                // flag set to valid
-                result = sectrue;
-
-            // normal exit, no error found
-            break;
-        }
-
-        if ( processed_size == 0 )
-            process_size = MIN((code_len - processed_size), (hash_chunk_size - code_offset));
-        else
-            process_size = MIN((code_len - processed_size), (hash_chunk_size));
-
-        if ( sectrue ==
-             check_single_hash(hdr->hashes + block * 32, code_data + processed_size, process_size) )
-        {
-            block++;
-            processed_size += process_size;
-        }
-        else
-        {
-            // error exit, hash mismatch
-            break;
-        }
-    }
-
-    return result;
-}
-
 int process_msg_FirmwareUpdateEmmc(uint8_t iface_num, uint32_t msg_size, uint8_t* buf)
 {
     MSG_INIT(msg_recv, FirmwareUpdateEmmc);
@@ -741,7 +688,7 @@ int process_msg_FirmwareUpdateEmmc(uint8_t iface_num, uint32_t msg_size, uint8_t
         // emmc_fs_file_delete(msg_recv.path);
         if ( msg_recv.has_reboot_on_success && msg_recv.reboot_on_success )
         {
-            *STAY_IN_FLAG_ADDR = 0;
+            *BOOT_TARGET_FLAG_ADDR = BOOT_TARGET_NORMAL;
             restart();
         }
         else
@@ -847,7 +794,7 @@ int process_msg_FirmwareUpdateEmmc(uint8_t iface_num, uint32_t msg_size, uint8_t
         // emmc_fs_file_delete(msg_recv.path);
         if ( msg_recv.has_reboot_on_success && msg_recv.reboot_on_success )
         {
-            *STAY_IN_FLAG_ADDR = 0;
+            *BOOT_TARGET_FLAG_ADDR = BOOT_TARGET_NORMAL;
             restart();
         }
         else
@@ -1159,7 +1106,7 @@ int process_msg_FirmwareUpdateEmmc(uint8_t iface_num, uint32_t msg_size, uint8_t
         send_success_nocheck(iface_num, "Succeed");
         if ( msg_recv.has_reboot_on_success && msg_recv.reboot_on_success )
         {
-            *STAY_IN_FLAG_ADDR = 0;
+            *BOOT_TARGET_FLAG_ADDR = BOOT_TARGET_NORMAL;
             restart();
         }
         else
