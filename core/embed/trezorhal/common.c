@@ -28,6 +28,14 @@
 #include "supervise.h"
 #include "touch.h"
 
+const char *STAY_REASON_str[] = {
+    ENUM_STAY_REASON_ITEM(STAY_REASON_NONE),
+    ENUM_STAY_REASON_ITEM(STAY_REASON_REQUIRED_BY_FLAG),
+    ENUM_STAY_REASON_ITEM(STAY_REASON_MANUAL_OVERRIDE),
+    ENUM_STAY_REASON_ITEM(STAY_REASON_INVALID_DEPENDENCY),
+    ENUM_STAY_REASON_ITEM(STAY_REASON_INVALID_NEXT_TARGET),
+};
+
 #if defined(STM32F427xx) || defined(STM32F405xx)
 #include "stm32f4xx_ll_utils.h"
 #elif defined(STM32H747xx)
@@ -70,13 +78,13 @@ void shutdown(void) {
 void restart(void) { svc_reset_system(); }
 
 void reboot_to_board(void) {
-  *STAY_IN_FLAG_ADDR = STAY_IN_BOARDLOADER_FLAG;
+  *BOOT_TARGET_FLAG_ADDR = BOOT_TARGET_BOARDLOADER;
   SCB_CleanDCache();
   svc_reset_system();
 }
 
 void reboot_to_boot(void) {
-  *STAY_IN_FLAG_ADDR = STAY_IN_BOOTLOADER_FLAG;
+  *BOOT_TARGET_FLAG_ADDR = BOOT_TARGET_BOOTLOADER;
   SCB_CleanDCache();
   svc_reset_system();
 }

@@ -177,6 +177,14 @@ else:
 
 env = Environment(ENV=os.environ, CFLAGS='%s -DPRODUCTION=%s' % (ARGUMENTS.get('CFLAGS', ''), ARGUMENTS.get('PRODUCTION', '0')))
 
+# debug utils
+SOURCE_DEBUG_UTILS = []
+SOURCE_DEBUG_UTILS.extend(Glob('embed/debug_utils/*.c'))
+
+# emmc wrapper
+SOURCE_EMMC_WRAPPER = []
+SOURCE_EMMC_WRAPPER.extend(Glob('embed/emmc_wrapper/emmc_fs.c'))
+
 env.Replace(
     DD='dd',
     AS='arm-none-eabi-as',
@@ -227,6 +235,8 @@ if PRODUCTION_MODEL == 'H':
             'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Inc',
             'vendor/micropython/lib/stm32lib/CMSIS/STM32H7xx/Include',
             'vendor/micropython/lib/cmsis/inc',
+            'embed/debug_utils',
+            'embed/emmc_wrapper',
         ] + CPPPATH_MOD,
         CPPDEFINES=[
             'BOARDLOADER',
@@ -281,6 +291,8 @@ obj_program += env.Object(source=SOURCE_MOD)
 obj_program += env.Object(source=SOURCE_BOARDLOADER)
 obj_program += env.Object(source=SOURCE_STMHAL)
 obj_program += env.Object(source=SOURCE_TREZORHAL)
+obj_program += env.Object(source=SOURCE_DEBUG_UTILS)
+obj_program += env.Object(source=SOURCE_EMMC_WRAPPER)
 
 program_elf = env.Command(
     target='boardloader.elf',

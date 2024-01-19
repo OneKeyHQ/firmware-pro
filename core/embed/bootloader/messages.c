@@ -457,7 +457,7 @@ void process_msg_Reboot(uint8_t iface_num, uint32_t msg_size, uint8_t *buf) {
       MSG_SEND_ASSIGN_STRING(message, "Reboot type Normal accepted!");
       MSG_SEND(Success);
     }
-      *STAY_IN_FLAG_ADDR = 0;
+      *BOOT_TARGET_FLAG_ADDR = BOOT_TARGET_NORMAL;
       restart();
       break;
     case RebootType_Boardloader: {

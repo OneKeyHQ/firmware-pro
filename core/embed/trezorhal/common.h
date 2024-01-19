@@ -23,7 +23,28 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include "debug_utils.h"
 #include "secbool.h"
+
+typedef enum {
+  STAY_REASON_NONE = 0,
+  STAY_REASON_REQUIRED_BY_FLAG,
+  STAY_REASON_MANUAL_OVERRIDE,
+  STAY_REASON_INVALID_DEPENDENCY,
+  STAY_REASON_INVALID_NEXT_TARGET,
+  STAY_REASON_UPDATE_NEXT_TARGET
+} STAY_REASON;
+
+#define ENUM_STAY_REASON_ITEM(x) [x] = "x"
+extern const char *STAY_REASON_str[];
+
+typedef enum {
+  BOOT_TARGET_NORMAL = 0,
+  BOOT_TARGET_BOARDLOADER = 0x64616F62,
+  BOOT_TARGET_BOOTLOADER = 0x746F6F62,
+} BOOT_TARGET;
+
+#define BOOT_TARGET_FLAG_ADDR ((BOOT_TARGET *)(0x30040000 - 4))
 
 #ifndef MIN_8bits
 #define MIN_8bits(a, b)                  \
@@ -50,10 +71,6 @@
   })
 #endif
 
-#define STAY_IN_FLAG_ADDR ((uint32_t *)(0x30040000 - 4))
-#define STAY_IN_BOARDLOADER_FLAG 0x64616F62
-#define STAY_IN_BOOTLOADER_FLAG 0x746F6F62
-
 void shutdown(void);
 
 void restart(void);
@@ -73,10 +90,15 @@ void error_reset(const char *line1, const char *line2, const char *line3,
                  const char *line4);
 void error_pin_max(void);
 
+// cannot use like this due to code size issue
+// waiting until we could outmize out some space
+// #if PRODUCTION
 #define ensure(expr, msg) \
-  (((expr) == sectrue)    \
-       ? (void)0          \
-       : __fatal_error(#expr, msg, __FILE__, __LINE__, __func__))
+(((expr) == sectrue) ? (void)0 : __fatal_error(#expr, msg, __FILE__, __LINE__, __func__))
+// #else
+// #define ensure(expr, msg) \
+// (((expr) == sectrue) ? (void)0 : dbgprintf_Wait("%s\n%s\n",#expr, msg))
+// #endif
 
 #define ensure_ex(expr, ret, msg) \
   (((expr) == ret) ? (void)0      \
