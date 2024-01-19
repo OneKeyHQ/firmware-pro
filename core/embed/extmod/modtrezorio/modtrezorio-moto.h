@@ -47,7 +47,7 @@ STATIC mp_obj_t mod_trezorio_MOTOR_make_new(const mp_obj_type_t* type,
 
 /// def tock(self) -> None:
 ///     """
-///     Reset motor and stop any on going vibrate 
+///     Reset motor and stop any on going vibrate
 ///     """
 STATIC mp_obj_t mod_trezorio_MOTOR_reset(mp_obj_t self) {
   motor_reset();
