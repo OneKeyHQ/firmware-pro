@@ -62,6 +62,7 @@ secbool se_get_private_region(uint16_t offset, void *val_dest, uint16_t len);
 
 secbool se_get_pubkey(uint8_t *pubkey);
 secbool se_get_ecdh_pubkey(uint8_t addr, uint8_t *key);
+secbool se_lock_ecdh_pubkey(uint8_t addr);
 secbool se_write_certificate(const uint8_t *cert, uint16_t cert_len);
 secbool se_read_certificate(uint8_t *cert, uint16_t *cert_len);
 secbool se_has_cerrificate(void);

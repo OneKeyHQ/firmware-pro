@@ -67,6 +67,7 @@ void device_para_init(void) {
   if (secfalse == flash_otp_is_locked(FLASH_OTP_BLOCK_THD89_1_PUBKEY1) ||
       secfalse == flash_otp_is_locked(FLASH_OTP_BLOCK_THD89_1_PUBKEY2)) {
     ensure(se_get_ecdh_pubkey(THD89_MASTER_ADDRESS, pubkey), NULL);
+    ensure(se_lock_ecdh_pubkey(THD89_MASTER_ADDRESS), NULL);
     ensure(flash_otp_write(FLASH_OTP_BLOCK_THD89_1_PUBKEY1, 0, pubkey,
                            FLASH_OTP_BLOCK_SIZE),
            NULL);
@@ -80,6 +81,7 @@ void device_para_init(void) {
   if (secfalse == flash_otp_is_locked(FLASH_OTP_BLOCK_THD89_2_PUBKEY1) ||
       secfalse == flash_otp_is_locked(FLASH_OTP_BLOCK_THD89_2_PUBKEY2)) {
     ensure(se_get_ecdh_pubkey(THD89_2ND_ADDRESS, pubkey), NULL);
+    ensure(se_lock_ecdh_pubkey(THD89_2ND_ADDRESS), NULL);
     ensure(flash_otp_write(FLASH_OTP_BLOCK_THD89_2_PUBKEY1, 0, pubkey,
                            FLASH_OTP_BLOCK_SIZE),
            NULL);
@@ -93,6 +95,7 @@ void device_para_init(void) {
   if (secfalse == flash_otp_is_locked(FLASH_OTP_BLOCK_THD89_3_PUBKEY1) ||
       secfalse == flash_otp_is_locked(FLASH_OTP_BLOCK_THD89_3_PUBKEY2)) {
     ensure(se_get_ecdh_pubkey(THD89_3RD_ADDRESS, pubkey), NULL);
+    ensure(se_lock_ecdh_pubkey(THD89_3RD_ADDRESS), NULL);
     ensure(flash_otp_write(FLASH_OTP_BLOCK_THD89_3_PUBKEY1, 0, pubkey,
                            FLASH_OTP_BLOCK_SIZE),
            NULL);
@@ -106,6 +109,7 @@ void device_para_init(void) {
   if (secfalse == flash_otp_is_locked(FLASH_OTP_BLOCK_THD89_4_PUBKEY1) ||
       secfalse == flash_otp_is_locked(FLASH_OTP_BLOCK_THD89_4_PUBKEY2)) {
     ensure(se_get_ecdh_pubkey(THD89_FINGER_ADDRESS, pubkey), NULL);
+    ensure(se_lock_ecdh_pubkey(THD89_FINGER_ADDRESS), NULL);
     ensure(flash_otp_write(FLASH_OTP_BLOCK_THD89_4_PUBKEY1, 0, pubkey,
                            FLASH_OTP_BLOCK_SIZE),
            NULL);

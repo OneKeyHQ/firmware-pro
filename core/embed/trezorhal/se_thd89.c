@@ -613,6 +613,11 @@ secbool se_get_ecdh_pubkey(uint8_t addr, uint8_t *key) {
   return thd89_transmit_ex(addr, cmd, sizeof(cmd), key, &resp_len);
 }
 
+secbool se_lock_ecdh_pubkey(uint8_t addr) {
+  uint8_t cmd[6] = {0x00, 0xF5, 0x00, 0x05, 0x01, 0x02};
+  return thd89_transmit_ex(addr, cmd, sizeof(cmd), NULL, NULL);
+}
+
 secbool se_get_pubkey(uint8_t *public_key) {
   uint8_t cmd[5] = {0x00, 0xF5, 0x00, 0x01, 0x00};
   uint16_t resp_len = 64;
