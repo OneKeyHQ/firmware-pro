@@ -86,11 +86,11 @@ bool emmc_fs_recreate(bool partition_table, bool onekey_data, bool user_data)
 
         // create folders and files to avoid stuck in boardloader
         // this should be kept if we switch to use command to upload files
-        FIL res_flag;
-        ExecuteCheck_OKEMMC_SIMPLE(f_mkdir("0:res"));
-        ExecuteCheck_OKEMMC_SIMPLE(f_open(&res_flag, "0:res/.ONEKEY_RESOURCE", FA_CREATE_NEW | FA_WRITE));
-        ExecuteCheck_OKEMMC_SIMPLE(f_close(&res_flag));
-        ExecuteCheck_OKEMMC_SIMPLE(f_mkdir("0:boot"));
+        // FIL res_flag;
+        // ExecuteCheck_OKEMMC_SIMPLE(f_mkdir("0:res"));
+        // ExecuteCheck_OKEMMC_SIMPLE(f_open(&res_flag, "0:res/.ONEKEY_RESOURCE", FA_CREATE_NEW | FA_WRITE));
+        // ExecuteCheck_OKEMMC_SIMPLE(f_close(&res_flag));
+        // ExecuteCheck_OKEMMC_SIMPLE(f_mkdir("0:boot"));
 
         ExecuteCheck_OKEMMC_SIMPLE(f_unmount("0:"));
     }
@@ -116,6 +116,8 @@ bool emmc_fs_is_partitioned()
     FATFS fs_obj_test;
     ExecuteCheck_OKEMMC_SIMPLE(f_mount(&fs_obj_test, "0:", 1));
     ExecuteCheck_OKEMMC_SIMPLE(f_unmount("0:"));
+    // ExecuteCheck_OKEMMC_SIMPLE(f_mount(&fs_obj_test, "1:", 1));
+    // ExecuteCheck_OKEMMC_SIMPLE(f_unmount("1:"));
     return true;
 }
 
