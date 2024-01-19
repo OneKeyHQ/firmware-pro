@@ -155,8 +155,7 @@ class NFC:
         Send receive data through NFC.
         """
 
-    def send_recv_single_shot(self, send: bytearray, timeout_ms: int) ->
-    Tuple[int, bytearray]:
+    def send_recv_single_shot(self, send: bytearray, timeout_ms: int) -> Tuple[int, bytearray]:
         """
         Wait for card, then send receive data through NFC.
         """

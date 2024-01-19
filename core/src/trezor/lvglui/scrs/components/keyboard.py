@@ -499,7 +499,7 @@ class NumberKeyboard(lv.keyboard):
     def update_count_tips(self):
         """Update/show tips only when input length larger than 10"""
         input_len = len(self.ta.get_text())
-        if input_len >= self.max_len // 5 if self.max_len != 6 else 0:
+        if input_len >= (self.max_len // 5 if self.max_len != 6 else 0):
             self.input_count_tips.set_text(f"{len(self.ta.get_text())}/{self.max_len}")
             if self.input_count_tips.has_flag(lv.obj.FLAG.HIDDEN):
                 self.input_count_tips.clear_flag(lv.obj.FLAG.HIDDEN)

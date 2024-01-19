@@ -69,8 +69,7 @@ STATIC mp_obj_t mod_trezorio_NFC_send_recv(mp_obj_t self, mp_obj_t send) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_trezorio_NFC_send_recv_obj,
                                  mod_trezorio_NFC_send_recv);
 
-/// def send_recv_single_shot(self, send: bytearray, timeout_ms: int) ->
-/// Tuple[int, bytearray]:
+/// def send_recv_single_shot(self, send: bytearray, timeout_ms: int) -> Tuple[int, bytearray]:
 ///     """
 ///     Wait for card, then send receive data through NFC.
 ///     """

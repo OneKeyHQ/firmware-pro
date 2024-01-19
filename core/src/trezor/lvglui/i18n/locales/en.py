@@ -738,5 +738,8 @@ translations = [
     "Lift and fine-tune the position, then touch power button again.",
     "Clean power button and try again.",
     "Put finger on the power button and keep in place.",
+    "Domain",
+    "LNURL Auth",
+    "Approve LNURL Authorization",
 ]
 # fmt: on

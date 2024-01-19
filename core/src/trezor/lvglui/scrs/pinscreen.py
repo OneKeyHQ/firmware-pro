@@ -167,14 +167,6 @@ class InputLitePin(FullSizeWindow):
             0,
         )
         self.title.align(lv.ALIGN.TOP_MID, 0, 24)
-        self.subtitle.add_style(
-            StyleWrapper()
-            .text_font(font_GeistRegular26)
-            .text_color(lv_colors.ONEKEY_RED_1)
-            .text_align_center(),
-            0,
-        )
-        self.subtitle.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
         self.clear_flag(lv.obj.FLAG.SCROLLABLE)
         self.keyboard = NumberKeyboard(self, max_len=6, min_len=6)
         self.keyboard.add_event_cb(self.on_event, lv.EVENT.READY, None)

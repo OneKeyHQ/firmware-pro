@@ -59,7 +59,9 @@ class Bip39DotMap(FullSizeWindow):
         # self.content_area.set_style_max_height(756, 0)
         # self.btn_yes.align_to(self.tips_bar, lv.ALIGN.OUT_BOTTOM_MID, 0, 16)
 
-        self.matrix = ContainerFlexCol(self.panel, None, padding_row=0)
+        self.matrix = ContainerFlexCol(
+            self.panel, None, padding_row=0, clip_corner=False
+        )
         self.matrix.align(lv.ALIGN.TOP_LEFT, 59, 75)
         self.matrix.set_size(373, 373)
         self.matrix.add_style(StyleWrapper().pad_all(0), 0)

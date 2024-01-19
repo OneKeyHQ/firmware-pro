@@ -104,8 +104,8 @@ async def handle_fingerprint():
                 else:
                     if __debug__:
                         print(f"fingerprint match {match_id}")
+                    motor.vibrate(weak=True)
                     # # 1. publish signal
-
                     if fingerprints.has_takers():
                         if __debug__:
                             print("publish signal")
@@ -459,6 +459,8 @@ def _ctrl_flashled(enable: bool, brightness=15) -> None:
     """Request to open or close flashlight.
     @param enable: True to open, False to close
     """
+    if brightness > 50:
+        brightness = 50
     BLE_CTRL.ctrl(
         0x85, b"\x01" + (int.to_bytes(brightness, 1, "big") if enable else b"\x00")
     )

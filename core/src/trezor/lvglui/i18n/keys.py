@@ -364,6 +364,7 @@ LOCKED_TEXT__TAP_TO_UNLOCK = 163
 APP__USER_GUIDE = 164
 # Setting
 APP__SETTING = 165
+BUTTON__GO_SETTING = 165
 # Ready to Create
 TITLE__READY_TO_CREATE = 166
 # The next screen will show the passphrase you entered on the connected device
@@ -1609,4 +1610,10 @@ MSG__LIFT_AND_FINE_TUNE_THE_POSITION_THEN_TOUCH_POWER_BUTTON_AGAIN = 735
 MSG__CLEAN_FINGERPRINT_SENSOR_AND_TRY_AGAIN = 736
 # Put finger on the power button and keep in place.
 MSG__PUT_FINGER_ON_THE_FINGERPRINT = 737
+# Domain
+LIST_KEY__DOMAIN__COLON = 738
+# LNURL Auth
+FORM__LNURL_AUTH = 739
+# Approve LNURL Authorization
+TITLE__APPROVE_LNURL_AUTHORIZATION = 740
 # fmt: on

@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
 import storage.recovery
-from trezor import ui, wire
+from trezor import ui, utils, wire
 from trezor.enums import ButtonRequestType
 from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
 from trezor.lvglui.lv_colors import lv_colors
@@ -120,8 +120,13 @@ async def show_dry_run_result(
             header=_(i18n_keys.TITLE__CORRECT),
         )
         if not is_slip39 and not __debug__:
-            await backup_with_keytag(ctx, mnemonics, recovery_check=True)
-            await backup_with_lite(ctx, mnemonics, recovery_check=True)
+            if utils.is_backup_with_lite_1st():
+                await backup_with_lite(ctx, mnemonics, recovery_check=True)
+                await backup_with_keytag(ctx, mnemonics, recovery_check=True)
+            else:
+                await backup_with_keytag(ctx, mnemonics, recovery_check=True)
+                await backup_with_lite(ctx, mnemonics, recovery_check=True)
+
     else:
         if is_slip39:
             raise

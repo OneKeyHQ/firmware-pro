@@ -804,6 +804,12 @@ class SettingsScreen(Screen):
                 left_img_src="A:/res/about.png",
                 has_next=False,
             )
+            self.nfc_test = ListItemBtn(
+                self.container,
+                "NFC test",
+                left_img_src="A:/res/about.png",
+                has_next=False,
+            )
         self.general = ListItemBtn(
             self.container,
             _(i18n_keys.ITEM__GENERAL),
@@ -909,6 +915,11 @@ class SettingsScreen(Screen):
                     #     UITest()
                     if target == self.anim_test:
                         AnimationSettings(self)
+                    if target == self.nfc_test:
+                        from trezor.ui.layouts import backup_with_lite
+                        from trezor import wire
+
+                        workflow.spawn(backup_with_lite(wire.DUMMY_CONTEXT, b""))
 
     def _load_scr(self, scr: "Screen", back: bool = False) -> None:
         lv.scr_load(scr)
@@ -1046,6 +1057,10 @@ class BackupWallet(Screen):
                 from apps.management.recovery_device import recovery_device
                 from trezor.messages import RecoveryDevice
 
+                if target == self.lite:
+                    utils.mark_backup_with_lite_1st()
+                elif target == self.keytag:
+                    utils.mark_backup_with_keytag_1st()
                 # pyright: off
                 workflow.spawn(
                     recovery_device(
@@ -2436,6 +2451,8 @@ class AirGapSetting(Screen):
         if code == lv.EVENT.VALUE_CHANGED:
             if target == self.air_gap.switch:
                 if target.has_state(lv.STATE.CHECKED):
+                    from trezor.lvglui.scrs.template import AirGapOpenTips
+
                     AirGapOpenTips(self)
                 else:
                     self.description.set_text(
@@ -2443,55 +2460,16 @@ class AirGapSetting(Screen):
                             i18n_keys.CONTENT__AFTER_ENABLING_THE_AIRGAP_BLUETOOTH_USB_AND_NFC_TRANSFER_WILL_BE_DISABLED_SIMULTANEOUSLY
                         )
                     )
-                device.enable_airgap_mode(False)
-                uart.ctrl_ble(enable=True)
-                import usb
-
-                if usb.bus.state() == 0:
-                    usb.bus = usb.init()
-                    for iface in usb.active_iface:
-                        usb.bus.add(iface)
-                    usb.bus.open(device.get_device_id())
+                    utils.disable_airgap_mode()
         elif code == lv.EVENT.READY:
             self.description.set_text(
                 _(
                     i18n_keys.CONTENT__BLUETOOTH_USB_AND_NFT_TRANSFER_FUNCTIONS_HAVE_BEEN_DISABLED
                 )
             )
-            device.enable_airgap_mode(True)
-            uart.ctrl_ble(enable=False)
-            import usb
-
-            if usb.bus.state() == 1:
-                usb.bus.close()
+            utils.enable_airgap_mode()
         elif code == lv.EVENT.CANCEL:
             self.air_gap.clear_state()
-
-
-class AirGapOpenTips(FullSizeWindow):
-    def __init__(self, callback_obj):
-        super().__init__(
-            title=_(i18n_keys.TITLE__ENABLE_AIR_GAP),
-            subtitle=_(i18n_keys.CONTENT__ARE_YOU_SURE_TO_ENABLE_AIRGAP_MODE),
-            confirm_text=_(i18n_keys.BUTTON__ENABLE),
-            cancel_text=_(i18n_keys.BUTTON__CANCEL),
-            anim_dir=2,
-        )
-        self.callback_obj = callback_obj
-
-    def eventhandler(self, event_obj):
-        code = event_obj.code
-        target = event_obj.get_target()
-        if code == lv.EVENT.CLICKED:
-            if utils.lcd_resume():
-                return
-            elif target == self.btn_no:
-                lv.event_send(self.callback_obj, lv.EVENT.CANCEL, None)
-            elif target == self.btn_yes:
-                lv.event_send(self.callback_obj, lv.EVENT.READY, None)
-            else:
-                return
-            self.show_dismiss_anim()
 
 
 class AboutSetting(Screen):

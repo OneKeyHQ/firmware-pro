@@ -3074,3 +3074,50 @@ class Signature(FullSizeWindow):
             self.qr_code,
         )
         self.qr.align_to(self.subtitle, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 30)
+
+
+##################
+# misc functions #
+##################
+class AirgapMode(FullSizeWindow):
+    def __init__(self):
+        super().__init__(
+            _(i18n_keys.TITLE__AIR_GAP_MODE),
+            _(i18n_keys.CONTENT__WHAT_DOES_AIR_GAP_MEANS),
+            _(i18n_keys.BUTTON__SKIP),
+            _(i18n_keys.BUTTON__GO_SETTING),
+        )
+        self.btn_yes.enable()
+        self.btn_no.enable(bg_color=lv_colors.ONEKEY_GREEN, text_color=lv_colors.BLACK)
+
+
+class AirGapOpenTips(FullSizeWindow):
+    def __init__(self, callback_obj=None):
+        super().__init__(
+            title=_(i18n_keys.TITLE__ENABLE_AIR_GAP),
+            subtitle=_(i18n_keys.CONTENT__ARE_YOU_SURE_TO_ENABLE_AIRGAP_MODE),
+            confirm_text=_(i18n_keys.BUTTON__ENABLE),
+            cancel_text=_(i18n_keys.BUTTON__CANCEL),
+            anim_dir=2,
+        )
+        self.callback_obj = callback_obj
+
+    def eventhandler(self, event_obj):
+        code = event_obj.code
+        target = event_obj.get_target()
+        if code == lv.EVENT.CLICKED:
+            if utils.lcd_resume():
+                return
+            elif target == self.btn_no:
+                if self.callback_obj:
+                    lv.event_send(self.callback_obj, lv.EVENT.CANCEL, None)
+                else:
+                    self.channel.publish(0)
+            elif target == self.btn_yes:
+                if self.callback_obj:
+                    lv.event_send(self.callback_obj, lv.EVENT.READY, None)
+                else:
+                    self.channel.publish(1)
+            else:
+                return
+            self.show_dismiss_anim()

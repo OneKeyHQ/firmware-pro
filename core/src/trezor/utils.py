@@ -56,6 +56,7 @@ _INITIALIZATION_PROCESSING = False
 _COLLECTING_FINGERPRINT = False
 _PIN_VERIFIED_SINCE_BOOT = False
 FLASH_LED_BRIGHTNESS: int | None = None
+_BACKUP_WITH_LITE_FIRST = False
 
 if __debug__:
     MAX_FP_ATTEMPTS = 50
@@ -176,6 +177,33 @@ def play_dead():
     loop.pop_tasks_on_iface(SPI_IFACE_NUM)
 
 
+def disable_airgap_mode():
+    from storage import device
+    from trezor import uart
+
+    device.enable_airgap_mode(False)
+    uart.ctrl_ble(enable=True)
+    import usb
+
+    if usb.bus.state() == 0:
+        usb.bus = usb.init()
+        for iface in usb.active_iface:
+            usb.bus.add(iface)
+        usb.bus.open(device.get_device_id())
+
+
+def enable_airgap_mode():
+    from storage import device
+    from trezor import uart
+
+    device.enable_airgap_mode(True)
+    uart.ctrl_ble(enable=False)
+    import usb
+
+    if usb.bus.state() == 1:
+        usb.bus.close()
+
+
 def show_app_guide():
     global _SHOW_APP_GUIDE
     if _SHOW_APP_GUIDE:
@@ -215,6 +243,20 @@ def is_collecting_fingerprint():
 def mark_collecting_fingerprint_done():
     global _COLLECTING_FINGERPRINT
     _COLLECTING_FINGERPRINT = False
+
+
+def mark_backup_with_lite_1st():
+    global _BACKUP_WITH_LITE_FIRST
+    _BACKUP_WITH_LITE_FIRST = True
+
+
+def mark_backup_with_keytag_1st():
+    global _BACKUP_WITH_LITE_FIRST
+    _BACKUP_WITH_LITE_FIRST = False
+
+
+def is_backup_with_lite_1st():
+    return _BACKUP_WITH_LITE_FIRST
 
 
 def unimport_begin() -> set[str]:

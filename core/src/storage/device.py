@@ -375,7 +375,11 @@ def get_ble_name() -> str:
 def ble_enabled() -> bool:
     global _BLE_ENABLED_VALUE
     if _BLE_ENABLED_VALUE is None:
-        _BLE_ENABLED_VALUE = common.get_bool(_NAMESPACE, _BLE_ENABLED, public=True)
+        ble_enabled = common.get(_NAMESPACE, _BLE_ENABLED, public=True)
+        if ble_enabled == common._FALSE_BYTE:
+            _BLE_ENABLED_VALUE = False
+        else:
+            _BLE_ENABLED_VALUE = True
     return _BLE_ENABLED_VALUE
 
 
@@ -478,17 +482,12 @@ def enable_fingerprint_unlock(enable: bool) -> None:
 def is_fingerprint_unlock_enabled() -> bool:
     global _USE_FINGERPRINT_UNLOCK_VALUE
     if _USE_FINGERPRINT_UNLOCK_VALUE is None:
-        _USE_FINGERPRINT_UNLOCK_VALUE = common.get_bool(
-            _NAMESPACE, _USE_FINGERPRINT_UNLOCK, public=True
-        )
+        use_finger_unlock = common.get(_NAMESPACE, _USE_FINGERPRINT_UNLOCK, public=True)
+        if use_finger_unlock == common._FALSE_BYTE:
+            _USE_FINGERPRINT_UNLOCK_VALUE = False
+        else:
+            _USE_FINGERPRINT_UNLOCK_VALUE = True
     return _USE_FINGERPRINT_UNLOCK_VALUE
-
-
-def is_tap_awake_enabled() -> bool:
-    global _TAP_AWAKE_VALUE
-    if _TAP_AWAKE_VALUE is None:
-        _TAP_AWAKE_VALUE = common.get_bool(_NAMESPACE, _TAP_AWAKE, public=True)
-    return _TAP_AWAKE_VALUE
 
 
 def has_prompted_fingerprint() -> bool:
@@ -533,6 +532,17 @@ def finger_failed_count_reset() -> None:
     _FINGER_FAILED_COUNT_VALUE = 0
 
 
+def is_tap_awake_enabled() -> bool:
+    global _TAP_AWAKE_VALUE
+    if _TAP_AWAKE_VALUE is None:
+        tap_awake = common.get(_NAMESPACE, _TAP_AWAKE, public=True)
+        if tap_awake == common._FALSE_BYTE:
+            _TAP_AWAKE_VALUE = False
+        else:
+            _TAP_AWAKE_VALUE = True
+    return _TAP_AWAKE_VALUE
+
+
 def set_tap_awake_enable(enable: bool) -> None:
     global _TAP_AWAKE_VALUE
     common.set_bool(
@@ -553,10 +563,10 @@ def is_animation_enabled() -> bool:
 
 def set_animation_enable(enable: bool) -> None:
     global _ANIMATION_VALUE
-    common.set(
+    common.set_bool(
         _NAMESPACE,
         _ANIMATION,
-        common._TRUE_BYTE if enable else common._FALSE_BYTE,
+        enable,
         public=True,
     )
     _ANIMATION_VALUE = enable
@@ -565,22 +575,21 @@ def set_animation_enable(enable: bool) -> None:
 def keyboard_haptic_enabled() -> bool:
     global _KEYBOARD_HAPTIC_VALUE
     if _KEYBOARD_HAPTIC_VALUE is None:
-        enabled = common.get(_NAMESPACE, _KEYBOARD_HAPTIC, public=True)
-        if enabled == common._FALSE_BYTE:
+        haptic_enabled = common.get(_NAMESPACE, _KEYBOARD_HAPTIC, public=True)
+        if haptic_enabled == common._FALSE_BYTE:
             _KEYBOARD_HAPTIC_VALUE = False
         else:
             _KEYBOARD_HAPTIC_VALUE = True
-        return _KEYBOARD_HAPTIC_VALUE
-    else:
-        return _KEYBOARD_HAPTIC_VALUE
+
+    return _KEYBOARD_HAPTIC_VALUE
 
 
 def toggle_keyboard_haptic(enable: bool) -> None:
     global _KEYBOARD_HAPTIC_VALUE
-    common.set(
+    common.set_bool(
         _NAMESPACE,
         _KEYBOARD_HAPTIC,
-        common._TRUE_BYTE if enable else common._FALSE_BYTE,
+        enable,
         public=True,
     )
     _KEYBOARD_HAPTIC_VALUE = enable

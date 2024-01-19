@@ -71,6 +71,7 @@ __all__ = (
     "confirm_polkadot_balances",
     "should_show_details",
     "show_signature",
+    "enable_airgap_mode",
 )
 
 
@@ -1255,6 +1256,19 @@ async def show_onekey_app_guide():
         set_homescreen()
 
 
+async def enable_airgap_mode() -> None:
+    from trezor.lvglui.scrs.template import AirgapMode, AirGapOpenTips
+    from trezor import utils
+
+    scr_airgap = AirgapMode()
+    reject = await scr_airgap.request()
+    if not reject:
+        scr_tips = AirGapOpenTips()
+        enable = await scr_tips.request()
+        if enable:
+            utils.enable_airgap_mode()
+
+
 async def confirm_set_homescreen(ctx, replace: bool = False):
     await confirm_action(
         ctx=ctx,
@@ -1856,11 +1870,11 @@ async def backup_with_keytag(
 async def backup_with_lite(
     ctx: wire.GenericContext, mnemonics: bytes, recovery_check: bool = False
 ):
+    # # not support now
+    # return
     from trezor.lvglui.scrs.common import FullSizeWindow, lv
     from trezor.lvglui.scrs.pinscreen import InputLitePin
 
-    # not support now
-    return
     while True:
         ask_screen = FullSizeWindow(
             _(i18n_keys.TITLE__BACK_UP_WITH_LITE),
@@ -1886,13 +1900,59 @@ async def backup_with_lite(
                     start_scr.subtitle, lv.ALIGN.OUT_BOTTOM_MID, 0, 52
                 )
                 if await ctx.wait(start_scr.request()):
+                    if __debug__:
+                        print("Lite backup start")
                     pin = await ctx.wait(InputLitePin().request())
+                    if __debug__:
+                        print(f"Got lite pin {pin}")
                     if not pin:
+                        if __debug__:
+                            print("Lite pin cancelled")
                         continue
 
+                    from trezor.lvglui.scrs.nfc import SearchDeviceScreen
+
+                    search_scr = SearchDeviceScreen()
+                    # from trezorio import NFC
+
+                    # nfc_controler = NFC()
+                    # res = nfc_controler.pwr_ctrl(True)
+                    # print(f"nfc power on {res}")
+                    # # res = nfc_controler.wait_card(1000)
+                    # status, res = nfc_controler.send_recv_single_shot(
+                    #     b"\x80\xcb\x80\x00\x05\xdf\xff\x02\x81\x01", 1000
+                    # )
+                    # print(f"nfc wait card status {status} and result {res}")
+                    # nfc_controler.send_recv(b'\x00\x00\x00\x00')
+                    # nfc_controler.send_recv_single_shot(b'\x00\x00\x00\x00', 100)
+                    # get serial number
+                    # status, res = nfc_controler.send_recv_single_shot(
+                    #     b"\x80\xcb\x80\x00\x05\xdf\xff\x02\x81\x01", 100
+                    # )
+
+                    # TODO: 1. start nfc
+                    # TODO: 2. searching device
+                    # TODO: 3. select primary security domain
+                    # TODO: 4. select backup APP ......
+
+                    if await ctx.wait(search_scr.request()):
+                        break
+
+                    # finally show backup success
+                    await show_success(
+                        ctx,
+                        "Lite backup success",
+                        _(i18n_keys.TITLE__BACKUP_COMPLETED_DESC),
+                        _(i18n_keys.TITLE__BACKUP_COMPLETED),
+                        button=_(i18n_keys.BUTTON__CONTINUE),
+                    )
                 else:
+                    if __debug__:
+                        print("Lite backup cancelled")
                     break
         else:
+            if __debug__:
+                print("Lite backup skipped")
             break
 
 

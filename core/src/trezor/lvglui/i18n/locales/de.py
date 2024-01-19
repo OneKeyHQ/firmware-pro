@@ -738,5 +738,8 @@ translations = [
     "Heben Sie die Position an und stellen Sie sie fein ein. Berühren Sie dann erneut die Ein-/Aus-Taste.",
     "Reinigen Sie den Netzschalter und versuchen Sie es erneut.",
     "Legen Sie den Finger auf den Einschaltknopf und halten Sie ihn fest.",
+    "Domain",
+    "LNURL-Auth",
+    "Genehmigen Sie die LNURL-Autorisierung",
 ]
 # fmt: on

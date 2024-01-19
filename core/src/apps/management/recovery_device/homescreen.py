@@ -9,7 +9,12 @@ from trezor.enums import BackupType, MessageType
 from trezor.errors import MnemonicError
 from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
 from trezor.messages import Success
-from trezor.ui.layouts import show_onekey_app_guide, show_popup, show_success
+from trezor.ui.layouts import (
+    enable_airgap_mode,
+    show_onekey_app_guide,
+    show_popup,
+    show_success,
+)
 
 from apps.base import set_homescreen
 from apps.common import mnemonic
@@ -167,6 +172,9 @@ async def _finish_recovery(
         header=_(i18n_keys.TITLE__WALLET_IS_READY),
         button=_(i18n_keys.BUTTON__CONTINUE),
     )
+    # ask user to open air-gapped mode
+    await enable_airgap_mode()
+
     if isinstance(ctx, wire.DummyContext):
         utils.make_show_app_guide()
     else:

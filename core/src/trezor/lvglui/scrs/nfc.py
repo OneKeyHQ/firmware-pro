@@ -8,7 +8,8 @@ class SearchDeviceScreen(FullSizeWindow):
         super().__init__(
             _(i18n_keys.TITLE__SEARCHING),
             _(i18n_keys.CONTENT__KEEP_LITE_DEVICE_TOGETHER_BACKUP_COMPLETE),
-            _(i18n_keys.BUTTON__CANCEL),
+            cancel_text=_(i18n_keys.BUTTON__CANCEL),
+            anim_dir=0,
         )
         self.img_bg = lv.img(self.content_area)
         self.img_bg.set_src("A:/res/nfc-bg.png")
@@ -21,13 +22,10 @@ class SearchDeviceScreen(FullSizeWindow):
         self.anim = lv.anim_t()
         self.anim.init()
         self.anim.set_var(self.img_bg)
-        self.anim.set_values(0, 360)
+        self.anim.set_values(0, 3600)
         self.anim.set_time(1000)
-        self.anim.set_playback_delay(100)
-        self.anim.set_playback_time(1000)
-        self.anim.set_repeat_delay(100)
         self.anim.set_repeat_count(0xFFFF)  # infinite
-        self.anim.set_path_cb(lv.anim_t.path_ease_in_out)
+        self.anim.set_path_cb(lv.anim_t.path_linear)
         self.anim.set_custom_exec_cb(lambda _a, val: self.set_angle(val))
         lv.anim_t.start(self.anim)
 
@@ -43,7 +41,8 @@ class TransferDataScreen(FullSizeWindow):
         super().__init__(
             _(i18n_keys.TITLE__TRANSFERRING),
             _(i18n_keys.TITLE__TRANSFERRING_DESC),
-            _(i18n_keys.BUTTON__CANCEL),
+            cancel_text=_(i18n_keys.BUTTON__CANCEL),
+            anim_dir=0,
         )
         self.img_bg = lv.img(self.content_area)
         self.img_bg.set_src("A:/res/nfc-bg.png")
@@ -56,11 +55,8 @@ class TransferDataScreen(FullSizeWindow):
         self.anim = lv.anim_t()
         self.anim.init()
         self.anim.set_var(self.img_bg)
-        self.anim.set_values(0, 360)
+        self.anim.set_values(0, 3600)
         self.anim.set_time(1000)
-        self.anim.set_playback_delay(100)
-        self.anim.set_playback_time(1000)
-        self.anim.set_repeat_delay(100)
         self.anim.set_repeat_count(0xFFFF)  # infinite
         self.anim.set_path_cb(lv.anim_t.path_ease_in_out)
         self.anim.set_custom_exec_cb(lambda _a, val: self.set_angle(val))
