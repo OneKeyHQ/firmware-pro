@@ -588,6 +588,8 @@ void display_print(const char *text, int textlen) {
   for (int i = 0; i < textlen; i++) {
     switch (text[i]) {
       case '\r':
+        col = 0;
+        width = 0;
         break;
       case '\n':
         row++;
