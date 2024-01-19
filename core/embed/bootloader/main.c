@@ -26,6 +26,7 @@
 #include "display.h"
 #include "flash.h"
 #include "image.h"
+#include "lowlevel.h"
 #include "mini_printf.h"
 #include "mipi_lcd.h"
 #include "mpu.h"
@@ -155,9 +156,8 @@ static secbool handle_flash_ecc_error = secfalse;
 static void set_handle_flash_ecc_error(secbool val) {
   handle_flash_ecc_error = val;
 }
-static void bus_fault_enable() { SCB->SHCSR |= SCB_SHCSR_BUSFAULTENA_Msk; }
-static void bus_fault_disable() { SCB->SHCSR &= ~SCB_SHCSR_BUSFAULTENA_Msk; }
 
+// fault handlers
 void HardFault_Handler(void) {
   error_shutdown("Internal error", "(HF)", NULL, NULL);
 }
@@ -206,6 +206,7 @@ void BusFault_Handler(void) {
 void UsageFault_Handler(void) {
   error_shutdown("Internal error", "(UF)", NULL, NULL);
 }
+
 static void usb_init_all(secbool usb21_landing) {
   usb_dev_info_t dev_info = {
       .device_class = 0x00,
@@ -603,15 +604,49 @@ static secbool validate_firmware_code(vendor_header* const vhdr,
   return result;
 }
 
-int main(void) {
-  volatile uint32_t stay_in_bootloader_flag = *STAY_IN_FLAG_ADDR;
+static BOOT_TARGET decide_boot_target(vendor_header* const vhdr,
+                                      image_header* const hdr,
+                                      secbool* headers_validate_result) {
+  // get boot target flag
+  volatile BOOT_TARGET boot_target = *BOOT_TARGET_FLAG_ADDR;  // cache flag
+  *BOOT_TARGET_FLAG_ADDR = BOOT_TARGET_NORMAL;  // consume(reset) flag
 
+  // if boot target already at boot, no more checks
+  if (boot_target == BOOT_TARGET_BOOTLOADER) return boot_target;
+
+  // check se status
+  if (se_get_state() != 0) {
+    boot_target = BOOT_TARGET_BOOTLOADER;
+    return boot_target;
+  }
+
+  // check firmware
+  if (sectrue == validate_firmware_headers(vhdr, hdr)) {
+    *headers_validate_result = sectrue;
+    if (sectrue == validate_firmware_code(vhdr, hdr)) {
+      __asm("nop");  // all good, do nothing
+    } else {
+      boot_target = BOOT_TARGET_BOOTLOADER;
+      return boot_target;
+    }
+  } else {
+    *headers_validate_result = secfalse;
+    boot_target = BOOT_TARGET_BOOTLOADER;
+    return boot_target;
+  }
+
+  return boot_target;
+}
+
+int main(void) {
   SystemCoreClockUpdate();
-  mpu_config_bootloader();
   dwt_init();
+  mpu_config_bootloader();
   // user interface
   lcd_para_init(DISPLAY_RESX, DISPLAY_RESY, LCD_PIXEL_FORMAT_RGB565);
+  // lcd_init(DISPLAY_RESX, DISPLAY_RESY, LCD_PIXEL_FORMAT_RGB565);
   lcd_pwm_init();
+  display_clear();
   touch_init();
 
   // fault handler
@@ -630,22 +665,18 @@ int main(void) {
 
   // misc/feedback
   random_delays_init();
-  
+
   // as they using same i2c bus, both needs to be powered up before any
   // communication
-  thd89_io_init();
   camera_io_init();
+  thd89_io_init();
 
   // se
   thd89_reset();
   thd89_init();
 
-  uint8_t se_state = 0;
-
-  se_state = se_get_state();
-
   // all se in app mode
-  if (se_state == 0) {
+  if (se_get_state() == 0) {
     device_para_init();
   }
 
@@ -668,10 +699,25 @@ int main(void) {
   // if (!se_has_cerrificate()) {
   //   write_dev_dummy_cert();
   // }
-
   UNUSED(write_dev_dummy_cert);
 
+  // if(!device_overwrite_serial("PRA50I0000 QA"))
+  // {
+  //   dbgprintf_Wait("serial overwrite failed!");
+  // }
+
+  // device_test(true);
+
   device_backup_otp(false);
+  // device_restore_otp();
+
+  // motor test
+  // while(1)
+  // {
+  //   hal_delay(80);
+  //   motor_tick();
+  // }
+
 #endif
 
 #if PRODUCTION
@@ -681,36 +727,15 @@ int main(void) {
 
 #endif
 
-  secbool stay_in_bootloader = secfalse;  // flag to stay in bootloader
-
-  if (stay_in_bootloader_flag == STAY_IN_BOOTLOADER_FLAG) {
-    *STAY_IN_FLAG_ADDR = 0;
-    stay_in_bootloader = sectrue;
-  }
-  if (se_state != 0) {
-    stay_in_bootloader = sectrue;
-  }
-
-  // delay to detect touch or skip if we know we are staying in bootloader
-  // anyway
-  uint32_t touched = 0;
-  if (stay_in_bootloader != sectrue) {
-    for (int i = 0; i < 100; i++) {
-      touched = touch_is_detected() | touch_read();
-      if (touched) {
-        break;
-      }
-      hal_delay(1);
-    }
-  }
-
   vendor_header vhdr;
   image_header hdr;
+  secbool headers_valid = secfalse;
 
-  // check stay_in_bootloader flag
-  if (stay_in_bootloader == sectrue) {
+  BOOT_TARGET boot_target = decide_boot_target(&vhdr, &hdr, &headers_valid);
+
+  if (boot_target == BOOT_TARGET_BOOTLOADER) {
     display_clear();
-    if (sectrue == validate_firmware_headers(&vhdr, &hdr)) {
+    if (sectrue == headers_valid) {
       ui_bootloader_first(&hdr);
       if (bootloader_usb_loop(&vhdr, &hdr) != sectrue) {
         return 1;
@@ -720,25 +745,6 @@ int main(void) {
       if (bootloader_usb_loop(NULL, NULL) != sectrue) {
         return 1;
       }
-    }
-  }
-
-  // check if firmware valid
-  if (sectrue == validate_firmware_headers(&vhdr, &hdr)) {
-    if (sectrue == validate_firmware_code(&vhdr, &hdr)) {
-      // __asm("nop"); // all good, do nothing
-    } else {
-      display_clear();
-      ui_bootloader_first(&hdr);
-      if (bootloader_usb_loop(&vhdr, &hdr) != sectrue) {
-        return 1;
-      }
-    }
-  } else {
-    display_clear();
-    ui_bootloader_first(NULL);
-    if (bootloader_usb_loop(NULL, NULL) != sectrue) {
-      return 1;
     }
   }
 

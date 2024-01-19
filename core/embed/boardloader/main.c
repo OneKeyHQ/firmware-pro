@@ -29,7 +29,9 @@
 #include "i2c.h"
 #include "image.h"
 #include "mipi_lcd.h"
+#include "qspi_flash.h"
 #include "rng.h"
+#include "systick.h"
 #ifdef TREZOR_MODEL_T
 #include "sdcard.h"
 #include "sdram.h"
@@ -43,6 +45,7 @@
 #include "memzero.h"
 
 #include "ble.h"
+#include "emmc_fs.h"
 #include "usart.h"
 
 #define BOARD_MODE 1
@@ -56,6 +59,9 @@ const uint8_t BOARDLOADER_KEY_N = 7;
 const uint8_t BOARDLOADER_KEY_M = 2;
 const uint8_t BOARDLOADER_KEY_N = 3;
 #endif
+
+#define FORCE_IGNORE_RETURN(x) \
+  { __typeof__(x) __attribute__((unused)) d = (x); }
 
 static const uint8_t * const BOARDLOADER_KEYS[] = {
 #if PRODUCTION
@@ -113,7 +119,7 @@ static const uint8_t toi_icon_safeos[] = {
 };
 // clang-format on
 
-#define BOARD_VERSION "OneKey Boardloader 1.5.0\n"
+#define BOARD_VERSION "OneKey Boardloader 1.6.0\n"
 
 #if defined(STM32H747xx)
 
@@ -121,263 +127,28 @@ static const uint8_t toi_icon_safeos[] = {
 
 extern volatile uint32_t system_reset;
 
-static FATFS fs_instance;
-PARTITION VolToPart[FF_VOLUMES] = {
-    {0, 1},
-    {0, 2},
-};
-uint32_t *sdcard_buf = (uint32_t *)0x24000000;
-uint32_t *sdcard_buf1 = (uint32_t *)0x24000000 + IMAGE_HEADER_SIZE;
+// axi ram 512k
+uint8_t *boardloader_buf = (uint8_t *)0x24000000;
 
-void fatfs_init(void) {
-  FRESULT res;
-  BYTE work[FF_MAX_SS];
-  MKFS_PARM mk_para = {
-      .fmt = FM_FAT32,
-  };
-
-  LBA_t plist[] = {
-      BOOT_EMMC_BLOCKS,
-      100};  // 1G sectors for 1st partition and left all for 2nd partition
-
-  res = f_mount(&fs_instance, "", 1);
-  if (res != FR_OK) {
-    if (res == FR_NO_FILESYSTEM) {
-      res = f_fdisk(0, plist, work); /* Divide physical drive 0 */
-      if (res) {
-        display_printf("f_fdisk error%d\n", res);
-      }
-      res = f_mkfs("0:", &mk_para, work, sizeof(work));
-      if (res) {
-        display_printf("f_mkfs 0 error%d\n", res);
-      }
-      res = f_mkfs("1:", &mk_para, work, sizeof(work));
-      if (res) {
-        display_printf("fatfs Format error");
-      }
-      f_setlabel("Onekey Data");
-    } else {
-      display_printf("mount err %d\n", res);
-    }
-  }
+// fault handlers
+void HardFault_Handler(void) {
+  error_shutdown("Internal error", "(HF)", NULL, NULL);
 }
 
-int fatfs_check_res(void) {
-  FRESULT res;
-  FIL fsrc;
-  res = f_mount(&fs_instance, "", 1);
-  if (res != FR_OK) {
-    display_printf("fatfs mount error");
-    return 0;
-  }
-  res = f_open(&fsrc, "/res/.ONEKEY_RESOURCE", FA_READ);
-  if (res != FR_OK) {
-    f_unmount("");
-  }
-  return res;
+void MemManage_Handler_MM(void) {
+  error_shutdown("Internal error", "(MM)", NULL, NULL);
 }
 
-secbool check_sd_card_image_contents(const image_header *const hdr,
-                                     uint32_t firstskip, FIL fsrc) {
-  void *data = sdcard_buf1;
-
-  FRESULT res;
-  UINT num_of_read = 0;
-
-  res = f_read(&fsrc, data, IMAGE_CHUNK_SIZE - firstskip, &num_of_read);
-  if ((num_of_read != (IMAGE_CHUNK_SIZE - firstskip)) || (res != FR_OK)) {
-    f_close(&fsrc);
-    return secfalse;
-  }
-
-  int remaining = hdr->codelen;
-  if (remaining <= IMAGE_CHUNK_SIZE - firstskip) {
-    if (sectrue != check_single_hash(hdr->hashes, data,
-                                     MIN(remaining, IMAGE_CHUNK_SIZE))) {
-      return secfalse;
-    } else {
-      return sectrue;
-    }
-  }
-
-  BLAKE2S_CTX ctx;
-  uint8_t hash[BLAKE2S_DIGEST_LENGTH];
-  blake2s_Init(&ctx, BLAKE2S_DIGEST_LENGTH);
-
-  blake2s_Update(&ctx, data, MIN(remaining, IMAGE_CHUNK_SIZE - firstskip));
-  int block = 1;
-  int update_flag = 1;
-  remaining -= IMAGE_CHUNK_SIZE - firstskip;
-  while (remaining > 0) {
-    res = f_read(&fsrc, data, MIN(remaining, IMAGE_CHUNK_SIZE), &num_of_read);
-    if ((num_of_read != MIN(remaining, IMAGE_CHUNK_SIZE)) || (res != FR_OK)) {
-      f_close(&fsrc);
-      return secfalse;
-    }
-
-    if (remaining - IMAGE_CHUNK_SIZE > 0) {
-      if (block % 2) {
-        update_flag = 0;
-        blake2s_Update(&ctx, data, MIN(remaining, IMAGE_CHUNK_SIZE));
-        blake2s_Final(&ctx, hash, BLAKE2S_DIGEST_LENGTH);
-        if (0 != memcmp(hdr->hashes + (block / 2) * 32, hash,
-                        BLAKE2S_DIGEST_LENGTH)) {
-          return secfalse;
-        }
-      } else {
-        blake2s_Init(&ctx, BLAKE2S_DIGEST_LENGTH);
-        blake2s_Update(&ctx, data, MIN(remaining, IMAGE_CHUNK_SIZE));
-        update_flag = 1;
-      }
-    } else {
-      if (update_flag) {
-        blake2s_Update(&ctx, data, MIN(remaining, IMAGE_CHUNK_SIZE));
-        blake2s_Final(&ctx, hash, BLAKE2S_DIGEST_LENGTH);
-        if (0 != memcmp(hdr->hashes + (block / 2) * 32, hash,
-                        BLAKE2S_DIGEST_LENGTH)) {
-          return secfalse;
-        }
-      } else {
-        if (sectrue != check_single_hash(hdr->hashes + (block / 2) * 32, data,
-                                         MIN(remaining, IMAGE_CHUNK_SIZE))) {
-          return secfalse;
-        }
-      }
-    }
-    block++;
-    remaining -= MIN(remaining, IMAGE_CHUNK_SIZE);
-  }
-  return sectrue;
+void MemManage_Handler_SO(void) {
+  error_shutdown("Internal error", "(SO)", NULL, NULL);
 }
 
-static secbool check_sdcard(image_header *hdr) {
-  FRESULT res;
-
-  res = f_mount(&fs_instance, "", 1);
-  if (res != FR_OK) {
-    return secfalse;
-  }
-  uint64_t cap = emmc_get_capacity_in_bytes();
-  if (cap < 1024 * 1024) {
-    return secfalse;
-  }
-
-  memzero(sdcard_buf, IMAGE_HEADER_SIZE);
-
-  FIL fsrc;
-  UINT num_of_read = 0;
-
-  res = f_open(&fsrc, "/boot/bootloader.bin", FA_READ);
-  if (res != FR_OK) {
-    return secfalse;
-  }
-  res = f_read(&fsrc, sdcard_buf, IMAGE_HEADER_SIZE, &num_of_read);
-  if ((num_of_read != IMAGE_HEADER_SIZE) || (res != FR_OK)) {
-    f_close(&fsrc);
-    return secfalse;
-  }
-
-  secbool new_present = secfalse;
-
-  new_present =
-      load_image_header((const uint8_t *)sdcard_buf, BOOTLOADER_IMAGE_MAGIC,
-                        BOOTLOADER_IMAGE_MAXSIZE, BOARDLOADER_KEY_M,
-                        BOARDLOADER_KEY_N, BOARDLOADER_KEYS, hdr);
-  if (sectrue == new_present) {
-    new_present = check_sd_card_image_contents(hdr, IMAGE_HEADER_SIZE, fsrc);
-  }
-
-  f_close(&fsrc);
-  return sectrue == new_present ? sectrue : secfalse;
+void BusFault_Handler(void) {
+  error_shutdown("Internal error", "(BF)", NULL, NULL);
 }
 
-static void progress_callback(int pos, int len) { display_printf("."); }
-
-static secbool copy_sdcard(uint32_t code_len) {
-  display_backlight(255);
-
-  display_printf(BOARD_VERSION);
-  display_printf("=====================\n\n");
-
-  display_printf("new version bootloader found\n\n");
-
-  display_printf("\n\nerasing flash:\n\n");
-
-  // erase all flash (except boardloader)
-  static const uint8_t sectors[] = {
-      FLASH_SECTOR_BOOTLOADER_1,
-      FLASH_SECTOR_BOOTLOADER_2,
-  };
-
-  if (sectrue !=
-      flash_erase_sectors(sectors, sizeof(sectors), progress_callback)) {
-    display_printf(" failed\n");
-    return secfalse;
-  }
-  display_printf(" done\n\n");
-
-  ensure(flash_unlock_write(), NULL);
-
-  // copy bootloader from SD card to Flash
-  display_printf("copying new bootloader from SD card\n\n");
-
-  memzero(sdcard_buf, EMMC_BLOCK_SIZE);
-
-  FIL fsrc;
-  FRESULT res;
-  UINT num_of_read;
-  res = f_open(&fsrc, "/boot/bootloader.bin", FA_READ);
-  if (res != FR_OK) {
-    return secfalse;
-  }
-  int blocks = (IMAGE_HEADER_SIZE + code_len) / EMMC_BLOCK_SIZE;
-  int percent = 0, percent_bak = 0;
-  for (int i = 0; i < blocks; i++) {
-    percent = (i * 100) / blocks;
-    if (percent != percent_bak) {
-      percent_bak = percent;
-      display_printf("%d ", percent);
-    }
-
-    f_lseek(&fsrc, i * EMMC_BLOCK_SIZE);
-    res = f_read(&fsrc, sdcard_buf, EMMC_BLOCK_SIZE, &num_of_read);
-    if ((num_of_read != EMMC_BLOCK_SIZE) || (res != FR_OK)) {
-      f_close(&fsrc);
-      return secfalse;
-    }
-    if (i * EMMC_BLOCK_SIZE < FLASH_FIRMWARE_SECTOR_SIZE) {
-      for (int j = 0; j < EMMC_BLOCK_SIZE / (sizeof(uint32_t) * 8); j++) {
-        ensure(
-            flash_write_words(FLASH_SECTOR_BOOTLOADER_1,
-                              i * EMMC_BLOCK_SIZE + j * (sizeof(uint32_t) * 8),
-                              (uint32_t *)&sdcard_buf[8 * j]),
-            NULL);
-      }
-    } else {
-      for (int j = 0; j < EMMC_BLOCK_SIZE / (sizeof(uint32_t) * 8); j++) {
-        ensure(flash_write_words(
-                   FLASH_SECTOR_BOOTLOADER_2,
-                   (i - FLASH_FIRMWARE_SECTOR_SIZE / EMMC_BLOCK_SIZE) *
-                           EMMC_BLOCK_SIZE +
-                       j * (sizeof(uint32_t) * 8),
-                   (uint32_t *)&sdcard_buf[8 * j]),
-               NULL);
-      }
-    }
-  }
-  f_close(&fsrc);
-  f_unlink("/boot/bootloader.bin");
-  ensure(flash_lock_write(), NULL);
-
-  display_printf("\ndone\n\n");
-  display_printf("Device will be restart in 3 seconds\n");
-
-  for (int i = 3; i >= 0; i--) {
-    display_printf("%d ", i);
-    hal_delay(1000);
-  }
-  HAL_NVIC_SystemReset();
-  return sectrue;
+void UsageFault_Handler(void) {
+  error_shutdown("Internal error", "(UF)", NULL, NULL);
 }
 
 void show_poweron_bar(void) {
@@ -415,183 +186,358 @@ void show_poweron_bar(void) {
                      COLOR_BLACK, 2);
 }
 
+static secbool validate_bootloader(image_header *const hdr) {
+  secbool result = secfalse;
+  // set_handle_flash_ecc_error(sectrue);
+
+  secbool boot_hdr_valid = load_image_header(
+      (const uint8_t *)BOOTLOADER_START, BOOTLOADER_IMAGE_MAGIC,
+      BOOTLOADER_IMAGE_MAXSIZE, BOARDLOADER_KEY_M, BOARDLOADER_KEY_N,
+      BOARDLOADER_KEYS, hdr);
+
+  secbool boot_code_valid = check_image_contents(
+      hdr, IMAGE_HEADER_SIZE, BOOTLOADER_SECTORS, BOOTLOADER_SECTORS_COUNT);
+
+  result = ((sectrue == boot_hdr_valid) && (sectrue == boot_code_valid))
+               ? sectrue
+               : secfalse;
+
+  // set_handle_flash_ecc_error(secfalse);
+  return result;
+}
+
+static void bootloader_update_erase_cb(int pos, int len) {
+  display_printf(".");
+}
+
+static secbool try_bootloader_update(bool do_update, bool auto_reboot) {
+  memzero(boardloader_buf, BOOTLOADER_IMAGE_MAXSIZE);
+
+  // read file
+  char new_bootloader_path[] = "0:boot/bootloader.bin";
+
+  // check file exists
+  if (!emmc_fs_path_exist(new_bootloader_path)) return secfalse;
+
+  // check file size
+  EMMC_PATH_INFO file_info;
+  if (!emmc_fs_path_info(new_bootloader_path, &file_info)) return secfalse;
+  if (file_info.size > BOOTLOADER_IMAGE_MAXSIZE) return secfalse;
+
+  // read file to buffer
+  uint32_t num_of_read = 0;
+  if (!emmc_fs_file_read(new_bootloader_path, 0, boardloader_buf,
+                         file_info.size, &num_of_read))
+    return secfalse;
+
+  // check read size matchs file size
+  if (num_of_read != file_info.size) return secfalse;
+
+  // validate new bootloader
+  image_header file_hdr;
+
+  if (sectrue != load_image_header(boardloader_buf, BOOTLOADER_IMAGE_MAGIC,
+                                   BOOTLOADER_IMAGE_MAXSIZE, BOARDLOADER_KEY_M,
+                                   BOARDLOADER_KEY_N, BOARDLOADER_KEYS,
+                                   &file_hdr))
+    return secfalse;
+
+  if (sectrue != check_image_contents_ram(&file_hdr, boardloader_buf,
+                                          file_hdr.hdrlen,
+                                          BOOTLOADER_SECTORS_COUNT))
+    return secfalse;
+
+  // if not actually doing the update, return as update file validate result
+  if (!do_update) return sectrue;
+
+  // validate current bootloader
+  image_header hdr;
+  secbool bootloader_valid = validate_bootloader(&hdr);
+
+  // if bootloader update is interrupted right after flash sector erase, header
+  // will be losted and bootloader upgrade will be possible
+  // thus, as a minimum defence, wipe user storage area if downgrade or
+  // bootloader not valid
+
+  // handle downgrade or invalid bootloader
+  if (bootloader_valid == sectrue) {
+    if (memcmp(&file_hdr.version, &hdr.version, 4) < 0) {
+      ensure(flash_erase_sectors(STORAGE_SECTORS, STORAGE_SECTORS_COUNT, NULL),
+             NULL);
+    }
+  } else {
+    ensure(flash_erase_sectors(STORAGE_SECTORS, STORAGE_SECTORS_COUNT, NULL),
+           NULL);
+  }
+
+  // update process
+  secbool temp_state;
+
+  display_backlight(255);
+  display_clear();
+  display_printf(BOARD_VERSION);
+  display_printf("=====================\n");
+  display_printf("Bootloader Update\n");
+  display_printf("!!! DO NOT POWER OFF !!!\n");
+  display_printf("\r\n");
+
+  // erase
+  display_printf("\rErasing: ");
+  temp_state = flash_erase_sectors(BOOTLOADER_SECTORS, BOOTLOADER_SECTORS_COUNT,
+                                   bootloader_update_erase_cb);
+  if (temp_state != sectrue) {
+    display_printf(" fail\n");
+    while (true) {
+      hal_delay(100);
+    }  // die here
+  } else
+    display_printf(" done\n");
+
+  // unlock
+  display_printf("\rPreparing Write: ");
+  temp_state = flash_unlock_write();
+  if (temp_state != sectrue) {
+    display_printf(" fail\n");
+    while (true) {
+      hal_delay(100);
+    }  // die here
+  } else
+    display_printf(" done\n");
+
+  // write
+  size_t processed_bytes = 0;
+  size_t flash_sectors_index = 0;
+  while (processed_bytes < file_info.size) {
+    for (size_t sector_offset = 0;
+         sector_offset <
+         flash_sector_size(BOOTLOADER_SECTORS[flash_sectors_index]);
+         sector_offset += 32) {
+      temp_state = flash_write_words(
+          BOOTLOADER_SECTORS[flash_sectors_index], sector_offset,
+          (uint32_t *)(boardloader_buf + processed_bytes));
+      if (temp_state != sectrue) break;
+      processed_bytes += ((file_info.size - processed_bytes) > 32)
+                             ? 32  // since we could only write 32 byte a time
+                             : (file_info.size - processed_bytes);
+
+      //TODO: fix the ghosting text while updating
+      display_printf("\rWriting: %u%%",
+                     (uint16_t)(processed_bytes * 100 / file_info.size));
+    }
+    if (temp_state != sectrue) break;
+
+    flash_sectors_index++;
+  }
+  if (temp_state != sectrue) {
+    display_printf(" fail\n");
+    while (true) {
+      hal_delay(100);
+    }  // die here
+  } else
+    display_printf(" done\n");
+
+  // lock
+  display_printf("\rFinishing Write: ");
+  temp_state = flash_lock_write();
+  if (temp_state != sectrue) {
+    display_printf(" fail\n");
+    while (true) {
+      hal_delay(100);
+    }  // die here
+  } else
+    display_printf(" done\n");
+
+  // verify again to make sure
+  if (sectrue != validate_bootloader(&hdr)) {
+    // if not valid, erase anyways
+    display_printf("Verifiy error! Bootloader will be erased!\n");
+    FORCE_IGNORE_RETURN(flash_erase_sectors(BOOTLOADER_SECTORS,
+                                            BOOTLOADER_SECTORS_COUNT, NULL));
+  }
+
+  emmc_fs_file_delete("0:boot/bootloader.bin");
+  display_printf("Update data cleared\n");
+
+  // reboot
+  if (auto_reboot) {
+    for (int i = 3; i >= 0; i--) {
+      display_printf("\rRestarting in %d second(s)", i);
+      hal_delay(1000);
+    }
+
+    restart();
+  }
+  return sectrue;
+}
+
+static void decide_boot_target(BOOT_TARGET *boot_target,
+                               STAY_REASON *stay_reason) {
+  // empty reason
+  *stay_reason = STAY_REASON_NONE;
+
+  // check res
+  if (!emmc_fs_path_exist("0:res/.ONEKEY_RESOURCE")) {
+    *boot_target = BOOT_TARGET_BOARDLOADER;
+    *stay_reason = STAY_REASON_INVALID_DEPENDENCY;
+    return;
+  }
+
+  // check manual overrides
+  bool manual_overrided = false;
+  bool swipe_detected = false;
+  uint32_t touch_data = 0, x_start = 0, y_start = 0, x_mov = 0, y_mov = 0;
+
+  ble_usart_init();
+  for (int timer = 0; timer < 1600; timer++) {
+    // display bar
+    if (timer % 8 == 0) {
+      show_poweron_bar();
+    }
+
+    // pull touch screen, check for swip up or tap
+    touch_data = touch_read();
+    if (touch_data != 0) {
+      if (touch_data & TOUCH_START) {
+        x_start = x_mov = (touch_data >> 12) & 0xFFF;
+        y_start = y_mov = touch_data & 0xFFF;
+      }
+
+      if (touch_data & TOUCH_MOVE) {
+        x_mov = (touch_data >> 12) & 0xFFF;
+        y_mov = touch_data & 0xFFF;
+      }
+
+      if ((abs(x_start - x_mov) > 100) || (abs(y_start - y_mov) > 100)) {
+        swipe_detected = true;
+      }
+    }
+
+    // pull button status
+    ble_uart_poll();
+
+    // check if button long press
+    if (ble_power_button_state() == 2) {
+      if (swipe_detected) {
+        *boot_target = BOOT_TARGET_BOARDLOADER;
+        *stay_reason = STAY_REASON_MANUAL_OVERRIDE;
+      } else {
+        *boot_target = BOOT_TARGET_BOOTLOADER;
+      }
+      manual_overrided = true;
+      break;
+    }
+
+    // delay
+    hal_delay(1);
+  }
+  ble_usart_irq_disable();
+  display_bar(160, 352, 160, 4, COLOR_BLACK);
+  if (manual_overrided && (*boot_target == BOOT_TARGET_BOARDLOADER)) return;
+
+  // check bootloader update
+  if (sectrue == try_bootloader_update(false, false)) {
+    *boot_target = BOOT_TARGET_BOARDLOADER;
+    *stay_reason = STAY_REASON_UPDATE_NEXT_TARGET;
+    return;
+  }
+
+  // check bootloader
+  image_header hdr;
+  if (sectrue != validate_bootloader(&hdr)) {
+    *boot_target = BOOT_TARGET_BOARDLOADER;
+    *stay_reason = STAY_REASON_INVALID_NEXT_TARGET;
+    return;
+  }
+
+  // check flag (lowest priority)
+  *boot_target = *BOOT_TARGET_FLAG_ADDR;        // cache flag
+  *BOOT_TARGET_FLAG_ADDR = BOOT_TARGET_NORMAL;  // consume(reset) flag
+  return;
+}
+
 int main(void) {
-  volatile uint32_t startup_mode_flag = *STAY_IN_FLAG_ADDR;
-
+  // minimal initialize
   reset_flags_reset();
-
   periph_init();
-
-  /* Enable the CPU Cache */
-  cpu_cache_enable();
-
   system_clock_config();
-
-  rng_init();
-
-  flash_option_bytes_init();
-
-  clear_otg_hs_memory();
-
-  flash_otp_init();
-
-  gpio_init();
-
+  dwt_init();
+  cpu_cache_enable();
   sdram_init();
 
+  // enforce protection
+  flash_option_bytes_init();
   mpu_config();
 
+  // user interface
+  lcd_para_init(DISPLAY_RESX, DISPLAY_RESY, LCD_PIXEL_FORMAT_RGB565);
   lcd_init(DISPLAY_RESX, DISPLAY_RESY, LCD_PIXEL_FORMAT_RGB565);
   display_clear();
   lcd_pwm_init();
-
-  if (startup_mode_flag != STAY_IN_BOARDLOADER_FLAG &&
-      startup_mode_flag != STAY_IN_BOOTLOADER_FLAG) {
-    display_image((DISPLAY_RESX - 128) / 2, 190, 128, 128, toi_icon_onekey + 12,
-                  sizeof(toi_icon_onekey) - 12);
-
-    display_image((DISPLAY_RESX - 140) / 2, DISPLAY_RESY - 120, 140, 30,
-                  toi_icon_safeos + 12, sizeof(toi_icon_safeos) - 12);
-    display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY - 64,
-                        "Powered by OneKey", -1, FONT_NORMAL, COLOR_GRAY,
-                        COLOR_BLACK);
-
-#if !PRODUCTION
-    display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY / 2, "TEST VERSION", -1,
-                        FONT_NORMAL, COLOR_RED, COLOR_BLACK);
-#endif
-  }
-
   touch_init();
 
-  emmc_init();
-  fatfs_init();
+  // fault handler
+  bus_fault_enable();  // it's here since requires user interface
 
-  uint32_t mode = 0;
-  bool factory_mode = false;
+  // periph initialize
+  flash_otp_init();
+  rng_init();
+  clear_otg_hs_memory();
 
-  if (startup_mode_flag == STAY_IN_BOARDLOADER_FLAG) {
-    mode = BOARD_MODE;
-    *STAY_IN_FLAG_ADDR = 0;
-  } else if (fatfs_check_res() != 0) {
-    mode = BOARD_MODE;
-    factory_mode = true;
+  // ext flash
+  qspi_flash_init();
+  qspi_flash_config();
+  qspi_flash_memory_mapped();
+
+  // emmc init and volume check
+  emmc_fs_init();
+  if (!emmc_fs_is_partitioned()) {
+    emmc_fs_recreate(true, true, true);
   }
-  if (startup_mode_flag == STAY_IN_BOOTLOADER_FLAG) {
-    mode = BOOT_MODE;
-  }
+  emmc_fs_mount(true, true);
 
-  if (!mode) {
-    ble_usart_init();
-    bool touched = false;
-    uint32_t touch_data, x_start, y_start, x_mov, y_mov;
+  // display boot screen
+  display_image((DISPLAY_RESX - 128) / 2, 190, 128, 128, toi_icon_onekey + 12,
+                sizeof(toi_icon_onekey) - 12);
+  display_image((DISPLAY_RESX - 140) / 2, DISPLAY_RESY - 120, 140, 30,
+                toi_icon_safeos + 12, sizeof(toi_icon_safeos) - 12);
+  display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY - 64, "Powered by OneKey",
+                      -1, FONT_NORMAL, COLOR_GRAY, COLOR_BLACK);
+#if !PRODUCTION
+  display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY / 2, "TEST VERSION", -1,
+                      FONT_NORMAL, COLOR_RED, COLOR_BLACK);
+#endif
 
-    touch_data = x_start = y_start = x_mov = y_mov = 0;
+  BOOT_TARGET boot_target;
+  STAY_REASON stay_reason;
+  decide_boot_target(&boot_target, &stay_reason);
 
-    for (int timer = 0; timer < 1600; timer++) {
-      ble_uart_poll();
-
-      if (timer % 8 == 0) {
-        show_poweron_bar();
-      }
-
-      if (ble_power_button_state() == 2) {
-        if (touched) {
-          mode = BOARD_MODE;
-        } else {
-          mode = BOOT_MODE;
+  if (boot_target == BOOT_TARGET_BOARDLOADER) {
+    if (stay_reason == STAY_REASON_UPDATE_NEXT_TARGET) {
+      try_bootloader_update(true, true);
+    } else {
+      display_clear();
+      display_printf(BOARD_VERSION);
+      display_printf("USB Mass Storage Mode\n");
+      display_printf("======================\n\n");
+      usb_msc_init();
+      while (1) {
+        if (system_reset == 1) {
+          hal_delay(5);
+          restart();
         }
-        break;
-      }
-      touch_data = touch_read();
-      if (touch_data != 0) {
-        if (touch_data & TOUCH_START) {
-          x_start = x_mov = (touch_data >> 12) & 0xFFF;
-          y_start = y_mov = touch_data & 0xFFF;
-        }
-
-        if (touch_data & TOUCH_MOVE) {
-          x_mov = (touch_data >> 12) & 0xFFF;
-          y_mov = touch_data & 0xFFF;
-        }
-
-        if ((abs(x_start - x_mov) > 100) || (abs(y_start - y_mov) > 100)) {
-          touched = true;
-        }
-      }
-
-      hal_delay(1);
-    }
-    ble_usart_irq_disable();
-    display_bar(160, 352, 160, 4, COLOR_BLACK);
-  }
-
-  if (mode == BOARD_MODE) {
-    if (!factory_mode) {
-      f_chmod("/res/", AM_RDO | AM_SYS | AM_HID, AM_RDO | AM_SYS | AM_HID);
-    }
-  } else {
-    f_chmod("/res/", 0, AM_RDO | AM_SYS | AM_HID);
-  }
-
-  if (mode == BOARD_MODE) {
-    display_printf(BOARD_VERSION);
-    display_printf("USB Mass Storage Mode\n");
-    display_printf("======================\n\n");
-    usb_msc_init();
-    while (1) {
-      if (system_reset == 1) {
-        hal_delay(5);
-        restart();
       }
     }
   }
 
-  if (mode == BOOT_MODE) {
-    *STAY_IN_FLAG_ADDR = STAY_IN_BOOTLOADER_FLAG;
+  if (boot_target == BOOT_TARGET_BOOTLOADER) {
     SCB_CleanDCache();
   }
 
-  image_header hdr_inner, hdr_sd;
+  *BOOT_TARGET_FLAG_ADDR = boot_target;  // set flag for bootloader to comsume
 
-  const uint8_t sectors[] = {
-      FLASH_SECTOR_BOOTLOADER_1,
-      FLASH_SECTOR_BOOTLOADER_2,
-  };
-  secbool boot_hdr = secfalse, boot_present = secfalse;
+  bus_fault_disable();
 
-  boot_hdr = load_image_header((const uint8_t *)BOOTLOADER_START,
-                               BOOTLOADER_IMAGE_MAGIC, BOOTLOADER_IMAGE_MAXSIZE,
-                               BOARDLOADER_KEY_M, BOARDLOADER_KEY_N,
-                               BOARDLOADER_KEYS, &hdr_inner);
-
-  if (sectrue == boot_hdr) {
-    boot_present = check_image_contents(&hdr_inner, IMAGE_HEADER_SIZE, sectors,
-                                        sizeof(sectors));
-  }
-
-  if (sectrue == check_sdcard(&hdr_sd)) {
-    if (sectrue == boot_hdr) {
-      if (memcmp(&hdr_sd.version, &hdr_inner.version, 4) >= 0) {
-        return copy_sdcard(hdr_sd.codelen) == sectrue ? 0 : 3;
-      }
-    } else {
-      return copy_sdcard(hdr_sd.codelen) == sectrue ? 0 : 3;
-    }
-  }
-
-  if (boot_present == secfalse) {
-    display_printf(BOARD_VERSION);
-    display_printf("USB Mass Storage Mode\n");
-    display_printf("======================\n\n");
-    usb_msc_init();
-    while (1) {
-      if (system_reset == 1) {
-        hal_delay(5);
-        restart();
-      }
-    }
-  }
+  // mpu_config_off();
 
   jump_to(BOOTLOADER_START + IMAGE_HEADER_SIZE);
 

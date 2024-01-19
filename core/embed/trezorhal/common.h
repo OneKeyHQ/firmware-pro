@@ -94,10 +94,11 @@ void error_pin_max(void);
 // waiting until we could outmize out some space
 // #if PRODUCTION
 #define ensure(expr, msg) \
-(((expr) == sectrue) ? (void)0 : __fatal_error(#expr, msg, __FILE__, __LINE__, __func__))
+  (((expr) == sectrue)    \
+       ? (void)0          \
+       : __fatal_error(#expr, msg, __FILE__, __LINE__, __func__))
 // #else
-// #define ensure(expr, msg) \
-// (((expr) == sectrue) ? (void)0 : dbgprintf_Wait("%s\n%s\n",#expr, msg))
+// #define ensure(expr, msg) (((expr) == sectrue) ? (void)0 : dbgprintf_Wait("%s\n%s\n",#expr, msg))
 // #endif
 
 #define ensure_ex(expr, ret, msg) \

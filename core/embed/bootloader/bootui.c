@@ -1024,7 +1024,7 @@ void ui_bootloader_page_switch(const image_header *const hdr) {
       ui_bootloader_first(hdr);
     } else if (INPUT_RESTART == response) {
       HAL_NVIC_SystemReset();
-    } 
+    }
     // else if (INPUT_VERSION_INFO == response) {
     //   click++;
     //   click_pre = click_now;
@@ -1035,5 +1035,5 @@ void ui_bootloader_page_switch(const image_header *const hdr) {
     //     click_pre = click_now;
     //   }
     // }
-  } 
+  }
 }
