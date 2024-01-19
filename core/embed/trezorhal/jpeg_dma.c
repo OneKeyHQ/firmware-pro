@@ -1,3 +1,7 @@
+#include "lvgl.h"
+
+#include "jpeg_dma.h"
+
 #include STM32_HAL_H
 
 #include "ff.h"
@@ -23,9 +27,8 @@ JPEG_ConfTypeDef JPEG_Info;
 
 volatile uint32_t Jpeg_HWDecodingEnd = 0, Jpeg_HWDecodingError = 0;
 
-uint32_t JPEGSourceAddress, FrameBufferAddress;
-static FIL JPEG_File; /* File object */
-uint32_t index, size;
+uint32_t FrameBufferAddress;
+uint32_t size;
 
 uint8_t JPEG_Data_InBuffer0[CHUNK_SIZE_IN] __attribute__((aligned(4)));
 
@@ -38,6 +41,47 @@ JPEG_Data_BufferTypeDef Jpeg_IN_BufferTab[NB_INPUT_DATA_BUFFERS] = {
 uint32_t JPEG_IN_Read_BufferIndex = 0;
 uint32_t JPEG_IN_Write_BufferIndex = 0;
 volatile uint32_t Input_Is_Paused = 0;
+
+typedef struct {
+  FIL fatfs_file;
+  lv_fs_file_t lvgl_file;
+  uint8_t mode;
+} file_operation_t;
+
+file_operation_t file_operation = {
+    .mode = JPEG_FILE_LVGL,
+};
+
+void jpeg_decode_file_operation(uint8_t mode) { file_operation.mode = mode; }
+
+int jpeg_decode_file_open(const char *path) {
+  if (file_operation.mode == JPEG_FILE_LVGL) {
+    return lv_fs_open(&file_operation.lvgl_file, path, LV_FS_MODE_RD);
+  } else if (file_operation.mode == JPEG_FILE_FATFS) {
+    return f_open(&file_operation.fatfs_file, path, FA_READ);
+  }
+  return -1;
+}
+
+int jpeg_decode_file_read(uint8_t *buf, uint32_t len, uint32_t *read_len) {
+  if (file_operation.mode == JPEG_FILE_LVGL) {
+    return lv_fs_read(&file_operation.lvgl_file, buf, len, read_len);
+  } else if (file_operation.mode == JPEG_FILE_FATFS) {
+    return f_read(&file_operation.fatfs_file, buf, len, (UINT *)read_len);
+  }
+  return -1;
+}
+
+void jpeg_decode_file_close(void) {
+  if (file_operation.mode == JPEG_FILE_LVGL) {
+    lv_fs_close(&file_operation.lvgl_file);
+  } else if (file_operation.mode == JPEG_FILE_FATFS) {
+    f_close(&file_operation.fatfs_file);
+  }
+}
+int jpeg_get_decode_state(void) { return Jpeg_HWDecodingEnd; }
+
+int jpeg_get_decode_error(void) { return Jpeg_HWDecodingError; }
 
 void HAL_JPEG_MspInit(JPEG_HandleTypeDef *hjpeg) {
   static MDMA_HandleTypeDef hmdmaIn;
@@ -141,14 +185,14 @@ void MDMA_IRQHandler() {
 }
 
 uint32_t JPEG_InputHandler(JPEG_HandleTypeDef *hjpeg) {
-  if (Jpeg_HWDecodingEnd == 0) {
+  if (Jpeg_HWDecodingEnd == 0 && Jpeg_HWDecodingError == 0) {
     if (Jpeg_IN_BufferTab[JPEG_IN_Write_BufferIndex].State ==
         JPEG_BUFFER_EMPTY) {
-      if (f_read(&JPEG_File,
-                 Jpeg_IN_BufferTab[JPEG_IN_Write_BufferIndex].DataBuffer,
-                 CHUNK_SIZE_IN,
-                 (UINT *)(&Jpeg_IN_BufferTab[JPEG_IN_Write_BufferIndex]
-                               .DataBufferSize)) == FR_OK) {
+      if (jpeg_decode_file_read(
+              Jpeg_IN_BufferTab[JPEG_IN_Write_BufferIndex].DataBuffer,
+              CHUNK_SIZE_IN,
+              (uint32_t *)(&Jpeg_IN_BufferTab[JPEG_IN_Write_BufferIndex]
+                                .DataBufferSize)) == FR_OK) {
         Jpeg_IN_BufferTab[JPEG_IN_Write_BufferIndex].State = JPEG_BUFFER_FULL;
       } else {
         return 1;
@@ -207,8 +251,8 @@ void HAL_JPEG_GetDataCallback(JPEG_HandleTypeDef *hjpeg,
 #else
   if (NbDecodedData ==
       Jpeg_IN_BufferTab[JPEG_IN_Read_BufferIndex].DataBufferSize) {
-    f_read(&JPEG_File, Jpeg_IN_BufferTab[0].DataBuffer, CHUNK_SIZE_IN,
-           (UINT *)(&Jpeg_IN_BufferTab[0].DataBufferSize));
+    jpeg_decode_file_read(Jpeg_IN_BufferTab[0].DataBuffer, CHUNK_SIZE_IN,
+                          (uint32_t *)(&Jpeg_IN_BufferTab[0].DataBufferSize));
     HAL_JPEG_ConfigInputBuffer(hjpeg, Jpeg_IN_BufferTab[0].DataBuffer,
                                Jpeg_IN_BufferTab[0].DataBufferSize);
   } else if (NbDecodedData <
@@ -250,40 +294,53 @@ void jpeg_init(void) {
   HAL_JPEG_Init(&JPEG_Handle);
 }
 
+void jpeg_decode_init(uint32_t address) {
+  Jpeg_HWDecodingEnd = 0;
+  Jpeg_HWDecodingError = 0;
+  FrameBufferAddress = address;
+}
+
+int jpeg_decode_start(const char *path) {
+  if (jpeg_decode_file_open(path) != 0) {
+    return -1;
+  }
+  if (jpeg_decode_file_read(
+          Jpeg_IN_BufferTab[0].DataBuffer, CHUNK_SIZE_IN,
+          (uint32_t *)(&Jpeg_IN_BufferTab[0].DataBufferSize)) == 0) {
+    Jpeg_IN_BufferTab[0].State = JPEG_BUFFER_FULL;
+  } else {
+    return -1;
+  }
+  /* Start JPEG decoding with DMA method */
+  HAL_JPEG_Decode_DMA(&JPEG_Handle, Jpeg_IN_BufferTab[0].DataBuffer,
+                      Jpeg_IN_BufferTab[0].DataBufferSize,
+                      (uint8_t *)FrameBufferAddress, CHUNK_SIZE_OUT);
+
+  while ((jpeg_get_decode_state() == 0) && (jpeg_get_decode_error() == 0))
+    ;
+
+  if (Jpeg_HWDecodingError) {
+    return -2;
+  }
+  return 0;
+}
+
+void jpeg_decode_info(uint32_t *width, uint32_t *height,
+                      uint32_t *subsampling) {
+  HAL_JPEG_GetInfo(&JPEG_Handle, &JPEG_Info);
+  *width = JPEG_Info.ImageWidth;
+  *height = JPEG_Info.ImageHeight;
+  *subsampling = JPEG_Info.ChromaSubsampling;
+}
+
 #include "mipi_lcd.h"
 #include "sdram.h"
 
 int jped_decode(char *path, uint32_t address) {
-  Jpeg_HWDecodingEnd = 0;
-  Jpeg_HWDecodingError = 0;
-  FrameBufferAddress = address;
+  jpeg_decode_init(address);
+  jpeg_decode_file_operation(JPEG_FILE_FATFS);
 
-  //   uint32_t JpegProcessing_End = 0;
-  if (f_open(&JPEG_File, path, FA_READ) == FR_OK) {
-    /* Read from JPG file and fill input buffers */
-    for (uint32_t i = 0; i < 1; i++) {
-      if (f_read(&JPEG_File, Jpeg_IN_BufferTab[i].DataBuffer, CHUNK_SIZE_IN,
-                 (UINT *)(&Jpeg_IN_BufferTab[i].DataBufferSize)) == FR_OK) {
-        Jpeg_IN_BufferTab[i].State = JPEG_BUFFER_FULL;
-      } else {
-        return -1;
-      }
-    }
-    /* Start JPEG decoding with DMA method */
-    HAL_JPEG_Decode_DMA(&JPEG_Handle, Jpeg_IN_BufferTab[0].DataBuffer,
-                        Jpeg_IN_BufferTab[0].DataBufferSize,
-                        (uint8_t *)FrameBufferAddress, CHUNK_SIZE_OUT);
-    //   do {
-    //     JpegProcessing_End = JPEG_InputHandler(&JPEG_Handle);
-    //   } while (JpegProcessing_End == 0);
-
-    while ((Jpeg_HWDecodingEnd == 0) && (Jpeg_HWDecodingError == 0))
-      ;
-
-    if (Jpeg_HWDecodingError) {
-      return -2;
-    }
-
+  if (jpeg_decode_start(path) == 0) {
     HAL_JPEG_GetInfo(&JPEG_Handle, &JPEG_Info);
 
     dma2d_copy_ycbcr_to_rgb((uint32_t *)address,

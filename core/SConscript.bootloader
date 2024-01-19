@@ -60,7 +60,6 @@ CPPPATH_MOD += [
 ]
 CPPDEFINES_MOD += [
     'TREZOR_FONT_NORMAL_ENABLE',
-    'TREZOR_FONT_ROBOT_REGULAR_ENABLE',
     'TREZOR_FONT_PJKS_BOLD_ENABLE',
     'TREZOR_FONT_PJKS_REGULAR_20_ENABLE',
     'TREZOR_FONT_PJKS_BOLD_26_ENABLE',
@@ -212,7 +211,6 @@ SOURCE_TREZORHAL = [
     'embed/trezorhal/fatfs/ff.c',
     'embed/trezorhal/fatfs/ffunicode.c',
     'embed/trezorhal/fatfs/diskio.c',
-    'embed/trezorhal/jpeg_dma.c',
     'embed/trezorhal/thd89.c',
     'embed/trezorhal/thd89_boot.c',
     'embed/trezorhal/se_thd89.c',
@@ -293,11 +291,6 @@ if PRODUCTION_MODEL == 'H':
         CCFLAGS_QSTR='-DNO_QSTR -DN_X64 -DN_X86 -DN_THUMB',
         LINKFLAGS='-T embed/bootloader/memory.ld -Wl,--gc-sections -Wl,-Map=build/bootloader/bootloader.map -Wl,--warn-common '
         '-Wl,-L embed/fp_sensor_wrapper -Wl,-whole-archive -Wl,-lFpalgorithm -Wl,-no-whole-archive',
-        INC = 
-        '-Iembed/debug_utils '
-        '-Iembed/emmc_wrapper '
-        '-Iembed/pn532 '
-        '-Iembed/fp_sensor_wrapper ',
         CPPPATH=[
             'embed/bootloader',
             'embed/bootloader/nanopb',

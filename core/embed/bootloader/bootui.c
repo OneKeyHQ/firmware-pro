@@ -1001,7 +1001,7 @@ void ui_bootloader_device_test(void) {
 void ui_bootloader_page_switch(const image_header *const hdr) {
   int response;
 
-  static uint32_t click = 0, click_pre = 0, click_now = 0;
+  // static uint32_t click = 0, click_pre = 0, click_now = 0;
 
   if (ui_bootloader_page_current == 0) {
     response = ui_input_poll(INPUT_NEXT, false);
@@ -1013,10 +1013,10 @@ void ui_bootloader_page_switch(const image_header *const hdr) {
       ui_bootloader_first(hdr);
     }
   } else if (ui_bootloader_page_current == 1) {
-    click_now = HAL_GetTick();
-    if ((click_now - click_pre) > (1000 / 2)) {
-      click = 0;
-    }
+    // click_now = HAL_GetTick();
+    // if ((click_now - click_pre) > (1000 / 2)) {
+    //   click = 0;
+    // }
     response = ui_input_poll(
         INPUT_PREVIOUS | INPUT_RESTART | INPUT_VERSION_INFO, false);
     if (INPUT_PREVIOUS == response) {
@@ -1024,27 +1024,16 @@ void ui_bootloader_page_switch(const image_header *const hdr) {
       ui_bootloader_first(hdr);
     } else if (INPUT_RESTART == response) {
       HAL_NVIC_SystemReset();
-    } else if (INPUT_VERSION_INFO == response) {
-      click++;
-      click_pre = click_now;
-      if (click == 5) {
-        click = 0;
-        display_clear();
-        ui_bootloader_device_test();
-        click_pre = click_now;
-      }
-    }
-  } else if (ui_bootloader_page_current == 2) {
-    response = ui_input_poll(INPUT_PREVIOUS | INPUT_RESTART, false);
-    if (INPUT_PREVIOUS == response) {
-      device_test(true);
-    } else if (INPUT_RESTART == response) {
-      device_burnin_test(true);
-    }
-    click_now = HAL_GetTick();
-    if (click_now - click_pre > (1000 * 3)) {
-      display_clear();
-      ui_bootloader_first(hdr);
-    }
-  }
+    } 
+    // else if (INPUT_VERSION_INFO == response) {
+    //   click++;
+    //   click_pre = click_now;
+    //   if (click == 5) {
+    //     click = 0;
+    //     display_clear();
+    //     ui_bootloader_device_test();
+    //     click_pre = click_now;
+    //   }
+    // }
+  } 
 }

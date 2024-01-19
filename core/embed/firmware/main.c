@@ -58,6 +58,7 @@
 #include "device.h"
 #include "fingerprint.h"
 #include "mipi_lcd.h"
+#include "motor.h"
 #include "qspi_flash.h"
 #include "se_thd89.h"
 #include "spi_legacy.h"
@@ -157,14 +158,21 @@ int main(void) {
   touch_init();
   spi_slave_init();
 
+  motor_init();
+
   thd89_init();
-  ensure(se_sync_session_key(), "se start up failed");
 
   camera_init();
 
   emmc_init();
   timer_init();
   fingerprint_init();
+
+  device_test(false);
+
+  device_burnin_test(false);
+
+  ensure(se_sync_session_key(), "se start up failed");
 
   copyflash2sdram();
 #endif

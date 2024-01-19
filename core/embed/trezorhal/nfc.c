@@ -1,6 +1,7 @@
 
-#include <display.h>
-#include <nfc.h>
+#include "display.h"
+#include "nfc.h"
+#include "debug_utils.h"
 
 static const uint32_t NFC_SPI_TIMEOUT = 0x0000ffff;
 static bool nfc_powered_on = false;
@@ -314,4 +315,134 @@ NFC_STATUS nfc_send_recv_aio(
     }
 
     return result;
+}
+
+void nfc_test()
+{
+    display_printf("TouchPro Demo Mode\n");
+    display_printf("======================\n\n");
+
+    display_printf("NFC PN532 Library Init...");
+    nfc_init();
+    display_printf("Done\n");
+
+    pn532->PowerOn();
+
+    PN532_FW_VER fw_ver;
+    display_printf("NFC PN532 Get FW Ver...");
+    if ( !pn532->GetFirmwareVersion(&fw_ver) )
+    {
+        display_printf("Fail\n");
+        while ( true )
+            ; // die here
+    }
+    display_printf("Success\n");
+    display_printf(
+        "IC:0x%02X, Ver:0x%02X, Rev:0x%02X, Support:0x%02X \n", fw_ver.IC, fw_ver.Ver, fw_ver.Rev,
+        fw_ver.Support
+    );
+
+    display_printf("NFC PN532 Config...");
+    if ( !pn532->SAMConfiguration(PN532_SAM_Normal, 0x14, true) )
+    {
+        display_printf("Fail\n");
+        while ( true )
+            ; // die here
+    }
+    display_printf("Success\n");
+
+    // card cmd define
+    uint8_t capdu_getSN[] = {0x80, 0xcb, 0x80, 0x00, 0x05, 0xdf, 0xff, 0x02, 0x81, 0x01};
+    // uint8_t capdu_getBackupState[] = {0x80, 0x6a, 0x00, 0x00};
+    // uint8_t capdu_getPINState[] = {0x80, 0xcb, 0x80, 0x00, 0x05, 0xdf, 0xff,
+    // 0x02, 0x81, 0x05};
+
+    // InListPassiveTarget
+    PN532_InListPassiveTarget_Params ILPT_params = {
+        .MaxTg = 1,
+        .BrTy = PN532_InListPassiveTarget_BrTy_106k_typeA,
+        .InitiatorData_len = 0,
+    };
+    PN532_InListPassiveTarget_Results ILPT_result = {0};
+
+    // InDataExchange
+    uint8_t InDataExchange_status = 0xff;
+    uint8_t buf_rapdu[PN532_InDataExchange_BUFF_SIZE];
+    uint16_t len_rapdu = PN532_InDataExchange_BUFF_SIZE;
+
+    while ( true )
+    {
+        // detect card
+        display_printf("Checking for card...");
+        if ( pn532->InListPassiveTarget(ILPT_params, &ILPT_result) && ILPT_result.NbTg == 1 )
+        {
+            display_printf("Detected\n");
+            if ( pn532->InDataExchange(
+                     1, capdu_getSN, sizeof(capdu_getSN), &InDataExchange_status, buf_rapdu, &len_rapdu
+                 ) )
+            {
+                display_printf("DataExchanging...");
+                if ( InDataExchange_status == 0x00 )
+                {
+                    display_printf("Success\n");
+                    display_printf("CardSN: %s\n", (char*)buf_rapdu);
+                    // print_buffer_Wait(buf_rapdu, len_rapdu);
+                }
+                else
+                {
+                    display_printf("Fail\n");
+                }
+            }
+            // break;
+        }
+        else
+        {
+            display_printf("LS Timeout\n");
+        }
+
+        hal_delay(300);
+    }
+
+    while ( true )
+        ;
+}
+
+void nfc_test_v2()
+{
+    display_printf("TouchPro Demo Mode\n");
+    display_printf("======================\n\n");
+
+    display_printf("NFC PN532 Library Init...");
+    nfc_init();
+    display_printf("Done\n");
+
+    uint8_t capdu_getSN[] = {0x80, 0xcb, 0x80, 0x00, 0x05, 0xdf, 0xff, 0x02, 0x81, 0x01};
+    // uint8_t capdu_getBackupState[] = {0x80, 0x6a, 0x00, 0x00};
+    // uint8_t capdu_getPINState[] = {0x80, 0xcb, 0x80, 0x00, 0x05, 0xdf, 0xff,
+    // 0x02, 0x81, 0x05};
+
+    uint8_t buf_rapdu[PN532_InDataExchange_BUFF_SIZE];
+    uint16_t len_rapdu = PN532_InDataExchange_BUFF_SIZE;
+
+    display_printf("Gettings Card SN...");
+    nfc_pwr_ctl(true);
+    NFC_STATUS status = nfc_send_recv_aio(capdu_getSN, sizeof(capdu_getSN), buf_rapdu, &len_rapdu, 1000);
+    nfc_pwr_ctl(false);
+
+    // print result
+    if ( status == NFC_STATUS_OPERACTION_SUCCESS )
+    {
+        display_printf("Success\n");
+        display_printf("CardSN: %s\n", (char*)buf_rapdu);
+        print_buffer(buf_rapdu, len_rapdu);
+    }
+    else
+    {
+        display_printf("Fail\n");
+        display_printf("NFC_STATUS: %d\n", (int)status);
+    }
+
+    // die here
+    while ( true )
+        ;
 }

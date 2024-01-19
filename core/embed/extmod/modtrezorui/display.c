@@ -595,7 +595,7 @@ void display_print(const char *text, int textlen) {
         width = 0;
         break;
       default:
-        w = display_text_width(&text[i], 1, FONT_ROBOT_REGULAR_24);
+        w = display_text_width(&text[i], 1, FONT_NORMAL);
         width += w;
 
         if (width >= DISPLAY_RESX - 8) {
@@ -632,7 +632,7 @@ void display_print(const char *text, int textlen) {
   for (int y = 0; y < DISPLAY_PRINT_ROWS; y++) {
     if (display_print_buf[y][0] != 0) {
       display_text(8, (y + 1) * DISPLAY_CHAR_HIGHT, &display_print_buf[y][0],
-                   -1, FONT_ROBOT_REGULAR_24, display_print_fgcolor,
+                   -1, FONT_NORMAL, display_print_fgcolor,
                    display_print_bgcolor);
     }
   }

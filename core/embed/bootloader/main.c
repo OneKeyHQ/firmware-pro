@@ -68,7 +68,6 @@
 
 #include "camera.h"
 #include "emmc_wrapper.h"
-#include "nfc.h"
 
 #if PRODUCTION
 const uint8_t BOOTLOADER_KEY_M = 4;
@@ -144,123 +143,6 @@ static void write_dev_dummy_cert() {
     if (!se_write_certificate(dummy_cert, sizeof(dummy_cert)))
       ensure(secfalse, "set cert failed");
   }
-}
-
-static void nfc_test() {
-  display_printf("TouchPro Demo Mode\n");
-  display_printf("======================\n\n");
-
-  display_printf("NFC PN532 Library Init...");
-  nfc_init();
-  display_printf("Done\n");
-
-  pn532->PowerOn();
-
-  PN532_FW_VER fw_ver;
-  display_printf("NFC PN532 Get FW Ver...");
-  if (!pn532->GetFirmwareVersion(&fw_ver)) {
-    display_printf("Fail\n");
-    while (true)
-      ;  // die here
-  }
-  display_printf("Success\n");
-  display_printf("IC:0x%02X, Ver:0x%02X, Rev:0x%02X, Support:0x%02X \n",
-                 fw_ver.IC, fw_ver.Ver, fw_ver.Rev, fw_ver.Support);
-
-  display_printf("NFC PN532 Config...");
-  if (!pn532->SAMConfiguration(PN532_SAM_Normal, 0x14, true)) {
-    display_printf("Fail\n");
-    while (true)
-      ;  // die here
-  }
-  display_printf("Success\n");
-
-  // card cmd define
-  uint8_t capdu_getSN[] = {0x80, 0xcb, 0x80, 0x00, 0x05,
-                           0xdf, 0xff, 0x02, 0x81, 0x01};
-  // uint8_t capdu_getBackupState[] = {0x80, 0x6a, 0x00, 0x00};
-  // uint8_t capdu_getPINState[] = {0x80, 0xcb, 0x80, 0x00, 0x05, 0xdf, 0xff,
-  // 0x02, 0x81, 0x05};
-
-  // InListPassiveTarget
-  PN532_InListPassiveTarget_Params ILPT_params = {
-      .MaxTg = 1,
-      .BrTy = PN532_InListPassiveTarget_BrTy_106k_typeA,
-      .InitiatorData_len = 0,
-  };
-  PN532_InListPassiveTarget_Results ILPT_result = {0};
-
-  // InDataExchange
-  uint8_t InDataExchange_status = 0xff;
-  uint8_t buf_rapdu[PN532_InDataExchange_BUFF_SIZE];
-  uint16_t len_rapdu = PN532_InDataExchange_BUFF_SIZE;
-
-  while (true) {
-    // detect card
-    display_printf("Checking for card...");
-    if (pn532->InListPassiveTarget(ILPT_params, &ILPT_result) &&
-        ILPT_result.NbTg == 1) {
-      display_printf("Detected\n");
-      if (pn532->InDataExchange(1, capdu_getSN, sizeof(capdu_getSN),
-                                &InDataExchange_status, buf_rapdu,
-                                &len_rapdu)) {
-        display_printf("DataExchanging...");
-        if (InDataExchange_status == 0x00) {
-          display_printf("Success\n");
-          display_printf("CardSN: %s\n", (char*)buf_rapdu);
-          // print_buffer_Wait(buf_rapdu, len_rapdu);
-        } else {
-          display_printf("Fail\n");
-        }
-      }
-      // break;
-    } else {
-      display_printf("LS Timeout\n");
-    }
-
-    hal_delay(300);
-  }
-
-  while (true)
-    ;
-}
-
-static void nfc_test_v2() {
-  display_printf("TouchPro Demo Mode\n");
-  display_printf("======================\n\n");
-
-  display_printf("NFC PN532 Library Init...");
-  nfc_init();
-  display_printf("Done\n");
-
-  uint8_t capdu_getSN[] = {0x80, 0xcb, 0x80, 0x00, 0x05,
-                           0xdf, 0xff, 0x02, 0x81, 0x01};
-  // uint8_t capdu_getBackupState[] = {0x80, 0x6a, 0x00, 0x00};
-  // uint8_t capdu_getPINState[] = {0x80, 0xcb, 0x80, 0x00, 0x05, 0xdf, 0xff,
-  // 0x02, 0x81, 0x05};
-
-  uint8_t buf_rapdu[PN532_InDataExchange_BUFF_SIZE];
-  uint16_t len_rapdu = PN532_InDataExchange_BUFF_SIZE;
-
-  display_printf("Gettings Card SN...");
-  nfc_pwr_ctl(true);
-  NFC_STATUS status = nfc_send_recv_aio(capdu_getSN, sizeof(capdu_getSN),
-                                        buf_rapdu, &len_rapdu, 1000);
-  nfc_pwr_ctl(false);
-
-  // print result
-  if (status == NFC_STATUS_OPERACTION_SUCCESS) {
-    display_printf("Success\n");
-    display_printf("CardSN: %s\n", (char*)buf_rapdu);
-    print_buffer(buf_rapdu, len_rapdu);
-  } else {
-    display_printf("Fail\n");
-    display_printf("NFC_STATUS: %d\n", (int)status);
-  }
-
-  // die here
-  while (true)
-    ;
 }
 
 #endif
@@ -748,8 +630,7 @@ int main(void) {
 
   // misc/feedback
   random_delays_init();
-  motor_init();
-
+  
   // as they using same i2c bus, both needs to be powered up before any
   // communication
   thd89_io_init();
@@ -758,6 +639,24 @@ int main(void) {
   // se
   thd89_reset();
   thd89_init();
+
+  uint8_t se_state = 0;
+
+  se_state = se_get_state();
+
+  // all se in app mode
+  if (se_state == 0) {
+    device_para_init();
+  }
+
+  if (!device_serial_set() || !se_has_cerrificate()) {
+    display_clear();
+    device_set_factory_mode(true);
+    ui_bootloader_factory();
+    if (bootloader_usb_loop_factory(NULL, NULL) != sectrue) {
+      return 1;
+    }
+  }
 
 #if !PRODUCTION
 
@@ -769,93 +668,18 @@ int main(void) {
   // if (!se_has_cerrificate()) {
   //   write_dev_dummy_cert();
   // }
+
   UNUSED(write_dev_dummy_cert);
 
-  // if(!device_overwrite_serial("PRA50I0000 QA"))
-  // {
-  //   dbgprintf_Wait("serial overwrite failed!");
-  // }
-
-  // device_test(true);
-
-  // char fp_ver[8];
-  // FpAlgorithmLibVer(fp_ver);
-  // dbgprintf_Wait("fp_ver=%s", fp_ver);
-  // dbgprintf_Wait("throw back -> %08X", compile_test(TEST_MAGIC_A));
-
-  // nfc_test();
-  UNUSED(nfc_test);
-  // nfc_test_v2();
-  UNUSED(nfc_test_v2);
-
-  // restore se session key
-  // if (sectrue == flash_otp_is_locked(FLASH_OTP_BLOCK_THD89_SESSION_KEY)) {
-  //   dbgprintf_Wait("restoring se session key!");
-  //   uint8_t session_key[FLASH_OTP_BLOCK_SIZE];
-  //   ensure(flash_otp_read(FLASH_OTP_BLOCK_THD89_SESSION_KEY, 0, session_key,
-  //                          FLASH_OTP_BLOCK_SIZE),
-  //          NULL);
-  //   if(se_set_session_key_ex(THD89_MASTER_ADDRESS, session_key) != sectrue)
-  //     dbgprintf_Wait("se set session key failed");
-  //   if(se_set_session_key_ex(THD89_FINGER_ADDRESS, session_key) != sectrue)
-  //     dbgprintf_Wait("se fp set session key failed");
-
-  //   dbgprintf_Wait("se session key restored");
-  // }
-
   device_backup_otp(false);
-  // device_restore_otp();
-
-  // set batch get state
-  // uint8_t se_state_1;
-  // uint8_t se_state_2;
-  // uint8_t se_state_3;
-  // uint8_t se_state_4;
-
-  // ensure(_se_get_state(THD89_1ST_ADDRESS,&se_state_1) ? sectrue : secfalse,
-  // "get se state failed"); ensure(_se_get_state(THD89_2ND_ADDRESS,&se_state_2)
-  // ? sectrue : secfalse, "get se state failed");
-  // ensure(_se_get_state(THD89_3RD_ADDRESS,&se_state_3) ? sectrue : secfalse,
-  // "get se state failed"); ensure(_se_get_state(THD89_4TH_ADDRESS,&se_state_4)
-  // ? sectrue : secfalse, "get se state failed");
-
-  // dbgprintf_Wait(
-  //   "SE_1 = %02X\nSE_2 = %02X\nSE_3 = %02X\nSE_4 = %02X\n",
-  //   se_state_1, se_state_2, se_state_3, se_state_4
-  // );
-
 #endif
 
-  device_para_init();
-
-  if (!device_serial_set() || !se_has_cerrificate()) {
-    display_clear();
-    device_set_factory_mode(true);
-    ui_bootloader_factory();
-    if (bootloader_usb_loop_factory(NULL, NULL) != sectrue) {
-      return 1;
-    }
-  }
-
 #if PRODUCTION
-  // device function test
-  device_test(false);
-
-  // burnin test
-  jpeg_init();
-  device_burnin_test(false);
 
   // check bootloader downgrade
   check_bootloader_version();
 
 #endif
-
-  // check se
-  uint8_t se_state, se_fp_state;
-
-  ensure(se_get_state(&se_state) ? sectrue : secfalse, "get se state failed");
-  ensure(se_fp_get_state(&se_fp_state) ? sectrue : secfalse,
-         "get se fp state failed");
 
   secbool stay_in_bootloader = secfalse;  // flag to stay in bootloader
 
@@ -863,7 +687,7 @@ int main(void) {
     *STAY_IN_FLAG_ADDR = 0;
     stay_in_bootloader = sectrue;
   }
-  if (se_state == THD89_STATE_BOOT || se_fp_state == THD89_STATE_BOOT) {
+  if (se_state != 0) {
     stay_in_bootloader = sectrue;
   }
 

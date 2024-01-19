@@ -197,7 +197,6 @@ CPPDEFINES_MOD += [
     'TREZOR_FONT_BOLD_ENABLE',
     'TREZOR_FONT_NORMAL_ENABLE',
     'TREZOR_FONT_MONO_ENABLE',
-    'TREZOR_FONT_ROBOT_REGULAR_ENABLE',
 ]
 SOURCE_MOD += [
     'embed/extmod/modtrezorui/mipi_lcd.c',
@@ -486,6 +485,7 @@ if PRODUCTION_MODEL == 'H':
         'embed/trezorhal/ble.c',
         'embed/trezorhal/device.c',
         'embed/trezorhal/br_check.c',
+        'embed/trezorhal/jpeg_dma.c',
         'embed/trezorhal/util.s',
         'embed/trezorhal/vectortable.s',
     ]
@@ -667,7 +667,7 @@ if PRODUCTION_MODEL == 'H':
     env.Replace(
         COPT=env.get('ENV').get('OPTIMIZE', '-Os'),
         CCFLAGS='$COPT '
-        '-g0 '
+        '-g3 '
         '-nostdlib '
         '-std=gnu99 -Wall -Werror -Wdouble-promotion -Wpointer-arith -Wno-missing-braces -fno-common '
         '-fsingle-precision-constant -fdata-sections -ffunction-sections '
@@ -677,11 +677,6 @@ if PRODUCTION_MODEL == 'H':
         CCFLAGS_QSTR='-DNO_QSTR -DN_X64 -DN_X86 -DN_THUMB',
         LINKFLAGS='-T embed/firmware/memory_H%s.ld -Wl,--gc-sections -Wl,-Map=build/firmware/firmware.map -Wl,--warn-common '
         '-Wl,-L embed/fp_sensor_wrapper -Wl,-whole-archive -Wl,-lFpalgorithm -Wl,-no-whole-archive' % LD_VARIANT,
-        INC = 
-        '-Iembed/debug_utils '
-        '-Iembed/emmc_wrapper '
-        '-Iembed/pn532 '
-        '-Iembed/fp_sensor_wrapper ',
         CPPPATH=[
             '.',
             'embed/rust',
@@ -716,6 +711,7 @@ if PRODUCTION_MODEL == 'H':
             'LV_LVGL_H_INCLUDE_SIMPLE',
             ('STM32_HAL_H', '"<stm32h7xx.h>"'),
             ('QUIRC_FLOAT_TYPE', 'float'),
+            ('DEVICE_TEST',1),
         ] + CPPDEFINES_MOD,
         ASFLAGS=CPU_ASFLAGS,
         ASPPFLAGS='$CFLAGS $CCFLAGS', )
@@ -1097,7 +1093,7 @@ VENDORHEADER = 'embed/vendorheader/vendorheader_' + ('onekey_test_signed.bin' if
 zbar_env = env.Clone()
 zbar_archive = zbar_env.Object(source=SOURCE_ZBAR)
 
-zbar_env.Replace(CCFLAGS='$COPT '
+zbar_env.Replace(CCFLAGS='-O3 '
         '-g3 '
         '-nostdlib '
         '-std=gnu99 -Wall -Wdouble-promotion -Wpointer-arith -Wno-missing-braces -Wno-error=parentheses -fno-common '

@@ -41,6 +41,7 @@ extern uint8_t dev_pwr_sta;
 #define BLE_VER_PROTO 0x03
 #define BLE_VER_BOOT 0x04
 #define BLE_REBOOT 0x84
+#define BLE_FLASHLED 0x85
 #define BLE_REBOOT_SYS 0x01
 
 bool ble_connect_state(void);
@@ -63,6 +64,7 @@ void ble_set_switch(bool flag);
 bool ble_get_switch(void);
 void ble_get_dev_info(void);
 void ble_refresh_dev_info(void);
+void ble_set_flashled(uint8_t value);
 #else
 #define ble_name_state(...) false
 #define ble_ver_state(...) false

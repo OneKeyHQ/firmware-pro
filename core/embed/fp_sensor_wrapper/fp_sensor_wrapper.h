@@ -51,7 +51,6 @@ int __fastcall Fp_AlgorithmInit(int address)
     result = 1;
   return result;
 }
-#endif
 
 uint8_t fp_init(uint32_t addr)
 {
@@ -74,5 +73,6 @@ uint8_t fp_init(uint32_t addr)
 
     return 0;
 }
+#endif
 
 #endif //_FP_SENSOR_WRAPPER_H_

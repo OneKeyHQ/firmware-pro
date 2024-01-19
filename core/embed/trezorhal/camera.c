@@ -220,6 +220,7 @@ void camera_start(uint8_t* buffer_address, uint32_t mode)
         return;
     }
     HAL_DCMI_Start_DMA(&DCMI_Handle, mode, (uint32_t)buffer_address, (WIN_W * WIN_H) / 2);
+    camera_opened = true;
 }
 
 void camera_stop(void)

@@ -200,6 +200,15 @@ void ble_get_dev_info(void) {
   }
 }
 
+void ble_set_flashled(uint8_t value) {
+  uint8_t buf[64] = {0};
+  buf[0] = BLE_FLASHLED;
+  buf[1] = 0x01;
+  buf[2] = value;
+  ble_cmd_packet(buf, 3);
+  hal_delay(10);
+}
+
 void ble_refresh_dev_info(void) {
   // get_ble_name = false;
   // while(false == get_ble_name)

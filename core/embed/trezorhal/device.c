@@ -6,17 +6,23 @@
 #include "emmc.h"
 #include "flash.h"
 #include "mini_printf.h"
+#include "mipi_lcd.h"
 #include "motor.h"
 #include "qspi_flash.h"
 #include "rand.h"
 #include "se_thd89.h"
 #include "sha2.h"
+#include "systick.h"
 #include "thd89.h"
 #include "touch.h"
 
 #include "ble.h"
+#include "camera.h"
 #include "ff.h"
+#include "fingerprint.h"
+#include "fp_sensor_wrapper.h"
 #include "jpeg_dma.h"
+#include "nfc.h"
 #include "sdram.h"
 #include "usart.h"
 
@@ -268,7 +274,7 @@ void ui_test_input(void) {
   }
 }
 
-#ifdef BOOT_ONLY
+#if DEVICE_TEST
 
 static FATFS fs_instance;
 
@@ -285,9 +291,11 @@ typedef enum {
   TEST_FAILED = 0x33333333
 } test_status;
 
+enum { UI_RESPONSE_NONE = 0, UI_RESPONSE_YES, UI_RESPONSE_NO };
+
 static TIM_HandleTypeDef TimHandle;
 
-static void timer_init(void) {
+static void test_timer_init(void) {
   __HAL_RCC_TIM2_CLK_ENABLE();
   TimHandle.Instance = TIM2;
   TimHandle.Init.Prescaler = (uint32_t)(SystemCoreClock / (2 * 10000)) - 1;
@@ -313,6 +321,7 @@ static void lock_burnin_test_otp(void) {
 
 static void ui_generic_confirm_simple(const char *msg) {
   if (msg == NULL) return;
+  display_bar(0, 380, DISPLAY_RESX, 420, COLOR_BLACK);
   display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY / 2, msg, -1, FONT_NORMAL,
                       COLOR_WHITE, COLOR_BLACK);
 
@@ -344,6 +353,125 @@ static bool ui_response(void) {
     if (x >= DISPLAY_RESX - 32 - 128 && x < DISPLAY_RESX - 32 &&
         y > DISPLAY_RESY - 160 && y < DISPLAY_RESY - 160 + 64) {
       return true;
+    }
+  }
+}
+
+static int ui_response_ex(void) {
+  uint32_t evt = touch_click();
+
+  if (!evt) {
+    return UI_RESPONSE_NONE;
+  }
+  uint16_t x = touch_unpack_x(evt);
+  uint16_t y = touch_unpack_y(evt);
+  // clicked on Cancel button
+  if (x >= 32 && x < 32 + 128 && y > DISPLAY_RESY - 160 &&
+      y < DISPLAY_RESY - 160 + 64) {
+    return UI_RESPONSE_NO;
+  }
+  // clicked on Confirm button
+  if (x >= DISPLAY_RESX - 32 - 128 && x < DISPLAY_RESX - 32 &&
+      y > DISPLAY_RESY - 160 && y < DISPLAY_RESY - 160 + 64) {
+    return UI_RESPONSE_YES;
+  }
+  return UI_RESPONSE_NONE;
+}
+
+static bool _motor_test(void) {
+  int ui_res = 0;
+  motor_init();
+  ui_generic_confirm_simple("MOTOR test");
+
+  while (1) {
+    motor_tick();
+
+    ui_res = ui_response_ex();
+    if (ui_res != UI_RESPONSE_NONE) {
+      return ui_res == UI_RESPONSE_YES;
+    }
+  }
+}
+
+static bool _camera_test(void) {
+  int ui_res = 0;
+  while (1) {
+    camera_capture_start();
+    if (camera_capture_done()) {
+      dma2d_copy_buffer((uint32_t *)CAM_BUF_ADDRESS,
+                        (uint32_t *)FMC_SDRAM_LTDC_BUFFER_ADDRESS, 80, 240,
+                        WIN_W, WIN_H);
+    }
+
+    ui_res = ui_response_ex();
+    if (ui_res != UI_RESPONSE_NONE) {
+      display_bar(80, 240, WIN_W, WIN_H, COLOR_BLACK);
+      return ui_res == UI_RESPONSE_YES;
+    }
+  }
+}
+
+static bool _nfc_test() {
+  int ui_res = 0;
+  ui_generic_confirm_simple("NFC test");
+
+  nfc_init();
+  pn532->PowerOn();
+  pn532->SAMConfiguration(PN532_SAM_Normal, 0x14, true);
+  // InListPassiveTarget
+  PN532_InListPassiveTarget_Params ILPT_params = {
+      .MaxTg = 1,
+      .BrTy = PN532_InListPassiveTarget_BrTy_106k_typeA,
+      .InitiatorData_len = 0,
+  };
+  PN532_InListPassiveTarget_Results ILPT_result = {0};
+  while (1) {
+    if (pn532->InListPassiveTarget(ILPT_params, &ILPT_result) &&
+        ILPT_result.NbTg == 1) {
+      return true;
+    }
+    ui_res = ui_response_ex();
+    if (ui_res != UI_RESPONSE_NONE) {
+      return ui_res == UI_RESPONSE_YES;
+    }
+  }
+}
+
+static bool _flashled_test(void) {
+  uint32_t start, current, value;
+  int ui_res = 0;
+  start = current = HAL_GetTick();
+  value = 1;
+  ui_generic_confirm_simple("FLASHLED test");
+  ble_set_flashled(value);
+  while (1) {
+    current = HAL_GetTick();
+    if (current - start > 1000) {
+      start = current;
+      value = value ? 0 : 1;
+      ble_set_flashled(value);
+    }
+    ui_res = ui_response_ex();
+    if (ui_res != UI_RESPONSE_NONE) {
+      ble_set_flashled(0);
+      return ui_res == UI_RESPONSE_YES;
+    }
+  }
+}
+
+static bool _fp_test(void) {
+  int ui_res = 0;
+  uint8_t image_data[88 * 112 + 2];
+  ui_generic_confirm_simple("FINGERPRINT test");
+  while (1) {
+    if (FpsDetectFinger() == 1) {
+      if (FpsGetImageData(image_data) == 0) {
+        display_fp(196, 500, 88, 112, image_data);
+      }
+    }
+    ui_res = ui_response_ex();
+    if (ui_res != UI_RESPONSE_NONE) {
+      return ui_res == UI_RESPONSE_YES;
     }
   }
 }
@@ -395,25 +523,51 @@ void device_test(bool force) {
                  COLOR_BLACK);
   }
 
-  motor_tick();
-  hal_delay(100);
-  motor_tock();
-  hal_delay(100);
-  motor_tick();
-  hal_delay(100);
-  motor_tock();
-  hal_delay(100);
-  motor_tick();
-  hal_delay(100);
-  motor_tock();
-  hal_delay(100);
-
-  ui_generic_confirm_simple("MOTOR test");
-  if (ui_response()) {
-    display_text(0, 140, "MOTOR test done", -1, FONT_NORMAL, COLOR_WHITE,
+  if (_motor_test()) {
+    display_text(0, 110, "MOTOR test done", -1, FONT_NORMAL, COLOR_WHITE,
                  COLOR_BLACK);
   } else {
-    display_text(0, 140, "MOTOR test faild", -1, FONT_NORMAL, COLOR_RED,
+    display_text(0, 110, "MOTOR test faild", -1, FONT_NORMAL, COLOR_RED,
+                 COLOR_BLACK);
+    while (1)
+      ;
+  }
+
+  if (_camera_test()) {
+    display_text(0, 140, "CAMERA test done", -1, FONT_NORMAL, COLOR_WHITE,
+                 COLOR_BLACK);
+  } else {
+    display_text(0, 140, "CAMERA test faild", -1, FONT_NORMAL, COLOR_RED,
+                 COLOR_BLACK);
+    while (1)
+      ;
+  }
+
+  if (_nfc_test()) {
+    display_text(0, 170, "NFC test done", -1, FONT_NORMAL, COLOR_WHITE,
+                 COLOR_BLACK);
+  } else {
+    display_text(0, 170, "NFC test faild", -1, FONT_NORMAL, COLOR_RED,
+                 COLOR_BLACK);
+    while (1)
+      ;
+  }
+
+  if (_fp_test()) {
+    display_text(0, 200, "FINGERPRINT test done", -1, FONT_NORMAL, COLOR_WHITE,
+                 COLOR_BLACK);
+  } else {
+    display_text(0, 200, "FINGERPRINT test faild", -1, FONT_NORMAL, COLOR_RED,
+                 COLOR_BLACK);
+    while (1)
+      ;
+  }
+
+  if (_flashled_test()) {
+    display_text(0, 230, "FLASHLED test done", -1, FONT_NORMAL, COLOR_WHITE,
+                 COLOR_BLACK);
+  } else {
+    display_text(0, 230, "FLASHLED test faild", -1, FONT_NORMAL, COLOR_RED,
                  COLOR_BLACK);
     while (1)
       ;
@@ -427,9 +581,9 @@ void device_test(bool force) {
 
   char count_str[24] = {0};
   for (int i = 1; i >= 0; i--) {
-    display_bar(0, 140, DISPLAY_RESX, 140, COLOR_BLACK);
+    display_bar(0, 230, DISPLAY_RESX, 30, COLOR_BLACK);
     mini_snprintf(count_str, sizeof(count_str), "Done! Restarting in %d s", i);
-    display_text(0, 170, count_str, -1, FONT_NORMAL, COLOR_WHITE, COLOR_BLACK);
+    display_text(0, 260, count_str, -1, FONT_NORMAL, COLOR_WHITE, COLOR_BLACK);
     hal_delay(1000);
   }
   HAL_NVIC_SystemReset();
@@ -444,6 +598,10 @@ void device_burnin_test(bool force) {
   volatile uint32_t flash_id = 0;
   volatile uint32_t index = 0, index_bak = 0xff;
   volatile uint32_t click = 0, click_pre = 0, click_now = 0;
+  volatile uint32_t flashled_pre = 0, flashled_now = 0;
+  volatile bool card_state = false, fingerprint_detect = false;
+  uint8_t image_data[88 * 112 + 2];
+  int flashled_value = 1;
 
   FRESULT res;
   FIL fil;
@@ -480,42 +638,12 @@ void device_burnin_test(bool force) {
     return;
   }
 
-  timer_init();
-
   if (test_res.flag == TEST_TESTING) {
     start = test_res.time;
   } else if (test_res.flag == TEST_PASS) {
     if (test_res.touch != TEST_PASS) {
       ui_test_input();
 
-      for (int i = 0; i < 2; i++) {
-        display_clear();
-
-        ui_generic_confirm_simple("MOTOR test");
-
-        motor_tick();
-        hal_delay(100);
-        motor_tock();
-        hal_delay(100);
-        motor_tick();
-        hal_delay(100);
-        motor_tock();
-        hal_delay(100);
-        motor_tick();
-        hal_delay(100);
-        motor_tock();
-        hal_delay(100);
-
-        if (ui_response()) {
-          display_text(0, 140, "MOTOR test done", -1, FONT_NORMAL, COLOR_WHITE,
-                       COLOR_BLACK);
-        } else {
-          display_text(0, 140, "MOTOR test faild", -1, FONT_NORMAL, COLOR_RED,
-                       COLOR_BLACK);
-          while (1)
-            ;
-        }
-      }
       test_res.touch = TEST_PASS;
       f_lseek(&fil, 0);
       f_write(&fil, &test_res, sizeof(test_res), &bw);
@@ -527,8 +655,27 @@ void device_burnin_test(bool force) {
     return;
   }
 
+  test_timer_init();
+  jpeg_init();
+  motor_init();
+
+  nfc_init();
+  pn532->PowerOn();
+  pn532->SAMConfiguration(PN532_SAM_Normal, 0x14, true);
+  // InListPassiveTarget
+  PN532_InListPassiveTarget_Params ILPT_params = {
+      .MaxTg = 1,
+      .BrTy = PN532_InListPassiveTarget_BrTy_106k_typeA,
+      .InitiatorData_len = 0,
+  };
+  PN532_InListPassiveTarget_Results ILPT_result = {0};
+
   previous_remain = 0;
   previous = 0;
+
+  flashled_pre = flashled_now = HAL_GetTick();
+
+  ble_set_flashled(flashled_value);
 
   do {
     ble_uart_poll();
@@ -577,12 +724,12 @@ void device_burnin_test(bool force) {
       uint8_t min = (remain % 3600) / 60;
       uint8_t sec = (remain % 3600) % 60;
 
-      int w = display_text_width(remain_timer, -1, FONT_PJKS_BOLD_38);
+      int w = display_text_width(remain_timer, -1, FONT_NORMAL);
       mini_snprintf(remain_timer, sizeof(remain_timer), "%02d:%02d:%02d", hour,
                     min, sec);
       display_bar(DISPLAY_RESX / 2 - w / 2, 690, w, 34, COLOR_BLACK);
-      display_text_center(DISPLAY_RESX / 2, 720, remain_timer, -1,
-                          FONT_PJKS_BOLD_38, COLOR_WHITE, COLOR_BLACK);
+      display_text_center(DISPLAY_RESX / 2, 720, remain_timer, -1, FONT_NORMAL,
+                          COLOR_WHITE, COLOR_BLACK);
     }
 
     index = (current / (TIMER_1S * 3)) % 4;
@@ -614,6 +761,7 @@ void device_burnin_test(bool force) {
         case 3:
           display_clear();
           display_print_clear();
+
           display_printf("SPI_FLASH ID= 0x%X \n", (unsigned)flash_id);
 
           if (emmc_cap > (1024 * 1024 * 1024)) {
@@ -645,14 +793,18 @@ void device_burnin_test(bool force) {
               hal_delay(5);
             }
           }
-
+          display_printf("CARD STATE %d\n", card_state);
+          if (fingerprint_detect) {
+            display_fp(10, 620, 88, 112, image_data);
+            fingerprint_detect = false;
+          }
           break;
         default:
           break;
       }
     }
     // 100ms
-    if ((current - previous) > (TIMER_1S / 10)) {
+    if ((current - previous) > (TIMER_1S / 2)) {
       previous = current;
       emmc_cap = emmc_get_capacity_in_bytes();
       if (emmc_cap == 0) {
@@ -690,9 +842,38 @@ void device_burnin_test(bool force) {
         ble_cmd_req(BLE_BT, BLE_BT_STA);
         hal_delay(5);
       }
+      card_state = false;
+      if (pn532->InListPassiveTarget(ILPT_params, &ILPT_result) &&
+          ILPT_result.NbTg == 1) {
+        card_state = true;
+      }
+      fingerprint_detect = false;
+      if (FpsDetectFinger() == 1) {
+        if (FpsGetImageData(image_data) == 0) {
+          fingerprint_detect = true;
+        }
+      }
+    }
+
+    flashled_now = HAL_GetTick();
+    if (flashled_now - flashled_pre > 3000) {
+      flashled_pre = flashled_now;
+      flashled_value = flashled_value ? 0 : 1;
+      ble_set_flashled(flashled_value);
+    }
+
+    if (index == 3) {
+      motor_tick();
+      camera_capture_start();
+      if (camera_capture_done()) {
+        dma2d_copy_buffer((uint32_t *)CAM_BUF_ADDRESS,
+                          (uint32_t *)FMC_SDRAM_LTDC_BUFFER_ADDRESS, 80, 300,
+                          WIN_W, WIN_H);
+      }
     }
 
     if ((current - start) > 15 * 60 * TIMER_1S) {
+      ble_set_flashled(0);
       test_res.flag = TEST_TESTING;
       test_res.time = current;
       f_lseek(&fil, 0);
@@ -706,6 +887,7 @@ void device_burnin_test(bool force) {
   test_res.flag = TEST_PASS;
   test_res.time = current;
   ble_cmd_req(BLE_BT, BLE_BT_ON);
+  ble_set_flashled(0);
   f_lseek(&fil, 0);
   f_write(&fil, &test_res, sizeof(test_res), &bw);
   f_sync(&fil);
