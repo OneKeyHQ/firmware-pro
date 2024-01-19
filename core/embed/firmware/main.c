@@ -300,7 +300,7 @@ void UsageFault_Handler(void) {
 
 __attribute__((noreturn)) void reboot_to_bootloader() {
   jump_to_with_flag(BOOTLOADER_START + IMAGE_HEADER_SIZE,
-                    STAY_IN_BOOTLOADER_FLAG);
+                    BOOT_TARGET_BOOTLOADER);
   for (;;)
     ;
 }

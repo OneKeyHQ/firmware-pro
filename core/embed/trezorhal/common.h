@@ -23,7 +23,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include "debug_utils.h"
 #include "secbool.h"
 
 typedef enum {

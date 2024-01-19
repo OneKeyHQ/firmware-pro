@@ -711,13 +711,6 @@ int main(void) {
   device_backup_otp(false);
   // device_restore_otp();
 
-  // motor test
-  // while(1)
-  // {
-  //   hal_delay(80);
-  //   motor_tick();
-  // }
-
 #endif
 
 #if PRODUCTION
