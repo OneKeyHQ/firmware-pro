@@ -33,7 +33,6 @@
 #include "lowlevel.h"
 #include "memzero.h"
 #include "mipi_lcd.h"
-#include "qspi_flash.h"
 #include "rng.h"
 #include "sdcard.h"
 #include "sdram.h"
@@ -240,18 +239,13 @@ static secbool try_bootloader_update(bool do_update, bool auto_reboot) {
 
   // if bootloader update is interrupted right after flash sector erase, header
   // will be losted and bootloader upgrade will be possible
-  // thus, as a minimum defence, wipe user storage area if downgrade or
-  // bootloader not valid
+  // this has been discussed and decided to not take further action
 
   // handle downgrade or invalid bootloader
   if (bootloader_valid == sectrue) {
     if (memcmp(&file_hdr.version, &hdr.version, 4) < 0) {
-      ensure(flash_erase_sectors(STORAGE_SECTORS, STORAGE_SECTORS_COUNT, NULL),
-             NULL);
+      return secfalse;
     }
-  } else {
-    ensure(flash_erase_sectors(STORAGE_SECTORS, STORAGE_SECTORS_COUNT, NULL),
-           NULL);
   }
 
   // update process
@@ -466,11 +460,6 @@ int main(void) {
   flash_otp_init();
   rng_init();
   clear_otg_hs_memory();
-
-  // ext flash
-  qspi_flash_init();
-  qspi_flash_config();
-  qspi_flash_memory_mapped();
 
   // emmc init and volume check
   emmc_fs_init();
