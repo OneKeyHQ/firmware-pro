@@ -24,9 +24,6 @@
 #include "common.h"
 #include "flash.h"
 
-// see docs/memory.md for more information
-#if defined(STM32H747xx)
-
 #include "qspi_flash.h"
 
 #define FLASH_TYPEPROGRAM_WORD FLASH_TYPEPROGRAM_FLASHWORD
@@ -37,8 +34,41 @@ const uint8_t BOOTLOADER_SECTORS[BOOTLOADER_SECTORS_COUNT] = {
     FLASH_SECTOR_BOOTLOADER_1,
     FLASH_SECTOR_BOOTLOADER_2,
 };
+const uint8_t FIRMWARE_SECTORS[FIRMWARE_SECTORS_COUNT] = {
+    FLASH_SECTOR_FIRMWARE_START,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    FLASH_SECTOR_FIRMWARE_END,
+    FLASH_SECTOR_FIRMWARE_EXTRA_START,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    FLASH_SECTOR_FIRMWARE_EXTRA_END};
+const uint8_t STORAGE_SECTORS[STORAGE_SECTORS_COUNT] = {
+    FLASH_SECTOR_STORAGE_1,
+    FLASH_SECTOR_STORAGE_2,
+};
 
-#if 0
+#ifdef NOT_USED_pLDNf4fNyLwV1RqEGZub
 static const uint32_t FLASH_SECTOR_TABLE[FLASH_SECTOR_COUNT + 2] = {
     [0] = 0x08000000,   // - 0x0801FFFF | 128 KiB
     [1] = 0x08020000,   // - 0x08007FFF | 128 KiB
@@ -85,107 +115,15 @@ static const uint32_t FLASH_SECTOR_TABLE[FLASH_SECTOR_COUNT + 2] = {
 };
 #endif
 
-const uint8_t FIRMWARE_SECTORS[FIRMWARE_SECTORS_COUNT] = {
-    FLASH_SECTOR_FIRMWARE_START,
-    4,
-    5,
-    6,
-    7,
-    8,
-    9,
-    10,
-    11,
-    12,
-    13,
-    FLASH_SECTOR_FIRMWARE_END,
-    FLASH_SECTOR_FIRMWARE_EXTRA_START,
-    17,
-    18,
-    19,
-    20,
-    21,
-    22,
-    23,
-    24,
-    25,
-    26,
-    27,
-    28,
-    29,
-    30,
-    FLASH_SECTOR_FIRMWARE_EXTRA_END};
-#else
-static const uint32_t FLASH_SECTOR_TABLE[FLASH_SECTOR_COUNT + 1] = {
-    [0] = 0x08000000,   // - 0x08003FFF |  16 KiB
-    [1] = 0x08004000,   // - 0x08007FFF |  16 KiB
-    [2] = 0x08008000,   // - 0x0800BFFF |  16 KiB
-    [3] = 0x0800C000,   // - 0x0800FFFF |  16 KiB
-    [4] = 0x08010000,   // - 0x0801FFFF |  64 KiB
-    [5] = 0x08020000,   // - 0x0803FFFF | 128 KiB
-    [6] = 0x08040000,   // - 0x0805FFFF | 128 KiB
-    [7] = 0x08060000,   // - 0x0807FFFF | 128 KiB
-    [8] = 0x08080000,   // - 0x0809FFFF | 128 KiB
-    [9] = 0x080A0000,   // - 0x080BFFFF | 128 KiB
-    [10] = 0x080C0000,  // - 0x080DFFFF | 128 KiB
-    [11] = 0x080E0000,  // - 0x080FFFFF | 128 KiB
-#if defined TREZOR_MODEL_T || defined TREZOR_MODEL_R
-    [12] = 0x08100000,  // - 0x08103FFF |  16 KiB
-    [13] = 0x08104000,  // - 0x08107FFF |  16 KiB
-    [14] = 0x08108000,  // - 0x0810BFFF |  16 KiB
-    [15] = 0x0810C000,  // - 0x0810FFFF |  16 KiB
-    [16] = 0x08110000,  // - 0x0811FFFF |  64 KiB
-    [17] = 0x08120000,  // - 0x0813FFFF | 128 KiB
-    [18] = 0x08140000,  // - 0x0815FFFF | 128 KiB
-    [19] = 0x08160000,  // - 0x0817FFFF | 128 KiB
-    [20] = 0x08180000,  // - 0x0819FFFF | 128 KiB
-    [21] = 0x081A0000,  // - 0x081BFFFF | 128 KiB
-    [22] = 0x081C0000,  // - 0x081DFFFF | 128 KiB
-    [23] = 0x081E0000,  // - 0x081FFFFF | 128 KiB
-    [24] = 0x08200000,  // last element - not a valid sector
-#elif defined TREZOR_MODEL_1
-    [12] = 0x08100000,  // last element - not a valid sector
-#else
-#error Unknown Trezor model
-#endif
-};
-
-const uint8_t FIRMWARE_SECTORS[FIRMWARE_SECTORS_COUNT] = {
-    FLASH_SECTOR_FIRMWARE_START,
-    7,
-    8,
-    9,
-    10,
-    FLASH_SECTOR_FIRMWARE_END,
-    FLASH_SECTOR_FIRMWARE_EXTRA_START,
-    18,
-    19,
-    20,
-    21,
-    22,
-    FLASH_SECTOR_FIRMWARE_EXTRA_END,
-};
-#endif
-
-const uint8_t STORAGE_SECTORS[STORAGE_SECTORS_COUNT] = {
-    FLASH_SECTOR_STORAGE_1,
-    FLASH_SECTOR_STORAGE_2,
-};
-
 secbool flash_unlock_write(void) {
   HAL_FLASH_Unlock();
-#if defined(STM32H747xx)
   SCB_DisableDCache();
-#else
-  FLASH->SR |= FLASH_STATUS_ALL_FLAGS;  // clear all status flags
-#endif
   return sectrue;
 }
 
 secbool flash_lock_write(void) {
   HAL_FLASH_Lock();
-#if defined(STM32H747xx)
   SCB_EnableDCache();
-#endif
   return sectrue;
 }
 
@@ -420,6 +358,28 @@ bool flash_clear_ecc_fault(uint32_t address) {
     return true;
   }
   return false;
+}
+
+// sector erase method, large effect area
+bool flash_fix_ecc_fault_BOOTLOADER(uint32_t address) {
+  if (!IS_FLASH_PROGRAM_ADDRESS_BANK1(address)) {
+    return false;
+  }
+
+  // find which sector the address is on
+  uint32_t offset = address - FLASH_BANK1_BASE;
+  uint8_t sector = offset / FLASH_BOOTLOADER_SECTOR_SIZE;
+
+  // sanity check
+  if (sector != FLASH_SECTOR_BOOTLOADER_1 &&
+      sector != FLASH_SECTOR_BOOTLOADER_1) {
+    return false;
+  }
+
+  // wipe sector
+  if (sectrue != flash_erase(sector)) return false;
+
+  return true;
 }
 
 // sector erase method, large effect area
@@ -667,8 +627,6 @@ secbool flash_write_word(uint8_t sector, uint32_t offset, uint32_t data) {
 
 #endif
 
-#if defined(STM32H747xx)
-
 void flash_otp_init(void) {
   if (memcmp(flash_otp_data->flag, "erased", strlen("erased")) == 0) {
     return;
@@ -725,55 +683,6 @@ secbool flash_otp_is_locked(uint8_t block) {
   }
   return sectrue;
 }
-#else
-#define FLASH_OTP_LOCK_BASE 0x1FFF7A00U
-
-secbool flash_otp_read(uint8_t block, uint8_t offset, uint8_t *data,
-                       uint8_t datalen) {
-  if (block >= FLASH_OTP_NUM_BLOCKS ||
-      offset + datalen > FLASH_OTP_BLOCK_SIZE) {
-    return secfalse;
-  }
-  for (uint8_t i = 0; i < datalen; i++) {
-    data[i] = *(__IO uint8_t *)(FLASH_OTP_BASE + block * FLASH_OTP_BLOCK_SIZE +
-                                offset + i);
-  }
-  return sectrue;
-}
-
-secbool flash_otp_write(uint8_t block, uint8_t offset, const uint8_t *data,
-                        uint8_t datalen) {
-  if (block >= FLASH_OTP_NUM_BLOCKS ||
-      offset + datalen > FLASH_OTP_BLOCK_SIZE) {
-    return secfalse;
-  }
-  ensure(flash_unlock_write(), NULL);
-  for (uint8_t i = 0; i < datalen; i++) {
-    uint32_t address =
-        FLASH_OTP_BASE + block * FLASH_OTP_BLOCK_SIZE + offset + i;
-    ensure(sectrue * (HAL_OK == HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE,
-                                                  address, data[i])),
-           NULL);
-  }
-  ensure(flash_lock_write(), NULL);
-  return sectrue;
-}
-
-secbool flash_otp_lock(uint8_t block) {
-  if (block >= FLASH_OTP_NUM_BLOCKS) {
-    return secfalse;
-  }
-  ensure(flash_unlock_write(), NULL);
-  HAL_StatusTypeDef ret = HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE,
-                                            FLASH_OTP_LOCK_BASE + block, 0x00);
-  ensure(flash_lock_write(), NULL);
-  return sectrue * (ret == HAL_OK);
-}
-
-secbool flash_otp_is_locked(uint8_t block) {
-  return sectrue * (0x00 == *(__IO uint8_t *)(FLASH_OTP_LOCK_BASE + block));
-}
-#endif
 
 void flash_test(void) {
   // static uint8_t data[32];

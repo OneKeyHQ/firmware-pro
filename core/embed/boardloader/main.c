@@ -113,6 +113,15 @@ extern volatile uint32_t system_reset;
 // axi ram 512k
 uint8_t *boardloader_buf = (uint8_t *)0x24000000;
 
+// this is mainly for ignore/supress faults during flash read (for check
+// purpose). if bus fault enabled, it will catched by BusFault_Handler, then we
+// could ignore it. if bus fault disabled, it will elevate to hard fault, this
+// is not what we want
+static secbool handle_flash_ecc_error = secfalse;
+static void set_handle_flash_ecc_error(secbool val) {
+  handle_flash_ecc_error = val;
+}
+
 // fault handlers
 void HardFault_Handler(void) {
   error_shutdown("Internal error", "(HF)", NULL, NULL);
@@ -127,6 +136,35 @@ void MemManage_Handler_SO(void) {
 }
 
 void BusFault_Handler(void) {
+  // if want handle flash ecc error
+  if (handle_flash_ecc_error == sectrue) {
+    // dbgprintf_Wait("Internal flash ECC error detected at 0x%X", SCB->BFAR);
+
+    // check if it's triggered by flash DECC
+    if (flash_check_ecc_fault()) {
+      // reset flash controller error flags
+      flash_clear_ecc_fault(SCB->BFAR);
+
+      // reset bus fault error flags
+      SCB->CFSR &= ~(SCB_CFSR_BFARVALID_Msk | SCB_CFSR_PRECISERR_Msk);
+      __DSB();
+      SCB->SHCSR &= ~(SCB_SHCSR_BUSFAULTACT_Msk);
+      __DSB();
+
+      // try to fix ecc error and reboot
+      if (flash_fix_ecc_fault_BOOTLOADER(SCB->BFAR)) {
+        error_shutdown("Internal flash ECC error", "Cleanup successful",
+                       "Bootloader reinstall may required",
+                       "If the issue persists, contact support.");
+      } else {
+        error_shutdown("Internal error", "Cleanup failed",
+                       "Reboot to try again",
+                       "If the issue persists, contact support.");
+      }
+    }
+  }
+
+  // normal route
   error_shutdown("Internal error", "(BF)", NULL, NULL);
 }
 
@@ -171,7 +209,7 @@ void show_poweron_bar(void) {
 
 static secbool validate_bootloader(image_header *const hdr) {
   secbool result = secfalse;
-  // set_handle_flash_ecc_error(sectrue);
+  set_handle_flash_ecc_error(sectrue);
 
   secbool boot_hdr_valid = load_image_header(
       (const uint8_t *)BOOTLOADER_START, BOOTLOADER_IMAGE_MAGIC,
@@ -185,7 +223,7 @@ static secbool validate_bootloader(image_header *const hdr) {
                ? sectrue
                : secfalse;
 
-  // set_handle_flash_ecc_error(secfalse);
+  set_handle_flash_ecc_error(secfalse);
   return result;
 }
 
@@ -285,6 +323,8 @@ static secbool try_bootloader_update(bool do_update, bool auto_reboot) {
   // write
   size_t processed_bytes = 0;
   size_t flash_sectors_index = 0;
+  uint16_t last_progress = 0;
+  uint16_t current_progress = 0;
   while (processed_bytes < file_info.size) {
     for (size_t sector_offset = 0;
          sector_offset <
@@ -298,9 +338,12 @@ static secbool try_bootloader_update(bool do_update, bool auto_reboot) {
                              ? 32  // since we could only write 32 byte a time
                              : (file_info.size - processed_bytes);
 
-      // TODO: fix the ghosting text while updating
-      display_printf("\rWriting: %u%%",
-                     (uint16_t)(processed_bytes * 100 / file_info.size));
+      current_progress = (uint16_t)(processed_bytes * 100 / file_info.size);
+      if ((last_progress != current_progress)) {
+        display_printf("\rWriting: %u%%", current_progress);
+        last_progress = current_progress;
+        hal_delay(100);  // slow down a little to reduce lcd refresh flickering
+      }
     }
     if (temp_state != sectrue) break;
 
