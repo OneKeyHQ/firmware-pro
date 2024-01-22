@@ -568,8 +568,14 @@ void display_print_clear(void) {
 
 // display text using bitmap font
 void display_print(const char *text, int textlen) {
+  static bool redraw_needed = false;
+
   if (row == 0) {
+    redraw_needed = true;
+  }
+  if (redraw_needed) {
     display_bar(0, 0, DISPLAY_RESX, DISPLAY_RESY, display_print_bgcolor);
+    redraw_needed = false;
   }
 
   // determine text length if not provided
@@ -588,6 +594,9 @@ void display_print(const char *text, int textlen) {
   for (int i = 0; i < textlen; i++) {
     switch (text[i]) {
       case '\r':
+        // redraw_needed = true;
+        display_bar(0, DISPLAY_CHAR_HIGHT * (row), DISPLAY_RESX,
+                    DISPLAY_CHAR_HIGHT, display_print_bgcolor);
         col = 0;
         width = 0;
         break;
