@@ -250,26 +250,8 @@ static secbool try_bootloader_update(bool do_update, bool auto_reboot) {
   // if not actually doing the update, return as update file validate result
   if (!do_update) return sectrue;
 
-  // validate current bootloader
+  // validate bootloader
   image_header hdr;
-  secbool bootloader_valid = validate_bootloader(&hdr);
-
-  // if bootloader update is interrupted right after flash sector erase, header
-  // will be losted and bootloader upgrade will be possible
-  // thus, as a minimum defence, wipe user storage area if downgrade or
-  // bootloader not valid
-
-  // handle downgrade or invalid bootloader
-  if (bootloader_valid == sectrue) {
-    if (memcmp(&file_hdr.version, &hdr.version, 4) < 0) {
-      ensure(flash_erase_sectors(STORAGE_SECTORS, STORAGE_SECTORS_COUNT, NULL),
-             NULL);
-    }
-  } else {
-    ensure(flash_erase_sectors(STORAGE_SECTORS, STORAGE_SECTORS_COUNT, NULL),
-           NULL);
-  }
-
   // update process
   secbool temp_state;
 
@@ -674,14 +656,6 @@ int main(void) {
   // need the systick timer running before many HAL operations.
   // want the PVD enabled before flash operations too.
   periph_init();
-
-  if (sectrue != flash_configure_option_bytes()) {
-    // display is not initialized so don't call ensure
-    const secbool r =
-        flash_erase_sectors(STORAGE_SECTORS, STORAGE_SECTORS_COUNT, NULL);
-    (void)r;
-    return 2;
-  }
 
   clear_otg_hs_memory();
 
