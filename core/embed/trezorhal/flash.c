@@ -272,7 +272,7 @@ secbool flash_write_word(uint8_t sector, uint32_t offset, uint32_t data) {
 
 secbool flash_write_words(uint8_t sector, uint32_t offset, uint32_t data[8]) {
   uint32_t flash_word[8];
-  int retry = -1;
+  int retry = 0;
 
   uint32_t address = (uint32_t)flash_get_address(sector, offset, 4);
   if (address == 0) {
@@ -292,7 +292,7 @@ secbool flash_write_words(uint8_t sector, uint32_t offset, uint32_t data[8]) {
   }
 rewrite:
   retry++;
-  if (retry == 3) {
+  if (retry > 3) {
     return secfalse;
   }
   memcpy(flash_word, data, 32);
