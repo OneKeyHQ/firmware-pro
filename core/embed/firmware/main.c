@@ -41,7 +41,6 @@
 #include "board_capabilities.h"
 #include "common.h"
 #include "compiler_traits.h"
-#include "systick.h"
 #include "display.h"
 #include "emmc.h"
 #include "ff.h"
@@ -49,6 +48,7 @@
 #include "image.h"
 #include "mpu.h"
 #include "random_delays.h"
+#include "systick.h"
 #include "usart.h"
 #ifdef SYSTEM_VIEW
 #include "systemview.h"

@@ -658,7 +658,7 @@ def get_label() -> str:
     """Get device label.
 
     Returns:
-        str: if label == "", return default label "OneKey Touch" instead
+        str: if label == "", return default label "OneKey Pro" instead
     """
     global _LABEL_VALUE
     if _LABEL_VALUE is None:

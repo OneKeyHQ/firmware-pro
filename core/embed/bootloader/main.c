@@ -215,10 +215,10 @@ static void usb_init_all(secbool usb21_landing) {
       .vendor_id = 0x1209,
       .product_id = 0x4F4A,
       .release_num = 0x0200,
-      .manufacturer = "OneKey",
-      .product = "ONEKEY Pro Boot",
+      .manufacturer = "OneKey Ltd.",
+      .product = "OneKey Pro",
       .serial_number = "000000000000000000000000",
-      .interface = "ONEKEY Interface",
+      .interface = "Bootloader Interface",
       .usb21_enabled = sectrue,
       .usb21_landing = usb21_landing,
   };
@@ -607,11 +607,11 @@ static secbool validate_firmware_code(vendor_header* const vhdr,
 static BOOT_TARGET decide_boot_target(vendor_header* const vhdr,
                                       image_header* const hdr,
                                       secbool* headers_validate_result) {
-  // get boot target flag
-  volatile BOOT_TARGET boot_target = *BOOT_TARGET_FLAG_ADDR;  // cache flag
-  *BOOT_TARGET_FLAG_ADDR = BOOT_TARGET_NORMAL;  // consume(reset) flag
+// get boot target flag
+  BOOT_TARGET boot_target = *BOOT_TARGET_FLAG_ADDR;  // cache flag
+  *BOOT_TARGET_FLAG_ADDR = BOOT_TARGET_NORMAL;       // consume(reset) flag
 
-  // if boot target already at boot, no more checks
+  // if boot target already set to this level, no more checks
   if (boot_target == BOOT_TARGET_BOOTLOADER) return boot_target;
 
   // check se status

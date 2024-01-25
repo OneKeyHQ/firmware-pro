@@ -895,7 +895,7 @@ void ui_bootloader_second(const image_header *const hdr) {
   display_text(offset_x, offset_y, "Model", -1, FONT_PJKS_BOLD_26, COLOR_BL_FG,
                COLOR_BL_BG);
   offset_y += offset_line;
-  display_text(offset_x, offset_y, "OneKey Touch", -1, FONT_NORMAL,
+  display_text(offset_x, offset_y, "OneKey Pro", -1, FONT_NORMAL,
                COLOR_BL_TAGVALUE, COLOR_BL_BG);
   offset_y += offset_seg;
 
