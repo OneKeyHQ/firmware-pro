@@ -6,6 +6,7 @@ SCONS = scons -Q -j $(JOBS)
 
 BUILD_DIR             = build
 BOARDLOADER_BUILD_DIR = $(BUILD_DIR)/boardloader
+BOAR_DEV_REFLASH_BUILD_DIR  = $(BUILD_DIR)/boardloader_reflash_dev
 BOOTLOADER_BUILD_DIR  = $(BUILD_DIR)/bootloader
 BOOTLOADER_CI_BUILD_DIR  = $(BUILD_DIR)/bootloader_ci
 PRODTEST_BUILD_DIR    = $(BUILD_DIR)/prodtest
@@ -168,6 +169,11 @@ build_embed: build_boardloader build_bootloader build_firmware # build boardload
 build_boardloader: ## build boardloader
 	$(SCONS) CFLAGS="$(CFLAGS)" PRODUCTION="$(PRODUCTION)" TREZOR_MODEL="$(TREZOR_MODEL)" PRODUCTION_MODEL="$(PRODUCTION_MODEL)" $(BOARDLOADER_BUILD_DIR)/boardloader.bin
 
+build_boardloader_reflash_dev: build_boardloader ## build boardloader_reflash_dev
+	mkdir -p $(BOAR_DEV_REFLASH_BUILD_DIR)
+	python embed/boardloader_reflash_dev/bin2array.py -l 16 -i $(BOARDLOADER_BUILD_DIR)/boardloader.bin -o $(BOAR_DEV_REFLASH_BUILD_DIR)/payload.h
+	$(SCONS) CFLAGS="$(CFLAGS)" PRODUCTION="$(PRODUCTION)" TREZOR_MODEL="$(TREZOR_MODEL)" PRODUCTION_MODEL="$(PRODUCTION_MODEL)" $(BOAR_DEV_REFLASH_BUILD_DIR)/boardloader_reflash_dev.bin
+
 build_bootloader: ## build bootloader
 	$(SCONS) CFLAGS="$(CFLAGS)" PRODUCTION="$(PRODUCTION)" TREZOR_MODEL="$(TREZOR_MODEL)" PRODUCTION_MODEL="$(PRODUCTION_MODEL)" $(BOOTLOADER_BUILD_DIR)/bootloader.bin
 	cp $(BOOTLOADER_BUILD_DIR)/bootloader.bin $(BOOTLOADER_BUILD_DIR)/$(BOOT_BUILD_NAME).bin
@@ -206,6 +212,9 @@ clean: clean_boardloader clean_bootloader clean_bootloader_ci clean_prodtest cle
 
 clean_boardloader: ## clean boardloader build
 	rm -rf $(BOARDLOADER_BUILD_DIR)
+
+clean_boardloader_reflash_dev: ## clean boardloader_reflash_dev build
+	rm -rf $(BOAR_DEV_REFLASH_BUILD_DIR)
 
 clean_bootloader: ## clean bootloader build
 	rm -rf $(BOOTLOADER_BUILD_DIR)
@@ -264,6 +273,9 @@ flash_erase_storage: ## erase storage sectors from flash
 
 flash_boardloader_jlink: $(BOARDLOADER_BUILD_DIR)/boardloader.bin ## flash bootloader using JLink
 	JLinkExe -nogui 1 -commanderscript embed/debugger_scripts/jlink/write_boardloader.jlink
+
+flash_boardloader_reflash_dev_jlink: $(BOAR_DEV_REFLASH_BUILD_DIR)/boardloader_reflash_dev.bin ## flash boardloader_reflash_dev using JLink
+	JLinkExe -nogui 1 -commanderscript embed/debugger_scripts/jlink/write_boardloader_reflash_dev.jlink
 
 flash_bootloader_jlink: $(BOOTLOADER_BUILD_DIR)/bootloader.bin ## flash bootloader using JLink
 	JLinkExe -nogui 1 -commanderscript embed/debugger_scripts/jlink/write_bootloader.jlink

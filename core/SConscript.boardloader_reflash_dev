@@ -1,0 +1,210 @@
+# pylint: disable=E0602
+
+import os
+
+TREZOR_MODEL = ARGUMENTS.get('TREZOR_MODEL', 'T')
+PRODUCTION_MODEL = ARGUMENTS.get('PRODUCTION_MODEL', 'H')
+
+CCFLAGS_MOD = ''
+CPPPATH_MOD = []
+CPPDEFINES_MOD = []
+SOURCE_MOD = []
+
+
+# modtrezorcrypto
+CCFLAGS_MOD += '-Wno-sequence-point '
+CPPPATH_MOD += [
+    'vendor/trezor-crypto',
+]
+SOURCE_MOD += [
+    'vendor/trezor-crypto/memzero.c',
+]
+
+# modtrezorui
+CPPPATH_MOD += [
+        'vendor/micropython/lib/uzlib',
+]
+CPPDEFINES_MOD += [
+    'TREZOR_FONT_NORMAL_ENABLE',
+    'TREZOR_FONT_PJKS_BOLD_ENABLE',
+    'TREZOR_FONT_PJKS_REGULAR_20_ENABLE',
+    'TREZOR_FONT_PJKS_BOLD_26_ENABLE',
+]
+
+SOURCE_MOD += [
+    'embed/extmod/modtrezorui/mipi_lcd.c',
+    'embed/extmod/modtrezorui/display.c',
+    'embed/extmod/modtrezorui/fonts/font_bitmap.c',
+    'embed/extmod/modtrezorui/fonts/font_roboto_regular_24.c',
+    'embed/extmod/modtrezorui/fonts/font_plusjakartasans_regular_20.c',
+    'embed/extmod/modtrezorui/fonts/font_plusjakartasans_regular_26.c',
+    'embed/extmod/modtrezorui/fonts/font_plusjakartasans_bold_26.c',
+    'embed/extmod/modtrezorui/fonts/font_plusjakartasans_bold_38.c',
+    'vendor/micropython/lib/uzlib/adler32.c',
+    'vendor/micropython/lib/uzlib/crc32.c',
+    'vendor/micropython/lib/uzlib/tinflate.c',
+]
+SOURCE_STMHAL = [
+    'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal.c',
+    'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_cortex.c',
+    'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dma.c',
+    'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dma_ex.c',
+    'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_flash.c',
+    'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_flash_ex.c',
+    'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_gpio.c',
+    'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_i2c.c',
+    'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_i2c_ex.c',
+    'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_mmc.c',
+    'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_pcd.c',
+    'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_pcd_ex.c',
+    'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_pwr.c',
+    'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_pwr_ex.c',
+    'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_rcc.c',
+    'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_rcc_ex.c',
+    'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_sd.c',
+    'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_spi.c',
+    'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_sram.c',
+    'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_sdram.c',
+    'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_tim.c',
+    'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_tim_ex.c',
+    'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_ltdc.c',
+    'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_ltdc_ex.c',
+    'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dsi.c',
+    'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dma2d.c',
+    'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_qspi.c',
+    'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_mdma.c',
+    'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_ll_fmc.c',
+    'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_ll_sdmmc.c',
+]
+
+SOURCE_BOOTLOADER = [
+    'embed/boardloader_reflash_dev/startup.s',
+    'embed/boardloader_reflash_dev/header.S',
+    'embed/boardloader_reflash_dev/main.c',
+]
+
+SOURCE_TREZORHAL = [
+    'embed/trezorhal/system_stm32h7xx.c',
+    'embed/trezorhal/common.c',
+    'embed/trezorhal/flash.c',
+    'embed/trezorhal/lowlevel.c',
+    'embed/trezorhal/mini_printf.c',
+    'embed/trezorhal/mpu.c',
+    'embed/trezorhal/emmc.c',
+    'embed/trezorhal/qspi_flash.c',
+    'embed/trezorhal/touch.c',
+    'embed/trezorhal/random_delays.c',
+    'embed/trezorhal/rng.c',
+    'embed/trezorhal/stm32.c',
+    'embed/trezorhal/systick.c',
+    'embed/trezorhal/trans_fifo.c',
+    'embed/trezorhal/i2c.c',
+    'embed/trezorhal/spi.c',
+    'embed/trezorhal/spi_legacy.c',
+    'embed/trezorhal/br_check.c',
+    'embed/trezorhal/fatfs/ff.c',
+    'embed/trezorhal/fatfs/ffunicode.c',
+    'embed/trezorhal/fatfs/diskio.c',
+    'embed/trezorhal/util.s',
+    'embed/trezorhal/vectortable.s',
+    'embed/trezorhal/gt911.c',
+]
+
+# payload
+CPPPATH_MOD += [
+    'build/boardloader_reflash_dev',
+]
+
+# debug utils
+SOURCE_DEBUG_UTILS = []
+SOURCE_DEBUG_UTILS.extend(Glob('embed/debug_utils/*.c'))
+
+# emmc wrapper
+SOURCE_EMMC_WRAPPER = []
+SOURCE_EMMC_WRAPPER.extend(Glob('embed/emmc_wrapper/emmc_fs.c'))
+
+
+env = Environment(ENV=os.environ, CFLAGS='%s -DPRODUCTION=%s' % (ARGUMENTS.get('CFLAGS', ''), ARGUMENTS.get('PRODUCTION', '0')))
+
+env.Replace(
+    AS='arm-none-eabi-as',
+    AR='arm-none-eabi-ar',
+    CC='arm-none-eabi-gcc',
+    LINK='arm-none-eabi-gcc',
+    SIZE='arm-none-eabi-size',
+    STRIP='arm-none-eabi-strip',
+    OBJCOPY='arm-none-eabi-objcopy', )
+
+env.Replace(
+    TREZOR_MODEL=TREZOR_MODEL,
+    PRODUCTION_MODEL=ord(PRODUCTION_MODEL), )
+
+CPU_ASFLAGS = '-mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-d16 '
+CPU_CCFLAGS = '-mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-d16 -mtune=cortex-m7 --specs=nano.specs '
+CPU_MODEL   = 'STM32H747xx'
+CORE_MODEL = 'CORE_CM7'
+
+
+env.Replace(
+    COPT=env.get('ENV').get('OPTIMIZE', '-Os'),
+    CCFLAGS='$COPT '
+    '-g3 '
+    '-nostdlib '
+    '-std=gnu99 -Wall -Werror -Wdouble-promotion -Wpointer-arith -Wno-missing-braces -fno-common '
+    '-fsingle-precision-constant -fdata-sections -ffunction-sections '
+    '-ffreestanding '
+    '-fstack-protector-all '
+    + CPU_CCFLAGS + CCFLAGS_MOD,
+    CCFLAGS_QSTR='-DNO_QSTR -DN_X64 -DN_X86 -DN_THUMB',
+    LINKFLAGS='-T embed/boardloader_reflash_dev/memory.ld -Wl,--gc-sections -Wl,-Map=build/boardloader_reflash_dev/boardloader_reflash_dev.map -Wl,--warn-common ',
+    CPPPATH=[
+        'embed/boardloader_reflash_dev',
+        'embed/trezorhal',
+        'embed/trezorhal/fatfs',
+        'embed/extmod/modtrezorui',
+        'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Inc',
+        'vendor/micropython/lib/stm32lib/CMSIS/STM32H7xx/Include',
+        'vendor/micropython/lib/cmsis/inc',
+        'embed/debug_utils',
+        'embed/emmc_wrapper',
+    ] + CPPPATH_MOD,
+    CPPDEFINES=[
+        'TREZOR_MODEL_'+TREZOR_MODEL,
+        ('PRODUCTION_MODEL', '$PRODUCTION_MODEL'),
+        CPU_MODEL,
+        CORE_MODEL,
+        'USE_HAL_DRIVER',
+        ('STM32_HAL_H', '"<stm32h7xx.h>"'),
+        'BOOT_ONLY',
+        ('STATIC_TABLES', 0),
+    ] + CPPDEFINES_MOD,
+    ASFLAGS=CPU_ASFLAGS,
+    ASPPFLAGS='$CFLAGS $CCFLAGS', )
+
+
+#
+# Program objects
+#
+
+obj_program = []
+obj_program += env.Object(source=SOURCE_MOD)
+obj_program += env.Object(source=SOURCE_BOOTLOADER)
+obj_program += env.Object(source=SOURCE_STMHAL)
+obj_program += env.Object(source=SOURCE_TREZORHAL)
+obj_program += env.Object(source=SOURCE_DEBUG_UTILS)
+obj_program += env.Object(source=SOURCE_EMMC_WRAPPER)
+
+program_elf = env.Command(
+    target='boardloader_reflash_dev.elf',
+    source=obj_program,
+    action=
+    '$LINK -o $TARGET $CCFLAGS $CFLAGS $LINKFLAGS $SOURCES -Wl,--start-group -lc_nano -lnosys -lgcc -lm -Wl,--end-group',
+)
+
+program_bin = env.Command(
+    target='boardloader_reflash_dev.bin',
+    source=program_elf,
+    action=[
+        '$OBJCOPY -O binary -j .header -j .flash -j .data $SOURCE $TARGET',
+        '$HEADERTOOL -h $TARGET ' + ('-D' if ARGUMENTS.get('PRODUCTION', '0') == '0' else ''),
+    ], )
