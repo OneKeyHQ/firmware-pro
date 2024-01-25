@@ -26,7 +26,6 @@
 #include "display.h"
 #include "emmc.h"
 #include "emmc_fs.h"
-#include "ff.h"
 #include "flash.h"
 #include "i2c.h"
 #include "image.h"
@@ -51,7 +50,7 @@
 #define TO_STR(x) _TO_STR(x)
 
 // defines
-#define BOARD_VERSION \
+#define VERSION_STR \
   TO_STR(VERSION_MAJOR) "." TO_STR(VERSION_MINOR) "." TO_STR(VERSION_PATCH)
 #define PIXEL_STEP 5
 
@@ -112,6 +111,8 @@ extern volatile uint32_t system_reset;
 
 // axi ram 512k
 uint8_t *boardloader_buf = (uint8_t *)0x24000000;
+#define USB_SIZ_STRING_SERIAL \
+  0x20  // keep it same as "core/embed/trezorhal/usbd_desc.h"
 
 // this is mainly for ignore/supress faults during flash read (for check
 // purpose). if bus fault enabled, it will catched by BusFault_Handler, then we
@@ -170,6 +171,13 @@ void BusFault_Handler(void) {
 
 void UsageFault_Handler(void) {
   error_shutdown("Internal error", "(UF)", NULL, NULL);
+}
+
+static inline void dispaly_boardloader_title() {
+  display_backlight(255);
+  display_clear();
+  display_printf("OneKey Boardloader " VERSION_STR "\n");
+  display_printf("======================\n");
 }
 
 void show_poweron_bar(void) {
@@ -289,10 +297,7 @@ static secbool try_bootloader_update(bool do_update, bool auto_reboot) {
   // update process
   secbool temp_state;
 
-  display_backlight(255);
-  display_clear();
-  display_printf("OneKey Boardloader " BOARD_VERSION "\n");
-  display_printf("=====================\n");
+  dispaly_boardloader_title();
   display_printf("Bootloader Update\n");
   display_printf("!!! DO NOT POWER OFF !!!\n");
   display_printf("\r\n");
@@ -391,20 +396,24 @@ static secbool try_bootloader_update(bool do_update, bool auto_reboot) {
   return sectrue;
 }
 
-static void decide_boot_target(BOOT_TARGET *boot_target,
-                               STAY_REASON *stay_reason) {
-  // empty reason
+static BOOT_TARGET decide_boot_target(STAY_REASON *stay_reason) {
+  // get boot target flag
+  BOOT_TARGET boot_target = *BOOT_TARGET_FLAG_ADDR;  // cache flag
+  *BOOT_TARGET_FLAG_ADDR = BOOT_TARGET_NORMAL;       // consume(reset) flag
+  // handle stay reason
+  STAY_REASON dummy_stay_reason;
+  if (stay_reason == NULL) {
+    stay_reason = &dummy_stay_reason;
+  }
   *stay_reason = STAY_REASON_NONE;
 
-  // check res
-  if (!emmc_fs_path_exist("0:res/.ONEKEY_RESOURCE")) {
-    *boot_target = BOOT_TARGET_BOARDLOADER;
-    *stay_reason = STAY_REASON_INVALID_DEPENDENCY;
-    return;
+  // if boot target already set to this level, no more checks
+  if (boot_target == BOOT_TARGET_BOARDLOADER) {
+    *stay_reason = STAY_REASON_REQUIRED_BY_FLAG;
+    return boot_target;
   }
 
   // check manual overrides
-  bool manual_overrided = false;
   bool swipe_detected = false;
   uint32_t touch_data = 0, x_start = 0, y_start = 0, x_mov = 0, y_mov = 0;
 
@@ -439,12 +448,11 @@ static void decide_boot_target(BOOT_TARGET *boot_target,
     // check if button long press
     if (ble_power_button_state() == 2) {
       if (swipe_detected) {
-        *boot_target = BOOT_TARGET_BOARDLOADER;
-        *stay_reason = STAY_REASON_MANUAL_OVERRIDE;
+        boot_target = BOOT_TARGET_BOARDLOADER;
       } else {
-        *boot_target = BOOT_TARGET_BOOTLOADER;
+        boot_target = BOOT_TARGET_BOOTLOADER;
       }
-      manual_overrided = true;
+      *stay_reason = STAY_REASON_MANUAL_OVERRIDE;
       break;
     }
 
@@ -452,28 +460,70 @@ static void decide_boot_target(BOOT_TARGET *boot_target,
     hal_delay(1);
   }
   ble_usart_irq_disable();
-  display_bar(160, 352, 160, 4, COLOR_BLACK);
-  if (manual_overrided && (*boot_target == BOOT_TARGET_BOARDLOADER)) return;
+  // display_bar(160, 352, 160, 4, COLOR_BLACK);// what is this for?
+
+  // if manual override stay at this level no more checks
+  if ((*stay_reason == STAY_REASON_MANUAL_OVERRIDE) &&
+      (boot_target == BOOT_TARGET_BOARDLOADER)) {
+    return boot_target;
+  }
 
   // check bootloader update
   if (sectrue == try_bootloader_update(false, false)) {
-    *boot_target = BOOT_TARGET_BOARDLOADER;
+    boot_target = BOOT_TARGET_BOARDLOADER;
     *stay_reason = STAY_REASON_UPDATE_NEXT_TARGET;
-    return;
+    return boot_target;
+  }
+
+  // check res
+  if (!emmc_fs_path_exist("0:res/.ONEKEY_RESOURCE")) {
+    boot_target = BOOT_TARGET_BOARDLOADER;
+    *stay_reason = STAY_REASON_INVALID_DEPENDENCY;
+    return boot_target;
   }
 
   // check bootloader
   image_header hdr;
   if (sectrue != validate_bootloader(&hdr)) {
-    *boot_target = BOOT_TARGET_BOARDLOADER;
+    boot_target = BOOT_TARGET_BOARDLOADER;
     *stay_reason = STAY_REASON_INVALID_NEXT_TARGET;
-    return;
+    return boot_target;
   }
 
-  // check flag (lowest priority)
-  *boot_target = *BOOT_TARGET_FLAG_ADDR;        // cache flag
-  *BOOT_TARGET_FLAG_ADDR = BOOT_TARGET_NORMAL;  // consume(reset) flag
-  return;
+  return boot_target;
+}
+
+static secbool get_device_serial(char *serial, size_t len) {
+  // init
+  uint8_t otp_serial[FLASH_OTP_BLOCK_SIZE] = {0};
+  memzero(otp_serial, sizeof(otp_serial));
+  memzero(serial, len);
+
+  // get OTP serial
+  if (sectrue != flash_otp_is_locked(FLASH_OTP_DEVICE_SERIAL)) return secfalse;
+
+  if (sectrue != flash_otp_read(FLASH_OTP_DEVICE_SERIAL, 0, otp_serial,
+                                sizeof(otp_serial))) {
+    return secfalse;
+  }
+
+  // check if all is ascii
+  for (uint32_t i = 0; i < sizeof(otp_serial); i++) {
+    if (otp_serial[i] == '\0') {
+      break;
+    }
+    if (otp_serial[i] < ' ' || otp_serial[i] > '~') {
+      return secfalse;
+    }
+  }
+
+  // copy to output buffer
+  memcpy(serial, otp_serial, MIN(len, sizeof(otp_serial)));
+
+  // cutoff by strlen
+  serial[strlen(serial)] = '\0';
+
+  return sectrue;
 }
 
 int main(void) {
@@ -523,19 +573,23 @@ int main(void) {
                       FONT_NORMAL, COLOR_RED, COLOR_BLACK);
 #endif
 
-  BOOT_TARGET boot_target;
   STAY_REASON stay_reason;
-  decide_boot_target(&boot_target, &stay_reason);
+  BOOT_TARGET boot_target = decide_boot_target(&stay_reason);
+  if ((stay_reason < STAY_REASON_NONE) || (stay_reason > STAY_REASON_UNKNOWN))
+    stay_reason = STAY_REASON_UNKNOWN;
 
   if (boot_target == BOOT_TARGET_BOARDLOADER) {
     if (stay_reason == STAY_REASON_UPDATE_NEXT_TARGET) {
       try_bootloader_update(true, true);
     } else {
-      display_clear();
-      display_printf("OneKey Boardloader " BOARD_VERSION "\n");
+      dispaly_boardloader_title();
       display_printf("USB Mass Storage Mode\n");
-      display_printf("======================\n\n");
-      usb_msc_init();
+      display_printf(STAY_REASON_str[stay_reason]);
+
+      char serial[USB_SIZ_STRING_SERIAL];
+      get_device_serial(serial, sizeof(serial));
+      usb_msc_init(serial, sizeof(serial));
+
       while (1) {
         if (system_reset == 1) {
           hal_delay(5);
@@ -545,16 +599,13 @@ int main(void) {
     }
   }
 
-  if (boot_target == BOOT_TARGET_BOOTLOADER) {
-    SCB_CleanDCache();
-  }
-
   *BOOT_TARGET_FLAG_ADDR = boot_target;  // set flag for bootloader to comsume
 
   bus_fault_disable();
 
   // mpu_config_off();
 
+  SCB_CleanDCache();
   jump_to(BOOTLOADER_START + IMAGE_HEADER_SIZE);
 
   return 0;

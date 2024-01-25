@@ -29,7 +29,11 @@ EndBSPDependencies */
 #include "usbd_msc_storage.h"
 
 #include "emmc.h"
+#include "version.h"
 
+#define _TO_STR(x) #x
+#define TO_STR(x) _TO_STR(x)
+#define TO_CHAR(x) (TO_STR(x))[0]
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -73,10 +77,10 @@ int8_t  STORAGE_Inquirydata[] =  /* 36 */
   0x00,
   0x00,
   0x00,
-  'O', 'N', 'E', 'K', 'E', 'Y', ' ', ' ', /* Manufacturer : 8 bytes */
-  'T', 'O', 'U', 'C', 'H', '-', 'B', 'O', /* Product      : 16 Bytes */
-  'A', 'R', 'D', ' ', ' ', ' ', ' ', ' ',
-  '0', '.', '0', '1',                     /* Version      : 4 Bytes */
+  'O', 'n', 'e', 'K', 'e', 'y', ' ', ' ', /* Manufacturer : 8 bytes */
+  'P', 'r', 'o', ' ', 'B', 'o', 'a', 'r', /* Product      : 16 Bytes */
+  'd', 'l', 'o', 'a', 'd', 'e', 'r', ' ',
+  TO_CHAR(VERSION_MAJOR), '.', TO_CHAR(VERSION_MINOR), TO_CHAR(VERSION_PATCH), /* Version      : 4 Bytes */
 };
 
 USBD_StorageTypeDef USBD_DISK_fops =

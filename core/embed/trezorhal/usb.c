@@ -606,8 +606,12 @@ static const USBD_ClassTypeDef usb_class = {
     .GetUsrStrDescriptor = usb_class_get_usrstr_desc,
 };
 
-void usb_msc_init(void) {
+void usb_msc_init(char *serial, size_t serial_len) {
   HAL_PWREx_EnableUSBVoltageDetector();
+
+  // Set serial before init
+  USBD_MSC_SetSerial(serial, serial_len);
+
   /* Init Device Library */
   USBD_Init(&usb_dev_handle, &MSC_Desc, 1);
 

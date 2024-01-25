@@ -360,6 +360,29 @@ bool flash_clear_ecc_fault(uint32_t address) {
   return false;
 }
 
+#if !PRODUCTION
+// sector erase method, large effect area
+bool flash_fix_ecc_fault_BOARDLOADER(uint32_t address) {
+  if (!IS_FLASH_PROGRAM_ADDRESS_BANK1(address)) {
+    return false;
+  }
+
+  // find which sector the address is on
+  uint32_t offset = address - FLASH_BANK1_BASE;
+  uint8_t sector = offset / FLASH_BOOTLOADER_SECTOR_SIZE;
+
+  // sanity check
+  if (sector != FLASH_SECTOR_BOARDLOADER) {
+    return false;
+  }
+
+  // wipe sector
+  if (sectrue != flash_erase(sector)) return false;
+
+  return true;
+}
+#endif
+
 // sector erase method, large effect area
 bool flash_fix_ecc_fault_BOOTLOADER(uint32_t address) {
   if (!IS_FLASH_PROGRAM_ADDRESS_BANK1(address)) {

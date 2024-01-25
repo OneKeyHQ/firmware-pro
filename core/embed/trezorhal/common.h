@@ -31,17 +31,18 @@ typedef enum {
   STAY_REASON_MANUAL_OVERRIDE,
   STAY_REASON_INVALID_DEPENDENCY,
   STAY_REASON_INVALID_NEXT_TARGET,
-  STAY_REASON_UPDATE_NEXT_TARGET
+  STAY_REASON_UPDATE_NEXT_TARGET,
+  STAY_REASON_UNKNOWN,
 } STAY_REASON;
 
-#define ENUM_STAY_REASON_ITEM(x) [x] = "x"
+#define ENUM_STAY_REASON_ITEM(x) [x] = #x
 extern const char *STAY_REASON_str[];
 
 typedef enum {
   BOOT_TARGET_NORMAL = 0,
   BOOT_TARGET_BOARDLOADER = 0x64616F62,
   BOOT_TARGET_BOOTLOADER = 0x746F6F62,
-} BOOT_TARGET;
+} volatile BOOT_TARGET;
 
 #define BOOT_TARGET_FLAG_ADDR ((BOOT_TARGET *)(0x30040000 - 4))
 
@@ -97,8 +98,8 @@ void error_pin_max(void);
        ? (void)0          \
        : __fatal_error(#expr, msg, __FILE__, __LINE__, __func__))
 // #else
-// #define ensure(expr, msg) (((expr) == sectrue) ? (void)0 : dbgprintf_Wait("%s\n%s\n",#expr, msg))
-// #endif
+// #define ensure(expr, msg) (((expr) == sectrue) ? (void)0 :
+// dbgprintf_Wait("%s\n%s\n",#expr, msg)) #endif
 
 #define ensure_ex(expr, ret, msg) \
   (((expr) == ret) ? (void)0      \

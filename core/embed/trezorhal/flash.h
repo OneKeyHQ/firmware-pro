@@ -39,8 +39,7 @@
 #define FLASH_SECTOR_COUNT 16
 #endif
 
-#define FLASH_SECTOR_BOARDLOADER_START 0
-#define FLASH_SECTOR_BOARDLOADER_END 0
+#define FLASH_SECTOR_BOARDLOADER 0
 #define FLASH_SECTOR_BOOTLOADER_1 1
 #define FLASH_SECTOR_BOOTLOADER_2 2
 #define FLASH_SECTOR_OTP_EMULATOR 15
@@ -90,6 +89,9 @@ secbool __wur flash_write_words(uint8_t sector, uint32_t offset,
 
 bool flash_check_ecc_fault();
 bool flash_clear_ecc_fault(uint32_t address);
+#if !PRODUCTION
+bool flash_fix_ecc_fault_BOARDLOADER(uint32_t address);
+#endif
 bool flash_fix_ecc_fault_BOOTLOADER(uint32_t address);
 bool flash_fix_ecc_fault_FIRMWARE(uint32_t address);
 bool flash_fix_ecc_fault_FIRMWARE_v2(uint32_t address);

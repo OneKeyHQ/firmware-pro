@@ -28,14 +28,12 @@
 
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
-#define         DEVICE_ID1          (0x5C001000)
-#define         DEVICE_ID2          (0x5C001004)
-#define         DEVICE_ID3          (0x5C001008)
+#define  USB_SIZ_STRING_SERIAL       0x20
 
-#define  USB_SIZ_STRING_SERIAL       0x1A
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
 extern USBD_DescriptorsTypeDef MSC_Desc;
+void USBD_MSC_SetSerial(char* serial, size_t len);
 
 #endif /* __USBD_DESC_H */
  
