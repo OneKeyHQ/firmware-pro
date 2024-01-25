@@ -1,6 +1,6 @@
 device STM32H747XI_M7
 SelectInterface swd
-speed 8000
+speed 50000
 loadbin build/bootloader/bootloader.bin 0x08020000
 rx 100
 g

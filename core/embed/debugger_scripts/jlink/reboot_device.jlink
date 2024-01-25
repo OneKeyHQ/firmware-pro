@@ -1,5 +1,5 @@
 device STM32H747XI_M7
-if swd
+SelectInterface swd
 speed 50000
 rx 100
 exit

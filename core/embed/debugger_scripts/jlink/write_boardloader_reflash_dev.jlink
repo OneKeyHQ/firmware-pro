@@ -1,0 +1,7 @@
+device STM32H747XI_M7
+SelectInterface swd
+speed 50000
+loadbin build/boardloader_reflash_dev/boardloader_reflash_dev.bin 0x08020000
+rx 100
+g
+exit
