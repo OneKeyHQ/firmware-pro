@@ -682,21 +682,20 @@ static void _nfc_test(void){
                COLOR_RED);
   // display_text(DISPLAY_RESX - 118, DISPLAY_RESY - 120, "Yes", -1, FONT_NORMAL,
   //              COLOR_WHITE, COLOR_GREEN);
-  pn532->PowerOn();
-  pn532->SAMConfiguration(PN532_SAM_Normal, 0x14, true);
-  // InListPassiveTarget
-  PN532_InListPassiveTarget_Params ILPT_params = {
-      .MaxTg = 1,
-      .BrTy = PN532_InListPassiveTarget_BrTy_106k_typeA,
-      .InitiatorData_len = 0,
-  };
-  PN532_InListPassiveTarget_Results ILPT_result = {0};
+  nfc_pwr_ctl(true);
   while(1){
-    if (pn532->InListPassiveTarget(ILPT_params, &ILPT_result) &&
-        ILPT_result.NbTg == 1){
-          screen_bg[NFC_TEST] = COLOR_GREEN;
-          return;
-        
+    if (nfc_poll_card()==NFC_STATUS_OPERACTION_SUCCESS){
+        if(nfc_select_aid((uint8_t *)"\xD1\x56\x00\x01\x32\x83\x40\x01",8)==NFC_STATUS_OPERACTION_SUCCESS){
+            screen_bg[NFC_TEST] = COLOR_GREEN;
+            nfc_pwr_ctl(false);
+            return;
+          }
+
+          if(nfc_select_aid((uint8_t *)"\x6f\x6e\x65\x6b\x65\x79\x2e\x62\x61\x63\x6b\x75\x70\x01",14)==NFC_STATUS_OPERACTION_SUCCESS){
+            screen_bg[NFC_TEST] = COLOR_GREEN;
+            nfc_pwr_ctl(false);
+            return;
+          }      
         }
     uint32_t evt = touch_click();
 
@@ -710,6 +709,7 @@ static void _nfc_test(void){
     if (x >= 32 && x < 32 + 128 && y > DISPLAY_RESY - 160 &&
         y < DISPLAY_RESY - 160 + 64) {
       screen_bg[NFC_TEST] = COLOR_RED;
+      nfc_pwr_ctl(false);
       return;
     }
     // // clicked on Confirm button
@@ -797,14 +797,15 @@ int spi_flash_test(void) {
 
   for (uint32_t address = 0; address < (1 * 1024 * 1024);
        address += QSPI_SECTOR_SIZE) {
-    qspi_flash_erase_block_64k(address);
+    ensure(qspi_flash_erase_block_64k(address)==HAL_OK?sectrue:secfalse, NULL);
 
     for (uint32_t offset = 0; offset < QSPI_SECTOR_SIZE;
          offset += sizeof(flash_data)) {
-      qspi_flash_read_buffer(flash_data, address + offset, sizeof(flash_data));
+      ensure(qspi_flash_read_buffer(flash_data, address + offset, sizeof(flash_data))==HAL_OK?sectrue:secfalse, NULL);
       for (uint32_t i = 0; i < sizeof(flash_data); i++) {
         if (flash_data[i] != 0xFF) {
           screen_bg[SPI_FLASH_TEST] = COLOR_RED;
+          ensure(secfalse,"erase compare failed");
           return 0;
         }
       }
@@ -812,12 +813,17 @@ int spi_flash_test(void) {
 
     for (uint32_t offset = 0; offset < QSPI_SECTOR_SIZE;
          offset += sizeof(test_data)) {
-      qspi_flash_write_buffer_unsafe(test_data, address + offset,
-                                     sizeof(test_data));
+      ensure(qspi_flash_write_buffer_unsafe(test_data, address + offset,
+                                     sizeof(test_data))==HAL_OK?sectrue:secfalse, NULL);
       memset(flash_data, 0x00, sizeof(flash_data));
-      qspi_flash_read_buffer(flash_data, address + offset, sizeof(flash_data));
+      ensure(qspi_flash_read_buffer(flash_data, address + offset, sizeof(flash_data))==HAL_OK?sectrue:secfalse, NULL);
       for (uint32_t i = 0; i < sizeof(flash_data); i++) {
         if (flash_data[i] != i % 256) {
+          // ensure(secfalse,"read compare failed");
+          display_clear();
+          display_printf("write compare failed,address:%d,offset:%d,loc:%d\n",(unsigned)address,(unsigned)offset,(unsigned)i);
+          display_printf("%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,",flash_data[0],flash_data[1],flash_data[2],flash_data[3],flash_data[4],flash_data[5],flash_data[6],flash_data[7],flash_data[8],flash_data[9],flash_data[10],flash_data[11],flash_data[12],flash_data[13],flash_data[14],flash_data[15],flash_data[16]);
+          while(1);
           screen_bg[SPI_FLASH_TEST] = COLOR_RED;
           return 0;
         }
@@ -1119,15 +1125,16 @@ int main(void) {
 
   sdram_init();
 
-  qspi_flash_init();
-  qspi_flash_config();
-  // qspi_flash_memory_mapped();
-
   mpu_config();
 
   lcd_init(DISPLAY_RESX, DISPLAY_RESY, LCD_PIXEL_FORMAT_RGB565);
   display_clear();
   lcd_pwm_init();
+
+    qspi_flash_init();
+  qspi_flash_config();
+  // qspi_flash_memory_mapped();
+
 
   if (startup_mode_flag != STAY_IN_BOARDLOADER_FLAG &&
       startup_mode_flag != STAY_IN_BOOTLOADER_FLAG) {

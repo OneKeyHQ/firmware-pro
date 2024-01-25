@@ -50,5 +50,5 @@ int qspi_flash_write_buffer_unsafe(uint8_t *data, uint32_t address,
                                    uint32_t len);
 int qspi_flash_read_buffer(uint8_t *data, uint32_t address, uint32_t len);
 void qspi_flash_test(void);
-
+int qspi_flash_read_buffer_single(uint8_t *data, uint32_t address, uint32_t len);
 #endif
