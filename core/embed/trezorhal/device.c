@@ -181,7 +181,6 @@ bool device_set_serial(char *dev_serial) {
                              FLASH_OTP_BLOCK_SIZE),
              NULL);
       ensure(flash_otp_lock(FLASH_OTP_DEVICE_SERIAL), NULL);
-      device_para_init();
       return true;
     }
   }
@@ -941,6 +940,7 @@ bool device_restore_otp() {
 bool device_overwrite_serial(char *dev_serial) {
   // not set, no need to overwrite
   if (device_set_serial(dev_serial)) {
+    device_para_init();
     return true;
   }
 
