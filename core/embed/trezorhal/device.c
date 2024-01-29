@@ -449,22 +449,27 @@ static bool _nfc_test() {
   ui_generic_confirm_simple("NFC test");
 
   nfc_init();
-  pn532->PowerOn();
-  pn532->SAMConfiguration(PN532_SAM_Normal, 0x14, true);
-  // InListPassiveTarget
-  PN532_InListPassiveTarget_Params ILPT_params = {
-      .MaxTg = 1,
-      .BrTy = PN532_InListPassiveTarget_BrTy_106k_typeA,
-      .InitiatorData_len = 0,
-  };
-  PN532_InListPassiveTarget_Results ILPT_result = {0};
+  nfc_pwr_ctl(true);
   while (1) {
-    if (pn532->InListPassiveTarget(ILPT_params, &ILPT_result) &&
-        ILPT_result.NbTg == 1) {
-      return true;
+    if (nfc_poll_card() == NFC_STATUS_OPERACTION_SUCCESS) {
+      if (nfc_select_aid((uint8_t *)"\xD1\x56\x00\x01\x32\x83\x40\x01", 8) ==
+          NFC_STATUS_OPERACTION_SUCCESS) {
+        nfc_pwr_ctl(false);
+        return true;
+      }
+
+      if (nfc_select_aid(
+              (uint8_t
+                   *)"\x6f\x6e\x65\x6b\x65\x79\x2e\x62\x61\x63\x6b\x75\x70\x01",
+              14) == NFC_STATUS_OPERACTION_SUCCESS) {
+        nfc_pwr_ctl(false);
+        return true;
+      }
     }
+
     ui_res = ui_response_ex();
     if (ui_res != UI_RESPONSE_NONE) {
+      nfc_pwr_ctl(false);
       return ui_res == UI_RESPONSE_YES;
     }
   }
@@ -693,15 +698,7 @@ void device_burnin_test(bool force) {
   motor_init();
 
   nfc_init();
-  pn532->PowerOn();
-  pn532->SAMConfiguration(PN532_SAM_Normal, 0x14, true);
-  // InListPassiveTarget
-  PN532_InListPassiveTarget_Params ILPT_params = {
-      .MaxTg = 1,
-      .BrTy = PN532_InListPassiveTarget_BrTy_106k_typeA,
-      .InitiatorData_len = 0,
-  };
-  PN532_InListPassiveTarget_Results ILPT_result = {0};
+  nfc_pwr_ctl(true);
 
   previous_remain = 0;
   previous = 0;
@@ -876,9 +873,16 @@ void device_burnin_test(bool force) {
         hal_delay(5);
       }
       card_state = false;
-      if (pn532->InListPassiveTarget(ILPT_params, &ILPT_result) &&
-          ILPT_result.NbTg == 1) {
-        card_state = true;
+
+      if (nfc_poll_card() == NFC_STATUS_OPERACTION_SUCCESS) {
+        if (nfc_select_aid((uint8_t *)"\xD1\x56\x00\x01\x32\x83\x40\x01", 8) ==
+            NFC_STATUS_OPERACTION_SUCCESS) {
+          card_state = true;
+        } else if (nfc_select_aid((uint8_t *)"\x6f\x6e\x65\x6b\x65\x79\x2e\x62"
+                                             "\x61\x63\x6b\x75\x70\x01",
+                                  14) == NFC_STATUS_OPERACTION_SUCCESS) {
+          card_state = true;
+        }
       }
       fingerprint_detect = false;
       if (FpsDetectFinger() == 1) {

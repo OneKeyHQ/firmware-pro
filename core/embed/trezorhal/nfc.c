@@ -317,6 +317,66 @@ NFC_STATUS nfc_send_recv_aio(
     return result;
 }
 
+NFC_STATUS nfc_poll_card(void)
+{
+    // sanity check
+    if ( pn532 == NULL || !nfc_powered_on )
+    {
+        return NFC_STATUS_NOT_INITIALIZED;
+    }
+
+    NFC_STATUS result = NFC_STATUS_UNDEFINED_ERROR;
+
+    // InListPassiveTarget
+    PN532_InListPassiveTarget_Params ILPT_params = {
+        .MaxTg = 1,
+        .BrTy = PN532_InListPassiveTarget_BrTy_106k_typeA,
+        .InitiatorData_len = 0,
+    };
+    PN532_InListPassiveTarget_Results ILPT_result = {0};
+
+    // detect card
+    if ( pn532->InListPassiveTarget(ILPT_params, &ILPT_result) )
+    {
+        // detected
+        // only allow a single card
+        if ( ILPT_result.NbTg == 1 )
+        {
+            result = NFC_STATUS_OPERACTION_SUCCESS;
+        }
+        else
+        {
+            result = NFC_STATUS_OPERACTION_FAILED;
+        }
+    }
+
+    return result;
+}
+
+NFC_STATUS nfc_select_aid(uint8_t* aid, uint8_t aid_len)
+{
+    uint8_t apdu_select[64] = {0x00, 0xA4, 0x04, 0x00, 0x00};
+    uint8_t response[64] = {0};
+    uint16_t response_len = 64;
+    apdu_select[4] = aid_len;
+    memcpy(apdu_select + 5, aid, aid_len);
+    NFC_STATUS result = nfc_send_recv(apdu_select, aid_len + 5, response, &response_len);
+
+    if ( result == NFC_STATUS_OPERACTION_SUCCESS )
+    {
+        if ( response[0] == 0x90 && response[1] == 0x00 )
+        {
+            result = NFC_STATUS_OPERACTION_SUCCESS;
+        }
+        else
+        {
+            result = NFC_STATUS_OPERACTION_FAILED;
+        }
+    }
+
+    return result;
+}
+
 void nfc_test()
 {
     display_printf("TouchPro Demo Mode\n");
