@@ -1161,7 +1161,7 @@ class SolBlindingSign(FullSizeWindow):
         self.warning_banner = Banner(
             self.content_area, 2, _(i18n_keys.TITLE__UNKNOWN_TRANSACTION)
         )
-        self.warning_banner.algin(lv.ALIGN.TOP_MID, 0, 40)
+        self.warning_banner.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, 40)
         self.container = ContainerFlexCol(self.content_area, self.title)
         self.container.align_to(self.warning_banner, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
 
@@ -3074,6 +3074,19 @@ class Signature(FullSizeWindow):
             self.qr_code,
         )
         self.qr.align_to(self.subtitle, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 30)
+
+
+class ErrorFeedback(FullSizeWindow):
+    def __init__(self, title, subtitle, btn_text: str = ""):
+        super().__init__(
+            title,
+            subtitle,
+            cancel_text=_(i18n_keys.BUTTON__BACK) if not btn_text else btn_text,
+            icon_path="A:/res/danger.png",
+        )
+
+    def destroy(self):
+        return super().destroy(0)
 
 
 ##################

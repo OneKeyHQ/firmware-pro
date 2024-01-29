@@ -142,8 +142,11 @@ class URDecoder:
                 self.result = self.fountain_decoder.result_error()
 
             return True
-        except Exception as err:
-            raise Exception("Expected {}".format(err))
+        except Exception as exc:
+            if __debug__:
+                from trezor import log
+                log.exception(__name__, exc)
+            raise exc
 
     # def expected_type(self):
     #     return self.expected_type

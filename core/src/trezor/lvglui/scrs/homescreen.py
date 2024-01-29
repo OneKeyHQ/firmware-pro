@@ -1196,6 +1196,14 @@ class ScanScreen(Screen):
                 uart.flashled_close()
                 close_camera()
 
+    async def error_feedback(self):
+        from trezor.ui.layouts import show_error_no_interact
+
+        await show_error_no_interact(
+            _(i18n_keys.TITLE__DATA_FORMAT_NOT_SUPPORT),
+            _(i18n_keys.CONTENT__QR_CODE_TYPE_NOT_SUPPORT_PLEASE_TRY_AGAIN),
+        )
+
     def _load_scr(self, scr: "Screen", back: bool = False) -> None:
         lv.scr_load(scr)
 

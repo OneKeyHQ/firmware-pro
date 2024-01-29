@@ -129,13 +129,19 @@ def scan_qr(callback_obj):
             if qr_data:
                 if __debug__:
                     print(qr_data.decode("utf-8"))
-                decoder.receive_part(qr_data.decode("utf-8"))
-                if decoder.is_complete():
-                    motor.vibrate()
-                    camera.stop()
-                    if type(decoder.result) is UR:
-                        await handle_qr(decoder.result)
-                    break
+                try:
+                    decoder.receive_part(qr_data.decode("utf-8"))
+                except Exception:
+                    await callback_obj.error_feedback()
+                    await loop.sleep(100)
+                    continue
+                else:
+                    if decoder.is_complete():
+                        motor.vibrate()
+                        camera.stop()
+                        if type(decoder.result) is UR:
+                            await handle_qr(decoder.result)
+                        break
             await loop.sleep(1)
 
     workflow.spawn(camear_scan())

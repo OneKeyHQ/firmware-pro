@@ -73,6 +73,7 @@ __all__ = (
     "show_signature",
     "enable_airgap_mode",
     "confirm_nostrmessage",
+    "show_error_no_interact",
 )
 
 
@@ -470,6 +471,17 @@ def show_success(
         icon="A:/res/success.png",
         icon_color=ui.GREEN,
     )
+
+
+async def show_error_no_interact(title: str, subtitle: str, cancel_text: str = ""):
+    from trezor.lvglui.scrs.template import ErrorFeedback
+
+    screen = ErrorFeedback(
+        title,
+        subtitle,
+        cancel_text,
+    )
+    await screen.request()
 
 
 async def confirm_output(

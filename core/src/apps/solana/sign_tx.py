@@ -57,7 +57,12 @@ async def sign_tx(
     accounts_keys = message.account_keys
     # verify fee payer
     if accounts_keys[0].get() != signer_pub_key_bytes:
-        raise wire.DataError("Invalid signer used")
+        if __debug__:
+            print(
+                f"Invalid signer used got {str(PublicKey(accounts_keys[0].get()))}, expect {str(PublicKey(signer_pub_key_bytes))}"
+            )
+        else:
+            raise wire.DataError("Invalid signer used")
 
     # recent_blockhash is something like nonce in ethereum
     _recent_blockhash = message.recent_blockhash  # noqa: F841
