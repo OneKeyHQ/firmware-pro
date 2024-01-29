@@ -11,6 +11,7 @@
 #include "qspi_flash.h"
 #include "rand.h"
 #include "se_thd89.h"
+#include "secp256k1.h"
 #include "sha2.h"
 #include "systick.h"
 #include "thd89.h"
@@ -48,22 +49,51 @@ void device_set_factory_mode(bool mode) { factory_mode = mode; }
 
 bool device_is_factory_mode(void) { return factory_mode; }
 
+void device_verify_ble(void) {
+  uint8_t pubkey[65];
+  uint8_t rand_buf[16], signature[64], digest[32];
+  char *ble_ver;
+  ensure(ble_get_version(&ble_ver) ? sectrue : secfalse, NULL);
+
+  if (secfalse == flash_otp_is_locked(FLASH_OTP_BLOCK_BLE_PUBKEY1) ||
+      secfalse == flash_otp_is_locked(FLASH_OTP_BLOCK_BLE_PUBKEY2)) {
+    ensure(ble_get_pubkey(pubkey) ? sectrue : secfalse, NULL);
+    ensure(ble_lock_pubkey() ? sectrue : secfalse, NULL);
+    ensure(flash_otp_write(FLASH_OTP_BLOCK_BLE_PUBKEY1, 0, pubkey + 1,
+                           FLASH_OTP_BLOCK_SIZE),
+           NULL);
+    ensure(flash_otp_write(FLASH_OTP_BLOCK_BLE_PUBKEY2, 0, pubkey + 33,
+                           FLASH_OTP_BLOCK_SIZE),
+           NULL);
+    ensure(flash_otp_lock(FLASH_OTP_BLOCK_BLE_PUBKEY1), NULL);
+    ensure(flash_otp_lock(FLASH_OTP_BLOCK_BLE_PUBKEY2), NULL);
+  } else {
+    ensure(flash_otp_read(FLASH_OTP_BLOCK_BLE_PUBKEY1, 0, pubkey + 1,
+                          FLASH_OTP_BLOCK_SIZE),
+           NULL);
+    ensure(flash_otp_read(FLASH_OTP_BLOCK_BLE_PUBKEY2, 0, pubkey + 33,
+                          FLASH_OTP_BLOCK_SIZE),
+           NULL);
+  }
+  pubkey[0] = 0x04;
+  random_buffer(rand_buf, sizeof(rand_buf));
+  ensure(
+      ble_sign_msg(rand_buf, sizeof(rand_buf), signature) ? sectrue : secfalse,
+      NULL);
+  sha256_Raw(rand_buf, 16, digest);
+
+  ensure(ecdsa_verify_digest(&secp256k1, pubkey, signature, digest) == 0
+             ? sectrue
+             : secfalse,
+         NULL);
+}
+
 void device_para_init(void) {
   dev_info.st_id[0] = HAL_GetUIDw0();
   dev_info.st_id[1] = HAL_GetUIDw1();
   dev_info.st_id[2] = HAL_GetUIDw2();
 
-  // if (secfalse == flash_otp_is_locked(FLASH_OTP_BLOCK_THD89_SESSION_KEY)) {
-  //   uint8_t entropy[FLASH_OTP_BLOCK_SIZE];
-  //   random_buffer(entropy, FLASH_OTP_BLOCK_SIZE);
-  //   ensure(se_set_session_key(entropy), NULL);
-  //   ensure(flash_otp_write(FLASH_OTP_BLOCK_THD89_SESSION_KEY, 0, entropy,
-  //                          FLASH_OTP_BLOCK_SIZE),
-  //          NULL);
-  //   ensure(flash_otp_lock(FLASH_OTP_BLOCK_THD89_SESSION_KEY), NULL);
-  // }
-
-  uint8_t pubkey[FLASH_OTP_BLOCK_SIZE];
+  uint8_t pubkey[64];
   if (secfalse == flash_otp_is_locked(FLASH_OTP_BLOCK_THD89_1_PUBKEY1) ||
       secfalse == flash_otp_is_locked(FLASH_OTP_BLOCK_THD89_1_PUBKEY2)) {
     ensure(se_get_ecdh_pubkey(THD89_MASTER_ADDRESS, pubkey), NULL);
@@ -419,22 +449,27 @@ static bool _nfc_test() {
   ui_generic_confirm_simple("NFC test");
 
   nfc_init();
-  pn532->PowerOn();
-  pn532->SAMConfiguration(PN532_SAM_Normal, 0x14, true);
-  // InListPassiveTarget
-  PN532_InListPassiveTarget_Params ILPT_params = {
-      .MaxTg = 1,
-      .BrTy = PN532_InListPassiveTarget_BrTy_106k_typeA,
-      .InitiatorData_len = 0,
-  };
-  PN532_InListPassiveTarget_Results ILPT_result = {0};
+  nfc_pwr_ctl(true);
   while (1) {
-    if (pn532->InListPassiveTarget(ILPT_params, &ILPT_result) &&
-        ILPT_result.NbTg == 1) {
-      return true;
+    if (nfc_poll_card() == NFC_STATUS_OPERACTION_SUCCESS) {
+      if (nfc_select_aid((uint8_t *)"\xD1\x56\x00\x01\x32\x83\x40\x01", 8) ==
+          NFC_STATUS_OPERACTION_SUCCESS) {
+        nfc_pwr_ctl(false);
+        return true;
+      }
+
+      if (nfc_select_aid(
+              (uint8_t
+                   *)"\x6f\x6e\x65\x6b\x65\x79\x2e\x62\x61\x63\x6b\x75\x70\x01",
+              14) == NFC_STATUS_OPERACTION_SUCCESS) {
+        nfc_pwr_ctl(false);
+        return true;
+      }
     }
+
     ui_res = ui_response_ex();
     if (ui_res != UI_RESPONSE_NONE) {
+      nfc_pwr_ctl(false);
       return ui_res == UI_RESPONSE_YES;
     }
   }
@@ -663,15 +698,7 @@ void device_burnin_test(bool force) {
   motor_init();
 
   nfc_init();
-  pn532->PowerOn();
-  pn532->SAMConfiguration(PN532_SAM_Normal, 0x14, true);
-  // InListPassiveTarget
-  PN532_InListPassiveTarget_Params ILPT_params = {
-      .MaxTg = 1,
-      .BrTy = PN532_InListPassiveTarget_BrTy_106k_typeA,
-      .InitiatorData_len = 0,
-  };
-  PN532_InListPassiveTarget_Results ILPT_result = {0};
+  nfc_pwr_ctl(true);
 
   previous_remain = 0;
   previous = 0;
@@ -846,9 +873,16 @@ void device_burnin_test(bool force) {
         hal_delay(5);
       }
       card_state = false;
-      if (pn532->InListPassiveTarget(ILPT_params, &ILPT_result) &&
-          ILPT_result.NbTg == 1) {
-        card_state = true;
+
+      if (nfc_poll_card() == NFC_STATUS_OPERACTION_SUCCESS) {
+        if (nfc_select_aid((uint8_t *)"\xD1\x56\x00\x01\x32\x83\x40\x01", 8) ==
+            NFC_STATUS_OPERACTION_SUCCESS) {
+          card_state = true;
+        } else if (nfc_select_aid((uint8_t *)"\x6f\x6e\x65\x6b\x65\x79\x2e\x62"
+                                             "\x61\x63\x6b\x75\x70\x01",
+                                  14) == NFC_STATUS_OPERACTION_SUCCESS) {
+          card_state = true;
+        }
       }
       fingerprint_detect = false;
       if (FpsDetectFinger() == 1) {

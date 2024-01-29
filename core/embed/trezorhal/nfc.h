@@ -26,4 +26,7 @@ NFC_STATUS nfc_send_recv_aio(
     uint8_t* send, uint16_t sendLength, uint8_t* response, uint16_t* responseLength, uint32_t timeout_ms
 );
 
+NFC_STATUS nfc_poll_card(void);
+NFC_STATUS nfc_select_aid(uint8_t* aid, uint8_t aid_len);
+
 #endif // __NFC_H__

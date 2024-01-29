@@ -361,6 +361,8 @@ uint32_t qspi_flash_read_id(void) {
     qspi_flash_memory_mapped();
   }
 
+  sf_info.manufacturer_id = buf[0];
+
   id = (buf[0] << 16) | (buf[1] << 8) | buf[2];
 
   return id;
@@ -375,7 +377,8 @@ int qspi_flash_config(void) {
   }
 
   // WINBOND GIGADEVICE
-  if (((id >> 16 & 0xFF) == 0xEF) || ((id >> 16 & 0xFF) == 0xC8)) {
+  if ((sf_info.manufacturer_id == WINBOND_MANUFACTURER_ID) ||
+      (sf_info.manufacturer_id == GIGADEVICE_MANUFACTURER_ID)) {
     qspi_flash_read_status2(&status2);
     // quad enable bit
     if ((status2 & 0x02) == 0) {
@@ -384,8 +387,8 @@ int qspi_flash_config(void) {
       qspi_flash_write_status2(status2 | 0x02);
     }
   }
-  if ((id >> 16 & 0xFF) == 0xC8) {
-    qspi_flash_hp_modoe();
+  if (sf_info.manufacturer_id == GIGADEVICE_MANUFACTURER_ID) {
+    // qspi_flash_hp_modoe();
   }
 
   switch (id & 0xFF) {
@@ -630,12 +633,21 @@ int qspi_flash_read_buffer(uint8_t *data, uint32_t address, uint32_t len) {
   command.DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY;
   command.SIOOMode = QSPI_SIOO_INST_EVERY_CMD;
 
-  command.Instruction = QUAD_INOUT_FAST_READ_4_BYTE_ADDR_CMD;
-  command.DummyCycles = 6;
-  command.AddressMode = QSPI_ADDRESS_4_LINES;
-  command.DataMode = QSPI_DATA_4_LINES;
-  command.NbData = len;
-  command.Address = address;
+  if (sf_info.manufacturer_id == WINBOND_MANUFACTURER_ID) {
+    command.Instruction = QUAD_INOUT_FAST_READ_4_BYTE_ADDR_CMD;
+    command.DummyCycles = 6;
+    command.AddressMode = QSPI_ADDRESS_4_LINES;
+    command.DataMode = QSPI_DATA_4_LINES;
+    command.NbData = len;
+    command.Address = address;
+  } else if (sf_info.manufacturer_id == GIGADEVICE_MANUFACTURER_ID) {
+    command.Instruction = READ_DATA_BYTES_CMD;
+    command.DummyCycles = 0;
+    command.AddressMode = QSPI_ADDRESS_1_LINE;
+    command.DataMode = QSPI_DATA_1_LINE;
+    command.NbData = len;
+    command.Address = address;
+  }
 
   if (HAL_QSPI_Command(&hqspi, &command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) !=
       HAL_OK) {
@@ -669,10 +681,17 @@ int qspi_flash_memory_mapped(void) {
   command.DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY;
   command.SIOOMode = QSPI_SIOO_INST_EVERY_CMD;
 
-  command.Instruction = QUAD_INOUT_FAST_READ_4_BYTE_ADDR_CMD;
-  command.AddressMode = QSPI_ADDRESS_4_LINES;
-  command.DataMode = QSPI_DATA_4_LINES;
-  command.DummyCycles = 6;
+  if (sf_info.manufacturer_id == WINBOND_MANUFACTURER_ID) {
+    command.Instruction = QUAD_INOUT_FAST_READ_4_BYTE_ADDR_CMD;
+    command.AddressMode = QSPI_ADDRESS_4_LINES;
+    command.DataMode = QSPI_DATA_4_LINES;
+    command.DummyCycles = 6;
+  } else if (sf_info.manufacturer_id == GIGADEVICE_MANUFACTURER_ID) {
+    command.Instruction = READ_DATA_BYTES_CMD;
+    command.AddressMode = QSPI_ADDRESS_1_LINE;
+    command.DataMode = QSPI_DATA_1_LINE;
+    command.DummyCycles = 0;
+  }
 
   s_mem_mapped_cfg.TimeOutActivation = QSPI_TIMEOUT_COUNTER_DISABLE;
   s_mem_mapped_cfg.TimeOutPeriod = 0;

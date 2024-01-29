@@ -18,12 +18,17 @@
 #define SECTOR_64K_ERASE_CMD 0xD8
 #define QUAD_IN_FAST_PROG_4_BYTE_ADDR_CMD 0x32
 #define QUAD_INOUT_FAST_READ_4_BYTE_ADDR_CMD 0xEB
+#define READ_DATA_BYTES_CMD 0x03
 
 #define QSPI_FLASH_BASE_ADDRESS (0x90000000)
 #define QSPI_FLASH_STORAG_OFFSET (7 * 1024 * 1024)
 
+#define WINBOND_MANUFACTURER_ID 0xEF
+#define GIGADEVICE_MANUFACTURER_ID 0xC8
+
 typedef struct {
   uint8_t uniq_id[8];
+  uint8_t manufacturer_id;
   uint16_t page_size;
   uint32_t page_count;
   uint32_t sector_size;

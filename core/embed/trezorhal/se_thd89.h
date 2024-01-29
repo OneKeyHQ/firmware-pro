@@ -18,7 +18,7 @@ void se_set_ui_callback(UI_WAIT_CALLBACK callback);
 secbool se_transmit_mac(uint8_t ins, uint8_t p1, uint8_t p2, uint8_t *data,
                         uint16_t data_len, uint8_t *recv, uint16_t *recv_len);
 
-secbool se_get_rand(uint8_t *rand, uint8_t rand_len);
+secbool se_get_rand(uint8_t *rand, uint16_t rand_len);
 secbool se_reset_se(void);
 secbool se_random_encrypted(uint8_t *rand, uint16_t len);
 secbool se_random_encrypted_ex(uint8_t addr, uint8_t *session_key,

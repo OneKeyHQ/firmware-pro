@@ -22,6 +22,8 @@ static char ble_proto_ver[16 + 1] = {0};
 static char ble_boot_ver[6] = {0};
 static uint8_t dev_press_sta = 0;
 static uint8_t dev_pwr = 0;
+static int ble_request_state = -1;
+static uint8_t ble_response_buf[64];
 
 static uint8_t calXor(uint8_t *buf, uint32_t len) {
   uint8_t tmp = 0;
@@ -48,7 +50,7 @@ void ble_cmd_req(uint8_t cmd, uint8_t value) {
   buf[0] = cmd;
   buf[1] = value;
   ble_cmd_packet(buf, 2);
-  hal_delay(10);
+  hal_delay(5);
 }
 
 void ble_cmd_req_ex(uint8_t cmd, const uint8_t *value, uint32_t value_len) {
@@ -56,7 +58,111 @@ void ble_cmd_req_ex(uint8_t cmd, const uint8_t *value, uint32_t value_len) {
   buf[0] = cmd;
   memcpy(buf + 1, value, value_len);
   ble_cmd_packet(buf, value_len + 1);
-  hal_delay(10);
+  hal_delay(5);
+}
+
+bool ble_get_version(char **ver) {
+  // if (get_ble_ver) {
+  //   *ver = ble_ver;
+  //   return true;
+  // }
+  // ble_cmd_req(BLE_VER, BLE_VER_FW);
+  // uint8_t counter = 0;
+  // while (1) {
+  //   ble_uart_poll();
+  //   if (get_ble_ver) {
+  //     break;
+  //   }
+  //   counter++;
+  //   hal_delay(100);
+  //   if (counter > 20) {
+  //     return false;
+  //   }
+  //   ble_cmd_req(BLE_VER, BLE_VER_FW);
+  // }
+  ble_refresh_dev_info();
+  *ver = ble_ver;
+  return true;
+}
+
+bool ble_get_pubkey(uint8_t *pubkey) {
+  uint8_t cmd[64] = {0};
+  uint8_t counter = 0;
+  cmd[0] = BLE_DEVICE_KEY;
+  cmd[1] = BLE_DEVICE_KEY_GET;
+  ble_cmd_packet(cmd, 2);
+  ble_request_state = -1;
+  while (1) {
+    ble_uart_poll();
+    if (ble_request_state != -1) {
+      break;
+    }
+    counter++;
+    hal_delay(100);
+    if (counter > 20) {
+      return false;
+    }
+    ble_cmd_packet(cmd, 2);
+  }
+  if (ble_request_state != 0) {
+    return false;
+  }
+  memcpy(pubkey, ble_response_buf, 64);
+  memset(ble_response_buf, 0x00, 64);
+  return true;
+}
+
+bool ble_lock_pubkey(void) {
+  uint8_t cmd[64] = {0};
+  uint8_t counter = 0;
+  cmd[0] = BLE_DEVICE_KEY;
+  cmd[1] = BLE_DEVICE_KEY_LOCK;
+  ble_cmd_packet(cmd, 2);
+  ble_request_state = -1;
+  while (1) {
+    ble_uart_poll();
+    if (ble_request_state != -1) {
+      break;
+    }
+    counter++;
+    hal_delay(100);
+    if (counter > 20) {
+      return false;
+    }
+    ble_cmd_packet(cmd, 2);
+  }
+  if (ble_request_state != 0) {
+    return false;
+  }
+  return true;
+}
+
+bool ble_sign_msg(uint8_t *msg, uint32_t msg_len, uint8_t *sign) {
+  uint8_t cmd[64] = {0};
+  uint8_t counter = 0;
+  cmd[0] = BLE_DEVICE_KEY;
+  cmd[1] = BLE_DEVICE_KEY_SIGN;
+  memcpy(cmd + 2, msg, msg_len);
+  ble_cmd_packet(cmd, msg_len + 2);
+  ble_request_state = -1;
+  while (1) {
+    ble_uart_poll();
+    if (ble_request_state != -1) {
+      break;
+    }
+    counter++;
+    hal_delay(100);
+    if (counter > 20) {
+      return false;
+    }
+    ble_cmd_packet(cmd, msg_len + 2);
+  }
+  if (ble_request_state != 0) {
+    return false;
+  }
+  memcpy(sign, ble_response_buf, 64);
+  memset(ble_response_buf, 0x00, 64);
+  return true;
 }
 
 bool ble_connect_state(void) { return ble_connect; }
@@ -91,7 +197,7 @@ void ble_uart_poll(void) {
   uint32_t total_len, len;
 
   uint8_t passkey[7] = {0};
-  uint8_t buf[64] = {0};
+  uint8_t buf[128] = {0};
 
   total_len = fifo_lockdata_len(&uart_fifo_in);
   if (total_len < 5) {
@@ -167,6 +273,19 @@ void ble_uart_poll(void) {
       break;
     case BLE_CMD_PWR:
       dev_pwr = ble_usart_msg.cmd_vale[0];
+      break;
+    case BLE_CMD_DEV_KEY:
+      if (ble_usart_msg.cmd_vale[0] == BLE_KEY_RESP_PUBKEY) {
+        memcpy(ble_response_buf, ble_usart_msg.cmd_vale + 1, 64);
+        ble_request_state = 0;
+      } else if (ble_usart_msg.cmd_vale[0] == BLE_KEY_RESP_SIGN) {
+        memcpy(ble_response_buf, ble_usart_msg.cmd_vale + 1, 64);
+        ble_request_state = 0;
+      } else if (ble_usart_msg.cmd_vale[0] == BLE_KEY_RESP_FAILED) {
+        ble_request_state = 1;
+      } else if (ble_usart_msg.cmd_vale[0] == BLE_KEY_RESP_SUCCESS) {
+        ble_request_state = 0;
+      }
       break;
     default:
       break;

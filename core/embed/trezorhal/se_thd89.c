@@ -71,24 +71,20 @@ static void xor_cal(uint8_t *data1, uint8_t *data2, uint16_t len,
 
 void se_set_ui_callback(UI_WAIT_CALLBACK callback) { ui_callback = callback; }
 
-static secbool se_get_rand_ex(uint8_t addr, uint8_t *rand, uint8_t rand_len) {
+static secbool se_get_rand_ex(uint8_t addr, uint8_t *rand, uint16_t rand_len) {
   uint8_t rand_cmd[7] = {0x00, 0x84, 0x00, 0x00, 0x02};
   uint16_t resp_len = rand_len;
-
-  if (rand_len > 0x20) {
-    return secfalse;
-  }
 
   rand_cmd[5] = (rand_len >> 8) & 0xff;
   rand_cmd[6] = rand_len & 0xff;
   return thd89_transmit_ex(addr, rand_cmd, sizeof(rand_cmd), rand, &resp_len);
 }
 
-secbool se_get_rand(uint8_t *rand, uint8_t rand_len) {
+secbool se_get_rand(uint8_t *rand, uint16_t rand_len) {
   return se_get_rand_ex(THD89_MASTER_ADDRESS, rand, rand_len);
 }
 
-secbool se_fp_get_rand(uint8_t *rand, uint8_t rand_len) {
+secbool se_fp_get_rand(uint8_t *rand, uint16_t rand_len) {
   return se_get_rand_ex(THD89_FINGER_ADDRESS, rand, rand_len);
 }
 
