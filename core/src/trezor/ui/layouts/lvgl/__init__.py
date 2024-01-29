@@ -72,6 +72,7 @@ __all__ = (
     "should_show_details",
     "show_signature",
     "enable_airgap_mode",
+    "confirm_nostrmessage",
 )
 
 
@@ -2111,4 +2112,35 @@ async def show_signature(
         ),
         "show_signature",
         ButtonRequestType.SignTx,
+    )
+
+
+async def confirm_nostrmessage(
+    ctx: wire.GenericContext,
+    address: str,
+    message: str,
+    encrypt: bool,
+    title: str,
+) -> None:
+    from trezor.lvglui.scrs.template import Message
+
+    if encrypt:
+        br_type = "verify_message"
+    else:
+        br_type = "sign_message"
+    await raise_if_cancelled(
+        interact(
+            ctx,
+            Message(
+                title,
+                address,
+                message,
+                ctx.primary_color,
+                ctx.icon_path,
+                encrypt,
+                None,
+            ),
+            br_type,
+            ButtonRequestType.Other,
+        )
     )

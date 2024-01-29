@@ -54,6 +54,10 @@ def get_features() -> Features:
     from trezor import uart
     from apps.common import mnemonic, safety_checks
 
+    storage_serial_no = storage.device.get_serial()
+    serial_no = storage_serial_no
+    if serial_no[0:2] == "PR":
+        serial_no = "TC" + serial_no[2:]
     f = Features(
         vendor=get_vendor(),
         language=storage.device.get_language(),
@@ -70,7 +74,7 @@ def get_features() -> Features:
         ble_name=uart.get_ble_name(),
         ble_ver=uart.get_ble_version(),
         ble_enable=storage.device.ble_enabled(),
-        serial_no=storage.device.get_serial(),
+        serial_no=serial_no,
         build_id=utils.BUILD_ID,
         bootloader_version=utils.boot_version(),
         boardloader_version=utils.board_version(),
@@ -86,7 +90,7 @@ def get_features() -> Features:
         onekey_se_build_id=utils.se_build_id(),
         onekey_firmware_version=utils.ONEKEY_VERSION,
         onekey_firmware_build_id=str(utils.BUILD_ID),
-        onekey_serial_no=storage.device.get_serial(),
+        onekey_serial_no=storage_serial_no,
     )
 
     if utils.BITCOIN_ONLY:
