@@ -243,19 +243,28 @@ static secbool try_bootloader_update(bool do_update, bool auto_reboot) {
   memzero(boardloader_buf, BOOTLOADER_IMAGE_MAXSIZE);
 
   // read file
-  char new_bootloader_path[] = "0:boot/bootloader.bin";
+  char new_bootloader_path_legacy[] = "0:boot/bootloader.bin";
+  char new_bootloader_path[] = "0:updates/bootloader.bin";
+
+  char* new_bootloader_path_p = NULL;
 
   // check file exists
-  if (!emmc_fs_path_exist(new_bootloader_path)) return secfalse;
+  if (emmc_fs_path_exist(new_bootloader_path_legacy)){
+    new_bootloader_path_p = new_bootloader_path_legacy;
+  }
+  if (emmc_fs_path_exist(new_bootloader_path)){
+    new_bootloader_path_p = new_bootloader_path;
+  }
+  if (new_bootloader_path_p == NULL) return secfalse;
 
   // check file size
   EMMC_PATH_INFO file_info;
-  if (!emmc_fs_path_info(new_bootloader_path, &file_info)) return secfalse;
+  if (!emmc_fs_path_info(new_bootloader_path_p, &file_info)) return secfalse;
   if (file_info.size > BOOTLOADER_IMAGE_MAXSIZE) return secfalse;
 
   // read file to buffer
   uint32_t num_of_read = 0;
-  if (!emmc_fs_file_read(new_bootloader_path, 0, boardloader_buf,
+  if (!emmc_fs_file_read(new_bootloader_path_p, 0, boardloader_buf,
                          file_info.size, &num_of_read))
     return secfalse;
 
@@ -381,8 +390,15 @@ static secbool try_bootloader_update(bool do_update, bool auto_reboot) {
                                             BOOTLOADER_SECTORS_COUNT, NULL));
   }
 
-  emmc_fs_file_delete("0:boot/bootloader.bin");
-  display_printf("Update data cleared\n");
+  // remove file
+  display_printf("\rRemoving Payload: ");
+  if (!emmc_fs_file_delete(new_bootloader_path_p)) {
+    display_printf(" fail\n");
+    while (true) {
+      hal_delay(100);
+    }  // die here
+  } else
+    display_printf(" done\n");
 
   // reboot
   if (auto_reboot) {
