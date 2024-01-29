@@ -22,6 +22,13 @@ extern uint8_t dev_pwr_sta;
 #define BLE_CMD_EQ 0x09
 #define BLE_CMD_RPESS 0x0A
 #define BLE_CMD_PWR 0x0B
+#define BLE_CMD_FLASHLED_STATE 0x0C
+#define BLE_CMD_DEV_KEY 0x0E
+
+#define BLE_KEY_RESP_SUCCESS 0x00
+#define BLE_KEY_RESP_FAILED 0x01
+#define BLE_KEY_RESP_PUBKEY 0x02
+#define BLE_KEY_RESP_SIGN 0x03
 
 // ST send command
 #define BLE_BT 0x81
@@ -41,8 +48,14 @@ extern uint8_t dev_pwr_sta;
 #define BLE_VER_PROTO 0x03
 #define BLE_VER_BOOT 0x04
 #define BLE_REBOOT 0x84
-#define BLE_FLASHLED 0x85
 #define BLE_REBOOT_SYS 0x01
+
+#define BLE_FLASHLED 0x85
+
+#define BLE_DEVICE_KEY 0x87
+#define BLE_DEVICE_KEY_GET 0x01
+#define BLE_DEVICE_KEY_LOCK 0x02
+#define BLE_DEVICE_KEY_SIGN 0x03
 
 bool ble_connect_state(void);
 void ble_cmd_req(uint8_t cmd, uint8_t value);
@@ -65,6 +78,11 @@ bool ble_get_switch(void);
 void ble_get_dev_info(void);
 void ble_refresh_dev_info(void);
 void ble_set_flashled(uint8_t value);
+bool ble_get_version(char **ver);
+bool ble_get_pubkey(uint8_t *pubkey);
+bool ble_lock_pubkey(void);
+bool ble_sign_msg(uint8_t *msg, uint32_t msg_len, uint8_t *sign);
+
 #else
 #define ble_name_state(...) false
 #define ble_ver_state(...) false

@@ -123,6 +123,8 @@ typedef struct __attribute__((packed)) {
 #define FLASH_OTP_BLOCK_THD89_3_PUBKEY2 21
 #define FLASH_OTP_BLOCK_THD89_4_PUBKEY1 22
 #define FLASH_OTP_BLOCK_THD89_4_PUBKEY2 23
+#define FLASH_OTP_BLOCK_BLE_PUBKEY1 24
+#define FLASH_OTP_BLOCK_BLE_PUBKEY2 25
 
 extern FlashLockedData* flash_otp_data;
 

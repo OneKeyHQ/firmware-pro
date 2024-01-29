@@ -38,6 +38,8 @@ bool device_get_serial(char **serial);
 char *device_get_se_config_version(void);
 void device_get_enc_key(uint8_t key[32]);
 
+void device_verify_ble(void);
+
 void device_test(bool force);
 void device_burnin_test(bool force);
 #if !PRODUCTION

@@ -11,6 +11,7 @@
 #include "qspi_flash.h"
 #include "rand.h"
 #include "se_thd89.h"
+#include "secp256k1.h"
 #include "sha2.h"
 #include "systick.h"
 #include "thd89.h"
@@ -48,22 +49,51 @@ void device_set_factory_mode(bool mode) { factory_mode = mode; }
 
 bool device_is_factory_mode(void) { return factory_mode; }
 
+void device_verify_ble(void) {
+  uint8_t pubkey[65];
+  uint8_t rand_buf[16], signature[64], digest[32];
+  char *ble_ver;
+  ensure(ble_get_version(&ble_ver) ? sectrue : secfalse, NULL);
+
+  if (secfalse == flash_otp_is_locked(FLASH_OTP_BLOCK_BLE_PUBKEY1) ||
+      secfalse == flash_otp_is_locked(FLASH_OTP_BLOCK_BLE_PUBKEY2)) {
+    ensure(ble_get_pubkey(pubkey) ? sectrue : secfalse, NULL);
+    ensure(ble_lock_pubkey() ? sectrue : secfalse, NULL);
+    ensure(flash_otp_write(FLASH_OTP_BLOCK_BLE_PUBKEY1, 0, pubkey + 1,
+                           FLASH_OTP_BLOCK_SIZE),
+           NULL);
+    ensure(flash_otp_write(FLASH_OTP_BLOCK_BLE_PUBKEY2, 0, pubkey + 33,
+                           FLASH_OTP_BLOCK_SIZE),
+           NULL);
+    ensure(flash_otp_lock(FLASH_OTP_BLOCK_BLE_PUBKEY1), NULL);
+    ensure(flash_otp_lock(FLASH_OTP_BLOCK_BLE_PUBKEY2), NULL);
+  } else {
+    ensure(flash_otp_read(FLASH_OTP_BLOCK_BLE_PUBKEY1, 0, pubkey + 1,
+                          FLASH_OTP_BLOCK_SIZE),
+           NULL);
+    ensure(flash_otp_read(FLASH_OTP_BLOCK_BLE_PUBKEY2, 0, pubkey + 33,
+                          FLASH_OTP_BLOCK_SIZE),
+           NULL);
+  }
+  pubkey[0] = 0x04;
+  random_buffer(rand_buf, sizeof(rand_buf));
+  ensure(
+      ble_sign_msg(rand_buf, sizeof(rand_buf), signature) ? sectrue : secfalse,
+      NULL);
+  sha256_Raw(rand_buf, 16, digest);
+
+  ensure(ecdsa_verify_digest(&secp256k1, pubkey, signature, digest) == 0
+             ? sectrue
+             : secfalse,
+         NULL);
+}
+
 void device_para_init(void) {
   dev_info.st_id[0] = HAL_GetUIDw0();
   dev_info.st_id[1] = HAL_GetUIDw1();
   dev_info.st_id[2] = HAL_GetUIDw2();
 
-  // if (secfalse == flash_otp_is_locked(FLASH_OTP_BLOCK_THD89_SESSION_KEY)) {
-  //   uint8_t entropy[FLASH_OTP_BLOCK_SIZE];
-  //   random_buffer(entropy, FLASH_OTP_BLOCK_SIZE);
-  //   ensure(se_set_session_key(entropy), NULL);
-  //   ensure(flash_otp_write(FLASH_OTP_BLOCK_THD89_SESSION_KEY, 0, entropy,
-  //                          FLASH_OTP_BLOCK_SIZE),
-  //          NULL);
-  //   ensure(flash_otp_lock(FLASH_OTP_BLOCK_THD89_SESSION_KEY), NULL);
-  // }
-
-  uint8_t pubkey[FLASH_OTP_BLOCK_SIZE];
+  uint8_t pubkey[64];
   if (secfalse == flash_otp_is_locked(FLASH_OTP_BLOCK_THD89_1_PUBKEY1) ||
       secfalse == flash_otp_is_locked(FLASH_OTP_BLOCK_THD89_1_PUBKEY2)) {
     ensure(se_get_ecdh_pubkey(THD89_MASTER_ADDRESS, pubkey), NULL);
