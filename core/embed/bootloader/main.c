@@ -680,6 +680,8 @@ int main(void) {
     device_para_init();
   }
 
+  device_verify_ble();
+
   if (!device_serial_set() || !se_has_cerrificate()) {
     display_clear();
     device_set_factory_mode(true);
