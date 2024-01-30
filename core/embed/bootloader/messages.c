@@ -810,20 +810,23 @@ int process_msg_FirmwareUpload(uint8_t iface_num, uint32_t msg_size,
       ui_screen_install_start();
       ui_fadein();
 
-      read_offset = IMAGE_INIT_CHUNK_SIZE;
+      read_offset = chunk_requested;
       firmware_remaining -= read_offset;
 
       chunk_requested = (firmware_remaining > (IMAGE_CHUNK_SIZE - read_offset))
                             ? (IMAGE_CHUNK_SIZE - read_offset)
                             : firmware_remaining;
 
-      // request the rest of the first chunk
-      MSG_SEND_INIT(FirmwareRequest);
-      MSG_SEND_ASSIGN_VALUE(offset, read_offset);
-      MSG_SEND_ASSIGN_VALUE(length, chunk_requested);
-      MSG_SEND(FirmwareRequest);
+      if (chunk_requested) {
+        // request the rest of the first chunk
+        MSG_SEND_INIT(FirmwareRequest);
+        MSG_SEND_ASSIGN_VALUE(offset, read_offset);
+        MSG_SEND_ASSIGN_VALUE(length, chunk_requested);
+        MSG_SEND(FirmwareRequest);
 
-      return (int)firmware_remaining;
+        return (int)firmware_remaining;
+      }
+
     } else {
       // first block with the headers parsed -> the first chunk is now complete
       read_offset = 0;
