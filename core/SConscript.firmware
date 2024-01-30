@@ -667,7 +667,7 @@ if PRODUCTION_MODEL == 'H':
     env.Replace(
         COPT=env.get('ENV').get('OPTIMIZE', '-Os'),
         CCFLAGS='$COPT '
-        '-g3 '
+        '-ggdb3 '
         '-nostdlib '
         '-std=gnu99 -Wall -Werror -Wdouble-promotion -Wpointer-arith -Wno-missing-braces -fno-common '
         '-fsingle-precision-constant -fdata-sections -ffunction-sections '

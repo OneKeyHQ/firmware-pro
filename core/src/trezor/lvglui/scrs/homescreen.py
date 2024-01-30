@@ -1131,6 +1131,20 @@ class ConnectWallet(Screen):
         self.label_bottom.align_to(self.line, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 0)
         self.panel.align_to(self.qr, lv.ALIGN.OUT_BOTTOM_MID, 0, 32)
 
+    def load_screen(self, scr, destroy_self: bool = False):
+        if destroy_self:
+            self._load_scr(scr.__class__(), back=True)
+            utils.try_remove_scr(self)
+            self.qr.delete()
+            self.del_delayed(0)
+            del self.__class__._instance
+            del self
+            import gc
+
+            gc.collect()
+        else:
+            self._load_scr(scr)
+
 
 class ScanScreen(Screen):
     def __init__(self, prev_scr=None):

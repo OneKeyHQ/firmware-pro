@@ -59,13 +59,8 @@ def get_seed(passphrase: str = "", progress_bar: bool = True) -> bytes:
     else:
         from trezor.crypto import se_thd89
 
-        render_func = None
-        if progress_bar and not utils.DISABLE_ANIMATION:
-            # _start_progress()
-            # render_func = _render_progress
-            pass
         if is_bip39():
-            if not se_thd89.seed(passphrase, render_func):
+            if not se_thd89.seed(passphrase, None):
                 raise RuntimeError
         return b""
 

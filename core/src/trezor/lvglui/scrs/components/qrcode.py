@@ -20,3 +20,8 @@ class QRCode(lv.qrcode):
             if scale:
                 self.icon.set_zoom(512)
             self.icon.set_align(lv.ALIGN.CENTER)
+
+    def __new__(cls, *args, **kwargs):
+        if not hasattr(cls, "_instance"):
+            cls._instance = super(lv.qrcode, cls).__new__(cls)
+        return cls._instance

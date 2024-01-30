@@ -1027,11 +1027,13 @@ async def request_passphrase_on_device(ctx: wire.GenericContext, max_len: int) -
 
 async def require_confirm_passphrase(ctx: wire.GenericContext, passphrase: str) -> None:
     from trezor.lvglui.scrs.template import PassphraseDisplayConfirm
+    from trezor import loop
 
     screen = PassphraseDisplayConfirm(passphrase)
     await raise_if_cancelled(
         interact(ctx, screen, "confirm_passphrase", ButtonRequestType.ProtectCall)
     )
+    await loop.sleep(10)
 
 
 async def request_pin_on_device(

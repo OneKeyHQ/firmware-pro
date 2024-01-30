@@ -976,10 +976,10 @@ STATIC mp_obj_t mod_trezorconfig_get_serial(void) {
 
   char *dev_serial;
   if (device_get_serial(&dev_serial)) {
-    res = mp_obj_new_str_copy(&mp_type_bytes, (const uint8_t *)dev_serial,
+    res = mp_obj_new_str_copy(&mp_type_str, (const uint8_t *)dev_serial,
                               strlen(dev_serial));
   } else {
-    res = mp_obj_new_str_copy(&mp_type_bytes, (const uint8_t *)"NULL",
+    res = mp_obj_new_str_copy(&mp_type_str, (const uint8_t *)"NULL",
                               strlen("NULL"));
   }
 
@@ -1006,7 +1006,7 @@ STATIC mp_obj_t mod_trezorconfig_get_capacity(void) {
   } else {
     mini_snprintf(cap_info, sizeof(cap_info), "%d Bytes", (unsigned int)cap);
   }
-  return mp_obj_new_str_copy(&mp_type_bytes, (const uint8_t *)cap_info,
+  return mp_obj_new_str_copy(&mp_type_str, (const uint8_t *)cap_info,
                              strlen(cap_info));
 }
 

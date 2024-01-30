@@ -69,7 +69,7 @@ async def recovery_device(ctx: wire.Context, msg: RecoveryDevice) -> Success:
             # set up pin if requested
             if msg.pin_protection:
                 newpin = await request_pin_confirm(ctx, allow_cancel=False)
-                # config.change_pin("", newpin, None, None)
+                config.change_pin("", newpin, None, None)
             if not __debug__:
                 await fingerprints.request_add_fingerprint()
             storage.device.set_passphrase_enabled(bool(msg.passphrase_protection))
@@ -82,10 +82,6 @@ async def recovery_device(ctx: wire.Context, msg: RecoveryDevice) -> Success:
         storage.recovery.set_dry_run(bool(msg.dry_run))
         # workflow.set_default(recovery_homescreen)
         result = await recovery_process(ctx)
-        if Success.is_type_of(result):
-            if newpin is not None:
-                config.change_pin("", newpin, None, None)
-                config.unlock(newpin, None)
     except BaseException as e:
         raise e
     else:

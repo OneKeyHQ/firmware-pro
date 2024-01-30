@@ -1147,6 +1147,9 @@ class PassphraseDisplayConfirm(FullSizeWindow):
         )
         self.input_count_tips.set_text(f"{len(passphrase)}/50")
 
+    def show_unload_anim(self):
+        self.destroy(5)
+
 
 class SolBlindingSign(FullSizeWindow):
     def __init__(self, fee_payer: str, message_hex: str, primary_color, icon_path):

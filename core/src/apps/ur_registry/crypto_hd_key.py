@@ -274,7 +274,7 @@ class CryptoHDKey:
         return key_path
 
 
-def generateCryptoHDKeyForETHStandard(pubkey, masterfingerprint):
+def generateCryptoHDKeyForETHStandard(pubkey):
     hdkey = CryptoHDKey()
     hdkey.new_extended_key(
         False,
@@ -287,7 +287,7 @@ def generateCryptoHDKeyForETHStandard(pubkey, masterfingerprint):
                 PathComponent.new(60, True),
                 PathComponent.new(0, True),
             ],
-            list(masterfingerprint.to_bytes(4, "big")),
+            list(pubkey.root_fingerprint.to_bytes(4, "big")),
             3,
         ),
         CryptoKeyPath(
@@ -311,28 +311,22 @@ def generateCryptoHDKeyForETHStandard(pubkey, masterfingerprint):
 async def genCryptoHDKeyForETHStandard(ctx: wire.Context) -> str:
     from trezor.messages import GetPublicKey
     from apps.bitcoin import get_public_key as bitcoin_get_public_key
-    from apps.common import paths
-    from apps.common.keychain import get_keychain
 
     # import usb
 
     # "m/44'/60'/0'"
     btc_pubkey_msg = GetPublicKey(address_n=[2147483692, 2147483708, 2147483648])
     resp = await bitcoin_get_public_key.get_public_key(ctx, btc_pubkey_msg)
-    keychain = await get_keychain(ctx, "secp256k1", [paths.AlwaysMatchingSchema])
-    ur_encoded = generateCryptoHDKeyForETHStandard(resp, keychain.root_fingerprint())
+    ur_encoded = generateCryptoHDKeyForETHStandard(resp)
     return ur_encoded
 
 
 async def crypto_hd_key(ctx: wire.Context, msg: URCryptoHdkey) -> URResponse:
     from trezor.messages import GetPublicKey
     from apps.bitcoin import get_public_key as bitcoin_get_public_key
-    from apps.common import paths
-    from apps.common.keychain import get_keychain
 
     btc_pubkey_msg = GetPublicKey(address_n=msg.address_n)
     resp = await bitcoin_get_public_key.get_public_key(ctx, btc_pubkey_msg)
-    keychain = await get_keychain(ctx, "secp256k1", [paths.AlwaysMatchingSchema])
-    ur_encoded = generateCryptoHDKeyForETHStandard(resp, keychain.root_fingerprint())
+    ur_encoded = generateCryptoHDKeyForETHStandard(resp)
 
     return URResponse(data=ur_encoded)
