@@ -97,16 +97,16 @@ int main(void) {
 
   SystemCoreClockUpdate();
 
+  display_backlight(0);
+  lcd_init(DISPLAY_RESX, DISPLAY_RESY, LCD_PIXEL_FORMAT_RGB565);
+  lcd_pwm_init();
+
   // Enable MPU
   mpu_config_firmware();
 
   qspi_flash_init();
   qspi_flash_config();
   qspi_flash_memory_mapped();
-
-  display_backlight(0);
-  lcd_init(DISPLAY_RESX, DISPLAY_RESY, LCD_PIXEL_FORMAT_RGB565);
-  lcd_pwm_init();
 
   random_delays_init();
 
@@ -171,9 +171,9 @@ int main(void) {
 
   device_burnin_test(false);
 
-  ensure(se_sync_session_key(), "se start up failed");
-
   device_para_init();
+
+  ensure(se_sync_session_key(), "se start up failed");
 
   copyflash2sdram();
 #endif

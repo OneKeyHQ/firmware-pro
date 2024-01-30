@@ -416,8 +416,12 @@ static bool _motor_test(void) {
   motor_init();
   ui_generic_confirm_simple("MOTOR test");
 
+  HAL_GPIO_WritePin(GPIOK, GPIO_PIN_3, GPIO_PIN_SET);
   while (1) {
-    motor_tick();
+    HAL_GPIO_WritePin(GPIOK, GPIO_PIN_2, GPIO_PIN_RESET);
+    dwt_delay_us(2083);
+    HAL_GPIO_WritePin(GPIOK, GPIO_PIN_2, GPIO_PIN_SET);
+    dwt_delay_us(767);
 
     ui_res = ui_response_ex();
     if (ui_res != UI_RESPONSE_NONE) {
@@ -446,7 +450,14 @@ static bool _camera_test(void) {
 
 static bool _nfc_test() {
   int ui_res = 0;
-  ui_generic_confirm_simple("NFC test");
+  display_bar(0, 380, DISPLAY_RESX, 420, COLOR_BLACK);
+  display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY / 2, "NFC test", -1,
+                      FONT_NORMAL, COLOR_WHITE, COLOR_BLACK);
+
+  display_bar_radius(32, DISPLAY_RESY - 160, 128, 64, COLOR_RED, COLOR_BLACK,
+                     16);
+  display_text(80, DISPLAY_RESY - 120, "No", -1, FONT_NORMAL, COLOR_WHITE,
+               COLOR_RED);
 
   nfc_init();
   nfc_pwr_ctl(true);
@@ -468,11 +479,12 @@ static bool _nfc_test() {
     }
 
     ui_res = ui_response_ex();
-    if (ui_res != UI_RESPONSE_NONE) {
+    if (ui_res == UI_RESPONSE_NO) {
       nfc_pwr_ctl(false);
-      return ui_res == UI_RESPONSE_YES;
+      return false;
     }
   }
+  return false;
 }
 
 static bool _flashled_test(void) {
