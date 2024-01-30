@@ -54,7 +54,7 @@ def get_features() -> Features:
     from trezor import uart
     from apps.common import mnemonic, safety_checks
 
-    storage_serial_no = storage.device.get_serial()
+    storage_serial_no = storage.device.get_serial().decode()
     serial_no = storage_serial_no
     if serial_no[0:2] == "PR":
         serial_no = "TC" + serial_no[2:]
@@ -89,7 +89,7 @@ def get_features() -> Features:
         onekey_se_hash=utils.se_hash(),
         onekey_se_build_id=utils.se_build_id(),
         onekey_firmware_version=utils.ONEKEY_VERSION,
-        onekey_firmware_build_id=str(utils.BUILD_ID[-7:]),
+        onekey_firmware_build_id=utils.BUILD_ID[-7:].decode("utf-8"),
         onekey_serial_no=storage_serial_no,
     )
 
