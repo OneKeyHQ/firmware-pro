@@ -607,7 +607,7 @@ class OneKeyDeviceType(IntEnum):
     CLASSIC1S = 1
     MINI = 2
     TOUCH = 3
-    TOUCH_PRO = 4
+    PRO = 4
 
 
 class OneKeySeType(IntEnum):

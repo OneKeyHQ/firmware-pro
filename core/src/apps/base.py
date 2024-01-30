@@ -75,11 +75,11 @@ def get_features() -> Features:
         ble_ver=uart.get_ble_version(),
         ble_enable=storage.device.ble_enabled(),
         serial_no=serial_no,
-        build_id=utils.BUILD_ID,
+        build_id=utils.BUILD_ID[-7:],
         bootloader_version=utils.boot_version(),
         boardloader_version=utils.board_version(),
         busy=busy_expiry_ms() > 0,
-        onekey_device_type=OneKeyDeviceType.TOUCH_PRO,
+        onekey_device_type=OneKeyDeviceType.PRO,
         onekey_se_type=OneKeySeType.THD89,
         onekey_board_version=utils.board_version(),
         onekey_board_hash=utils.board_hash(),
@@ -89,7 +89,7 @@ def get_features() -> Features:
         onekey_se_hash=utils.se_hash(),
         onekey_se_build_id=utils.se_build_id(),
         onekey_firmware_version=utils.ONEKEY_VERSION,
-        onekey_firmware_build_id=str(utils.BUILD_ID),
+        onekey_firmware_build_id=str(utils.BUILD_ID[-7:]),
         onekey_serial_no=storage_serial_no,
     )
 

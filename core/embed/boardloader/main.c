@@ -246,13 +246,13 @@ static secbool try_bootloader_update(bool do_update, bool auto_reboot) {
   char new_bootloader_path_legacy[] = "0:boot/bootloader.bin";
   char new_bootloader_path[] = "0:updates/bootloader.bin";
 
-  char* new_bootloader_path_p = NULL;
+  char *new_bootloader_path_p = NULL;
 
   // check file exists
-  if (emmc_fs_path_exist(new_bootloader_path_legacy)){
+  if (emmc_fs_path_exist(new_bootloader_path_legacy)) {
     new_bootloader_path_p = new_bootloader_path_legacy;
   }
-  if (emmc_fs_path_exist(new_bootloader_path)){
+  if (emmc_fs_path_exist(new_bootloader_path)) {
     new_bootloader_path_p = new_bootloader_path;
   }
   if (new_bootloader_path_p == NULL) return secfalse;
