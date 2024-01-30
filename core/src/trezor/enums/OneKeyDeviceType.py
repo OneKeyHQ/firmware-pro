@@ -6,4 +6,4 @@ CLASSIC = 0
 CLASSIC1S = 1
 MINI = 2
 TOUCH = 3
-PRO = 4
+PRO = 5

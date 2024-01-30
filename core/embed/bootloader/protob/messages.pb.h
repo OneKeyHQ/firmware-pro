@@ -60,7 +60,7 @@ typedef enum _OneKeyDeviceType {
     OneKeyDeviceType_CLASSIC1S = 1, 
     OneKeyDeviceType_MINI = 2, 
     OneKeyDeviceType_TOUCH = 3, 
-    OneKeyDeviceType_TOUCH_PRO = 4 
+    OneKeyDeviceType_TOUCH_PRO = 5 
 } OneKeyDeviceType;
 
 typedef enum _OneKeySeType { 
