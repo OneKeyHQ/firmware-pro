@@ -29,6 +29,8 @@ static void nfc_lowlevel_gpio_init(void)
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     GPIO_InitStruct.Alternate = 0; // ignored
     HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+
+    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_5, GPIO_PIN_SET);
 }
 
 static void nfc_lowlevel_reset_ctl(bool ctl)
