@@ -50,9 +50,10 @@ FIRMWARE_P1_MAXSIZE = 786432
 FIRMWARE_P2_MAXSIZE = 917504
 FIRMWARE_MAXSIZE    = 1703936
 
-CFLAGS += -DSCM_REVISION='\"$(shell git rev-parse HEAD | sed 's:\(..\):\\x\1:g')\"'
+SCM_REVISION=$(shell git rev-parse HEAD | sed 's:\(..\):\\x\1:g')
 BUILD_DATE=$(shell date "+%m%d")
 
+BOARD_BUILD_VERSION=$(shell ../tools/version.sh ./embed/boardloader/version.h)
 BOOT_BUILD_VERSION=$(shell ../tools/version.sh ./embed/bootloader/version.h)
 FIRMWARE_BUILD_VERSION=$(shell cat ./embed/firmware/version.h | grep "ONEKEY_VERSION " | awk -F "[\"\"]" '{print $$2}')
 ifndef BUILD_ID
@@ -64,7 +65,6 @@ FIRMWARE_BUILD_NAME=pro.$(FIRMWARE_BUILD_VERSION)-Alpha-$(BUILD_DATE)-$(BUILD_ID
 BOOT_BUILD_NAME=pro.bootloader.$(BOOT_BUILD_VERSION)-Alpha-$(BUILD_DATE)-$(BUILD_ID)
 endif
 #CFLAGS += -DBUILD_ID='\"$(BUILD_COMMIT)\"'
-CFLAGS += -DBUILD_ID='\"$(FIRMWARE_BUILD_NAME)\"'
 
 
 TESTPATH = $(CURDIR)/../tests
@@ -166,6 +166,7 @@ build: build_boardloader build_bootloader build_firmware build_prodtest build_un
 
 build_embed: build_boardloader build_bootloader build_firmware # build boardloader, bootloader, firmware
 
+build_boardloader: CFLAGS += -DBUILD_ID='\"boardloader.$(BOARD_BUILD_VERSION)\"'
 build_boardloader: ## build boardloader
 	$(SCONS) CFLAGS="$(CFLAGS)" PRODUCTION="$(PRODUCTION)" TREZOR_MODEL="$(TREZOR_MODEL)" PRODUCTION_MODEL="$(PRODUCTION_MODEL)" $(BOARDLOADER_BUILD_DIR)/boardloader.bin
 
@@ -174,6 +175,8 @@ build_boardloader_reflash_dev: build_boardloader ## build boardloader_reflash_de
 	python embed/boardloader_reflash_dev/bin2array.py -l 16 -i $(BOARDLOADER_BUILD_DIR)/boardloader.bin -o $(BOAR_DEV_REFLASH_BUILD_DIR)/payload.h
 	$(SCONS) CFLAGS="$(CFLAGS)" PRODUCTION="$(PRODUCTION)" TREZOR_MODEL="$(TREZOR_MODEL)" PRODUCTION_MODEL="$(PRODUCTION_MODEL)" $(BOAR_DEV_REFLASH_BUILD_DIR)/boardloader_reflash_dev.bin
 
+build_bootloader: CFLAGS += -DBUILD_ID='\"bootloader.$(BOOT_BUILD_VERSION)-$(BUILD_DATE)\"'
+build_bootloader: CFLAGS += -DSCM_REVISION='\"$(SCM_REVISION)\"'
 build_bootloader: ## build bootloader
 	$(SCONS) CFLAGS="$(CFLAGS)" PRODUCTION="$(PRODUCTION)" TREZOR_MODEL="$(TREZOR_MODEL)" PRODUCTION_MODEL="$(PRODUCTION_MODEL)" $(BOOTLOADER_BUILD_DIR)/bootloader.bin
 	cp $(BOOTLOADER_BUILD_DIR)/bootloader.bin $(BOOTLOADER_BUILD_DIR)/$(BOOT_BUILD_NAME).bin
@@ -189,6 +192,8 @@ build_reflash: ## build reflash firmware + reflash image
 	dd if=build/boardloader/boardloader.bin of=$(REFLASH_BUILD_DIR)/sdimage.bin bs=1 seek=0
 	dd if=build/bootloader/bootloader.bin of=$(REFLASH_BUILD_DIR)/sdimage.bin bs=1 seek=49152
 
+build_firmware: CFLAGS += -DBUILD_ID='\"$(FIRMWARE_BUILD_NAME)\"'
+build_firmware: CFLAGS += -DSCM_REVISION='\"$(SCM_REVISION)\"'
 build_firmware: templates build_cross ## build firmware with frozen modules
 	$(SCONS) CFLAGS="$(CFLAGS)" PRODUCTION="$(PRODUCTION)" TREZOR_MODEL="$(TREZOR_MODEL)" PRODUCTION_MODEL="$(PRODUCTION_MODEL)" PYOPT="$(PYOPT)" BITCOIN_ONLY="$(BITCOIN_ONLY)" UI2="$(UI2)" USE_THD89="$(USE_THD89)" $(FIRMWARE_BUILD_DIR)/firmware.bin
 	cp $(FIRMWARE_BUILD_DIR)/firmware.bin $(FIRMWARE_BUILD_DIR)/$(FIRMWARE_BUILD_NAME).bin
