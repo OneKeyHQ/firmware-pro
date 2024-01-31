@@ -175,7 +175,7 @@ build_boardloader_reflash_dev: build_boardloader ## build boardloader_reflash_de
 	python embed/boardloader_reflash_dev/bin2array.py -l 16 -i $(BOARDLOADER_BUILD_DIR)/boardloader.bin -o $(BOAR_DEV_REFLASH_BUILD_DIR)/payload.h
 	$(SCONS) CFLAGS="$(CFLAGS)" PRODUCTION="$(PRODUCTION)" TREZOR_MODEL="$(TREZOR_MODEL)" PRODUCTION_MODEL="$(PRODUCTION_MODEL)" $(BOAR_DEV_REFLASH_BUILD_DIR)/boardloader_reflash_dev.bin
 
-build_bootloader: CFLAGS += -DBUILD_ID='\"bootloader.$(BOOT_BUILD_VERSION)-$(BUILD_DATE)\"'
+build_bootloader: CFLAGS += -DBUILD_ID='\"bootloader.$(BOOT_BUILD_VERSION)-$(BUILD_DATE)-$(BUILD_COMMIT)\"'
 build_bootloader: CFLAGS += -DSCM_REVISION='\"$(SCM_REVISION)\"'
 build_bootloader: ## build bootloader
 	$(SCONS) CFLAGS="$(CFLAGS)" PRODUCTION="$(PRODUCTION)" TREZOR_MODEL="$(TREZOR_MODEL)" PRODUCTION_MODEL="$(PRODUCTION_MODEL)" $(BOOTLOADER_BUILD_DIR)/bootloader.bin
