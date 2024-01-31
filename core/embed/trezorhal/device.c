@@ -57,7 +57,7 @@ void device_verify_ble(void) {
 
   if (secfalse == flash_otp_is_locked(FLASH_OTP_BLOCK_BLE_PUBKEY1) ||
       secfalse == flash_otp_is_locked(FLASH_OTP_BLOCK_BLE_PUBKEY2)) {
-    ensure(ble_get_pubkey(pubkey) ? sectrue : secfalse, NULL);
+    ensure(ble_get_pubkey(pubkey + 1) ? sectrue : secfalse, NULL);
     ensure(ble_lock_pubkey() ? sectrue : secfalse, NULL);
     ensure(flash_otp_write(FLASH_OTP_BLOCK_BLE_PUBKEY1, 0, pubkey + 1,
                            FLASH_OTP_BLOCK_SIZE),
