@@ -53,7 +53,23 @@ void device_verify_ble(void) {
   uint8_t pubkey[65];
   uint8_t rand_buf[16], signature[64], digest[32];
   char *ble_ver;
+  char info[64] = {0};
   ensure(ble_get_version(&ble_ver) ? sectrue : secfalse, NULL);
+  if (memcmp(ble_ver, "2.2.3", 5) < 0) {
+    strcat(info, "current ble version: ");
+    strcat(info, ble_ver);
+    display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY / 2,
+                        "Please upgrade the Bluetooth.", -1, FONT_NORMAL,
+                        COLOR_WHITE, COLOR_BLACK);
+    display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY / 2 + 30,
+                        "Touch the screen to continue", -1, FONT_NORMAL,
+                        COLOR_WHITE, COLOR_BLACK);
+    display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY / 2 + 60, info, -1,
+                        FONT_NORMAL, COLOR_WHITE, COLOR_BLACK);
+    while (!touch_click())
+      ;
+    return;
+  }
 
   if (secfalse == flash_otp_is_locked(FLASH_OTP_BLOCK_BLE_PUBKEY1) ||
       secfalse == flash_otp_is_locked(FLASH_OTP_BLOCK_BLE_PUBKEY2)) {
