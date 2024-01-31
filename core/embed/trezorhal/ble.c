@@ -98,11 +98,15 @@ bool ble_get_pubkey(uint8_t *pubkey) {
       break;
     }
     counter++;
-    hal_delay(100);
-    if (counter > 20) {
+    hal_delay(1);
+    // 2000ms
+    if (counter > 2000) {
       return false;
     }
-    ble_cmd_packet(cmd, 2);
+    // 100ms
+    if (counter % 100 == 0) {
+      ble_cmd_packet(cmd, 2);
+    }
   }
   if (ble_request_state != 0) {
     return false;
@@ -125,11 +129,15 @@ bool ble_lock_pubkey(void) {
       break;
     }
     counter++;
-    hal_delay(100);
-    if (counter > 20) {
+    hal_delay(1);
+    // 2000ms
+    if (counter > 2000) {
       return false;
     }
-    ble_cmd_packet(cmd, 2);
+    // 100ms
+    if (counter % 100 == 0) {
+      ble_cmd_packet(cmd, 2);
+    }
   }
   if (ble_request_state != 0) {
     return false;
@@ -151,11 +159,15 @@ bool ble_sign_msg(uint8_t *msg, uint32_t msg_len, uint8_t *sign) {
       break;
     }
     counter++;
-    hal_delay(100);
-    if (counter > 20) {
+    hal_delay(1);
+    // 2000ms
+    if (counter > 2000) {
       return false;
     }
-    ble_cmd_packet(cmd, msg_len + 2);
+    // 100ms
+    if (counter % 100 == 0) {
+      ble_cmd_packet(cmd, msg_len + 2);
+    }
   }
   if (ble_request_state != 0) {
     return false;
