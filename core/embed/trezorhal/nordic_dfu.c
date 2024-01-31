@@ -242,7 +242,7 @@ static void enter_boot(void) {
   BLE_RST_PIN_LOW();  // reset ble
   hal_delay(100);
   BLE_RST_PIN_HIGH();
-  hal_delay(500);
+  hal_delay(1000);
   SET_COMBUS_HIGH();
 }
 
