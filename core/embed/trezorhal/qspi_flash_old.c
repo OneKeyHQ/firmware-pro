@@ -1,11 +1,13 @@
 #include STM32_HAL_H
-#include "qspi_flash.h"
 #include "irq.h"
+#include "qspi_flash.h"
 
 #include "display.h"
 
 #include <stdbool.h>
 #include <string.h>
+
+#pragma GCC optimize("Og")
 
 static QSPI_HandleTypeDef hqspi;
 // static MDMA_HandleTypeDef hmdma;
@@ -14,6 +16,109 @@ static volatile uint8_t CmdCplt, RxCplt, TxCplt, StatusMatch;
 
 static spi_flash_info sf_info;
 static bool memory_mapped = false;
+
+static bool qpi_enabled = false;
+
+inline void qspi_set_qpi(bool qpi_enable) { qpi_enabled = qpi_enable; }
+
+int qspi_wait_bit_status(uint8_t reg, uint8_t bit, bool set_unset) {
+  QSPI_CommandTypeDef hal_cmd = {0};
+  hal_cmd.InstructionMode =
+      (qpi_enabled ? QSPI_INSTRUCTION_4_LINES : QSPI_INSTRUCTION_1_LINE);
+  hal_cmd.AddressSize = QSPI_ADDRESS_24_BITS;
+  hal_cmd.AlternateByteMode =
+      (qpi_enabled ? QSPI_ALTERNATE_BYTES_4_LINES : QSPI_ALTERNATE_BYTES_NONE);
+  hal_cmd.DdrMode = QSPI_DDR_MODE_DISABLE;
+  hal_cmd.SIOOMode = QSPI_SIOO_INST_EVERY_CMD;
+  hal_cmd.Instruction = cmd;
+  hal_cmd.AddressMode = QSPI_ADDRESS_NONE;
+  hal_cmd.DataMode = QSPI_DATA_NONE;
+  hal_cmd.DummyCycles = 0;
+
+  /* Configure automatic polling mode to wait for write enabling ---- */
+  QSPI_AutoPollingTypeDef config;
+  config.Match = 0x02;
+  config.Mask = 0x02;
+  config.MatchMode = QSPI_MATCH_MODE_AND;
+  config.StatusBytesSize = 1;
+  config.Interval = 0x10;
+  config.AutomaticStop = QSPI_AUTOMATIC_STOP_ENABLE;
+
+  hal_cmd.Instruction = READ_STATUS_REG_CMD;
+  hal_cmd.DataMode = QSPI_DATA_1_LINE;
+
+  if (HAL_QSPI_AutoPolling(&hqspi, &hal_cmd, &config,
+                           HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
+    return HAL_ERROR;
+  }
+}
+
+int qspi_send_cmd(uint8_t cmd) {
+  QSPI_CommandTypeDef hal_cmd = {0};
+  hal_cmd.InstructionMode =
+      (qpi_enabled ? QSPI_INSTRUCTION_4_LINES : QSPI_INSTRUCTION_1_LINE);
+  hal_cmd.AddressSize = QSPI_ADDRESS_24_BITS;
+  hal_cmd.AlternateByteMode =
+      (qpi_enabled ? QSPI_ALTERNATE_BYTES_4_LINES : QSPI_ALTERNATE_BYTES_NONE);
+  hal_cmd.DdrMode = QSPI_DDR_MODE_DISABLE;
+  hal_cmd.SIOOMode = QSPI_SIOO_INST_EVERY_CMD;
+  hal_cmd.Instruction = cmd;
+  hal_cmd.AddressMode = QSPI_ADDRESS_NONE;
+  hal_cmd.DataMode = QSPI_DATA_NONE;
+  hal_cmd.DummyCycles = 0;
+
+  if (HAL_QSPI_Command(&hqspi, &hal_cmd, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) !=
+      HAL_OK) {
+    return HAL_ERROR;
+  }
+
+  return HAL_OK;
+}
+
+int qspi_read_reg() {
+  uint32_t reg QSPI_CommandTypeDef cmd = {0};
+  cmd.InstructionMode =
+      (qpi_enabled ? QSPI_INSTRUCTION_4_LINES : QSPI_INSTRUCTION_1_LINE);
+  cmd.AddressSize = QSPI_ADDRESS_24_BITS;
+  cmd.AlternateByteMode =
+      (qpi_enabled ? QSPI_ALTERNATE_BYTES_4_LINES : QSPI_ALTERNATE_BYTES_NONE);
+  cmd.DdrMode = QSPI_DDR_MODE_DISABLE;
+  cmd.SIOOMode = QSPI_SIOO_INST_EVERY_CMD;
+  cmd.Instruction = WRITE_ENABLE_CMD;
+  cmd.AddressMode = QSPI_ADDRESS_NONE;
+  cmd.DataMode = QSPI_DATA_NONE;
+  cmd.DummyCycles = 0;
+
+  if (HAL_QSPI_Command(&hqspi, &cmd, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) !=
+      HAL_OK) {
+    return HAL_ERROR;
+  }
+
+  /* Configure automatic polling mode to wait for write enabling ---- */
+  QSPI_AutoPollingTypeDef config;
+  config.Match = 0x02;
+  config.Mask = 0x02;
+  config.MatchMode = QSPI_MATCH_MODE_AND;
+  config.StatusBytesSize = 1;
+  config.Interval = 0x10;
+  config.AutomaticStop = QSPI_AUTOMATIC_STOP_ENABLE;
+
+  cmd.Instruction = READ_STATUS_REG_CMD;
+  cmd.DataMode = QSPI_DATA_1_LINE;
+
+  if (HAL_QSPI_AutoPolling(&hqspi, &cmd, &config,
+                           HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
+    return HAL_ERROR;
+  }
+
+  return HAL_OK;
+}
+
+int qspi_write_reg() {}
+
+int qspi_read() {}
+
+int qspi_write() {}
 
 int qspi_flash_init(void) {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
@@ -596,7 +701,8 @@ int qspi_flash_write_page(uint8_t *data, uint32_t address, uint16_t len) {
   return HAL_OK;
 }
 
-int qspi_flash_write_page_single(uint8_t *data, uint32_t address, uint16_t len) {
+int qspi_flash_write_page_single(uint8_t *data, uint32_t address,
+                                 uint16_t len) {
   QSPI_CommandTypeDef command = {0};
 
   TxCplt = 0;
@@ -693,7 +799,6 @@ int qspi_flash_read_buffer(uint8_t *data, uint32_t address, uint32_t len) {
 
   if (HAL_QSPI_Receive(&hqspi, data, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) !=
       HAL_OK) {
-        
     return HAL_QSPI_GetError(&hqspi);
   }
 
@@ -708,7 +813,8 @@ int qspi_flash_read_buffer(uint8_t *data, uint32_t address, uint32_t len) {
   return HAL_OK;
 }
 
-int qspi_flash_read_buffer_single(uint8_t *data, uint32_t address, uint32_t len) {
+int qspi_flash_read_buffer_single(uint8_t *data, uint32_t address,
+                                  uint32_t len) {
   QSPI_CommandTypeDef command = {0};
 
   RxCplt = 0;
@@ -827,7 +933,6 @@ void QUADSPI_IRQHandler(void) { HAL_QSPI_IRQHandler(&hqspi); }
  * @param  None
  * @retval None
  */
-
 // void MDMA_IRQHandler(void) { HAL_MDMA_IRQHandler(hqspi.hmdma); }
 
 void qspi_flash_test(void) {

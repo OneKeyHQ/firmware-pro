@@ -23,11 +23,17 @@
 
 #include "common.h"
 #include "flash.h"
+#include "qspi_flash.h"
 
 // see docs/memory.md for more information
 #if defined(STM32H747xx)
 
-#include "qspi_flash.h"
+// TODO: REPLACE ME!!!
+#define QSPI_FLASH_SIZE 23
+#define QSPI_SECTOR_SIZE (64 * 1024)
+#define QSPI_PAGE_SIZE 256
+#define QSPI_END_ADDR (1 << QSPI_FLASH_SIZE)
+#define QSPI_FLASH_SIZES (8 * 1024 * 1024)
 
 #define FLASH_TYPEPROGRAM_WORD FLASH_TYPEPROGRAM_FLASHWORD
 
@@ -69,10 +75,10 @@ static const uint32_t FLASH_SECTOR_TABLE[FLASH_SECTOR_COUNT + 2] = {
     [30] = QSPI_FLASH_BASE_ADDRESS + 0x1A0000,                  // 128 KiB
     [31] = QSPI_FLASH_BASE_ADDRESS + 0x1C0000,                  // 128 KiB
     [32] = QSPI_FLASH_BASE_ADDRESS + 0x1E0000,                  // 128 KiB
-    [33] = QSPI_FLASH_BASE_ADDRESS + QSPI_FLASH_STORAG_OFFSET,  // 64 KiB
-    [34] = QSPI_FLASH_BASE_ADDRESS + QSPI_FLASH_STORAG_OFFSET +
+    [33] = QSPI_FLASH_BASE_ADDRESS + EXT_FLASH_STORAG_OFFSET,  // 64 KiB
+    [34] = QSPI_FLASH_BASE_ADDRESS + EXT_FLASH_STORAG_OFFSET +
            64 * 1024,  //  64 KiB storage sector 2
-    [35] = QSPI_FLASH_BASE_ADDRESS + QSPI_FLASH_STORAG_OFFSET + 128 * 1024,
+    [35] = QSPI_FLASH_BASE_ADDRESS + EXT_FLASH_STORAG_OFFSET + 128 * 1024,
 #else
     [16] = 0x08200000,  // last element - not a valid sector
 #endif
@@ -210,7 +216,7 @@ const void *flash_get_address(uint8_t sector, uint32_t offset, uint32_t size) {
     if (offset + size > FLASH_STORAGE_SECTOR_SIZE) {
       return NULL;
     }
-    return (const void *)(QSPI_FLASH_BASE_ADDRESS + QSPI_FLASH_STORAG_OFFSET +
+    return (const void *)(QSPI_FLASH_BASE_ADDRESS + EXT_FLASH_STORAG_OFFSET +
                           (sector - FLASH_SECTOR_STORAGE_1) *
                               FLASH_STORAGE_SECTOR_SIZE +
                           offset);
@@ -226,18 +232,19 @@ secbool flash_erase_sectors(const uint8_t *sectors, int len,
   for (int i = 0; i < len; i++) {
     if (sectors[i] >= FLASH_SECTOR_FIRMWARE_EXTRA_START &&
         sectors[i] <= FLASH_SECTOR_FIRMWARE_EXTRA_END) {
-      qspi_flash_erase_block_64k(
-          (sectors[i] - FLASH_SECTOR_FIRMWARE_EXTRA_START) * 2 *
-          QSPI_SECTOR_SIZE);
-      qspi_flash_erase_block_64k(
-          (sectors[i] - FLASH_SECTOR_FIRMWARE_EXTRA_START) * 2 *
-              QSPI_SECTOR_SIZE +
-          QSPI_SECTOR_SIZE);
+      qspi_flash_erase((sectors[i] - FLASH_SECTOR_FIRMWARE_EXTRA_START) * 2 *
+                           QSPI_SECTOR_SIZE,
+                       QSPI_SECTOR_SIZE);
+      qspi_flash_erase((sectors[i] - FLASH_SECTOR_FIRMWARE_EXTRA_START) * 2 *
+                               QSPI_SECTOR_SIZE +
+                           QSPI_SECTOR_SIZE,
+                       QSPI_SECTOR_SIZE);
     } else if (sectors[i] >= FLASH_SECTOR_STORAGE_1 &&
                sectors[i] <= FLASH_SECTOR_STORAGE_2) {
-      qspi_flash_erase_block_64k((sectors[i] - FLASH_SECTOR_STORAGE_1) *
-                                     QSPI_SECTOR_SIZE +
-                                 QSPI_FLASH_STORAG_OFFSET);
+      qspi_flash_erase(
+          (sectors[i] - FLASH_SECTOR_STORAGE_1) * QSPI_SECTOR_SIZE +
+              EXT_FLASH_STORAG_OFFSET,
+          QSPI_SECTOR_SIZE);
     } else {
       ensure(flash_unlock_write(), NULL);
       FLASH_EraseInitTypeDef EraseInitStruct;
@@ -293,8 +300,8 @@ secbool flash_write_byte(uint8_t sector, uint32_t offset, uint8_t data) {
     return secfalse;
   }
   // display_printf("flash write byte\n");
-  if (HAL_OK != qspi_flash_write_buffer_unsafe(
-                    (uint8_t *)&data, address - QSPI_FLASH_BASE_ADDRESS, 1)) {
+  if (HAL_OK != qspi_flash_write_buffer((uint8_t *)&data,
+                                        address - QSPI_FLASH_BASE_ADDRESS, 1)) {
     return secfalse;
   }
   if (data != *((const uint8_t *)address)) {
@@ -317,8 +324,8 @@ secbool flash_write_word(uint8_t sector, uint32_t offset, uint32_t data) {
   if (data != (data & *((const uint32_t *)address))) {
     return secfalse;
   }
-  if (HAL_OK != qspi_flash_write_buffer_unsafe(
-                    (uint8_t *)&data, address - QSPI_FLASH_BASE_ADDRESS, 4)) {
+  if (HAL_OK != qspi_flash_write_buffer((uint8_t *)&data,
+                                        address - QSPI_FLASH_BASE_ADDRESS, 4)) {
     return secfalse;
   }
   if (data != *((const uint32_t *)address)) {
@@ -329,6 +336,7 @@ secbool flash_write_word(uint8_t sector, uint32_t offset, uint32_t data) {
 
 secbool flash_write_words(uint8_t sector, uint32_t offset, uint32_t data[8]) {
   uint32_t flash_word[8];
+  memset(&flash_word, 0xff, sizeof(flash_word));
   int retry = -1;
 
   uint32_t address = (uint32_t)flash_get_address(sector, offset, 4);
@@ -361,9 +369,9 @@ rewrite:
       goto rewrite;
     }
   } else {
-    if (HAL_OK !=
-        qspi_flash_write_buffer_unsafe((uint8_t *)&flash_word,
-                                       address - QSPI_FLASH_BASE_ADDRESS, 32)) {
+    if (HAL_OK != qspi_flash_write_buffer((uint8_t *)&flash_word,
+                                          address - QSPI_FLASH_BASE_ADDRESS,
+                                          32)) {
       goto rewrite;
     }
   }

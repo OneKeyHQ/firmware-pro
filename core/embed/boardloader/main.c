@@ -17,6 +17,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -50,11 +52,11 @@
 #include "fingerprint.h"
 #include "fp_sensor_wrapper.h"
 #include "motor.h"
-#include "thd89_boot.h"
+#include "nfc.h"
 #include "systick.h"
 #include "thd89.h"
+#include "thd89_boot.h"
 #include "usart.h"
-#include "nfc.h"
 
 #define BOARD_MODE 1
 #define BOOT_MODE 2
@@ -137,8 +139,8 @@ PARTITION VolToPart[FF_VOLUMES] = {
     {0, 1},
     {0, 2},
 };
-uint32_t *sdcard_buf = (uint32_t *)0x24000000;
-uint32_t *sdcard_buf1 = (uint32_t *)0x24000000 + IMAGE_HEADER_SIZE;
+uint32_t* sdcard_buf = (uint32_t*)0x24000000;
+uint32_t* sdcard_buf1 = (uint32_t*)0x24000000 + IMAGE_HEADER_SIZE;
 
 void fatfs_init(void) {
   FRESULT res;
@@ -188,9 +190,9 @@ int fatfs_check_res(void) {
   return res;
 }
 
-secbool check_sd_card_image_contents(const image_header *const hdr,
+secbool check_sd_card_image_contents(const image_header* const hdr,
                                      uint32_t firstskip, FIL fsrc) {
-  void *data = sdcard_buf1;
+  void* data = sdcard_buf1;
 
   FRESULT res;
   UINT num_of_read = 0;
@@ -261,7 +263,7 @@ secbool check_sd_card_image_contents(const image_header *const hdr,
   return sectrue;
 }
 
-static secbool check_sdcard(image_header *hdr) {
+static secbool check_sdcard(image_header* hdr) {
   FRESULT res;
 
   res = f_mount(&fs_instance, "", 1);
@@ -291,7 +293,7 @@ static secbool check_sdcard(image_header *hdr) {
   secbool new_present = secfalse;
 
   new_present =
-      load_image_header((const uint8_t *)sdcard_buf, BOOTLOADER_IMAGE_MAGIC,
+      load_image_header((const uint8_t*)sdcard_buf, BOOTLOADER_IMAGE_MAGIC,
                         BOOTLOADER_IMAGE_MAXSIZE, BOARDLOADER_KEY_M,
                         BOARDLOADER_KEY_N, BOARDLOADER_KEYS, hdr);
   if (sectrue == new_present) {
@@ -361,7 +363,7 @@ static secbool copy_sdcard(uint32_t code_len) {
         ensure(
             flash_write_words(FLASH_SECTOR_BOOTLOADER_1,
                               i * EMMC_BLOCK_SIZE + j * (sizeof(uint32_t) * 8),
-                              (uint32_t *)&sdcard_buf[8 * j]),
+                              (uint32_t*)&sdcard_buf[8 * j]),
             NULL);
       }
     } else {
@@ -371,7 +373,7 @@ static secbool copy_sdcard(uint32_t code_len) {
                    (i - FLASH_FIRMWARE_SECTOR_SIZE / EMMC_BLOCK_SIZE) *
                            EMMC_BLOCK_SIZE +
                        j * (sizeof(uint32_t) * 8),
-                   (uint32_t *)&sdcard_buf[8 * j]),
+                   (uint32_t*)&sdcard_buf[8 * j]),
                NULL);
       }
     }
@@ -416,7 +418,7 @@ typedef enum {
 
 static uint16_t screen_bg[TEST_NUMS + 1];
 
-static void ui_generic_confirm_simple(const char *msg) {
+static void ui_generic_confirm_simple(const char* msg) {
   if (msg == NULL) return;
   display_clear();
   display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY / 2, msg, -1, FONT_NORMAL,
@@ -545,8 +547,8 @@ void camera_test(void) {
   while (1) {
     camera_capture_start();
     if (camera_capture_done()) {
-      dma2d_copy_buffer((uint32_t *)CAM_BUF_ADDRESS,
-                        (uint32_t *)FMC_SDRAM_LTDC_BUFFER_ADDRESS, 80, 0, WIN_W,
+      dma2d_copy_buffer((uint32_t*)CAM_BUF_ADDRESS,
+                        (uint32_t*)FMC_SDRAM_LTDC_BUFFER_ADDRESS, 80, 0, WIN_W,
                         WIN_H);
     }
     uint32_t evt = touch_click();
@@ -588,14 +590,11 @@ static void _motor_test(void) {
 
   HAL_GPIO_WritePin(GPIOK, GPIO_PIN_3, GPIO_PIN_SET);
   while (1) {
-    
- 
-      HAL_GPIO_WritePin(GPIOK, GPIO_PIN_2, GPIO_PIN_RESET);
-      dwt_delay_us(2083);
-      HAL_GPIO_WritePin(GPIOK, GPIO_PIN_2, GPIO_PIN_SET);
-      dwt_delay_us(767);
-    
-   
+    HAL_GPIO_WritePin(GPIOK, GPIO_PIN_2, GPIO_PIN_RESET);
+    dwt_delay_us(2083);
+    HAL_GPIO_WritePin(GPIOK, GPIO_PIN_2, GPIO_PIN_SET);
+    dwt_delay_us(767);
+
     uint32_t evt = touch_click();
 
     if (!evt) {
@@ -668,35 +667,38 @@ static void _fp_test(void) {
   }
 }
 
-static void _nfc_test(void){
-
+static void _nfc_test(void) {
   display_clear();
 
-  display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY / 2, "NFC POLLING CARD", -1,
-                      FONT_NORMAL, COLOR_WHITE, COLOR_BLACK);
+  display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY / 2, "NFC POLLING CARD",
+                      -1, FONT_NORMAL, COLOR_WHITE, COLOR_BLACK);
   display_bar_radius(32, DISPLAY_RESY - 160, 128, 64, COLOR_RED, COLOR_BLACK,
                      16);
   // display_bar_radius(DISPLAY_RESX - 32 - 128, DISPLAY_RESY - 160, 128, 64,
   //                    COLOR_GREEN, COLOR_BLACK, 16);
   display_text(80, DISPLAY_RESY - 120, "No", -1, FONT_NORMAL, COLOR_WHITE,
                COLOR_RED);
-  // display_text(DISPLAY_RESX - 118, DISPLAY_RESY - 120, "Yes", -1, FONT_NORMAL,
+  // display_text(DISPLAY_RESX - 118, DISPLAY_RESY - 120, "Yes", -1,
+  // FONT_NORMAL,
   //              COLOR_WHITE, COLOR_GREEN);
   nfc_pwr_ctl(true);
-  while(1){
-    if (nfc_poll_card()==NFC_STATUS_OPERACTION_SUCCESS){
-        if(nfc_select_aid((uint8_t *)"\xD1\x56\x00\x01\x32\x83\x40\x01",8)==NFC_STATUS_OPERACTION_SUCCESS){
-            screen_bg[NFC_TEST] = COLOR_GREEN;
-            nfc_pwr_ctl(false);
-            return;
-          }
+  while (1) {
+    if (nfc_poll_card() == NFC_STATUS_OPERACTION_SUCCESS) {
+      if (nfc_select_aid((uint8_t*)"\xD1\x56\x00\x01\x32\x83\x40\x01", 8) ==
+          NFC_STATUS_OPERACTION_SUCCESS) {
+        screen_bg[NFC_TEST] = COLOR_GREEN;
+        nfc_pwr_ctl(false);
+        return;
+      }
 
-          if(nfc_select_aid((uint8_t *)"\x6f\x6e\x65\x6b\x65\x79\x2e\x62\x61\x63\x6b\x75\x70\x01",14)==NFC_STATUS_OPERACTION_SUCCESS){
-            screen_bg[NFC_TEST] = COLOR_GREEN;
-            nfc_pwr_ctl(false);
-            return;
-          }      
-        }
+      if (nfc_select_aid((uint8_t*)"\x6f\x6e\x65\x6b\x65\x79\x2e\x62\x61\x63"
+                                   "\x6b\x75\x70\x01",
+                         14) == NFC_STATUS_OPERACTION_SUCCESS) {
+        screen_bg[NFC_TEST] = COLOR_GREEN;
+        nfc_pwr_ctl(false);
+        return;
+      }
+    }
     uint32_t evt = touch_click();
 
     if (!evt) {
@@ -721,10 +723,10 @@ static void _nfc_test(void){
   }
 }
 
-void flashled_test(void){
-  uint32_t start,current;
+void flashled_test(void) {
+  uint32_t start, current;
   start = current = HAL_GetTick();
-  uint8_t value=1;
+  uint8_t value = 1;
   display_clear();
 
   display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY / 2, "FLASHLED TEST", -1,
@@ -738,11 +740,11 @@ void flashled_test(void){
   display_text(DISPLAY_RESX - 118, DISPLAY_RESY - 120, "Yes", -1, FONT_NORMAL,
                COLOR_WHITE, COLOR_GREEN);
   ble_set_flashled(value);
-  while(1){
+  while (1) {
     current = HAL_GetTick();
-    if(current - start > 1000){
+    if (current - start > 1000) {
       start = current;
-      value = value?0:1;
+      value = value ? 0 : 1;
       ble_set_flashled(value);
     }
     uint32_t evt = touch_click();
@@ -771,82 +773,87 @@ void flashled_test(void){
 }
 
 void se_test(void) {
-
-  if (se_get_state()!=0) {
+  if (se_get_state() != 0) {
     screen_bg[SE_TEST] = COLOR_RED;
   } else {
     screen_bg[SE_TEST] = COLOR_GREEN;
   }
 }
 
+#ifndef QSPI_FLASH_TEST
 int spi_flash_test(void) {
-  // if (qspi_flash_read_id() == 0) {
-  //   screen_bg[SPI_FLASH_TEST] = COLOR_RED;
-  // } else {
-  //   screen_bg[SPI_FLASH_TEST] = COLOR_GREEN;
-  // }
-  char show_tip[64] = {0};
   volatile uint32_t write_start_time, write_end_time;
   write_start_time = HAL_GetTick();
 
-  uint8_t flash_data[2048] = {0};
-  uint8_t test_data[2048] = {0};
+  screen_bg[SPI_FLASH_TEST] = COLOR_GREEN;
+
+  // try probe flash
+  if (!qspi_flash_probe()) {
+    screen_bg[SPI_FLASH_TEST] = COLOR_RED;
+    return 0;
+  }
+
+  // test step
+  uint32_t step = qspi_flash_info->BlockSize * 4;
+
+  // test data
+  uint8_t test_data[step];
   for (uint32_t i = 0; i < sizeof(test_data); i++) {
     test_data[i] = i;
   }
 
-  for (uint32_t address = 0; address < (1 * 1024 * 1024);
-       address += QSPI_SECTOR_SIZE) {
-    ensure(qspi_flash_erase_block_64k(address)==HAL_OK?sectrue:secfalse, NULL);
+  // readback buffer
+  uint8_t flash_data[step];
+  memset(flash_data, 0x00, sizeof(flash_data));
 
-    for (uint32_t offset = 0; offset < QSPI_SECTOR_SIZE;
-         offset += sizeof(flash_data)) {
-      ensure(qspi_flash_read_buffer(flash_data, address + offset, sizeof(flash_data))==HAL_OK?sectrue:secfalse, NULL);
-      for (uint32_t i = 0; i < sizeof(flash_data); i++) {
-        if (flash_data[i] != 0xFF) {
-          screen_bg[SPI_FLASH_TEST] = COLOR_RED;
-          ensure(secfalse,"erase compare failed");
-          return 0;
-        }
-      }
+  // E/W/R
+  bool test_pass = true;
+  uint32_t addr = 0;
+  char show_tip[64] = {0};
+  char error_detail[64] = {0};
+  for (addr = 0; addr < qspi_flash_info->FlashSize; addr += step) {
+    if (!qspi_flash->Erase(addr, step)) {
+      mini_snprintf(error_detail, sizeof(error_detail),
+                    "SPI Erase Error addr=%lu", addr);
+      test_pass = false;
+      break;
     }
-
-    for (uint32_t offset = 0; offset < QSPI_SECTOR_SIZE;
-         offset += sizeof(test_data)) {
-      ensure(qspi_flash_write_buffer_unsafe(test_data, address + offset,
-                                     sizeof(test_data))==HAL_OK?sectrue:secfalse, NULL);
-      memset(flash_data, 0x00, sizeof(flash_data));
-      ensure(qspi_flash_read_buffer(flash_data, address + offset, sizeof(flash_data))==HAL_OK?sectrue:secfalse, NULL);
-      for (uint32_t i = 0; i < sizeof(flash_data); i++) {
-        if (flash_data[i] != i % 256) {
-          // ensure(secfalse,"read compare failed");
-          display_clear();
-          display_printf("write compare failed,address:%d,offset:%d,loc:%d\n",(unsigned)address,(unsigned)offset,(unsigned)i);
-          display_printf("%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,",flash_data[0],flash_data[1],flash_data[2],flash_data[3],flash_data[4],flash_data[5],flash_data[6],flash_data[7],flash_data[8],flash_data[9],flash_data[10],flash_data[11],flash_data[12],flash_data[13],flash_data[14],flash_data[15],flash_data[16]);
-          while(1);
-          screen_bg[SPI_FLASH_TEST] = COLOR_RED;
-          return 0;
-        }
-      }
+    if (!qspi_flash->Write(addr, test_data, step)) {
+      mini_snprintf(error_detail, sizeof(error_detail),
+                    "SPI Write Error addr=%lu", addr);
+      test_pass = false;
+      break;
     }
-
-    qspi_flash_erase_block_64k(address);
+    if (!qspi_flash->Read(addr, flash_data, step)) {
+      mini_snprintf(error_detail, sizeof(error_detail),
+                    "SPI Read Error addr=%lu", addr);
+      test_pass = false;
+      break;
+    }
+    if (memcmp(flash_data, test_data, step) != 0) {
+      mini_snprintf(error_detail, sizeof(error_detail),
+                    "SPI Compare Error addr=%lu", addr);
+      test_pass = false;
+      break;
+    }
 
     display_bar(0, 130, 480, 30, COLOR_BL_BG);
-    mini_snprintf(show_tip, sizeof(show_tip), "SPI TEST... %d%%",
-                  (unsigned int)(address * 100) / (1024 * 1024));
+    mini_snprintf(show_tip, sizeof(show_tip), "SPI TEST... %u%%",
+                  (uint16_t)((addr * 100) / step));
     display_text_center(DISPLAY_RESX / 2, 160, show_tip, -1, FONT_NORMAL,
                         COLOR_BL_FG, COLOR_BL_BG);
   }
 
-  display_bar(0, 130, 480, 30, COLOR_BL_BG);
-  display_text_center(DISPLAY_RESX / 2, 160, "SPI TEST... 100%", -1,
-                      FONT_NORMAL, COLOR_BL_FG, COLOR_BL_BG);
+  if (!test_pass) {
+    dbgprintf_Wait(error_detail);
+    screen_bg[SPI_FLASH_TEST] = COLOR_RED;
+  }
 
   write_end_time = HAL_GetTick();
-  screen_bg[SPI_FLASH_TEST] = COLOR_GREEN;
   return write_end_time - write_start_time;
 }
+
+#endif
 
 void emmc_test(void) {
   if (emmc_get_capacity_in_bytes() == 0) {
@@ -859,14 +866,14 @@ void emmc_test(void) {
 void sdram_test(void) {
   uint32_t i, j;
   uint32_t write_start_time, write_end_time, read_start_time, read_end_time;
-  uint32_t *buffer;
+  uint32_t* buffer;
 
   // char write_info[128] = {0};
   // char read_info[128] = {0};
 
   write_start_time = HAL_GetTick();
   j = 0;
-  buffer = (uint32_t *)(FMC_SDRAM_ADDRESS + 1024 * 1024);
+  buffer = (uint32_t*)(FMC_SDRAM_ADDRESS + 1024 * 1024);
 
   for (i = ((1024 * 1024 / 4) - (1024 * 1024 / 128)); i > 0; i--) {
     *buffer++ = j++;
@@ -908,7 +915,7 @@ void sdram_test(void) {
   write_end_time = HAL_GetTick();
 
   j = 0;
-  buffer = (uint32_t *)(FMC_SDRAM_ADDRESS + 1024 * 1024);
+  buffer = (uint32_t*)(FMC_SDRAM_ADDRESS + 1024 * 1024);
   for (i = 0; i < ((1024 * 1024 * 8) - (1024 * 1024 / 4)); i++) {
     if (*buffer++ != j++) {
       screen_bg[SDRAM_TEST] = COLOR_RED;
@@ -918,7 +925,7 @@ void sdram_test(void) {
 
   volatile uint32_t data;
   (void)data;
-  buffer = (uint32_t *)FMC_SDRAM_ADDRESS;
+  buffer = (uint32_t*)FMC_SDRAM_ADDRESS;
 
   read_start_time = HAL_GetTick();
   for (i = 1024 * 1024 / 4; i > 0; i--) {
@@ -1007,7 +1014,7 @@ void ble_test(void) {
   }
 }
 
-uint16_t *p_test_result = (uint16_t *)0x08020000;
+uint16_t* p_test_result = (uint16_t*)0x08020000;
 uint16_t test_result[16];
 
 #define OFFSET_Y 80
@@ -1021,7 +1028,7 @@ void test_menu(void) {
 
   ensure(flash_erase_sectors(secotrs, 1, NULL), "erase data sector 1");
   ensure(flash_unlock_write(), NULL);
-  ensure(flash_write_words(1, 0, (uint32_t *)test_result), "write test result");
+  ensure(flash_write_words(1, 0, (uint32_t*)test_result), "write test result");
   ensure(flash_lock_write(), NULL);
 
   display_clear();
@@ -1033,30 +1040,30 @@ void test_menu(void) {
                          screen_bg[j * 2 + i], COLOR_BLACK, 16);
     }
   }
-  display_text_center(135, FONT_OFFSET+OFFSET_Y*2, "SCREEN", -1, FONT_NORMAL, COLOR_BL_FG,
-                      screen_bg[SCREEN_TEST]);
-  display_text_center(345,  FONT_OFFSET+OFFSET_Y*2, "TOUCH", -1, FONT_NORMAL, COLOR_BL_FG,
-                      screen_bg[TOUCH_TEST]);
-  display_text_center(135,  FONT_OFFSET+OFFSET_Y*3, "SE", -1, FONT_NORMAL, COLOR_BL_FG,
-                      screen_bg[SE_TEST]);
-  display_text_center(345,  FONT_OFFSET+OFFSET_Y*3, "SPI-FLASH", -1, FONT_NORMAL, COLOR_BL_FG,
-                      screen_bg[SPI_FLASH_TEST]);
-  display_text_center(135,  FONT_OFFSET+OFFSET_Y*4, "EMMC", -1, FONT_NORMAL, COLOR_BL_FG,
-                      screen_bg[EMMC_TEST]);
-  display_text_center(345,  FONT_OFFSET+OFFSET_Y*4, "SDRAM", -1, FONT_NORMAL, COLOR_BL_FG,
-                      screen_bg[SDRAM_TEST]);
-  display_text_center(135,  FONT_OFFSET+OFFSET_Y*5, "CAMERA", -1, FONT_NORMAL, COLOR_BL_FG,
-                      screen_bg[CAMERA_TEST]);
-  display_text_center(345,  FONT_OFFSET+OFFSET_Y*5, "MOTOR", -1, FONT_NORMAL, COLOR_BL_FG,
-                      screen_bg[MOTOR_TEST]);
-  display_text_center(135,  FONT_OFFSET+OFFSET_Y*6, "BLE", -1, FONT_NORMAL, COLOR_BL_FG,
-                      screen_bg[BLE_TEST]);
-  display_text_center(345,  FONT_OFFSET+OFFSET_Y*6, "FP", -1, FONT_NORMAL, COLOR_BL_FG,
-                      screen_bg[FP_TEST]);
-  display_text_center(135,  FONT_OFFSET+OFFSET_Y*7, "NFC", -1, FONT_NORMAL, COLOR_BL_FG,
-                      screen_bg[NFC_TEST]);
-  display_text_center(345,  FONT_OFFSET+OFFSET_Y*7, "FLASHLED", -1, FONT_NORMAL, COLOR_BL_FG,
-                      screen_bg[FLASHLED_TEST]);
+  display_text_center(135, FONT_OFFSET + OFFSET_Y * 2, "SCREEN", -1,
+                      FONT_NORMAL, COLOR_BL_FG, screen_bg[SCREEN_TEST]);
+  display_text_center(345, FONT_OFFSET + OFFSET_Y * 2, "TOUCH", -1, FONT_NORMAL,
+                      COLOR_BL_FG, screen_bg[TOUCH_TEST]);
+  display_text_center(135, FONT_OFFSET + OFFSET_Y * 3, "SE", -1, FONT_NORMAL,
+                      COLOR_BL_FG, screen_bg[SE_TEST]);
+  display_text_center(345, FONT_OFFSET + OFFSET_Y * 3, "SPI-FLASH", -1,
+                      FONT_NORMAL, COLOR_BL_FG, screen_bg[SPI_FLASH_TEST]);
+  display_text_center(135, FONT_OFFSET + OFFSET_Y * 4, "EMMC", -1, FONT_NORMAL,
+                      COLOR_BL_FG, screen_bg[EMMC_TEST]);
+  display_text_center(345, FONT_OFFSET + OFFSET_Y * 4, "SDRAM", -1, FONT_NORMAL,
+                      COLOR_BL_FG, screen_bg[SDRAM_TEST]);
+  display_text_center(135, FONT_OFFSET + OFFSET_Y * 5, "CAMERA", -1,
+                      FONT_NORMAL, COLOR_BL_FG, screen_bg[CAMERA_TEST]);
+  display_text_center(345, FONT_OFFSET + OFFSET_Y * 5, "MOTOR", -1, FONT_NORMAL,
+                      COLOR_BL_FG, screen_bg[MOTOR_TEST]);
+  display_text_center(135, FONT_OFFSET + OFFSET_Y * 6, "BLE", -1, FONT_NORMAL,
+                      COLOR_BL_FG, screen_bg[BLE_TEST]);
+  display_text_center(345, FONT_OFFSET + OFFSET_Y * 6, "FP", -1, FONT_NORMAL,
+                      COLOR_BL_FG, screen_bg[FP_TEST]);
+  display_text_center(135, FONT_OFFSET + OFFSET_Y * 7, "NFC", -1, FONT_NORMAL,
+                      COLOR_BL_FG, screen_bg[NFC_TEST]);
+  display_text_center(345, FONT_OFFSET + OFFSET_Y * 7, "FLASHLED", -1,
+                      FONT_NORMAL, COLOR_BL_FG, screen_bg[FLASHLED_TEST]);
 }
 
 uint16_t pos_x, pos_y;
@@ -1072,8 +1079,8 @@ uint32_t test_ui_response(void) {
   for (int i = 0; i < 2; i++) {
     for (int j = 0; j < 6; j++) {
       if (pos_x > ((i + 1) * 60 + i * 150) &&
-          pos_x < ((i + 1) * 60 + (i + 1) * 150) && pos_y > (150 + j * OFFSET_Y) &&
-          pos_y < (150 + j * OFFSET_Y + 80)) {
+          pos_x < ((i + 1) * 60 + (i + 1) * 150) &&
+          pos_y > (150 + j * OFFSET_Y) && pos_y < (150 + j * OFFSET_Y + 80)) {
         return j * 2 + i;
       }
     }
@@ -1102,39 +1109,36 @@ void ble_response(void) {
 }
 
 int main(void) {
-  volatile uint32_t startup_mode_flag = *STAY_IN_FLAG_ADDR;
-
+  SystemCoreClockUpdate();
   reset_flags_reset();
-
-  periph_init();
-
-  /* Enable the CPU Cache */
+  dwt_init();
   cpu_cache_enable();
 
+  periph_init();
   system_clock_config();
-
-  rng_init();
-
-  flash_option_bytes_init();
-
-  clear_otg_hs_memory();
-
-  flash_otp_init();
-
-  gpio_init();
-
+  // HAL_MPU_Disable();
   sdram_init();
 
+  flash_option_bytes_init();
   mpu_config();
 
   lcd_init(DISPLAY_RESX, DISPLAY_RESY, LCD_PIXEL_FORMAT_RGB565);
   display_clear();
   lcd_pwm_init();
+  touch_init();
 
-    qspi_flash_init();
-  qspi_flash_config();
+  qspi_flash_init();
+  // if (!qspi_flash_probe()) {
+  //   dbgprintf_Wait("qspi_flash_probe fail!");
+  // }
+  // if (qspi_flash_test()) {
+  //   dbgprintf_Wait("qspi_flash_test success!");
+  // } else {
+  //   dbgprintf_Wait("qspi_flash_test fail!");
+  // }
   // qspi_flash_memory_mapped();
 
+  volatile uint32_t startup_mode_flag = *STAY_IN_FLAG_ADDR;
 
   if (startup_mode_flag != STAY_IN_BOARDLOADER_FLAG &&
       startup_mode_flag != STAY_IN_BOOTLOADER_FLAG) {
@@ -1153,7 +1157,9 @@ int main(void) {
 #endif
   }
 
-  touch_init();
+  flash_otp_init();
+  rng_init();
+  clear_otg_hs_memory();
 
   emmc_init();
   thd89_io_init();
@@ -1164,7 +1170,6 @@ int main(void) {
   camera_init();
   ble_usart_init();
   motor_init();
-  dwt_init();
 
   nfc_init();
 
@@ -1354,7 +1359,7 @@ int main(void) {
   };
   secbool boot_hdr = secfalse, boot_present = secfalse;
 
-  boot_hdr = load_image_header((const uint8_t *)BOOTLOADER_START,
+  boot_hdr = load_image_header((const uint8_t*)BOOTLOADER_START,
                                BOOTLOADER_IMAGE_MAGIC, BOOTLOADER_IMAGE_MAXSIZE,
                                BOARDLOADER_KEY_M, BOARDLOADER_KEY_N,
                                BOARDLOADER_KEYS, &hdr_inner);

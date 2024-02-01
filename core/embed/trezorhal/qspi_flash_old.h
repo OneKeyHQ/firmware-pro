@@ -13,14 +13,13 @@
 #define READ_STATUS2_REG_CMD 0x35
 #define WRITE_STATUS_REG_CMD 0x01
 #define WRITE_STATUS2_REG_CMD 0x31
-#define BULK_ERASE_CMD 0x60
+#define BULK_ERASE_CMD 0xc7
 #define SUBSECTOR_ERASE_4_BYTE_ADDR_CMD 0x20
 #define SECTOR_64K_ERASE_CMD 0xD8
 #define QUAD_IN_FAST_PROG_4_BYTE_ADDR_CMD 0x32
 #define QUAD_INOUT_FAST_READ_4_BYTE_ADDR_CMD 0xEB
 
 #define QSPI_FLASH_BASE_ADDRESS (0x90000000)
-#define QSPI_FLASH_STORAG_OFFSET (7 * 1024 * 1024)
 
 typedef struct {
   uint8_t uniq_id[8];
@@ -50,5 +49,6 @@ int qspi_flash_write_buffer_unsafe(uint8_t *data, uint32_t address,
                                    uint32_t len);
 int qspi_flash_read_buffer(uint8_t *data, uint32_t address, uint32_t len);
 void qspi_flash_test(void);
-int qspi_flash_read_buffer_single(uint8_t *data, uint32_t address, uint32_t len);
+int qspi_flash_read_buffer_single(uint8_t *data, uint32_t address,
+                                  uint32_t len);
 #endif
