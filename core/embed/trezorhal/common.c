@@ -55,6 +55,10 @@ static const uint8_t toi_icon_warning[] = {
 
 volatile uint32_t system_reset = 0;
 
+void __attribute__((noreturn)) __stack_chk_fail(void) {
+  error_shutdown("Internal error", "(SS)", NULL, NULL);
+}
+
 // from util.s
 extern void shutdown_privileged(void);
 
@@ -263,10 +267,6 @@ void clear_otg_hs_memory(void) {
 }
 
 uint32_t __stack_chk_guard = 0;
-
-void __attribute__((noreturn)) __stack_chk_fail(void) {
-  error_shutdown("Internal error", "(SS)", NULL, NULL);
-}
 
 uint8_t HW_ENTROPY_DATA[HW_ENTROPY_LEN];
 

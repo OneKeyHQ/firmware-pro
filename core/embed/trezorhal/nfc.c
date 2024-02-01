@@ -336,19 +336,19 @@ NFC_STATUS nfc_poll_card(void)
     PN532_InListPassiveTarget_Results ILPT_result = {0};
 
     // detect card
-        if ( pn532->InListPassiveTarget(ILPT_params, &ILPT_result) )
+    if ( pn532->InListPassiveTarget(ILPT_params, &ILPT_result) )
+    {
+        // detected
+        // only allow a single card
+        if ( ILPT_result.NbTg == 1 )
         {
-            // detected
-            // only allow a single card
-            if ( ILPT_result.NbTg == 1 )
-            {
-                result = NFC_STATUS_OPERACTION_SUCCESS;
-            }
-            else
-            {
-                result = NFC_STATUS_OPERACTION_FAILED;
-            }
+            result = NFC_STATUS_OPERACTION_SUCCESS;
         }
+        else
+        {
+            result = NFC_STATUS_OPERACTION_FAILED;
+        }
+    }
 
     return result;
 }
@@ -362,9 +362,9 @@ NFC_STATUS nfc_select_aid(uint8_t* aid, uint8_t aid_len)
     memcpy(apdu_select + 5, aid, aid_len);
     NFC_STATUS result = nfc_send_recv(apdu_select, aid_len + 5, response, &response_len);
 
-    if(result == NFC_STATUS_OPERACTION_SUCCESS)
+    if ( result == NFC_STATUS_OPERACTION_SUCCESS )
     {
-        if(response[0] == 0x90 && response[1] == 0x00)
+        if ( response[0] == 0x90 && response[1] == 0x00 )
         {
             result = NFC_STATUS_OPERACTION_SUCCESS;
         }

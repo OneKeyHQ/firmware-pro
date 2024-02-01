@@ -151,8 +151,6 @@ static void nfc_test() {
   nfc_init();
   display_printf("Done\n");
 
-    
-
   PN532_FW_VER fw_ver;
   display_printf("NFC PN532 Get FW Ver...");
   if (!pn532->GetFirmwareVersion(&fw_ver)) {
