@@ -83,13 +83,10 @@ class Transaction:
         return hash
 
     @staticmethod
-    def as_note(note):
-        if not note:
-            return None
-        if not isinstance(note, (bytes, bytearray, str)):
-            raise error.WrongNoteType
-        if isinstance(note, str):
-            note = note.encode()
+    def as_note(note) -> str | None:
+        from trezor import strings
+
+        note = strings.format_customer_data(note)
         if len(note) > constants.note_max_length:
             raise error.WrongNoteLength
         return note

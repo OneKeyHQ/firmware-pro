@@ -447,12 +447,11 @@ class TransactionDetailsETH(FullSizeWindow):
             self.group_more.add_dummy()
 
         if raw_data:
-            try:
-                self.data_str = raw_data.decode()
-            except UnicodeError:
-                from binascii import hexlify
+            from trezor import strings
 
-                self.data_str = f"0x{hexlify(raw_data).decode()}"
+            self.data_str = strings.format_customer_data(raw_data)
+            if not self.data_str:
+                return
             self.long_data = False
             if len(self.data_str) > 225:
                 self.long_data = True
@@ -469,9 +468,9 @@ class TransactionDetailsETH(FullSizeWindow):
                 self.show_full_data = NormalButton(
                     self.item_data.content, _(i18n_keys.BUTTON__VIEW_DATA)
                 )
-                self.show_full_data.set_size(185, 77)
+                self.show_full_data.set_size(lv.SIZE.CONTENT, 77)
                 self.show_full_data.add_style(
-                    StyleWrapper().text_font(font_GeistSemiBold26), 0
+                    StyleWrapper().text_font(font_GeistSemiBold26).pad_hor(24), 0
                 )
                 self.show_full_data.align(lv.ALIGN.CENTER, 0, 0)
                 self.show_full_data.remove_style(None, lv.PART.MAIN | lv.STATE.PRESSED)
@@ -531,9 +530,9 @@ class ContractDataOverview(FullSizeWindow):
             self.show_full_data = NormalButton(
                 self.item_data.content, _(i18n_keys.BUTTON__VIEW_DATA)
             )
-            self.show_full_data.set_size(185, 77)
+            self.show_full_data.set_size(lv.SIZE.CONTENT, 77)
             self.show_full_data.add_style(
-                StyleWrapper().text_font(font_GeistSemiBold26), 0
+                StyleWrapper().text_font(font_GeistSemiBold26).pad_hor(24), 0
             )
             self.show_full_data.align(lv.ALIGN.CENTER, 0, 0)
             self.show_full_data.remove_style(None, lv.PART.MAIN | lv.STATE.PRESSED)
@@ -1148,7 +1147,7 @@ class PassphraseDisplayConfirm(FullSizeWindow):
         self.input_count_tips.set_text(f"{len(passphrase)}/50")
 
     def show_unload_anim(self):
-        self.destroy(5)
+        self.destroy(10)
 
 
 class SolBlindingSign(FullSizeWindow):
@@ -1553,7 +1552,7 @@ class AlgoPayment(FullSizeWindow):
         )
         self.group_fees.add_dummy()
 
-        if note is not None:
+        if note:
             self.item_note = CardItem(
                 self.container,
                 _(i18n_keys.LIST_KEY__NOTE__COLON),
@@ -1635,7 +1634,7 @@ class AlgoAssetFreeze(FullSizeWindow):
         )
         self.group_fees.add_dummy()
 
-        if note is not None:
+        if note:
             self.item_note = CardItem(
                 self.container,
                 _(i18n_keys.LIST_KEY__NOTE__COLON),
@@ -1746,7 +1745,7 @@ class AlgoAssetXfer(FullSizeWindow):
         )
         self.group_fees.add_dummy()
 
-        if note is not None:
+        if note:
             self.item_note = CardItem(
                 self.container,
                 _(i18n_keys.LIST_KEY__NOTE__COLON),
@@ -1851,7 +1850,7 @@ class AlgoAssetCfg(FullSizeWindow):
         )
         self.group_fees.add_dummy()
 
-        if note is not None:
+        if note:
             self.item_note = CardItem(
                 self.container,
                 _(i18n_keys.LIST_KEY__NOTE__COLON),
@@ -2012,7 +2011,7 @@ class AlgoKeyregOnline(FullSizeWindow):
         )
         self.group_fees.add_dummy()
 
-        if note is not None:
+        if note:
             self.item_note = CardItem(
                 self.container,
                 _(i18n_keys.LIST_KEY__NOTE__COLON),
@@ -2091,7 +2090,7 @@ class AlgoKeyregNonp(FullSizeWindow):
         )
         self.group_fees.add_dummy()
 
-        if note is not None:
+        if note:
             self.item_note = CardItem(
                 self.container,
                 _(i18n_keys.LIST_KEY__NOTE__COLON),
@@ -2810,9 +2809,9 @@ class CosmosSignCombined(FullSizeWindow):
             self.show_full_data = NormalButton(
                 self.item_data.content, _(i18n_keys.BUTTON__VIEW_DATA)
             )
-            self.show_full_data.set_size(185, 82)
+            self.show_full_data.set_size(lv.SIZE.CONTENT, 82)
             self.show_full_data.add_style(
-                StyleWrapper().text_font(font_GeistSemiBold26), 0
+                StyleWrapper().text_font(font_GeistSemiBold26).pad_hor(24), 0
             )
             self.show_full_data.align(lv.ALIGN.CENTER, 0, 0)
             self.show_full_data.remove_style(None, lv.PART.MAIN | lv.STATE.PRESSED)

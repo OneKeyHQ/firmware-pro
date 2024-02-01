@@ -9,7 +9,7 @@ from trezor.lvglui.i18n import gettext as _, i18n_refresh, keys as i18n_keys
 from trezor.lvglui.lv_colors import lv_colors
 from trezor.lvglui.scrs.components.pageable import Indicator
 from trezor.lvglui.scrs.components.qrcode import QRCode
-from trezor.qr import close_camera, get_hd_key, save_app_obj, scan_qr
+from trezor.qr import close_camera, get_hd_key, retrieval_hd_key, save_app_obj, scan_qr
 from trezor.ui import display, style
 
 import ujson as json
@@ -101,15 +101,14 @@ class MainScreen(Screen):
         self.bottom_bar = lv.btn(self)
         self.bottom_bar.remove_style_all()
         self.bottom_bar.set_size(lv.pct(100), 61)
-        self.bottom_bar.align(lv.ALIGN.BOTTOM_MID, 0, 0)
+        self.bottom_bar.align(lv.ALIGN.BOTTOM_MID, 0, -24)
 
         self.up_arrow = lv.img(self)
         self.up_arrow.set_src("A:/res/up-home.png")
         self.up_arrow.align_to(self.bottom_bar, lv.ALIGN.OUT_TOP_MID, 0, -8)
 
         self.bottom_tips = lv.label(self.bottom_bar)
-        self.bottom_tips.align(lv.ALIGN.BOTTOM_MID, 0, -24)
-        self.bottom_tips.set_width(456)
+        self.bottom_tips.set_size(456, lv.pct(100))
         self.bottom_tips.set_text(_(i18n_keys.BUTTON__SWIPE_TO_SHOW_APPS))
         self.bottom_tips.add_style(
             StyleWrapper()
@@ -945,35 +944,43 @@ class WalletList(Screen):
             self.content_area, self.subtitle, padding_row=2
         )
 
-        self.onekey = ListItemBtn(
-            self.container,
-            _(i18n_keys.ITEM__ONEKEY_WALLET),
-            "BTC·ETH·TRON·SOL·NEAR ...",
-            left_img_src="A:/res/ok-logo-48.png",
-        )
-        self.onekey.text_layout_vertical(pad_top=17, pad_ver=20)
-
         self.mm = ListItemBtn(
             self.container,
             _(i18n_keys.ITEM__METAMASK_WALLET),
-            "ETH·EVM ...",
+            _(i18n_keys.CONTENT__ETH_AND_EVM_POWERED_NETWORK),
             left_img_src="A:/res/mm-logo-48.png",
         )
         self.mm.text_layout_vertical()
+
+        self.onekey = ListItemBtn(
+            self.container,
+            _(i18n_keys.ITEM__ONEKEY_WALLET),
+            # "BTC·ETH·TRON·SOL·NEAR ...",
+            _(i18n_keys.CONTENT__COMING_SOON),
+            left_img_src="A:/res/ok-logo-48.png",
+        )
+        self.onekey.text_layout_vertical(pad_top=17, pad_ver=20)
+        self.onekey.disable()
+
         self.okx = ListItemBtn(
             self.container,
             _(i18n_keys.ITEM__OKX_WALLET),
-            "BTC·ETH·TRON·SOL·NEAR ...",
+            # "BTC·ETH·TRON·SOL·NEAR ...",
+            _(i18n_keys.CONTENT__COMING_SOON),
             left_img_src="A:/res/okx-logo-48.png",
         )
         self.okx.text_layout_vertical(pad_top=17, pad_ver=20)
+        self.okx.disable()
 
         self.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
 
-        from trezor.qr import gen_hd_key
+        if not device.is_passphrase_enabled():
+            from trezor.qr import gen_hd_key
 
-        if not get_hd_key():
-            workflow.spawn(gen_hd_key(self.refresh))
+            if not get_hd_key():
+                workflow.spawn(gen_hd_key(self.refresh))
+        else:
+            retrieval_hd_key()
 
     def on_click(self, event_obj):
         code = event_obj.code
@@ -981,7 +988,9 @@ class WalletList(Screen):
         if code == lv.EVENT.CLICKED:
             if target not in [self.onekey, self.mm, self.okx]:
                 return
-            qr_data = get_hd_key()
+            qr_data = (
+                retrieval_hd_key() if device.is_passphrase_enabled() else get_hd_key()
+            )
             if qr_data is None:
                 from trezor.qr import gen_hd_key
 

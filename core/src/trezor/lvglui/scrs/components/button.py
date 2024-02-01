@@ -88,7 +88,7 @@ class ListItemBtn(lv.btn):
         self.set_size(456, lv.SIZE.CONTENT)
         self.add_style(
             StyleWrapper()
-            .bg_color(lv_colors.ONEKEY_GRAY_3 if has_bgcolor else lv_colors.BLACK)
+            .bg_color(lv_colors.ONEKEY_BLACK_3 if has_bgcolor else lv_colors.BLACK)
             .bg_opa(lv.OPA.COVER)
             .min_height(94)
             .text_font(font_GeistSemiBold30)
@@ -178,6 +178,15 @@ class ListItemBtn(lv.btn):
             0,
         )
         self.label_right.align_to(self.label_left, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 4)
+
+    def disable(self) -> None:
+        self.add_style(
+            StyleWrapper().bg_color(lv_colors.ONEKEY_GRAY_3),
+            0,
+        )
+        self.label_left.set_style_text_color(lv_colors.WHITE_2, 0)
+        self.label_right.set_style_text_color(lv_colors.ONEKEY_GRAY_1, 0)
+        self.clear_flag(lv.obj.FLAG.CLICKABLE)
 
 
 class ListItemBtnWithSwitch(lv.btn):

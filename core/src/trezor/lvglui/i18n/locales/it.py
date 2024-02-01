@@ -630,7 +630,7 @@ translations = [
     "Transazione di fusione",
     "Sistema",
     "Boot loader",
-    "Invia \n {}",
+    "Invia \n{}",
     "Dettagli",
     "Interagire con {}",
     "Indicazioni",
@@ -741,5 +741,6 @@ translations = [
     "Dominio",
     "LNURL Aut",
     "Approva l'autorizzazione LNURL",
+    "Rete alimentata da ETH ed EVM",
 ]
 # fmt: on

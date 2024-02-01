@@ -15,6 +15,13 @@ class QRTask:
         self.callback_obj = None
         self.hd_key = None
 
+    def get_and_rest_hd_key(self) -> str | None:
+        if self.hd_key is None:
+            return None
+        current = self.hd_key
+        self.hd_key = None
+        return current
+
     def get_hd_key(self) -> str | None:
         return self.hd_key
 
@@ -151,13 +158,17 @@ def close_camera():
     qr_task.set_camera_state(False)
 
 
+def retrieval_hd_key():
+    return qr_task.get_and_rest_hd_key()
+
+
 def get_hd_key():
     return qr_task.get_hd_key()
 
 
 async def gen_hd_key(callback=None):
     global qr_task
-    if qr_task.get_hd_key() is not None:
+    if qr_task.hd_key is not None:
         return
     from apps.base import handle_Initialize
     from apps.ur_registry.crypto_hd_key import genCryptoHDKeyForETHStandard

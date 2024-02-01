@@ -630,7 +630,7 @@ translations = [
     "Meld Transaction",
     "System",
     "Bootloader",
-    "Send \n {}",
+    "Send \n{}",
     "Details",
     "Interacting with {}",
     "Directions",
@@ -741,5 +741,6 @@ translations = [
     "Domain",
     "LNURL Auth",
     "Approve LNURL Authorization",
+    "ETH and EVM powered network",
 ]
 # fmt: on

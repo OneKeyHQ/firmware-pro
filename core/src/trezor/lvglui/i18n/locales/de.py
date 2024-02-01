@@ -630,7 +630,7 @@ translations = [
     "Transaktion melden",
     "System",
     "Bootloader",
-    "Senden \n {}",
+    "Senden \n{}",
     "Einzelheiten",
     "Interagieren mit {}",
     "Richtungen",
@@ -741,5 +741,6 @@ translations = [
     "Domain",
     "LNURL-Auth",
     "Genehmigen Sie die LNURL-Autorisierung",
+    "ETH- und EVM-basiertes Netzwerk",
 ]
 # fmt: on

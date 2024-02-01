@@ -46,7 +46,7 @@ async def sign_tx(
             if type(txn) is transactions.transaction.AssetFreezeTxn
             else False,
             txn.genesis_id if txn is not None else None,
-            note.decode("utf-8") if note is not None else None,
+            note,
         )
     elif type(txn) == transactions.transaction.PaymentTxn:
         from trezor.ui.layouts.lvgl import confirm_algo_payment
@@ -69,7 +69,7 @@ async def sign_tx(
             close_remainder_to,
             txn.rekey_to if txn is not None else None,
             txn.genesis_id if txn is not None else None,
-            note.decode("utf-8") if note is not None else None,
+            note,
             fee,
             amount,
         )
@@ -110,7 +110,7 @@ async def sign_tx(
             else None,
             txn.rekey_to if txn is not None else None,
             txn.genesis_id if txn is not None else None,
-            note.decode("utf-8") if note is not None else None,
+            note,
         )
     elif type(txn) == transactions.transaction.AssetConfigTxn:
         from trezor.ui.layouts.lvgl import confirm_algo_asset_cfg
@@ -159,7 +159,7 @@ async def sign_tx(
             else None,
             txn.rekey_to if txn is not None else None,
             txn.genesis_id if txn is not None else None,
-            note.decode("utf-8") if note is not None else None,
+            note,
         )
     elif type(txn) == transactions.transaction.KeyregNonparticipatingTxn:
         from trezor.ui.layouts.lvgl import confirm_algo_keyregNonparticipating
@@ -177,7 +177,7 @@ async def sign_tx(
             nonpart if type(nonpart) is bool else False,
             txn.rekey_to if txn is not None else None,
             txn.genesis_id if txn is not None else None,
-            note.decode("utf-8") if note is not None else None,
+            note,
         )
     elif type(txn) == transactions.transaction.KeyregOfflineTxn:
         from trezor.ui.layouts.lvgl import confirm_algo_keyregOnline
@@ -193,7 +193,7 @@ async def sign_tx(
             None,
             txn.rekey_to if txn is not None else None,
             txn.genesis_id if txn is not None else None,
-            note.decode("utf-8") if note is not None else None,
+            note,
         )
     elif type(txn) == transactions.transaction.KeyregOnlineTxn:
         from trezor.ui.layouts.lvgl import confirm_algo_keyregOnline
@@ -211,7 +211,7 @@ async def sign_tx(
             else None,
             txn.rekey_to if txn is not None else None,
             txn.genesis_id if txn is not None else None,
-            note.decode("utf-8") if note is not None else None,
+            note,
         )
     elif type(txn) == transactions.transaction.ApplicationCallTxn:
         from trezor.ui.layouts.lvgl import confirm_algo_app

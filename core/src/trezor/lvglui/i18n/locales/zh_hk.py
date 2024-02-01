@@ -630,7 +630,7 @@ translations = [
     "合並交易",
     "系統版本",
     "Bootloader 版本",
-    "發送\n {}",
+    "發送\n{}",
     "詳情",
     "與 {} 交互",
     "方向",
@@ -741,5 +741,6 @@ translations = [
     "域名",
     "LNURL 授權",
     "批準 LNURL 授權",
+    "ETH 和 EVM 兼容鏈",
 ]
 # fmt: on
