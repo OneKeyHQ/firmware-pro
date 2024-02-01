@@ -2,7 +2,7 @@ from trezor import wire
 from trezor.crypto.curve import ed25519
 from trezor.crypto.hashlib import blake2b
 from trezor.lvglui.scrs import lv
-from trezor.messages import SuiSignedTx, SuiSignTx
+from trezor.messages import SuiSignedTx, SuiSignTx, SuiTxAck, SuiTxRequest
 
 from apps.common import paths, seed
 from apps.common.keychain import Keychain, auto_keychain
@@ -23,14 +23,44 @@ async def sign_tx(ctx: wire.Context, msg: SuiSignTx, keychain: Keychain) -> SuiS
     ctx.primary_color, ctx.icon_path = lv.color_hex(PRIMARY_COLOR), ICON
     from trezor.ui.layouts import confirm_blind_sign_common, confirm_final
 
-    intent = msg.raw_tx[:3]
-    if INTENT_BYTES != intent:
-        raise wire.DataError("Invalid raw tx")
+    if msg.data_length is not None and msg.data_length > 0:
+        intent = msg.data_initial_chunk[:3]
+        if INTENT_BYTES != intent:
+            raise wire.DataError("Invalid raw tx")
 
-    await confirm_blind_sign_common(ctx, address, msg.raw_tx)
+        data_total = msg.data_length
+        data = bytearray()
+        data += msg.data_initial_chunk
+        data_left = data_total - len(msg.data_initial_chunk)
+
+        hash_fn = blake2b(outlen=32)
+        hash_fn.update(msg.data_initial_chunk)
+        while data_left > 0:
+            resp = await send_request_chunk(ctx, data_left)
+            data_left -= len(resp.data_chunk)
+            hash_fn.update(resp.data_chunk)
+            data += resp.data_chunk
+
+        hash = hash_fn.digest()
+        await confirm_blind_sign_common(ctx, address, bytes(data))
+    else:
+        intent = msg.raw_tx[:3]
+        if INTENT_BYTES != intent:
+            raise wire.DataError("Invalid raw tx")
+        hash = blake2b(data=msg.raw_tx, outlen=32).digest()
+        await confirm_blind_sign_common(ctx, address, msg.raw_tx)
+
     await confirm_final(ctx, "SUI")
-    signature = ed25519.sign(
-        node.private_key(), blake2b(data=msg.raw_tx, outlen=32).digest()
-    )
 
+    signature = ed25519.sign(node.private_key(), hash)
     return SuiSignedTx(public_key=pub_key_bytes, signature=signature)
+
+
+async def send_request_chunk(ctx: wire.Context, data_left: int) -> SuiTxAck:
+    req = SuiTxRequest()
+    if data_left <= 1024:
+        req.data_length = data_left
+    else:
+        req.data_length = 1024
+
+    return await ctx.call(req, SuiTxAck)
