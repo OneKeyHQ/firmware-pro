@@ -20,6 +20,8 @@ _HEADER_LEN = const(5)
 # fmt: off
 _CMD_BLE_NAME = _PRESS_SHORT = _USB_STATUS_PLUG_IN = _BLE_STATUS_CONNECTED = _BLE_PAIR_SUCCESS = const(1)
 _PRESS_LONG = _USB_STATUS_PLUG_OUT = _BLE_STATUS_DISCONNECTED = _BLE_PAIR_FAILED = _CMD_BLE_STATUS = const(2)
+_BTN_PRESS = const(0x20)
+_BTN_RELEASE = const(0x40)
 # fmt: on
 _BLE_STATUS_OPENED = _POWER_STATUS_CHARGING = _CMD_BLE_PAIR_CODE = const(3)
 _BLE_STATUS_CLOSED = _CMD_BLE_PAIR_RES = _POWER_STATUS_CHARGING_FINISHED = const(4)
@@ -57,7 +59,6 @@ async def handle_fingerprint():
             )
         ):
             await loop.sleep(2000)
-            fingerprint.sleep()
             continue
 
         try:
@@ -266,16 +267,11 @@ async def _deal_ble_pair(value):
 
 async def _deal_button_press(value: bytes) -> None:
     res = ustruct.unpack(">B", value)[0]
+    if res in (_PRESS_SHORT, _PRESS_LONG):
+        if utils.is_collecting_fingerprint():
+            return
     if res == _PRESS_SHORT:
         if display.backlight():
-            if utils.is_collecting_fingerprint():
-                from trezor.lvglui.scrs.fingerprints import (
-                    CollectFingerprintProgress,
-                )
-
-                if CollectFingerprintProgress.has_instance():
-                    CollectFingerprintProgress.get_instance().prompt_tips()
-                    return
             display.backlight(0)
             if device.is_initialized():
                 if utils.is_initialization_processing():
@@ -284,8 +280,9 @@ async def _deal_button_press(value: bytes) -> None:
                 from trezor.lvglui.scrs import fingerprints
 
                 if config.has_pin() and config.is_unlocked():
-                    if fingerprints.is_available() and fingerprints.is_unlocked():
-                        fingerprints.lock()
+                    if fingerprints.is_available():
+                        if fingerprints.is_unlocked():
+                            fingerprints.lock()
                     else:
                         config.lock()
                 await loop.race(safe_reloop(), loop.sleep(200))
@@ -303,6 +300,17 @@ async def _deal_button_press(value: bytes) -> None:
         )
         await loop.sleep(200)
         utils.lcd_resume()
+    elif res == _BTN_PRESS:
+        if utils.is_collecting_fingerprint():
+            from trezor.lvglui.scrs.fingerprints import (
+                CollectFingerprintProgress,
+            )
+
+            if CollectFingerprintProgress.has_instance():
+                CollectFingerprintProgress.get_instance().prompt_tips()
+                return
+    elif res == _BTN_RELEASE:
+        pass
 
 
 async def _deal_charging_state(value: bytes) -> None:

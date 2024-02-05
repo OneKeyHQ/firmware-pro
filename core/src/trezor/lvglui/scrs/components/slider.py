@@ -34,7 +34,7 @@ class Slider(lv.slider):
             # .border_color(lv_colors.WHITE)
             .bg_color(lv_colors.ONEKEY_BLACK_3)
             .bg_opa()
-            .pad_ver(40)
+            .pad_ver(20)
             .pad_hor(8)
             .radius(98),
             lv.PART.MAIN | lv.STATE.DEFAULT,

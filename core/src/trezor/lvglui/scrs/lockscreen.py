@@ -47,7 +47,6 @@ class LockScreen(Screen):
             0,
         )
         self.tap_tip = lv.label(self.content_area)
-        self.tap_tip.set_size(456, lv.SIZE.CONTENT)
         self.tap_tip.set_long_mode(lv.label.LONG.WRAP)
         self.show_tips()
         self.lock_state = lv.img(self.content_area)
@@ -73,6 +72,8 @@ class LockScreen(Screen):
                 self.tap_tip.set_text(
                     _(i18n_keys.MSG__CLEAN_FINGERPRINT_SENSOR_AND_TRY_AGAIN)
                 )
+            if hasattr(self, "lock_state"):
+                self.lock_state.align_to(self.tap_tip, lv.ALIGN.OUT_TOP_MID, 0, -16)
         else:
             from trezor.lvglui.scrs import fingerprints
 
@@ -83,7 +84,9 @@ class LockScreen(Screen):
                 # self._show_fingerprint_prompt_if_necessary()
             else:
                 self.tap_tip.set_text(_(i18n_keys.MSG__SWIPE_UP_TO_UNLOCK))
-        self.tap_tip.align(lv.ALIGN.TOP_MID, 0, 739)
+
+        self.tap_tip.set_size(456, lv.SIZE.CONTENT)
+        self.tap_tip.align(lv.ALIGN.BOTTOM_MID, 0, 0)
         self.tap_tip.add_style(
             StyleWrapper()
             .text_font(font_GeistRegular26)

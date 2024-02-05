@@ -71,6 +71,22 @@ class RequestAddFingerprintScreen(FullSizeWindow):
         self.destroy(10)
 
 
+class FingerprintAddedSuccess(FullSizeWindow):
+    def __init__(self, ids: int):
+        super().__init__(
+            title=_(i18n_keys.TITLE__FINGERPRINT_ADDED),
+            subtitle=_(i18n_keys.TITLE__FINGERPRINT_ADDED_DESC).format(
+                _(i18n_keys.FORM__FINGER_STR).format(ids + 1)
+            ),
+            confirm_text=_(i18n_keys.BUTTON__CONTINUE),
+            icon_path="A:/res/success.png",
+            anim_dir=0,
+        )
+
+    def show_unload_anim(self):
+        self.destroy(100)
+
+
 class CollectFingerprintStart(FullSizeWindow):
     def __init__(self):
         super().__init__(
@@ -140,7 +156,7 @@ class CollectFingerprintProgress(FullSizeWindow):
         self.img.set_src("A:/res/fingerprint-process-0.png")
         self.img.align_to(self.subtitle, lv.ALIGN.OUT_BOTTOM_MID, 0, 85)
 
-        self.tips = lv.label(self)
+        self.tips = lv.label(self.content_area)
         self.tips.set_long_mode(lv.label.LONG.WRAP)
         self.tips.set_text("")
         self.tips.add_style(
@@ -154,7 +170,7 @@ class CollectFingerprintProgress(FullSizeWindow):
             .pad_hor(12),
             0,
         )
-        self.tips.align_to(self.btn_no, lv.ALIGN.OUT_TOP_MID, 0, -41)
+        self.tips.align_to(self.img, lv.ALIGN.OUT_BOTTOM_MID, 0, 16)
 
     def update_progress(self, progress):
         self.img.set_src(f"A:/res/fingerprint-process-{progress}.png")
@@ -164,7 +180,7 @@ class CollectFingerprintProgress(FullSizeWindow):
             self.tips.set_text(text)
         else:
             self.tips.set_text(_(i18n_keys.MSG__DO_NOT_PRESS_THE_POWER_BUTTON))
-        self.tips.align_to(self.btn_no, lv.ALIGN.OUT_TOP_MID, 0, -41)
+        self.tips.align_to(self.img, lv.ALIGN.OUT_BOTTOM_MID, 0, 16)
 
     def prompt_tips_clear(self):
         self.tips.set_text("")
@@ -272,15 +288,7 @@ async def add_fingerprint(ids, callback=None) -> bool:
             break
     utils.mark_collecting_fingerprint_done()
     if success:
-        await FullSizeWindow(
-            title=_(i18n_keys.TITLE__FINGERPRINT_ADDED),
-            subtitle=_(i18n_keys.TITLE__FINGERPRINT_ADDED_DESC).format(
-                _(i18n_keys.FORM__FINGER_STR).format(ids + 1)
-            ),
-            confirm_text=_(i18n_keys.BUTTON__CONTINUE),
-            icon_path="A:/res/success.png",
-            anim_dir=0,
-        ).request()
+        await FingerprintAddedSuccess(ids).request()
         if callback and callable(callback):
             callback()
     return success
@@ -307,6 +315,7 @@ class RequestRemoveFingerprint(FullSizeWindow):
         self.btn_yes.add_style(StyleWrapper().bg_color(lv_colors.ONEKEY_RED_1), 0)
 
         self.add_event_cb(self.on_nav_back, lv.EVENT.CLICKED, None)
+        self.add_event_cb(self.on_nav_back, lv.EVENT.GESTURE, None)
 
     def on_nav_back(self, event_obj):
         code = event_obj.code
@@ -314,6 +323,10 @@ class RequestRemoveFingerprint(FullSizeWindow):
         if code == lv.EVENT.CLICKED:
             if target == self.nav_back.nav_btn:
                 self.destroy(50)
+        elif code == lv.EVENT.GESTURE:
+            _dir = lv.indev_get_act().get_gesture_dir()
+            if _dir == lv.DIR.RIGHT:
+                lv.event_send(self.nav_back.nav_btn, lv.EVENT.CLICKED, None)
 
     def show_unload_anim(self):
         # if self.anim_dir == ANIM_DIRS.HOR:
@@ -335,6 +348,7 @@ class ConfirmRemoveFingerprint(FullSizeWindow):
         self.add_nav_back()
         self.btn_yes.add_style(StyleWrapper().bg_color(lv_colors.ONEKEY_RED_1), 0)
         self.add_event_cb(self.on_nav_back, lv.EVENT.CLICKED, None)
+        self.add_event_cb(self.on_nav_back, lv.EVENT.GESTURE, None)
 
     def on_nav_back(self, event_obj):
         code = event_obj.code
@@ -342,6 +356,10 @@ class ConfirmRemoveFingerprint(FullSizeWindow):
         if code == lv.EVENT.CLICKED:
             if target == self.nav_back.nav_btn:
                 self.destroy(50)
+        elif code == lv.EVENT.GESTURE:
+            _dir = lv.indev_get_act().get_gesture_dir()
+            if _dir == lv.DIR.RIGHT:
+                lv.event_send(self.nav_back.nav_btn, lv.EVENT.CLICKED, None)
 
     def show_unload_anim(self):
         self.destroy(10)

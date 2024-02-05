@@ -98,17 +98,9 @@ class MainScreen(Screen):
 
         self.clear_flag(lv.obj.FLAG.SCROLLABLE)
 
-        self.bottom_bar = lv.btn(self)
-        self.bottom_bar.remove_style_all()
-        self.bottom_bar.set_size(lv.pct(100), 61)
-        self.bottom_bar.align(lv.ALIGN.BOTTOM_MID, 0, -24)
-
-        self.up_arrow = lv.img(self)
-        self.up_arrow.set_src("A:/res/up-home.png")
-        self.up_arrow.align_to(self.bottom_bar, lv.ALIGN.OUT_TOP_MID, 0, -8)
-
-        self.bottom_tips = lv.label(self.bottom_bar)
-        self.bottom_tips.set_size(456, lv.pct(100))
+        self.bottom_tips = lv.label(self.content_area)
+        self.bottom_tips.set_long_mode(lv.label.LONG.WRAP)
+        self.bottom_tips.set_size(456, lv.SIZE.CONTENT)
         self.bottom_tips.set_text(_(i18n_keys.BUTTON__SWIPE_TO_SHOW_APPS))
         self.bottom_tips.add_style(
             StyleWrapper()
@@ -117,30 +109,34 @@ class MainScreen(Screen):
             .text_align_center(),
             0,
         )
+        self.bottom_tips.align(lv.ALIGN.BOTTOM_MID, 0, 0)
+        self.up_arrow = lv.img(self.content_area)
+        self.up_arrow.set_src("A:/res/up-home.png")
+        self.up_arrow.align_to(self.bottom_tips, lv.ALIGN.OUT_TOP_MID, 0, -8)
+
         self.apps = self.AppDrawer(self)
         self.add_event_cb(self.on_slide_up, lv.EVENT.GESTURE, None)
         save_app_obj(self)
 
     def hidden_others(self, hidden: bool = True):
-        if hidden:
-            # self.subtitle.add_flag(lv.obj.FLAG.HIDDEN)
-            # self.title.add_flag(lv.obj.FLAG.HIDDEN)
-            self.bottom_bar.add_flag(lv.obj.FLAG.HIDDEN)
+        # if hidden:
+        #     # self.subtitle.add_flag(lv.obj.FLAG.HIDDEN)
+        #     # self.title.add_flag(lv.obj.FLAG.HIDDEN)
+        #     self.bottom_bar.add_flag(lv.obj.FLAG.HIDDEN)
 
-        else:
-            # self.subtitle.clear_flag(lv.obj.FLAG.HIDDEN)
-            # self.title.clear_flag(lv.obj.FLAG.HIDDEN)
-            self.bottom_bar.clear_flag(lv.obj.FLAG.HIDDEN)
+        # else:
+        #     # self.subtitle.clear_flag(lv.obj.FLAG.HIDDEN)
+        #     # self.title.clear_flag(lv.obj.FLAG.HIDDEN)
+        #     self.bottom_bar.clear_flag(lv.obj.FLAG.HIDDEN)
+        pass
 
     def change_state(self, busy: bool):
         if busy:
             self.clear_flag(lv.obj.FLAG.CLICKABLE)
-            self.bottom_bar.clear_flag(lv.obj.FLAG.CLICKABLE)
             self.up_arrow.add_flag(lv.obj.FLAG.HIDDEN)
             self.bottom_tips.set_text(_(i18n_keys.BUTTON__PROCESSING))
         else:
             self.add_flag(lv.obj.FLAG.CLICKABLE)
-            self.bottom_bar.add_flag(lv.obj.FLAG.CLICKABLE)
             self.up_arrow.clear_flag(lv.obj.FLAG.HIDDEN)
             self.bottom_tips.set_text(_(i18n_keys.BUTTON__SWIPE_TO_SHOW_APPS))
 

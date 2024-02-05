@@ -65,8 +65,10 @@ class GuideAppDownload(lv.obj):
         self.label1.align(lv.ALIGN.TOP_LEFT, 12, 12)
 
         self.label2 = lv.label(self.content_area)
+        self.label2.set_long_mode(lv.label.LONG.WRAP)
         self.label2.add_style(
             StyleWrapper()
+            .width(456)
             .text_font(font_GeistRegular30)
             .text_color(lv_colors.LIGHT_GRAY)
             .text_letter_space(-1)

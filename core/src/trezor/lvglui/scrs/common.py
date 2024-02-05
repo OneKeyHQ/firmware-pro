@@ -298,6 +298,7 @@ class FullSizeWindow(lv.obj):
     def btn_layout_ver(self):
         if not all([hasattr(self, "btn_no"), hasattr(self, "btn_yes")]):
             return
+        self.content_area.set_style_max_height(520, 0)
         self.btn_no.set_size(456, 98)
         self.btn_no.align(lv.ALIGN.BOTTOM_MID, 0, -8)
         self.btn_yes.set_size(456, 98)

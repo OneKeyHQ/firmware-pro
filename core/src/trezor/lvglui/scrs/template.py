@@ -2400,6 +2400,7 @@ class CosmosTransactionOverview(FullSizeWindow):
             )
             self.group_directions.add_dummy()
         else:
+            self.container.add_style(StyleWrapper().pad_row(0), 0)
             self.container.add_dummy()
             self.item_type = DisplayItem(
                 self.container,

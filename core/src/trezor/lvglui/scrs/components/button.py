@@ -215,6 +215,7 @@ class ListItemBtnWithSwitch(lv.btn):
         )
 
         label_left = lv.label(self)
+        label_left.set_width(340)
         label_left.set_text(text)
         label_left.set_long_mode(lv.label.LONG.WRAP)
         label_left.set_align(lv.ALIGN.LEFT_MID)

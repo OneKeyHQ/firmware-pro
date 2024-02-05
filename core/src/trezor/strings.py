@@ -115,11 +115,11 @@ def format_customer_data(data: bytes | None) -> str:
     """
     if data is None or len(data) == 0:
         return ""
-    elif len(data) == 1 and data == b"\x00":
-        return "0x00"
     try:
         formatted = data.decode()
-    except UnicodeDecodeError:
+        if all((c <= 0x20 or c == 0x7F) for c in data[:33]):
+            raise UnicodeError  # non-printable characters
+    except UnicodeError:  # mp has no UnicodeDecodeError
         from binascii import hexlify
 
         formatted = f"0x{hexlify(data).decode()}"

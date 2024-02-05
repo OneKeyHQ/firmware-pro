@@ -360,16 +360,7 @@ class Signer:
 
     async def _show_output_init(self, output: messages.CardanoTxOutput) -> None:
         address_type = self._get_output_address_type(output)
-        if (
-            output.datum_hash is None
-            and output.inline_datum_size == 0
-            and address_type in addresses.ADDRESS_TYPES_PAYMENT_SCRIPT
-        ):
-            await layout.warn_tx_output_no_datum(self.ctx)
-
-        if output.asset_groups_count > 0:
-            await layout.warn_tx_output_contains_tokens(self.ctx)
-
+        should_show_credentials = False
         if output.address_parameters is not None:
             address = addresses.derive_human_readable(
                 self.keychain,
@@ -377,7 +368,7 @@ class Signer:
                 self.msg.protocol_magic,
                 self.msg.network_id,
             )
-            await self._show_output_credentials(output.address_parameters)
+            should_show_credentials = True
         else:
             assert output.address is not None  # _validate_output
             address = output.address
@@ -389,6 +380,17 @@ class Signer:
             "change" if self._is_change_output(output) else "address",
             self.msg.network_id,
         )
+        if output.asset_groups_count > 0:
+            await layout.warn_tx_output_contains_tokens(self.ctx)
+        if should_show_credentials:
+            assert output.address_parameters is not None
+            await self._show_output_credentials(output.address_parameters)
+        if (
+            output.datum_hash is None
+            and output.inline_datum_size == 0
+            and address_type in addresses.ADDRESS_TYPES_PAYMENT_SCRIPT
+        ):
+            await layout.warn_tx_output_no_datum(self.ctx)
 
     async def _show_output_credentials(
         self, address_parameters: messages.CardanoAddressParametersType

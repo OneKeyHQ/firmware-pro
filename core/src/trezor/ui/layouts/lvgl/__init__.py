@@ -1906,7 +1906,7 @@ async def backup_with_lite(
                     cancel_text=_(i18n_keys.BUTTON__BACK),
                     anim_dir=0,
                 )
-                start_scr.img = lv.img(start_scr)
+                start_scr.img = lv.img(start_scr.content_area)
                 start_scr.img.set_src("A:/res/nfc-start.png")
                 start_scr.img.align_to(
                     start_scr.subtitle, lv.ALIGN.OUT_BOTTOM_MID, 0, 52
