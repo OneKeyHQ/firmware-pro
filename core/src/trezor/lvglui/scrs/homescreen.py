@@ -81,6 +81,7 @@ class MainScreen(Screen):
             self.set_style_bg_img_src(homescreen, 0)
             if self.bottom_tips:
                 self.bottom_tips.set_text(_(i18n_keys.BUTTON__SWIPE_TO_SHOW_APPS))
+                self.up_arrow.align_to(self.bottom_tips, lv.ALIGN.OUT_TOP_MID, 0, -8)
             if self.apps:
                 self.apps.refresh_text()
             return
@@ -1046,6 +1047,9 @@ class BackupWallet(Screen):
             "OneKey Lite",
             left_img_src="A:/res/icon-lite-48.png",
         )
+        # hide lite backup for now
+        self.lite.add_flag(lv.obj.FLAG.HIDDEN)
+
         self.keytag = ListItemBtn(
             self.container,
             "OneKey Keytag",
@@ -3076,6 +3080,7 @@ class SecurityScreen(Screen):
         if not hasattr(self, "_init"):
             self._init = True
         else:
+            utils.mark_collecting_fingerprint_done()
             return
         super().__init__(prev_scr, title=_(i18n_keys.TITLE__SECURITY), nav_back=True)
         self.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
@@ -3118,20 +3123,20 @@ class SecurityScreen(Screen):
                 from trezor.lvglui.scrs import fingerprints
 
                 if fingerprints.has_fingerprints():
-                    from trezor import config
+                    # from trezor import config
 
-                    if config.has_pin():
-                        config.lock()
-                        from apps.common.request_pin import verify_user_pin
+                    # if config.has_pin():
+                    #     config.lock()
+                    from apps.common.request_pin import verify_user_pin
 
-                        workflow.spawn(
-                            verify_user_pin(
-                                re_loop=False,
-                                allow_cancel=False,
-                                callback=lambda: FingerprintSetting(self),
-                                allow_fingerprint=False,
-                            )
+                    workflow.spawn(
+                        verify_user_pin(
+                            re_loop=False,
+                            allow_cancel=True,
+                            callback=lambda: FingerprintSetting(self),
+                            allow_fingerprint=False,
                         )
+                    )
                 else:
 
                     workflow.spawn(

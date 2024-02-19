@@ -224,7 +224,7 @@ void error_reset(const char *line1, const char *line2, const char *line3,
   restart();
 }
 
-void error_pin_max(void) {
+void error_pin_max_prompt(void) {
   display_orientation(0);
   display_printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
   display_print_color(RGB16(0x69, 0x69, 0x69), COLOR_BLACK);
@@ -235,14 +235,11 @@ void error_pin_max(void) {
                 sizeof(toi_icon_warning) - 12);
   display_text(8, 140, "Too many wrong PIN attempts.Storage", -1, FONT_NORMAL,
                COLOR_WHITE, COLOR_BLACK);
-  display_text(8, 164, "has been wiped.", -1, FONT_NORMAL, COLOR_WHITE,
+  display_text(8, 164, "will be erased.", -1, FONT_NORMAL, COLOR_WHITE,
                COLOR_BLACK);
 
-  display_text(8, 784, "It will be restart 5s later.", -1, FONT_NORMAL,
-               COLOR_WHITE, COLOR_BLACK);
-
-  hal_delay(5000);
-  restart();
+  display_text(8, 784, "It will be restart a few seconds later.", -1,
+               FONT_NORMAL, COLOR_WHITE, COLOR_BLACK);
 }
 
 #ifndef NDEBUG

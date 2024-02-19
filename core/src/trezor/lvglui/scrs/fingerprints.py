@@ -154,7 +154,7 @@ class CollectFingerprintProgress(FullSizeWindow):
         self.img = lv.img(self.content_area)
         self.img.remove_style_all()
         self.img.set_src("A:/res/fingerprint-process-0.png")
-        self.img.align_to(self.subtitle, lv.ALIGN.OUT_BOTTOM_MID, 0, 85)
+        self.img.align_to(self.subtitle, lv.ALIGN.OUT_BOTTOM_MID, 0, 52)
 
         self.tips = lv.label(self.content_area)
         self.tips.set_long_mode(lv.label.LONG.WRAP)
@@ -170,7 +170,7 @@ class CollectFingerprintProgress(FullSizeWindow):
             .pad_hor(12),
             0,
         )
-        self.tips.align_to(self.img, lv.ALIGN.OUT_BOTTOM_MID, 0, 16)
+        self.tips.align_to(self.img, lv.ALIGN.OUT_BOTTOM_MID, 0, 6)
 
     def update_progress(self, progress):
         self.img.set_src(f"A:/res/fingerprint-process-{progress}.png")
@@ -192,7 +192,7 @@ async def request_enroll(i) -> None:
         if i != 0:
             if __debug__:
                 print("move finger away")
-            motor.vibrate(weak=True)
+            # motor.vibrate(weak=True)
             await loop.sleep(100)
         else:
             break

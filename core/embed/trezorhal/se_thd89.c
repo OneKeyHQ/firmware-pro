@@ -866,11 +866,13 @@ secbool se_getRetryTimes(uint8_t *ptimes) {
 
   *ptimes = retry_cnts > fp_retry_cnts ? fp_retry_cnts : retry_cnts;
   if (*ptimes == 0) {
+    error_pin_max_prompt();
     se_reset_storage();
     se_fp_reset_storage();
     se_reset_se();
     se_fp_reset_se();
-    error_pin_max();
+    hal_delay(5000);
+    restart();
   }
   return sectrue;
 }

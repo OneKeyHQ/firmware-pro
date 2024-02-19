@@ -28,6 +28,8 @@ apps.base.set_homescreen()
 
 loop.schedule(handle_uart())
 
+loop.schedule(handle_fingerprint())
+
 loop.schedule(handle_ble_info())
 
 loop.schedule(handle_usb_state())
@@ -35,7 +37,6 @@ loop.schedule(handle_usb_state())
 loop.schedule(handle_qr_ctx())
 loop.schedule(handle_qr_task())
 
-loop.schedule(handle_fingerprint())
 loop.schedule(lvgl_tick())
 
 utils.set_up()

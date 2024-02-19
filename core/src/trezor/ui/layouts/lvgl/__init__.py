@@ -1882,8 +1882,9 @@ async def backup_with_keytag(
 async def backup_with_lite(
     ctx: wire.GenericContext, mnemonics: bytes, recovery_check: bool = False
 ):
-    # # not support now
-    # return
+    # TODO: Not support now
+    if not __debug__:
+        return
     from trezor.lvglui.scrs.common import FullSizeWindow, lv
     from trezor.lvglui.scrs.pinscreen import InputLitePin
 

@@ -1147,6 +1147,7 @@ class PassphraseDisplayConfirm(FullSizeWindow):
         self.input_count_tips.set_text(f"{len(passphrase)}/50")
 
     def show_unload_anim(self):
+        self.clean()
         self.destroy(10)
 
 

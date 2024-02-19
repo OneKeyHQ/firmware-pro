@@ -35,10 +35,10 @@ class PassphraseRequest(FullSizeWindow):
         input = self.keyboard.ta.get_text()
         self.channel.publish(input)
         self.keyboard.ta.set_text("")
-        self.destroy()
+        self.destroy(100)
 
     def on_cancel(self, event_obj):
         target = event_obj.get_target()
         if target == self.nav_back.nav_btn:
             self.channel.publish(None)
-            self.destroy()
+            self.destroy(10)

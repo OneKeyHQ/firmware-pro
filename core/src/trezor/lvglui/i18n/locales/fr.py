@@ -2,7 +2,7 @@
 translations = [
     "Continuez",
     "Choisir la langue",
-    "Créer un nouveau portefeuille",
+    "Créer un Portefeuille",
     "Démarrage rapide",
     "Démarrer",
     "Restaurer le portefeuille",
@@ -644,7 +644,7 @@ translations = [
     "Cliquez sur le bouton ci-dessous pour redémarrer.",
     "Empreinte digitale",
     "Méthode alternative au déverrouillage du code PIN ! Activez le capteur d'identité par empreinte digitale et facilitez l'accès à OneKey Pro.",
-    "Ajouter une empreinte digitale",
+    "Ajouter empreinte",
     "Commencer",
     "Placez votre doigt sur le capteur situé sur le côté du téléphone.",
     "Placer le doigt",

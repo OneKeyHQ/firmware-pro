@@ -88,7 +88,7 @@ error_shutdown(const char *line1, const char *line2, const char *line3,
 
 void error_reset(const char *line1, const char *line2, const char *line3,
                  const char *line4);
-void error_pin_max(void);
+void error_pin_max_prompt(void);
 
 // cannot use like this due to code size issue
 // waiting until we could outmize out some space

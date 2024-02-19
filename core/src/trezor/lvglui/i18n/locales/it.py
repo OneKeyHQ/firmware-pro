@@ -298,7 +298,7 @@ translations = [
     "Tocca per chiudere",
     "Elaborazione...",
     "Scorri per firmare",
-    "Scorri per ripristinare",
+    "Scorri per Reset",
     "Scorri per confermare",
     "Blocco USB",
     "Il dispositivo si bloccherà automaticamente ogni volta che si collega o si scollega l'USB.",

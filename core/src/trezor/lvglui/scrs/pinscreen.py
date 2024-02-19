@@ -115,16 +115,9 @@ class InputPin(FullSizeWindow):
         self.keyboard.add_event_cb(self.on_event, lv.EVENT.VALUE_CHANGED, None)
 
     def _show_fingerprint_prompt_if_necessary(self):
-        from storage import device
-        from trezorio import fingerprint
+        from . import fingerprints
 
-        if (
-            self.allow_fingerprint
-            and device.is_fingerprint_unlock_enabled()
-            and utils.pin_verified_since_boot()
-            and fingerprint.get_template_count() > 0
-            and device.finger_failed_count() < 5
-        ):
+        if self.allow_fingerprint and fingerprints.is_available():
             self.fingerprint_prompt = lv.img(self.content_area)
             self.fingerprint_prompt.set_src("A:/res/fingerprint-prompt.png")
             self.fingerprint_prompt.set_pos(414, 30)

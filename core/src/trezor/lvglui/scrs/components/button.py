@@ -115,7 +115,7 @@ class ListItemBtn(lv.btn):
             self.img_right.set_src("A:/res/arrow-right.png")
             self.img_right.set_align(lv.ALIGN.RIGHT_MID)
         self.label_left = lv.label(self)
-        self.label_left.set_width(374)
+        self.label_left.set_width(360)
         self.label_left.set_long_mode(lv.label.LONG.WRAP)
         self.label_left.set_text(text)
 

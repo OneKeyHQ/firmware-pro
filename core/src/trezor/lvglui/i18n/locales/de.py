@@ -2,7 +2,7 @@
 translations = [
     "Fortsetzen",
     "Sprache auswählen",
-    "Erstellen Sie eine neue Brieftasche",
+    "Neue Brieftasche Erstellen",
     "Schnellstart",
     "Start",
     "Brieftasche wiederherstellen",
@@ -298,7 +298,7 @@ translations = [
     "Zum Schließen tippen",
     "Verarbeitung...",
     "Dia zum Unterschreiben",
-    "Zum Zurücksetzen schieben",
+    "Zum Reset schieben",
     "Schieben zum Bestätigen",
     "USB-Schloss",
     "Das Gerät wird jedes Mal automatisch gesperrt, wenn der USB-Stecker ein- oder ausgesteckt wird.",
