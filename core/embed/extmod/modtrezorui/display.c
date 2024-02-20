@@ -177,6 +177,44 @@ void display_bar(int x, int y, int w, int h, uint16_t c) {
   fb_fill_rect(x, y, w, h, c);
 }
 
+static void display_rounded_corner(int x, int y, int r, int delta_x,
+                                   int delta_y, uint16_t c, uint16_t b) {
+  int r2 = r * r;
+  int r2_1 = (r + 1) * (r + 1);
+  int r2_2 = (r + 2) * (r + 2);
+  for (int i = 0; i < r + 2; ++i) {
+    for (int j = 0; j < r + 2; ++j) {
+      int d = i * i + j * j;
+      if (d <= r2) {
+        // fb_write_pixel(x + delta_x * i, y + delta_y * j, c);
+      } else if (d <= r2_1) {
+        uint16_t color = interpolate_color(c, b, 9);
+        fb_write_pixel(x + delta_x * i, y + delta_y * j, color);
+      } else if (d <= r2_2) {
+        uint16_t color = interpolate_color(c, b, 3);
+        fb_write_pixel(x + delta_x * i, y + delta_y * j, color);
+      } else {
+        fb_write_pixel(x + delta_x * i, y + delta_y * j, b);
+      }
+    }
+  }
+}
+
+void display_bar_radius_ex(int x, int y, int w, int h, uint16_t c, uint16_t b,
+                           int r) {
+  display_bar(x, y, w, h, c);
+
+  uint16_t color = interpolate_color(c, b, 9);
+
+  fb_draw_hline(x + r, y - 1, w - 2 * r, color);
+  fb_draw_hline(x + r, y + h, w - 2 * r, color);
+
+  display_rounded_corner(x + r, y + r, r, -1, -1, c, b);
+  display_rounded_corner(x + w - r, y + r, r, 1, -1, c, b);
+  display_rounded_corner(x + r, y + h - r, r, -1, 1, c, b);
+  display_rounded_corner(x + w - r, y + h - r, r, 1, 1, c, b);
+}
+
 #define CORNER_RADIUS 16
 
 static const uint8_t cornertable[CORNER_RADIUS * CORNER_RADIUS] = {
@@ -1077,32 +1115,31 @@ void display_progress_percent(int x, int y, int permil) {
 #ifdef TREZOR_FONT_PJKS_REGULAR_20_ENABLE
   display_bar(0, y - 23, MAX_DISPLAY_RESX, 25, COLOR_BLACK);
   display_text_center(x, y, (const char *)percent_asc, -1, FONT_PJKS_REGULAR_20,
-                      RGB16(0xD2, 0xD2, 0xD2), COLOR_BLACK);
+                      COLOR_WHITE, COLOR_BLACK);
 #else
   display_bar(0, y - 28, MAX_DISPLAY_RESX, 28, COLOR_BLACK);
   display_text_center(x, y, (const char *)percent_asc, -1, FONT_NORMAL,
-                      RGB16(0xD2, 0xD2, 0xD2), COLOR_BLACK);
+                      COLOR_WHITE, COLOR_BLACK);
 #endif
 }
 
 void _display_progress(uint16_t y, const char *desc, int permil) {
   if (desc) {
-    display_text_center(MAX_DISPLAY_RESX / 2, y - 20, desc, -1, FONT_NORMAL,
+    display_text_center(MAX_DISPLAY_RESX / 2, y + 50, desc, -1, FONT_NORMAL,
                         COLOR_WHITE, COLOR_BLACK);
   }
-  display_progress_percent(MAX_DISPLAY_RESX / 2, y + 40, permil / 10);
+  display_progress_percent(MAX_DISPLAY_RESX / 2, y - 20, permil / 10);
   if (permil == 0) {
-    display_bar(60, y, 360, 12, COLOR_WHITE);
-    display_bar(61, y + 1, 358, 10, COLOR_BLACK);
+    display_bar_radius(12, y, 456, 12, COLOR_PROCESS, COLOR_BLACK, 4);
   }
 
-  uint16_t width = permil * 360 / 1000;
+  uint16_t width = permil * 456 / 1000;
 
-  display_bar(62, y + 2, width, 8, COLOR_WHITE);
+  display_bar_radius(12, y, width, 12, COLOR_WHITE, COLOR_PROCESS, 4);
 }
 
 void display_progress(const char *desc, int permil) {
-  _display_progress(740, desc, permil);
+  _display_progress(720, desc, permil);
 }
 
 #else

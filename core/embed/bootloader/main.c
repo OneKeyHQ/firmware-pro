@@ -346,11 +346,11 @@ static secbool bootloader_usb_loop(const vendor_header* const vhdr,
           return secfalse;  // shutdown
         } else {            // success
           ui_fadeout();
-          ui_screen_done(0, sectrue);
+          ui_screen_wipe_done();
           ui_fadein();
           usb_stop();
           usb_deinit();
-          while (!touch_click()) {
+          while (!ui_input_poll(INPUT_NEXT, true)) {
           }
           restart();
           return secfalse;  // shutdown

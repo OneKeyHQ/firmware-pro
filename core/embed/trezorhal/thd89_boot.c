@@ -27,6 +27,8 @@ char *se_get_version_ex(void) {
   static char ver[16] = {0};
   uint16_t ver_len = sizeof(ver);
 
+  memset(ver, 0, sizeof(ver));
+
   if (!thd89_transmit_ex(device_addr, get_ver, sizeof(get_ver), (uint8_t *)ver,
                          &ver_len)) {
     return NULL;
