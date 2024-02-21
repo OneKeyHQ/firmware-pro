@@ -645,14 +645,18 @@ void device_test(bool force) {
          NULL);
   ensure(flash_otp_lock(FLASH_OTP_FACTORY_TEST), NULL);
 
-  char count_str[24] = {0};
-  for (int i = 1; i >= 0; i--) {
-    display_bar(0, 230, DISPLAY_RESX, 30, COLOR_BLACK);
-    mini_snprintf(count_str, sizeof(count_str), "Done! Restarting in %d s", i);
-    display_text(0, 260, count_str, -1, FONT_NORMAL, COLOR_WHITE, COLOR_BLACK);
-    hal_delay(1000);
+  if (!force) {
+    char count_str[24] = {0};
+    for (int i = 1; i >= 0; i--) {
+      display_bar(0, 230, DISPLAY_RESX, 30, COLOR_BLACK);
+      mini_snprintf(count_str, sizeof(count_str), "Done! Restarting in %d s",
+                    i);
+      display_text(0, 260, count_str, -1, FONT_NORMAL, COLOR_WHITE,
+                   COLOR_BLACK);
+      hal_delay(1000);
+    }
+    HAL_NVIC_SystemReset();
   }
-  HAL_NVIC_SystemReset();
 }
 
 void device_burnin_test(bool force) {
@@ -665,7 +669,7 @@ void device_burnin_test(bool force) {
   volatile uint32_t index = 0, index_bak = 0xff;
   volatile uint32_t click = 0, click_pre = 0, click_now = 0;
   volatile uint32_t flashled_pre = 0, flashled_now = 0;
-  volatile bool card_state = false, fingerprint_detect = false;
+  volatile bool fingerprint_detect = false;
   uint8_t image_data[88 * 112 + 2];
   int flashled_value = 1;
 
@@ -708,7 +712,7 @@ void device_burnin_test(bool force) {
     start = test_res.time;
   } else if (test_res.flag == TEST_PASS) {
     if (test_res.touch != TEST_PASS) {
-      ui_test_input();
+      device_test(true);
 
       test_res.touch = TEST_PASS;
       f_lseek(&fil, 0);
@@ -851,11 +855,29 @@ void device_burnin_test(bool force) {
               hal_delay(5);
             }
           }
-          display_printf("CARD STATE %d\n", card_state);
+
           if (fingerprint_detect) {
             display_fp(10, 620, 88, 112, image_data);
             fingerprint_detect = false;
           }
+
+          display_printf("Poll card...\n");
+          HAL_TIM_Base_Stop(&TimHandle);
+          while (1) {
+            if (nfc_poll_card() == NFC_STATUS_OPERACTION_SUCCESS) {
+              if (nfc_select_aid((uint8_t *)"\xD1\x56\x00\x01\x32\x83\x40\x01",
+                                 8) == NFC_STATUS_OPERACTION_SUCCESS) {
+                break;
+              } else if (nfc_select_aid(
+                             (uint8_t *)"\x6f\x6e\x65\x6b\x65\x79\x2e\x62"
+                                        "\x61\x63\x6b\x75\x70\x01",
+                             14) == NFC_STATUS_OPERACTION_SUCCESS) {
+                break;
+              }
+            }
+          }
+          display_printf("Card test passed\n");
+          HAL_TIM_Base_Start(&TimHandle);
           break;
         default:
           break;
@@ -900,18 +922,7 @@ void device_burnin_test(bool force) {
         ble_cmd_req(BLE_BT, BLE_BT_STA);
         hal_delay(5);
       }
-      card_state = false;
 
-      if (nfc_poll_card() == NFC_STATUS_OPERACTION_SUCCESS) {
-        if (nfc_select_aid((uint8_t *)"\xD1\x56\x00\x01\x32\x83\x40\x01", 8) ==
-            NFC_STATUS_OPERACTION_SUCCESS) {
-          card_state = true;
-        } else if (nfc_select_aid((uint8_t *)"\x6f\x6e\x65\x6b\x65\x79\x2e\x62"
-                                             "\x61\x63\x6b\x75\x70\x01",
-                                  14) == NFC_STATUS_OPERACTION_SUCCESS) {
-          card_state = true;
-        }
-      }
       fingerprint_detect = false;
       if (FpsDetectFinger() == 1) {
         if (FpsGetImageData(image_data) == 0) {
