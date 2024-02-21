@@ -612,20 +612,26 @@ void device_init_and_ble_verify(void) {
   device_verify_ble();
 }
 
-void camera_thd89_init(void) {
-  static bool inited = false;
+static void camera_thd89_init(void) {
+  // as they using same i2c bus, both needs to be powered up before any
+  // communication
+  camera_io_init();
+  thd89_io_init();
 
-  if (!inited) {
-    // as they using same i2c bus, both needs to be powered up before any
-    // communication
-    camera_io_init();
-    thd89_io_init();
+  // se
+  thd89_reset();
+  thd89_init();
+}
 
-    // se
-    thd89_reset();
-    thd89_init();
-    inited = true;
+static bool decide_target_is_boot_by_flag(void) {
+  // get boot target flag
+  BOOT_TARGET boot_target = *BOOT_TARGET_FLAG_ADDR;  // cache flag
+
+  // if boot target already set to this level, no more checks
+  if (boot_target == BOOT_TARGET_BOOTLOADER) {
+    return true;
   }
+  return false;
 }
 
 static BOOT_TARGET decide_boot_target(vendor_header* const vhdr,
@@ -638,8 +644,6 @@ static BOOT_TARGET decide_boot_target(vendor_header* const vhdr,
 
   // if boot target already set to this level, no more checks
   if (boot_target == BOOT_TARGET_BOOTLOADER) return boot_target;
-
-  camera_thd89_init();
 
   // check se status
   if (se_get_state() != 0) {
@@ -695,10 +699,16 @@ int main(void) {
   // misc/feedback
   random_delays_init();
 
+  if (decide_target_is_boot_by_flag()) {
+    display_clear();
+    ui_bootloader_simple();
+  }
+
+  camera_thd89_init();
+  device_init_and_ble_verify();
+
   if (!device_serial_set() || !se_has_cerrificate()) {
     display_clear();
-    camera_thd89_init();
-    device_init_and_ble_verify();
     device_set_factory_mode(true);
     ui_bootloader_factory();
     if (bootloader_usb_loop_factory(NULL, NULL) != sectrue) {
@@ -745,10 +755,6 @@ int main(void) {
       decide_boot_target(&vhdr, &hdr, &headers_valid, &headers_checked);
 
   if (boot_target == BOOT_TARGET_BOOTLOADER) {
-    display_clear();
-    ui_bootloader_simple();
-    camera_thd89_init();
-    device_init_and_ble_verify();
     if (headers_checked == secfalse) {
       if (sectrue == validate_firmware_headers(&vhdr, &hdr)) {
         if (sectrue == validate_firmware_code(&vhdr, &hdr)) {
@@ -768,7 +774,6 @@ int main(void) {
       }
     }
   }
-  device_init_and_ble_verify();
   // check if firmware valid again to make sure
   ensure(validate_firmware_headers(&vhdr, &hdr), "invalid firmware header");
   ensure(validate_firmware_code(&vhdr, &hdr), "invalid firmware code");
