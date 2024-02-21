@@ -604,15 +604,42 @@ static secbool validate_firmware_code(vendor_header* const vhdr,
   return result;
 }
 
+void device_init_and_ble_verify(void) {
+  // all se in app mode
+  if (se_get_state() == 0) {
+    device_para_init();
+  }
+  device_verify_ble();
+}
+
+void camera_thd89_init(void) {
+  static bool inited = false;
+
+  if (!inited) {
+    // as they using same i2c bus, both needs to be powered up before any
+    // communication
+    camera_io_init();
+    thd89_io_init();
+
+    // se
+    thd89_reset();
+    thd89_init();
+    inited = true;
+  }
+}
+
 static BOOT_TARGET decide_boot_target(vendor_header* const vhdr,
                                       image_header* const hdr,
-                                      secbool* headers_validate_result) {
+                                      secbool* headers_validate_result,
+                                      secbool* headers_checked) {
   // get boot target flag
   BOOT_TARGET boot_target = *BOOT_TARGET_FLAG_ADDR;  // cache flag
   *BOOT_TARGET_FLAG_ADDR = BOOT_TARGET_NORMAL;       // consume(reset) flag
 
   // if boot target already set to this level, no more checks
   if (boot_target == BOOT_TARGET_BOOTLOADER) return boot_target;
+
+  camera_thd89_init();
 
   // check se status
   if (se_get_state() != 0) {
@@ -622,15 +649,17 @@ static BOOT_TARGET decide_boot_target(vendor_header* const vhdr,
 
   // check firmware
   if (sectrue == validate_firmware_headers(vhdr, hdr)) {
-    *headers_validate_result = sectrue;
     if (sectrue == validate_firmware_code(vhdr, hdr)) {
-      __asm("nop");  // all good, do nothing
+      *headers_validate_result = sectrue;
+      *headers_checked = sectrue;
     } else {
       boot_target = BOOT_TARGET_BOOTLOADER;
+      *headers_checked = sectrue;
       return boot_target;
     }
   } else {
     *headers_validate_result = secfalse;
+    *headers_checked = sectrue;
     boot_target = BOOT_TARGET_BOOTLOADER;
     return boot_target;
   }
@@ -666,24 +695,10 @@ int main(void) {
   // misc/feedback
   random_delays_init();
 
-  // as they using same i2c bus, both needs to be powered up before any
-  // communication
-  camera_io_init();
-  thd89_io_init();
-
-  // se
-  thd89_reset();
-  thd89_init();
-
-  // all se in app mode
-  if (se_get_state() == 0) {
-    device_para_init();
-  }
-
-  device_verify_ble();
-
   if (!device_serial_set() || !se_has_cerrificate()) {
     display_clear();
+    camera_thd89_init();
+    device_init_and_ble_verify();
     device_set_factory_mode(true);
     ui_bootloader_factory();
     if (bootloader_usb_loop_factory(NULL, NULL) != sectrue) {
@@ -724,12 +739,23 @@ int main(void) {
 
   vendor_header vhdr;
   image_header hdr;
-  secbool headers_valid = secfalse;
+  secbool headers_valid = secfalse, headers_checked = secfalse;
 
-  BOOT_TARGET boot_target = decide_boot_target(&vhdr, &hdr, &headers_valid);
+  BOOT_TARGET boot_target =
+      decide_boot_target(&vhdr, &hdr, &headers_valid, &headers_checked);
 
   if (boot_target == BOOT_TARGET_BOOTLOADER) {
     display_clear();
+    ui_bootloader_simple();
+    camera_thd89_init();
+    device_init_and_ble_verify();
+    if (headers_checked == secfalse) {
+      if (sectrue == validate_firmware_headers(&vhdr, &hdr)) {
+        if (sectrue == validate_firmware_code(&vhdr, &hdr)) {
+          headers_valid = sectrue;
+        }
+      }
+    }
     if (sectrue == headers_valid) {
       ui_bootloader_first(&hdr);
       if (bootloader_usb_loop(&vhdr, &hdr) != sectrue) {
@@ -742,7 +768,7 @@ int main(void) {
       }
     }
   }
-
+  device_init_and_ble_verify();
   // check if firmware valid again to make sure
   ensure(validate_firmware_headers(&vhdr, &hdr), "invalid firmware header");
   ensure(validate_firmware_code(&vhdr, &hdr), "invalid firmware code");
