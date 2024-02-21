@@ -205,7 +205,6 @@ SOURCE_TREZORHAL = [
     'embed/trezorhal/spi_legacy.c',
     'embed/trezorhal/usart.c',
     'embed/trezorhal/ble.c',
-    'embed/trezorhal/motor.c',
     'embed/trezorhal/device.c',
     'embed/trezorhal/nordic_dfu.c',
     'embed/trezorhal/br_check.c',
@@ -218,7 +217,6 @@ SOURCE_TREZORHAL = [
     'embed/trezorhal/util.s',
     'embed/trezorhal/vectortable.s',
     'embed/trezorhal/camera.c',
-    'embed/trezorhal/nfc.c',
     'embed/trezorhal/gt911.c',
 
 ]
@@ -240,10 +238,6 @@ SOURCE_EMMC_WRAPPER.extend(Glob('embed/emmc_wrapper/*.c'))
 # pn532 wrapper
 SOURCE_PN532_WRAPPER = []
 SOURCE_PN532_WRAPPER.extend(Glob('embed/pn532/*.c'))
-
-# fp_sensor wrapper
-SOURCE_FP_SENSOR_WRAPPER = []
-SOURCE_FP_SENSOR_WRAPPER.extend(Glob('embed/fp_sensor_wrapper/*.c'))
 
 env = Environment(ENV=os.environ, CFLAGS='%s -DPRODUCTION=%s' % (ARGUMENTS.get('CFLAGS', ''), ARGUMENTS.get('PRODUCTION', '0')))
 
@@ -287,11 +281,11 @@ if PRODUCTION_MODEL == 'H':
         '-std=gnu99 -Wall -Werror -Wdouble-promotion -Wpointer-arith -Wno-missing-braces -fno-common '
         '-fsingle-precision-constant -fdata-sections -ffunction-sections '
         '-ffreestanding '
-        '-fstack-protector-all '
+        '-fstack-protector '
         + CPU_CCFLAGS + CCFLAGS_MOD,
         CCFLAGS_QSTR='-DNO_QSTR -DN_X64 -DN_X86 -DN_THUMB',
         LINKFLAGS='-T embed/bootloader/memory.ld -Wl,--gc-sections -Wl,-Map=build/bootloader/bootloader.map -Wl,--warn-common '
-        '-Wl,-L embed/fp_sensor_wrapper -Wl,-whole-archive -Wl,-lFpalgorithm -Wl,-no-whole-archive',
+        '-Wl,-L embed/fp_sensor_wrapper -Wl,-whole-archive -Wl,-no-whole-archive',
         CPPPATH=[
             'embed/bootloader',
             'embed/bootloader/nanopb',
@@ -379,7 +373,6 @@ obj_program += env.Object(source=SOURCE_TREZORHAL)
 obj_program += env.Object(source=SOURCE_DEBUG_UTILS)
 obj_program += env.Object(source=SOURCE_EMMC_WRAPPER)
 obj_program += env.Object(source=SOURCE_PN532_WRAPPER)
-obj_program += env.Object(source=SOURCE_FP_SENSOR_WRAPPER)
 
 program_elf = env.Command(
     target='bootloader.elf',

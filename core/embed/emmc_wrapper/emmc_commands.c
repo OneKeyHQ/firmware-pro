@@ -52,10 +52,11 @@ static bool inline packet_process(
     uint8_t* desc_buff, const uint8_t* src_buff, size_t buff_len, size_t msg_len, size_t* outside_counter
 )
 {
-    // Please note, as the protocol not really designed properly, there are cases that the package is subseq
-    // with single byte HEADER "3F", and following two byte DATA is "23 23", which will render the header
-    // useless for diff bewtween what packet it is. We added (outside_counter != 0) to the condition to
-    // workaround this issue
+    // Please note, as the protocol not really designed properly, there are cases
+    // that the package is subseq with single byte HEADER "3F", and following two
+    // byte DATA is "23 23", which will render the header useless for diff
+    // bewtween what packet it is. We added (outside_counter != 0) to the
+    // condition to workaround this issue
     if ( src_buff[0] == '?' && src_buff[1] == '#' && src_buff[2] == '#' && (*outside_counter == 0) )
     {
         size_t process_size =
@@ -173,9 +174,11 @@ bool recv_msg_sync_parse(
                 // exceed max retry, error
                 if ( retry >= IO_RETRY_MAX )
                     break;
-                // not error out since nanopb parse will fail anyways, and this way allows retry from
+                // not error out since nanopb parse will fail anyways, and this way
+                // allows retry from
                 outside
-                // error_shutdown("\0", "\0", "Error reading from USB.", "Try different USB cable.");
+                // error_shutdown("\0", "\0", "Error reading from USB.", "Try
+                // different USB cable.");
             }
             break;
         case CHANNEL_SLAVE:
@@ -277,7 +280,8 @@ bool recv_msg_async_parse(
                 // exceed max retry, error
                 if ( retry >= IO_RETRY_MAX )
                 {
-                    // error_shutdown("\0", "\0", "Error reading from USB.", "Try different USB cable.");
+                    // error_shutdown("\0", "\0", "Error reading from USB.", "Try
+                    // different USB cable.");
                     send_failure_nocheck(
                         iface_num, FailureType_Failure_DataError, "Communication timed out!"
                     );
@@ -323,7 +327,8 @@ bool recv_msg_async_parse(
     // cleanup outside buffer
     memzero(buf, IO_PACKET_SIZE);
 
-    // parse all packet in the same buffer, this works because packet always larger than data in side it
+    // parse all packet in the same buffer, this works because packet always
+    // larger than data in side it
     size_t recv_raw_index = 0;
     size_t recv_parsed_index = 0;
     while ( recv_parsed_index < msg_size )
@@ -504,15 +509,122 @@ static int version_compare(uint32_t vera, uint32_t verb)
 }
 
 // not used since no where to store them
-// static void firmware_headers_store(const uint8_t* const input_buffer, size_t buffer_len)
+// static void firmware_headers_store(const uint8_t* const input_buffer, size_t
+// buffer_len)
 // {
 //     // not implemented yet
 // }
-// static void firmware_headers_retrieve(uint8_t* const outputput_buffer, size_t buffer_len)
+// static void firmware_headers_retrieve(uint8_t* const outputput_buffer, size_t
+// buffer_len)
 // {
 //     memzero(outputput_buffer, buffer_len);
 //     // not implemented yet
 // }
+
+static int check_file_contents(uint8_t iface_num, const uint8_t* buffer, uint32_t buffer_len)
+{
+    vendor_header file_vhdr;
+    image_header file_hdr, ble_hdr;
+    image_header_th89 thd89_hdr;
+    uint8_t* p_data = (uint8_t*)buffer;
+    while ( buffer_len )
+    {
+        // MCU
+        if ( memcmp(p_data, "OKTV", 4) == 0 )
+        {
+            // check firmware header
+            extern const uint8_t BOOTLOADER_KEY_M;
+            extern const uint8_t BOOTLOADER_KEY_N;
+            extern const uint8_t* const BOOTLOADER_KEYS[];
+
+            // check file header
+            ExecuteCheck_MSGS_ADV(
+                load_vendor_header(p_data, BOOTLOADER_KEY_M, BOOTLOADER_KEY_N, BOOTLOADER_KEYS, &file_vhdr),
+                sectrue,
+                {
+                    send_failure(
+                        iface_num, FailureType_Failure_ProcessError, "Update file vender header invalid!"
+                    );
+                    return -1;
+                }
+            );
+            ExecuteCheck_MSGS_ADV(
+                load_image_header(
+                    p_data + file_vhdr.hdrlen, FIRMWARE_IMAGE_MAGIC, FIRMWARE_IMAGE_MAXSIZE, file_vhdr.vsig_m,
+                    file_vhdr.vsig_n, file_vhdr.vpub, &file_hdr
+                ),
+                sectrue,
+                {
+                    send_failure(iface_num, FailureType_Failure_ProcessError, "Update file header invalid!");
+                    return -1;
+                }
+            );
+
+            // check file firmware hash
+            ExecuteCheck_MSGS_ADV(
+                check_image_contents_ram(
+                    &file_hdr, p_data, file_vhdr.hdrlen + file_hdr.hdrlen, FIRMWARE_SECTORS_COUNT
+                ),
+                sectrue,
+                {
+                    send_failure(iface_num, FailureType_Failure_ProcessError, "Update file hash invalid!");
+                    return -1;
+                }
+            );
+
+            // check file size
+            ExecuteCheck_MSGS_ADV(
+                (file_vhdr.hdrlen + file_hdr.hdrlen + file_hdr.codelen <=
+                 FIRMWARE_SECTORS_COUNT * FLASH_FIRMWARE_SECTOR_SIZE),
+                true,
+                {
+                    send_failure(iface_num, FailureType_Failure_ProcessError, "Firmware file is too big!");
+                    return -1;
+                }
+            );
+
+            p_data += file_vhdr.hdrlen + file_hdr.hdrlen + file_hdr.codelen;
+            buffer_len -= file_vhdr.hdrlen + file_hdr.hdrlen + file_hdr.codelen;
+            continue;
+        }
+        // SE
+        if ( memcmp(p_data, "TF89", 4) == 0 )
+        {
+            ExecuteCheck_MSGS_ADV(
+                load_thd89_image_header(
+                    p_data, FIRMWARE_IMAGE_MAGIC_THD89, FIRMWARE_IMAGE_MAXSIZE_THD89, &thd89_hdr
+                ),
+                sectrue,
+                {
+                    send_failure(iface_num, FailureType_Failure_ProcessError, "SE header error!");
+                    return -1;
+                }
+            );
+            p_data += thd89_hdr.codelen + IMAGE_HEADER_SIZE;
+            buffer_len -= thd89_hdr.codelen + IMAGE_HEADER_SIZE;
+            continue;
+        }
+        // BLE
+        if ( memcmp(p_data, "5283", 4) == 0 )
+        {
+            ExecuteCheck_MSGS_ADV(
+                load_ble_image_header(p_data, FIRMWARE_IMAGE_MAGIC_BLE, FIRMWARE_IMAGE_MAXSIZE_BLE, &ble_hdr),
+                sectrue,
+                {
+                    send_failure(iface_num, FailureType_Failure_ProcessError, "Update file header invalid!");
+                    return -1;
+                }
+            );
+            p_data += ble_hdr.codelen + IMAGE_HEADER_SIZE;
+            buffer_len -= ble_hdr.codelen + IMAGE_HEADER_SIZE;
+            continue;
+        }
+        // unknown
+        send_failure(iface_num, FailureType_Failure_ProcessError, "Update file unknown type!");
+        return -1;
+    }
+    return 0;
+}
 
 int process_msg_FirmwareUpdateEmmc(uint8_t iface_num, uint32_t msg_size, uint8_t* buf)
 {
@@ -590,381 +702,40 @@ int process_msg_FirmwareUpdateEmmc(uint8_t iface_num, uint32_t msg_size, uint8_t
         return -1;
     }
 
-    // check firmware header
-    extern const uint8_t BOOTLOADER_KEY_M;
-    extern const uint8_t BOOTLOADER_KEY_N;
-    extern const uint8_t* const BOOTLOADER_KEYS[];
+    ExecuteCheck_MSGS_ADV(check_file_contents(iface_num, bl_buffer->misc_buff, emmc_file_size), 0, {
+        emmc_fs_file_delete(msg_recv.path);
+        return -1;
+    });
 
-    vendor_header file_vhdr;
-    image_header file_hdr;
-    image_header_th89 thd89_hdr;
+    uint8_t* p_data = bl_buffer->misc_buff;
 
-    // detect firmware type
-    if ( memcmp(bl_buffer->misc_buff, "5283", 4) == 0 )
+    while ( processed )
     {
-        // bluetooth update
-
-        // check header
-        ExecuteCheck_MSGS_ADV(
-            load_ble_image_header(
-                bl_buffer->misc_buff, FIRMWARE_IMAGE_MAGIC_BLE, FIRMWARE_IMAGE_MAXSIZE_BLE, &file_hdr
-            ),
-            sectrue,
-            {
-                emmc_fs_file_delete(msg_recv.path);
-                send_failure(iface_num, FailureType_Failure_ProcessError, "Update file header invalid!");
-                return -3;
-            }
-        );
-
-        // make sure we have latest bluetooth status
-        ble_refresh_dev_info();
-
-        // ui confirm
-        ui_fadeout();
-        ui_install_ble_confirm();
-        ui_fadein();
-
-        int response = ui_input_poll(INPUT_CONFIRM | INPUT_CANCEL, true);
-        if ( INPUT_CONFIRM != response )
+        // detect firmware type
+        if ( memcmp(p_data, "5283", 4) == 0 )
         {
-            // We could but should not remove the file if user cancels
-            // emmc_fs_file_delete(msg_recv.path);
-            ui_fadeout();
-            ui_bootloader_first(NULL);
-            ui_fadein();
-            send_user_abort_nocheck(iface_num, "Firmware install cancelled");
-            return -4;
-        }
+            // bluetooth update
+            image_header file_hdr;
 
-        // return success as bluetooth will be disconnected, we have no way to send result back if the update
-        // started via bluetooth
-        send_success_nocheck(iface_num, "Succeed");
-        // may have to delay a bit to allow the message be sent out (if ui fade in and out time is too short)
-        // hal_delay(50);
-
-        // ui start install
-        ui_fadeout();
-        ui_screen_progress_bar_prepare("Installing", NULL);
-        ui_fadein();
-
-        // enter dfu
-        ExecuteCheck_MSGS_ADV(bluetooth_enter_dfu(), true, {
-            emmc_fs_file_delete(msg_recv.path);
-            send_failure(iface_num, FailureType_Failure_ProcessError, "Bluetooth enter DFU failed!");
-            return -6;
-        });
-
-        // install
-        uint8_t* p_init = (uint8_t*)bl_buffer->misc_buff + IMAGE_HEADER_SIZE;
-        uint32_t init_data_len = p_init[0] + (p_init[1] << 8);
-        ExecuteCheck_MSGS_ADV(
-            bluetooth_update(
-                p_init + 4, init_data_len, bl_buffer->misc_buff + IMAGE_HEADER_SIZE + BLE_INIT_DATA_LEN,
-                file_hdr.codelen - BLE_INIT_DATA_LEN, ui_screen_progress_bar_update
-            ),
-            true,
-            {
-                emmc_fs_file_delete(msg_recv.path);
-                send_failure(
-                    iface_num, FailureType_Failure_ProcessError, "Update bluetooth firmware failed!"
-                );
-                return -6;
-            }
-        );
-
-        // update progress (final)
-        ui_screen_progress_bar_update(NULL, NULL, 100);
-
-        // delay before kick it out of DFU
-        // this is important, otherwise the update may fail
-        hal_delay(50);
-        // reboot bluetooth
-        bluetooth_reset();
-        // make sure we have latest bluetooth status (and wait for bluetooth become ready)
-        ble_refresh_dev_info();
-
-        // buetooth update done
-        // emmc_fs_file_delete(msg_recv.path);
-        if ( msg_recv.has_reboot_on_success && msg_recv.reboot_on_success )
-        {
-            *BOOT_TARGET_FLAG_ADDR = BOOT_TARGET_NORMAL;
-            restart();
-        }
-        else
-        {
-            ui_fadeout();
-            ui_bootloader_first(NULL);
-            ui_fadein();
-        }
-        return 0;
-    }
-    else if ( memcmp(bl_buffer->misc_buff, "TF89", 4) == 0 )
-    {
-        // se thd89 update
-        // check header
-        ExecuteCheck_MSGS_ADV(
-            load_thd89_image_header(
-                bl_buffer->misc_buff, FIRMWARE_IMAGE_MAGIC_THD89, FIRMWARE_IMAGE_MAXSIZE_THD89, &thd89_hdr
-            ),
-            sectrue,
-            {
-                emmc_fs_file_delete(msg_recv.path);
-                send_failure(iface_num, FailureType_Failure_ProcessError, "Update file header invalid!");
-                return -3;
-            }
-        );
-
-        if ( thd89_hdr.i2c_address != 0 )
-        {
-            thd89_boot_set_address(thd89_hdr.i2c_address);
-        }
-
-        // check file size
-        ExecuteCheck_MSGS_ADV((emmc_file_size == thd89_hdr.codelen + IMAGE_HEADER_SIZE), true, {
-            emmc_fs_file_delete(msg_recv.path);
-            send_failure(iface_num, FailureType_Failure_ProcessError, "Firmware file length error!");
-            return -1;
-        });
-        char se_ver[16] = {0}, boot_ver[16] = {0};
-        strncpy(se_ver, se_get_version_ex(), sizeof(se_ver));
-        if ( !se_back_to_boot_progress() )
-        {
-            send_failure(iface_num, FailureType_Failure_ProcessError, "SE back to boot error");
-            return -1;
-        }
-
-        strncpy(boot_ver, se_get_version_ex(), sizeof(boot_ver));
-
-        if ( !se_verify_firmware(bl_buffer->misc_buff, IMAGE_HEADER_SIZE) )
-        {
-            send_failure(iface_num, FailureType_Failure_ProcessError, "SE verify header error");
-            return -1;
-        }
-        // ui confirm
-        ui_fadeout();
-        ui_install_thd89_confirm(se_ver, boot_ver);
-        ui_fadein();
-
-        int response = ui_input_poll(INPUT_CONFIRM | INPUT_CANCEL, true);
-        if ( INPUT_CONFIRM != response )
-        {
-            // We could but should not remove the file if user cancels
-            // emmc_fs_file_delete(msg_recv.path);
-            ui_fadeout();
-            ui_bootloader_first(NULL);
-            ui_fadein();
-            send_user_abort_nocheck(iface_num, "Firmware install cancelled");
-            return -4;
-        }
-
-        // ui start install
-        ui_fadeout();
-        ui_screen_install_start();
-        // ui_screen_progress_bar_prepare("Installing", NULL);
-        ui_fadein();
-
-        // install
-        if ( !se_update_firmware(
-                 bl_buffer->misc_buff + IMAGE_HEADER_SIZE, thd89_hdr.codelen,
-                 ui_screen_install_progress_upload
-             ) )
-        {
-            send_failure(iface_num, FailureType_Failure_ProcessError, "SE update error");
-            return -1;
-        }
-
-        if ( !se_check_firmware() )
-        {
-            send_failure(iface_num, FailureType_Failure_ProcessError, "SE firmware check error");
-            return -1;
-        }
-
-        if ( !se_active_app_progress() )
-        {
-            send_failure(iface_num, FailureType_Failure_ProcessError, "SE activate app error");
-            return -1;
-        }
-
-        // update progress (final)
-        ui_screen_progress_bar_update(NULL, NULL, 100);
-
-        send_success(iface_num, "Succeed");
-
-        // emmc_fs_file_delete(msg_recv.path);
-        if ( msg_recv.has_reboot_on_success && msg_recv.reboot_on_success )
-        {
-            *BOOT_TARGET_FLAG_ADDR = BOOT_TARGET_NORMAL;
-            restart();
-        }
-        else
-        {
-            ui_fadeout();
-            ui_bootloader_first(NULL);
-            ui_fadein();
-        }
-        return 0;
-    }
-    else
-    {
-        // MCU update
-
-        // check file size
-        ExecuteCheck_MSGS_ADV((emmc_file_size <= FIRMWARE_SECTORS_COUNT * FLASH_FIRMWARE_SECTOR_SIZE), true, {
-            emmc_fs_file_delete(msg_recv.path);
-            send_failure(iface_num, FailureType_Failure_ProcessError, "Firmware file is too big!");
-            return -1;
-        });
-
-        // check file header
-        ExecuteCheck_MSGS_ADV(
-            load_vendor_header(
-                bl_buffer->misc_buff, BOOTLOADER_KEY_M, BOOTLOADER_KEY_N, BOOTLOADER_KEYS, &file_vhdr
-            ),
-            sectrue,
-            {
-                send_failure(
-                    iface_num, FailureType_Failure_ProcessError, "Update file vender header invalid!"
-                );
-                return -1;
-            }
-        );
-        ExecuteCheck_MSGS_ADV(
-            load_image_header(
-                bl_buffer->misc_buff + file_vhdr.hdrlen, FIRMWARE_IMAGE_MAGIC, FIRMWARE_IMAGE_MAXSIZE,
-                file_vhdr.vsig_m, file_vhdr.vsig_n, file_vhdr.vpub, &file_hdr
-            ),
-            sectrue,
-            {
-                send_failure(iface_num, FailureType_Failure_ProcessError, "Update file header invalid!");
-                return -1;
-            }
-        );
-
-        // check file firmware hash
-        ExecuteCheck_MSGS_ADV(
-            check_image_contents_ram(
-                &file_hdr, bl_buffer->misc_buff, file_vhdr.hdrlen + file_hdr.hdrlen, FIRMWARE_SECTORS_COUNT
-            ),
-            sectrue,
-            {
-                send_failure(iface_num, FailureType_Failure_ProcessError, "Update file hash invalid!");
-                return -1;
-            }
-        );
-
-        // check firmware header
-        vendor_header current_vhdr;
-        image_header current_hdr;
-
-        // retrieve stored firmware headers (not used)
-        // uint8_t firmware_headers_backup[FIRMWARE_HEADERS_LEN];
-        // firmware_headers_retrieve(firmware_headers_backup, FIRMWARE_HEADERS_LEN);
-
-        // initial value
-        secbool firmware_header_valid = secfalse;
-        secbool wipe_required = sectrue;
-        secbool downgrade_or_vendor_change = secfalse;
-
-        // check if currently have a vaild firmware header
-        while ( true )
-        {
-
-            vendor_header temp_vhdr;
-            image_header temp_hdr;
-
-            // vhdr
-            if ( load_vendor_header(
-                     (const uint8_t*)FIRMWARE_START, BOOTLOADER_KEY_M, BOOTLOADER_KEY_N, BOOTLOADER_KEYS,
-                     &temp_vhdr
-                 ) == sectrue )
-            {
-                memcpy(&current_vhdr, &temp_vhdr, sizeof(current_vhdr));
-            }
-            // else if ( load_vendor_header(firmware_headers_backup, BOOTLOADER_KEY_M, BOOTLOADER_KEY_N,
-            // BOOTLOADER_KEYS, &temp_vhdr) == sectrue )
-            // {
-            //     memcpy(&current_vhdr, &temp_vhdr, sizeof(current_vhdr));
-            // }
-            else
-                break;
-
-            // hdr
-            if ( load_image_header(
-                     (const uint8_t*)FIRMWARE_START + current_vhdr.hdrlen, FIRMWARE_IMAGE_MAGIC,
-                     FIRMWARE_IMAGE_MAXSIZE, current_vhdr.vsig_m, current_vhdr.vsig_n, current_vhdr.vpub,
-                     &temp_hdr
-                 ) == sectrue )
-            {
-                memcpy(&current_hdr, &temp_hdr, sizeof(current_hdr));
-            }
-            // else if ( load_image_header(
-            //          firmware_headers_backup + current_vhdr.hdrlen, FIRMWARE_IMAGE_MAGIC,
-            //          FIRMWARE_IMAGE_MAXSIZE, current_vhdr.vsig_m, current_vhdr.vsig_n, current_vhdr.vpub,
-            //          &temp_hdr
-            //      ) == sectrue )
-            // {
-            //     memcpy(&current_hdr, &temp_hdr, sizeof(current_hdr));
-            // }
-            else
-                break;
-
-            // confirmed firmware detected (at least headers)
-            firmware_header_valid = sectrue;
-
-            // check vendor identity
-            uint8_t hash1[32], hash2[32];
-            vendor_header_hash(&file_vhdr, hash1);
-            vendor_header_hash(&current_vhdr, hash2);
-            if ( 0 == memcmp(hash1, hash2, 32) )
-            {
-                // vendor identity match
-
-                // compare version
-                if ( !(version_compare(file_hdr.onekey_version, current_hdr.onekey_version) < 0) )
+            // check header
+            ExecuteCheck_MSGS_ADV(
+                load_ble_image_header(
+                    p_data, FIRMWARE_IMAGE_MAGIC_BLE, FIRMWARE_IMAGE_MAXSIZE_BLE, &file_hdr
+                ),
+                sectrue,
                 {
-                    // new firwmare have same or higher version
-
-                    // confirmed wipe not required
-                    wipe_required = secfalse;
-
-                    // downgrade_or_vendor_change ignored in this case
-                    EMMC_WRAPPER_UNUSED(downgrade_or_vendor_change);
-                    break;
+                    emmc_fs_file_delete(msg_recv.path);
+                    send_failure(iface_num, FailureType_Failure_ProcessError, "Update file header invalid!");
+                    return -3;
                 }
-                else
-                {
-                    // new firwmare have lower version
-                    downgrade_or_vendor_change = sectrue;
-                    break;
-                }
-            }
-            else
-            {
-                // vendor identity mismatch
-                downgrade_or_vendor_change = secfalse;
-                break;
-            }
+            );
 
-            // should not come to here
-            break;
-        }
+            // make sure we have latest bluetooth status
+            ble_refresh_dev_info();
 
-        // ui confirm
-        if ( firmware_header_valid == sectrue )
-        {
+            // ui confirm
             ui_fadeout();
-            // if ( (wipe_required == sectrue) || (msg_recv.has_force_erase && msg_recv.force_erase) )
-            if ( (wipe_required == sectrue) )
-            {
-                ui_screen_install_confirm_newvendor_or_downgrade_wipe(
-                    &file_vhdr, &file_hdr, downgrade_or_vendor_change
-                );
-            }
-            else
-            {
-                ui_install_confirm(&current_hdr, &file_hdr);
-            }
+            ui_install_ble_confirm();
             ui_fadein();
 
             int response = ui_input_poll(INPUT_CONFIRM | INPUT_CANCEL, true);
@@ -973,154 +744,480 @@ int process_msg_FirmwareUpdateEmmc(uint8_t iface_num, uint32_t msg_size, uint8_t
                 // We could but should not remove the file if user cancels
                 // emmc_fs_file_delete(msg_recv.path);
                 ui_fadeout();
-                ui_bootloader_first(&current_hdr);
+                ui_bootloader_first(NULL);
                 ui_fadein();
                 send_user_abort_nocheck(iface_num, "Firmware install cancelled");
                 return -4;
             }
-        }
 
-        // ui start install
-        ui_fadeout();
-        ui_screen_install_start();
-        ui_fadein();
+            // return success as bluetooth will be disconnected, we have no way to send
+            // result back if the update started via bluetooth
+            send_success_nocheck(iface_num, "Succeed");
+            // may have to delay a bit to allow the message be sent out (if ui fade in
+            // and out time is too short) hal_delay(50);
 
-        // selectively wipe user data and reset se
-        if ( sectrue == wipe_required )
-        {
-            se_reset_storage();
+            // ui start install
+            ui_fadeout();
+            ui_screen_progress_bar_prepare("Installing", NULL);
+            ui_fadein();
 
-            // erease with retry, max 10 retry allowed, 10ms delay in between
-            ExecuteCheck_MSGS_ADV_RETRY_DELAY(
-                flash_erase_sectors(STORAGE_SECTORS, STORAGE_SECTORS_COUNT, NULL), sectrue,
-                {
-                    send_failure(
-                        iface_num, FailureType_Failure_ProcessError, "Flash storage area erease failed!"
-                    );
-                    return -1;
-                },
-                10, 10
-            );
-        }
-
-        // write firmware
-
-        size_t processed_bytes = 0;
-        size_t flash_sectors_index = 0;
-        while ( processed_bytes < emmc_file_size )
-        {
-
-            // wipe firmware area
-            // erease with retry, max 10 retry allowed, 10ms delay in between
-            ExecuteCheck_MSGS_ADV_RETRY_DELAY(
-                flash_erase(FIRMWARE_SECTORS[flash_sectors_index]), sectrue,
-                {
-                    send_failure(
-                        iface_num, FailureType_Failure_ProcessError, "Flash firmware area erease failed!"
-                    );
-                },
-                10, 10
-            );
-            // update progress (erase)
-            ui_screen_install_progress_upload(
-                (250 * flash_sectors_index / (emmc_file_size / flash_sector_size(flash_sectors_index))) +
-                (750 * processed_bytes / emmc_file_size)
-            );
-
-            // unlock
-            ExecuteCheck_MSGS_ADV(flash_unlock_write(), sectrue, {
-                send_failure(iface_num, FailureType_Failure_ProcessError, "Flash unlock failed!");
-                return -1;
+            // enter dfu
+            ExecuteCheck_MSGS_ADV(bluetooth_enter_dfu(), true, {
+                emmc_fs_file_delete(msg_recv.path);
+                send_failure(iface_num, FailureType_Failure_ProcessError, "Bluetooth enter DFU failed!");
+                return -6;
             });
 
-            for ( size_t sector_offset = 0;
-                  sector_offset < flash_sector_size(FIRMWARE_SECTORS[flash_sectors_index]);
-                  sector_offset += 32 )
+            // install
+            uint8_t* p_init = p_data + IMAGE_HEADER_SIZE;
+            uint32_t init_data_len = p_init[0] + (p_init[1] << 8);
+            ExecuteCheck_MSGS_ADV(
+                bluetooth_update(
+                    p_init + 4, init_data_len, p_data + IMAGE_HEADER_SIZE + BLE_INIT_DATA_LEN,
+                    file_hdr.codelen - BLE_INIT_DATA_LEN, ui_screen_progress_bar_update
+                ),
+                true,
+                {
+                    emmc_fs_file_delete(msg_recv.path);
+                    send_failure(
+                        iface_num, FailureType_Failure_ProcessError, "Update bluetooth firmware failed!"
+                    );
+                    return -6;
+                }
+            );
+
+            // update progress (final)
+            ui_screen_progress_bar_update(NULL, NULL, 100);
+
+            // delay before kick it out of DFU
+            // this is important, otherwise the update may fail
+            hal_delay(50);
+            // reboot bluetooth
+            bluetooth_reset();
+            // make sure we have latest bluetooth status (and wait for bluetooth become
+            // ready)
+            ble_refresh_dev_info();
+
+            p_data += file_hdr.codelen + IMAGE_HEADER_SIZE;
+            processed -= file_hdr.codelen + IMAGE_HEADER_SIZE;
+        }
+        else if ( memcmp(p_data, "TF89", 4) == 0 )
+        {
+            image_header_th89 thd89_hdr;
+            // se thd89 update
+            // check header
+            ExecuteCheck_MSGS_ADV(
+                load_thd89_image_header(
+                    p_data, FIRMWARE_IMAGE_MAGIC_THD89, FIRMWARE_IMAGE_MAXSIZE_THD89, &thd89_hdr
+                ),
+                sectrue,
+                {
+                    emmc_fs_file_delete(msg_recv.path);
+                    send_failure(iface_num, FailureType_Failure_ProcessError, "Update file header invalid!");
+                    return -3;
+                }
+            );
+
+            if ( thd89_hdr.i2c_address != 0 )
             {
-                // write with retry, max 10 retry allowed, 10ms delay in between
-                ExecuteCheck_MSGS_ADV_RETRY_DELAY(
-                    flash_write_words(
-                        FIRMWARE_SECTORS[flash_sectors_index], sector_offset,
-                        (uint32_t*)(bl_buffer->misc_buff + processed_bytes)
-                    ),
-                    sectrue,
+                thd89_boot_set_address(thd89_hdr.i2c_address);
+            }
+
+            char se_ver[16] = {0}, boot_ver[16] = {0};
+            strncpy(se_ver, se_get_version_ex(), sizeof(se_ver));
+            if ( !se_back_to_boot_progress() )
+            {
+                send_failure(iface_num, FailureType_Failure_ProcessError, "SE back to boot error");
+                return -1;
+            }
+
+            strncpy(boot_ver, se_get_version_ex(), sizeof(boot_ver));
+
+            if ( !se_verify_firmware(p_data, IMAGE_HEADER_SIZE) )
+            {
+                send_failure(iface_num, FailureType_Failure_ProcessError, "SE verify header error");
+                return -1;
+            }
+            // ui confirm
+            ui_fadeout();
+            ui_install_thd89_confirm(se_ver, boot_ver);
+            ui_fadein();
+
+            int response = ui_input_poll(INPUT_CONFIRM | INPUT_CANCEL, true);
+            if ( INPUT_CONFIRM != response )
+            {
+                // We could but should not remove the file if user cancels
+                // emmc_fs_file_delete(msg_recv.path);
+                ui_fadeout();
+                ui_bootloader_first(NULL);
+                ui_fadein();
+                send_user_abort_nocheck(iface_num, "Firmware install cancelled");
+                return -4;
+            }
+
+            // ui start install
+            ui_fadeout();
+            ui_screen_install_start();
+            // ui_screen_progress_bar_prepare("Installing", NULL);
+            ui_fadein();
+
+            // install
+            if ( !se_update_firmware(
+                     p_data + IMAGE_HEADER_SIZE, thd89_hdr.codelen, ui_screen_install_progress_upload
+                 ) )
+            {
+                send_failure(iface_num, FailureType_Failure_ProcessError, "SE update error");
+                return -1;
+            }
+
+            if ( !se_check_firmware() )
+            {
+                send_failure(iface_num, FailureType_Failure_ProcessError, "SE firmware check error");
+                return -1;
+            }
+
+            if ( !se_active_app_progress() )
+            {
+                send_failure(iface_num, FailureType_Failure_ProcessError, "SE activate app error");
+                return -1;
+            }
+
+            // update progress (final)
+            ui_screen_progress_bar_update(NULL, NULL, 100);
+
+            p_data += IMAGE_HEADER_SIZE + thd89_hdr.codelen;
+            processed -= IMAGE_HEADER_SIZE + thd89_hdr.codelen;
+        }
+        else if ( memcmp(p_data, "OKTV", 4) == 0 )
+        {
+            // MCU update
+            // check firmware header
+            extern const uint8_t BOOTLOADER_KEY_M;
+            extern const uint8_t BOOTLOADER_KEY_N;
+            extern const uint8_t* const BOOTLOADER_KEYS[];
+
+            vendor_header file_vhdr;
+            image_header file_hdr;
+            uint32_t firmware_file_size = 0;
+
+            // check file header
+            ExecuteCheck_MSGS_ADV(
+                load_vendor_header(p_data, BOOTLOADER_KEY_M, BOOTLOADER_KEY_N, BOOTLOADER_KEYS, &file_vhdr),
+                sectrue,
+                {
+                    send_failure(
+                        iface_num, FailureType_Failure_ProcessError, "Update file vender header invalid!"
+                    );
+                    return -1;
+                }
+            );
+            ExecuteCheck_MSGS_ADV(
+                load_image_header(
+                    p_data + file_vhdr.hdrlen, FIRMWARE_IMAGE_MAGIC, FIRMWARE_IMAGE_MAXSIZE, file_vhdr.vsig_m,
+                    file_vhdr.vsig_n, file_vhdr.vpub, &file_hdr
+                ),
+                sectrue,
+                {
+                    send_failure(iface_num, FailureType_Failure_ProcessError, "Update file header invalid!");
+                    return -1;
+                }
+            );
+
+            // check file firmware hash
+            ExecuteCheck_MSGS_ADV(
+                check_image_contents_ram(
+                    &file_hdr, p_data, file_vhdr.hdrlen + file_hdr.hdrlen, FIRMWARE_SECTORS_COUNT
+                ),
+                sectrue,
+                {
+                    send_failure(iface_num, FailureType_Failure_ProcessError, "Update file hash invalid!");
+                    return -1;
+                }
+            );
+
+            firmware_file_size = file_vhdr.hdrlen + file_hdr.hdrlen + file_hdr.codelen;
+
+            // check firmware header
+            vendor_header current_vhdr;
+            image_header current_hdr;
+
+            // retrieve stored firmware headers (not used)
+            // uint8_t firmware_headers_backup[FIRMWARE_HEADERS_LEN];
+            // firmware_headers_retrieve(firmware_headers_backup, FIRMWARE_HEADERS_LEN);
+
+            // initial value
+            secbool firmware_header_valid = secfalse;
+            secbool wipe_required = sectrue;
+            secbool downgrade_or_vendor_change = secfalse;
+
+            // check if currently have a vaild firmware header
+            while ( true )
+            {
+
+                vendor_header temp_vhdr;
+                image_header temp_hdr;
+
+                // vhdr
+                if ( load_vendor_header(
+                         (const uint8_t*)FIRMWARE_START, BOOTLOADER_KEY_M, BOOTLOADER_KEY_N, BOOTLOADER_KEYS,
+                         &temp_vhdr
+                     ) == sectrue )
+                {
+                    memcpy(&current_vhdr, &temp_vhdr, sizeof(current_vhdr));
+                }
+                // else if ( load_vendor_header(firmware_headers_backup, BOOTLOADER_KEY_M, BOOTLOADER_KEY_N,
+                // BOOTLOADER_KEYS, &temp_vhdr) == sectrue )
+                // {
+                //     memcpy(&current_vhdr, &temp_vhdr, sizeof(current_vhdr));
+                // }
+                else
+                    break;
+
+                // hdr
+                if ( load_image_header(
+                         (const uint8_t*)FIRMWARE_START + current_vhdr.hdrlen, FIRMWARE_IMAGE_MAGIC,
+                         FIRMWARE_IMAGE_MAXSIZE, current_vhdr.vsig_m, current_vhdr.vsig_n, current_vhdr.vpub,
+                         &temp_hdr
+                     ) == sectrue )
+                {
+                    memcpy(&current_hdr, &temp_hdr, sizeof(current_hdr));
+                }
+                // else if ( load_image_header(
+                //          firmware_headers_backup + current_vhdr.hdrlen, FIRMWARE_IMAGE_MAGIC,
+                //          FIRMWARE_IMAGE_MAXSIZE, current_vhdr.vsig_m, current_vhdr.vsig_n,
+                //          current_vhdr.vpub, &temp_hdr
+                //      ) == sectrue )
+                // {
+                //     memcpy(&current_hdr, &temp_hdr, sizeof(current_hdr));
+                // }
+                else
+                    break;
+
+                // confirmed firmware detected (at least headers)
+                firmware_header_valid = sectrue;
+
+                // check vendor identity
+                uint8_t hash1[32], hash2[32];
+                vendor_header_hash(&file_vhdr, hash1);
+                vendor_header_hash(&current_vhdr, hash2);
+                if ( 0 == memcmp(hash1, hash2, 32) )
+                {
+                    // vendor identity match
+
+                    // compare version
+                    if ( !(version_compare(file_hdr.onekey_version, current_hdr.onekey_version) < 0) )
                     {
-                        send_failure(iface_num, FailureType_Failure_ProcessError, "Flash write failed!");
+                        // new firwmare have same or higher version
+
+                        // confirmed wipe not required
+                        wipe_required = secfalse;
+
+                        // downgrade_or_vendor_change ignored in this case
+                        EMMC_WRAPPER_UNUSED(downgrade_or_vendor_change);
+                        break;
+                    }
+                    else
+                    {
+                        // new firwmare have lower version
+                        downgrade_or_vendor_change = sectrue;
+                        break;
+                    }
+                }
+                else
+                {
+                    // vendor identity mismatch
+                    downgrade_or_vendor_change = secfalse;
+                    break;
+                }
+
+                // should not come to here
+                break;
+            }
+
+            // ui confirm
+            if ( firmware_header_valid == sectrue )
+            {
+                ui_fadeout();
+                // if ( (wipe_required == sectrue) || (msg_recv.has_force_erase && msg_recv.force_erase) )
+                if ( (wipe_required == sectrue) )
+                {
+                    ui_screen_install_confirm_newvendor_or_downgrade_wipe(
+                        &file_vhdr, &file_hdr, downgrade_or_vendor_change
+                    );
+                }
+                else
+                {
+                    ui_install_confirm(&current_hdr, &file_hdr);
+                }
+                ui_fadein();
+
+                int response = ui_input_poll(INPUT_CONFIRM | INPUT_CANCEL, true);
+                if ( INPUT_CONFIRM != response )
+                {
+                    // We could but should not remove the file if user cancels
+                    // emmc_fs_file_delete(msg_recv.path);
+                    ui_fadeout();
+                    ui_bootloader_first(&current_hdr);
+                    ui_fadein();
+                    send_user_abort_nocheck(iface_num, "Firmware install cancelled");
+                    return -4;
+                }
+            }
+
+            // ui start install
+            ui_fadeout();
+            ui_screen_install_start();
+            ui_fadein();
+
+            // selectively wipe user data and reset se
+            if ( sectrue == wipe_required )
+            {
+                se_reset_storage();
+
+                // erease with retry, max 10 retry allowed, 10ms delay in between
+                ExecuteCheck_MSGS_ADV_RETRY_DELAY(
+                    flash_erase_sectors(STORAGE_SECTORS, STORAGE_SECTORS_COUNT, NULL), sectrue,
+                    {
+                        send_failure(
+                            iface_num, FailureType_Failure_ProcessError, "Flash storage area erease failed!"
+                        );
                         return -1;
                     },
                     10, 10
                 );
-
-                processed_bytes += ((emmc_file_size - processed_bytes) > 32)
-                                     ? 32 // since we could only write 32 byte a time
-                                     : (emmc_file_size - processed_bytes);
             }
 
-            // lock
-            ExecuteCheck_MSGS_ADV(flash_lock_write(), sectrue, {
-                send_failure(iface_num, FailureType_Failure_ProcessError, "Flash unlock failed!");
-                return -1;
-            });
+            // write firmware
 
-            // update progress (write)
-            ui_screen_install_progress_upload(
-                (250 * flash_sectors_index / (emmc_file_size / flash_sector_size(flash_sectors_index))) +
-                (750 * processed_bytes / emmc_file_size)
+            size_t processed_bytes = 0;
+            size_t flash_sectors_index = 0;
+            while ( processed_bytes < firmware_file_size )
+            {
+
+                // wipe firmware area
+                // erease with retry, max 10 retry allowed, 10ms delay in between
+                ExecuteCheck_MSGS_ADV_RETRY_DELAY(
+                    flash_erase(FIRMWARE_SECTORS[flash_sectors_index]), sectrue,
+                    {
+                        send_failure(
+                            iface_num, FailureType_Failure_ProcessError, "Flash firmware area erease failed!"
+                        );
+                    },
+                    10, 10
+                );
+                // update progress (erase)
+                ui_screen_install_progress_upload(
+                    (250 * flash_sectors_index / (firmware_file_size / flash_sector_size(flash_sectors_index))
+                    ) +
+                    (750 * processed_bytes / firmware_file_size)
+                );
+
+                // unlock
+                ExecuteCheck_MSGS_ADV(flash_unlock_write(), sectrue, {
+                    send_failure(iface_num, FailureType_Failure_ProcessError, "Flash unlock failed!");
+                    return -1;
+                });
+
+                for ( size_t sector_offset = 0;
+                      sector_offset < flash_sector_size(FIRMWARE_SECTORS[flash_sectors_index]);
+                      sector_offset += 32 )
+                {
+                    // write with retry, max 10 retry allowed, 10ms delay in between
+                    ExecuteCheck_MSGS_ADV_RETRY_DELAY(
+                        flash_write_words(
+                            FIRMWARE_SECTORS[flash_sectors_index], sector_offset,
+                            (uint32_t*)(p_data + processed_bytes)
+                        ),
+                        sectrue,
+                        {
+                            send_failure(iface_num, FailureType_Failure_ProcessError, "Flash write failed!");
+                            return -1;
+                        },
+                        10, 10
+                    );
+
+                    processed_bytes += ((firmware_file_size - processed_bytes) > 32)
+                                         ? 32 // since we could only write 32 byte a time
+                                         : (firmware_file_size - processed_bytes);
+                }
+
+                // lock
+                ExecuteCheck_MSGS_ADV(flash_lock_write(), sectrue, {
+                    send_failure(iface_num, FailureType_Failure_ProcessError, "Flash unlock failed!");
+                    return -1;
+                });
+
+                // update progress (write)
+                ui_screen_install_progress_upload(
+                    (250 * flash_sectors_index / (firmware_file_size / flash_sector_size(flash_sectors_index))
+                    ) +
+                    (750 * processed_bytes / firmware_file_size)
+                );
+
+                flash_sectors_index++;
+            }
+
+            // wipe unused sectors
+            while ( flash_sectors_index < FIRMWARE_SECTORS_COUNT )
+            {
+                flash_erase(FIRMWARE_SECTORS[flash_sectors_index]);
+                flash_sectors_index++;
+            }
+
+            // verify flash firmware hash
+            ExecuteCheck_MSGS_ADV(
+                check_image_contents(
+                    &file_hdr, IMAGE_HEADER_SIZE + file_vhdr.hdrlen, FIRMWARE_SECTORS, FIRMWARE_SECTORS_COUNT
+                ),
+                sectrue,
+                {
+                    send_failure(iface_num, FailureType_Failure_ProcessError, "New firmware hash invalid!");
+                    // wipe invalid firmware, don't care the result as we cannot control, but we have to try
+                    EMMC_WRAPPER_FORCE_IGNORE(
+                        flash_erase_sectors(FIRMWARE_SECTORS, FIRMWARE_SECTORS_COUNT, NULL)
+                    );
+                    return -1;
+                }
             );
 
-            flash_sectors_index++;
-        }
+            // backup new firmware header (not used since no where to stroe it)
+            // As the firmware in flash has is the the same as the one from file, and it has been verified, we
+            // could use file_vhdr and file_hdr, instead of read them from flash again.
+            // firmware_headers_store((const uint8_t*)FIRMWARE_START, file_vhdr.hdrlen + file_hdr.hdrlen);
 
-        // wipe unused sectors
-        while ( flash_sectors_index < FIRMWARE_SECTORS_COUNT )
-        {
-            flash_erase(FIRMWARE_SECTORS[flash_sectors_index]);
-            flash_sectors_index++;
-        }
+            // update progress (final)
+            ui_screen_install_progress_upload(1000);
 
-        // verify flash firmware hash
-        ExecuteCheck_MSGS_ADV(
-            check_image_contents(
-                &file_hdr, IMAGE_HEADER_SIZE + file_vhdr.hdrlen, FIRMWARE_SECTORS, FIRMWARE_SECTORS_COUNT
-            ),
-            sectrue,
-            {
-                send_failure(iface_num, FailureType_Failure_ProcessError, "New firmware hash invalid!");
-                // wipe invalid firmware, don't care the result as we cannot control, but we have to try
-                EMMC_WRAPPER_FORCE_IGNORE(flash_erase_sectors(FIRMWARE_SECTORS, FIRMWARE_SECTORS_COUNT, NULL)
-                );
-                return -1;
-            }
-        );
-
-        // backup new firmware header (not used since no where to stroe it)
-        // As the firmware in flash has is the the same as the one from file, and it has been verified, we
-        // could use file_vhdr and file_hdr, instead of read them from flash again.
-        // firmware_headers_store((const uint8_t*)FIRMWARE_START, file_vhdr.hdrlen + file_hdr.hdrlen);
-
-        // update progress (final)
-        ui_screen_install_progress_upload(1000);
-
-        // MCU update done
-        // emmc_fs_file_delete(msg_recv.path);
-        send_success_nocheck(iface_num, "Succeed");
-        if ( msg_recv.has_reboot_on_success && msg_recv.reboot_on_success )
-        {
-            *BOOT_TARGET_FLAG_ADDR = BOOT_TARGET_NORMAL;
-            restart();
+            p_data += firmware_file_size;
+            processed -= firmware_file_size;
         }
         else
         {
-            ui_fadeout();
-            ui_bootloader_first(&file_hdr);
-            ui_fadein();
+            send_failure(iface_num, FailureType_Failure_ProcessError, "Unknown firmware type!");
+            return -1;
         }
-        return 0;
     }
 
-    // should not come to here
-    send_failure(iface_num, FailureType_Failure_ProcessError, "Unexpected error during firmware update!");
-    return -1;
+    send_success_nocheck(iface_num, "Succeed");
+    if ( msg_recv.has_reboot_on_success && msg_recv.reboot_on_success )
+    {
+        ui_fadeout();
+        ui_screen_done(3, sectrue);
+        ui_fadein();
+        ui_screen_done(2, secfalse);
+        hal_delay(1000);
+        ui_screen_done(1, secfalse);
+        hal_delay(1000);
+        *BOOT_TARGET_FLAG_ADDR = BOOT_TARGET_NORMAL;
+        restart();
+    }
+    else
+    {
+        ui_fadeout();
+        ui_bootloader_first(NULL);
+        ui_fadein();
+    }
+    return 0;
 }
 
 int process_msg_EmmcFixPermission(uint8_t iface_num, uint32_t msg_size, uint8_t* buf)
@@ -1240,7 +1337,8 @@ int process_msg_EmmcFileRead(uint8_t iface_num, uint32_t msg_size, uint8_t* buf)
     }
 
     // handle progress display
-    // please note, this value not calculated localy as we don't know the total (requester intersted) size
+    // please note, this value not calculated localy as we don't know the total
+    // (requester intersted) size
     if ( msg_recv.has_ui_percentage )
     {
         char ui_progress_title[] = "Transferring Data";
@@ -1269,7 +1367,8 @@ int process_msg_EmmcFileRead(uint8_t iface_num, uint32_t msg_size, uint8_t* buf)
         {
             if ( !ui_progress_bar_visible )
             {
-                // this is for the instant 100% case, which happens if the file is too small
+                // this is for the instant 100% case, which happens if the file is too
+                // small
                 ui_fadeout();
                 ui_screen_progress_bar_prepare(ui_progress_title, NULL);
                 ui_screen_progress_bar_update(NULL, NULL, msg_recv.ui_percentage);
@@ -1390,7 +1489,8 @@ int process_msg_EmmcFileWrite(uint8_t iface_num, uint32_t msg_size, uint8_t* buf
     }
 
     // handle progress display
-    // please note, this value not calculated localy as we don't know the total (requester intersted) size
+    // please note, this value not calculated localy as we don't know the total
+    // (requester intersted) size
     if ( msg_recv.has_ui_percentage )
     {
         char ui_progress_title[] = "Transferring Data";
@@ -1418,7 +1518,8 @@ int process_msg_EmmcFileWrite(uint8_t iface_num, uint32_t msg_size, uint8_t* buf
         {
             if ( !ui_progress_bar_visible )
             {
-                // this is for the instant 100% case, which happens if the file is too small
+                // this is for the instant 100% case, which happens if the file is too
+                // small
                 ui_fadeout();
                 ui_screen_progress_bar_prepare(ui_progress_title, NULL);
                 ui_screen_progress_bar_update(NULL, NULL, msg_recv.ui_percentage);
