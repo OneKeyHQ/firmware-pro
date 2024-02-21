@@ -352,9 +352,47 @@ void fpsensor_data_set_sync(bool sync)
     fp_data_sync = sync;
 }
 
+static uint32_t reflect(uint32_t ref, char ch)
+{
+    uint32_t value = 0;
+
+    for ( int i = 1; i < (ch + 1); i++ )
+    {
+        if ( ref & 1 )
+            value |= 1 << (ch - i);
+        ref >>= 1;
+    }
+
+    return value;
+}
+
+static uint32_t fp_crc32(uint8_t* buf, uint32_t len)
+{
+    uint32_t result = 0xFFFFFFFF;
+    uint32_t m_Table[256];
+
+    uint32_t ulPolynomial = 0x04C11DB7;
+
+    for ( int i = 0; i <= 0xFF; i++ )
+    {
+        m_Table[i] = reflect(i, 8) << 24;
+        for ( int j = 0; j < 8; j++ )
+            m_Table[i] = (m_Table[i] << 1) ^ (m_Table[i] & (1 << 31) ? ulPolynomial : 0);
+        m_Table[i] = reflect(m_Table[i], 32);
+    }
+
+    while ( len-- )
+        result = (result >> 8) ^ m_Table[(result & 0xFF) ^ *buf++];
+
+    result ^= 0xFFFFFFFF;
+
+    return result;
+}
+
 bool fpsensor_data_init(void)
 {
     static bool data_inited = false;
+    uint32_t crc;
 
     if ( data_inited )
     {
@@ -368,7 +406,9 @@ bool fpsensor_data_init(void)
     for ( uint8_t i = 0; i < MAX_FINGERPRINT_COUNT; i++ )
     {
         p_data = fp_data_cache + TEMPLATE_ADDR_OFFSET + i * TEMPLATE_LENGTH;
-        ensure(se_fp_read(TEMPLATE_ADDR_OFFSET + i * TEMPLATE_LENGTH, p_data, 2, 0, 0), "se_fp_read failed");
+        ensure(
+            se_fp_read(TEMPLATE_ADDR_OFFSET + i * TEMPLATE_TOTAL_LENGTH, p_data, 2, 0, 0), "se_fp_read failed"
+        );
         if ( p_data[0] == 0x32 && p_data[1] == 0x34 )
         {
             list[counter++] = i;
@@ -379,9 +419,23 @@ bool fpsensor_data_init(void)
     {
         p_data = fp_data_cache + TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_LENGTH;
         ensure(
-            se_fp_read(TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_LENGTH, p_data, TEMPLATE_LENGTH, i, counter),
+            se_fp_read(
+                TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_TOTAL_LENGTH, p_data, TEMPLATE_LENGTH, i, counter
+            ),
             "se_fp_read failed"
         );
+        ensure(
+            se_fp_read(
+                TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_TOTAL_LENGTH + TEMPLATE_LENGTH, (uint8_t*)&crc,
+                TEMPLATE_DATA_CRC_LEN, 0, 0
+            ),
+            "se_fp_read failed"
+        );
+        if ( crc != fp_crc32(p_data, TEMPLATE_LENGTH) )
+        {
+            memset(p_data, 0, TEMPLATE_LENGTH);
+        }
+        se_fp_write(TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_TOTAL_LENGTH, "\xff\xff\xff\xff", 4, 0, 0);
     }
     data_inited = true;
     return true;
@@ -390,6 +444,7 @@ bool fpsensor_data_init(void)
 bool fpsensor_data_save(void)
 {
     uint8_t* p_data;
+    uint32_t crc;
     uint8_t list[MAX_FINGERPRINT_COUNT] = {0};
     uint8_t counter = 0;
     for ( uint8_t i = 0; i < MAX_FINGERPRINT_COUNT; i++ )
@@ -403,9 +458,18 @@ bool fpsensor_data_save(void)
     for ( uint8_t i = 0; i < counter; i++ )
     {
         p_data = fp_data_cache + TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_LENGTH;
+        crc = fp_crc32(p_data, TEMPLATE_LENGTH);
+
         ensure(
             se_fp_write(
-                TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_LENGTH, p_data, TEMPLATE_LENGTH, i, counter
+                TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_TOTAL_LENGTH, p_data, TEMPLATE_LENGTH, i, counter
+            ),
+            "se_fp_write failed"
+        );
+        ensure(
+            se_fp_write(
+                TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_TOTAL_LENGTH + TEMPLATE_LENGTH, (uint8_t*)&crc,
+                TEMPLATE_DATA_CRC_LEN, 0, 0
             ),
             "se_fp_write failed"
         );

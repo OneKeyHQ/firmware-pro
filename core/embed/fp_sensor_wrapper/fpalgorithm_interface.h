@@ -5,6 +5,8 @@
 
 #define MAX_FINGERPRINT_COUNT 3
 #define TEMPLATE_LENGTH       (12 * 1024)
+#define TEMPLATE_DATA_CRC_LEN 4
+#define TEMPLATE_TOTAL_LENGTH (TEMPLATE_LENGTH + TEMPLATE_DATA_CRC_LEN)
 
 /*
  * Function：     FpLibVersion
