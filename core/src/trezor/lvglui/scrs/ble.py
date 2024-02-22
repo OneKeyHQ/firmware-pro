@@ -11,6 +11,7 @@ class PairCodeDisplay(FullSizeWindow):
             _(i18n_keys.SUBTITLE__BLUETOOTH_PAIR),
             _(i18n_keys.BUTTON__CLOSE),
             icon_path="A:/res/icon-bluetooth.png",
+            anim_dir=0,
         )
         self.panel = lv.obj(self.content_area)
         self.panel.set_size(456, lv.SIZE.CONTENT)
@@ -37,3 +38,6 @@ class PairCodeDisplay(FullSizeWindow):
     def destroy(self, delay_ms=100):
         super().destroy(delay_ms)
         self.destroyed = True
+        from trezor.lvglui.scrs.homescreen import ScanScreen
+
+        ScanScreen.notify_close()

@@ -8,7 +8,6 @@ from trezor.langs import langs, langs_keys
 from trezor.lvglui.i18n import gettext as _, i18n_refresh, keys as i18n_keys
 from trezor.lvglui.lv_colors import lv_colors
 from trezor.lvglui.scrs.components.pageable import Indicator
-from trezor.lvglui.scrs.components.qrcode import QRCode
 from trezor.qr import close_camera, get_hd_key, retrieval_hd_key, save_app_obj, scan_qr
 from trezor.ui import display, style
 
@@ -997,7 +996,6 @@ class WalletList(Screen):
                 return
             if target == self.onekey:
                 ConnectWallet(
-                    self,
                     _(i18n_keys.ITEM__ONEKEY_WALLET),
                     "Ethereum, Polygon, Avalanche, Base and other EVM networks.",
                     qr_data,
@@ -1005,7 +1003,6 @@ class WalletList(Screen):
                 )
             elif target == self.mm:
                 ConnectWallet(
-                    self,
                     _(i18n_keys.ITEM__METAMASK_WALLET),
                     "Ethereum, Polygon, Avalanche, Base and other EVM networks.",
                     qr_data,
@@ -1013,7 +1010,6 @@ class WalletList(Screen):
                 )
             elif target == self.okx:
                 ConnectWallet(
-                    self,
                     _(i18n_keys.ITEM__OKX_WALLET),
                     "Ethereum, Bitcoin, Polygon, Solana, OKT Chain, TRON and other networks.",
                     qr_data,
@@ -1083,21 +1079,23 @@ class BackupWallet(Screen):
         lv.scr_load(scr)
 
 
-class ConnectWallet(Screen):
-    def __init__(self, prev_scr, wallet_name, support_chains, qr_data, icon_path):
-        if not hasattr(self, "_init"):
-            self._init = True
-            kwargs = {
-                "prev_scr": prev_scr,
-                "title": _(i18n_keys.TITLE__CONNECT_STR_WALLET).format(wallet_name),
-                "subtitle": _(
-                    i18n_keys.CONTENT__OPEN_STR_WALLET_AND_SCAN_THE_QR_CODE_BELOW
-                ).format(wallet_name),
-                "nav_back": True,
-            }
-            super().__init__(**kwargs)
-        else:
-            return
+class ConnectWallet(FullSizeWindow):
+    def __init__(self, wallet_name, support_chains, qr_data, icon_path):
+        super().__init__(
+            _(i18n_keys.TITLE__CONNECT_STR_WALLET).format(wallet_name),
+            _(i18n_keys.CONTENT__OPEN_STR_WALLET_AND_SCAN_THE_QR_CODE_BELOW).format(
+                wallet_name
+            ),
+            anim_dir=0,
+        )
+        self.content_area.set_style_max_height(684, 0)
+        self.add_nav_back()
+        import gc
+
+        gc.collect()
+        gc.threshold(int(18248 * 1.5))  # type: ignore["threshold" is not a known member of module]
+        from trezor.lvglui.scrs.components.qrcode import QRCode
+
         self.qr = QRCode(
             self.content_area,
             qr_data,
@@ -1139,20 +1137,22 @@ class ConnectWallet(Screen):
         self.label_bottom.set_text(support_chains)
         self.label_bottom.align_to(self.line, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 0)
         self.panel.align_to(self.qr, lv.ALIGN.OUT_BOTTOM_MID, 0, 32)
+        self.nav_back.add_event_cb(self.on_nav_back, lv.EVENT.CLICKED, None)
+        self.add_event_cb(self.on_nav_back, lv.EVENT.GESTURE, None)
 
-    def load_screen(self, scr, destroy_self: bool = False):
-        if destroy_self:
-            self._load_scr(scr.__class__(), back=True)
-            utils.try_remove_scr(self)
-            self.qr.delete()
-            self.del_delayed(0)
-            del self.__class__._instance
-            del self
-            import gc
+    def on_nav_back(self, event_obj):
+        code = event_obj.code
+        target = event_obj.get_target()
+        if code == lv.EVENT.CLICKED:
+            if target == self.nav_back.nav_btn:
+                self.destroy()
+        elif code == lv.EVENT.GESTURE:
+            _dir = lv.indev_get_act().get_gesture_dir()
+            if _dir == lv.DIR.RIGHT:
+                lv.event_send(self.nav_back.nav_btn, lv.EVENT.CLICKED, None)
 
-            gc.collect()
-        else:
-            self._load_scr(scr)
+    def destroy(self, delay_ms=200):
+        self.delete()
 
 
 class ScanScreen(Screen):
@@ -1229,6 +1229,11 @@ class ScanScreen(Screen):
 
     def _load_scr(self, scr: "Screen", back: bool = False) -> None:
         lv.scr_load(scr)
+
+    @classmethod
+    def notify_close(cls):
+        if hasattr(cls, "_instance") and cls._instance._init:
+            lv.event_send(cls._instance.nav_back.nav_btn, lv.EVENT.CLICKED, None)
 
 
 if __debug__:
@@ -2481,26 +2486,38 @@ class AirGapSetting(Screen):
         target = event_obj.get_target()
         if code == lv.EVENT.VALUE_CHANGED:
             if target == self.air_gap.switch:
-                if target.has_state(lv.STATE.CHECKED):
-                    from trezor.lvglui.scrs.template import AirGapOpenTips
+                from trezor.lvglui.scrs.template import AirGapToggleTips
 
-                    AirGapOpenTips(self)
-                else:
-                    self.description.set_text(
-                        _(
-                            i18n_keys.CONTENT__AFTER_ENABLING_THE_AIRGAP_BLUETOOTH_USB_AND_NFC_TRANSFER_WILL_BE_DISABLED_SIMULTANEOUSLY
-                        )
+                if target.has_state(lv.STATE.CHECKED):
+                    AirGapToggleTips(
+                        enable=True,
+                        callback_obj=self,
                     )
-                    utils.disable_airgap_mode()
+                else:
+                    AirGapToggleTips(
+                        enable=False,
+                        callback_obj=self,
+                    )
         elif code == lv.EVENT.READY:
-            self.description.set_text(
-                _(
-                    i18n_keys.CONTENT__BLUETOOTH_USB_AND_NFT_TRANSFER_FUNCTIONS_HAVE_BEEN_DISABLED
+            if not device.is_airgap_mode():
+                self.description.set_text(
+                    _(
+                        i18n_keys.CONTENT__BLUETOOTH_USB_AND_NFT_TRANSFER_FUNCTIONS_HAVE_BEEN_DISABLED
+                    )
                 )
-            )
-            utils.enable_airgap_mode()
+                utils.enable_airgap_mode()
+            else:
+                self.description.set_text(
+                    _(
+                        i18n_keys.CONTENT__AFTER_ENABLING_THE_AIRGAP_BLUETOOTH_USB_AND_NFC_TRANSFER_WILL_BE_DISABLED_SIMULTANEOUSLY
+                    )
+                )
+                utils.disable_airgap_mode()
         elif code == lv.EVENT.CANCEL:
-            self.air_gap.clear_state()
+            if device.is_airgap_mode():
+                self.air_gap.add_state()
+            else:
+                self.air_gap.clear_state()
 
 
 class AboutSetting(Screen):
@@ -3336,7 +3353,9 @@ class SafetyCheckSetting(Screen):
         else:
             return
         super().__init__(
-            prev_scr=prev_scr, title=_(i18n_keys.TITLE__SAFETY_CHECKS), nav_back=True
+            prev_scr=prev_scr,
+            title=_(i18n_keys.TITLE__SAFETY_CHECKS),
+            nav_back=True,
         )
 
         self.container = ContainerFlexCol(self.content_area, self.title, padding_row=2)

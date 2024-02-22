@@ -102,6 +102,7 @@ class InputPin(FullSizeWindow):
         self.subtitle.add_style(
             StyleWrapper()
             .text_font(font_GeistRegular26)
+            .max_width(368)
             .text_color(lv_colors.ONEKEY_RED_1)
             .text_align_center(),
             0,
@@ -142,7 +143,7 @@ class InputPin(FullSizeWindow):
             self.channel.publish(0)
 
         self.clean()
-        self.destroy()
+        self.destroy(500)
 
 
 class InputLitePin(FullSizeWindow):

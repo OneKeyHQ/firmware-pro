@@ -775,7 +775,14 @@ static secbool se_verifyPin_ex(uint8_t addr, uint8_t *session_key,
 static secbool se_fp_verifyPin(const char *pin) {
   return se_verifyPin_ex(THD89_FINGER_ADDRESS, se_fp_session_key, pin);
 }
-
+static void reset_storage_and_restart(void) {
+  error_pin_max_prompt();
+  se_reset_storage();
+  se_reset_se();
+  se_fp_reset_se();
+  hal_delay(5000);
+  restart();
+}
 secbool se_verifyPin(const char *pin) {
   secbool result = se_verifyPin_ex(THD89_MASTER_ADDRESS, se_session_key, pin);
   if (result == sectrue) {
@@ -790,6 +797,12 @@ secbool se_verifyPin(const char *pin) {
       ensure(se_fp_setPin(pin), "set fp pin failed");
       ensure(se_fp_verifyPin(pin), "verify fp pin failed");
       return sectrue;
+    }
+  } else {
+    uint8_t retry_cnts = 0;
+    ensure(se_getRetryTimes(&retry_cnts), "get retry times failed");
+    if (retry_cnts == 0) {
+      reset_storage_and_restart();
     }
   }
   return secfalse;
@@ -865,15 +878,6 @@ secbool se_getRetryTimes(uint8_t *ptimes) {
          "get fp retry times failed");
 
   *ptimes = retry_cnts > fp_retry_cnts ? fp_retry_cnts : retry_cnts;
-  if (*ptimes == 0) {
-    error_pin_max_prompt();
-    se_reset_storage();
-    se_fp_reset_storage();
-    se_reset_se();
-    se_fp_reset_se();
-    hal_delay(5000);
-    restart();
-  }
   return sectrue;
 }
 

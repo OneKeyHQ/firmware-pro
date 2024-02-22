@@ -659,6 +659,7 @@ class TransactionDetailsBTC(FullSizeWindow):
             primary_color=primary_color,
             icon_path="A:/res/icon-send.png",
             sub_icon_path=icon_path,
+            anim_dir=0,
         )
         self.container = ContainerFlexCol(
             self.content_area, self.title, pos=(0, 40), padding_row=8
@@ -3108,12 +3109,18 @@ class AirgapMode(FullSizeWindow):
         self.btn_no.enable(bg_color=lv_colors.ONEKEY_GREEN, text_color=lv_colors.BLACK)
 
 
-class AirGapOpenTips(FullSizeWindow):
-    def __init__(self, callback_obj=None):
+class AirGapToggleTips(FullSizeWindow):
+    def __init__(self, enable, callback_obj=None):
         super().__init__(
-            title=_(i18n_keys.TITLE__ENABLE_AIR_GAP),
-            subtitle=_(i18n_keys.CONTENT__ARE_YOU_SURE_TO_ENABLE_AIRGAP_MODE),
-            confirm_text=_(i18n_keys.BUTTON__ENABLE),
+            title=_(i18n_keys.TITLE__ENABLE_AIR_GAP)
+            if enable
+            else _(i18n_keys.TITLE__DISABLE_AIR_GAP),
+            subtitle=_(i18n_keys.CONTENT__ARE_YOU_SURE_TO_ENABLE_AIRGAP_MODE)
+            if enable
+            else _(i18n_keys.CONTENT__ARE_YOU_SURE_TO_DISABLE_AIRGAP_MODE),
+            confirm_text=_(i18n_keys.BUTTON__ENABLE)
+            if enable
+            else _(i18n_keys.BUTTON__DISABLE),
             cancel_text=_(i18n_keys.BUTTON__CANCEL),
             anim_dir=2,
         )

@@ -77,7 +77,7 @@ translations = [
     "PIN deaktiviert",
     "Sie haben den PIN-Schutz erfolgreich deaktiviert.",
     "Pin eingeben",
-    "Falsche PIN, noch {} Versuche.",
+    "Falsche PIN, noch {} Versuche",
     "Passphrase aktivieren",
     "Passphrase deaktivieren",
     "Möchten Sie die Passphrase-Verschlüsselung deaktivieren?",
@@ -742,5 +742,7 @@ translations = [
     "LNURL-Auth",
     "Genehmigen Sie die LNURL-Autorisierung",
     "ETH- und EVM-basiertes Netzwerk",
+    "Luftspalt deaktivieren",
+    "Sind Sie sicher, den Air Gap-Modus zu deaktivieren? Nach der Deaktivierung kann Ihr Gerät über Bluetooth oder USB verbunden werden.",
 ]
 # fmt: on

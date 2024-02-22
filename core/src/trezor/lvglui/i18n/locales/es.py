@@ -77,7 +77,7 @@ translations = [
     "PIN deshabilitado",
     "Has deshabilitado con éxito la protección con PIN.",
     "Ingresa tu PIN",
-    "PIN incorrecto, quedan {} intentos.",
+    "PIN incorrecto, quedan {} intentos",
     "Habilitar frase de contraseña",
     "Deshabilitar frase de contraseña",
     "¿Deseas deshabilitar el cifrado de frase de contraseña?",
@@ -742,5 +742,7 @@ translations = [
     "Autenticación LNURL",
     "Aprobar la autorización de LNURL",
     "Red alimentada por ETH y EVM",
+    "Deshabilitar el espacio de aire",
+    "¿Estás seguro de desactivar el modo Air Gap? Después de desactivarlo, podrá conectar su dispositivo a través de Bluetooth o USB.",
 ]
 # fmt: on

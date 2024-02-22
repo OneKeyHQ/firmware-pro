@@ -77,7 +77,7 @@ translations = [
     "PIN disabilitato",
     "Hai disabilitato correttamente la protezione del PIN.",
     "Inserisci il PIN",
-    "PIN errato, {} tentativi rimasti.",
+    "PIN errato, {} tentativi rimasti",
     "Abilita passphrase",
     "Disabilita passphrase",
     "Vuoi disabilitare la crittografia della passphrase?",
@@ -742,5 +742,7 @@ translations = [
     "LNURL Aut",
     "Approva l'autorizzazione LNURL",
     "Rete alimentata da ETH ed EVM",
+    "Disabilita traferro",
+    "Sei sicuro di disabilitare la modalità Air Gap? Dopo la disattivazione, sarà in grado di connettere il tuo dispositivo tramite Bluetooth o USB.",
 ]
 # fmt: on

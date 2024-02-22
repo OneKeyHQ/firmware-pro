@@ -31,6 +31,10 @@ class WipeDevice(FullSizeWindow):
             0,
         )
 
+    def show_unload_anim(self):
+        self.clean()
+        self.destroy(100)
+
 
 class WipeDeviceTips(FullSizeWindow):
     def __init__(self):

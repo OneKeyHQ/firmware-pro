@@ -77,7 +77,7 @@ translations = [
     "PIN Disabled",
     "You have successfully disabled PIN protection.",
     "Enter PIN",
-    "Incorrect PIN, {} attempts left.",
+    "Incorrect PIN, {} attempts left",
     "Enable Passphrase",
     "Disable Passphrase",
     "Do you want to disable passphrase encryption?",
@@ -742,5 +742,7 @@ translations = [
     "LNURL Auth",
     "Approve LNURL Authorization",
     "ETH and EVM powered network",
+    "Disable Air Gap",
+    "Are you sure to disable Air Gap mode? After disable, it will be able to connect your device via USB or Bluetooth.",
 ]
 # fmt: on

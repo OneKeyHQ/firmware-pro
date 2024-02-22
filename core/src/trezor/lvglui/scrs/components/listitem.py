@@ -65,7 +65,7 @@ class ListItemWithLeadingCheckbox(lv.obj):
         self.label = lv.label(self)
         self.label.remove_style_all()
         self.label.set_long_mode(lv.label.LONG.WRAP)
-        self.label.set_size(374, lv.SIZE.CONTENT)
+        self.label.set_size(360, lv.SIZE.CONTENT)
         self.label.align_to(self.checkbox, lv.ALIGN.OUT_RIGHT_TOP, 8, -4)
         self.label.set_text(text)
         self.add_flag(lv.obj.FLAG.EVENT_BUBBLE | lv.obj.FLAG.CLICKABLE)

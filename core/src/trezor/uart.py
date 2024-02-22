@@ -89,10 +89,9 @@ async def handle_fingerprint():
                         warning_level = 3
                     elif isinstance(e, fingerprint.NotMatch):
                         # increase failed count
+                        device.finger_failed_count_incr()
                         failed_count = device.finger_failed_count()
-                        if failed_count < utils.MAX_FP_ATTEMPTS:
-                            device.finger_failed_count_incr()
-                        else:
+                        if failed_count >= utils.MAX_FP_ATTEMPTS:
                             from trezor.lvglui.scrs.pinscreen import InputPin
 
                             pin_wind = InputPin.get_window_if_visible()
@@ -173,7 +172,7 @@ async def handle_usb_state():
                 from trezor.lvglui.scrs import fingerprints
 
                 if config.is_unlocked():
-                    if fingerprints.is_available() and fingerprints.is_unlocked():
+                    if fingerprints.is_available():
                         fingerprints.lock()
                     else:
                         config.lock()
@@ -274,13 +273,17 @@ async def _deal_ble_pair(value):
     # pair_codes = "".join(list(map(lambda c: chr(c), ustruct.unpack(">6B", value))))
     utils.turn_on_lcd_if_possible()
     from trezor.lvglui.scrs.ble import PairCodeDisplay
+    from trezor.qr import close_camera
 
+    close_camera()
+    flashled_close()
     SCREEN = PairCodeDisplay(pair_codes)
 
 
 async def _deal_button_press(value: bytes) -> None:
     res = ustruct.unpack(">B", value)[0]
     if res in (_PRESS_SHORT, _PRESS_LONG):
+        flashled_close()
         if utils.is_collecting_fingerprint():
             return
     if res == _PRESS_SHORT:
@@ -305,7 +308,9 @@ async def _deal_button_press(value: bytes) -> None:
             utils.turn_on_lcd_if_possible()
     elif res == _PRESS_LONG:
         from trezor.lvglui.scrs.homescreen import PowerOff
+        from trezor.qr import close_camera
 
+        close_camera()
         PowerOff(
             True
             if not utils.is_initialization_processing() and device.is_initialized()
@@ -461,6 +466,7 @@ def _request_charging_status():
 
 def fetch_all():
     """Request some important data."""
+    flashled_close()
     _request_ble_name()
     _request_ble_version()
     _request_ble_status()

@@ -166,7 +166,7 @@ TITLE__PIN_DISABLED = 74
 SUBTITLE__SET_PIN_PIN_DISABLED = 75
 # Enter PIN
 TITLE__ENTER_PIN = 76
-# Incorrect PIN, {} attempts left.
+# Incorrect PIN, {} attempts left
 MSG__INCORRECT_PIN_STR_ATTEMPTS_LEFT = 77
 # Enable Passphrase
 TITLE__ENABLE_PASSPHRASE = 78
@@ -1618,4 +1618,9 @@ FORM__LNURL_AUTH = 739
 TITLE__APPROVE_LNURL_AUTHORIZATION = 740
 # ETH and EVM powered network
 CONTENT__ETH_AND_EVM_POWERED_NETWORK = 741
+# Disable Air Gap
+TITLE__DISABLE_AIR_GAP = 742
+# Are you sure to disable Air Gap mode? After disable, it will be able to conn
+# ect your device via USB or Bluetooth.
+CONTENT__ARE_YOU_SURE_TO_DISABLE_AIRGAP_MODE = 743
 # fmt: on

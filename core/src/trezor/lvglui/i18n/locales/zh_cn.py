@@ -77,7 +77,7 @@ translations = [
     "PIN 已禁用",
     "你已成功禁用 PIN 码保护",
     "输入 PIN",
-    "PIN 不正确，剩余 {} 次尝试机会。",
+    "PIN 错误，剩余 {} 次尝试机会",
     "启用 Passphrase",
     "禁用 Passphrase",
     "要禁用 Passphrase 加密吗？",
@@ -742,5 +742,7 @@ translations = [
     "LNURL 授权",
     "批准 LNURL 授权",
     "ETH 和 EVM 兼容链",
+    "禁用 Air Gap",
+    "要关闭 Air Gap 模式吗？关闭后，将允许通过蓝牙和 USB 连接此设备。",
 ]
 # fmt: on

@@ -519,7 +519,7 @@ def finger_failed_count() -> int:
 def finger_failed_count_incr() -> None:
     global _FINGER_FAILED_COUNT_VALUE
     cur = finger_failed_count()
-    if cur >= utils.MAX_FP_ATTEMPTS:
+    if cur > utils.MAX_FP_ATTEMPTS:
         raise ValueError("finger_failed_count is too large")
     count = cur + 1
     common.set(_NAMESPACE, _FINGER_FAILED_COUNT, count.to_bytes(1, "big"), public=True)

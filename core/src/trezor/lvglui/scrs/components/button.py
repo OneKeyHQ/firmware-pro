@@ -222,7 +222,6 @@ class ListItemBtnWithSwitch(lv.btn):
         self.switch = lv.switch(self)
         self.switch.set_size(80, 48)
         self.switch.set_align(lv.ALIGN.RIGHT_MID)
-        self.switch.add_state(lv.STATE.CHECKED)
         self.switch.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
 
         self.switch.add_style(
@@ -236,7 +235,7 @@ class ListItemBtnWithSwitch(lv.btn):
             StyleWrapper().bg_color(lv_colors.WHITE).pad_all(-8),
             lv.PART.KNOB | lv.STATE.DEFAULT,
         )
-
+        self.switch.add_state(lv.STATE.CHECKED)
         self.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
         self.add_event_cb(self.eventhandler, lv.EVENT.CLICKED, None)
 

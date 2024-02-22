@@ -1269,13 +1269,13 @@ async def show_onekey_app_guide():
 
 
 async def enable_airgap_mode() -> None:
-    from trezor.lvglui.scrs.template import AirgapMode, AirGapOpenTips
+    from trezor.lvglui.scrs.template import AirgapMode, AirGapToggleTips
     from trezor import utils
 
     scr_airgap = AirgapMode()
     reject = await scr_airgap.request()
     if not reject:
-        scr_tips = AirGapOpenTips()
+        scr_tips = AirGapToggleTips(enable=True)
         enable = await scr_tips.request()
         if enable:
             utils.enable_airgap_mode()

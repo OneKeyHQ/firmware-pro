@@ -77,7 +77,7 @@ translations = [
     "NIP désactivé",
     "Vous avez désactivé avec succès la protection par code PIN.",
     "Entrez le NIP",
-    "Code PIN incorrect, {} tentatives restantes.",
+    "Code PIN incorrect, {} tentatives restantes",
     "Activer la phrase de passe",
     "Désactiver la phrase secrète",
     "Voulez-vous désactiver le chiffrement de la phrase secrète ?",
@@ -742,5 +742,7 @@ translations = [
     "Authentification LNURL",
     "Approuver l'autorisation LNURL",
     "Réseau alimenté par ETH et EVM",
+    "Désactiver l'espace d'air",
+    "Êtes-vous sûr de désactiver le mode Air Gap ? Après désactivation, il pourra connecter votre appareil via Bluetooth ou USB.",
 ]
 # fmt: on
