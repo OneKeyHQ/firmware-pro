@@ -121,6 +121,7 @@ message Features {
     optional bytes onekey_firmware_hash	 = 610;
     optional string onekey_firmware_build_id = 611;
     optional string onekey_serial_no = 612;
+    optional string onekey_boot_build_id = 613;
 }
 
 /**

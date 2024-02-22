@@ -3906,6 +3906,11 @@ class Features(protobuf.MessageType):
         610: protobuf.Field("onekey_firmware_hash", "bytes", repeated=False, required=False),
         611: protobuf.Field("onekey_firmware_build_id", "string", repeated=False, required=False),
         612: protobuf.Field("onekey_serial_no", "string", repeated=False, required=False),
+        613: protobuf.Field("onekey_boot_build_id", "string", repeated=False, required=False),
+        614: protobuf.Field("onekey_ble_name", "string", repeated=False, required=False),
+        615: protobuf.Field("onekey_ble_version", "string", repeated=False, required=False),
+        616: protobuf.Field("onekey_ble_build_id", "string", repeated=False, required=False),
+        617: protobuf.Field("onekey_ble_hash", "bytes", repeated=False, required=False),
     }
 
     def __init__(
@@ -3982,6 +3987,11 @@ class Features(protobuf.MessageType):
         onekey_firmware_hash: Optional["bytes"] = None,
         onekey_firmware_build_id: Optional["str"] = None,
         onekey_serial_no: Optional["str"] = None,
+        onekey_boot_build_id: Optional["str"] = None,
+        onekey_ble_name: Optional["str"] = None,
+        onekey_ble_version: Optional["str"] = None,
+        onekey_ble_build_id: Optional["str"] = None,
+        onekey_ble_hash: Optional["bytes"] = None,
     ) -> None:
         self.capabilities: Sequence["Capability"] = capabilities if capabilities is not None else []
         self.major_version = major_version
@@ -4054,6 +4064,11 @@ class Features(protobuf.MessageType):
         self.onekey_firmware_hash = onekey_firmware_hash
         self.onekey_firmware_build_id = onekey_firmware_build_id
         self.onekey_serial_no = onekey_serial_no
+        self.onekey_boot_build_id = onekey_boot_build_id
+        self.onekey_ble_name = onekey_ble_name
+        self.onekey_ble_version = onekey_ble_version
+        self.onekey_ble_build_id = onekey_ble_build_id
+        self.onekey_ble_hash = onekey_ble_hash
 
 
 class LockDevice(protobuf.MessageType):

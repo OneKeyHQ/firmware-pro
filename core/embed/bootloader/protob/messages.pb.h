@@ -287,6 +287,8 @@ typedef struct _Features {
     char onekey_firmware_build_id[64]; 
     bool has_onekey_serial_no;
     char onekey_serial_no[32]; 
+    bool has_onekey_boot_build_id;
+    char onekey_boot_build_id[8]; 
 } Features;
 
 typedef struct _FirmwareErase { 
@@ -406,7 +408,7 @@ extern "C" {
 /* Initializer values for message structs */
 #define Initialize_init_default                  {0}
 #define GetFeatures_init_default                 {0}
-#define Features_init_default                    {false, "", 0, 0, 0, false, 0, false, "", false, "", false, "", false, 0, false, {0, {0}}, false, 0, false, "", false, 0, false, 0, false, 0, false, "", false, 0, false, "", false, "", false, 0, false, 0, false, "", false, 0, false, "", false, "", false, "", false, 0, false, "", false, _OneKeyDeviceType_MIN, false, _OneKeySeType_MIN, false, "", false, {0, {0}}, false, "", false, {0, {0}}, false, "", false, {0, {0}}, false, "", false, "", false, {0, {0}}, false, "", false, ""}
+#define Features_init_default                    {false, "", 0, 0, 0, false, 0, false, "", false, "", false, "", false, 0, false, {0, {0}}, false, 0, false, "", false, 0, false, 0, false, 0, false, "", false, 0, false, "", false, "", false, 0, false, 0, false, "", false, 0, false, "", false, "", false, "", false, 0, false, "", false, _OneKeyDeviceType_MIN, false, _OneKeySeType_MIN, false, "", false, {0, {0}}, false, "", false, {0, {0}}, false, "", false, {0, {0}}, false, "", false, "", false, {0, {0}}, false, "", false, "", false, ""}
 #define Ping_init_default                        {false, ""}
 #define Success_init_default                     {false, ""}
 #define Failure_init_default                     {false, _FailureType_MIN, false, ""}
@@ -442,7 +444,7 @@ extern "C" {
 #define SEMessageSignature_init_default          {{0, {0}}}
 #define Initialize_init_zero                     {0}
 #define GetFeatures_init_zero                    {0}
-#define Features_init_zero                       {false, "", 0, 0, 0, false, 0, false, "", false, "", false, "", false, 0, false, {0, {0}}, false, 0, false, "", false, 0, false, 0, false, 0, false, "", false, 0, false, "", false, "", false, 0, false, 0, false, "", false, 0, false, "", false, "", false, "", false, 0, false, "", false, _OneKeyDeviceType_MIN, false, _OneKeySeType_MIN, false, "", false, {0, {0}}, false, "", false, {0, {0}}, false, "", false, {0, {0}}, false, "", false, "", false, {0, {0}}, false, "", false, ""}
+#define Features_init_zero                       {false, "", 0, 0, 0, false, 0, false, "", false, "", false, "", false, 0, false, {0, {0}}, false, 0, false, "", false, 0, false, 0, false, 0, false, "", false, 0, false, "", false, "", false, 0, false, 0, false, "", false, 0, false, "", false, "", false, "", false, 0, false, "", false, _OneKeyDeviceType_MIN, false, _OneKeySeType_MIN, false, "", false, {0, {0}}, false, "", false, {0, {0}}, false, "", false, {0, {0}}, false, "", false, "", false, {0, {0}}, false, "", false, "", false, ""}
 #define Ping_init_zero                           {false, ""}
 #define Success_init_zero                        {false, ""}
 #define Failure_init_zero                        {false, _FailureType_MIN, false, ""}
@@ -558,6 +560,7 @@ extern "C" {
 #define Features_onekey_firmware_hash_tag        610
 #define Features_onekey_firmware_build_id_tag    611
 #define Features_onekey_serial_no_tag            612
+#define Features_onekey_boot_build_id_tag        613
 #define FirmwareErase_length_tag                 1
 #define FirmwareErase_ex_length_tag              1
 #define FirmwareRequest_offset_tag               1
@@ -633,7 +636,8 @@ X(a, STATIC,   OPTIONAL, STRING,   onekey_se_build_id, 608) \
 X(a, STATIC,   OPTIONAL, STRING,   onekey_firmware_version, 609) \
 X(a, STATIC,   OPTIONAL, BYTES,    onekey_firmware_hash, 610) \
 X(a, STATIC,   OPTIONAL, STRING,   onekey_firmware_build_id, 611) \
-X(a, STATIC,   OPTIONAL, STRING,   onekey_serial_no, 612)
+X(a, STATIC,   OPTIONAL, STRING,   onekey_serial_no, 612) \
+X(a, STATIC,   OPTIONAL, STRING,   onekey_boot_build_id, 613)
 #define Features_CALLBACK NULL
 #define Features_DEFAULT NULL
 
@@ -931,7 +935,7 @@ extern const pb_msgdesc_t SEMessageSignature_msg;
 #define EmmcPathInfo_size                        258
 #define EmmcPath_size                            59
 #define Failure_size                             260
-#define Features_size                            991
+#define Features_size                            1001
 #define FirmwareErase_ex_size                    6
 #define FirmwareErase_size                       6
 #define FirmwareRequest_size                     12

@@ -283,8 +283,9 @@ STATIC mp_obj_t mod_trezorutils_boot_hash(void) {
 #ifdef TREZOR_EMULATOR
   return mp_obj_new_str_from_vstr(&mp_type_bytes, &vstr);
 #else
-  sha256_Raw((uint8_t *)BOOTLOADER_START, FIRMWARE_START - BOOTLOADER_START,
-             (uint8_t *)vstr.buf);
+  uint8_t *p_code_len = (uint8_t *)(BOOTLOADER_START + 12);
+  int len = p_code_len[0] + p_code_len[1] * 256 + p_code_len[2] * 256 * 256;
+  sha256_Raw((uint8_t *)(BOOTLOADER_START + 1024), len, (uint8_t *)vstr.buf);
   sha256_Raw((uint8_t *)vstr.buf, 32, (uint8_t *)vstr.buf);
 
   return mp_obj_new_str_from_vstr(&mp_type_bytes, &vstr);

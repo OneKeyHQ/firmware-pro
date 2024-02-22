@@ -64,7 +64,7 @@ else
 FIRMWARE_BUILD_NAME=pro.$(FIRMWARE_BUILD_VERSION)-Alpha-$(BUILD_DATE)-$(BUILD_ID)
 BOOT_BUILD_NAME=pro.bootloader.$(BOOT_BUILD_VERSION)-Alpha-$(BUILD_DATE)-$(BUILD_ID)
 endif
-#CFLAGS += -DBUILD_ID='\"$(BUILD_COMMIT)\"'
+CFLAGS += -DBUILD_COMMIT='\"$(BUILD_COMMIT)\"'
 
 
 TESTPATH = $(CURDIR)/../tests
@@ -287,6 +287,9 @@ flash_bootloader_jlink: $(BOOTLOADER_BUILD_DIR)/bootloader.bin ## flash bootload
 
 # flash_bootloader_ci_jlink: $(BOOTLOADER_CI_BUILD_DIR)/bootloader.bin ## flash CI bootloader using JLink
 # 	JLinkExe -nogui 1 -commanderscript embed/bootloader_ci/bootloader_flash.jlink
+
+erase_firmware_jlink: $(FIRMWARE_BUILD_DIR)/firmware.bin
+	JLinkExe -nogui 1 -commanderscript embed/debugger_scripts/jlink/wipe_firmware_header.jlink
 
 flash_firmware_jlink: $(FIRMWARE_BUILD_DIR)/firmware.bin ## flash firmware using JLink. file names must end in .bin for JLink
 	cp -f $<.p1 $<.p1.bin

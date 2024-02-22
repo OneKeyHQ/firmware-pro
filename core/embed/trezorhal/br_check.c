@@ -89,8 +89,9 @@ uint8_t *get_boardloader_hash(void) {
 uint8_t *get_bootloader_hash(void) {
   static uint8_t bootloader_hash[32] = {0};
 
-  sha256_Raw((uint8_t *)BOOTLOADER_START, FIRMWARE_START - BOOTLOADER_START,
-             bootloader_hash);
+  uint8_t *p_code_len = (uint8_t *)(BOOTLOADER_START + 12);
+  int len = p_code_len[0] + p_code_len[1] * 256 + p_code_len[2] * 256 * 256;
+  sha256_Raw((uint8_t *)(BOOTLOADER_START + 1024), len, bootloader_hash);
   sha256_Raw(bootloader_hash, 32, bootloader_hash);
 
   return bootloader_hash;

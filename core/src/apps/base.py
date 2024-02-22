@@ -91,6 +91,10 @@ def get_features() -> Features:
         onekey_firmware_version=utils.ONEKEY_VERSION,
         onekey_firmware_build_id=utils.BUILD_ID[-7:].decode(),
         onekey_serial_no=storage_serial_no,
+        onekey_ble_name=uart.get_ble_name(),
+        onekey_ble_version=uart.get_ble_version(),
+        onekey_ble_build_id=uart.get_ble_build_id(),
+        onekey_ble_hash=uart.get_ble_hash(),
     )
 
     if utils.BITCOIN_ONLY:

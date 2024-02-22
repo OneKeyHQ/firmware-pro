@@ -30,12 +30,16 @@ _CMD_DEVICE_CHARGING_STATUS = const(8)
 _CMD_BATTERY_STATUS = const(9)
 _CMD_SIDE_BUTTON_PRESS = const(10)
 _CMD_LED_BRIGHTNESS = const(12)
+_CMD_BLE_BUILD_ID = const(16)
+_CMD_BLE_HASH = const(17)
 CHARGING = False
 SCREEN: PairCodeDisplay | None = None
 BLE_ENABLED: bool | None = None
 NRF_VERSION: str | None = None
 BLE_CTRL = io.BLE()
 FLASH_LED_BRIGHTNESS: int | None = None
+BLE_BUILD_ID: str | None = None
+BLE_HASH: bytes | None = None
 
 
 async def handle_fingerprint():
@@ -255,6 +259,10 @@ async def process_push() -> None:
     elif cmd == _CMD_LED_BRIGHTNESS:
         # retrieve led brightness
         _retrieve_flashled_brightness(value)
+    elif cmd == _CMD_BLE_BUILD_ID:
+        _retrieve_ble_build_id(value)
+    elif cmd == _CMD_BLE_HASH:
+        _retrieve_ble_hash(value)
     else:
         if __debug__:
             print("unknown or not care command:", cmd)
@@ -414,6 +422,18 @@ def _retrieve_nrf_version(value: bytes) -> None:
         #     device.set_ble_version(NRF_VERSION)
 
 
+def _retrieve_ble_build_id(value: bytes) -> None:
+    global BLE_BUILD_ID
+    if value != b"":
+        BLE_BUILD_ID = value.decode("utf-8")
+
+
+def _retrieve_ble_hash(value: bytes) -> None:
+    global BLE_HASH
+    if value != b"":
+        BLE_HASH = value
+
+
 def _request_ble_name():
     """Request ble name."""
     BLE_CTRL.ctrl(0x83, b"\x01")
@@ -460,6 +480,14 @@ def fetch_ble_info():
     global BLE_ENABLED
     if BLE_ENABLED is None:
         BLE_CTRL.ctrl(0x81, b"\x04")
+
+    global BLE_BUILD_ID
+    if BLE_BUILD_ID is None:
+        BLE_CTRL.ctrl(0x83, b"\x05")
+
+    global BLE_HASH
+    if BLE_HASH is None:
+        BLE_CTRL.ctrl(0x83, b"\x06")
 
 
 def ctrl_ble(enable: bool) -> None:
@@ -523,6 +551,14 @@ def get_ble_version() -> str:
     if utils.EMULATOR:
         return "1.0.0"
     return NRF_VERSION if NRF_VERSION else ""
+
+
+def get_ble_build_id() -> str:
+    return BLE_BUILD_ID if BLE_BUILD_ID else ""
+
+
+def get_ble_hash() -> bytes:
+    return BLE_HASH if BLE_HASH else b""
 
 
 def is_ble_opened() -> bool:
