@@ -199,8 +199,8 @@ async def gen_hd_key(callback=None):
     from apps.ur_registry.crypto_hd_key import genCryptoHDKeyForETHStandard
 
     # pyright: off
-    await handle_Initialize(wire.QR_CONTEXT, messages.Initialize())
-    ur = await genCryptoHDKeyForETHStandard(wire.QR_CONTEXT)
+    await handle_Initialize(wire.DUMMY_CONTEXT, messages.Initialize())
+    ur = await genCryptoHDKeyForETHStandard(wire.DUMMY_CONTEXT)
     # pyright: on
     qr_task.set_hd_key(ur)
     if callback is not None:
