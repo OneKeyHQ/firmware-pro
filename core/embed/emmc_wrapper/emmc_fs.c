@@ -435,7 +435,16 @@ bool emmc_fs_file_delete(char* path_buff)
     case FR_OK:                          // exists, remove it
         if ( !(finfo.fattrib & AM_DIR) ) // make sure it's not a directory
         {
-            f_unlink(path_buff);
+            // remove readonly attribute if exists
+            if ( finfo.fattrib & AM_RDO )
+            {
+                ExecuteCheck_OKEMMC_SIMPLE(f_chmod(path_buff, 0, AM_RDO));
+            }
+
+            // remove item
+            ExecuteCheck_OKEMMC_SIMPLE(f_unlink(path_buff));
+
+            // return
             return true;
         }
         else
