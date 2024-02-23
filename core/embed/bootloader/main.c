@@ -604,17 +604,6 @@ static secbool validate_firmware_code(vendor_header* const vhdr,
   return result;
 }
 
-static void camera_thd89_init(void) {
-  // as they using same i2c bus, both needs to be powered up before any
-  // communication
-  camera_io_init();
-  thd89_io_init();
-
-  // se
-  thd89_reset();
-  thd89_init();
-}
-
 static bool decide_target_is_boot_by_flag(void) {
   // get boot target flag
   BOOT_TARGET boot_target = *BOOT_TARGET_FLAG_ADDR;  // cache flag
@@ -696,7 +685,14 @@ int main(void) {
     ui_bootloader_simple();
   }
 
-  camera_thd89_init();
+  // as they using same i2c bus, both needs to be powered up before any
+  // communication
+  camera_io_init();
+  thd89_io_init();
+
+  // se
+  thd89_reset();
+  thd89_init();
 
   uint8_t se_mode = se_get_state();
   // all se in app mode
