@@ -9,6 +9,8 @@ extern uint8_t battery_cap;
 extern uint8_t dev_pwr_sta;
 
 #define BLE_NAME_LEN 16
+#define CHARGE_BY_USB 0x01
+#define CHARGE_BY_WIRELESS 0x02
 
 // BLE send command
 #define BLE_CMD_ADV 0x01
@@ -23,6 +25,7 @@ extern uint8_t dev_pwr_sta;
 #define BLE_CMD_RPESS 0x0A
 #define BLE_CMD_PWR 0x0B
 #define BLE_CMD_FLASHLED_STATE 0x0C
+#define BLE_CMD_BATTERY_INFO 0x0D
 #define BLE_CMD_DEV_KEY 0x0E
 
 #define BLE_KEY_RESP_SUCCESS 0x00
@@ -51,6 +54,12 @@ extern uint8_t dev_pwr_sta;
 #define BLE_REBOOT_SYS 0x01
 
 #define BLE_FLASHLED 0x85
+
+#define BLE_BATTERY_INFO 0x86
+#define BLE_BATTERY_INFO_VOLTAGE 0x01
+#define BLE_BATTERY_INFO_CHARGING_CURRENT 0x02
+#define BLE_BATTERY_INFO_DISCHARGING_CURRENT 0x03
+#define BLE_BATTERY_INFO_INNER_TEMP 0x04
 
 #define BLE_DEVICE_KEY 0x87
 #define BLE_DEVICE_KEY_GET 0x01
@@ -82,6 +91,11 @@ bool ble_get_version(char **ver);
 bool ble_get_pubkey(uint8_t *pubkey);
 bool ble_lock_pubkey(void);
 bool ble_sign_msg(uint8_t *msg, uint32_t msg_len, uint8_t *sign);
+uint8_t ble_get_charge_type(void);
+bool ble_get_battery_voltage(uint16_t *voltage);
+bool ble_get_battery_charging_current(uint16_t *current);
+bool ble_get_battery_discharging_current(uint16_t *current);
+bool ble_get_battery_inner_temp(uint16_t *temp);
 
 #else
 #define ble_name_state(...) false

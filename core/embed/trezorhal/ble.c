@@ -13,6 +13,7 @@ static bool get_ble_proto_ver = false;
 static bool get_ble_boot_ver = false;
 static bool get_ble_battery = false;
 static bool get_ble_charging = false;
+static uint8_t ble_charging_type = 0;
 static bool ble_connect = false;
 static bool ble_switch = false;
 static bool get_ble_switch = false;
@@ -177,6 +178,46 @@ bool ble_sign_msg(uint8_t *msg, uint32_t msg_len, uint8_t *sign) {
   return true;
 }
 
+bool ble_get_battery_info(uint8_t type, uint16_t *value) {
+  uint8_t counter = 0;
+  ble_cmd_req(BLE_BATTERY_INFO, type);
+  ble_request_state = -1;
+  while (1) {
+    ble_uart_poll();
+    if (ble_request_state != -1) {
+      break;
+    }
+    counter++;
+    hal_delay(1);
+    // 100ms
+    if (counter > 100) {
+      return false;
+    }
+  }
+  if (ble_request_state != 0) {
+    return false;
+  }
+
+  *value = (ble_response_buf[0] << 8) + ble_response_buf[1];
+  return true;
+}
+
+bool ble_get_battery_voltage(uint16_t *voltage) {
+  return ble_get_battery_info(BLE_BATTERY_INFO_VOLTAGE, voltage);
+}
+
+bool ble_get_battery_charging_current(uint16_t *current) {
+  return ble_get_battery_info(BLE_BATTERY_INFO_CHARGING_CURRENT, current);
+}
+
+bool ble_get_battery_discharging_current(uint16_t *current) {
+  return ble_get_battery_info(BLE_BATTERY_INFO_DISCHARGING_CURRENT, current);
+}
+
+bool ble_get_battery_inner_temp(uint16_t *temp) {
+  return ble_get_battery_info(BLE_BATTERY_INFO_INNER_TEMP, temp);
+}
+
 bool ble_connect_state(void) { return ble_connect; }
 
 bool ble_name_state(void) { return get_ble_name; }
@@ -190,6 +231,8 @@ bool ble_switch_state(void) { return get_ble_switch; }
 bool ble_charging_state(void) { return get_ble_charging; }
 
 uint32_t ble_power_button_state(void) { return dev_press_sta; }
+
+uint8_t ble_get_charge_type(void) { return ble_charging_type; }
 
 // Since RELEASED event won't be reported
 // we have to clear this locally cached status
@@ -272,9 +315,15 @@ void ble_uart_poll(void) {
       get_ble_charging = true;
       if (ble_usart_msg.cmd_vale[0] == 1 || ble_usart_msg.cmd_vale[0] == 3) {
         dev_pwr_sta = 1;
+        if (ble_usart_msg.cmd_vale[1] == CHARGE_BY_USB ||
+            ble_usart_msg.cmd_vale[1] == CHARGE_BY_WIRELESS) {
+          ble_charging_type = ble_usart_msg.cmd_vale[1];
+        }
       } else {
         dev_pwr_sta = 0;
+        ble_charging_type = 0;
       }
+
       break;
     case BLE_CMD_EQ:
       get_ble_battery = true;
@@ -285,6 +334,23 @@ void ble_uart_poll(void) {
       break;
     case BLE_CMD_PWR:
       dev_pwr = ble_usart_msg.cmd_vale[0];
+      break;
+    case BLE_CMD_BATTERY_INFO:
+      if (ble_usart_msg.cmd_vale[0] == BLE_BATTERY_INFO_VOLTAGE) {
+        memcpy(ble_response_buf, ble_usart_msg.cmd_vale + 1, 2);
+        ble_request_state = 0;
+      } else if (ble_usart_msg.cmd_vale[0] ==
+                 BLE_BATTERY_INFO_CHARGING_CURRENT) {
+        memcpy(ble_response_buf, ble_usart_msg.cmd_vale + 1, 2);
+        ble_request_state = 0;
+      } else if (ble_usart_msg.cmd_vale[0] ==
+                 BLE_BATTERY_INFO_DISCHARGING_CURRENT) {
+        memcpy(ble_response_buf, ble_usart_msg.cmd_vale + 1, 2);
+        ble_request_state = 0;
+      } else if (ble_usart_msg.cmd_vale[0] == BLE_BATTERY_INFO_INNER_TEMP) {
+        memcpy(ble_response_buf, ble_usart_msg.cmd_vale + 1, 2);
+        ble_request_state = 0;
+      }
       break;
     case BLE_CMD_DEV_KEY:
       if (ble_usart_msg.cmd_vale[0] == BLE_KEY_RESP_PUBKEY) {
