@@ -1,6 +1,6 @@
 device STM32H747XI_M7
 SelectInterface swd
-speed 50000
+speed 25000
 Erase 0x08060000 0x08060600
 rx 100
 go
