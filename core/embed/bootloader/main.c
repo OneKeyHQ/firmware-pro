@@ -604,14 +604,6 @@ static secbool validate_firmware_code(vendor_header* const vhdr,
   return result;
 }
 
-void device_init_and_ble_verify(void) {
-  // all se in app mode
-  if (se_get_state() == 0) {
-    device_para_init();
-  }
-  device_verify_ble();
-}
-
 static void camera_thd89_init(void) {
   // as they using same i2c bus, both needs to be powered up before any
   // communication
@@ -705,9 +697,15 @@ int main(void) {
   }
 
   camera_thd89_init();
-  device_init_and_ble_verify();
 
-  if (!device_serial_set() || !se_has_cerrificate()) {
+  uint8_t se_mode = se_get_state();
+  // all se in app mode
+  if (se_mode == 0) {
+    device_para_init();
+  }
+  device_verify_ble();
+
+  if ((!device_serial_set() || !se_has_cerrificate()) && se_mode == 0) {
     display_clear();
     device_set_factory_mode(true);
     ui_bootloader_factory();
