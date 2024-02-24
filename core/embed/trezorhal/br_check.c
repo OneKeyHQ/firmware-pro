@@ -39,6 +39,14 @@ static int onekey_known_boardloader(const uint8_t *hash) {
     memcpy(boardloader_version, "1.6.1", strlen("1.6.1"));
     return 1;
   }
+  if (0 ==
+      memcmp(hash,
+             "\x85\xe5\x28\x2c\xb2\x18\x69\x91\x3e\x46\xa5\xbf\x98\x6f\xdb\x7d"
+             "\xc7\x5d\x55\x32\x08\xa1\x4b\x7b\x9e\xdd\xdf\xc5\x33\x15\x9a\x5e",
+             32)) {
+    memcpy(boardloader_version, "1.6.2", strlen("1.6.2"));
+    return 1;
+  }
   memcpy(boardloader_version, "unknown boardloader",
          strlen("unknown boardloader"));
   return 1;
@@ -53,6 +61,14 @@ static int onekey_known_boardloader(const uint8_t *hash) {
              "\xeb\x8f\x4b\xe7\x2c\x57\xeb\xe4\xe4\x4c\x37\xba\xe7\xb3\xcf\x34",
              32)) {
     memcpy(boardloader_version, "1.6.1", strlen("1.6.1"));
+    return 1;
+  }
+  if (0 ==
+      memcmp(hash,
+             "\xf3\x80\x4e\x1b\x58\xed\x0d\x39\x66\x76\xe0\xf0\x64\x94\x5d\xfd"
+             "\xe0\x26\x79\xc8\x55\x51\x3e\xee\x56\xa0\xcc\x0a\x02\x10\x05\xa1",
+             32)) {
+    memcpy(boardloader_version, "1.6.2", strlen("1.6.2"));
     return 1;
   }
   memcpy(boardloader_version, "unknown boardloader",
