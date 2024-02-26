@@ -58,7 +58,8 @@ class GuideAppDownload(lv.obj):
             .text_font(font_GeistSemiBold64)
             .text_color(lv_colors.WHITE)
             .text_letter_space(-4)
-            .text_line_space(-8),
+            .text_line_space(-8)
+            .width(456),
             0,
         )
         self.label1.set_text(_(i18n_keys.TITLE__DOWNLOAD__TUTORIAL_AFTER_INIT))
@@ -166,7 +167,7 @@ class ConnectWallet(lv.obj):
         # self.images.align(lv.ALIGN.TOP_MID, 0, 36)
 
         self.label1 = lv.label(self.content_area)
-        self.label1.set_width(432)
+        self.label1.set_width(456)
         self.set_style_text_align(lv.TEXT_ALIGN.LEFT, 0)
         self.label1.add_style(
             StyleWrapper()
@@ -186,7 +187,7 @@ class ConnectWallet(lv.obj):
             .text_align_left()
             .text_letter_space(-1)
             .text_line_space(6)
-            .width(392)
+            .width(456)
         )
 
         self.label2 = lv.label(self.content_area)
@@ -286,7 +287,7 @@ class AddAccount(lv.obj):
         # self.images.align(lv.ALIGN.TOP_MID, 0, 36)
 
         self.label1 = lv.label(self.content_area)
-        self.label1.set_width(432)
+        self.label1.set_width(456)
         self.set_style_text_align(lv.TEXT_ALIGN.LEFT, 0)
         self.label1.add_style(
             StyleWrapper()
@@ -306,7 +307,7 @@ class AddAccount(lv.obj):
             .text_align_left()
             .text_letter_space(-1)
             .text_line_space(6)
-            .width(392)
+            .width(456)
         )
         self.label2 = lv.label(self.content_area)
         self.label2.add_style(text_style, 0)

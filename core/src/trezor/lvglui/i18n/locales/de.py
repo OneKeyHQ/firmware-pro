@@ -351,7 +351,6 @@ translations = [
     "Tippen Sie auf die Schaltfläche Wallet erstellen.",
     "Später stellt die OneKey-App zuvor verwendete Konten wieder her.",
     "Konto hinzufügen",
-    "Wählen Sie die gewünschte Kette aus und klicken Sie dann auf die Schaltfläche Erstellen.",
     "Klicken Sie oben rechts auf den Kontonamen und dann auf das Symbol „Hinzufügen“.",
     "OneKey-App-Lernprogramm",
     "Homescreen einstellen",
@@ -744,5 +743,6 @@ translations = [
     "ETH- und EVM-basiertes Netzwerk",
     "Luftspalt deaktivieren",
     "Sind Sie sicher, den Air Gap-Modus zu deaktivieren? Nach der Deaktivierung kann Ihr Gerät über Bluetooth oder USB verbunden werden.",
+    "Wählen Sie die gewünschte Kette aus und klicken Sie dann auf die Schaltfläche „Erstellen“.",
 ]
 # fmt: on

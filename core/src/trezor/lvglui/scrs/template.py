@@ -501,6 +501,7 @@ class ContractDataOverview(FullSizeWindow):
             _(i18n_keys.BUTTON__CONTINUE),
             _(i18n_keys.BUTTON__REJECT),
             primary_color=primary_color,
+            anim_dir=0,
         )
         self.primary_color = primary_color
         self.container = ContainerFlexCol(
@@ -3066,19 +3067,28 @@ class Signature(FullSizeWindow):
         title,
         subtitle,
         qr_code,
+        primary_color,
     ):
         super().__init__(
             title,
             subtitle,
             confirm_text=_(i18n_keys.BUTTON__DONE),
-            # primary_color=0x000000,
+            primary_color=primary_color,
+            anim_dir=0,
         )
+        import gc
+
+        gc.collect()
+        gc.threshold(int(18248 * 1.5))  # type: ignore["threshold" is not a known member of module]
         self.qr_code = qr_code
         self.qr = QRCode(
             self.content_area,
             self.qr_code,
         )
         self.qr.align_to(self.subtitle, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 30)
+
+    def destroy(self, delay_ms=400):
+        return self.delete()
 
 
 class ErrorFeedback(FullSizeWindow):

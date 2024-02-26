@@ -351,7 +351,6 @@ translations = [
     "Toca el botón Crear billetera.",
     "Más tarde, la aplicación OneKey recuperará las cuentas que usaste anteriormente.",
     "Añadir cuenta",
-    "Selecciona la cadena que necesitas y, a continuación, haz clic en el botón Crear.",
     "Haz clic en el nombre de la cuenta en el panel superior derecho y, a continuación, en el icono Añadir.",
     "Tutorial de la aplicación OneKey",
     "Establecer pantalla de inicio",
@@ -744,5 +743,6 @@ translations = [
     "Red alimentada por ETH y EVM",
     "Deshabilitar el espacio de aire",
     "¿Estás seguro de desactivar el modo Air Gap? Después de desactivarlo, podrá conectar su dispositivo a través de Bluetooth o USB.",
+    "Seleccione la cadena que necesita y luego haga clic en el botón Crear.",
 ]
 # fmt: on

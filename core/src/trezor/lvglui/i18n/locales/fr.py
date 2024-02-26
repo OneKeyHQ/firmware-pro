@@ -351,7 +351,6 @@ translations = [
     "Appuyez sur le bouton Créer un portefeuille.",
     "Plus tard, l'application OneKey récupérera les comptes que vous avez précédemment utilisés.",
     "Ajouter un compte",
-    "Sélectionnez la chaîne dont vous avez besoin, puis cliquez sur le bouton Créer.",
     "Cliquez sur le nom du compte dans le panneau supérieur droit, puis cliquez sur l'icône Ajouter.",
     "Tutoriel de l'application OneKey",
     "Définir l'écran d'accueil",
@@ -744,5 +743,6 @@ translations = [
     "Réseau alimenté par ETH et EVM",
     "Désactiver l'espace d'air",
     "Êtes-vous sûr de désactiver le mode Air Gap ? Après désactivation, il pourra connecter votre appareil via Bluetooth ou USB.",
+    "Sélectionnez la chaîne dont vous avez besoin, puis cliquez sur le bouton Créer.",
 ]
 # fmt: on

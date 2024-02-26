@@ -448,7 +448,7 @@ class FullSizeWindow(lv.obj):
         #     Anim(0, -480, self.set_pos, time=200, y_axis=False, delay=200, del_cb=self._delete).start()
         # else:
         #     self.show_dismiss_anim()
-        self.destroy(1000)
+        self.destroy(1100)
 
     def refresh(self):
         area = lv.area_t()

@@ -351,7 +351,6 @@ translations = [
     "Tocca il pulsante Crea portafoglio.",
     "Successivamente, l'app OneKey recupererà gli account che hai utilizzato in precedenza.",
     "Aggiungi account",
-    "Seleziona la catena di cui hai bisogno, quindi fai clic sul pulsante Crea.",
     "Fai clic sul nome dell'account nel pannello in alto a destra, quindi fai clic sull'icona Aggiungi.",
     "Esercitazione sull'app OneKey",
     "Imposta schermata iniziale",
@@ -744,5 +743,6 @@ translations = [
     "Rete alimentata da ETH ed EVM",
     "Disabilita traferro",
     "Sei sicuro di disabilitare la modalità Air Gap? Dopo la disattivazione, sarà in grado di connettere il tuo dispositivo tramite Bluetooth o USB.",
+    "Seleziona la catena che ti serve, quindi fai clic sul pulsante Crea.",
 ]
 # fmt: on

@@ -2121,6 +2121,7 @@ async def show_signature(
                 i18n_keys.CONTENT__RETUNRN_TO_THE_APP_AND_SCAN_THE_SIGNED_TX_QR_CODE_BELOW
             ),
             qr_code=qr_code,
+            primary_color=ctx.primary_color,
         ),
         "show_signature",
         ButtonRequestType.SignTx,

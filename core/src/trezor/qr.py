@@ -1,8 +1,6 @@
 from trezor import log, loop, messages, wire, workflow
 from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
-from trezor.lvglui.lv_colors import lv_colors
 from trezor.lvglui.scrs import lv
-from trezor.ui.layouts import show_warning
 
 from apps.ur_registry.ur_py.ur.ur import UR
 
@@ -104,25 +102,25 @@ class QRTask:
         elif ur.type == "crypto-psbt":
             if __debug__:
                 print("TODO crypto-psbt")
-            await show_warning(
-                ctx=wire.QR_CONTEXT,
-                br_type="qr_not_support",
-                header=_(i18n_keys.TITLE__DATA_FORMAT_NOT_SUPPORT),
-                content=_(i18n_keys.CONTENT__QR_CODE_TYPE_NOT_SUPPORT_PLEASE_TRY_AGAIN),
-                icon="A:/res/danger.png",
-                btn_yes_bg_color=lv_colors.ONEKEY_BLACK,
+            from trezor.ui.layouts import show_error_no_interact
+
+            await show_error_no_interact(
+                title=_(i18n_keys.TITLE__DATA_FORMAT_NOT_SUPPORT),
+                subtitle=_(
+                    i18n_keys.CONTENT__QR_CODE_TYPE_NOT_SUPPORT_PLEASE_TRY_AGAIN
+                ),
             )
             self.ur = None
         else:
             if __debug__:
                 print("TODO unsupport")
-            await show_warning(
-                ctx=wire.QR_CONTEXT,
-                br_type="qr_not_support",
-                header=_(i18n_keys.TITLE__DATA_FORMAT_NOT_SUPPORT),
-                content=_(i18n_keys.CONTENT__QR_CODE_TYPE_NOT_SUPPORT_PLEASE_TRY_AGAIN),
-                icon="A:/res/danger.png",
-                btn_yes_bg_color=lv_colors.ONEKEY_BLACK,
+            from trezor.ui.layouts import show_error_no_interact
+
+            await show_error_no_interact(
+                title=_(i18n_keys.TITLE__DATA_FORMAT_NOT_SUPPORT),
+                subtitle=_(
+                    i18n_keys.CONTENT__QR_CODE_TYPE_NOT_SUPPORT_PLEASE_TRY_AGAIN
+                ),
             )
             self.ur = None
             # if self.callback_obj is not None:
@@ -227,14 +225,15 @@ async def handle_qr_task():
         except Exception as exec:
             if __debug__:
                 log.exception(__name__, exec)
-            await show_warning(
-                ctx=wire.QR_CONTEXT,
-                br_type="qr_not_support",
-                header=_(i18n_keys.TITLE__INVALID_TRANSACTION),
-                content=_(i18n_keys.CONTENT__TX_DATA_IS_INCORRECT_PLEASE_TRY_AGAIN),
-                icon="A:/res/danger.png",
-                btn_yes_bg_color=lv_colors.ONEKEY_BLACK,
-            )
+            if not isinstance(exec, wire.ActionCancelled):
+                from trezor.ui.layouts import show_error_no_interact
+
+                await show_error_no_interact(
+                    title=_(i18n_keys.TITLE__INVALID_TRANSACTION),
+                    subtitle=_(
+                        i18n_keys.CONTENT__TX_DATA_IS_INCORRECT_PLEASE_TRY_AGAIN
+                    ),
+                )
             loop.clear()
             return  # pylint: disable=lost-exception
 

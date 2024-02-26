@@ -179,8 +179,8 @@ async def handle_usb_state():
                     await safe_reloop()
                     # single to restart the main loop
                     raise loop.TASK_CLOSED
-            elif not usb_auto_lock and not state:
-                await safe_reloop()
+            # elif not usb_auto_lock and not state:
+            #     await safe_reloop()
             base.reload_settings_from_storage()
         except Exception as exec:
             if __debug__:

@@ -351,7 +351,6 @@ translations = [
     "Tap Create-Wallet button.",
     "Later, OneKey app will recover accounts you previously used.",
     "Add Account",
-    "Select the chain you need, then click Create button.",
     "Click account name on the top right panel, then click Add icon.",
     "OneKey App Tutorial",
     "Set Homescreen",
@@ -744,5 +743,6 @@ translations = [
     "ETH and EVM powered network",
     "Disable Air Gap",
     "Are you sure to disable Air Gap mode? After disable, it will be able to connect your device via USB or Bluetooth.",
+    "Select the chain you need, then click Create button.",
 ]
 # fmt: on
