@@ -33,6 +33,7 @@ _CMD_LED_BRIGHTNESS = const(12)
 _CMD_BLE_BUILD_ID = const(16)
 _CMD_BLE_HASH = const(17)
 CHARGING = False
+CHARING_TYPE = 0  # 1 VIA USB / 2 VIA WIRELESS
 SCREEN: PairCodeDisplay | None = None
 BLE_ENABLED: bool | None = None
 NRF_VERSION: str | None = None
@@ -40,6 +41,7 @@ BLE_CTRL = io.BLE()
 FLASH_LED_BRIGHTNESS: int | None = None
 BLE_BUILD_ID: str | None = None
 BLE_HASH: bytes | None = None
+BUTTON_PRESSING = False
 
 
 async def handle_fingerprint():
@@ -60,6 +62,7 @@ async def handle_fingerprint():
                 fingerprints.is_unlocked(),
                 utils.is_collecting_fingerprint(),
                 display.backlight() == 0,
+                BUTTON_PRESSING,
             )
         ):
             await loop.sleep(2000)
@@ -149,7 +152,7 @@ async def handle_usb_state():
                     prompt.show()
                 StatusBar.get_instance().show_usb(True)
                 # deal with charging state
-                CHARGING = True
+                # CHARGING = True
                 StatusBar.get_instance().show_charging(True)
                 if utils.BATTERY_CAP:
                     StatusBar.get_instance().set_battery_img(
@@ -160,27 +163,32 @@ async def handle_usb_state():
                 utils.lcd_resume()
                 StatusBar.get_instance().show_usb(False)
                 # deal with charging state
-                CHARGING = False
+                # CHARGING = False
                 StatusBar.get_instance().show_charging()
                 if utils.BATTERY_CAP:
                     StatusBar.get_instance().set_battery_img(
                         utils.BATTERY_CAP, CHARGING
                     )
                     _request_charging_status()
-            usb_auto_lock = device.is_usb_lock_enabled()
-            if usb_auto_lock and device.is_initialized() and config.has_pin():
-                from trezor.lvglui.scrs import fingerprints
+            import usb
 
-                if config.is_unlocked():
-                    if fingerprints.is_available():
-                        fingerprints.lock()
-                    else:
-                        config.lock()
-                    await safe_reloop()
-                    # single to restart the main loop
-                    raise loop.TASK_CLOSED
-            # elif not usb_auto_lock and not state:
-            #     await safe_reloop()
+            if usb.bus.state() == 1 and (
+                not CHARGING or CHARING_TYPE == 2
+            ):  # not enable or disable airgap mode
+                usb_auto_lock = device.is_usb_lock_enabled()
+                if usb_auto_lock and device.is_initialized() and config.has_pin():
+                    from trezor.lvglui.scrs import fingerprints
+
+                    if config.is_unlocked():
+                        if fingerprints.is_available():
+                            fingerprints.lock()
+                        else:
+                            config.lock()
+                        await safe_reloop()
+                        # single to restart the main loop
+                        raise loop.TASK_CLOSED
+                # elif not usb_auto_lock and not state:
+                #     await safe_reloop()
             base.reload_settings_from_storage()
         except Exception as exec:
             if __debug__:
@@ -319,6 +327,8 @@ async def _deal_button_press(value: bytes) -> None:
         await loop.sleep(200)
         utils.lcd_resume()
     elif res == _BTN_PRESS:
+        global BUTTON_PRESSING
+        BUTTON_PRESSING = True
         if utils.is_collecting_fingerprint():
             from trezor.lvglui.scrs.fingerprints import (
                 CollectFingerprintProgress,
@@ -328,7 +338,8 @@ async def _deal_button_press(value: bytes) -> None:
                 CollectFingerprintProgress.get_instance().prompt_tips()
                 return
     elif res == _BTN_RELEASE:
-        pass
+        global BUTTON_PRESSING
+        BUTTON_PRESSING = False
 
 
 async def _deal_charging_state(value: bytes) -> None:
@@ -336,8 +347,9 @@ async def _deal_charging_state(value: bytes) -> None:
     CHARGING WITH A CHARGER NOW.
 
     """
-    global CHARGING
-    res = ustruct.unpack(">B", value)[0]
+    global CHARGING, CHARING_TYPE
+    res, CHARING_TYPE = ustruct.unpack(">BB", value)
+
     if res in (
         _USB_STATUS_PLUG_IN,
         _POWER_STATUS_CHARGING,

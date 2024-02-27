@@ -740,9 +740,9 @@ translations = [
     "Domain",
     "LNURL Auth",
     "Approve LNURL Authorization",
-    "ETH and EVM powered network",
     "Disable Air Gap",
     "Are you sure to disable Air Gap mode? After disable, it will be able to connect your device via USB or Bluetooth.",
     "Select the chain you need, then click Create button.",
+    "ETH and EVM‒compatible chains",
 ]
 # fmt: on

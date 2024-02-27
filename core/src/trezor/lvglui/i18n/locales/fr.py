@@ -740,9 +740,9 @@ translations = [
     "Domaine",
     "Authentification LNURL",
     "Approuver l'autorisation LNURL",
-    "Réseau alimenté par ETH et EVM",
     "Désactiver l'espace d'air",
     "Êtes-vous sûr de désactiver le mode Air Gap ? Après désactivation, il pourra connecter votre appareil via Bluetooth ou USB.",
     "Sélectionnez la chaîne dont vous avez besoin, puis cliquez sur le bouton Créer.",
+    "Chaînes compatibles ETH et EVM",
 ]
 # fmt: on

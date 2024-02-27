@@ -740,9 +740,9 @@ translations = [
     "域名",
     "LNURL 授权",
     "批准 LNURL 授权",
-    "ETH 和 EVM 兼容链",
     "禁用 Air Gap",
     "要关闭 Air Gap 模式吗？关闭后，将允许通过蓝牙和 USB 连接此设备。",
     "选择你需要的链，然后点击创建按钮。",
+    "ETH 和 EVM 兼容链",
 ]
 # fmt: on

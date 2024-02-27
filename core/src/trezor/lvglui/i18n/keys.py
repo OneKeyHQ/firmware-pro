@@ -1614,13 +1614,13 @@ LIST_KEY__DOMAIN__COLON = 737
 FORM__LNURL_AUTH = 738
 # Approve LNURL Authorization
 TITLE__APPROVE_LNURL_AUTHORIZATION = 739
-# ETH and EVM powered network
-CONTENT__ETH_AND_EVM_POWERED_NETWORK = 740
 # Disable Air Gap
-TITLE__DISABLE_AIR_GAP = 741
+TITLE__DISABLE_AIR_GAP = 740
 # Are you sure to disable Air Gap mode? After disable, it will be able to conn
 # ect your device via USB or Bluetooth.
-CONTENT__ARE_YOU_SURE_TO_DISABLE_AIRGAP_MODE = 742
+CONTENT__ARE_YOU_SURE_TO_DISABLE_AIRGAP_MODE = 741
 # Select the chain you need, then click Create button.
-SUBTITLE__ADD_ACCOUNT_2__TUTORIAL_AFTER_INIT = 743
+SUBTITLE__ADD_ACCOUNT_2__TUTORIAL_AFTER_INIT = 742
+# ETH and EVM‒compatible chains
+CONTENT__ETH_AND_EVM_POWERED_NETWORK = 743
 # fmt: on

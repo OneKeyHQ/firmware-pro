@@ -40,7 +40,7 @@ from typing import TYPE_CHECKING
 from storage.cache import InvalidSessionError
 from trezor import io, log, loop, protobuf, utils, workflow
 from trezor.enums import FailureType
-from trezor.messages import Failure, ButtonRequest
+from trezor.messages import ButtonRequest, Failure
 from trezor.wire import codec_v1
 from trezor.wire.errors import ActionCancelled, DataError, Error
 

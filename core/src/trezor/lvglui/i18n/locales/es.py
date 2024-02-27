@@ -740,9 +740,9 @@ translations = [
     "Dominio",
     "Autenticación LNURL",
     "Aprobar la autorización de LNURL",
-    "Red alimentada por ETH y EVM",
     "Deshabilitar el espacio de aire",
     "¿Estás seguro de desactivar el modo Air Gap? Después de desactivarlo, podrá conectar su dispositivo a través de Bluetooth o USB.",
     "Seleccione la cadena que necesita y luego haga clic en el botón Crear.",
+    "Cadenas compatibles con ETH y EVM",
 ]
 # fmt: on

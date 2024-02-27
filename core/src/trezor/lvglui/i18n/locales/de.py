@@ -740,9 +740,9 @@ translations = [
     "Domain",
     "LNURL-Auth",
     "Genehmigen Sie die LNURL-Autorisierung",
-    "ETH- und EVM-basiertes Netzwerk",
     "Luftspalt deaktivieren",
     "Sind Sie sicher, den Air Gap-Modus zu deaktivieren? Nach der Deaktivierung kann Ihr Gerät über Bluetooth oder USB verbunden werden.",
     "Wählen Sie die gewünschte Kette aus und klicken Sie dann auf die Schaltfläche „Erstellen“.",
+    "ETH- und EVM-kompatible Ketten",
 ]
 # fmt: on

@@ -172,6 +172,7 @@ def scan_qr(callback_obj):
                             if res:
                                 camera.stop()
                                 from trezor import uart
+
                                 uart.flashled_close()
                                 break
             await loop.sleep(1)
