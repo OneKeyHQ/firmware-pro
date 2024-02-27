@@ -27,7 +27,7 @@ class EthereumPersonalMessageTransacion:
 
         # pyright: off
         tx = self.get_tx(self.req.get_sign_data())
-        self.resp = await sign_message(wire.DUMMY_CONTEXT, tx)
+        self.resp = await sign_message(wire.QR_CONTEXT, tx)
         self.signature = self.resp.signature
         eth_signature = EthSignature(
             request_id=self.req.get_request_id(),

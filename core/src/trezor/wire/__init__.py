@@ -40,7 +40,7 @@ from typing import TYPE_CHECKING
 from storage.cache import InvalidSessionError
 from trezor import io, log, loop, protobuf, utils, workflow
 from trezor.enums import FailureType
-from trezor.messages import Failure
+from trezor.messages import Failure, ButtonRequest
 from trezor.wire import codec_v1
 from trezor.wire.errors import ActionCancelled, DataError, Error
 
@@ -151,6 +151,8 @@ class QRContext:
         msg: protobuf.MessageType,
         expected_type: type[LoadedMessageType],
     ) -> protobuf.MessageType | None:
+        if ButtonRequest.is_type_of(msg):
+            return
         await self.write(msg)
         del msg
         return await self.read(expected_type)

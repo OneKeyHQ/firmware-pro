@@ -62,7 +62,7 @@ class EthereumSignTxTransacion:
 
         # pyright: off
         tx = self.get_tx(self.req)
-        self.resp = await sign_tx(wire.DUMMY_CONTEXT, tx)
+        self.resp = await sign_tx(wire.QR_CONTEXT, tx)
         self.signature = (
             self.resp.signature_r
             + self.resp.signature_s

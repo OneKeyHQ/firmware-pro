@@ -68,7 +68,7 @@ class QRTask:
 
             self.resp = self.req.resp
             if self.req.qr is not None:
-                await show_signature(wire.DUMMY_CONTEXT, self.req.qr)
+                await show_signature(wire.QR_CONTEXT, self.req.qr)
             self.req = None
             if self.callback_obj is not None:
                 lv.event_send(
@@ -83,7 +83,7 @@ class QRTask:
         if self.req is not None:
             await self.req.run()
 
-    async def push(self, ur: UR):
+    async def push(self, ur: UR) -> bool:
         self.ur = ur
         if __debug__:
             print("push: ", self.ur.type)
@@ -99,6 +99,7 @@ class QRTask:
             self.req = await EthSignRequest.gen_transaction(ur)
             if __debug__:
                 print("req: ", type(self.req))
+            return True
         elif ur.type == "crypto-psbt":
             if __debug__:
                 print("TODO crypto-psbt")
@@ -123,17 +124,15 @@ class QRTask:
                 ),
             )
             self.ur = None
-            # if self.callback_obj is not None:
-            #     lv.event_send(
-            #         self.callback_obj.nav_back.nav_btn, lv.EVENT.CLICKED, None
-            #     )
+
+        return False
 
 
 qr_task = QRTask()
 
 
-async def handle_qr(qr: UR):
-    await qr_task.push(qr)
+async def handle_qr(qr: UR) -> bool:
+    return await qr_task.push(qr)
 
 
 def save_app_obj(callback_obj):
@@ -168,10 +167,13 @@ def scan_qr(callback_obj):
                 else:
                     if decoder.is_complete():
                         motor.vibrate()
-                        camera.stop()
                         if type(decoder.result) is UR:
-                            await handle_qr(decoder.result)
-                        break
+                            res = await handle_qr(decoder.result)
+                            if res:
+                                camera.stop()
+                                from trezor import uart
+                                uart.flashled_close()
+                                break
             await loop.sleep(1)
 
     workflow.spawn(camear_scan())
@@ -249,5 +251,14 @@ async def handle_qr_ctx():
         except Exception as exec:
             if __debug__:
                 log.exception(__name__, exec)
+            if not isinstance(exec, wire.ActionCancelled):
+                from trezor.ui.layouts import show_error_no_interact
+
+                await show_error_no_interact(
+                    title=_(i18n_keys.TITLE__INVALID_TRANSACTION),
+                    subtitle=_(
+                        i18n_keys.CONTENT__TX_DATA_IS_INCORRECT_PLEASE_TRY_AGAIN
+                    ),
+                )
             loop.clear()
             return  # pylint: disable=lost-exception

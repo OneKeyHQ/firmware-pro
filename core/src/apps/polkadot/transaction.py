@@ -49,7 +49,7 @@ class Transaction:
         rawtx: codec.base.ScaleBytes, callPrivIdx: int
     ) -> "Transaction":
         tx = TransactionUnknown(rawtx)
-        if callPrivIdx == 1287:
+        if callPrivIdx in (1287, 1280):
             desc = Transaction._readAccountIdLookupOfT_V15(rawtx, 0)
             obj = codec.types.Compact(rawtx)
             balance = obj.decode(check_remaining=False)
@@ -77,7 +77,7 @@ class Transaction:
         rawtx: codec.base.ScaleBytes, callPrivIdx: int
     ) -> "Transaction":
         tx = TransactionUnknown(rawtx)
-        if callPrivIdx == 1031:
+        if callPrivIdx in (1031, 1024):
             desc = Transaction._readAccountIdLookupOfT_V15(rawtx, 2)
             obj = codec.types.Compact(rawtx)
             balance = obj.decode(check_remaining=False)
@@ -133,7 +133,7 @@ class Transaction:
         rawtx: codec.base.ScaleBytes, callPrivIdx: int
     ) -> "Transaction":
         tx = TransactionUnknown(rawtx)
-        if callPrivIdx == 7943:
+        if callPrivIdx in (7943, 7936):
             desc = Transaction._readAccountIdLookupOfT_V15(rawtx, 5)
             obj = codec.types.Compact(rawtx)
             balance = obj.decode(check_remaining=False)

@@ -1,7 +1,7 @@
 from ubinascii import hexlify
 
+from trezor import wire
 from trezor.messages import EthereumSignTxEIP1559
-from trezor.wire import DUMMY_CONTEXT
 
 from apps.ur_registry.rlp import decode
 
@@ -70,7 +70,7 @@ class FeeMarketEIP1559Transaction:
 
         # pyright: off
         req = self.get_tx(self.req)
-        self.resp = await sign_tx_eip1559(DUMMY_CONTEXT, req)
+        self.resp = await sign_tx_eip1559(wire.QR_CONTEXT, req)
         self.signature = (
             self.resp.signature_r
             + self.resp.signature_s
