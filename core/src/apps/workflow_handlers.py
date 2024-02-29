@@ -317,6 +317,12 @@ def find_message_handler_module(msg_type: int) -> str:
             return "apps.nexa.get_address"
         if msg_type == MessageType.NexaSignTx:
             return "apps.nexa.sign_tx"
+        # nervos
+        if msg_type == MessageType.NervosGetAddress:
+            return "apps.nervos.get_address"
+        if msg_type == MessageType.NervosSignTx:
+            return "apps.nervos.sign_tx"
+
 
         # UR
         if msg_type == MessageType.URCryptoHdkey:

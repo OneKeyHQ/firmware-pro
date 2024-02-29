@@ -63,6 +63,7 @@ from . import (
     with_client,
     kaspa,
     nexa,
+    nervos,
 )
 
 F = TypeVar("F", bound=Callable)
@@ -106,6 +107,7 @@ COMMAND_ALIASES = {
     "cosmos": cosmos.cli,
     "polkadot": polkadot.cli,
     "kaspa": kaspa.cli,
+    "nervos": nervos.cli,
     "nexa": nexa.cli,
     # firmware aliases:
     "fw": firmware.cli,
@@ -124,6 +126,7 @@ class TrezorctlGroup(AliasedGroup):
     ("sign-tx"). The `TrezorctlGroup` can perform subcommand lookup: if a command
     "binance-sign-tx" does not exist in the default group, it tries to find "sign-tx"
     subcommand of "binance" group.
+
     """
 
     def get_command(self, ctx: click.Context, cmd_name: str) -> Optional[click.Command]:
@@ -454,6 +457,8 @@ cli.add_command(cosmos.cli)
 cli.add_command(polkadot.cli)
 cli.add_command(kaspa.cli)
 cli.add_command(nexa.cli)
+cli.add_command(nervos.cli)
+
 
 #
 # Main

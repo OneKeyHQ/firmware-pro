@@ -353,6 +353,10 @@ if not utils.BITCOIN_ONLY:
     NostrSignedSchnorr = 11509
     URCryptoHdkey = 21000
     URResponse = 21001
+    NervosGetAddress = 11701
+    NervosAddress = 11702
+    NervosSignTx = 11703
+    NervosSignedTx = 11704
     DeviceBackToBoot = 903
     RebootToBoardloader = 904
     DeviceInfoSettings = 10001
