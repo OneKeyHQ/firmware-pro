@@ -434,8 +434,8 @@ bool fpsensor_data_init(void)
         if ( crc != fp_crc32(p_data, TEMPLATE_LENGTH) )
         {
             memset(p_data, 0, TEMPLATE_LENGTH);
+            se_fp_write(TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_TOTAL_LENGTH, "\xff\xff\xff\xff", 4, 0, 0);
         }
-        se_fp_write(TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_TOTAL_LENGTH, "\xff\xff\xff\xff", 4, 0, 0);
     }
     data_inited = true;
     return true;

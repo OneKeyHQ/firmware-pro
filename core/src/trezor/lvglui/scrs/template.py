@@ -197,8 +197,8 @@ class Message(FullSizeWindow):
         self.primary_color = primary_color
         self.long_message = False
         self.full_message = message
-        if len(message) > 225:
-            self.message = message[:222] + "..."
+        if len(message) > 175:
+            self.message = message[:172] + "..."
             self.long_message = True
         else:
             self.message = message
@@ -241,11 +241,11 @@ class Message(FullSizeWindow):
         if code == lv.EVENT.CLICKED:
             if target == self.show_full_message:
                 PageAbleMessage(
-                    _(i18n_keys.TITLE__STR_MESSAGE).format(""),
+                    _(i18n_keys.TITLE__MESSAGE),
                     self.full_message,
                     None,
                     primary_color=self.primary_color,
-                    page_size=405,
+                    page_size=360,
                     font=font_GeistMono28,
                     confirm_text=None,
                     cancel_text=None,
@@ -486,7 +486,7 @@ class TransactionDetailsETH(FullSizeWindow):
                     self.data_str,
                     None,
                     primary_color=self.primary_color,
-                    page_size=405,
+                    page_size=360,
                     font=font_GeistMono28,
                     confirm_text=None,
                     cancel_text=None,
@@ -549,7 +549,7 @@ class ContractDataOverview(FullSizeWindow):
                     self.data_str,
                     None,
                     primary_color=self.primary_color,
-                    page_size=405,
+                    page_size=360,
                     font=font_GeistMono28,
                     confirm_text=None,
                     cancel_text=None,
@@ -595,7 +595,7 @@ class BlobDisPlay(FullSizeWindow):
             if target == self.btn_yes:
                 if self.long_message:
                     PageAbleMessage(
-                        _(i18n_keys.LIST_KEY__MESSAGE__COLON)[:-1],
+                        _(i18n_keys.TITLE__MESSAGE),
                         self.data,
                         self.channel,
                         primary_color=self.primary_color,
@@ -2831,7 +2831,7 @@ class CosmosSignCombined(FullSizeWindow):
                     self.data_str,
                     None,
                     primary_color=self.primary_color,
-                    page_size=405,
+                    page_size=360,
                     font=font_GeistMono28,
                     confirm_text=None,
                     cancel_text=None,

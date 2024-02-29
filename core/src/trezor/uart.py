@@ -8,6 +8,7 @@ from trezor.lvglui import StatusBar
 from trezor.lvglui.scrs.charging import ChargingPromptScr
 from trezor.ui import display
 
+import usb
 from apps import base
 
 if TYPE_CHECKING:
@@ -143,6 +144,7 @@ async def handle_usb_state():
     global CHARGING
     while True:
         try:
+            previous_usb_bus_state = usb.bus.state()
             usb_state = loop.wait(io.USB_STATE)
             state = await usb_state
             if state:
@@ -152,7 +154,7 @@ async def handle_usb_state():
                     prompt.show()
                 StatusBar.get_instance().show_usb(True)
                 # deal with charging state
-                # CHARGING = True
+                CHARGING = True
                 StatusBar.get_instance().show_charging(True)
                 if utils.BATTERY_CAP:
                     StatusBar.get_instance().set_battery_img(
@@ -163,17 +165,16 @@ async def handle_usb_state():
                 utils.lcd_resume()
                 StatusBar.get_instance().show_usb(False)
                 # deal with charging state
-                # CHARGING = False
+                CHARGING = False
                 StatusBar.get_instance().show_charging()
                 if utils.BATTERY_CAP:
                     StatusBar.get_instance().set_battery_img(
                         utils.BATTERY_CAP, CHARGING
                     )
                     _request_charging_status()
-            import usb
-
-            if usb.bus.state() == 1 and (
-                not CHARGING or CHARING_TYPE == 2
+            current_usb_bus_state = usb.bus.state()
+            if (
+                current_usb_bus_state == previous_usb_bus_state
             ):  # not enable or disable airgap mode
                 usb_auto_lock = device.is_usb_lock_enabled()
                 if usb_auto_lock and device.is_initialized() and config.has_pin():
@@ -187,8 +188,8 @@ async def handle_usb_state():
                         await safe_reloop()
                         # single to restart the main loop
                         raise loop.TASK_CLOSED
-                # elif not usb_auto_lock and not state:
-                #     await safe_reloop()
+                elif not usb_auto_lock and not state:
+                    await safe_reloop(ack=False)
             base.reload_settings_from_storage()
         except Exception as exec:
             if __debug__:
@@ -197,12 +198,13 @@ async def handle_usb_state():
             return  # pylint: disable=lost-exception
 
 
-async def safe_reloop():
+async def safe_reloop(ack=True):
     from trezor import wire
     from trezor.lvglui.scrs.homescreen import change_state
 
     change_state()
-    await wire.signal_ack()
+    if ack:
+        await wire.signal_ack()
 
 
 async def handle_uart():

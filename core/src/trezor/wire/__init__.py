@@ -380,7 +380,8 @@ class Context:
 
     async def signal(self):
         await SIGNAL_CHANNEL.take()
-        await self.write(failure(loop.TASK_CLOSED))
+        if self.iface.iface_num() == utils.SPI_IFACE_NUM:
+            await self.write(failure(loop.TASK_CLOSED))
         SIGNAL_CHANNEL.publish("done")
 
 
