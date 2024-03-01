@@ -40,8 +40,6 @@ BLE_ENABLED: bool | None = None
 NRF_VERSION: str | None = None
 BLE_CTRL = io.BLE()
 FLASH_LED_BRIGHTNESS: int | None = None
-BLE_BUILD_ID: str | None = None
-BLE_HASH: bytes | None = None
 BUTTON_PRESSING = False
 
 
@@ -442,15 +440,13 @@ def _retrieve_nrf_version(value: bytes) -> None:
 
 
 def _retrieve_ble_build_id(value: bytes) -> None:
-    global BLE_BUILD_ID
     if value != b"":
-        BLE_BUILD_ID = value.decode("utf-8")
+        utils.BLE_BUILD_ID = value.decode("utf-8")
 
 
 def _retrieve_ble_hash(value: bytes) -> None:
-    global BLE_HASH
     if value != b"":
-        BLE_HASH = value
+        utils.BLE_HASH = value
 
 
 def _request_ble_name():
@@ -501,12 +497,10 @@ def fetch_ble_info():
     if BLE_ENABLED is None:
         BLE_CTRL.ctrl(0x81, b"\x04")
 
-    global BLE_BUILD_ID
-    if BLE_BUILD_ID is None:
+    if utils.BLE_BUILD_ID is None:
         BLE_CTRL.ctrl(0x83, b"\x05")
 
-    global BLE_HASH
-    if BLE_HASH is None:
+    if utils.BLE_HASH is None:
         BLE_CTRL.ctrl(0x83, b"\x06")
 
 
@@ -574,11 +568,11 @@ def get_ble_version() -> str:
 
 
 def get_ble_build_id() -> str:
-    return BLE_BUILD_ID if BLE_BUILD_ID else ""
+    return utils.BLE_BUILD_ID if utils.BLE_BUILD_ID else ""
 
 
 def get_ble_hash() -> bytes:
-    return BLE_HASH if BLE_HASH else b""
+    return utils.BLE_HASH if utils.BLE_HASH else b""
 
 
 def is_ble_opened() -> bool:

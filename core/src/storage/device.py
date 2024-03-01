@@ -42,6 +42,9 @@ _USE_FINGERPRINT_UNLOCK_VALUE: bool | None = None
 _AIRGAP_MODE_VALUE: bool | None = None
 _HAS_PROMPTED_FINGERPRINT_VALUE: bool | None = None
 _FINGER_FAILED_COUNT_VALUE: int | None = None
+_SE_HASH_VALUE: bytes | None = None
+_SE_BUILDID_VALUE: bytes | None = None
+_SE_VERSION_VALUE: str | None = None
 
 if utils.USE_THD89:
     import uctypes
@@ -242,7 +245,6 @@ if utils.USE_THD89:
     _AIRGAP_MODE = struct_public["airgap_mode"][0]
     _HAS_PROMPTED_FINGERPRINT = struct_public["has_prompted_fingerprint"][0]
     _FINGER_FAILED_COUNT = struct_public["finger_failed_count"][0]
-
     U2F_COUNTER = 0x00  # u2f counter
 
     # recovery key
@@ -366,10 +368,13 @@ def set_ble_name(name: str) -> None:
 
 
 def get_ble_name() -> str:
-    ble_name = common.get(_NAMESPACE, _BLE_NAME, public=True)
-    if ble_name is None:
-        return "P2170" if utils.EMULATOR else ""
-    return ble_name.decode()
+    global _BLE_NAME_VALUE
+    if _BLE_NAME_VALUE is None:
+        ble_name = common.get(_NAMESPACE, _BLE_NAME, public=True)
+        if ble_name is None:
+            return "P2170" if utils.EMULATOR else ""
+        _BLE_NAME_VALUE = ble_name.decode()
+    return _BLE_NAME_VALUE
 
 
 def ble_enabled() -> bool:
@@ -1056,6 +1061,27 @@ def enable_airgap_mode(enable: bool) -> None:
         public=True,
     )
     _AIRGAP_MODE_VALUE = enable
+
+
+def get_se_hash() -> bytes:
+    global _SE_HASH_VALUE
+    if _SE_HASH_VALUE is None:
+        _SE_HASH_VALUE = utils.se_hash()
+    return _SE_HASH_VALUE
+
+
+def get_se_build_id() -> bytes:
+    global _SE_BUILDID_VALUE
+    if _SE_BUILDID_VALUE is None:
+        _SE_BUILDID_VALUE = utils.se_build_id()
+    return _SE_BUILDID_VALUE
+
+
+def get_se_version() -> str:
+    global _SE_VERSION_VALUE
+    if _SE_VERSION_VALUE is None:
+        _SE_VERSION_VALUE = utils.se_version()
+    return _SE_VERSION_VALUE
 
 
 def clear_global_cache() -> None:
