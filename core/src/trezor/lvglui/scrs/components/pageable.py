@@ -48,7 +48,6 @@ class PageAbleMessage(FullSizeWindow):
             .pad_ver(16)
             .pad_hor(24)
             .radius(40)
-            .max_height(500)
             .text_color(lv_colors.LIGHT_GRAY)
             .text_font(font)
             .text_align_left()
@@ -60,9 +59,8 @@ class PageAbleMessage(FullSizeWindow):
         self.message = lv.label(self.panel)
         self.message.set_long_mode(lv.label.LONG.WRAP)
         self.message.set_size(lv.pct(100), lv.SIZE.CONTENT)
+        self.message.add_style(StyleWrapper().text_letter_space(-2), 0)
         self.message.set_text(content[: self.page_size])
-        self.message.add_style(StyleWrapper().text_letter_space(-2).max_height(468), 0)
-        self.message.add_flag(lv.obj.FLAG.OVERFLOW_VISIBLE)
         # # close button
         # self.close = NormalButton(self, cancel_text)
         self.container = ContainerFlexRow(self, None, padding_col=0)

@@ -197,8 +197,8 @@ class Message(FullSizeWindow):
         self.primary_color = primary_color
         self.long_message = False
         self.full_message = message
-        if len(message) > 175:
-            self.message = message[:172] + "..."
+        if len(message) > 150:
+            self.message = message[:147] + "..."
             self.long_message = True
         else:
             self.message = message
@@ -245,7 +245,6 @@ class Message(FullSizeWindow):
                     self.full_message,
                     None,
                     primary_color=self.primary_color,
-                    page_size=360,
                     font=font_GeistMono28,
                     confirm_text=None,
                     cancel_text=None,
@@ -486,7 +485,6 @@ class TransactionDetailsETH(FullSizeWindow):
                     self.data_str,
                     None,
                     primary_color=self.primary_color,
-                    page_size=360,
                     font=font_GeistMono28,
                     confirm_text=None,
                     cancel_text=None,
@@ -549,7 +547,6 @@ class ContractDataOverview(FullSizeWindow):
                     self.data_str,
                     None,
                     primary_color=self.primary_color,
-                    page_size=360,
                     font=font_GeistMono28,
                     confirm_text=None,
                     cancel_text=None,
@@ -2831,7 +2828,6 @@ class CosmosSignCombined(FullSizeWindow):
                     self.data_str,
                     None,
                     primary_color=self.primary_color,
-                    page_size=360,
                     font=font_GeistMono28,
                     confirm_text=None,
                     cancel_text=None,
