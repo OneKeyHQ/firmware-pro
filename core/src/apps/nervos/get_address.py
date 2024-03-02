@@ -1,15 +1,14 @@
 from typing import TYPE_CHECKING
+from ubinascii import unhexlify
 
 from trezor import wire
 from trezor.crypto import bip32, hashlib
 from trezor.messages import NervosAddress
 from trezor.ui.layouts import show_address
-from ubinascii import unhexlify
 
 from apps.common import paths
 from apps.common.keychain import auto_keychain
 from apps.nervos.hash import ckb_blake160
-
 
 if TYPE_CHECKING:
     from trezor.messages import NervosGetAddress
@@ -26,7 +25,6 @@ class Prefix:
 
 
 CHARSET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l"
-
 
 
 def convertbits(data, frombits, tobits, pad=True):
@@ -96,7 +94,7 @@ def bech32_create_checksum(hrp, data):
 async def get_address(
     ctx: wire.Context, msg: NervosGetAddress, keychain
 ) -> NervosAddress:
-    
+
     if msg.network not in ["ckb", "ckt"]:
         raise ValueError(f"Invalid network: {msg.network}")
     await paths.validate_path(ctx, keychain, msg.address_n)

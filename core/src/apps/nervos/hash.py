@@ -1,26 +1,18 @@
-from trezor.crypto import  hashlib
-
-
-
-
-def bytes_to_hex_str(bytes_obj):
-    return ''.join('{:02x}'.format(byte) for byte in bytes_obj)
+from trezor.crypto import hashlib
+from .utils import bytes_to_hex_str
 
 
 def ckb_hasher():
-     return hashlib.blake2b(outlen=32, personal=b"ckb-default-hash")
-
+    return hashlib.blake2b(outlen=32, personal=b"ckb-default-hash")
 
 
 def ckb_hash(message: bytes) -> str:
     hasher = ckb_hasher()
-    print("hash:"+str(hasher))
     hasher.update(message)
-    hash_bytes =  hasher.digest()
+    hash_bytes = hasher.digest()
     hex_str = bytes_to_hex_str(hash_bytes)
-    hasher2 = '0x' + hex_str
-    print("hasher2:"+str(hasher2))
-    return hasher2
+    hasher_hex = "0x" + hex_str
+    return hasher_hex
 
 
 def ckb_blake160(message: bytes) -> str:
