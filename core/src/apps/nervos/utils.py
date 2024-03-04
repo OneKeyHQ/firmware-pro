@@ -1,11 +1,14 @@
 def hex_to_int(i: str) -> int:
     return int(i, 0)
 
+
 def extend_uint64(buffer: bytearray, n: str):
     buffer.extend(hex_to_int(n).to_bytes(8, "little"))
 
+
 def bytes_to_hex_str(bytes_obj):
     return "".join("{:02x}".format(byte) for byte in bytes_obj)
+
 
 def hex_to_bytes_custom(hex_str: str) -> bytes:
     if hex_str.startswith("0x"):

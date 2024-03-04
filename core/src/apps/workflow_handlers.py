@@ -323,7 +323,6 @@ def find_message_handler_module(msg_type: int) -> str:
         if msg_type == MessageType.NervosSignTx:
             return "apps.nervos.sign_tx"
 
-
         # UR
         if msg_type == MessageType.URCryptoHdkey:
             return "apps.ur_registry.crypto_hd_key"

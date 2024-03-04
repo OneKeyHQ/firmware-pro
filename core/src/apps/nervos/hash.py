@@ -1,4 +1,5 @@
 from trezor.crypto import hashlib
+
 from .utils import bytes_to_hex_str
 
 
