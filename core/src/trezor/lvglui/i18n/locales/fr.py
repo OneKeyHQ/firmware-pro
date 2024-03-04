@@ -744,5 +744,7 @@ translations = [
     "Êtes-vous sûr de désactiver le mode Air Gap ? Après désactivation, il pourra connecter votre appareil via Bluetooth ou USB.",
     "Sélectionnez la chaîne dont vous avez besoin, puis cliquez sur le bouton Créer.",
     "Chaînes compatibles ETH et EVM",
+    "Entrée dans le test de rodage",
+    "Voulez-vous passer en mode test de rodage?",
 ]
 # fmt: on

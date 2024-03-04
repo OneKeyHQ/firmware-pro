@@ -50,6 +50,13 @@ def reset() -> None:
 
 
 # extmod/modtrezorutils/modtrezorutils.c
+def burnin_test() -> None:
+    """
+    Run burn-in test.
+    """
+
+
+# extmod/modtrezorutils/modtrezorutils.c
 def firmware_hash(
     challenge: bytes | None = None,
     callback: Callable[[int, int], None] | None = None,

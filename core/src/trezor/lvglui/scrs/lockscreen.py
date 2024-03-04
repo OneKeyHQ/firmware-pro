@@ -34,7 +34,7 @@ class LockScreen(Screen):
             self.add_style(
                 StyleWrapper()
                 .bg_img_src(lockscreen)
-                .bg_img_opa(int(lv.OPA.COVER * 0.72)),
+                .bg_img_opa(int(lv.OPA.COVER * 0.4)),
                 0,
             )
             self.show_tips()
@@ -43,7 +43,7 @@ class LockScreen(Screen):
         self.title.align_to(self.content_area, lv.ALIGN.TOP_MID, 0, 76)
         self.subtitle.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, 16)
         self.add_style(
-            StyleWrapper().bg_img_src(lockscreen).bg_img_opa(int(lv.OPA.COVER * 0.72)),
+            StyleWrapper().bg_img_src(lockscreen).bg_img_opa(int(lv.OPA.COVER * 0.4)),
             0,
         )
         self.tap_tip = lv.label(self.content_area)

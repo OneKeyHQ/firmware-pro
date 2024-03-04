@@ -744,5 +744,7 @@ translations = [
     "Sind Sie sicher, den Air Gap-Modus zu deaktivieren? Nach der Deaktivierung kann Ihr Gerät über Bluetooth oder USB verbunden werden.",
     "Wählen Sie die gewünschte Kette aus und klicken Sie dann auf die Schaltfläche „Erstellen“.",
     "ETH- und EVM-kompatible Ketten",
+    "Beginn des Einbrenntests",
+    "Möchten Sie in den Burn-In-Testmodus wechseln?",
 ]
 # fmt: on

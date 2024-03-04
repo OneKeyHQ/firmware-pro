@@ -29,6 +29,7 @@ from trezorutils import (  # noqa: F401; FIRMWARE_SECTORS_COUNT,; firmware_secto
     se_version,
     se_hash,
     se_build_id,
+    burnin_test,
 )
 
 if not EMULATOR:

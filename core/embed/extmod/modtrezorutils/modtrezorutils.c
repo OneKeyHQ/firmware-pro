@@ -20,6 +20,7 @@
 #include "py/objstr.h"
 #include "py/runtime.h"
 #ifndef TREZOR_EMULATOR
+#include "device.h"
 #include "supervise.h"
 #endif
 #include "se_thd89.h"
@@ -148,6 +149,17 @@ STATIC mp_obj_t mod_trezorutils_reset(void) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorutils_reset_obj,
                                  mod_trezorutils_reset);
+
+/// def burnin_test() -> None:
+///     """
+///     Run burn-in test.
+///     """
+STATIC mp_obj_t mod_trezorutils_burnin_test(void) {
+  device_burnin_test(true);
+  return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorutils_burnin_test_obj,
+                                 mod_trezorutils_burnin_test);
 
 /// def firmware_hash(
 ///     challenge: bytes | None = None,
@@ -427,6 +439,8 @@ STATIC const mp_rom_map_elem_t mp_module_trezorutils_globals_table[] = {
     {MP_ROM_QSTR(MP_QSTR_reboot2boardloader),
      MP_ROM_PTR(&mod_trezorutils_reboot2boardloader_obj)},
     {MP_ROM_QSTR(MP_QSTR_reset), MP_ROM_PTR(&mod_trezorutils_reset_obj)},
+    {MP_ROM_QSTR(MP_QSTR_burnin_test),
+     MP_ROM_PTR(&mod_trezorutils_burnin_test_obj)},
     {MP_ROM_QSTR(MP_QSTR_firmware_hash),
      MP_ROM_PTR(&mod_trezorutils_firmware_hash_obj)},
     {MP_ROM_QSTR(MP_QSTR_firmware_vendor),

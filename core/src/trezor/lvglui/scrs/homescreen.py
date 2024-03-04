@@ -76,13 +76,17 @@ class MainScreen(Screen):
                 else:
                     self.dev_state.delete()
                     del self.dev_state
-
-            self.set_style_bg_img_src(homescreen, 0)
             if self.bottom_tips:
                 self.bottom_tips.set_text(_(i18n_keys.BUTTON__SWIPE_TO_SHOW_APPS))
                 self.up_arrow.align_to(self.bottom_tips, lv.ALIGN.OUT_TOP_MID, 0, -8)
             if self.apps:
                 self.apps.refresh_text()
+            self.add_style(
+                StyleWrapper()
+                .bg_img_src(homescreen)
+                .bg_img_opa(int(lv.OPA.COVER * 0.92)),
+                0,
+            )
             return
         self.title.align_to(self.content_area, lv.ALIGN.TOP_MID, 0, 76)
         self.subtitle.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, 16)
@@ -2665,6 +2669,7 @@ class AboutSetting(Screen):
         # self.firmware_update.add_style(StyleWrapper().bg_color(lv_colors.ONEKEY_BLACK_3), 0)
         self.firmware_update.align_to(self.trezor_mode, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
         self.serial.add_event_cb(self.on_long_pressed, lv.EVENT.LONG_PRESSED, None)
+        self.build_id.add_event_cb(self.on_long_pressed, lv.EVENT.LONG_PRESSED, None)
         self.container.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
         self.firmware_update.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
         self.trezor_mode.add_event_cb(
@@ -2686,6 +2691,8 @@ class AboutSetting(Screen):
             # else:
             #     self.board_loader.add_flag(lv.obj.FLAG.HIDDEN)
             GO2BoardLoader()
+        if target == self.build_id:
+            GO2BurninTest()
 
     def on_value_changed(self, event_obj):
         code = event_obj.code
@@ -2795,6 +2802,28 @@ class Go2UpdateMode(Screen):
                 utils.reboot_to_bootloader()
             elif target == self.btn_no:
                 self.load_screen(self.prev_scr, destroy_self=True)
+
+
+class GO2BurninTest(FullSizeWindow):
+    def __init__(self):
+        super().__init__(
+            title=_(i18n_keys.TITLE__ENTERING_BURN_IN_TEST),
+            subtitle=_(i18n_keys.SUBTITLE__SWITCH_TO_BURN_IN_TEST_RECONFIRM),
+            confirm_text=_(i18n_keys.BUTTON__CONFIRM),
+            cancel_text=_(i18n_keys.BUTTON__CANCEL),
+            # icon_path="A:/res/warning.png",
+        )
+
+    def eventhandler(self, event_obj):
+        code = event_obj.code
+        target = event_obj.get_target()
+        if code == lv.EVENT.CLICKED:
+            if utils.lcd_resume():
+                return
+            if target == self.btn_yes:
+                utils.burnin_test()
+            elif target == self.btn_no:
+                self.destroy(100)
 
 
 class PowerOff(FullSizeWindow):
