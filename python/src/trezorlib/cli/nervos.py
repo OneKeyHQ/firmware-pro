@@ -62,5 +62,7 @@ def sign_tx(client: "TrezorClient", address: str, message:str,witness_buffer: st
     If more than one address is needed. the address should be separated by a dash (-).
     """
     address_n = tools.parse_path(address)
-    resp = nervos.sign_tx(client, address_n, message,witness_buffer,network)
+    message_bytes = bytes.fromhex(message)
+    witness_buffer_bytes = bytes.fromhex(witness_buffer)
+    resp = nervos.sign_tx(client, address_n, message_bytes,witness_buffer_bytes,network)
     return resp.signature.hex()
