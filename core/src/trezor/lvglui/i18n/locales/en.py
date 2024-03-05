@@ -744,7 +744,5 @@ translations = [
     "Are you sure to disable Air Gap mode? After disable, it will be able to connect your device via USB or Bluetooth.",
     "Select the chain you need, then click Create button.",
     "ETH and EVM‒compatible chains",
-    "Entering burn-in test",
-    "Do you want to enter burn-in test mode?",
 ]
 # fmt: on

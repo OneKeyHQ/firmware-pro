@@ -744,7 +744,5 @@ translations = [
     "Sei sicuro di disabilitare la modalità Air Gap? Dopo la disattivazione, sarà in grado di connettere il tuo dispositivo tramite Bluetooth o USB.",
     "Seleziona la catena che ti serve, quindi fai clic sul pulsante Crea.",
     "Catene compatibili con ETH ed EVM",
-    "Ingresso nel test di burn-in",
-    "Vuoi accedere alla modalità di test di burn-in?",
 ]
 # fmt: on
