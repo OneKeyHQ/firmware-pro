@@ -266,7 +266,7 @@ typedef struct _Features {
     bool has_onekey_se_type;
     OneKeySeType onekey_se_type; 
     bool has_onekey_board_version;
-    char onekey_board_version[16]; 
+    char onekey_board_version[32]; 
     bool has_onekey_board_hash;
     Features_onekey_board_hash_t onekey_board_hash; 
     bool has_onekey_boot_version;
@@ -935,7 +935,7 @@ extern const pb_msgdesc_t SEMessageSignature_msg;
 #define EmmcPathInfo_size                        258
 #define EmmcPath_size                            59
 #define Failure_size                             260
-#define Features_size                            1001
+#define Features_size                            1017
 #define FirmwareErase_ex_size                    6
 #define FirmwareErase_size                       6
 #define FirmwareRequest_size                     12

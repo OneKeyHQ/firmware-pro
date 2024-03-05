@@ -403,6 +403,8 @@ static void send_msg_features(uint8_t iface_num,
     char *board_version = get_boardloader_version();
     MSG_SEND_ASSIGN_STRING_LEN(boardloader_version, board_version,
                                strlen(board_version));
+    MSG_SEND_ASSIGN_STRING_LEN(onekey_board_version, board_version,
+                               strlen(board_version));
     uint8_t *board_hash = get_boardloader_hash();
     MSG_SEND_ASSIGN_BYTES(onekey_board_hash, board_hash, 32);
 

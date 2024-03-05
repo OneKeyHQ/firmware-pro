@@ -13,7 +13,7 @@ Features.serial_no              max_size:32
 Features.bootloader_version     max_size:8
 Features.boardloader_version    max_size:32
 
-Features.onekey_board_version           max_size:16
+Features.onekey_board_version           max_size:32
 Features.onekey_board_hash              max_size:32
 Features.onekey_boot_version            max_size:16
 Features.onekey_boot_hash               max_size:32
