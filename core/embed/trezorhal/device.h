@@ -26,6 +26,12 @@ typedef struct __attribute__((packed)) {
   uint8_t random_key[32];
 } DeviceInfomation;
 
+typedef struct {
+  uint32_t flag;
+  uint32_t time;
+  uint32_t touch;
+} test_result;
+
 void device_set_factory_mode(bool mode);
 bool device_is_factory_mode(void);
 void device_para_init(void);
@@ -42,6 +48,7 @@ void device_verify_ble(void);
 
 void device_test(bool force);
 void device_burnin_test(bool force);
+void device_burnin_test_clear_flag(void);
 #if !PRODUCTION
 bool device_backup_otp(bool overwrite);
 bool device_restore_otp();
