@@ -24,26 +24,30 @@ class LockScreen(Screen):
         if not hasattr(self, "_init"):
             self._init = True
             super().__init__(title=device_name, subtitle=ble_name)
-            self.title.add_style(StyleWrapper().text_align_center(), 0)
-            self.subtitle.add_style(
-                StyleWrapper().text_align_center().text_color(lv_colors.WHITE), 0
+            self.title.add_style(
+                StyleWrapper().text_align_center().text_opa(int(lv.OPA.COVER * 0.85)), 0
             )
-        else:
-            if ble_name:
-                self.subtitle.set_text(ble_name)
-            self.add_style(
+            self.subtitle.add_style(
                 StyleWrapper()
-                .bg_img_src(lockscreen)
-                .bg_img_opa(int(lv.OPA.COVER * 0.72)),
+                .text_align_center()
+                .text_color(lv_colors.WHITE)
+                .text_opa(int(lv.OPA.COVER * 0.85)),
                 0,
             )
+        else:
+            self.add_style(
+                StyleWrapper().bg_img_src(lockscreen).bg_img_opa(lv.OPA._40),
+                0,
+            )
+            if ble_name:
+                self.subtitle.set_text(ble_name)
             self.show_tips()
             return
         self.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
         self.title.align_to(self.content_area, lv.ALIGN.TOP_MID, 0, 76)
         self.subtitle.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, 16)
         self.add_style(
-            StyleWrapper().bg_img_src(lockscreen).bg_img_opa(int(lv.OPA.COVER * 0.72)),
+            StyleWrapper().bg_img_src(lockscreen).bg_img_opa(lv.OPA._40),
             0,
         )
         self.tap_tip = lv.label(self.content_area)
@@ -51,6 +55,7 @@ class LockScreen(Screen):
         self.show_tips()
         self.lock_state = lv.img(self.content_area)
         self.lock_state.set_src("A:/res/lock.png")
+        self.lock_state.set_style_img_opa(int(lv.OPA.COVER * 0.85), 0)
         self.lock_state.align_to(self.tap_tip, lv.ALIGN.OUT_TOP_MID, 0, -16)
         self.add_event_cb(self.on_slide_up, lv.EVENT.GESTURE, None)
 
@@ -92,7 +97,8 @@ class LockScreen(Screen):
             .text_font(font_GeistRegular26)
             .text_letter_space(-1)
             .max_width(456)
-            .text_align_center(),
+            .text_align_center()
+            .text_opa(int(lv.OPA.COVER * 0.85)),
             0,
         )
 

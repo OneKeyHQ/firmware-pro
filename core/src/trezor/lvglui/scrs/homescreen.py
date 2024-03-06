@@ -67,6 +67,12 @@ class MainScreen(Screen):
                 StyleWrapper().text_align_center().text_color(lv_colors.WHITE), 0
             )
         else:
+            self.add_style(
+                StyleWrapper()
+                .bg_img_src(homescreen)
+                .bg_img_opa(int(lv.OPA.COVER * 0.92)),
+                0,
+            )
             if hasattr(self, "dev_state"):
                 from apps.base import get_state
 
@@ -76,8 +82,6 @@ class MainScreen(Screen):
                 else:
                     self.dev_state.delete()
                     del self.dev_state
-
-            self.set_style_bg_img_src(homescreen, 0)
             if self.bottom_tips:
                 self.bottom_tips.set_text(_(i18n_keys.BUTTON__SWIPE_TO_SHOW_APPS))
                 self.up_arrow.align_to(self.bottom_tips, lv.ALIGN.OUT_TOP_MID, 0, -8)
@@ -719,7 +723,7 @@ class NftManager(Screen):
         io.fatfs.unlink(self.img_path[2:])
         io.fatfs.unlink("1:/res/nfts/desc/" + self.file_name.split(".")[0] + ".json")
         if device.get_homescreen() == self.img_path:
-            device.set_homescreen("A:/res/wallpaper-1.jpg")
+            device.set_homescreen(utils.get_default_wallpaper())
         self.load_screen(self.prev_scr, destroy_self=True)
 
     def _load_scr(self, scr: "Screen", back: bool = False) -> None:
@@ -3063,7 +3067,7 @@ class WallPaperManage(Screen):
         io.fatfs.unlink(self.img_path[2:])
         io.fatfs.unlink(self.zoom_path[2:])
         if device.get_homescreen() == self.img_path:
-            device.set_homescreen("A:/res/wallpaper-1.jpg")
+            device.set_homescreen(utils.get_default_wallpaper())
         self.load_screen(self.prev_scr, destroy_self=True)
 
     # def cancel_callback(self):

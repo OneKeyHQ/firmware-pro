@@ -59,6 +59,7 @@ _COLLECTING_FINGERPRINT = False
 _PIN_VERIFIED_SINCE_BOOT = False
 FLASH_LED_BRIGHTNESS: int | None = None
 _BACKUP_WITH_LITE_FIRST = False
+_COLOR_FLAG: str | None = None
 
 if __debug__:
     MAX_FP_ATTEMPTS = 50
@@ -259,6 +260,22 @@ def mark_backup_with_keytag_1st():
 
 def is_backup_with_lite_1st():
     return _BACKUP_WITH_LITE_FIRST
+
+
+def get_default_wallpaper():
+    global _COLOR_FLAG
+    if _COLOR_FLAG is None:
+        import storage
+
+        serial = storage.device.get_serial()
+        color_flag = serial[-1]
+        _COLOR_FLAG = color_flag
+    if _COLOR_FLAG == "A":  # black shell
+        return "A:/res/wallpaper-1.jpg"
+    elif _COLOR_FLAG == "B":  # white shell
+        return "A:/res/wallpaper-2.jpg"
+    else:
+        return "A:/res/wallpaper-1.jpg"
 
 
 def unimport_begin() -> set[str]:
