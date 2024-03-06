@@ -323,15 +323,34 @@ void ui_test_input(void) {
   }
 }
 
+void device_burnin_test_clear_flag(void) {
+  FRESULT res;
+  FIL fil;
+
+  UINT bw;
+  test_result test_res = {0};
+
+  FATFS fs;
+
+  res = f_mount(&fs, "", 1);
+  if (res != FR_OK) {
+    display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY / 2,
+                        "mount fatfs failed", -1, FONT_NORMAL, COLOR_RED,
+                        COLOR_BLACK);
+    while (1)
+      ;
+  }
+
+  f_open(&fil, "test_res", FA_OPEN_ALWAYS | FA_WRITE | FA_READ);
+  f_write(&fil, &test_res, sizeof(test_res), &bw);
+  f_sync(&fil);
+  hal_delay(100);
+  HAL_NVIC_SystemReset();
+}
+
 #if DEVICE_TEST
 
 static FATFS fs_instance;
-
-typedef struct {
-  uint32_t flag;
-  uint32_t time;
-  uint32_t touch;
-} test_result;
 
 typedef enum {
   TEST_NULL = 0x00000000,

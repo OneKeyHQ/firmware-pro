@@ -566,6 +566,11 @@ int ui_input_poll(int zones, bool poll) {
           y > BUTTON_OFFSET_Y && y < BUTTON_OFFSET_Y + BUTTON_HEIGHT) {
         return (zones & INPUT_RESTART);
       }
+
+      if ((zones & INPUT_VERSION_INFO) && x >= 0 && x <= 480 && y > 520 &&
+          y < 580) {
+        return (zones & INPUT_VERSION_INFO);
+      }
     }
 
   } while (poll);
@@ -888,18 +893,13 @@ void ui_bootloader_device_test(void) {
   display_text_center(DISPLAY_RESX / 2, 277, "Test Mode", -1, FONT_PJKS_BOLD_38,
                       COLOR_BL_FG, COLOR_BL_BG);
 
-  display_bar(8, BUTTON_OFFSET_Y, 231, BUTTON_HEIGHT, COLOR_BL_DARK);
-  display_text_center(DISPLAY_RESX / 4, 755, "device test", -1,
-                      FONT_PJKS_BOLD_26, COLOR_BL_FG, COLOR_BL_DARK);
-  display_bar(241, BUTTON_OFFSET_Y, 231, BUTTON_HEIGHT, COLOR_BL_DARK);
-  display_text_center(DISPLAY_RESX - DISPLAY_RESX / 4, 755, "aging test", -1,
-                      FONT_PJKS_BOLD_26, COLOR_BL_FG, COLOR_BL_DARK);
+  ui_confirm_cancel_buttons("Back", "Enter", COLOR_BL_DARK, COLOR_BL_FAIL);
 }
 
 void ui_bootloader_page_switch(const image_header *const hdr) {
   int response;
 
-  // static uint32_t click = 0, click_pre = 0, click_now = 0;
+  static uint32_t click = 0, click_pre = 0, click_now = 0;
 
   if (ui_bootloader_page_current == 0) {
     response = ui_input_poll(INPUT_NEXT, false);
@@ -911,10 +911,10 @@ void ui_bootloader_page_switch(const image_header *const hdr) {
       ui_bootloader_first(hdr);
     }
   } else if (ui_bootloader_page_current == 1) {
-    // click_now = HAL_GetTick();
-    // if ((click_now - click_pre) > (1000 / 2)) {
-    //   click = 0;
-    // }
+    click_now = HAL_GetTick();
+    if ((click_now - click_pre) > (1000 / 2)) {
+      click = 0;
+    }
     response = ui_input_poll(
         INPUT_PREVIOUS | INPUT_RESTART | INPUT_VERSION_INFO, false);
     if (INPUT_PREVIOUS == response) {
@@ -922,16 +922,28 @@ void ui_bootloader_page_switch(const image_header *const hdr) {
       ui_bootloader_first(hdr);
     } else if (INPUT_RESTART == response) {
       HAL_NVIC_SystemReset();
+    } else if (INPUT_VERSION_INFO == response) {
+      click++;
+      click_pre = click_now;
+      if (click == 5) {
+        click = 0;
+        display_clear();
+        ui_bootloader_device_test();
+        click_pre = click_now;
+      }
     }
-    // else if (INPUT_VERSION_INFO == response) {
-    //   click++;
-    //   click_pre = click_now;
-    //   if (click == 5) {
-    //     click = 0;
-    //     display_clear();
-    //     ui_bootloader_device_test();
-    //     click_pre = click_now;
-    //   }
-    // }
+  } else if (ui_bootloader_page_current == 2) {
+    response = ui_input_poll(INPUT_PREVIOUS | INPUT_RESTART, false);
+    if (INPUT_PREVIOUS == response) {
+      display_clear();
+      ui_bootloader_first(hdr);
+    } else if (INPUT_RESTART == response) {
+      device_burnin_test_clear_flag();
+    }
+    click_now = HAL_GetTick();
+    if (click_now - click_pre > (1000 * 3)) {
+      display_clear();
+      ui_bootloader_first(hdr);
+    }
   }
 }
