@@ -850,7 +850,7 @@ void ui_bootloader_second(const image_header *const hdr) {
   display_text(offset_x, offset_y, "SE", -1, FONT_PJKS_BOLD_26,
                COLOR_BL_TAGVALUE, COLOR_BL_PANEL);
   offset_y += offset_line;
-  const char *se_version = se_get_version();
+  const char *se_version = se01_get_version();
   char se_version_str[32] = {0};
   strcat(se_version_str, "THD89-");
   strcat(se_version_str, se_version);

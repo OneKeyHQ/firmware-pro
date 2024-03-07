@@ -578,6 +578,10 @@ if TYPE_CHECKING:
         THD89 = 0
         SE608A = 1
 
+    class OneKeySEState(IntEnum):
+        BOOT = 0
+        APP = 1
+
     class SdProtectOperationType(IntEnum):
         DISABLE = 0
         ENABLE = 1

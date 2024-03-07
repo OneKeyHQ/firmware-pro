@@ -152,9 +152,9 @@ message Features {
     optional bytes onekey_board_hash = 603;
     optional string onekey_boot_version = 604;
     optional bytes onekey_boot_hash = 605;
-    optional string onekey_se_version = 606;
-    optional bytes onekey_se_hash = 607;
-    optional string onekey_se_build_id = 608;
+    optional string onekey_se01_version = 606;
+    optional bytes onekey_se01_hash = 607;
+    optional string onekey_se01_build_id = 608;
     optional string onekey_firmware_version = 609;
     optional bytes onekey_firmware_hash	 = 610;
     optional string onekey_firmware_build_id = 611;
@@ -164,6 +164,37 @@ message Features {
     optional string onekey_ble_version = 615;
     optional string onekey_ble_build_id = 616;
     optional bytes onekey_ble_hash = 617;
+    optional string onekey_board_build_id = 618;
+    optional string onekey_se01_boot_version = 619;
+    optional bytes onekey_se01_boot_hash = 620;
+    optional string onekey_se01_boot_build_id = 621;
+    optional string onekey_se02_version = 622;
+    optional bytes onekey_se02_hash = 623;
+    optional string onekey_se02_build_id = 624;
+    optional string onekey_se02_boot_version = 625;
+    optional bytes onekey_se02_boot_hash = 626;
+    optional string onekey_se02_boot_build_id = 627;
+    optional string onekey_se03_version = 628;
+    optional bytes onekey_se03_hash = 629;
+    optional string onekey_se03_build_id = 630;
+    optional string onekey_se03_boot_version = 631;
+    optional bytes onekey_se03_boot_hash = 632;
+    optional string onekey_se03_boot_build_id = 633;
+    optional string onekey_se04_version = 634;
+    optional bytes onekey_se04_hash = 635;
+    optional string onekey_se04_build_id = 636;
+    optional string onekey_se04_boot_version = 637;
+    optional bytes onekey_se04_boot_hash = 638;
+    optional string onekey_se04_boot_build_id = 639;
+
+    enum OneKeySEState {
+        BOOT = 0x00;
+        APP = 0x01;
+    }
+    optional OneKeySEState onekey_se01_state = 640;
+    optional OneKeySEState onekey_se02_state = 641;
+    optional OneKeySEState onekey_se03_state = 642;
+    optional OneKeySEState onekey_se04_state = 643;
 }
 
 /**

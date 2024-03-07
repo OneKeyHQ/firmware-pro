@@ -30,4 +30,8 @@ bool se_active_app_progress(void);
 bool se_verify_firmware(uint8_t *header, uint32_t header_len);
 bool se_check_firmware(void);
 
+bool se01_get_state(uint8_t *state);
+bool se02_get_state(uint8_t *state);
+bool se03_get_state(uint8_t *state);
+bool se04_get_state(uint8_t *state);
 #endif

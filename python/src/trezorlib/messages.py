@@ -617,6 +617,11 @@ class OneKeySeType(IntEnum):
     SE608A = 1
 
 
+class OneKeySEState(IntEnum):
+    BOOT = 0
+    APP = 1
+
+
 class SdProtectOperationType(IntEnum):
     DISABLE = 0
     ENABLE = 1
@@ -3899,9 +3904,9 @@ class Features(protobuf.MessageType):
         603: protobuf.Field("onekey_board_hash", "bytes", repeated=False, required=False),
         604: protobuf.Field("onekey_boot_version", "string", repeated=False, required=False),
         605: protobuf.Field("onekey_boot_hash", "bytes", repeated=False, required=False),
-        606: protobuf.Field("onekey_se_version", "string", repeated=False, required=False),
-        607: protobuf.Field("onekey_se_hash", "bytes", repeated=False, required=False),
-        608: protobuf.Field("onekey_se_build_id", "string", repeated=False, required=False),
+        606: protobuf.Field("onekey_se01_version", "string", repeated=False, required=False),
+        607: protobuf.Field("onekey_se01_hash", "bytes", repeated=False, required=False),
+        608: protobuf.Field("onekey_se01_build_id", "string", repeated=False, required=False),
         609: protobuf.Field("onekey_firmware_version", "string", repeated=False, required=False),
         610: protobuf.Field("onekey_firmware_hash", "bytes", repeated=False, required=False),
         611: protobuf.Field("onekey_firmware_build_id", "string", repeated=False, required=False),
@@ -3911,6 +3916,32 @@ class Features(protobuf.MessageType):
         615: protobuf.Field("onekey_ble_version", "string", repeated=False, required=False),
         616: protobuf.Field("onekey_ble_build_id", "string", repeated=False, required=False),
         617: protobuf.Field("onekey_ble_hash", "bytes", repeated=False, required=False),
+        618: protobuf.Field("onekey_board_build_id", "string", repeated=False, required=False),
+        619: protobuf.Field("onekey_se01_boot_version", "string", repeated=False, required=False),
+        620: protobuf.Field("onekey_se01_boot_hash", "bytes", repeated=False, required=False),
+        621: protobuf.Field("onekey_se01_boot_build_id", "string", repeated=False, required=False),
+        622: protobuf.Field("onekey_se02_version", "string", repeated=False, required=False),
+        623: protobuf.Field("onekey_se02_hash", "bytes", repeated=False, required=False),
+        624: protobuf.Field("onekey_se02_build_id", "string", repeated=False, required=False),
+        625: protobuf.Field("onekey_se02_boot_version", "string", repeated=False, required=False),
+        626: protobuf.Field("onekey_se02_boot_hash", "bytes", repeated=False, required=False),
+        627: protobuf.Field("onekey_se02_boot_build_id", "string", repeated=False, required=False),
+        628: protobuf.Field("onekey_se03_version", "string", repeated=False, required=False),
+        629: protobuf.Field("onekey_se03_hash", "bytes", repeated=False, required=False),
+        630: protobuf.Field("onekey_se03_build_id", "string", repeated=False, required=False),
+        631: protobuf.Field("onekey_se03_boot_version", "string", repeated=False, required=False),
+        632: protobuf.Field("onekey_se03_boot_hash", "bytes", repeated=False, required=False),
+        633: protobuf.Field("onekey_se03_boot_build_id", "string", repeated=False, required=False),
+        634: protobuf.Field("onekey_se04_version", "string", repeated=False, required=False),
+        635: protobuf.Field("onekey_se04_hash", "bytes", repeated=False, required=False),
+        636: protobuf.Field("onekey_se04_build_id", "string", repeated=False, required=False),
+        637: protobuf.Field("onekey_se04_boot_version", "string", repeated=False, required=False),
+        638: protobuf.Field("onekey_se04_boot_hash", "bytes", repeated=False, required=False),
+        639: protobuf.Field("onekey_se04_boot_build_id", "string", repeated=False, required=False),
+        640: protobuf.Field("onekey_se01_state", "OneKeySEState", repeated=False, required=False),
+        641: protobuf.Field("onekey_se02_state", "OneKeySEState", repeated=False, required=False),
+        642: protobuf.Field("onekey_se03_state", "OneKeySEState", repeated=False, required=False),
+        643: protobuf.Field("onekey_se04_state", "OneKeySEState", repeated=False, required=False),
     }
 
     def __init__(
@@ -3980,9 +4011,9 @@ class Features(protobuf.MessageType):
         onekey_board_hash: Optional["bytes"] = None,
         onekey_boot_version: Optional["str"] = None,
         onekey_boot_hash: Optional["bytes"] = None,
-        onekey_se_version: Optional["str"] = None,
-        onekey_se_hash: Optional["bytes"] = None,
-        onekey_se_build_id: Optional["str"] = None,
+        onekey_se01_version: Optional["str"] = None,
+        onekey_se01_hash: Optional["bytes"] = None,
+        onekey_se01_build_id: Optional["str"] = None,
         onekey_firmware_version: Optional["str"] = None,
         onekey_firmware_hash: Optional["bytes"] = None,
         onekey_firmware_build_id: Optional["str"] = None,
@@ -3992,6 +4023,32 @@ class Features(protobuf.MessageType):
         onekey_ble_version: Optional["str"] = None,
         onekey_ble_build_id: Optional["str"] = None,
         onekey_ble_hash: Optional["bytes"] = None,
+        onekey_board_build_id: Optional["str"] = None,
+        onekey_se01_boot_version: Optional["str"] = None,
+        onekey_se01_boot_hash: Optional["bytes"] = None,
+        onekey_se01_boot_build_id: Optional["str"] = None,
+        onekey_se02_version: Optional["str"] = None,
+        onekey_se02_hash: Optional["bytes"] = None,
+        onekey_se02_build_id: Optional["str"] = None,
+        onekey_se02_boot_version: Optional["str"] = None,
+        onekey_se02_boot_hash: Optional["bytes"] = None,
+        onekey_se02_boot_build_id: Optional["str"] = None,
+        onekey_se03_version: Optional["str"] = None,
+        onekey_se03_hash: Optional["bytes"] = None,
+        onekey_se03_build_id: Optional["str"] = None,
+        onekey_se03_boot_version: Optional["str"] = None,
+        onekey_se03_boot_hash: Optional["bytes"] = None,
+        onekey_se03_boot_build_id: Optional["str"] = None,
+        onekey_se04_version: Optional["str"] = None,
+        onekey_se04_hash: Optional["bytes"] = None,
+        onekey_se04_build_id: Optional["str"] = None,
+        onekey_se04_boot_version: Optional["str"] = None,
+        onekey_se04_boot_hash: Optional["bytes"] = None,
+        onekey_se04_boot_build_id: Optional["str"] = None,
+        onekey_se01_state: Optional["OneKeySEState"] = None,
+        onekey_se02_state: Optional["OneKeySEState"] = None,
+        onekey_se03_state: Optional["OneKeySEState"] = None,
+        onekey_se04_state: Optional["OneKeySEState"] = None,
     ) -> None:
         self.capabilities: Sequence["Capability"] = capabilities if capabilities is not None else []
         self.major_version = major_version
@@ -4057,9 +4114,9 @@ class Features(protobuf.MessageType):
         self.onekey_board_hash = onekey_board_hash
         self.onekey_boot_version = onekey_boot_version
         self.onekey_boot_hash = onekey_boot_hash
-        self.onekey_se_version = onekey_se_version
-        self.onekey_se_hash = onekey_se_hash
-        self.onekey_se_build_id = onekey_se_build_id
+        self.onekey_se01_version = onekey_se01_version
+        self.onekey_se01_hash = onekey_se01_hash
+        self.onekey_se01_build_id = onekey_se01_build_id
         self.onekey_firmware_version = onekey_firmware_version
         self.onekey_firmware_hash = onekey_firmware_hash
         self.onekey_firmware_build_id = onekey_firmware_build_id
@@ -4069,6 +4126,32 @@ class Features(protobuf.MessageType):
         self.onekey_ble_version = onekey_ble_version
         self.onekey_ble_build_id = onekey_ble_build_id
         self.onekey_ble_hash = onekey_ble_hash
+        self.onekey_board_build_id = onekey_board_build_id
+        self.onekey_se01_boot_version = onekey_se01_boot_version
+        self.onekey_se01_boot_hash = onekey_se01_boot_hash
+        self.onekey_se01_boot_build_id = onekey_se01_boot_build_id
+        self.onekey_se02_version = onekey_se02_version
+        self.onekey_se02_hash = onekey_se02_hash
+        self.onekey_se02_build_id = onekey_se02_build_id
+        self.onekey_se02_boot_version = onekey_se02_boot_version
+        self.onekey_se02_boot_hash = onekey_se02_boot_hash
+        self.onekey_se02_boot_build_id = onekey_se02_boot_build_id
+        self.onekey_se03_version = onekey_se03_version
+        self.onekey_se03_hash = onekey_se03_hash
+        self.onekey_se03_build_id = onekey_se03_build_id
+        self.onekey_se03_boot_version = onekey_se03_boot_version
+        self.onekey_se03_boot_hash = onekey_se03_boot_hash
+        self.onekey_se03_boot_build_id = onekey_se03_boot_build_id
+        self.onekey_se04_version = onekey_se04_version
+        self.onekey_se04_hash = onekey_se04_hash
+        self.onekey_se04_build_id = onekey_se04_build_id
+        self.onekey_se04_boot_version = onekey_se04_boot_version
+        self.onekey_se04_boot_hash = onekey_se04_boot_hash
+        self.onekey_se04_boot_build_id = onekey_se04_boot_build_id
+        self.onekey_se01_state = onekey_se01_state
+        self.onekey_se02_state = onekey_se02_state
+        self.onekey_se03_state = onekey_se03_state
+        self.onekey_se04_state = onekey_se04_state
 
 
 class LockDevice(protobuf.MessageType):

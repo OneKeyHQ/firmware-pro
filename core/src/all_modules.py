@@ -111,6 +111,8 @@ trezor.enums.MessageType
 import trezor.enums.MessageType
 trezor.enums.OneKeyDeviceType
 import trezor.enums.OneKeyDeviceType
+trezor.enums.OneKeySEState
+import trezor.enums.OneKeySEState
 trezor.enums.OneKeySeType
 import trezor.enums.OneKeySeType
 trezor.enums.OutputScriptType

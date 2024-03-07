@@ -22,6 +22,31 @@ static bool _se_get_state(uint8_t addr, uint8_t *state) {
   return true;
 }
 
+static bool _se_get_state_convert(uint8_t addr, uint8_t *state) {
+  uint8_t val = 0;
+  if (!_se_get_state(addr, &val)) {
+    return false;
+  }
+  *state = val == THD89_STATE_APP ? 1 : 0;
+  return true;
+}
+
+bool se01_get_state(uint8_t *state) {
+  return _se_get_state_convert(THD89_1ST_ADDRESS, state);
+}
+
+bool se02_get_state(uint8_t *state) {
+  return _se_get_state_convert(THD89_2ND_ADDRESS, state);
+}
+
+bool se03_get_state(uint8_t *state) {
+  return _se_get_state_convert(THD89_3RD_ADDRESS, state);
+}
+
+bool se04_get_state(uint8_t *state) {
+  return _se_get_state_convert(THD89_4TH_ADDRESS, state);
+}
+
 char *se_get_version_ex(void) {
   uint8_t get_ver[5] = {0x00, 0xf7, 0x00, 00, 0x00};
   static char ver[16] = {0};
@@ -39,23 +64,19 @@ char *se_get_version_ex(void) {
 
 uint8_t se_get_state(void) {
   uint8_t state, boot_flag = 0;
-  ensure(_se_get_state(THD89_1ST_ADDRESS, &state) ? sectrue : secfalse,
-         "se1 get state failed");
+  ensure(se01_get_state(&state) ? sectrue : secfalse, "se1 get state failed");
   if (state == THD89_STATE_BOOT) {
     boot_flag |= THD89_1ST_IN_BOOT;
   }
-  ensure(_se_get_state(THD89_2ND_ADDRESS, &state) ? sectrue : secfalse,
-         "se2 get state failed");
+  ensure(se02_get_state(&state) ? sectrue : secfalse, "se2 get state failed");
   if (state == THD89_STATE_BOOT) {
     boot_flag |= THD89_2ND_IN_BOOT;
   }
-  ensure(_se_get_state(THD89_3RD_ADDRESS, &state) ? sectrue : secfalse,
-         "se3 get state failed");
+  ensure(se03_get_state(&state) ? sectrue : secfalse, "se3 get state failed");
   if (state == THD89_STATE_BOOT) {
     boot_flag |= THD89_3RD_IN_BOOT;
   }
-  ensure(_se_get_state(THD89_4TH_ADDRESS, &state) ? sectrue : secfalse,
-         "se4 get state failed");
+  ensure(se04_get_state(&state) ? sectrue : secfalse, "se4 get state failed");
   if (state == THD89_STATE_BOOT) {
     boot_flag |= THD89_4TH_IN_BOOT;
   }

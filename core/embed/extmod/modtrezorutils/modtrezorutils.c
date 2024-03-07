@@ -331,59 +331,121 @@ STATIC mp_obj_t mod_trezorutils_board_hash(void) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorutils_board_hash_obj,
                                  mod_trezorutils_board_hash);
 
-/// def se_version() -> str:
+/// def se_version(se_addr: int) -> str:
 ///     """
 ///     Returns the se version string.
 ///     """
-STATIC mp_obj_t mod_trezorutils_se_version(void) {
+STATIC mp_obj_t mod_trezorutils_se_version(mp_obj_t se_addr) {
 #ifdef TREZOR_EMULATOR
   return mp_obj_new_str_copy(&mp_type_str, (const uint8_t *)"EMULATOR", 8);
 #else
-
-  char *ver_str = se_get_version();
+  int addr = mp_obj_get_int(se_addr);
+  char ver_str[16] = {0};
+  se_get_version(addr, ver_str, sizeof(ver_str));
 
   return mp_obj_new_str_copy(&mp_type_str, (const uint8_t *)ver_str,
                              strlen(ver_str));
 #endif
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorutils_se_version_obj,
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorutils_se_version_obj,
                                  mod_trezorutils_se_version);
 
-/// def se_hash() -> bytes:
+/// def se_hash(se_addr: int) -> bytes:
 ///     """
 ///     Returns the se hash.
 ///     """
-STATIC mp_obj_t mod_trezorutils_se_hash(void) {
+STATIC mp_obj_t mod_trezorutils_se_hash(mp_obj_t se_addr) {
   vstr_t vstr = {0};
   vstr_init_len(&vstr, 32);
 #ifdef TREZOR_EMULATOR
   return mp_obj_new_str_from_vstr(&mp_type_bytes, &vstr);
 #else
-  char *hash_str = se_get_hash();
+  int addr = mp_obj_get_int(se_addr);
+  uint8_t hash_str[32] = {0};
+  se_get_hash(addr, hash_str, sizeof(hash_str));
   memcpy(vstr.buf, hash_str, 32);
 
   return mp_obj_new_str_from_vstr(&mp_type_bytes, &vstr);
 #endif
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorutils_se_hash_obj,
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorutils_se_hash_obj,
                                  mod_trezorutils_se_hash);
 
-/// def se_build_id() -> str:
+/// def se_build_id(se_addr: int) -> str:
 ///     """
 ///     Returns the se build id string.
 ///     """
-STATIC mp_obj_t mod_trezorutils_se_build_id(void) {
+STATIC mp_obj_t mod_trezorutils_se_build_id(mp_obj_t se_addr) {
 #ifdef TREZOR_EMULATOR
   return mp_obj_new_str_copy(&mp_type_str, (const uint8_t *)"EMULATOR", 8);
 #else
-
-  char *str = se_get_build_id();
+  int addr = mp_obj_get_int(se_addr);
+  char str[8] = {0};
+  se_get_build_id(addr, str, sizeof(str));
 
   return mp_obj_new_str_copy(&mp_type_str, (const uint8_t *)str, strlen(str));
 #endif
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorutils_se_build_id_obj,
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorutils_se_build_id_obj,
                                  mod_trezorutils_se_build_id);
+
+/// def se_boot_version(se_addr: int) -> str:
+///     """
+///     Returns the se version string.
+///     """
+STATIC mp_obj_t mod_trezorutils_se_boot_version(mp_obj_t se_addr) {
+#ifdef TREZOR_EMULATOR
+  return mp_obj_new_str_copy(&mp_type_str, (const uint8_t *)"EMULATOR", 8);
+#else
+  int addr = mp_obj_get_int(se_addr);
+  char ver_str[16] = {0};
+  se_get_boot_version(addr, ver_str, sizeof(ver_str));
+
+  return mp_obj_new_str_copy(&mp_type_str, (const uint8_t *)ver_str,
+                             strlen(ver_str));
+#endif
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorutils_se_boot_version_obj,
+                                 mod_trezorutils_se_boot_version);
+
+/// def se_boot_hash(se_addr: int) -> bytes:
+///     """
+///     Returns the se hash.
+///     """
+STATIC mp_obj_t mod_trezorutils_se_boot_hash(mp_obj_t se_addr) {
+  vstr_t vstr = {0};
+  vstr_init_len(&vstr, 32);
+#ifdef TREZOR_EMULATOR
+  return mp_obj_new_str_from_vstr(&mp_type_bytes, &vstr);
+#else
+  int addr = mp_obj_get_int(se_addr);
+  uint8_t hash_str[32] = {0};
+  se_get_boot_hash(addr, hash_str, sizeof(hash_str));
+  memcpy(vstr.buf, hash_str, 32);
+
+  return mp_obj_new_str_from_vstr(&mp_type_bytes, &vstr);
+#endif
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorutils_se_boot_hash_obj,
+                                 mod_trezorutils_se_boot_hash);
+
+/// def se_boot_build_id(se_addr: int) -> str:
+///     """
+///     Returns the se build id string.
+///     """
+STATIC mp_obj_t mod_trezorutils_se_boot_build_id(mp_obj_t se_addr) {
+#ifdef TREZOR_EMULATOR
+  return mp_obj_new_str_copy(&mp_type_str, (const uint8_t *)"EMULATOR", 8);
+#else
+  int addr = mp_obj_get_int(se_addr);
+  char str[8] = {0};
+  se_get_boot_build_id(addr, str, sizeof(str));
+
+  return mp_obj_new_str_copy(&mp_type_str, (const uint8_t *)str, strlen(str));
+#endif
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorutils_se_boot_build_id_obj,
+                                 mod_trezorutils_se_boot_build_id);
 
 /// def usb_data_connected() -> bool:
 ///     """
@@ -444,6 +506,12 @@ STATIC const mp_rom_map_elem_t mp_module_trezorutils_globals_table[] = {
     {MP_ROM_QSTR(MP_QSTR_se_hash), MP_ROM_PTR(&mod_trezorutils_se_hash_obj)},
     {MP_ROM_QSTR(MP_QSTR_se_build_id),
      MP_ROM_PTR(&mod_trezorutils_se_build_id_obj)},
+    {MP_ROM_QSTR(MP_QSTR_se_boot_version),
+     MP_ROM_PTR(&mod_trezorutils_se_boot_version_obj)},
+    {MP_ROM_QSTR(MP_QSTR_se_boot_hash),
+     MP_ROM_PTR(&mod_trezorutils_se_boot_hash_obj)},
+    {MP_ROM_QSTR(MP_QSTR_se_boot_build_id),
+     MP_ROM_PTR(&mod_trezorutils_se_boot_build_id_obj)},
 
     {MP_ROM_QSTR(MP_QSTR_usb_data_connected),
      MP_ROM_PTR(&mod_trezorutils_usb_data_connected_obj)},

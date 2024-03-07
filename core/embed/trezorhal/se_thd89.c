@@ -564,53 +564,337 @@ secbool se_get_sn(char **serial) {
   return sectrue;
 }
 
-char *se_get_version(void) {
-  uint8_t get_ver[5] = {0x00, 0xf7, 0x00, 00, 0x00};
-  static char ver[8] = {0};
-  uint16_t ver_len = sizeof(ver);
+static int _se_get_ver_info(uint8_t addr, uint8_t cmd, uint8_t *out,
+                            uint16_t in_len) {
+  uint8_t get_ver[5] = {0x00, 0xf7, 0x00, cmd, 0x00};
+  uint16_t len = in_len;
 
-  if (!thd89_transmit(get_ver, sizeof(get_ver), (uint8_t *)ver, &ver_len)) {
-    return NULL;
+  if (!thd89_transmit_ex(addr, get_ver, sizeof(get_ver), out, &len)) {
+    memset(out, 0, in_len);
+    return 0;
   }
-
-  return ver;
+  return len;
 }
 
-char *se_get_hash(void) {
-  uint8_t get_hash[5] = {0x00, 0xf7, 0x00, 0x02, 0x00};
-  static char hash[32] = {0};
-  uint16_t len = 32;
-
-  if (!thd89_transmit(get_hash, sizeof(get_hash), (uint8_t *)hash, &len)) {
-    return NULL;
-  }
-
-  return hash;
+int se_get_version(uint8_t addr, char *ver, uint16_t in_len) {
+  return _se_get_ver_info(addr, 0x00, (uint8_t *)ver, in_len);
 }
 
-char *se_get_build_id(void) {
-  uint8_t get_build_id[5] = {0x00, 0xf7, 0x00, 0x01, 0x00};
+int se_get_build_id(uint8_t addr, char *build_id, uint16_t in_len) {
+  return _se_get_ver_info(addr, 0x01, (uint8_t *)build_id, in_len);
+}
+
+int se_get_hash(uint8_t addr, uint8_t *hash, uint16_t in_len) {
+  return _se_get_ver_info(addr, 0x02, hash, in_len);
+}
+
+int se_get_boot_version(uint8_t addr, char *ver, uint16_t in_len) {
+  return _se_get_ver_info(addr, 0x03, (uint8_t *)ver, in_len);
+}
+
+int se_get_boot_build_id(uint8_t addr, char *build_id, uint16_t in_len) {
+  return _se_get_ver_info(addr, 0x04, (uint8_t *)build_id, in_len);
+}
+
+int se_get_boot_hash(uint8_t addr, uint8_t *hash, uint16_t in_len) {
+  return _se_get_ver_info(addr, 0x05, hash, in_len);
+}
+
+char *se01_get_version(void) {
+  static char version[16] = {0};
+  if (strlen(version) > 0) {
+    return version;
+  }
+  int len = se_get_version(THD89_1ST_ADDRESS, version, sizeof(version));
+  if (len == 0) {
+    return NULL;
+  }
+  return version;
+}
+
+char *se01_get_build_id(void) {
   static char build_id[8] = {0};
-  uint16_t len = sizeof(build_id);
-
-  if (!thd89_transmit(get_build_id, sizeof(get_build_id), (uint8_t *)build_id,
-                      &len)) {
+  if (strlen(build_id) > 0) {
+    return build_id;
+  }
+  int len = se_get_build_id(THD89_1ST_ADDRESS, build_id, sizeof(build_id));
+  if (len == 0) {
     return NULL;
   }
-
   return build_id;
 }
 
-char *se_fp_get_version(void) {
-  uint8_t get_ver[5] = {0x00, 0xf7, 0x00, 00, 0x00};
-  static char ver[8] = {0};
-  uint16_t ver_len = sizeof(ver);
-
-  if (!thd89_fp_transmit(get_ver, sizeof(get_ver), (uint8_t *)ver, &ver_len)) {
+uint8_t *se01_get_hash(void) {
+  static uint8_t hash[32] = {0};
+  static bool hash_init = false;
+  if (hash_init) {
+    return hash;
+  }
+  if (se_get_hash(THD89_1ST_ADDRESS, hash, sizeof(hash)) == 0) {
     return NULL;
   }
+  hash_init = true;
+  return hash;
+}
 
-  return ver;
+char *se01_get_boot_version(void) {
+  static char version[16] = {0};
+  if (strlen(version) > 0) {
+    return version;
+  }
+  int len = se_get_boot_version(THD89_1ST_ADDRESS, version, sizeof(version));
+  if (len == 0) {
+    return NULL;
+  }
+  return version;
+}
+
+char *se01_get_boot_build_id(void) {
+  static char build_id[8] = {0};
+  if (strlen(build_id) > 0) {
+    return build_id;
+  }
+  int len = se_get_boot_build_id(THD89_1ST_ADDRESS, build_id, sizeof(build_id));
+  if (len == 0) {
+    return NULL;
+  }
+  return build_id;
+}
+
+uint8_t *se01_get_boot_hash(void) {
+  static uint8_t hash[32] = {0};
+  static bool hash_init = false;
+  if (hash_init) {
+    return hash;
+  }
+  if (se_get_boot_hash(THD89_1ST_ADDRESS, hash, sizeof(hash)) == 0) {
+    return NULL;
+  }
+  hash_init = true;
+  return hash;
+}
+
+char *se02_get_version(void) {
+  static char version[16] = {0};
+  if (strlen(version) > 0) {
+    return version;
+  }
+  int len = se_get_version(THD89_2ND_ADDRESS, version, sizeof(version));
+  if (len == 0) {
+    return NULL;
+  }
+  return version;
+}
+
+char *se02_get_build_id(void) {
+  static char build_id[8] = {0};
+  if (strlen(build_id) > 0) {
+    return build_id;
+  }
+  int len = se_get_build_id(THD89_2ND_ADDRESS, build_id, sizeof(build_id));
+  if (len == 0) {
+    return NULL;
+  }
+  return build_id;
+}
+
+uint8_t *se02_get_hash(void) {
+  static uint8_t hash[32] = {0};
+  static bool hash_init = false;
+  if (hash_init) {
+    return hash;
+  }
+  if (se_get_hash(THD89_2ND_ADDRESS, hash, sizeof(hash)) == 0) {
+    return NULL;
+  }
+  hash_init = true;
+  return hash;
+}
+
+char *se02_get_boot_version(void) {
+  static char version[16] = {0};
+  if (strlen(version) > 0) {
+    return version;
+  }
+  int len = se_get_boot_version(THD89_2ND_ADDRESS, version, sizeof(version));
+  if (len == 0) {
+    return NULL;
+  }
+  return version;
+}
+
+char *se02_get_boot_build_id(void) {
+  static char build_id[8] = {0};
+  if (strlen(build_id) > 0) {
+    return build_id;
+  }
+  int len = se_get_boot_build_id(THD89_2ND_ADDRESS, build_id, sizeof(build_id));
+  if (len == 0) {
+    return NULL;
+  }
+  return build_id;
+}
+
+uint8_t *se02_get_boot_hash(void) {
+  static uint8_t hash[32] = {0};
+  static bool hash_init = false;
+  if (hash_init) {
+    return hash;
+  }
+  if (se_get_boot_hash(THD89_2ND_ADDRESS, hash, sizeof(hash)) == 0) {
+    return NULL;
+  }
+  hash_init = true;
+  return hash;
+}
+
+char *se03_get_version(void) {
+  static char version[16] = {0};
+  if (strlen(version) > 0) {
+    return version;
+  }
+  int len = se_get_version(THD89_3RD_ADDRESS, version, sizeof(version));
+  if (len == 0) {
+    return NULL;
+  }
+  return version;
+}
+
+char *se03_get_build_id(void) {
+  static char build_id[8] = {0};
+  if (strlen(build_id) > 0) {
+    return build_id;
+  }
+  int len = se_get_build_id(THD89_3RD_ADDRESS, build_id, sizeof(build_id));
+  if (len == 0) {
+    return NULL;
+  }
+  return build_id;
+}
+
+uint8_t *se03_get_hash(void) {
+  static uint8_t hash[32] = {0};
+  static bool hash_init = false;
+  if (hash_init) {
+    return hash;
+  }
+  if (se_get_hash(THD89_3RD_ADDRESS, hash, sizeof(hash)) == 0) {
+    return NULL;
+  }
+  hash_init = true;
+  return hash;
+}
+
+char *se03_get_boot_version(void) {
+  static char version[16] = {0};
+  if (strlen(version) > 0) {
+    return version;
+  }
+  int len = se_get_boot_version(THD89_3RD_ADDRESS, version, sizeof(version));
+  if (len == 0) {
+    return NULL;
+  }
+  return version;
+}
+
+char *se03_get_boot_build_id(void) {
+  static char build_id[8] = {0};
+  if (strlen(build_id) > 0) {
+    return build_id;
+  }
+  int len = se_get_boot_build_id(THD89_3RD_ADDRESS, build_id, sizeof(build_id));
+  if (len == 0) {
+    return NULL;
+  }
+  return build_id;
+}
+
+uint8_t *se03_get_boot_hash(void) {
+  static uint8_t hash[32] = {0};
+  static bool hash_init = false;
+  if (hash_init) {
+    return hash;
+  }
+  if (se_get_boot_hash(THD89_3RD_ADDRESS, hash, sizeof(hash)) == 0) {
+    return NULL;
+  }
+  hash_init = true;
+  return hash;
+}
+
+char *se04_get_version(void) {
+  static char version[16] = {0};
+  if (strlen(version) > 0) {
+    return version;
+  }
+  int len = se_get_version(THD89_FINGER_ADDRESS, version, sizeof(version));
+  if (len == 0) {
+    return NULL;
+  }
+  return version;
+}
+
+char *se04_get_build_id(void) {
+  static char build_id[8] = {0};
+  if (strlen(build_id) > 0) {
+    return build_id;
+  }
+  int len = se_get_build_id(THD89_FINGER_ADDRESS, build_id, sizeof(build_id));
+  if (len == 0) {
+    return NULL;
+  }
+  return build_id;
+}
+
+uint8_t *se04_get_hash(void) {
+  static uint8_t hash[32] = {0};
+  static bool hash_init = false;
+  if (hash_init) {
+    return hash;
+  }
+  if (se_get_hash(THD89_FINGER_ADDRESS, hash, sizeof(hash)) == 0) {
+    return NULL;
+  }
+  hash_init = true;
+  return hash;
+}
+
+char *se04_get_boot_version(void) {
+  static char version[16] = {0};
+  if (strlen(version) > 0) {
+    return version;
+  }
+  int len = se_get_boot_version(THD89_FINGER_ADDRESS, version, sizeof(version));
+  if (len == 0) {
+    return NULL;
+  }
+  return version;
+}
+
+char *se04_get_boot_build_id(void) {
+  static char build_id[8] = {0};
+  if (strlen(build_id) > 0) {
+    return build_id;
+  }
+  int len =
+      se_get_boot_build_id(THD89_FINGER_ADDRESS, build_id, sizeof(build_id));
+  if (len == 0) {
+    return NULL;
+  }
+  return build_id;
+}
+
+uint8_t *se04_get_boot_hash(void) {
+  static uint8_t hash[32] = {0};
+  static bool hash_init = false;
+  if (hash_init) {
+    return hash;
+  }
+  if (se_get_boot_hash(THD89_FINGER_ADDRESS, hash, sizeof(hash)) == 0) {
+    return NULL;
+  }
+  hash_init = true;
+  return hash;
 }
 
 secbool se_get_ecdh_pubkey(uint8_t addr, uint8_t *key) {

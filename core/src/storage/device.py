@@ -10,6 +10,11 @@ if TYPE_CHECKING:
     from trezor.enums import BackupType
     from typing_extensions import Literal
 
+SE_1ST_ADDRESS = const(0x10 << 1)
+SE_2ND_ADDRESS = const(0x11 << 1)
+SE_3RD_ADDRESS = const(0x12 << 1)
+SE_4TH_ADDRESS = const(0x13 << 1)
+
 # Namespace:
 _NAMESPACE = common.APP_DEVICE
 _BRIGHTNESS_VALUE: int | None = None
@@ -42,9 +47,30 @@ _USE_FINGERPRINT_UNLOCK_VALUE: bool | None = None
 _AIRGAP_MODE_VALUE: bool | None = None
 _HAS_PROMPTED_FINGERPRINT_VALUE: bool | None = None
 _FINGER_FAILED_COUNT_VALUE: int | None = None
-_SE_HASH_VALUE: bytes | None = None
-_SE_BUILDID_VALUE: str | None = None
-_SE_VERSION_VALUE: str | None = None
+_SE01_HASH_VALUE: bytes | None = None
+_SE01_BUILDID_VALUE: str | None = None
+_SE01_VERSION_VALUE: str | None = None
+_SE01_BOOT_HASH_VALUE: bytes | None = None
+_SE01_BOOT_BUILDID_VALUE: str | None = None
+_SE01_BOOT_VERSION_VALUE: str | None = None
+_SE02_HASH_VALUE: bytes | None = None
+_SE02_BUILDID_VALUE: str | None = None
+_SE02_VERSION_VALUE: str | None = None
+_SE02_BOOT_HASH_VALUE: bytes | None = None
+_SE02_BOOT_BUILDID_VALUE: str | None = None
+_SE02_BOOT_VERSION_VALUE: str | None = None
+_SE03_HASH_VALUE: bytes | None = None
+_SE03_BUILDID_VALUE: str | None = None
+_SE03_VERSION_VALUE: str | None = None
+_SE03_BOOT_HASH_VALUE: bytes | None = None
+_SE03_BOOT_BUILDID_VALUE: str | None = None
+_SE03_BOOT_VERSION_VALUE: str | None = None
+_SE04_HASH_VALUE: bytes | None = None
+_SE04_BUILDID_VALUE: str | None = None
+_SE04_VERSION_VALUE: str | None = None
+_SE04_BOOT_HASH_VALUE: bytes | None = None
+_SE04_BOOT_BUILDID_VALUE: str | None = None
+_SE04_BOOT_VERSION_VALUE: str | None = None
 _STORAGE_SIZE_VALUE: str | None = None
 _SERIAL_NUMBER_VALUE: str | None = None
 _DEVICE_ID_VALUE: str | None = None
@@ -1086,25 +1112,172 @@ def enable_airgap_mode(enable: bool) -> None:
     _AIRGAP_MODE_VALUE = enable
 
 
-def get_se_hash() -> bytes:
-    global _SE_HASH_VALUE
-    if _SE_HASH_VALUE is None:
-        _SE_HASH_VALUE = utils.se_hash()
-    return _SE_HASH_VALUE
+def get_se01_hash() -> bytes:
+    global _SE01_HASH_VALUE
+    if _SE01_HASH_VALUE is None:
+        _SE01_HASH_VALUE = utils.se_hash(SE_1ST_ADDRESS)
+    return _SE01_HASH_VALUE
 
 
-def get_se_build_id() -> str:
-    global _SE_BUILDID_VALUE
-    if _SE_BUILDID_VALUE is None:
-        _SE_BUILDID_VALUE = utils.se_build_id()
-    return _SE_BUILDID_VALUE
+def get_se01_build_id() -> str:
+    global _SE01_BUILDID_VALUE
+    if _SE01_BUILDID_VALUE is None:
+        _SE01_BUILDID_VALUE = utils.se_build_id(SE_1ST_ADDRESS)
+    return _SE01_BUILDID_VALUE
 
 
-def get_se_version() -> str:
-    global _SE_VERSION_VALUE
-    if _SE_VERSION_VALUE is None:
-        _SE_VERSION_VALUE = utils.se_version()
-    return _SE_VERSION_VALUE
+def get_se01_version() -> str:
+    global _SE01_VERSION_VALUE
+    if _SE01_VERSION_VALUE is None:
+        _SE01_VERSION_VALUE = utils.se_version(SE_1ST_ADDRESS)
+    return _SE01_VERSION_VALUE
+
+
+def get_se01_boot_hash() -> bytes:
+    global _SE01_BOOT_HASH_VALUE
+    if _SE01_BOOT_HASH_VALUE is None:
+        _SE01_BOOT_HASH_VALUE = utils.se_boot_hash(SE_1ST_ADDRESS)
+    return _SE01_BOOT_HASH_VALUE
+
+
+def get_se01_boot_build_id() -> str:
+    global _SE01_BOOT_BUILDID_VALUE
+    if _SE01_BOOT_BUILDID_VALUE is None:
+        _SE01_BOOT_BUILDID_VALUE = utils.se_boot_build_id(SE_1ST_ADDRESS)
+    return _SE01_BOOT_BUILDID_VALUE
+
+
+def get_se01_boot_version() -> str:
+    global _SE01_BOOT_VERSION_VALUE
+    if _SE01_BOOT_VERSION_VALUE is None:
+        _SE01_BOOT_VERSION_VALUE = utils.se_boot_version(SE_1ST_ADDRESS)
+    return _SE01_BOOT_VERSION_VALUE
+
+
+def get_se02_hash() -> bytes:
+    global _SE02_HASH_VALUE
+    if _SE02_HASH_VALUE is None:
+        _SE02_HASH_VALUE = utils.se_hash(SE_2ND_ADDRESS)
+    return _SE02_HASH_VALUE
+
+
+def get_se02_build_id() -> str:
+    global _SE02_BUILDID_VALUE
+    if _SE02_BUILDID_VALUE is None:
+        _SE02_BUILDID_VALUE = utils.se_build_id(SE_2ND_ADDRESS)
+    return _SE02_BUILDID_VALUE
+
+
+def get_se02_version() -> str:
+    global _SE02_VERSION_VALUE
+    if _SE02_VERSION_VALUE is None:
+        _SE02_VERSION_VALUE = utils.se_version(SE_2ND_ADDRESS)
+    return _SE02_VERSION_VALUE
+
+
+def get_se02_boot_hash() -> bytes:
+    global _SE02_BOOT_HASH_VALUE
+    if _SE02_BOOT_HASH_VALUE is None:
+        _SE02_BOOT_HASH_VALUE = utils.se_boot_hash(SE_2ND_ADDRESS)
+    return _SE02_BOOT_HASH_VALUE
+
+
+def get_se02_boot_build_id() -> str:
+    global _SE02_BOOT_BUILDID_VALUE
+    if _SE02_BOOT_BUILDID_VALUE is None:
+        _SE02_BOOT_BUILDID_VALUE = utils.se_boot_build_id(SE_2ND_ADDRESS)
+    return _SE02_BOOT_BUILDID_VALUE
+
+
+def get_se02_boot_version() -> str:
+    global _SE02_BOOT_VERSION_VALUE
+    if _SE02_BOOT_VERSION_VALUE is None:
+        _SE02_BOOT_VERSION_VALUE = utils.se_boot_version(SE_2ND_ADDRESS)
+    return _SE02_BOOT_VERSION_VALUE
+
+
+def get_se03_hash() -> bytes:
+    global _SE03_HASH_VALUE
+    if _SE03_HASH_VALUE is None:
+        _SE03_HASH_VALUE = utils.se_hash(SE_3RD_ADDRESS)
+    return _SE03_HASH_VALUE
+
+
+def get_se03_build_id() -> str:
+    global _SE03_BUILDID_VALUE
+    if _SE03_BUILDID_VALUE is None:
+        _SE03_BUILDID_VALUE = utils.se_build_id(SE_3RD_ADDRESS)
+    return _SE03_BUILDID_VALUE
+
+
+def get_se03_version() -> str:
+    global _SE03_VERSION_VALUE
+    if _SE03_VERSION_VALUE is None:
+        _SE03_VERSION_VALUE = utils.se_version(SE_3RD_ADDRESS)
+    return _SE03_VERSION_VALUE
+
+
+def get_se03_boot_hash() -> bytes:
+    global _SE03_BOOT_HASH_VALUE
+    if _SE03_BOOT_HASH_VALUE is None:
+        _SE03_BOOT_HASH_VALUE = utils.se_boot_hash(SE_3RD_ADDRESS)
+    return _SE03_BOOT_HASH_VALUE
+
+
+def get_se03_boot_build_id() -> str:
+    global _SE03_BOOT_BUILDID_VALUE
+    if _SE03_BOOT_BUILDID_VALUE is None:
+        _SE03_BOOT_BUILDID_VALUE = utils.se_boot_build_id(SE_3RD_ADDRESS)
+    return _SE03_BOOT_BUILDID_VALUE
+
+
+def get_se03_boot_version() -> str:
+    global _SE03_BOOT_VERSION_VALUE
+    if _SE03_BOOT_VERSION_VALUE is None:
+        _SE03_BOOT_VERSION_VALUE = utils.se_boot_version(SE_3RD_ADDRESS)
+    return _SE03_BOOT_VERSION_VALUE
+
+
+def get_se04_hash() -> bytes:
+    global _SE04_HASH_VALUE
+    if _SE04_HASH_VALUE is None:
+        _SE04_HASH_VALUE = utils.se_hash(SE_4TH_ADDRESS)
+    return _SE04_HASH_VALUE
+
+
+def get_se04_build_id() -> str:
+    global _SE04_BUILDID_VALUE
+    if _SE04_BUILDID_VALUE is None:
+        _SE04_BUILDID_VALUE = utils.se_build_id(SE_4TH_ADDRESS)
+    return _SE04_BUILDID_VALUE
+
+
+def get_se04_version() -> str:
+    global _SE04_VERSION_VALUE
+    if _SE04_VERSION_VALUE is None:
+        _SE04_VERSION_VALUE = utils.se_version(SE_4TH_ADDRESS)
+    return _SE04_VERSION_VALUE
+
+
+def get_se04_boot_hash() -> bytes:
+    global _SE04_BOOT_HASH_VALUE
+    if _SE04_BOOT_HASH_VALUE is None:
+        _SE04_BOOT_HASH_VALUE = utils.se_boot_hash(SE_4TH_ADDRESS)
+    return _SE04_BOOT_HASH_VALUE
+
+
+def get_se04_boot_build_id() -> str:
+    global _SE04_BOOT_BUILDID_VALUE
+    if _SE04_BOOT_BUILDID_VALUE is None:
+        _SE04_BOOT_BUILDID_VALUE = utils.se_boot_build_id(SE_4TH_ADDRESS)
+    return _SE04_BOOT_BUILDID_VALUE
+
+
+def get_se04_boot_version() -> str:
+    global _SE04_BOOT_VERSION_VALUE
+    if _SE04_BOOT_VERSION_VALUE is None:
+        _SE04_BOOT_VERSION_VALUE = utils.se_boot_version(SE_4TH_ADDRESS)
+    return _SE04_BOOT_VERSION_VALUE
 
 
 def clear_global_cache() -> None:
@@ -1138,9 +1311,9 @@ def clear_global_cache() -> None:
     global _USE_FINGERPRINT_UNLOCK_VALUE
     global _HAS_PROMPTED_FINGERPRINT_VALUE
     global _FINGER_FAILED_COUNT_VALUE
-    global _SE_HASH_VALUE
-    global _SE_BUILDID_VALUE
-    global _SE_VERSION_VALUE
+    global _SE01_HASH_VALUE
+    global _SE01_BUILDID_VALUE
+    global _SE01_VERSION_VALUE
     global _DEVICE_ID_VALUE
     global _STORAGE_SIZE_VALUE
     global _SERIAL_NUMBER_VALUE
@@ -1176,9 +1349,9 @@ def clear_global_cache() -> None:
     _USE_FINGERPRINT_UNLOCK_VALUE = None
     _HAS_PROMPTED_FINGERPRINT_VALUE = None
     _FINGER_FAILED_COUNT_VALUE = None
-    _SE_HASH_VALUE = None
-    _SE_BUILDID_VALUE = None
-    _SE_VERSION_VALUE = None
+    _SE01_HASH_VALUE = None
+    _SE01_BUILDID_VALUE = None
+    _SE01_VERSION_VALUE = None
     _STORAGE_SIZE_VALUE = None
     _DEVICE_ID_VALUE = None
     _SERIAL_NUMBER_VALUE = None

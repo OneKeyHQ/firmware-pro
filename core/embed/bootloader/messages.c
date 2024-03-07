@@ -379,21 +379,66 @@ static void send_msg_features(uint8_t iface_num,
     if (ble_switch_state()) {
       MSG_SEND_ASSIGN_VALUE(ble_enable, ble_get_switch());
     }
-    char *se_version = se_get_version();
-    if (se_version) {
-      MSG_SEND_ASSIGN_STRING_LEN(se_ver, se_version, strlen(se_version));
-      MSG_SEND_ASSIGN_STRING_LEN(onekey_se_version, se_version,
-                                 strlen(se_version));
-    }
-    char *se_hash = se_get_hash();
-    if (se_hash) {
-      MSG_SEND_ASSIGN_BYTES(onekey_se_hash, se_hash, 32);
-    }
-    char *se_build_id = se_get_build_id();
-    if (se_build_id) {
-      MSG_SEND_ASSIGN_STRING_LEN(onekey_se_build_id, se_build_id,
-                                 strlen(se_build_id));
-    }
+
+    uint8_t state;
+    char *se_version, *se_build_id;
+    uint8_t *se_hash;
+
+#define GET_SE_INFO(se_prefix)                                                \
+  do {                                                                        \
+    if (se_prefix##_get_state(&state)) {                                      \
+      MSG_SEND_ASSIGN_VALUE(onekey_##se_prefix##_state, state);               \
+                                                                              \
+      se_hash = se_prefix##_get_boot_hash();                                  \
+      if (se_hash) {                                                          \
+        MSG_SEND_ASSIGN_BYTES(onekey_##se_prefix##_boot_hash, se_hash, 32);   \
+      }                                                                       \
+                                                                              \
+      se_build_id = se_prefix##_get_boot_build_id();                          \
+      if (se_build_id) {                                                      \
+        MSG_SEND_ASSIGN_STRING_LEN(onekey_##se_prefix##_boot_build_id,        \
+                                   se_build_id, strlen(se_build_id));         \
+      }                                                                       \
+                                                                              \
+      if (state) {                                                            \
+        /* APP */                                                             \
+        se_version = se_prefix##_get_version();                               \
+        if (se_version) {                                                     \
+          MSG_SEND_ASSIGN_STRING_LEN(se_ver, se_version, strlen(se_version)); \
+        }                                                                     \
+        se_hash = se_prefix##_get_hash();                                     \
+        if (se_hash) {                                                        \
+          MSG_SEND_ASSIGN_BYTES(onekey_##se_prefix##_hash, se_hash, 32);      \
+        }                                                                     \
+        se_build_id = se_prefix##_get_build_id();                             \
+        if (se_build_id) {                                                    \
+          MSG_SEND_ASSIGN_STRING_LEN(onekey_##se_prefix##_build_id,           \
+                                     se_build_id, strlen(se_build_id));       \
+        }                                                                     \
+        se_version = se_prefix##_get_boot_version();                          \
+        if (se_version) {                                                     \
+          MSG_SEND_ASSIGN_STRING_LEN(onekey_##se_prefix##_boot_version,       \
+                                     se_version, strlen(se_version));         \
+        }                                                                     \
+      } else {                                                                \
+        /* BOOT */                                                            \
+        se_version = se_prefix##_get_version();                               \
+        if (se_version) {                                                     \
+          MSG_SEND_ASSIGN_STRING_LEN(onekey_##se_prefix##_boot_version,       \
+                                     se_version, strlen(se_version));         \
+        }                                                                     \
+      }                                                                       \
+    }                                                                         \
+  } while (0)
+
+    GET_SE_INFO(se01);
+    GET_SE_INFO(se02);
+    GET_SE_INFO(se03);
+    GET_SE_INFO(se04);
+
+    char *board_build_id = get_boardloader_build_id();
+    MSG_SEND_ASSIGN_STRING_LEN(onekey_board_build_id, board_build_id,
+                               strlen(board_build_id));
 
     char *serial = NULL;
     if (device_get_serial(&serial)) {

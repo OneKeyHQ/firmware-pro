@@ -49,6 +49,7 @@ if TYPE_CHECKING:
     from trezor.enums import NEMMosaicLevy  # noqa: F401
     from trezor.enums import NEMSupplyChangeType  # noqa: F401
     from trezor.enums import OneKeyDeviceType  # noqa: F401
+    from trezor.enums import OneKeySEState  # noqa: F401
     from trezor.enums import OneKeySeType  # noqa: F401
     from trezor.enums import OutputScriptType  # noqa: F401
     from trezor.enums import PinMatrixRequestType  # noqa: F401
@@ -2601,9 +2602,9 @@ if TYPE_CHECKING:
         onekey_board_hash: "bytes | None"
         onekey_boot_version: "str | None"
         onekey_boot_hash: "bytes | None"
-        onekey_se_version: "str | None"
-        onekey_se_hash: "bytes | None"
-        onekey_se_build_id: "str | None"
+        onekey_se01_version: "str | None"
+        onekey_se01_hash: "bytes | None"
+        onekey_se01_build_id: "str | None"
         onekey_firmware_version: "str | None"
         onekey_firmware_hash: "bytes | None"
         onekey_firmware_build_id: "str | None"
@@ -2613,6 +2614,32 @@ if TYPE_CHECKING:
         onekey_ble_version: "str | None"
         onekey_ble_build_id: "str | None"
         onekey_ble_hash: "bytes | None"
+        onekey_board_build_id: "str | None"
+        onekey_se01_boot_version: "str | None"
+        onekey_se01_boot_hash: "bytes | None"
+        onekey_se01_boot_build_id: "str | None"
+        onekey_se02_version: "str | None"
+        onekey_se02_hash: "bytes | None"
+        onekey_se02_build_id: "str | None"
+        onekey_se02_boot_version: "str | None"
+        onekey_se02_boot_hash: "bytes | None"
+        onekey_se02_boot_build_id: "str | None"
+        onekey_se03_version: "str | None"
+        onekey_se03_hash: "bytes | None"
+        onekey_se03_build_id: "str | None"
+        onekey_se03_boot_version: "str | None"
+        onekey_se03_boot_hash: "bytes | None"
+        onekey_se03_boot_build_id: "str | None"
+        onekey_se04_version: "str | None"
+        onekey_se04_hash: "bytes | None"
+        onekey_se04_build_id: "str | None"
+        onekey_se04_boot_version: "str | None"
+        onekey_se04_boot_hash: "bytes | None"
+        onekey_se04_boot_build_id: "str | None"
+        onekey_se01_state: "OneKeySEState | None"
+        onekey_se02_state: "OneKeySEState | None"
+        onekey_se03_state: "OneKeySEState | None"
+        onekey_se04_state: "OneKeySEState | None"
 
         def __init__(
             self,
@@ -2680,9 +2707,9 @@ if TYPE_CHECKING:
             onekey_board_hash: "bytes | None" = None,
             onekey_boot_version: "str | None" = None,
             onekey_boot_hash: "bytes | None" = None,
-            onekey_se_version: "str | None" = None,
-            onekey_se_hash: "bytes | None" = None,
-            onekey_se_build_id: "str | None" = None,
+            onekey_se01_version: "str | None" = None,
+            onekey_se01_hash: "bytes | None" = None,
+            onekey_se01_build_id: "str | None" = None,
             onekey_firmware_version: "str | None" = None,
             onekey_firmware_hash: "bytes | None" = None,
             onekey_firmware_build_id: "str | None" = None,
@@ -2692,6 +2719,32 @@ if TYPE_CHECKING:
             onekey_ble_version: "str | None" = None,
             onekey_ble_build_id: "str | None" = None,
             onekey_ble_hash: "bytes | None" = None,
+            onekey_board_build_id: "str | None" = None,
+            onekey_se01_boot_version: "str | None" = None,
+            onekey_se01_boot_hash: "bytes | None" = None,
+            onekey_se01_boot_build_id: "str | None" = None,
+            onekey_se02_version: "str | None" = None,
+            onekey_se02_hash: "bytes | None" = None,
+            onekey_se02_build_id: "str | None" = None,
+            onekey_se02_boot_version: "str | None" = None,
+            onekey_se02_boot_hash: "bytes | None" = None,
+            onekey_se02_boot_build_id: "str | None" = None,
+            onekey_se03_version: "str | None" = None,
+            onekey_se03_hash: "bytes | None" = None,
+            onekey_se03_build_id: "str | None" = None,
+            onekey_se03_boot_version: "str | None" = None,
+            onekey_se03_boot_hash: "bytes | None" = None,
+            onekey_se03_boot_build_id: "str | None" = None,
+            onekey_se04_version: "str | None" = None,
+            onekey_se04_hash: "bytes | None" = None,
+            onekey_se04_build_id: "str | None" = None,
+            onekey_se04_boot_version: "str | None" = None,
+            onekey_se04_boot_hash: "bytes | None" = None,
+            onekey_se04_boot_build_id: "str | None" = None,
+            onekey_se01_state: "OneKeySEState | None" = None,
+            onekey_se02_state: "OneKeySEState | None" = None,
+            onekey_se03_state: "OneKeySEState | None" = None,
+            onekey_se04_state: "OneKeySEState | None" = None,
         ) -> None:
             pass
 
