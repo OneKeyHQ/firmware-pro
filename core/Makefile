@@ -167,6 +167,7 @@ build: build_boardloader build_bootloader build_firmware build_prodtest build_un
 build_embed: build_boardloader build_bootloader build_firmware # build boardloader, bootloader, firmware
 
 build_boardloader: CFLAGS += -DBUILD_ID='\"boardloader.$(BOARD_BUILD_VERSION)\"'
+build_boardloader: CFLAGS += -DBUILD_COMMIT='\"$(BUILD_COMMIT)\"'
 build_boardloader: ## build boardloader
 	$(SCONS) CFLAGS="$(CFLAGS)" PRODUCTION="$(PRODUCTION)" TREZOR_MODEL="$(TREZOR_MODEL)" PRODUCTION_MODEL="$(PRODUCTION_MODEL)" $(BOARDLOADER_BUILD_DIR)/boardloader.bin
 

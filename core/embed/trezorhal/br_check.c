@@ -28,6 +28,11 @@
 static char boardloader_version[32] = {0};
 #define FW_CHUNK_SIZE 65536
 
+typedef struct {
+  char version[16];
+  char build_id[16];
+} board_info_t;
+
 #if PRODUCTION
 
 static int onekey_known_boardloader(const uint8_t *hash) {
@@ -80,16 +85,42 @@ static int onekey_known_boardloader(const uint8_t *hash) {
 
 char *get_boardloader_version(void) {
   uint8_t hash[32] = {0};
+  SHA256_CTX context = {0};
 
   if (strlen(boardloader_version) == 0) {
-    sha256_Raw((uint8_t *)BOARDLOADER_START,
-               BOOTLOADER_START - BOARDLOADER_START, hash);
+    sha256_Init(&context);
+    sha256_Update(&context, (uint8_t *)BOARDLOADER_START,
+                  BOARDLOADER_SIZE - 32);
+    sha256_Update(
+        &context,
+        (uint8_t*)"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+        "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+        32);
+    sha256_Final(&context, hash);
     sha256_Raw(hash, 32, hash);
 
     onekey_known_boardloader(hash);
   }
 
   return boardloader_version;
+}
+
+char *get_boardloader_build_id(void) {
+  static char boardloader_build_id[16] = {0};
+  uint8_t build_id_len = 0;
+
+  board_info_t *board_info =
+      (board_info_t *)(BOARDLOADER_START + BOARDLOADER_SIZE -
+                       sizeof(board_info_t));
+  build_id_len =
+      strnlen(board_info->build_id, sizeof(board_info->build_id) - 1);
+  if (build_id_len > 0 && board_info->build_id[0] != 0xFF) {
+    memcpy(boardloader_build_id, board_info->build_id, build_id_len);
+  } else {
+    memcpy(boardloader_build_id, "unknown", strlen("unknown"));
+  }
+
+  return boardloader_build_id;
 }
 
 uint8_t *get_boardloader_hash(void) {

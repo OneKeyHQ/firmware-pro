@@ -83,6 +83,7 @@ def get_features() -> Features:
         onekey_se_type=OneKeySeType.THD89,
         onekey_board_version=utils.board_version(),
         onekey_board_hash=utils.board_hash(),
+        onekey_board_build_id=utils.board_build_id(),
         onekey_boot_version=utils.boot_version(),
         onekey_boot_hash=utils.boot_hash(),
         onekey_se01_version=storage.device.get_se01_version(),

@@ -54,6 +54,16 @@
   TO_STR(VERSION_MAJOR) "." TO_STR(VERSION_MINOR) "." TO_STR(VERSION_PATCH)
 #define PIXEL_STEP 5
 
+typedef struct {
+  char version[16];
+  char build_id[16];
+} board_info_t;
+
+const board_info_t board_info __attribute__((section(".version_section"))) = {
+    .version = VERSION_STR,
+    .build_id = BUILD_COMMIT,
+};
+
 #if PRODUCTION
 const uint8_t BOARDLOADER_KEY_M = 4;
 const uint8_t BOARDLOADER_KEY_N = 7;

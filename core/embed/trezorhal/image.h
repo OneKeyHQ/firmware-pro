@@ -33,6 +33,8 @@
 #define FIRMWARE_START 0x08040000
 #endif
 
+#define BOARDLOADER_SIZE (BOOTLOADER_START - BOARDLOADER_START)
+
 #define IMAGE_HEADER_SIZE 0x400  // size of the bootloader or firmware header
 #define IMAGE_SIG_SIZE 65
 #define IMAGE_CHUNK_SIZE (128 * 1024)

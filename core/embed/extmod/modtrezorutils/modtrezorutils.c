@@ -321,8 +321,15 @@ STATIC mp_obj_t mod_trezorutils_board_hash(void) {
 #ifdef TREZOR_EMULATOR
   return mp_obj_new_str_from_vstr(&mp_type_bytes, &vstr);
 #else
-  sha256_Raw((uint8_t *)BOARDLOADER_START, BOOTLOADER_START - BOARDLOADER_START,
-             (uint8_t *)vstr.buf);
+  SHA256_CTX context = {0};
+  sha256_Init(&context);
+  sha256_Update(&context, (uint8_t *)BOARDLOADER_START, BOARDLOADER_SIZE - 32);
+  sha256_Update(
+        &context,
+        (uint8_t*)"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+        "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+        32);
+  sha256_Final(&context, (uint8_t *)vstr.buf);
   sha256_Raw((uint8_t *)vstr.buf, 32, (uint8_t *)vstr.buf);
 
   return mp_obj_new_str_from_vstr(&mp_type_bytes, &vstr);
@@ -330,6 +337,22 @@ STATIC mp_obj_t mod_trezorutils_board_hash(void) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorutils_board_hash_obj,
                                  mod_trezorutils_board_hash);
+
+/// def board_build_id() -> str:
+///     """
+///     Returns the boardloader build_id.
+///     """
+STATIC mp_obj_t mod_trezorutils_board_build_id(void) {
+#ifdef TREZOR_EMULATOR
+  mp_obj_new_str_copy(&mp_type_str, (const uint8_t *)"EMULATOR", 8);
+#else
+  char *str = get_boardloader_build_id();
+
+  return mp_obj_new_str_copy(&mp_type_str, (const uint8_t *)str, strlen(str));
+#endif
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorutils_board_build_id_obj,
+                                 mod_trezorutils_board_build_id);
 
 /// def se_version(se_addr: int) -> str:
 ///     """
@@ -501,6 +524,8 @@ STATIC const mp_rom_map_elem_t mp_module_trezorutils_globals_table[] = {
      MP_ROM_PTR(&mod_trezorutils_board_version_obj)},
     {MP_ROM_QSTR(MP_QSTR_board_hash),
      MP_ROM_PTR(&mod_trezorutils_board_hash_obj)},
+    {MP_ROM_QSTR(MP_QSTR_board_build_id),
+     MP_ROM_PTR(&mod_trezorutils_board_build_id_obj)},
     {MP_ROM_QSTR(MP_QSTR_se_version),
      MP_ROM_PTR(&mod_trezorutils_se_version_obj)},
     {MP_ROM_QSTR(MP_QSTR_se_hash), MP_ROM_PTR(&mod_trezorutils_se_hash_obj)},
