@@ -689,6 +689,10 @@ void device_burnin_test(bool force) {
   volatile uint32_t click = 0, click_pre = 0, click_now = 0;
   volatile uint32_t flashled_pre = 0, flashled_now = 0;
   volatile bool fingerprint_detect = false;
+  static uint8_t charge_type_last = 0xff;
+  static uint16_t voltage_last = 0, current_last = 0,
+                  discahrging_current_last = 0;
+  volatile uint32_t battery_pre = 0, battery_now = 0;
   uint8_t image_data[88 * 112 + 2];
   int flashled_value = 1;
 
@@ -755,6 +759,7 @@ void device_burnin_test(bool force) {
   previous = 0;
 
   flashled_pre = flashled_now = HAL_GetTick();
+  battery_pre = battery_now = HAL_GetTick();
 
   ble_set_flashled(flashled_value);
 
@@ -808,8 +813,8 @@ void device_burnin_test(bool force) {
       int w = display_text_width(remain_timer, -1, FONT_NORMAL);
       mini_snprintf(remain_timer, sizeof(remain_timer), "%02d:%02d:%02d", hour,
                     min, sec);
-      display_bar(DISPLAY_RESX / 2 - w / 2, 690, w, 34, COLOR_BLACK);
-      display_text_center(DISPLAY_RESX / 2, 720, remain_timer, -1, FONT_NORMAL,
+      display_bar(DISPLAY_RESX / 2 - w / 2, 770, w, 30, COLOR_BLACK);
+      display_text_center(DISPLAY_RESX / 2, 800, remain_timer, -1, FONT_NORMAL,
                           COLOR_WHITE, COLOR_BLACK);
     }
 
@@ -955,6 +960,83 @@ void device_burnin_test(bool force) {
       flashled_pre = flashled_now;
       flashled_value = flashled_value ? 0 : 1;
       ble_set_flashled(flashled_value);
+    }
+
+#define FONT_HEIGHT 25
+
+    battery_now = HAL_GetTick();
+    if (battery_now - battery_pre > 1000) {
+      battery_pre = battery_now;
+      uint16_t voltage = 0;
+      char battery_str[64] = {0};
+      uint16_t battery_info_offset_y = 640;
+      ble_get_battery_voltage(&voltage);
+      if (voltage_last != voltage) {
+        voltage_last = voltage;
+        mini_snprintf(battery_str, sizeof(battery_str), "voltage %d mv",
+                      (voltage_last));
+        display_bar(0, battery_info_offset_y - 20, 360, FONT_HEIGHT,
+                    COLOR_BLACK);
+        display_text(0, battery_info_offset_y, battery_str, -1, FONT_NORMAL,
+                     COLOR_WHITE, COLOR_BLACK);
+      }
+      battery_info_offset_y += FONT_HEIGHT;
+      uint16_t current = 0;
+      ble_get_battery_charging_current(&current);
+      if (current_last != current) {
+        current_last = current;
+        mini_snprintf(battery_str, sizeof(battery_str),
+                      "charging current %d ma", (current_last));
+        display_bar(0, battery_info_offset_y - 20, 360, FONT_HEIGHT,
+                    COLOR_BLACK);
+        display_text(0, battery_info_offset_y, battery_str, -1, FONT_NORMAL,
+                     COLOR_WHITE, COLOR_BLACK);
+      }
+
+      battery_info_offset_y += FONT_HEIGHT;
+
+      uint16_t discharging_current = 0;
+      ble_get_battery_discharging_current(&discharging_current);
+      if (discahrging_current_last != discharging_current) {
+        discahrging_current_last = discharging_current;
+        mini_snprintf(battery_str, sizeof(battery_str),
+                      "discharging current %d ma", (discahrging_current_last));
+        display_bar(0, battery_info_offset_y - 20, 360, FONT_HEIGHT,
+                    COLOR_BLACK);
+        display_text(0, battery_info_offset_y, battery_str, -1, FONT_NORMAL,
+                     COLOR_WHITE, COLOR_BLACK);
+      }
+      battery_info_offset_y += FONT_HEIGHT;
+      if (!ble_charging_state()) {
+        ble_cmd_req(BLE_PWR, BLE_PWR_CHARGING);
+      } else {
+        uint8_t charge_type = ble_get_charge_type();
+        if (charge_type_last != charge_type) {
+          charge_type_last = charge_type;
+          display_bar(0, battery_info_offset_y - 20, 360, FONT_HEIGHT,
+                      COLOR_BLACK);
+          if (CHARGE_BY_USB == charge_type_last) {
+            display_text(0, battery_info_offset_y, "charging via usb", -1,
+                         FONT_NORMAL, COLOR_WHITE, COLOR_BLACK);
+          } else if (CHARGE_BY_WIRELESS == charge_type_last) {
+            display_text(0, battery_info_offset_y, "charging  via wireless", -1,
+                         FONT_NORMAL, COLOR_WHITE, COLOR_BLACK);
+          } else {
+            display_text(0, battery_info_offset_y, "uncharged", -1, FONT_NORMAL,
+                         COLOR_WHITE, COLOR_BLACK);
+          }
+        }
+      }
+      battery_info_offset_y += FONT_HEIGHT;
+      uint16_t battery_temp = 0;
+      if (ble_get_battery_inner_temp(&battery_temp)) {
+        mini_snprintf(battery_str, sizeof(battery_str), "battery temp %d c",
+                      (battery_temp));
+        display_bar(0, battery_info_offset_y - 20, 360, FONT_HEIGHT,
+                    COLOR_BLACK);
+        display_text(0, battery_info_offset_y, battery_str, -1, FONT_NORMAL,
+                     COLOR_WHITE, COLOR_BLACK);
+      }
     }
 
     if (index == 3) {
