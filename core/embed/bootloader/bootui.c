@@ -731,17 +731,6 @@ void ui_install_thd89_confirm(const char *old_ver, const char *boot_ver) {
   ui_confirm_cancel_buttons("Cancel", "Install", COLOR_BL_DARK, COLOR_BL_DONE);
 }
 
-void ui_bootloader_simple(void) {
-  ui_logo_onekey();
-  display_text_center(DISPLAY_RESX / 2, TITLE_OFFSET_Y, "Update Mode", -1,
-                      FONT_PJKS_BOLD_38, COLOR_BL_FG, COLOR_BL_BG);
-  display_bar_radius_ex(BUTTON_LEFT_OFFSET_X, BUTTON_OFFSET_Y,
-                        BUTTON_FULL_WIDTH, BUTTON_HEIGHT, COLOR_BL_DARK,
-                        COLOR_BL_BG, 49);
-  display_text_center(DISPLAY_RESX / 2, 755, "View Details", -1,
-                      FONT_PJKS_BOLD_26, COLOR_BL_FG, COLOR_BL_DARK);
-}
-
 void ui_bootloader_first(const image_header *const hdr) {
   ui_bootloader_page_current = 0;
   uint8_t se_state;

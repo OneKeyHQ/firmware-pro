@@ -569,17 +569,6 @@ static secbool validate_firmware_code(vendor_header* const vhdr,
   return result;
 }
 
-static bool decide_target_is_boot_by_flag(void) {
-  // get boot target flag
-  BOOT_TARGET boot_target = *BOOT_TARGET_FLAG_ADDR;  // cache flag
-
-  // if boot target already set to this level, no more checks
-  if (boot_target == BOOT_TARGET_BOOTLOADER) {
-    return true;
-  }
-  return false;
-}
-
 static BOOT_TARGET decide_boot_target(vendor_header* const vhdr,
                                       image_header* const hdr,
                                       secbool* headers_validate_result,
@@ -625,8 +614,11 @@ int main(void) {
   lcd_para_init(DISPLAY_RESX, DISPLAY_RESY, LCD_PIXEL_FORMAT_RGB565);
   // lcd_init(DISPLAY_RESX, DISPLAY_RESY, LCD_PIXEL_FORMAT_RGB565);
   lcd_pwm_init();
-  display_clear();
   touch_init();
+
+  // keep the screen but cover the boot bar
+  // display_clear();
+  display_bar_radius(160, 352, 160, 4, COLOR_BLACK, COLOR_BLACK, 2);
 
   // fault handler
   bus_fault_enable();  // it's here since requires user interface
@@ -644,11 +636,6 @@ int main(void) {
 
   // misc/feedback
   random_delays_init();
-
-  if (decide_target_is_boot_by_flag()) {
-    display_clear();
-    ui_bootloader_simple();
-  }
 
   // as they using same i2c bus, both needs to be powered up before any
   // communication
@@ -712,6 +699,9 @@ int main(void) {
 
   BOOT_TARGET boot_target =
       decide_boot_target(&vhdr, &hdr, &headers_valid, &headers_checked);
+
+  // boot target decided, clear screen
+  display_clear();
 
   if (boot_target == BOOT_TARGET_BOOTLOADER) {
     if (headers_checked == secfalse) {
