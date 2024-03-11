@@ -61,7 +61,7 @@ int qspi_flash_init(void) {
   hqspi.Init.ClockMode = QSPI_CLOCK_MODE_3;
   hqspi.Init.FlashID = QSPI_FLASH_ID_1;
   hqspi.Init.DualFlash = QSPI_DUALFLASH_DISABLE;
-  
+
   HAL_QSPI_DeInit(&hqspi);
   if (HAL_QSPI_Init(&hqspi) != HAL_OK) {
     return HAL_ERROR;
@@ -633,21 +633,16 @@ int qspi_flash_read_buffer(uint8_t *data, uint32_t address, uint32_t len) {
   command.DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY;
   command.SIOOMode = QSPI_SIOO_INST_EVERY_CMD;
 
-  if (sf_info.manufacturer_id == WINBOND_MANUFACTURER_ID) {
-    command.Instruction = QUAD_INOUT_FAST_READ_4_BYTE_ADDR_CMD;
-    command.DummyCycles = 6;
-    command.AddressMode = QSPI_ADDRESS_4_LINES;
-    command.DataMode = QSPI_DATA_4_LINES;
-    command.NbData = len;
-    command.Address = address;
-  } else if (sf_info.manufacturer_id == GIGADEVICE_MANUFACTURER_ID) {
-    command.Instruction = READ_DATA_BYTES_CMD;
-    command.DummyCycles = 0;
-    command.AddressMode = QSPI_ADDRESS_1_LINE;
-    command.DataMode = QSPI_DATA_1_LINE;
-    command.NbData = len;
-    command.Address = address;
-  }
+  // if (sf_info.manufacturer_id == WINBOND_MANUFACTURER_ID) {
+  // } else if (sf_info.manufacturer_id == GIGADEVICE_MANUFACTURER_ID) {
+  // }
+
+  command.Instruction = QUAD_INOUT_FAST_READ_4_BYTE_ADDR_CMD;
+  command.DummyCycles = 6;
+  command.AddressMode = QSPI_ADDRESS_4_LINES;
+  command.DataMode = QSPI_DATA_4_LINES;
+  command.NbData = len;
+  command.Address = address;
 
   if (HAL_QSPI_Command(&hqspi, &command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) !=
       HAL_OK) {
@@ -681,17 +676,14 @@ int qspi_flash_memory_mapped(void) {
   command.DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY;
   command.SIOOMode = QSPI_SIOO_INST_EVERY_CMD;
 
-  if (sf_info.manufacturer_id == WINBOND_MANUFACTURER_ID) {
-    command.Instruction = QUAD_INOUT_FAST_READ_4_BYTE_ADDR_CMD;
-    command.AddressMode = QSPI_ADDRESS_4_LINES;
-    command.DataMode = QSPI_DATA_4_LINES;
-    command.DummyCycles = 6;
-  } else if (sf_info.manufacturer_id == GIGADEVICE_MANUFACTURER_ID) {
-    command.Instruction = READ_DATA_BYTES_CMD;
-    command.AddressMode = QSPI_ADDRESS_1_LINE;
-    command.DataMode = QSPI_DATA_1_LINE;
-    command.DummyCycles = 0;
-  }
+  // if (sf_info.manufacturer_id == WINBOND_MANUFACTURER_ID) {
+  // } else if (sf_info.manufacturer_id == GIGADEVICE_MANUFACTURER_ID) {
+  // }
+
+  command.Instruction = QUAD_INOUT_FAST_READ_4_BYTE_ADDR_CMD;
+  command.AddressMode = QSPI_ADDRESS_4_LINES;
+  command.DataMode = QSPI_DATA_4_LINES;
+  command.DummyCycles = 6;
 
   s_mem_mapped_cfg.TimeOutActivation = QSPI_TIMEOUT_COUNTER_DISABLE;
   s_mem_mapped_cfg.TimeOutPeriod = 0;
