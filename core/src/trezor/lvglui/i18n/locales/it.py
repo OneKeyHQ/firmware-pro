@@ -744,5 +744,7 @@ translations = [
     "Sei sicuro di disabilitare la modalità Air Gap? Dopo la disattivazione, sarà in grado di connettere il tuo dispositivo tramite Bluetooth o USB.",
     "Seleziona la catena che ti serve, quindi fai clic sul pulsante Crea.",
     "Catene compatibili con ETH ed EVM",
+    "impronta digitale non riconosciuta, riprovare",
+    "Usa l'impronta digitale o tocca per sbloccare",
 ]
 # fmt: on

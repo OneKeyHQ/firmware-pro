@@ -3240,13 +3240,11 @@ class FingerprintSetting(Screen):
             self.container_fun.delete()
             self.tips.delete()
 
-        from trezorio import fingerprint
+        from . import fingerprints
 
-        self.fingerprint_list = fingerprint.list_template() or []
+        self.fingerprint_list = fingerprints.get_fingerprint_list()
 
-        if __debug__:
-            print("self.fingerprint_list", self.fingerprint_list)
-        counter = fingerprint.get_template_count()
+        counter = fingerprints.get_fingerprint_count()
         self.added_fingerprints = []
         if counter > 0:
             for ids in self.fingerprint_list:

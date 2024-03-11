@@ -104,7 +104,7 @@ translations = [
     "Llave pública",
     "{} Llave pública",
     "Mensaje",
-    "Señal",
+    "Firmar",
     "Firmar {} mensaje",
     "PARA",
     "Ver transacción",
@@ -744,5 +744,7 @@ translations = [
     "¿Estás seguro de desactivar el modo Air Gap? Después de desactivarlo, podrá conectar su dispositivo a través de Bluetooth o USB.",
     "Seleccione la cadena que necesita y luego haga clic en el botón Crear.",
     "Cadenas compatibles con ETH y EVM",
+    "huella digital no reconocida, inténtalo de nuevo",
+    "Use huella digital o toque para desbloquear",
 ]
 # fmt: on

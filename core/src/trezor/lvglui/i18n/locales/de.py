@@ -744,5 +744,7 @@ translations = [
     "Sind Sie sicher, den Air Gap-Modus zu deaktivieren? Nach der Deaktivierung kann Ihr Gerät über Bluetooth oder USB verbunden werden.",
     "Wählen Sie die gewünschte Kette aus und klicken Sie dann auf die Schaltfläche „Erstellen“.",
     "ETH- und EVM-kompatible Ketten",
+    "Fingerabdruck nicht erkannt, versuchen Sie es erneut",
+    "Verwenden Sie zum Entsperren den Fingerabdruck oder tippen Sie darauf",
 ]
 # fmt: on

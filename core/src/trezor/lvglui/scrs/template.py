@@ -1458,6 +1458,9 @@ class Modal(FullSizeWindow):
             title, subtitle, confirm_text, cancel_text, icon_path, anim_dir=anim_dir
         )
 
+    def show_unload_anim(self):
+        self.destroy(200)
+
 
 class AlgoCommon(FullSizeWindow):
     def __init__(self, type: str, primary_color, icon_path):

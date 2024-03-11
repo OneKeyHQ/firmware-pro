@@ -63,7 +63,7 @@ class LockScreen(Screen):
         if level:
             if level == 1:
                 self.tap_tip.set_text(
-                    _(i18n_keys.MSG__INVALID_FINGERPRINT_PLEASE_RETRY)
+                    _(i18n_keys.MSG__FINGERPRINT_NOT_RECOGNIZED_TRY_AGAIN)
                 )
             elif level == 2:
                 self.tap_tip.set_text(
@@ -84,7 +84,7 @@ class LockScreen(Screen):
 
             if fingerprints.is_available():
                 self.tap_tip.set_text(
-                    _(i18n_keys.MSG__USE_FINGERPRINT_OR_SWIPE_UP_TO_UNLOCK)
+                    _(i18n_keys.MSG__USE_FINGERPRINT_OR_TAP_TO_UNLOCK)
                 )
                 # self._show_fingerprint_prompt_if_necessary()
             else:

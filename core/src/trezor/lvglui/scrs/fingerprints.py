@@ -39,12 +39,32 @@ def failed_count() -> int:
     return device.finger_failed_count()
 
 
+def get_fingerprint_count() -> int:
+    try:
+        count = fingerprint.get_template_count()
+    except Exception as e:
+        if __debug__:
+            print(f"get fingerprint count failed: {e}")
+        count = 0
+    return count
+
+
 def has_fingerprints() -> bool:
-    return fingerprint.get_template_count() > 0
+    return get_fingerprint_count() > 0
 
 
-def lock():
-    se_thd89.fingerprint_lock()
+def get_fingerprint_list():
+    try:
+        fingers = fingerprint.list_template()
+    except Exception as e:
+        if __debug__:
+            print(f"get fingerprint list failed: {e}")
+        return ()
+    return fingers or ()
+
+
+def lock() -> bool:
+    return se_thd89.fingerprint_lock()
 
 
 def unlock() -> bool:

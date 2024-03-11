@@ -57,12 +57,20 @@ StatusBar.get_instance()
 
 # run the endless loop
 while True:
-    with unimport_manager:
-        import session  # noqa: F401
-        del session
+    try:
+        with unimport_manager:
+            import session  # noqa: F401
+            del session
+            if __debug__:
+                print('---heap status before gc---')
+                micropython.mem_info()  # type: ignore["micropython" is possibly unbound]
         if __debug__:
-            print('---heap status before gc---')
+            print('---heap status after gc----')
             micropython.mem_info()  # type: ignore["micropython" is possibly unbound]
-    if __debug__:
-        print('---heap status after gc----')
-        micropython.mem_info()  # type: ignore["micropython" is possibly unbound]
+    except Exception as e:
+
+        if __debug__:
+            import sys
+
+            print("Error in main loop:", e)
+            sys.print_exception(e)  # type: ignore["print_exception" is not a known member of module]

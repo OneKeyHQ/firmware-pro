@@ -47,6 +47,7 @@ async def handle_fingerprint():
     from trezorio import fingerprint
     from trezor.lvglui.scrs import fingerprints
 
+    global BUTTON_PRESSING
     while True:
         fingerprint.sleep()
         state = await loop.wait(io.FINGERPRINT_STATE)
@@ -64,7 +65,8 @@ async def handle_fingerprint():
                 BUTTON_PRESSING,
             )
         ):
-            await loop.sleep(2000)
+            await loop.sleep(200 if not BUTTON_PRESSING else 2000)
+            BUTTON_PRESSING = False  # reset button pressing state, because the push event is not triggered sometimes
             continue
 
         try:
@@ -77,7 +79,7 @@ async def handle_fingerprint():
                     print("finger detected ....")
                 try:
                     match_id = fingerprint.match()
-                    fps = fingerprint.list_template()
+                    fps = fingerprints.get_fingerprint_list()
                     assert fps is not None
                     assert match_id in fps
                 except Exception as e:
