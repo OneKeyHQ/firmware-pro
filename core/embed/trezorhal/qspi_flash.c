@@ -55,13 +55,13 @@ int qspi_flash_init(void) {
   hqspi.Instance = QUADSPI;
   hqspi.Init.ClockPrescaler = 2;
   hqspi.Init.FifoThreshold = 4;
-  hqspi.Init.SampleShifting = QSPI_SAMPLE_SHIFTING_HALFCYCLE;
+  hqspi.Init.SampleShifting = QSPI_SAMPLE_SHIFTING_NONE;
   hqspi.Init.FlashSize = QSPI_FLASH_SIZE;
   hqspi.Init.ChipSelectHighTime = QSPI_CS_HIGH_TIME_2_CYCLE;
-  hqspi.Init.ClockMode = QSPI_CLOCK_MODE_0;
+  hqspi.Init.ClockMode = QSPI_CLOCK_MODE_3;
   hqspi.Init.FlashID = QSPI_FLASH_ID_1;
   hqspi.Init.DualFlash = QSPI_DUALFLASH_DISABLE;
-
+  
   HAL_QSPI_DeInit(&hqspi);
   if (HAL_QSPI_Init(&hqspi) != HAL_OK) {
     return HAL_ERROR;
