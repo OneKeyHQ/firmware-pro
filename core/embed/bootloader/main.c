@@ -356,41 +356,6 @@ static secbool bootloader_usb_loop(const vendor_header* const vhdr,
           return secfalse;  // shutdown
         }
         break;
-      case MSG_NAME_TO_ID(FirmwareErase):  // FirmwareErase
-        process_msg_FirmwareErase(USB_IFACE_NUM, msg_size, buf);
-        break;
-      case MSG_NAME_TO_ID(FirmwareUpload):  // FirmwareUpload
-        r = process_msg_FirmwareUpload(USB_IFACE_NUM, msg_size, buf);
-        if (r < 0 && r != -4) {  // error, but not user abort (-4)
-          ui_fadeout();
-          ui_screen_fail();
-          ui_fadein();
-          usb_stop();
-          usb_deinit();
-          while (!touch_click()) {
-          }
-          restart();
-          return secfalse;    // shutdown
-        } else if (r == 0) {  // last chunk received
-          // ui_screen_install_progress_upload(1000);
-          ui_fadeout();
-          ui_screen_done(4, sectrue);
-          ui_fadein();
-          ui_screen_done(3, secfalse);
-          hal_delay(1000);
-          ui_screen_done(2, secfalse);
-          hal_delay(1000);
-          ui_screen_done(1, secfalse);
-          hal_delay(1000);
-          usb_stop();
-          usb_deinit();
-          ui_fadeout();
-          return sectrue;  // jump to firmware
-        }
-        break;
-      case MSG_NAME_TO_ID(FirmwareErase_ex):  // erase ble update buffer
-        process_msg_FirmwareEraseBLE(USB_IFACE_NUM, msg_size, buf);
-        break;
       case MSG_NAME_TO_ID(GetFeatures):  // GetFeatures
         process_msg_GetFeatures(USB_IFACE_NUM, msg_size, buf, vhdr, hdr);
         break;
