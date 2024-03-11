@@ -451,21 +451,24 @@ secbool bootloader_usb_loop_factory(const vendor_header* const vhdr,
       case MSG_NAME_TO_ID(Reboot):  // Reboot
         process_msg_Reboot(USB_IFACE_NUM, msg_size, buf);
         break;
+      case MSG_NAME_TO_ID(FirmwareUpdateEmmc):  // FirmwareUpdateEmmc
+        process_msg_FirmwareUpdateEmmc(USB_IFACE_NUM, msg_size, buf);
+        break;
       case MSG_NAME_TO_ID(EmmcFixPermission):  // EmmcFixPermission
         process_msg_EmmcFixPermission(USB_IFACE_NUM, msg_size, buf);
         break;
       case MSG_NAME_TO_ID(EmmcPathInfo):  // EmmcPathInfo
         process_msg_EmmcPathInfo(USB_IFACE_NUM, msg_size, buf);
         break;
-      // case MSG_NAME_TO_ID(EmmcFileRead): // EmmcFileRead
-      //   process_msg_EmmcFileRead(USB_IFACE_NUM, msg_size, buf);
-      //   break;
-      // case MSG_NAME_TO_ID(EmmcFileWrite): // EmmcFileWrite
-      //   process_msg_EmmcFileWrite(USB_IFACE_NUM, msg_size, buf);
-      //   break;
-      // case MSG_NAME_TO_ID(EmmcFileDelete): // EmmcFileDelete
-      //   process_msg_EmmcFileDelete(USB_IFACE_NUM, msg_size, buf);
-      //   break;
+      case MSG_NAME_TO_ID(EmmcFileRead): // EmmcFileRead
+        process_msg_EmmcFileRead(USB_IFACE_NUM, msg_size, buf);
+        break;
+      case MSG_NAME_TO_ID(EmmcFileWrite): // EmmcFileWrite
+        process_msg_EmmcFileWrite(USB_IFACE_NUM, msg_size, buf);
+        break;
+      case MSG_NAME_TO_ID(EmmcFileDelete): // EmmcFileDelete
+        process_msg_EmmcFileDelete(USB_IFACE_NUM, msg_size, buf);
+        break;
       case MSG_NAME_TO_ID(EmmcDirList):  // EmmcDirList
         process_msg_EmmcDirList(USB_IFACE_NUM, msg_size, buf);
         break;
