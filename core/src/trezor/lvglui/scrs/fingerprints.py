@@ -2,7 +2,6 @@ from trezorio import fingerprint
 
 from storage import device
 from trezor import config, loop, motor, utils
-from trezor.crypto import se_thd89
 
 from ..i18n import gettext as _, keys as i18n_keys
 from ..lv_colors import lv_colors
@@ -64,15 +63,15 @@ def get_fingerprint_list():
 
 
 def lock() -> bool:
-    return se_thd89.fingerprint_lock()
+    return config.fingerprint_lock()
 
 
 def unlock() -> bool:
-    return se_thd89.fingerprint_unlock()
+    return config.fingerprint_unlock()
 
 
 def is_unlocked() -> bool:
-    return se_thd89.fingerprint_is_unlocked()
+    return config.fingerprint_is_unlocked()
 
 
 class RequestAddFingerprintScreen(FullSizeWindow):

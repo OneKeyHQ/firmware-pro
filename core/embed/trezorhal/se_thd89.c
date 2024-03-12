@@ -986,10 +986,9 @@ static secbool se_hasPin_ex(uint8_t addr, uint8_t *session_key) {
   uint8_t hasPin = 0xff;
   uint16_t len = sizeof(hasPin);
 
-  if (!se_transmit_mac_ex(addr, session_key, SE_INS_PIN, 0x00, 0x00, NULL, 0,
-                          &hasPin, &len)) {
-    return secfalse;
-  }
+  ensure(se_transmit_mac_ex(addr, session_key, SE_INS_PIN, 0x00, 0x00, NULL, 0,
+                            &hasPin, &len),
+         "get pin failed");
 
   // 0x55 exist ,0xff not
   return sectrue * (hasPin == 0x55);

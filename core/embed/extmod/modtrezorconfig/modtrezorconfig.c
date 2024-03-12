@@ -44,6 +44,17 @@
 
 #endif
 
+typedef struct {
+  bool hal_pin_initialized;
+  bool has_pin;
+  bool pin_unlocked_initialized;
+  bool pin_unlocked;
+  bool fp_unlocked_initialized;
+  bool fp_unlocked;
+} pin_state_t;
+
+static pin_state_t pin_state = {false, false};
+
 static secbool wrapped_ui_wait_callback(uint32_t wait, uint32_t progress,
                                         const char *message) {
   if (mp_obj_is_callable(MP_STATE_VM(trezorconfig_ui_wait_callback))) {
@@ -120,11 +131,14 @@ STATIC mp_obj_t mod_trezorconfig_unlock(mp_obj_t pin, mp_obj_t ext_salt) {
   // verify se pin first when not in emulator
   ret = se_verifyPin(pin_b.buf);
   if (ret != sectrue) {
+    pin_state.pin_unlocked = false;
+    pin_state.pin_unlocked_initialized = true;
     return mp_const_false;
   }
 
   fpsensor_data_init();
-
+  pin_state.pin_unlocked = true;
+  pin_state.pin_unlocked_initialized = true;
   return mp_const_true;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_trezorconfig_unlock_obj,
@@ -147,6 +161,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_trezorconfig_check_pin_obj,
 ///     """
 STATIC mp_obj_t mod_trezorconfig_lock(void) {
   se_clearSecsta();
+  pin_state.pin_unlocked = false;
   return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorconfig_lock_obj,
@@ -157,7 +172,11 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorconfig_lock_obj,
 ///     Returns True if storage is unlocked, False otherwise.
 ///     """
 STATIC mp_obj_t mod_trezorconfig_is_unlocked(void) {
-  if (sectrue != se_getSecsta()) {
+  if (!pin_state.pin_unlocked_initialized) {
+    pin_state.pin_unlocked = se_getSecsta() ? true : false;
+    pin_state.pin_unlocked_initialized = true;
+  }
+  if (!pin_state.pin_unlocked) {
     return mp_const_false;
   }
   return mp_const_true;
@@ -170,7 +189,11 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorconfig_is_unlocked_obj,
 ///     Returns True if storage has a configured PIN, False otherwise.
 ///     """
 STATIC mp_obj_t mod_trezorconfig_has_pin(void) {
-  if (sectrue != se_hasPin()) {
+  if (!pin_state.hal_pin_initialized) {
+    pin_state.has_pin = se_hasPin() ? true : false;
+    pin_state.hal_pin_initialized = true;
+  }
+  if (!pin_state.has_pin) {
     return mp_const_false;
   }
 
@@ -211,10 +234,16 @@ STATIC mp_obj_t mod_trezorconfig_change_pin(size_t n_args,
   mp_buffer_info_t newpin = {0};
   mp_get_buffer_raise(args[1], &newpin, MP_BUFFER_READ);
 
-  if (!se_hasPin()) {
+  if (!pin_state.hal_pin_initialized) {
+    pin_state.has_pin = se_hasPin() ? true : false;
+    pin_state.hal_pin_initialized = true;
+  }
+
+  if (!pin_state.has_pin) {
     if (sectrue != se_setPin(newpin.buf)) {
       return mp_const_false;
     }
+    pin_state.has_pin = true;
 
   } else {
     if (sectrue != se_changePin(oldpin.buf, newpin.buf)) {
@@ -496,6 +525,55 @@ STATIC mp_obj_t mod_trezorconfig_se_export_mnemonic(void) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorconfig_se_export_mnemonic_obj,
                                  mod_trezorconfig_se_export_mnemonic);
+
+/// def fingerprint_is_unlocked() -> bool:
+///     """
+///     Returns True if fingerprint is unlocked, False otherwise.
+///     """
+STATIC mp_obj_t mod_trezorcrypto_se_fingerprint_is_unlocked(void) {
+  if (!pin_state.fp_unlocked_initialized) {
+    pin_state.fp_unlocked = se_fingerprint_state() ? true : false;
+    pin_state.fp_unlocked_initialized = true;
+  }
+  if (!pin_state.fp_unlocked) {
+    return mp_const_false;
+  }
+  return mp_const_true;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(
+    mod_trezorcrypto_se_fingerprint_is_unlocked_obj,
+    mod_trezorcrypto_se_fingerprint_is_unlocked);
+
+/// def fingerprint_lock() -> bool:
+///     """
+///     fingerprint lock.
+///     """
+STATIC mp_obj_t mod_trezorcrypto_se_fingerprint_lock(void) {
+  if (sectrue != se_fingerprint_lock()) {
+    return mp_const_false;
+  }
+  pin_state.fp_unlocked = false;
+  return mp_const_true;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorcrypto_se_fingerprint_lock_obj,
+                                 mod_trezorcrypto_se_fingerprint_lock);
+
+/// def fingerprint_unlock() -> bool:
+///     """
+///     fingerprint unlock.
+///     """
+STATIC mp_obj_t mod_trezorcrypto_se_fingerprint_unlock(void) {
+  if (sectrue != se_fingerprint_unlock()) {
+    pin_state.fp_unlocked = false;
+    pin_state.fp_unlocked_initialized = true;
+    return mp_const_false;
+  }
+  pin_state.fp_unlocked = true;
+  pin_state.fp_unlocked_initialized = true;
+  return mp_const_true;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorcrypto_se_fingerprint_unlock_obj,
+                                 mod_trezorcrypto_se_fingerprint_unlock);
 
 #endif
 #else
@@ -1055,6 +1133,12 @@ STATIC const mp_rom_map_elem_t mp_module_trezorconfig_globals_table[] = {
      MP_ROM_PTR(&mod_trezorconfig_get_needs_backup_obj)},
     {MP_ROM_QSTR(MP_QSTR_set_needs_backup),
      MP_ROM_PTR(&mod_trezorconfig_set_needs_backup_obj)},
+    {MP_ROM_QSTR(MP_QSTR_fingerprint_is_unlocked),
+     MP_ROM_PTR(&mod_trezorcrypto_se_fingerprint_is_unlocked_obj)},
+    {MP_ROM_QSTR(MP_QSTR_fingerprint_lock),
+     MP_ROM_PTR(&mod_trezorcrypto_se_fingerprint_lock_obj)},
+    {MP_ROM_QSTR(MP_QSTR_fingerprint_unlock),
+     MP_ROM_PTR(&mod_trezorcrypto_se_fingerprint_unlock_obj)},
 #endif
 #if USE_THD89
     {MP_ROM_QSTR(MP_QSTR_is_initialized),
