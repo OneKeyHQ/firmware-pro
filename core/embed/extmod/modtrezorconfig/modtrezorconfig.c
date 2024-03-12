@@ -139,6 +139,8 @@ STATIC mp_obj_t mod_trezorconfig_unlock(mp_obj_t pin, mp_obj_t ext_salt) {
   fpsensor_data_init();
   pin_state.pin_unlocked = true;
   pin_state.pin_unlocked_initialized = true;
+  pin_state.fp_unlocked = true;
+  pin_state.fp_unlocked_initialized = true;
   return mp_const_true;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_trezorconfig_unlock_obj,
@@ -161,6 +163,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_trezorconfig_check_pin_obj,
 ///     """
 STATIC mp_obj_t mod_trezorconfig_lock(void) {
   se_clearSecsta();
+  pin_state.pin_unlocked = false;
   pin_state.pin_unlocked = false;
   return mp_const_none;
 }

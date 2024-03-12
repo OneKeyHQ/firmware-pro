@@ -312,8 +312,8 @@ async def _deal_button_press(value: bytes) -> None:
                     else:
                         config.lock()
                 await loop.race(safe_reloop(), loop.sleep(200))
-                # single to restart the main loop
-                raise loop.TASK_CLOSED
+                workflow.spawn(utils.internal_reloop())
+                return
         else:
             utils.turn_on_lcd_if_possible()
             workflow.spawn(handle_fingerprint())
