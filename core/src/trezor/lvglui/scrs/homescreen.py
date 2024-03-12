@@ -96,7 +96,7 @@ class MainScreen(Screen):
             self.dev_state.show(dev_state)
 
         self.add_style(
-            StyleWrapper().bg_img_src(homescreen).bg_img_opa(int(lv.OPA.COVER * 0.92)),
+            StyleWrapper().bg_img_src(homescreen),
             0,
         )
 
@@ -326,8 +326,8 @@ class MainScreen(Screen):
                 start_cb=self.show_anim_start_cb,
                 delay=15 if not __debug__ else APP_DRAWER_UP_DELAY,
                 del_cb=self.show_anim_del_cb,
-                time=50 if not __debug__ else APP_DRAWER_UP_TIME,
-                path_cb=lv.anim_t.path_ease_out
+                time=130 if not __debug__ else APP_DRAWER_UP_TIME,
+                path_cb=lv.anim_t.path_ease_in
                 if not __debug__
                 else APP_DRAWER_UP_PATH_CB,
             )
@@ -335,10 +335,10 @@ class MainScreen(Screen):
                 0,
                 800,
                 self.set_position,
-                path_cb=lv.anim_t.path_ease_in_out
+                path_cb=lv.anim_t.path_ease_out
                 if not __debug__
                 else APP_DRAWER_DOWN_PATH_CB,
-                time=150 if not __debug__ else APP_DRAWER_DOWN_TIME,
+                time=50 if not __debug__ else APP_DRAWER_DOWN_TIME,
                 start_cb=self.dismiss_anim_start_cb,
                 del_cb=self.dismiss_anim_del_cb,
                 delay=0 if not __debug__ else APP_DRAWER_DOWN_DELAY,
