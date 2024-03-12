@@ -53,7 +53,7 @@ typedef struct {
   bool fp_unlocked;
 } pin_state_t;
 
-static pin_state_t pin_state = {false, false};
+static pin_state_t pin_state = {0};
 
 static secbool wrapped_ui_wait_callback(uint32_t wait, uint32_t progress,
                                         const char *message) {
@@ -131,8 +131,10 @@ STATIC mp_obj_t mod_trezorconfig_unlock(mp_obj_t pin, mp_obj_t ext_salt) {
   // verify se pin first when not in emulator
   ret = se_verifyPin(pin_b.buf);
   if (ret != sectrue) {
-    pin_state.pin_unlocked = false;
-    pin_state.pin_unlocked_initialized = true;
+    if (!pin_state.pin_unlocked_initialized) {
+      pin_state.pin_unlocked = false;
+      pin_state.pin_unlocked_initialized = true;
+    }
     return mp_const_false;
   }
 
