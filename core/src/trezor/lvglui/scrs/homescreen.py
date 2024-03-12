@@ -69,7 +69,6 @@ class MainScreen(Screen):
         else:
             self.add_style(
                 StyleWrapper().bg_img_src(homescreen),
-                # .bg_img_opa(int(lv.OPA.COVER * 0.92)),
                 0,
             )
             if hasattr(self, "dev_state"):
