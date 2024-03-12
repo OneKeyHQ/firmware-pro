@@ -71,10 +71,14 @@ void fingerprint_init(void)
     fingerprint_enter_sleep();
 }
 
-void fingerprint_enter_sleep(void)
+int fingerprint_enter_sleep(void)
 {
-    FpsSleep(256);
+    if ( FpsSleep(256) != 0 )
+    {
+        return -1;
+    }
     fpsensor_irq_enable();
+    return 0;
 }
 
 int fingerprint_detect(void)

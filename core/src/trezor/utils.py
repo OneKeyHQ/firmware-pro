@@ -27,6 +27,7 @@ from trezorutils import (  # noqa: F401; FIRMWARE_SECTORS_COUNT,; firmware_secto
     board_hash,
     board_build_id,
     boot_hash,
+    boot_build_id,
     se_version,
     se_hash,
     se_build_id,

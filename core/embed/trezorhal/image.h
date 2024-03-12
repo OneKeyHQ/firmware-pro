@@ -60,9 +60,10 @@ typedef struct {
   uint32_t version;
   uint32_t fix_version;
   uint32_t onekey_version;
-  // uint8_t reserved[4];
+  uint8_t reserved_1[4];
   uint8_t hashes[512];
-  uint8_t reserved[415];
+  uint8_t reserved[399];
+  uint8_t build_id[16];
   uint8_t sigmask;
   uint8_t sig[64];
   uint8_t fingerprint[32];

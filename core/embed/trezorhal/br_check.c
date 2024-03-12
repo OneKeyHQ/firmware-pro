@@ -160,7 +160,23 @@ uint8_t *get_bootloader_hash(void) {
   return bootloader_hash;
 }
 
-uint8_t *get_firmware_hash(const image_header *hdr) {
+char *get_bootloader_build_id(void) {
+#define BOOTLOADER_BUILD_ID_OFFSET 943
+  static char bootloader_build[16] = {0};
+  uint8_t build_id_len = 0;
+
+  char *p_build_id = (char *)(BOOTLOADER_START + BOOTLOADER_BUILD_ID_OFFSET);
+  build_id_len = strnlen(p_build_id, sizeof(bootloader_build) - 1);
+  if (build_id_len > 0) {
+    memcpy(bootloader_build, p_build_id, build_id_len);
+  } else {
+    memcpy(bootloader_build, "unknown", strlen("unknown"));
+  }
+
+  return bootloader_build;
+}
+
+uint8_t *get_firmware_hash(void) {
   static uint8_t onekey_firmware_hash[32] = {0};
   static bool onekey_firmware_hash_cached = false;
   if (!onekey_firmware_hash_cached) {

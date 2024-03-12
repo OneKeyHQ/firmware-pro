@@ -86,7 +86,7 @@ def list_template() -> tuple[int | None] | None:
     List fingerprints.
     returns: tuple of fingerprint ids
     """
- def sleep() -> None:
+ def sleep() -> bool:
      """
      make fingerprint sensor to sleep mode.
      """

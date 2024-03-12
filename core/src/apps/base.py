@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 import storage.cache
 import storage.device
 from trezor import config, loop, ui, utils, wire, workflow
-from trezor.enums import MessageType
+from trezor.enums import MessageType, OneKeySEState
 from trezor.messages import Success, UnlockPath
 
 from . import workflow_handlers
@@ -86,6 +86,7 @@ def get_features() -> Features:
         onekey_board_build_id=utils.board_build_id(),
         onekey_boot_version=utils.boot_version(),
         onekey_boot_hash=utils.boot_hash(),
+        onekey_boot_build_id=utils.boot_build_id(),
         onekey_se01_version=storage.device.get_se01_version(),
         onekey_se01_hash=storage.device.get_se01_hash(),
         onekey_se01_build_id=storage.device.get_se01_build_id(),
@@ -110,8 +111,13 @@ def get_features() -> Features:
         onekey_se04_boot_version=storage.device.get_se04_boot_version(),
         onekey_se04_boot_hash=storage.device.get_se04_boot_hash(),
         onekey_se04_boot_build_id=storage.device.get_se04_boot_build_id(),
+        onekey_se01_state=OneKeySEState.APP,
+        onekey_se02_state=OneKeySEState.APP,
+        onekey_se03_state=OneKeySEState.APP,
+        onekey_se04_state=OneKeySEState.APP,
         onekey_firmware_version=utils.ONEKEY_VERSION,
         onekey_firmware_build_id=utils.BUILD_ID[-7:].decode(),
+        onekey_firmware_hash=utils.firmware_hash(),
         onekey_serial_no=storage_serial_no,
         onekey_ble_name=uart.get_ble_name(),
         onekey_ble_version=uart.get_ble_version(),

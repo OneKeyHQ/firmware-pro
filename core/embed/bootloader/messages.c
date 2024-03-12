@@ -357,7 +357,7 @@ static void send_msg_features(uint8_t iface_num,
       MSG_SEND_ASSIGN_STRING_LEN(onekey_version, ver_str, 5);
       MSG_SEND_ASSIGN_STRING_LEN(onekey_firmware_version, ver_str, 5);
 
-      uint8_t *fimware_hash = get_firmware_hash(hdr);
+      uint8_t *fimware_hash = get_firmware_hash();
       MSG_SEND_ASSIGN_BYTES(onekey_firmware_hash, fimware_hash, 32);
     } else {
       MSG_SEND_ASSIGN_VALUE(firmware_present, false);

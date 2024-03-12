@@ -616,46 +616,6 @@ STATIC mp_obj_t mod_trezorcrypto_se_thd89_sign_message(mp_obj_t msg) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorcrypto_se_thd89_sign_message_obj,
                                  mod_trezorcrypto_se_thd89_sign_message);
 
-/// def fingerprint_is_unlocked() -> bool:
-///     """
-///     Returns True if fingerprint is unlocked, False otherwise.
-///     """
-STATIC mp_obj_t mod_trezorcrypto_se_fingerprint_is_unlocked(void) {
-  if (sectrue != se_fingerprint_state()) {
-    return mp_const_false;
-  }
-  return mp_const_true;
-}
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(
-    mod_trezorcrypto_se_fingerprint_is_unlocked_obj,
-    mod_trezorcrypto_se_fingerprint_is_unlocked);
-
-/// def fingerprint_lock() -> bool:
-///     """
-///     fingerprint lock.
-///     """
-STATIC mp_obj_t mod_trezorcrypto_se_fingerprint_lock(void) {
-  if (sectrue != se_fingerprint_lock()) {
-    return mp_const_false;
-  }
-  return mp_const_true;
-}
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorcrypto_se_fingerprint_lock_obj,
-                                 mod_trezorcrypto_se_fingerprint_lock);
-
-/// def fingerprint_unlock() -> bool:
-///     """
-///     fingerprint unlock.
-///     """
-STATIC mp_obj_t mod_trezorcrypto_se_fingerprint_unlock(void) {
-  if (sectrue != se_fingerprint_unlock()) {
-    return mp_const_false;
-  }
-  return mp_const_true;
-}
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorcrypto_se_fingerprint_unlock_obj,
-                                 mod_trezorcrypto_se_fingerprint_unlock);
-
 STATIC const mp_rom_map_elem_t mod_trezorcrypto_se_thd89_globals_table[] = {
     {MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_se_thd89)},
     {MP_ROM_QSTR(MP_QSTR_check),
@@ -702,12 +662,6 @@ STATIC const mp_rom_map_elem_t mod_trezorcrypto_se_thd89_globals_table[] = {
      MP_ROM_PTR(&mod_trezorcrypto_se_thd89_read_certificate_obj)},
     {MP_ROM_QSTR(MP_QSTR_sign_message),
      MP_ROM_PTR(&mod_trezorcrypto_se_thd89_sign_message_obj)},
-    {MP_ROM_QSTR(MP_QSTR_fingerprint_is_unlocked),
-     MP_ROM_PTR(&mod_trezorcrypto_se_fingerprint_is_unlocked_obj)},
-    {MP_ROM_QSTR(MP_QSTR_fingerprint_lock),
-     MP_ROM_PTR(&mod_trezorcrypto_se_fingerprint_lock_obj)},
-    {MP_ROM_QSTR(MP_QSTR_fingerprint_unlock),
-     MP_ROM_PTR(&mod_trezorcrypto_se_fingerprint_unlock_obj)},
 };
 STATIC MP_DEFINE_CONST_DICT(mod_trezorcrypto_se_thd89_globals,
                             mod_trezorcrypto_se_thd89_globals_table);

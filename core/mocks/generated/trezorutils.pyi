@@ -117,6 +117,13 @@ def board_build_id() -> str:
 
 
 # extmod/modtrezorutils/modtrezorutils.c
+def boot_build_id() -> str:
+    """
+    Returns the bootloader build_id.
+    """
+
+
+# extmod/modtrezorutils/modtrezorutils.c
 def se_version(se_addr: int) -> str:
     """
     Returns the se version string.
