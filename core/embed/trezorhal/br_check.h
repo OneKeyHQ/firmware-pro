@@ -29,7 +29,8 @@
 char *get_boardloader_version(void);
 uint8_t *get_boardloader_hash(void);
 char *get_boardloader_build_id(void);
+char *get_bootloader_build_id(void);
 uint8_t *get_bootloader_hash(void);
-uint8_t *get_firmware_hash(const image_header *hdr);
+uint8_t *get_firmware_hash(void);
 
 #endif
