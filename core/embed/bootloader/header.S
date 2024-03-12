@@ -22,7 +22,8 @@ g_header:
     .byte FIX_VERSION_BUILD          // fix_vbuild
     . = . + 8                        // reserved
     . = . + 512                      // hash1 ... hash16
-    . = . + 415                      // reserved
+    . = . + 399                      // reserved
+    .string  BUILD_COMMIT            // commit_id
     .byte 0                          // sigmask
     . = . + 64                       // sig
 g_header_end:
