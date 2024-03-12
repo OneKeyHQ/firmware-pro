@@ -3,7 +3,6 @@ from trezor.lvglui import lvgl_tick
 from trezor.qr import handle_qr_ctx, handle_qr_task
 from trezor.uart import (
     handle_ble_info,
-    handle_fingerprint,
     handle_uart,
     handle_usb_state,
 )
@@ -27,8 +26,6 @@ if __debug__:
 apps.base.set_homescreen()
 
 loop.schedule(handle_uart())
-
-loop.schedule(handle_fingerprint())
 
 loop.schedule(handle_ble_info())
 

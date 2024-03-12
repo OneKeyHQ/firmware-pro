@@ -3,7 +3,7 @@ from micropython import const
 from typing import TYPE_CHECKING
 
 from storage import device
-from trezor import config, io, log, loop, motor, utils
+from trezor import config, io, log, loop, motor, utils, workflow
 from trezor.lvglui import StatusBar
 from trezor.lvglui.scrs.charging import ChargingPromptScr
 from trezor.ui import display
@@ -49,11 +49,6 @@ async def handle_fingerprint():
 
     global BUTTON_PRESSING
     while True:
-        fingerprint.sleep()
-        state = await loop.wait(io.FINGERPRINT_STATE)
-        if __debug__:
-            print(f"state == {state}")
-
         if any(
             (
                 not fingerprints.has_fingerprints(),
@@ -65,9 +60,14 @@ async def handle_fingerprint():
                 BUTTON_PRESSING,
             )
         ):
-            await loop.sleep(200 if not BUTTON_PRESSING else 2000)
-            BUTTON_PRESSING = False  # reset button pressing state, because the push event is not triggered sometimes
+            return
+
+        if not fingerprint.sleep():
+            await loop.sleep(100)
             continue
+        state = await loop.wait(io.FINGERPRINT_STATE)
+        if __debug__:
+            print(f"state == {state}")
 
         try:
             detected = fingerprint.detect()
@@ -129,8 +129,8 @@ async def handle_fingerprint():
                         if __debug__:
                             print(f"uart unlock result {res}")
                         await base.unlock_device()
-                    await loop.sleep(2000)
-                    continue
+                    # await loop.sleep(2000)
+                    return
             else:
                 await loop.sleep(200)
         except Exception as e:
@@ -316,6 +316,8 @@ async def _deal_button_press(value: bytes) -> None:
                 raise loop.TASK_CLOSED
         else:
             utils.turn_on_lcd_if_possible()
+            workflow.spawn(handle_fingerprint())
+
     elif res == _PRESS_LONG:
         from trezor.lvglui.scrs.homescreen import PowerOff
         from trezor.qr import close_camera

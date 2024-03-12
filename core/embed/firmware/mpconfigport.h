@@ -162,7 +162,7 @@
 #define MICROPY_PY_TREZORUI2        (1)
 
 #ifdef SYSTEM_VIEW
-#define MP_PLAT_PRINT_STRN(str, len) segger_print(str, len)
+#define MP_PLAT_PRINT_STRN(str, len) segger_print(str, len);HAL_Delay(1);
 // uncomment DEST_RTT and comment DEST_SYSTEMVIEW
 // if you want to print to RTT instead of SystemView
 // OpenOCD supports only the RTT output method
