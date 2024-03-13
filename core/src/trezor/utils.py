@@ -135,7 +135,12 @@ def mark_pin_verified() -> None:
 
 
 def turn_on_lcd_if_possible() -> bool:
-    return lcd_resume()
+    resumed = lcd_resume()
+    if resumed:
+        from trezor import workflow, uart
+
+        workflow.spawn(uart.handle_fingerprint())
+    return resumed
 
 
 def lcd_resume() -> bool:

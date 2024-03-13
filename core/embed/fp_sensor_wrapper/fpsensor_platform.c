@@ -81,6 +81,13 @@ void fpsensor_irq_enable(void)
     HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 }
 
+void fpsensor_data_cache_clear(void)
+{
+    memset(fp_data_cache, 0, FINGER_DATA_TOTAL_SIZE);
+    fpsensor_cache.list_data_valid = false;
+    memset(fpsensor_cache.template_data_valid, 0, MAX_FINGERPRINT_COUNT);
+}
+
 void fpsensor_irq_disable(void)
 {
     fp_touched = false;

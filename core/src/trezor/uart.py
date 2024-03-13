@@ -51,13 +51,11 @@ async def handle_fingerprint():
     while True:
         if any(
             (
-                not fingerprints.has_fingerprints(),
-                not device.is_fingerprint_unlock_enabled(),
-                not config.is_unlocked(),
-                fingerprints.is_unlocked(),
+                BUTTON_PRESSING,
                 utils.is_collecting_fingerprint(),
                 display.backlight() == 0,
-                BUTTON_PRESSING,
+                not fingerprints.is_available(),
+                fingerprints.is_unlocked(),
             )
         ):
             return
@@ -80,7 +78,6 @@ async def handle_fingerprint():
                 try:
                     match_id = fingerprint.match()
                     fps = fingerprints.get_fingerprint_list()
-                    assert fps is not None
                     assert match_id in fps
                 except Exception as e:
                     if __debug__:
@@ -186,8 +183,7 @@ async def handle_usb_state():
                         else:
                             config.lock()
                         await safe_reloop()
-                        # single to restart the main loop
-                        raise loop.TASK_CLOSED
+                        await workflow.spawn(utils.internal_reloop())
                 elif not usb_auto_lock and not state:
                     await safe_reloop(ack=False)
             base.reload_settings_from_storage()
@@ -195,7 +191,6 @@ async def handle_usb_state():
             if __debug__:
                 log.exception(__name__, exec)
             loop.clear()
-            return  # pylint: disable=lost-exception
 
 
 async def safe_reloop(ack=True):
@@ -316,7 +311,6 @@ async def _deal_button_press(value: bytes) -> None:
                 return
         else:
             utils.turn_on_lcd_if_possible()
-            workflow.spawn(handle_fingerprint())
 
     elif res == _PRESS_LONG:
         from trezor.lvglui.scrs.homescreen import PowerOff
@@ -359,7 +353,7 @@ async def _deal_charging_state(value: bytes) -> None:
         _POWER_STATUS_CHARGING,
     ):
         if res != _POWER_STATUS_CHARGING:
-            utils.turn_on_lcd_if_possible()
+            utils.lcd_resume()
         if CHARGING:
             return
         CHARGING = True

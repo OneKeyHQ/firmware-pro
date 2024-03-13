@@ -27,7 +27,8 @@ def has_takers():
 
 def is_available() -> bool:
     return (
-        device.is_fingerprint_unlock_enabled()
+        device.is_initialized()
+        and device.is_fingerprint_unlock_enabled()
         and config.is_unlocked()
         and has_fingerprints()
         and failed_count() < utils.MAX_FP_ATTEMPTS

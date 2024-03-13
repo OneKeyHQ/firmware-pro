@@ -174,7 +174,7 @@ translations = [
     "Utilizzare questa Passphrase?",
     "Modello",
     "Conservazione",
-    "PIN errato, questo è il tuo ultimo tentativo.",
+    "PIN errato, questo è il tuo ultimo tentativo",
     "Modificare la tariffa",
     "Importo (Spesa)",
     "Nuova tariffa",

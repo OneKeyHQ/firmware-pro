@@ -488,6 +488,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_trezorconfig_next_counter_obj, 2,
 ///     Erases the whole config. Use with caution!
 ///     """
 STATIC mp_obj_t mod_trezorconfig_wipe(void) {
+  fpsensor_data_cache_clear();
   if (sectrue != se_reset_storage()) {
     mp_raise_msg(&mp_type_RuntimeError, "Failed to reset storage.");
   }

@@ -174,7 +174,7 @@ translations = [
     "Diese Passphrase verwenden?",
     "Modell",
     "Lager",
-    "Falsche PIN, dies ist Ihr letzter Versuch.",
+    "Falsche PIN, dies ist Ihr letzter Versuch",
     "Gebühr ändern",
     "Betrag (Sie geben aus)",
     "Neue Gebühr",

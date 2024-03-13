@@ -174,7 +174,7 @@ translations = [
     "Utiliser cette phrase secrète?",
     "Modèle",
     "Stockage",
-    "PIN incorrect, c'est votre dernière tentative.",
+    "PIN incorrect, c'est votre dernière tentative",
     "Modifier la redevance",
     "Montant (vous dépensez)",
     "Nouveaux frais",

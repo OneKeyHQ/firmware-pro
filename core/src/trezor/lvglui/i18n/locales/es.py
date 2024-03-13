@@ -174,7 +174,7 @@ translations = [
     "¿Usar esta frase de contraseña?",
     "Modelo",
     "Almacenamiento",
-    "PIN incorrecto, este es tu último intento.",
+    "PIN incorrecto, este es tu último intento",
     "Modificar la tarifa",
     "Cantidad (tu gastas)",
     "Nueva tarifa",

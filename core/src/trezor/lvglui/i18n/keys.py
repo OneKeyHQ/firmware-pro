@@ -383,7 +383,7 @@ TITLE__USE_THIS_PASSPHRASE = 171
 ITEM__MODEL = 172
 # Storage
 ITEM__STORAGE = 173
-# Incorrect PIN, this is your last attempt.
+# Incorrect PIN, this is your last attempt
 MSG__INCORRECT_PIN_THIS_IS_YOUR_LAST_ATTEMPT = 174
 # Modify Fee
 TITLE__MODIFY_FEE = 175
