@@ -65,7 +65,7 @@ void thd89_reset(void) {
   HAL_GPIO_WritePin(GPIOD, GPIO_PIN_4, GPIO_PIN_RESET);
   hal_delay(5);
   HAL_GPIO_WritePin(GPIOD, GPIO_PIN_4, GPIO_PIN_SET);
-  hal_delay(400);
+  hal_delay(500);
 }
 
 void thd89_init(void) { i2c_init_by_device(I2C_SE); }
