@@ -398,6 +398,7 @@ class MessageType(IntEnum):
     ResourceUpdate = 10022
     ListResDir = 10023
     FileInfoList = 10024
+    OnekeyGetFeatures = 10025
 
 
 class FailureType(IntEnum):
@@ -3835,6 +3836,10 @@ class Initialize(protobuf.MessageType):
 
 class GetFeatures(protobuf.MessageType):
     MESSAGE_WIRE_TYPE = 55
+
+
+class OnekeyGetFeatures(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 10025
 
 
 class Features(protobuf.MessageType):

@@ -34,6 +34,7 @@ typedef enum _MessageType {
     MessageType_MessageType_SEPublicCert = 10008, 
     MessageType_MessageType_SESignMessage = 10012, 
     MessageType_MessageType_SEMessageSignature = 10013, 
+    MessageType_MessageType_OnekeyGetFeatures = 10025, 
     MessageType_MessageType_Reboot = 30000, 
     MessageType_MessageType_FirmwareUpdateEmmc = 30001, 
     MessageType_MessageType_EmmcFixPermission = 30100, 
@@ -104,6 +105,10 @@ typedef struct _GetFeatures {
 typedef struct _Initialize { 
     char dummy_field;
 } Initialize;
+
+typedef struct _OnekeyGetFeatures { 
+    char dummy_field;
+} OnekeyGetFeatures;
 
 typedef struct _ReadSEPublicCert { 
     char dummy_field;
@@ -476,6 +481,7 @@ extern "C" {
 /* Initializer values for message structs */
 #define Initialize_init_default                  {0}
 #define GetFeatures_init_default                 {0}
+#define OnekeyGetFeatures_init_default           {0}
 #define Features_init_default                    {false, "", 0, 0, 0, false, 0, false, "", false, "", false, "", false, 0, false, {0, {0}}, false, 0, false, "", false, 0, false, 0, false, 0, false, "", false, 0, false, "", false, "", false, 0, false, 0, false, "", false, 0, false, "", false, "", false, "", false, 0, false, "", false, _OneKeyDeviceType_MIN, false, _OneKeySeType_MIN, false, "", false, {0, {0}}, false, "", false, {0, {0}}, false, "", false, {0, {0}}, false, "", false, "", false, {0, {0}}, false, "", false, "", false, "", false, "", false, "", false, {0, {0}}, false, "", false, "", false, {0, {0}}, false, "", false, "", false, {0, {0}}, false, "", false, "", false, {0, {0}}, false, "", false, "", false, {0, {0}}, false, "", false, "", false, {0, {0}}, false, "", false, "", false, {0, {0}}, false, "", false, _OneKeySEState_MIN, false, _OneKeySEState_MIN, false, _OneKeySEState_MIN, false, _OneKeySEState_MIN}
 #define Ping_init_default                        {false, ""}
 #define Success_init_default                     {false, ""}
@@ -512,6 +518,7 @@ extern "C" {
 #define SEMessageSignature_init_default          {{0, {0}}}
 #define Initialize_init_zero                     {0}
 #define GetFeatures_init_zero                    {0}
+#define OnekeyGetFeatures_init_zero              {0}
 #define Features_init_zero                       {false, "", 0, 0, 0, false, 0, false, "", false, "", false, "", false, 0, false, {0, {0}}, false, 0, false, "", false, 0, false, 0, false, 0, false, "", false, 0, false, "", false, "", false, 0, false, 0, false, "", false, 0, false, "", false, "", false, "", false, 0, false, "", false, _OneKeyDeviceType_MIN, false, _OneKeySeType_MIN, false, "", false, {0, {0}}, false, "", false, {0, {0}}, false, "", false, {0, {0}}, false, "", false, "", false, {0, {0}}, false, "", false, "", false, "", false, "", false, "", false, {0, {0}}, false, "", false, "", false, {0, {0}}, false, "", false, "", false, {0, {0}}, false, "", false, "", false, {0, {0}}, false, "", false, "", false, {0, {0}}, false, "", false, "", false, {0, {0}}, false, "", false, "", false, {0, {0}}, false, "", false, _OneKeySEState_MIN, false, _OneKeySEState_MIN, false, _OneKeySEState_MIN, false, _OneKeySEState_MIN}
 #define Ping_init_zero                           {false, ""}
 #define Success_init_zero                        {false, ""}
@@ -688,6 +695,11 @@ extern "C" {
 
 #define GetFeatures_CALLBACK NULL
 #define GetFeatures_DEFAULT NULL
+
+#define OnekeyGetFeatures_FIELDLIST(X, a) \
+
+#define OnekeyGetFeatures_CALLBACK NULL
+#define OnekeyGetFeatures_DEFAULT NULL
 
 #define Features_FIELDLIST(X, a) \
 X(a, STATIC,   OPTIONAL, STRING,   vendor,            1) \
@@ -964,6 +976,7 @@ X(a, STATIC,   REQUIRED, BYTES,    signature,         1)
 
 extern const pb_msgdesc_t Initialize_msg;
 extern const pb_msgdesc_t GetFeatures_msg;
+extern const pb_msgdesc_t OnekeyGetFeatures_msg;
 extern const pb_msgdesc_t Features_msg;
 extern const pb_msgdesc_t Ping_msg;
 extern const pb_msgdesc_t Success_msg;
@@ -1002,6 +1015,7 @@ extern const pb_msgdesc_t SEMessageSignature_msg;
 /* Defines for backwards compatibility with code written before nanopb-0.4.0 */
 #define Initialize_fields &Initialize_msg
 #define GetFeatures_fields &GetFeatures_msg
+#define OnekeyGetFeatures_fields &OnekeyGetFeatures_msg
 #define Features_fields &Features_msg
 #define Ping_fields &Ping_msg
 #define Success_fields &Success_msg
@@ -1063,6 +1077,7 @@ extern const pb_msgdesc_t SEMessageSignature_msg;
 #define GetDeviceInfo_size                       0
 #define GetFeatures_size                         0
 #define Initialize_size                          0
+#define OnekeyGetFeatures_size                   0
 #define Ping_size                                258
 #define ReadSEPublicCert_size                    0
 #define ReadSEPublicKey_size                     0

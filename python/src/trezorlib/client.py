@@ -295,6 +295,20 @@ class TrezorClient:
         self._refresh_features(resp)
         return resp
 
+
+    @session
+    def refresh_features_ex(self) -> messages.Features:
+        """Reload features from the device.
+
+        Should be called after changing settings or performing operations that affect
+        device state.
+        """
+        resp = self.call_raw(messages.OnekeyGetFeatures())
+        if not isinstance(resp, messages.Features):
+            raise exceptions.TrezorException("Unexpected response to GetFeatures")
+        self._refresh_features(resp)
+        return resp
+
     @session
     def init_device(
         self,

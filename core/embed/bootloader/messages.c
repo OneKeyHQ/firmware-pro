@@ -357,8 +357,6 @@ static void send_msg_features(uint8_t iface_num,
       MSG_SEND_ASSIGN_STRING_LEN(onekey_version, ver_str, 5);
       MSG_SEND_ASSIGN_STRING_LEN(onekey_firmware_version, ver_str, 5);
 
-      uint8_t *fimware_hash = get_firmware_hash();
-      MSG_SEND_ASSIGN_BYTES(onekey_firmware_hash, fimware_hash, 32);
     } else {
       MSG_SEND_ASSIGN_VALUE(firmware_present, false);
     }
@@ -373,64 +371,24 @@ static void send_msg_features(uint8_t iface_num,
     }
 
     uint8_t state;
-    char *se_version, *se_build_id;
-    uint8_t *se_hash;
+    char *se_version;
 
-#define GET_SE_INFO(se_prefix)                                                \
-  do {                                                                        \
-    if (se_prefix##_get_state(&state)) {                                      \
-      MSG_SEND_ASSIGN_VALUE(onekey_##se_prefix##_state, state);               \
-                                                                              \
-      se_hash = se_prefix##_get_boot_hash();                                  \
-      if (se_hash) {                                                          \
-        MSG_SEND_ASSIGN_BYTES(onekey_##se_prefix##_boot_hash, se_hash, 32);   \
-      }                                                                       \
-                                                                              \
-      se_build_id = se_prefix##_get_boot_build_id();                          \
-      if (se_build_id) {                                                      \
-        MSG_SEND_ASSIGN_STRING_LEN(onekey_##se_prefix##_boot_build_id,        \
-                                   se_build_id, strlen(se_build_id));         \
-      }                                                                       \
-                                                                              \
-      if (state) {                                                            \
-        /* APP */                                                             \
-        se_version = se_prefix##_get_version();                               \
-        if (se_version) {                                                     \
-          MSG_SEND_ASSIGN_STRING_LEN(se_ver, se_version, strlen(se_version)); \
-        }                                                                     \
-        se_hash = se_prefix##_get_hash();                                     \
-        if (se_hash) {                                                        \
-          MSG_SEND_ASSIGN_BYTES(onekey_##se_prefix##_hash, se_hash, 32);      \
-        }                                                                     \
-        se_build_id = se_prefix##_get_build_id();                             \
-        if (se_build_id) {                                                    \
-          MSG_SEND_ASSIGN_STRING_LEN(onekey_##se_prefix##_build_id,           \
-                                     se_build_id, strlen(se_build_id));       \
-        }                                                                     \
-        se_version = se_prefix##_get_boot_version();                          \
-        if (se_version) {                                                     \
-          MSG_SEND_ASSIGN_STRING_LEN(onekey_##se_prefix##_boot_version,       \
-                                     se_version, strlen(se_version));         \
-        }                                                                     \
-      } else {                                                                \
-        /* BOOT */                                                            \
-        se_version = se_prefix##_get_version();                               \
-        if (se_version) {                                                     \
-          MSG_SEND_ASSIGN_STRING_LEN(onekey_##se_prefix##_boot_version,       \
-                                     se_version, strlen(se_version));         \
-        }                                                                     \
-      }                                                                       \
-    }                                                                         \
+#define GET_SE_INFO(se_prefix)                                               \
+  do {                                                                       \
+    if (se_prefix##_get_state(&state)) {                                     \
+      MSG_SEND_ASSIGN_VALUE(onekey_##se_prefix##_state, state);              \
+      se_version = se_prefix##_get_version();                                \
+      if (se_version) {                                                      \
+        MSG_SEND_ASSIGN_STRING_LEN(onekey_##se_prefix##_version, se_version, \
+                                   strlen(se_version));                      \
+      }                                                                      \
+    }                                                                        \
   } while (0)
 
     GET_SE_INFO(se01);
     GET_SE_INFO(se02);
     GET_SE_INFO(se03);
     GET_SE_INFO(se04);
-
-    char *board_build_id = get_boardloader_build_id();
-    MSG_SEND_ASSIGN_STRING_LEN(onekey_board_build_id, board_build_id,
-                               strlen(board_build_id));
 
     char *serial = NULL;
     if (device_get_serial(&serial)) {
@@ -442,8 +400,6 @@ static void send_msg_features(uint8_t iface_num,
                                strlen(board_version));
     MSG_SEND_ASSIGN_STRING_LEN(onekey_board_version, board_version,
                                strlen(board_version));
-    uint8_t *board_hash = get_boardloader_hash();
-    MSG_SEND_ASSIGN_BYTES(onekey_board_hash, board_hash, 32);
 
     int boot_version_len = strlen((VERSTR(VERSION_MAJOR) "." VERSTR(
         VERSION_MINOR) "." VERSTR(VERSION_PATCH)));
@@ -451,13 +407,134 @@ static void send_msg_features(uint8_t iface_num,
                                (VERSTR(VERSION_MAJOR) "." VERSTR(
                                    VERSION_MINOR) "." VERSTR(VERSION_PATCH)),
                                boot_version_len);
-    uint8_t *boot_hash = get_bootloader_hash();
-    MSG_SEND_ASSIGN_BYTES(onekey_boot_hash, boot_hash, 32);
-    MSG_SEND_ASSIGN_STRING_LEN(onekey_boot_build_id, (char *)BUILD_COMMIT,
-                               strlen((char *)BUILD_COMMIT));
     MSG_SEND_ASSIGN_VALUE(onekey_device_type, OneKeyDeviceType_TOUCH_PRO);
     MSG_SEND_ASSIGN_VALUE(onekey_se_type, OneKeySeType_THD89);
   }
+
+  MSG_SEND(Features);
+}
+
+static void send_msg_features_ex(uint8_t iface_num,
+                                 const vendor_header *const vhdr,
+                                 const image_header *const hdr) {
+  MSG_SEND_INIT(Features);
+
+  MSG_SEND_ASSIGN_STRING(vendor, "onekey.so");
+  MSG_SEND_ASSIGN_REQUIRED_VALUE(major_version, VERSION_MAJOR);
+  MSG_SEND_ASSIGN_REQUIRED_VALUE(minor_version, VERSION_MINOR);
+  MSG_SEND_ASSIGN_REQUIRED_VALUE(patch_version, VERSION_PATCH);
+  MSG_SEND_ASSIGN_VALUE(bootloader_mode, true);
+  MSG_SEND_ASSIGN_STRING(model, "T");
+  if (vhdr && hdr) {
+    MSG_SEND_ASSIGN_VALUE(firmware_present, true);
+    MSG_SEND_ASSIGN_VALUE(fw_major, (hdr->version & 0xFF));
+    MSG_SEND_ASSIGN_VALUE(fw_minor, ((hdr->version >> 8) & 0xFF));
+    MSG_SEND_ASSIGN_VALUE(fw_patch, ((hdr->version >> 16) & 0xFF));
+    const char *ver_str = format_ver("%d.%d.%d", hdr->onekey_version);
+    MSG_SEND_ASSIGN_STRING_LEN(onekey_version, ver_str, 5);
+    MSG_SEND_ASSIGN_STRING_LEN(onekey_firmware_version, ver_str, 5);
+
+    uint8_t *fimware_hash = get_firmware_hash();
+    MSG_SEND_ASSIGN_BYTES(onekey_firmware_hash, fimware_hash, 32);
+  } else {
+    MSG_SEND_ASSIGN_VALUE(firmware_present, false);
+  }
+  if (ble_name_state()) {
+    MSG_SEND_ASSIGN_STRING_LEN(ble_name, ble_get_name(), BLE_NAME_LEN);
+  }
+  if (ble_ver_state()) {
+    MSG_SEND_ASSIGN_STRING_LEN(ble_ver, ble_get_ver(), 5);
+  }
+  if (ble_switch_state()) {
+    MSG_SEND_ASSIGN_VALUE(ble_enable, ble_get_switch());
+  }
+
+  uint8_t state;
+  char *se_version, *se_build_id;
+  uint8_t *se_hash;
+
+#define GET_SE_INFO_EX(se_prefix)                                              \
+  do {                                                                         \
+    if (se_prefix##_get_state(&state)) {                                       \
+      MSG_SEND_ASSIGN_VALUE(onekey_##se_prefix##_state, state);                \
+                                                                               \
+      se_hash = se_prefix##_get_boot_hash();                                   \
+      if (se_hash) {                                                           \
+        MSG_SEND_ASSIGN_BYTES(onekey_##se_prefix##_boot_hash, se_hash, 32);    \
+      }                                                                        \
+                                                                               \
+      se_build_id = se_prefix##_get_boot_build_id();                           \
+      if (se_build_id) {                                                       \
+        MSG_SEND_ASSIGN_STRING_LEN(onekey_##se_prefix##_boot_build_id,         \
+                                   se_build_id, strlen(se_build_id));          \
+      }                                                                        \
+                                                                               \
+      if (state) {                                                             \
+        /* APP */                                                              \
+        se_version = se_prefix##_get_version();                                \
+        if (se_version) {                                                      \
+          MSG_SEND_ASSIGN_STRING_LEN(onekey_##se_prefix##_version, se_version, \
+                                     strlen(se_version));                      \
+        }                                                                      \
+        se_hash = se_prefix##_get_hash();                                      \
+        if (se_hash) {                                                         \
+          MSG_SEND_ASSIGN_BYTES(onekey_##se_prefix##_hash, se_hash, 32);       \
+        }                                                                      \
+        se_build_id = se_prefix##_get_build_id();                              \
+        if (se_build_id) {                                                     \
+          MSG_SEND_ASSIGN_STRING_LEN(onekey_##se_prefix##_build_id,            \
+                                     se_build_id, strlen(se_build_id));        \
+        }                                                                      \
+        se_version = se_prefix##_get_boot_version();                           \
+        if (se_version) {                                                      \
+          MSG_SEND_ASSIGN_STRING_LEN(onekey_##se_prefix##_boot_version,        \
+                                     se_version, strlen(se_version));          \
+        }                                                                      \
+      } else {                                                                 \
+        /* BOOT */                                                             \
+        se_version = se_prefix##_get_version();                                \
+        if (se_version) {                                                      \
+          MSG_SEND_ASSIGN_STRING_LEN(onekey_##se_prefix##_boot_version,        \
+                                     se_version, strlen(se_version));          \
+        }                                                                      \
+      }                                                                        \
+    }                                                                          \
+  } while (0)
+
+  GET_SE_INFO_EX(se01);
+  GET_SE_INFO_EX(se02);
+  GET_SE_INFO_EX(se03);
+  GET_SE_INFO_EX(se04);
+
+  char *board_build_id = get_boardloader_build_id();
+  MSG_SEND_ASSIGN_STRING_LEN(onekey_board_build_id, board_build_id,
+                             strlen(board_build_id));
+
+  char *serial = NULL;
+  if (device_get_serial(&serial)) {
+    MSG_SEND_ASSIGN_STRING_LEN(serial_no, serial, strlen(serial));
+    MSG_SEND_ASSIGN_STRING_LEN(onekey_serial_no, serial, strlen(serial));
+  }
+  char *board_version = get_boardloader_version();
+  MSG_SEND_ASSIGN_STRING_LEN(boardloader_version, board_version,
+                             strlen(board_version));
+  MSG_SEND_ASSIGN_STRING_LEN(onekey_board_version, board_version,
+                             strlen(board_version));
+  uint8_t *board_hash = get_boardloader_hash();
+  MSG_SEND_ASSIGN_BYTES(onekey_board_hash, board_hash, 32);
+
+  int boot_version_len = strlen((VERSTR(VERSION_MAJOR) "." VERSTR(
+      VERSION_MINOR) "." VERSTR(VERSION_PATCH)));
+  MSG_SEND_ASSIGN_STRING_LEN(onekey_boot_version,
+                             (VERSTR(VERSION_MAJOR) "." VERSTR(
+                                 VERSION_MINOR) "." VERSTR(VERSION_PATCH)),
+                             boot_version_len);
+  uint8_t *boot_hash = get_bootloader_hash();
+  MSG_SEND_ASSIGN_BYTES(onekey_boot_hash, boot_hash, 32);
+  MSG_SEND_ASSIGN_STRING_LEN(onekey_boot_build_id, (char *)BUILD_COMMIT,
+                             strlen((char *)BUILD_COMMIT));
+  MSG_SEND_ASSIGN_VALUE(onekey_device_type, OneKeyDeviceType_TOUCH_PRO);
+  MSG_SEND_ASSIGN_VALUE(onekey_se_type, OneKeySeType_THD89);
 
   MSG_SEND(Features);
 }
@@ -476,6 +553,15 @@ void process_msg_GetFeatures(uint8_t iface_num, uint32_t msg_size, uint8_t *buf,
   MSG_RECV_INIT(GetFeatures);
   MSG_RECV(GetFeatures);
   send_msg_features(iface_num, vhdr, hdr);
+}
+
+void process_msg_OnekeyGetFeatures(uint8_t iface_num, uint32_t msg_size,
+                                   uint8_t *buf,
+                                   const vendor_header *const vhdr,
+                                   const image_header *const hdr) {
+  MSG_RECV_INIT(OnekeyGetFeatures);
+  MSG_RECV(OnekeyGetFeatures);
+  send_msg_features_ex(iface_num, vhdr, hdr);
 }
 
 void process_msg_Ping(uint8_t iface_num, uint32_t msg_size, uint8_t *buf) {

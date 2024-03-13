@@ -29,6 +29,7 @@ enum MessageType {
     MessageType_SEPublicCert = 10008;
     MessageType_SESignMessage = 10012;
     MessageType_SEMessageSignature = 10013;
+    MessageType_OnekeyGetFeatures = 10025;
 
     MessageType_Reboot = 30000;
     MessageType_FirmwareUpdateEmmc = 30001;
@@ -59,6 +60,14 @@ message Initialize {
  * @next Features
  */
 message GetFeatures {
+}
+
+/**
+ * Request: Ask for device details (no device reset)
+ * @start
+ * @next Features
+ */
+message OnekeyGetFeatures {
 }
 
 /**

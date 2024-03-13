@@ -389,6 +389,9 @@ static secbool bootloader_usb_loop(const vendor_header* const vhdr,
       case MSG_NAME_TO_ID(EmmcDirRemove):  // EmmcDirRemove
         process_msg_EmmcDirRemove(USB_IFACE_NUM, msg_size, buf);
         break;
+      case MSG_NAME_TO_ID(OnekeyGetFeatures):  // OnekeyGetFeatures
+        process_msg_OnekeyGetFeatures(USB_IFACE_NUM, msg_size, buf, vhdr, hdr);
+        break;
       default:
         process_msg_unknown(USB_IFACE_NUM, msg_size, buf);
         break;

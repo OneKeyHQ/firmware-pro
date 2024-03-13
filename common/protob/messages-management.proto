@@ -47,6 +47,14 @@ message GetFeatures {
 }
 
 /**
+ * Request: Ask for device details (no device reset)
+ * @start
+ * @next Features
+ */
+message OnekeyGetFeatures {
+}
+
+/**
  * Response: Reports various information about the device
  * @end
  */

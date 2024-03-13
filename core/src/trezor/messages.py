@@ -2538,6 +2538,12 @@ if TYPE_CHECKING:
         def is_type_of(cls, msg: Any) -> TypeGuard["GetFeatures"]:
             return isinstance(msg, cls)
 
+    class OnekeyGetFeatures(protobuf.MessageType):
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["OnekeyGetFeatures"]:
+            return isinstance(msg, cls)
+
     class Features(protobuf.MessageType):
         vendor: "str | None"
         major_version: "int"
