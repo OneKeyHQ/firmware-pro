@@ -190,7 +190,7 @@ FRESULT emmc_fs_f_stat(const TCHAR* path_buff, FILINFO* fno)
     return fresult;
 }
 
-bool emmc_fs_path_exist(char* path_buff)
+bool emmc_fs_path_exist(const char* path_buff)
 {
     // status update
     OKEMMC_DBG_STATUS_SETUP();
@@ -200,7 +200,7 @@ bool emmc_fs_path_exist(char* path_buff)
 
 // please note, this function returns true even the path not exist
 // use file_info->path_exist instead
-bool emmc_fs_path_info(char* path_buff, EMMC_PATH_INFO* file_info)
+bool emmc_fs_path_info(const char* path_buff, EMMC_PATH_INFO* file_info)
 {
     // status update
     OKEMMC_DBG_STATUS_SETUP();
@@ -244,7 +244,7 @@ bool emmc_fs_path_info(char* path_buff, EMMC_PATH_INFO* file_info)
 
 // permission
 
-bool emmc_fs_fix_permission_internal(char* path_buff)
+bool emmc_fs_fix_permission_internal(char* path_buff_internal)
 {
     // status update
     OKEMMC_DBG_STATUS_SETUP();
@@ -253,12 +253,12 @@ bool emmc_fs_fix_permission_internal(char* path_buff)
     DIR dir;
 
     // make sure path exists
-    if ( !emmc_fs_path_exist(path_buff) )
+    if ( !emmc_fs_path_exist(path_buff_internal) )
         return false;
 
     // open and walk through
-    ExecuteCheck_OKEMMC_SIMPLE(f_opendir(&dir, path_buff));
-    int i = strlen(path_buff);
+    ExecuteCheck_OKEMMC_SIMPLE(f_opendir(&dir, path_buff_internal));
+    int i = strlen(path_buff_internal);
     for ( ;; )
     {
         // read next file
@@ -273,21 +273,21 @@ bool emmc_fs_fix_permission_internal(char* path_buff)
             continue;
 
         // get full path
-        sprintf(&path_buff[i], "/%s", finfo.fname);
+        sprintf(&path_buff_internal[i], "/%s", finfo.fname);
 
         // remove all attribute
-        ExecuteCheck_OKEMMC_SIMPLE(f_chmod(path_buff, 0, AM_RDO | AM_HID | AM_SYS | AM_ARC));
+        ExecuteCheck_OKEMMC_SIMPLE(f_chmod(path_buff_internal, 0, AM_RDO | AM_HID | AM_SYS | AM_ARC));
 
         // if is dir
         if ( finfo.fattrib & AM_DIR )
         {
             // self invoke
-            if ( !emmc_fs_fix_permission_internal(path_buff) )
+            if ( !emmc_fs_fix_permission_internal(path_buff_internal) )
                 return false;
         }
 
         // reset path
-        path_buff[i] = '\0';
+        path_buff_internal[i] = '\0';
     }
     ExecuteCheck_OKEMMC_SIMPLE(f_closedir(&dir));
 
@@ -304,21 +304,21 @@ bool emmc_fs_fix_permission(bool onekey_data, bool user_data)
         return false;
 
     bool result = true;
-    char path_buff[256];
+    char path_buff_internal[FF_MAX_LFN];
 
     if ( onekey_data )
     {
         if ( !emmc_wrapper_status.is_mounted_onekey_data )
             return false;
-        strcpy(path_buff, "0:");
-        result &= emmc_fs_fix_permission_internal(path_buff);
+        strcpy(path_buff_internal, "0:");
+        result &= emmc_fs_fix_permission_internal(path_buff_internal);
     }
     if ( user_data )
     {
         if ( !emmc_wrapper_status.is_mounted_user_data )
             return false;
-        strcpy(path_buff, "1:");
-        result &= emmc_fs_fix_permission_internal(path_buff);
+        strcpy(path_buff_internal, "1:");
+        result &= emmc_fs_fix_permission_internal(path_buff_internal);
     }
     return result;
 }
@@ -326,7 +326,7 @@ bool emmc_fs_fix_permission(bool onekey_data, bool user_data)
 // file
 
 bool emmc_fs_file_read(
-    char* path_buff, uint32_t offset, void* buff, uint32_t target_len, uint32_t* processed_len
+    const char* path_buff, uint32_t offset, void* buff, uint32_t target_len, uint32_t* processed_len
 )
 {
     // status update
@@ -354,7 +354,7 @@ bool emmc_fs_file_read(
 }
 
 bool emmc_fs_file_write(
-    char* path_buff, uint32_t offset, void* buff, uint32_t target_len, uint32_t* processed_len,
+    const char* path_buff, uint32_t offset, void* buff, uint32_t target_len, uint32_t* processed_len,
     bool overwrite, bool append
 )
 {
@@ -419,7 +419,7 @@ bool emmc_fs_file_write(
     return true;
 }
 
-bool emmc_fs_file_delete(char* path_buff)
+bool emmc_fs_file_delete(const char* path_buff)
 {
     // status update
     OKEMMC_DBG_STATUS_SETUP();
@@ -464,7 +464,7 @@ bool emmc_fs_file_delete(char* path_buff)
 // dir
 
 bool emmc_fs_dir_list_internal(
-    char* path_buff, char* list_subdirs_buff, uint32_t list_subdirs_len, char* list_files_buff,
+    char* path_buff_internal, char* list_subdirs_buff, uint32_t list_subdirs_len, char* list_files_buff,
     uint32_t list_files_len
 )
 {
@@ -478,14 +478,14 @@ bool emmc_fs_dir_list_internal(
 
     // make sure path exists
     emmc_fs_dbgex_set("check path");
-    if ( !emmc_fs_path_exist(path_buff) )
+    if ( !emmc_fs_path_exist(path_buff_internal) )
         return false;
     emmc_fs_dbgex_set("path exits");
 
     // open and walk through
-    ExecuteCheck_OKEMMC_SIMPLE(f_opendir(&dir, path_buff));
+    ExecuteCheck_OKEMMC_SIMPLE(f_opendir(&dir, path_buff_internal));
     emmc_fs_dbgex_set("opendir");
-    int i = strlen(path_buff);
+    int i = strlen(path_buff_internal);
     for ( ;; )
     {
         // read next file
@@ -501,41 +501,41 @@ bool emmc_fs_dir_list_internal(
 
         // get full path
         if ( i == 2 )
-            sprintf(&path_buff[i], "%s", finfo.fname);
+            sprintf(&path_buff_internal[i], "%s", finfo.fname);
         else
-            sprintf(&path_buff[i], "/%s", finfo.fname);
+            sprintf(&path_buff_internal[i], "/%s", finfo.fname);
 
         // if is dir
         if ( finfo.fattrib & AM_DIR )
         {
             // check length
-            if ( (strlen(list_subdirs_buff) + strlen(path_buff) + 1) >= list_subdirs_len )
+            if ( (strlen(list_subdirs_buff) + strlen(path_buff_internal) + 1) >= list_subdirs_len )
                 return false;
 
             // append to the list
-            strcat(list_subdirs_buff, path_buff);
+            strcat(list_subdirs_buff, path_buff_internal);
             // use \n as seprater
             strcat(list_subdirs_buff, "\n");
             // self invoke
             if ( !emmc_fs_dir_list_internal(
-                     path_buff, list_subdirs_buff, list_subdirs_len, list_files_buff, list_files_len
+                     path_buff_internal, list_subdirs_buff, list_subdirs_len, list_files_buff, list_files_len
                  ) )
                 return false;
         }
         else
         {
             // check length
-            if ( (strlen(list_files_buff) + strlen(path_buff) + 1) >= list_files_len )
+            if ( (strlen(list_files_buff) + strlen(path_buff_internal) + 1) >= list_files_len )
                 return false;
 
             // append to the list
-            strcat(list_files_buff, path_buff);
+            strcat(list_files_buff, path_buff_internal);
             // use \n as seprater
             strcat(list_files_buff, "\n");
         }
 
         // reset path
-        path_buff[i] = '\0';
+        path_buff_internal[i] = '\0';
     }
     ExecuteCheck_OKEMMC_SIMPLE(f_closedir(&dir));
 
@@ -545,7 +545,7 @@ bool emmc_fs_dir_list_internal(
 }
 
 bool emmc_fs_dir_list(
-    char* path_buff, char* list_subdirs_buff, uint32_t list_subdirs_len, char* list_files_buff,
+    const char* path_buff, char* list_subdirs_buff, uint32_t list_subdirs_len, char* list_files_buff,
     uint32_t list_files_len
 )
 {
@@ -555,16 +555,20 @@ bool emmc_fs_dir_list(
     if ( !emmc_wrapper_status.is_inited )
         return false;
 
+    // copy path to non-const buffer
+    char path_buff_internal[FF_MAX_LFN];
+    strncpy(path_buff_internal, path_buff, FF_MAX_LFN);
+
     // clear buffers
     memset(list_subdirs_buff, '\0', list_subdirs_len);
     memset(list_files_buff, '\0', list_files_len);
 
     return emmc_fs_dir_list_internal(
-        path_buff, list_subdirs_buff, list_subdirs_len, list_files_buff, list_files_len
+        path_buff_internal, list_subdirs_buff, list_subdirs_len, list_files_buff, list_files_len
     );
 }
 
-bool emmc_fs_dir_create_internal(char* path_buff)
+bool emmc_fs_dir_create_internal(char* path_buff_internal)
 {
     // status update
     OKEMMC_DBG_STATUS_SETUP();
@@ -572,7 +576,7 @@ bool emmc_fs_dir_create_internal(char* path_buff)
     FILINFO finfo;
 
     // check path exist
-    switch ( emmc_fs_f_stat(path_buff, &finfo) )
+    switch ( emmc_fs_f_stat(path_buff_internal, &finfo) )
     {
     case FR_OK:
         // if path exists and is a directory, considered as success since we creating it anyways
@@ -583,7 +587,7 @@ bool emmc_fs_dir_create_internal(char* path_buff)
             return false;
         break;
     case FR_NO_FILE: // if path not exists, create it
-        ExecuteCheck_OKEMMC_SIMPLE(f_mkdir(path_buff));
+        ExecuteCheck_OKEMMC_SIMPLE(f_mkdir(path_buff_internal));
         break;
     default: // anything else considered as error
         return false;
@@ -594,7 +598,7 @@ bool emmc_fs_dir_create_internal(char* path_buff)
     return true;
 }
 
-bool emmc_fs_dir_make(char* path_buff)
+bool emmc_fs_dir_make(const char* path_buff)
 {
     // status update
     OKEMMC_DBG_STATUS_SETUP();
@@ -605,11 +609,11 @@ bool emmc_fs_dir_make(char* path_buff)
     // vars
     char* token;
 
-    char path_buff_creating[256];
-    memset(path_buff_creating, '\0', 256);
+    char path_buff_creating[FF_MAX_LFN];
+    memset(path_buff_creating, '\0', FF_MAX_LFN);
 
-    char path_buff_reamining[256];
-    strncpy(path_buff_reamining, path_buff, 256);
+    char path_buff_reamining[FF_MAX_LFN];
+    strncpy(path_buff_reamining, path_buff, FF_MAX_LFN);
 
     // create it recursively
     while ( true )
@@ -627,7 +631,7 @@ bool emmc_fs_dir_make(char* path_buff)
             break;
 
         // append chunk to buffer
-        strncat(path_buff_creating, token, 256 - strlen(path_buff_creating));
+        strncat(path_buff_creating, token, FF_MAX_LFN - strlen(path_buff_creating));
 
         // create path
         if ( !emmc_fs_dir_create_internal(path_buff_creating) )
@@ -647,7 +651,7 @@ bool emmc_fs_dir_make(char* path_buff)
         return false;
 }
 
-bool emmc_fs_dir_delete_internal(char* path_buff)
+bool emmc_fs_dir_delete_internal(char* path_buff_internal)
 {
     // status update
     OKEMMC_DBG_STATUS_SETUP();
@@ -656,7 +660,7 @@ bool emmc_fs_dir_delete_internal(char* path_buff)
     DIR dir;
 
     // check path exist
-    switch ( emmc_fs_f_stat(path_buff, &finfo) )
+    switch ( emmc_fs_f_stat(path_buff_internal, &finfo) )
     {
     case FR_OK:                       // do nothing
         if ( finfo.fattrib & AM_DIR ) // make sure it's a directory to begin with
@@ -676,8 +680,8 @@ bool emmc_fs_dir_delete_internal(char* path_buff)
     }
 
     // open and walk through
-    ExecuteCheck_OKEMMC_SIMPLE(f_opendir(&dir, path_buff));
-    int i = strlen(path_buff);
+    ExecuteCheck_OKEMMC_SIMPLE(f_opendir(&dir, path_buff_internal));
+    int i = strlen(path_buff_internal);
     for ( ;; )
     {
         // read next file
@@ -692,38 +696,38 @@ bool emmc_fs_dir_delete_internal(char* path_buff)
             continue;
 
         // get full path
-        sprintf(&path_buff[i], "/%s", finfo.fname);
+        sprintf(&path_buff_internal[i], "/%s", finfo.fname);
 
         // remove readonly attribute
-        ExecuteCheck_OKEMMC_SIMPLE(f_chmod(path_buff, 0, AM_RDO));
+        ExecuteCheck_OKEMMC_SIMPLE(f_chmod(path_buff_internal, 0, AM_RDO));
 
         // if is dir
         if ( finfo.fattrib & AM_DIR )
         {
             // self invoke
-            if ( !emmc_fs_dir_delete_internal(path_buff) )
+            if ( !emmc_fs_dir_delete_internal(path_buff_internal) )
                 return false;
         }
         // if is file
         else
         {
             // delete directly
-            ExecuteCheck_OKEMMC_SIMPLE(f_unlink(path_buff));
+            ExecuteCheck_OKEMMC_SIMPLE(f_unlink(path_buff_internal));
         }
 
         // reset path
-        path_buff[i] = '\0';
+        path_buff_internal[i] = '\0';
     }
     ExecuteCheck_OKEMMC_SIMPLE(f_closedir(&dir));
 
     // delete dir
-    ExecuteCheck_OKEMMC_SIMPLE(f_unlink(path_buff));
+    ExecuteCheck_OKEMMC_SIMPLE(f_unlink(path_buff_internal));
 
     // no error, all done
     return true;
 }
 
-bool emmc_fs_dir_delete(char* path_buff)
+bool emmc_fs_dir_delete(const char* path_buff)
 {
     // status update
     OKEMMC_DBG_STATUS_SETUP();
@@ -731,5 +735,9 @@ bool emmc_fs_dir_delete(char* path_buff)
     if ( !emmc_wrapper_status.is_inited )
         return false;
 
-    return emmc_fs_dir_delete_internal(path_buff);
+    // copy path to non-const buffer
+    char path_buff_internal[FF_MAX_LFN];
+    strncpy(path_buff_internal, path_buff, FF_MAX_LFN);
+
+    return emmc_fs_dir_delete_internal(path_buff_internal);
 }

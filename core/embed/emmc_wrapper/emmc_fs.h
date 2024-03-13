@@ -113,32 +113,33 @@ bool emmc_fs_recreate(bool partition_table, bool onekey_data, bool user_data);
 bool emmc_fs_is_partitioned();
 bool emmc_fs_mount(bool onekey_data, bool user_data);
 bool emmc_fs_unmount(bool onekey_data, bool user_data);
-bool emmc_fs_path_exist(char* path_buff);
-bool emmc_fs_path_info(char* path_buff, EMMC_PATH_INFO* file_info);
+bool emmc_fs_path_exist(const char* path_buff);
+bool emmc_fs_path_info(const char* path_buff, EMMC_PATH_INFO* file_info);
 
-// bool emmc_fs_fix_permission_internal(char* path_buff);
+// bool emmc_fs_fix_permission_internal(char* path_buff_internal);
 bool emmc_fs_fix_permission(bool onekey_data, bool user_data);
 
 bool emmc_fs_file_read(
-    char* path_buff, uint32_t offset, void* buff, uint32_t target_len, uint32_t* processed_len
+    const char* path_buff, uint32_t offset, void* buff, uint32_t target_len, uint32_t* processed_len
 );
 bool emmc_fs_file_write(
-    char* path_buff, uint32_t offset, void* buff, uint32_t target_len, uint32_t* processed_len,
+    const char* path_buff, uint32_t offset, void* buff, uint32_t target_len, uint32_t* processed_len,
     bool overwrite, bool append
 );
-bool emmc_fs_file_delete(char* path_buff);
+bool emmc_fs_file_delete(const char* path_buff);
 
 // bool emmc_fs_dir_list_internal(
-//     char* path_buff, char* list_subdirs_buff, uint32_t list_subdirs_len, char* list_files_buff,
+//     char* path_buff_internal, char* list_subdirs_buff, uint32_t list_subdirs_len, char* list_files_buff,
 //     uint32_t list_files_len
 // );
 bool emmc_fs_dir_list(
-    char* path_buff, char* list_subdirs_buff, uint32_t list_subdirs_len, char* list_files_buff,
+    const char* path_buff, char* list_subdirs_buff, uint32_t list_subdirs_len, char* list_files_buff,
     uint32_t list_files_len
 );
 
-bool emmc_fs_dir_make(char* path_buff);
-// bool emmc_fs_dir_delete_internal(char* path_buff);
-bool emmc_fs_dir_delete(char* path_buff);
+// bool emmc_fs_dir_create_internal(char* path_buff_internal)
+bool emmc_fs_dir_make(const char* path_buff);
+// bool emmc_fs_dir_delete_internal(char* path_buff_internal);
+bool emmc_fs_dir_delete(const char* path_buff);
 
 #endif //_EMMC_FS_H_
