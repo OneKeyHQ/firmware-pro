@@ -29,4 +29,7 @@ NFC_STATUS nfc_send_recv_aio(
 NFC_STATUS nfc_poll_card(void);
 NFC_STATUS nfc_select_aid(uint8_t* aid, uint8_t aid_len);
 
+void nfc_test();
+void nfc_test_v2();
+
 #endif // __NFC_H__
