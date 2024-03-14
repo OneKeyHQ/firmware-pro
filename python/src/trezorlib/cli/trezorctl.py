@@ -389,9 +389,9 @@ def get_features(client: "TrezorClient") -> messages.Features:
 
 @cli.command()
 @with_client
-def get_features_ex(client: "TrezorClient") -> messages.Features:
+def get_onekey_features(client: "TrezorClient") -> messages.Features:
     """Retrieve device features and settings."""
-    return client.refresh_features_ex()
+    return client.refresh_onekey_features()
 
 
 @cli.command()
