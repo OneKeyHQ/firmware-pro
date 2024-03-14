@@ -27,7 +27,6 @@
 #include "sdram.h"
 #include "usart.h"
 
-#include "bootui.h"
 #include "emmc_fs.h"
 
 static DeviceInfomation dev_info = {0};
@@ -349,6 +348,8 @@ void device_burnin_test_clear_flag(void) {
   HAL_NVIC_SystemReset();
 }
 
+#if BOOT_ONLY
+#include "bootui.h"
 void device_generate_trng_data(void) {
   // TRNG test
   display_clear();
@@ -363,7 +364,7 @@ void device_generate_trng_data(void) {
   const uint8_t batch_total = 2;
   uint8_t batch_current = 1;
 
-  const uint32_t batch_total_bytes = 10*1024*1024; // 10MB
+  const uint32_t batch_total_bytes = 10 * 1024 * 1024;  // 10MB
   uint32_t batch_processed_bytes = 0;
 
   // rmdir
@@ -425,6 +426,7 @@ void device_generate_trng_data(void) {
   display_clear();
   ui_bootloader_first(NULL);
 }
+#endif
 
 #if DEVICE_TEST
 
