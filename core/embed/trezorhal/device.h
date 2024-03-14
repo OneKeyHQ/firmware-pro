@@ -49,6 +49,8 @@ void device_verify_ble(void);
 void device_test(bool force);
 void device_burnin_test(bool force);
 void device_burnin_test_clear_flag(void);
+void device_generate_trng_data(void);
+;
 #if !PRODUCTION
 bool device_backup_otp(bool overwrite);
 bool device_restore_otp();

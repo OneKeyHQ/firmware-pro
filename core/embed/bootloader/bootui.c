@@ -593,13 +593,17 @@ int ui_input_poll(int zones, bool poll) {
           y > BUTTON_OFFSET_Y && y < BUTTON_OFFSET_Y + BUTTON_HEIGHT) {
         return (zones & INPUT_RESTART);
       }
-
-      if ((zones & INPUT_VERSION_INFO) && x >= 0 && x <= 480 && y > 520 &&
+      // bootloader version
+      if ((zones & INPUT_BOOT_VERSION_TEXT) && x >= 0 && x <= 480 && y > 520 &&
           y < 580) {
-        return (zones & INPUT_VERSION_INFO);
+        return (zones & INPUT_BOOT_VERSION_TEXT);
+      }
+      // build id
+      if ((zones & INPUT_BUILD_ID_TEXT) && x >= 0 && x <= 480 && y > 580 &&
+          y < 640) {
+        return (zones & INPUT_BUILD_ID_TEXT);
       }
     }
-
   } while (poll);
   return 0;
 }
@@ -636,7 +640,6 @@ void ui_title_update(void) {
       display_bar(DISPLAY_RESX - offset_x + 3, 10 + offset_y, bat_width, 12,
                   battery_color);
     }
-
   } else {
     display_bar(DISPLAY_RESX - 32, offset_y, 32, 32, boot_background);
   }
@@ -912,7 +915,16 @@ void ui_bootloader_device_test(void) {
   ui_confirm_cancel_buttons("Back", "Enter", COLOR_BL_DARK, COLOR_BL_FAIL);
 }
 
-void ui_bootloader_page_switch(const image_header *const hdr) {
+void ui_bootloader_generate_trng_data() {
+  ui_bootloader_page_current = 3;
+  ui_logo_onekey();
+  ui_screen_confirm("TRNG Generate", "Will generate 2 * 10MB Random Data",
+                    "The process may take up to 30 mins",
+                    "Enter Boardloader to obtain results at ",
+                    "\"TRNG_Test_Data\" Folder");
+}
+
+void ui_bootloader_page_switch(const image_header* const hdr) {
   int response;
 
   static uint32_t click = 0, click_pre = 0, click_now = 0;
@@ -931,20 +943,30 @@ void ui_bootloader_page_switch(const image_header *const hdr) {
     if ((click_now - click_pre) > (1000 / 2)) {
       click = 0;
     }
-    response = ui_input_poll(
-        INPUT_PREVIOUS | INPUT_RESTART | INPUT_VERSION_INFO, false);
+    response = ui_input_poll(INPUT_PREVIOUS | INPUT_RESTART |
+                                 INPUT_BOOT_VERSION_TEXT | INPUT_BUILD_ID_TEXT,
+                             false);
     if (INPUT_PREVIOUS == response) {
       display_clear();
       ui_bootloader_first(hdr);
     } else if (INPUT_RESTART == response) {
       HAL_NVIC_SystemReset();
-    } else if (INPUT_VERSION_INFO == response) {
+    } else if (INPUT_BOOT_VERSION_TEXT == response) {
       click++;
       click_pre = click_now;
       if (click == 5) {
         click = 0;
         display_clear();
         ui_bootloader_device_test();
+        click_pre = click_now;
+      }
+    } else if (INPUT_BUILD_ID_TEXT == response) {
+      click++;
+      click_pre = click_now;
+      if (click == 5) {
+        click = 0;
+        display_clear();
+        ui_bootloader_generate_trng_data();
         click_pre = click_now;
       }
     }
@@ -958,6 +980,19 @@ void ui_bootloader_page_switch(const image_header *const hdr) {
     }
     click_now = HAL_GetTick();
     if (click_now - click_pre > (1000 * 3)) {
+      display_clear();
+      ui_bootloader_first(hdr);
+    }
+  } else if (ui_bootloader_page_current == 3) {
+    response = ui_input_poll(INPUT_PREVIOUS | INPUT_RESTART, false);
+    if (INPUT_PREVIOUS == response) {
+      display_clear();
+      ui_bootloader_first(hdr);
+    } else if (INPUT_RESTART == response) {
+      device_generate_trng_data();
+    }
+    click_now = HAL_GetTick();
+    if (click_now - click_pre > (1000 * 10)) {
       display_clear();
       ui_bootloader_first(hdr);
     }

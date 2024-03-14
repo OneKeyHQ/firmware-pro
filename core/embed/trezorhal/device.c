@@ -27,6 +27,7 @@
 #include "sdram.h"
 #include "usart.h"
 
+#include "bootui.h"
 #include "emmc_fs.h"
 
 static DeviceInfomation dev_info = {0};
@@ -346,6 +347,83 @@ void device_burnin_test_clear_flag(void) {
   f_sync(&fil);
   hal_delay(100);
   HAL_NVIC_SystemReset();
+}
+
+void device_generate_trng_data(void) {
+  // TRNG test
+  display_clear();
+
+  // var
+  char title_buf[] = "TRNG Generate\0";
+  char note_buf[32];
+  char path_buf[FF_MAX_LFN];
+  uint8_t se_rand_buffer[1024];  // 1024 max supported by SE
+  uint32_t processed_len;
+
+  const uint8_t batch_total = 2;
+  uint8_t batch_current = 1;
+
+  const uint32_t batch_total_bytes = 10*1024*1024; // 10MB
+  uint32_t batch_processed_bytes = 0;
+
+  // rmdir
+  ensure_emmcfs(emmc_fs_dir_delete("0:TRNG_Test_Data"), "rmdir failed");
+
+  // mkdir
+  ensure_emmcfs(emmc_fs_dir_make("0:TRNG_Test_Data"), "mkdir failed");
+
+  // loop
+  while (batch_current <= batch_total) {
+    // ui init
+    snprintf(note_buf, sizeof(note_buf), "Batch   %u / %u", batch_current,
+             batch_total);
+    display_clear();
+    ui_screen_progress_bar_prepare(title_buf, note_buf);
+
+    // path
+    snprintf(path_buf, sizeof(path_buf), "0:TRNG_Test_Data/batch_%u.bin",
+             batch_current);
+
+    // batch
+    batch_processed_bytes = 0;
+    while (batch_processed_bytes < batch_total_bytes) {
+      // get trng
+      se_get_rand(se_rand_buffer, sizeof(se_rand_buffer));
+
+      // write to file
+      ensure_emmcfs(emmc_fs_file_write(path_buf, batch_processed_bytes,
+                                       se_rand_buffer, sizeof(se_rand_buffer),
+                                       &processed_len, false, true),
+                    "file write failed");
+      // EMMC_WRAPPER_UNUSED(processed_len);
+
+      // update progress
+      batch_processed_bytes += sizeof(se_rand_buffer);
+
+      // ui update
+      ui_screen_progress_bar_update(
+          NULL, NULL, (batch_processed_bytes * 100 / batch_total_bytes));
+
+      // delay
+      // hal_delay(10);
+    }
+
+    // reset se each batch
+    se_reset_se();
+
+    batch_current++;
+  }
+
+  // ui update (last)
+  ui_screen_progress_bar_update(NULL, NULL, 100);
+
+  // ui done
+  display_clear();
+  ui_screen_success("Finished", "Click to go back to main menu.");
+  while (!touch_click()) {
+  }
+  display_clear();
+  ui_bootloader_first(NULL);
 }
 
 #if DEVICE_TEST

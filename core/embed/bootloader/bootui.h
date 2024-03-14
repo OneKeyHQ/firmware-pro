@@ -74,7 +74,8 @@ void ui_fadeout(void);
 #define INPUT_NEXT 0x10          // Next icon
 #define INPUT_PREVIOUS 0x20      // Previous icon
 #define INPUT_RESTART 0x40       // Restart icon
-
+#define INPUT_BOOT_VERSION_TEXT 0x80     // Boot Version
+#define INPUT_BUILD_ID_TEXT 0x0100         // Build ID
 
 // clang-format on
 
