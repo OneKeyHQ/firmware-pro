@@ -3139,30 +3139,30 @@ class SecurityScreen(Screen):
             elif target == self.usb_lock:
                 UsbLockSetting(self)
             elif target == self.fingerprint:
-                from trezor.lvglui.scrs import fingerprints
+                # from trezor.lvglui.scrs import fingerprints
 
-                if fingerprints.has_fingerprints():
-                    # from trezor import config
+                # if fingerprints.has_fingerprints():
+                #     # from trezor import config
 
-                    # if config.has_pin():
-                    #     config.lock()
-                    from apps.common.request_pin import verify_user_pin
+                #     # if config.has_pin():
+                #     #     config.lock()
+                from apps.common.request_pin import verify_user_pin
 
-                    workflow.spawn(
-                        verify_user_pin(
-                            re_loop=False,
-                            allow_cancel=True,
-                            callback=lambda: FingerprintSetting(self),
-                            allow_fingerprint=False,
-                        )
+                workflow.spawn(
+                    verify_user_pin(
+                        re_loop=False,
+                        allow_cancel=True,
+                        callback=lambda: FingerprintSetting(self),
+                        allow_fingerprint=False,
                     )
-                else:
+                )
+                # else:
 
-                    workflow.spawn(
-                        fingerprints.add_fingerprint(
-                            0, callback=lambda: FingerprintSetting(self)
-                        )
-                    )
+                #     workflow.spawn(
+                #         fingerprints.add_fingerprint(
+                #             0, callback=lambda: FingerprintSetting(self)
+                #         )
+                #     )
             else:
                 if __debug__:
                     print("unknown")

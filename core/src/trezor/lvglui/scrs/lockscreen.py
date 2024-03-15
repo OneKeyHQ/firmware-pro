@@ -155,9 +155,6 @@ class LockScreen(Screen):
                 if not ui.display.backlight() and not device.is_tap_awake_enabled():
                     return
                 if utils.turn_on_lcd_if_possible():
-                    from trezor import uart, workflow
-
-                    workflow.spawn(uart.handle_fingerprint())
                     return
                 from trezor import workflow
                 from apps.base import unlock_device
