@@ -386,6 +386,7 @@ ALLOW_WHILE_LOCKED = (
     MessageType.Initialize,
     MessageType.EndSession,
     MessageType.GetFeatures,
+    MessageType.OnekeyGetFeatures,
     MessageType.Cancel,
     MessageType.LockDevice,
     MessageType.DoPreauthorized,
