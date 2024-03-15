@@ -362,9 +362,12 @@ static void send_msg_features(uint8_t iface_num,
     }
     if (ble_name_state()) {
       MSG_SEND_ASSIGN_STRING_LEN(ble_name, ble_get_name(), BLE_NAME_LEN);
+      MSG_SEND_ASSIGN_STRING_LEN(onekey_ble_name, ble_get_name(), BLE_NAME_LEN);
     }
     if (ble_ver_state()) {
-      MSG_SEND_ASSIGN_STRING_LEN(ble_ver, ble_get_ver(), 5);
+      char *ble_version = ble_get_ver();
+      MSG_SEND_ASSIGN_STRING_LEN(ble_ver, ble_version, strlen(ble_version));
+      MSG_SEND_ASSIGN_STRING_LEN(onekey_ble_version, ble_version, strlen(ble_version));
     }
     if (ble_switch_state()) {
       MSG_SEND_ASSIGN_VALUE(ble_enable, ble_get_switch());
@@ -430,7 +433,8 @@ static void send_msg_features_ex(uint8_t iface_num,
     MSG_SEND_ASSIGN_STRING_LEN(onekey_ble_name, ble_get_name(), BLE_NAME_LEN);
   }
   if (ble_ver_state()) {
-    MSG_SEND_ASSIGN_STRING_LEN(onekey_ble_version, ble_get_ver(), 5);
+    char *ble_version = ble_get_ver();
+      MSG_SEND_ASSIGN_STRING_LEN(onekey_ble_version, ble_version, strlen(ble_version));
   }
   uint8_t state;
   char *se_version, *se_build_id;

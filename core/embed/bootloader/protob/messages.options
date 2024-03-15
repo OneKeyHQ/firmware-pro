@@ -22,14 +22,17 @@ Features.onekey_se02_version            max_size:16
 Features.onekey_se03_version            max_size:16
 Features.onekey_se04_version            max_size:16
 
-Features.onekey_se01_hash          max_size:32
-Features.onekey_se01_build_id      max_size:8
+Features.onekey_se01_hash               max_size:32
+Features.onekey_se01_build_id           max_size:8
 
 Features.onekey_firmware_version        max_size:16
 Features.onekey_firmware_hash           max_size:32
 Features.onekey_firmware_build_id       max_size:64
 Features.onekey_serial_no               max_size:32
 Features.onekey_boot_build_id           max_size:8
+
+Features.onekey_ble_version             max_size:16
+Features.onekey_ble_name                max_size:32
 
 OnekeyFeatures.onekey_board_version           max_size:32
 OnekeyFeatures.onekey_board_hash              max_size:32

@@ -300,6 +300,10 @@ typedef struct _Features {
     char onekey_serial_no[32]; 
     bool has_onekey_boot_build_id;
     char onekey_boot_build_id[8]; 
+    bool has_onekey_ble_name;
+    char onekey_ble_name[32]; 
+    bool has_onekey_ble_version;
+    char onekey_ble_version[16]; 
     bool has_onekey_se02_version;
     char onekey_se02_version[16]; 
     bool has_onekey_se03_version;
@@ -541,7 +545,7 @@ extern "C" {
 #define Initialize_init_default                  {0}
 #define GetFeatures_init_default                 {0}
 #define OnekeyGetFeatures_init_default           {0}
-#define Features_init_default                    {false, "", 0, 0, 0, false, 0, false, "", false, "", false, "", false, 0, false, {0, {0}}, false, 0, false, "", false, 0, false, 0, false, 0, false, "", false, 0, false, "", false, "", false, 0, false, 0, false, "", false, 0, false, "", false, "", false, "", false, 0, false, "", false, _OneKeyDeviceType_MIN, false, _OneKeySeType_MIN, false, "", false, {0, {0}}, false, "", false, {0, {0}}, false, "", false, {0, {0}}, false, "", false, "", false, {0, {0}}, false, "", false, "", false, "", false, "", false, "", false, "", false, _OneKeySEState_MIN, false, _OneKeySEState_MIN, false, _OneKeySEState_MIN, false, _OneKeySEState_MIN}
+#define Features_init_default                    {false, "", 0, 0, 0, false, 0, false, "", false, "", false, "", false, 0, false, {0, {0}}, false, 0, false, "", false, 0, false, 0, false, 0, false, "", false, 0, false, "", false, "", false, 0, false, 0, false, "", false, 0, false, "", false, "", false, "", false, 0, false, "", false, _OneKeyDeviceType_MIN, false, _OneKeySeType_MIN, false, "", false, {0, {0}}, false, "", false, {0, {0}}, false, "", false, {0, {0}}, false, "", false, "", false, {0, {0}}, false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, _OneKeySEState_MIN, false, _OneKeySEState_MIN, false, _OneKeySEState_MIN, false, _OneKeySEState_MIN}
 #define OnekeyFeatures_init_default              {false, _OneKeyDeviceType_MIN, false, "", false, "", false, "", false, {0, {0}}, false, {0, {0}}, false, {0, {0}}, false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, {0, {0}}, false, _OneKeySeType_MIN, false, _OneKeySEState_MIN, false, _OneKeySEState_MIN, false, _OneKeySEState_MIN, false, _OneKeySEState_MIN, false, "", false, "", false, "", false, "", false, {0, {0}}, false, {0, {0}}, false, {0, {0}}, false, {0, {0}}, false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, {0, {0}}, false, {0, {0}}, false, {0, {0}}, false, {0, {0}}, false, "", false, "", false, "", false, ""}
 #define Ping_init_default                        {false, ""}
 #define Success_init_default                     {false, ""}
@@ -579,7 +583,7 @@ extern "C" {
 #define Initialize_init_zero                     {0}
 #define GetFeatures_init_zero                    {0}
 #define OnekeyGetFeatures_init_zero              {0}
-#define Features_init_zero                       {false, "", 0, 0, 0, false, 0, false, "", false, "", false, "", false, 0, false, {0, {0}}, false, 0, false, "", false, 0, false, 0, false, 0, false, "", false, 0, false, "", false, "", false, 0, false, 0, false, "", false, 0, false, "", false, "", false, "", false, 0, false, "", false, _OneKeyDeviceType_MIN, false, _OneKeySeType_MIN, false, "", false, {0, {0}}, false, "", false, {0, {0}}, false, "", false, {0, {0}}, false, "", false, "", false, {0, {0}}, false, "", false, "", false, "", false, "", false, "", false, "", false, _OneKeySEState_MIN, false, _OneKeySEState_MIN, false, _OneKeySEState_MIN, false, _OneKeySEState_MIN}
+#define Features_init_zero                       {false, "", 0, 0, 0, false, 0, false, "", false, "", false, "", false, 0, false, {0, {0}}, false, 0, false, "", false, 0, false, 0, false, 0, false, "", false, 0, false, "", false, "", false, 0, false, 0, false, "", false, 0, false, "", false, "", false, "", false, 0, false, "", false, _OneKeyDeviceType_MIN, false, _OneKeySeType_MIN, false, "", false, {0, {0}}, false, "", false, {0, {0}}, false, "", false, {0, {0}}, false, "", false, "", false, {0, {0}}, false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, _OneKeySEState_MIN, false, _OneKeySEState_MIN, false, _OneKeySEState_MIN, false, _OneKeySEState_MIN}
 #define OnekeyFeatures_init_zero                 {false, _OneKeyDeviceType_MIN, false, "", false, "", false, "", false, {0, {0}}, false, {0, {0}}, false, {0, {0}}, false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, {0, {0}}, false, _OneKeySeType_MIN, false, _OneKeySEState_MIN, false, _OneKeySEState_MIN, false, _OneKeySEState_MIN, false, _OneKeySEState_MIN, false, "", false, "", false, "", false, "", false, {0, {0}}, false, {0, {0}}, false, {0, {0}}, false, {0, {0}}, false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, {0, {0}}, false, {0, {0}}, false, {0, {0}}, false, {0, {0}}, false, "", false, "", false, "", false, ""}
 #define Ping_init_zero                           {false, ""}
 #define Success_init_zero                        {false, ""}
@@ -697,6 +701,8 @@ extern "C" {
 #define Features_onekey_firmware_build_id_tag    611
 #define Features_onekey_serial_no_tag            612
 #define Features_onekey_boot_build_id_tag        613
+#define Features_onekey_ble_name_tag             614
+#define Features_onekey_ble_version_tag          615
 #define Features_onekey_se02_version_tag         618
 #define Features_onekey_se03_version_tag         619
 #define Features_onekey_se04_version_tag         620
@@ -830,6 +836,8 @@ X(a, STATIC,   OPTIONAL, BYTES,    onekey_firmware_hash, 610) \
 X(a, STATIC,   OPTIONAL, STRING,   onekey_firmware_build_id, 611) \
 X(a, STATIC,   OPTIONAL, STRING,   onekey_serial_no, 612) \
 X(a, STATIC,   OPTIONAL, STRING,   onekey_boot_build_id, 613) \
+X(a, STATIC,   OPTIONAL, STRING,   onekey_ble_name, 614) \
+X(a, STATIC,   OPTIONAL, STRING,   onekey_ble_version, 615) \
 X(a, STATIC,   OPTIONAL, STRING,   onekey_se02_version, 618) \
 X(a, STATIC,   OPTIONAL, STRING,   onekey_se03_version, 619) \
 X(a, STATIC,   OPTIONAL, STRING,   onekey_se04_version, 620) \
@@ -1186,7 +1194,7 @@ extern const pb_msgdesc_t SEMessageSignature_msg;
 #define EmmcPathInfo_size                        258
 #define EmmcPath_size                            59
 #define Failure_size                             260
-#define Features_size                            1083
+#define Features_size                            1135
 #define FirmwareErase_ex_size                    6
 #define FirmwareErase_size                       6
 #define FirmwareRequest_size                     12
