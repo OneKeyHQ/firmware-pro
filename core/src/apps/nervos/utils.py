@@ -7,7 +7,7 @@ def extend_uint64(buffer: bytearray, n: str):
 
 
 def bytes_to_hex_str(bytes_obj):
-    return "".join("{:02x}".format(byte) for byte in bytes_obj)
+    return "".join(f"{byte:02x}" for byte in bytes_obj)
 
 
 def hex_to_bytes_custom(hex_str: str) -> bytes:
