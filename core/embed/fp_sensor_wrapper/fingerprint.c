@@ -135,7 +135,7 @@ int fingerprint_save(uint8_t id)
     {
         return -1;
     }
-    fpsensor_data_save();
+    fpsensor_data_save(false, id);
     return 0;
 }
 
@@ -190,7 +190,7 @@ int fingerprint_delete(uint8_t id)
 
         return -1;
     }
-    fpsensor_data_save();
+    fpsensor_data_delete(false, id);
     return 0;
 }
 
@@ -200,7 +200,7 @@ int fingerprint_delete_all(void)
     {
         return -1;
     }
-    fpsensor_data_save();
+    fpsensor_data_delete(true, 0);
     return 0;
 }
 

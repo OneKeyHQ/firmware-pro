@@ -448,17 +448,32 @@ bool fpsensor_data_init(void)
     return true;
 }
 
-bool fpsensor_data_save(void)
+bool fpsensor_data_save(bool update_all, uint8_t id)
 {
     uint8_t* p_data;
     uint32_t crc;
     uint8_t list[MAX_FINGERPRINT_COUNT] = {0};
     uint8_t counter = 0;
-    for ( uint8_t i = 0; i < MAX_FINGERPRINT_COUNT; i++ )
+    if ( update_all )
     {
-        if ( fpsensor_cache.template_data_valid[i] )
+        for ( uint8_t i = 0; i < MAX_FINGERPRINT_COUNT; i++ )
         {
-            list[counter++] = i;
+            if ( fpsensor_cache.template_data_valid[i] )
+            {
+                list[counter++] = i;
+            }
+        }
+    }
+    else
+    {
+        if ( fpsensor_cache.template_data_valid[id] )
+        {
+            list[0] = id;
+            counter = 1;
+        }
+        else
+        {
+            return false;
         }
     }
 
@@ -478,6 +493,47 @@ bool fpsensor_data_save(void)
                 TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_TOTAL_LENGTH + TEMPLATE_LENGTH, (uint8_t*)&crc,
                 TEMPLATE_DATA_CRC_LEN, 0, 0
             ),
+            "se_fp_write failed"
+        );
+    }
+    return true;
+}
+
+bool fpsensor_data_delete(bool all, uint8_t id)
+{
+    uint8_t* p_data;
+    uint8_t list[MAX_FINGERPRINT_COUNT] = {0};
+    uint8_t counter = 0;
+    if ( all )
+    {
+        for ( uint8_t i = 0; i < MAX_FINGERPRINT_COUNT; i++ )
+        {
+            if ( fpsensor_cache.template_data_valid[i] )
+            {
+                list[counter++] = i;
+            }
+        }
+    }
+    else
+    {
+        if ( fpsensor_cache.template_data_valid[id] )
+        {
+            list[0] = id;
+            counter = 1;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    for ( uint8_t i = 0; i < counter; i++ )
+    {
+        p_data = fp_data_cache + TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_LENGTH;
+        memset(p_data, 0, TEMPLATE_LENGTH);
+
+        ensure(
+            se_fp_write(TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_TOTAL_LENGTH, p_data, 4, 0, 0),
             "se_fp_write failed"
         );
     }

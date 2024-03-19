@@ -38,7 +38,8 @@ void fpsensor_irq_disable(void);
 int fpsensor_detect(void);
 
 bool fpsensor_data_init(void);
-bool fpsensor_data_save(void);
+bool fpsensor_data_save(bool update_all, uint8_t id);
+bool fpsensor_data_delete(bool all, uint8_t id);
 void fpsensor_data_cache_clear(void);
 uint8_t SF_Init(uint32_t startAddr, uint32_t ucMmSize);
 uint8_t SF_ReadData(uint8_t* buffer, uint32_t offset, uint32_t length);
