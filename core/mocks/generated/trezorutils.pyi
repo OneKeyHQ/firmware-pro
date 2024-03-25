@@ -61,6 +61,13 @@ def firmware_hash(
 
 
 # extmod/modtrezorutils/modtrezorutils.c
+def onekey_firmware_hash() -> bytes:
+    """
+    Computes the sha256 hash of the firmware
+    """
+
+
+# extmod/modtrezorutils/modtrezorutils.c
 def firmware_vendor() -> str:
     """
     Returns the firmware vendor string from the vendor header.

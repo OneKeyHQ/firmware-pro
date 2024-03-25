@@ -34,6 +34,7 @@ from trezorutils import (  # noqa: F401; FIRMWARE_SECTORS_COUNT,; firmware_secto
     se_boot_version,
     se_boot_hash,
     se_boot_build_id,
+    onekey_firmware_hash,
 )
 
 if not EMULATOR:

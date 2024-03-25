@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import struct
 
 from hashlib import sha256
 
@@ -25,6 +26,18 @@ def compute_hashes(data):
     return hash
 
 
+def compute_firmware_hashes(data):
+    # process chunks
+    vendor_len = 0
+    if data[0:4] == b"OKTV":
+        vendor_len = struct.unpack("<I", data[4:8])[0]
+        data = data[vendor_len + FWHEADER_SIZE :]
+    else:
+        data = data[FWHEADER_SIZE:]
+    hash = sha256(data).digest()
+    return hash
+
+
 def compute_boot_hashes(data):
     d = data[1024:]
     bh = sha256(sha256(d).digest()).digest()
@@ -46,7 +59,7 @@ def main(args):
 
     if args.bintype == "firmware":
         data = open(args.path, "rb").read()
-        hash = compute_hashes(data[FWHEADER_SIZE:])
+        hash = compute_firmware_hashes(data)
         print("firmware hash: ", hash.hex())
     elif args.bintype == "se":
         data = open(args.path, "rb").read()
@@ -62,9 +75,6 @@ def main(args):
         print("bluetooth app hash: ", hash.hex())
     else:
         print("no support")
-
-    data = open(args.path, "rb").read()
-    compute_hashes(data[FWHEADER_SIZE:])
 
 
 if __name__ == "__main__":

@@ -202,6 +202,22 @@ STATIC mp_obj_t mod_trezorutils_firmware_hash(size_t n_args,
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_trezorutils_firmware_hash_obj, 0,
                                            2, mod_trezorutils_firmware_hash);
 
+/// def onekey_firmware_hash() -> bytes:
+///     """
+///     Computes the sha256 hash of the firmware
+///     """
+STATIC mp_obj_t mod_trezorutils_onekey_firmware_hash(void) {
+  vstr_t hash = {0};
+
+  vstr_init_len(&hash, 32);
+
+  memcpy((uint8_t *)hash.buf, get_firmware_hash(), 32);
+
+  return mp_obj_new_str_from_vstr(&mp_type_bytes, &hash);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorutils_onekey_firmware_hash_obj,
+                                 mod_trezorutils_onekey_firmware_hash);
+
 /// def firmware_vendor() -> str:
 ///     """
 ///     Returns the firmware vendor string from the vendor header.
@@ -530,6 +546,8 @@ STATIC const mp_rom_map_elem_t mp_module_trezorutils_globals_table[] = {
     {MP_ROM_QSTR(MP_QSTR_reset), MP_ROM_PTR(&mod_trezorutils_reset_obj)},
     {MP_ROM_QSTR(MP_QSTR_firmware_hash),
      MP_ROM_PTR(&mod_trezorutils_firmware_hash_obj)},
+    {MP_ROM_QSTR(MP_QSTR_onekey_firmware_hash),
+     MP_ROM_PTR(&mod_trezorutils_onekey_firmware_hash_obj)},
     {MP_ROM_QSTR(MP_QSTR_firmware_vendor),
      MP_ROM_PTR(&mod_trezorutils_firmware_vendor_obj)},
     {MP_ROM_QSTR(MP_QSTR_boot_version),
