@@ -25,10 +25,8 @@ if __debug__:
 
 # run main event loop and specify which screen is the default
 apps.base.set_homescreen()
-
-loop.schedule(handle_uart())
-
 loop.schedule(handle_fingerprint())
+loop.schedule(handle_uart())
 
 loop.schedule(handle_ble_info())
 

@@ -356,41 +356,6 @@ static secbool bootloader_usb_loop(const vendor_header* const vhdr,
           return secfalse;  // shutdown
         }
         break;
-      case MSG_NAME_TO_ID(FirmwareErase):  // FirmwareErase
-        process_msg_FirmwareErase(USB_IFACE_NUM, msg_size, buf);
-        break;
-      case MSG_NAME_TO_ID(FirmwareUpload):  // FirmwareUpload
-        r = process_msg_FirmwareUpload(USB_IFACE_NUM, msg_size, buf);
-        if (r < 0 && r != -4) {  // error, but not user abort (-4)
-          ui_fadeout();
-          ui_screen_fail();
-          ui_fadein();
-          usb_stop();
-          usb_deinit();
-          while (!touch_click()) {
-          }
-          restart();
-          return secfalse;    // shutdown
-        } else if (r == 0) {  // last chunk received
-          // ui_screen_install_progress_upload(1000);
-          ui_fadeout();
-          ui_screen_done(4, sectrue);
-          ui_fadein();
-          ui_screen_done(3, secfalse);
-          hal_delay(1000);
-          ui_screen_done(2, secfalse);
-          hal_delay(1000);
-          ui_screen_done(1, secfalse);
-          hal_delay(1000);
-          usb_stop();
-          usb_deinit();
-          ui_fadeout();
-          return sectrue;  // jump to firmware
-        }
-        break;
-      case MSG_NAME_TO_ID(FirmwareErase_ex):  // erase ble update buffer
-        process_msg_FirmwareEraseBLE(USB_IFACE_NUM, msg_size, buf);
-        break;
       case MSG_NAME_TO_ID(GetFeatures):  // GetFeatures
         process_msg_GetFeatures(USB_IFACE_NUM, msg_size, buf, vhdr, hdr);
         break;
@@ -423,6 +388,9 @@ static secbool bootloader_usb_loop(const vendor_header* const vhdr,
         break;
       case MSG_NAME_TO_ID(EmmcDirRemove):  // EmmcDirRemove
         process_msg_EmmcDirRemove(USB_IFACE_NUM, msg_size, buf);
+        break;
+      case MSG_NAME_TO_ID(OnekeyGetFeatures):  // OnekeyGetFeatures
+        process_msg_OnekeyGetFeatures(USB_IFACE_NUM, msg_size, buf, vhdr, hdr);
         break;
       default:
         process_msg_unknown(USB_IFACE_NUM, msg_size, buf);
@@ -486,21 +454,24 @@ secbool bootloader_usb_loop_factory(const vendor_header* const vhdr,
       case MSG_NAME_TO_ID(Reboot):  // Reboot
         process_msg_Reboot(USB_IFACE_NUM, msg_size, buf);
         break;
+      case MSG_NAME_TO_ID(FirmwareUpdateEmmc):  // FirmwareUpdateEmmc
+        process_msg_FirmwareUpdateEmmc(USB_IFACE_NUM, msg_size, buf);
+        break;
       case MSG_NAME_TO_ID(EmmcFixPermission):  // EmmcFixPermission
         process_msg_EmmcFixPermission(USB_IFACE_NUM, msg_size, buf);
         break;
       case MSG_NAME_TO_ID(EmmcPathInfo):  // EmmcPathInfo
         process_msg_EmmcPathInfo(USB_IFACE_NUM, msg_size, buf);
         break;
-      // case MSG_NAME_TO_ID(EmmcFileRead): // EmmcFileRead
-      //   process_msg_EmmcFileRead(USB_IFACE_NUM, msg_size, buf);
-      //   break;
-      // case MSG_NAME_TO_ID(EmmcFileWrite): // EmmcFileWrite
-      //   process_msg_EmmcFileWrite(USB_IFACE_NUM, msg_size, buf);
-      //   break;
-      // case MSG_NAME_TO_ID(EmmcFileDelete): // EmmcFileDelete
-      //   process_msg_EmmcFileDelete(USB_IFACE_NUM, msg_size, buf);
-      //   break;
+      case MSG_NAME_TO_ID(EmmcFileRead):  // EmmcFileRead
+        process_msg_EmmcFileRead(USB_IFACE_NUM, msg_size, buf);
+        break;
+      case MSG_NAME_TO_ID(EmmcFileWrite):  // EmmcFileWrite
+        process_msg_EmmcFileWrite(USB_IFACE_NUM, msg_size, buf);
+        break;
+      case MSG_NAME_TO_ID(EmmcFileDelete):  // EmmcFileDelete
+        process_msg_EmmcFileDelete(USB_IFACE_NUM, msg_size, buf);
+        break;
       case MSG_NAME_TO_ID(EmmcDirList):  // EmmcDirList
         process_msg_EmmcDirList(USB_IFACE_NUM, msg_size, buf);
         break;
@@ -604,17 +575,6 @@ static secbool validate_firmware_code(vendor_header* const vhdr,
   return result;
 }
 
-static bool decide_target_is_boot_by_flag(void) {
-  // get boot target flag
-  BOOT_TARGET boot_target = *BOOT_TARGET_FLAG_ADDR;  // cache flag
-
-  // if boot target already set to this level, no more checks
-  if (boot_target == BOOT_TARGET_BOOTLOADER) {
-    return true;
-  }
-  return false;
-}
-
 static BOOT_TARGET decide_boot_target(vendor_header* const vhdr,
                                       image_header* const hdr,
                                       secbool* headers_validate_result,
@@ -660,8 +620,11 @@ int main(void) {
   lcd_para_init(DISPLAY_RESX, DISPLAY_RESY, LCD_PIXEL_FORMAT_RGB565);
   // lcd_init(DISPLAY_RESX, DISPLAY_RESY, LCD_PIXEL_FORMAT_RGB565);
   lcd_pwm_init();
-  display_clear();
   touch_init();
+
+  // keep the screen but cover the boot bar
+  // display_clear();
+  display_bar_radius(160, 352, 160, 4, COLOR_BLACK, COLOR_BLACK, 2);
 
   // fault handler
   bus_fault_enable();  // it's here since requires user interface
@@ -679,11 +642,6 @@ int main(void) {
 
   // misc/feedback
   random_delays_init();
-
-  if (decide_target_is_boot_by_flag()) {
-    display_clear();
-    ui_bootloader_simple();
-  }
 
   // as they using same i2c bus, both needs to be powered up before any
   // communication
@@ -747,6 +705,9 @@ int main(void) {
 
   BOOT_TARGET boot_target =
       decide_boot_target(&vhdr, &hdr, &headers_valid, &headers_checked);
+
+  // boot target decided, clear screen
+  display_clear();
 
   if (boot_target == BOOT_TARGET_BOOTLOADER) {
     if (headers_checked == secfalse) {

@@ -313,7 +313,7 @@ if PRODUCTION_MODEL == 'H':
             'PB_FIELD_16BIT',
             'PB_ENCODE_ARRAYS_UNPACKED',
             'PB_VALIDATE_UTF8',
-            'BOOT_ONLY',
+            ('BOOT_ONLY', 1),
             ('STATIC_TABLES', 0),
             ('QUIRC_FLOAT_TYPE', 'float'),
             ('USE_PRECOMPUTED_CP',0),

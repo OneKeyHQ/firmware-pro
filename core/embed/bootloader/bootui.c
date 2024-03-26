@@ -55,8 +55,8 @@
 #include "se_thd89.h"
 #include "thd89_boot.h"
 #include "usb.h"
-extern secbool load_vendor_header_keys(const uint8_t *const data,
-                                       vendor_header *const vhdr);
+extern secbool load_vendor_header_keys(const uint8_t* const data,
+                                       vendor_header* const vhdr);
 #endif
 
 #define BACKLIGHT_NORMAL 150
@@ -86,8 +86,8 @@ extern secbool load_vendor_header_keys(const uint8_t *const data,
 #define BUTTON_HEIGHT 98
 // common shared functions
 
-static void ui_confirm_cancel_buttons(const char *cancel_text,
-                                      const char *confirm_text,
+static void ui_confirm_cancel_buttons(const char* cancel_text,
+                                      const char* confirm_text,
                                       uint16_t cancel_bg_color,
                                       uint16_t confirm_bg_color) {
   display_bar_radius_ex(BUTTON_LEFT_OFFSET_X, BUTTON_OFFSET_Y,
@@ -102,7 +102,7 @@ static void ui_confirm_cancel_buttons(const char *cancel_text,
                       FONT_PJKS_BOLD_26, COLOR_BL_BG, confirm_bg_color);
 }
 
-const char *format_ver(const char *format, uint32_t version) {
+const char* format_ver(const char* format, uint32_t version) {
   static char ver_str[64];
   mini_snprintf(ver_str, sizeof(ver_str), format, (int)(version & 0xFF),
                 (int)((version >> 8) & 0xFF), (int)((version >> 16) & 0xFF)
@@ -130,8 +130,8 @@ void ui_logo_done(void) {
   display_image(176, 56, 128, 128, toi_done + 12, sizeof(toi_done) - 12);
 }
 
-void ui_screen_boot(const vendor_header *const vhdr,
-                    const image_header *const hdr) {
+void ui_screen_boot(const vendor_header* const vhdr,
+                    const image_header* const hdr) {
   display_clear();
   const int show_string = ((vhdr->vtrust & VTRUST_STRING) == 0);
   // if ((vhdr->vtrust & VTRUST_RED) == 0) {
@@ -170,14 +170,14 @@ void ui_screen_boot(const vendor_header *const vhdr,
 #if PRODUCTION_MODEL == 'H'
     display_text(8, 96, vhdr->vstr, vhdr->vstr_len, FONT_NORMAL, COLOR_BL_FG,
                  boot_background);
-    const char *ver_str = format_ver("v%d.%d.%d", fw_version);
+    const char* ver_str = format_ver("v%d.%d.%d", fw_version);
     display_text(8, 140, ver_str, -1, FONT_NORMAL, COLOR_BL_FG,
                  boot_background);
 #else
     display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY - 5 - 50, vhdr->vstr,
                         vhdr->vstr_len, FONT_NORMAL, COLOR_BL_BG,
                         boot_background);
-    const char *ver_str = format_ver("%d.%d.%d", fw_version);
+    const char* ver_str = format_ver("%d.%d.%d", fw_version);
     display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY - 5 - 25, ver_str, -1,
                         FONT_NORMAL, COLOR_BL_BG, boot_background);
 #endif
@@ -213,7 +213,7 @@ void ui_screen_boot_click(void) {
 }
 
 // info UI
-static int display_vendor_string(const char *text, int textlen,
+static int display_vendor_string(const char* text, int textlen,
                                  uint16_t fgcolor) {
   int split = display_text_split(text, textlen, FONT_NORMAL, DISPLAY_RESX - 55);
   if (split >= textlen) {
@@ -230,10 +230,10 @@ static int display_vendor_string(const char *text, int textlen,
   }
 }
 
-void ui_screen_firmware_info(const vendor_header *const vhdr,
-                             const image_header *const hdr) {
+void ui_screen_firmware_info(const vendor_header* const vhdr,
+                             const image_header* const hdr) {
   display_clear();
-  const char *ver_str = format_ver("Bootloader %d.%d.%d", VERSION_UINT32);
+  const char* ver_str = format_ver("Bootloader %d.%d.%d", VERSION_UINT32);
   display_text(16, 32, ver_str, -1, FONT_NORMAL, COLOR_BL_FG, COLOR_BL_BG);
   display_bar(16, 44, DISPLAY_RESX - 14 * 2, 1, COLOR_BL_BG);
   display_icon(16, 54, 32, 32, toi_icon_info + 12, sizeof(toi_icon_info) - 12,
@@ -254,13 +254,13 @@ void ui_screen_firmware_info(const vendor_header *const vhdr,
                       COLOR_BL_BG);
 }
 
-void ui_screen_firmware_fingerprint(const image_header *const hdr) {
+void ui_screen_firmware_fingerprint(const image_header* const hdr) {
   display_clear();
   display_text(16, 32, "Firmware fingerprint", -1, FONT_NORMAL, COLOR_BL_FG,
                COLOR_BL_BG);
   display_bar(16, 44, DISPLAY_RESX - 14 * 2, 1, COLOR_BL_BG);
 
-  static const char *hexdigits = "0123456789abcdef";
+  static const char* hexdigits = "0123456789abcdef";
   char fingerprint_str[64];
   for (int i = 0; i < 32; i++) {
     fingerprint_str[i * 2] = hexdigits[(hdr->fingerprint[i] >> 4) & 0xF];
@@ -280,15 +280,15 @@ void ui_screen_firmware_fingerprint(const image_header *const hdr) {
 // install UI
 
 void ui_screen_install_confirm_newvendor_or_downgrade_wipe(
-    const vendor_header *const vhdr, const image_header *const hdr,
+    const vendor_header* const vhdr, const image_header* const hdr,
     secbool downgrade_wipe) {
   vendor_header current_vhdr;
   image_header current_hdr;
   // char str[128] = {0};
   if (sectrue ==
-      load_vendor_header_keys((const uint8_t *)FIRMWARE_START, &current_vhdr)) {
+      load_vendor_header_keys((const uint8_t*)FIRMWARE_START, &current_vhdr)) {
     if (sectrue ==
-        load_image_header((const uint8_t *)FIRMWARE_START + current_vhdr.hdrlen,
+        load_image_header((const uint8_t*)FIRMWARE_START + current_vhdr.hdrlen,
                           FIRMWARE_IMAGE_MAGIC, FIRMWARE_IMAGE_MAXSIZE,
                           current_vhdr.vsig_m, current_vhdr.vsig_n,
                           current_vhdr.vpub, &current_hdr)) {
@@ -320,7 +320,7 @@ void ui_screen_install_confirm_newvendor_or_downgrade_wipe(
   // } while (split);
   display_bar_radius_ex(BOARD_OFFSET_X, 295, BUTTON_FULL_WIDTH, 98,
                         COLOR_BL_PANEL, COLOR_BL_BG, 49);
-  const char *ver_str = format_ver("%d.%d.%d", current_hdr.onekey_version);
+  const char* ver_str = format_ver("%d.%d.%d", current_hdr.onekey_version);
   display_text_right(MAX_DISPLAY_RESX / 2 - 25, 350, ver_str, -1, FONT_NORMAL,
                      COLOR_BL_SUBTITLE, COLOR_BL_DARK);
   ver_str = format_ver("%d.%d.%d", hdr->onekey_version);
@@ -334,13 +334,39 @@ void ui_screen_install_confirm_newvendor_or_downgrade_wipe(
   ui_confirm_cancel_buttons("Cancel", "Install", COLOR_BL_DARK, COLOR_BL_FAIL);
 }
 
-void ui_screen_progress_bar_prepare(char *title, char *notes) {
+void ui_screen_confirm(char* title, char* note_l1, char* note_l2, char* note_l3,
+                       char* note_l4) {
+  if (title != NULL)
+    display_text_center(DISPLAY_RESX / 2, TITLE_OFFSET_Y, title, -1,
+                        FONT_PJKS_BOLD_38, COLOR_BL_FG, COLOR_BL_BG);
+
+  if (note_l1 != NULL) {
+    display_text_center(DISPLAY_RESX / 2, SUBTITLE_OFFSET_Y, note_l1, -1,
+                        FONT_NORMAL, COLOR_BL_SUBTITLE, COLOR_BL_BG);
+  }
+  if (note_l2 != NULL) {
+    display_text_center(DISPLAY_RESX / 2, SUBTITLE_OFFSET_Y + 30, note_l2, -1,
+                        FONT_NORMAL, COLOR_BL_SUBTITLE, COLOR_BL_BG);
+  }
+  if (note_l3 != NULL) {
+    display_text_center(DISPLAY_RESX / 2, SUBTITLE_OFFSET_Y + 60, note_l3, -1,
+                        FONT_NORMAL, COLOR_BL_SUBTITLE, COLOR_BL_BG);
+  }
+  if (note_l4 != NULL) {
+    display_text_center(DISPLAY_RESX / 2, SUBTITLE_OFFSET_Y + 90, note_l4, -1,
+                        FONT_NORMAL, COLOR_BL_SUBTITLE, COLOR_BL_BG);
+  }
+
+  ui_confirm_cancel_buttons("Back", "OK", COLOR_BL_DARK, COLOR_BL_FAIL);
+}
+
+void ui_screen_progress_bar_prepare(char* title, char* notes) {
   ui_title_update();
   ui_logo_onekey();
   ui_screen_progress_bar_update(title, notes, -1);
 }
 
-void ui_screen_progress_bar_update(char *title, char *notes, int progress) {
+void ui_screen_progress_bar_update(char* title, char* notes, int progress) {
   if (title != NULL)
     display_text_center(DISPLAY_RESX / 2, TITLE_OFFSET_Y, title, -1,
                         FONT_PJKS_BOLD_38, COLOR_BL_FG, COLOR_BL_BG);
@@ -426,8 +452,21 @@ void ui_screen_wipe_done(void) {
 
 // done UI
 
+void ui_screen_success(char* title, char* notes) {
+  ui_title_update();
+  ui_logo_done();
+
+  if (title != NULL)
+    display_text_center(DISPLAY_RESX / 2, TITLE_OFFSET_Y, title, -1,
+                        FONT_PJKS_BOLD_38, COLOR_BL_FG, COLOR_BL_BG);
+
+  display_bar(0, DISPLAY_RESY - 78 - 30, DISPLAY_RESX, 30, COLOR_BL_BG);
+  display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY - 78, notes, -1,
+                      FONT_NORMAL, COLOR_BL_FG, COLOR_BL_BG);
+}
+
 void ui_screen_done(int restart_seconds, secbool full_redraw) {
-  const char *str;
+  const char* str;
   char count_str[24];
   if (restart_seconds >= 1) {
     mini_snprintf(count_str, sizeof(count_str), "Done! Restarting in %d s",
@@ -491,7 +530,6 @@ void ui_fadeout(void) {
 
 int ui_user_input(int zones) {
   for (;;) {
-#if defined TREZOR_MODEL_T
     uint32_t evt = touch_click();
     uint16_t x = touch_unpack_x(evt);
     uint16_t y = touch_unpack_y(evt);
@@ -515,17 +553,6 @@ int ui_user_input(int zones) {
         y < 54 + 32) {
       return INPUT_INFO;
     }
-#elif defined TREZOR_MODEL_R
-    uint32_t evt = button_read();
-    if (evt == (BTN_LEFT | BTN_EVT_DOWN)) {
-      return INPUT_CANCEL;
-    }
-    if (evt == (BTN_RIGHT | BTN_EVT_DOWN)) {
-      return INPUT_CONFIRM;
-    }
-#else
-#error Unknown Trezor model
-#endif
   }
 }
 
@@ -566,8 +593,17 @@ int ui_input_poll(int zones, bool poll) {
           y > BUTTON_OFFSET_Y && y < BUTTON_OFFSET_Y + BUTTON_HEIGHT) {
         return (zones & INPUT_RESTART);
       }
+      // bootloader version
+      if ((zones & INPUT_BOOT_VERSION_TEXT) && x >= 0 && x <= 480 && y > 520 &&
+          y < 580) {
+        return (zones & INPUT_BOOT_VERSION_TEXT);
+      }
+      // build id
+      if ((zones & INPUT_BUILD_ID_TEXT) && x >= 0 && x <= 480 && y > 580 &&
+          y < 640) {
+        return (zones & INPUT_BUILD_ID_TEXT);
+      }
     }
-
   } while (poll);
   return 0;
 }
@@ -604,7 +640,6 @@ void ui_title_update(void) {
       display_bar(DISPLAY_RESX - offset_x + 3, 10 + offset_y, bat_width, 12,
                   battery_color);
     }
-
   } else {
     display_bar(DISPLAY_RESX - 32, offset_y, 32, 32, boot_background);
   }
@@ -643,7 +678,7 @@ void ui_title_update(void) {
   }
 }
 
-void ui_wipe_confirm(const image_header *const hdr) {
+void ui_wipe_confirm(const image_header* const hdr) {
   ui_title_update();
   ui_logo_warning();
   // if (hdr && (hdr->onekey_version != 0)) {
@@ -662,8 +697,8 @@ void ui_wipe_confirm(const image_header *const hdr) {
   ui_confirm_cancel_buttons("Cancel", "Wipe", COLOR_BL_DARK, COLOR_BL_FAIL);
 }
 
-void ui_install_confirm(image_header *current_hdr,
-                        const image_header *const new_hdr) {
+void ui_install_confirm(image_header* current_hdr,
+                        const image_header* const new_hdr) {
   if ((current_hdr == NULL) || (new_hdr == NULL)) return;
   ui_title_update();
   ui_logo_onekey();
@@ -675,7 +710,7 @@ void ui_install_confirm(image_header *current_hdr,
 
   display_bar_radius_ex(BOARD_OFFSET_X, 295, BUTTON_FULL_WIDTH, 98,
                         COLOR_BL_PANEL, COLOR_BL_BG, 49);
-  const char *ver_str = format_ver("%d.%d.%d", current_hdr->onekey_version);
+  const char* ver_str = format_ver("%d.%d.%d", current_hdr->onekey_version);
   display_text_right(DISPLAY_RESX / 2 - 25, 350, ver_str, -1, FONT_NORMAL,
                      COLOR_WHITE, COLOR_BL_PANEL);
   ver_str = format_ver("%d.%d.%d", new_hdr->onekey_version);
@@ -704,7 +739,7 @@ void ui_install_ble_confirm(void) {
   ui_confirm_cancel_buttons("Cancel", "Install", COLOR_BL_DARK, COLOR_BL_DONE);
 }
 
-void ui_install_thd89_confirm(const char *old_ver, const char *boot_ver) {
+void ui_install_thd89_confirm(const char* old_ver, const char* boot_ver) {
   char str[128] = {0};
   ui_title_update();
   ui_logo_onekey();
@@ -726,18 +761,7 @@ void ui_install_thd89_confirm(const char *old_ver, const char *boot_ver) {
   ui_confirm_cancel_buttons("Cancel", "Install", COLOR_BL_DARK, COLOR_BL_DONE);
 }
 
-void ui_bootloader_simple(void) {
-  ui_logo_onekey();
-  display_text_center(DISPLAY_RESX / 2, TITLE_OFFSET_Y, "Update Mode", -1,
-                      FONT_PJKS_BOLD_38, COLOR_BL_FG, COLOR_BL_BG);
-  display_bar_radius_ex(BUTTON_LEFT_OFFSET_X, BUTTON_OFFSET_Y,
-                        BUTTON_FULL_WIDTH, BUTTON_HEIGHT, COLOR_BL_DARK,
-                        COLOR_BL_BG, 49);
-  display_text_center(DISPLAY_RESX / 2, 755, "View Details", -1,
-                      FONT_PJKS_BOLD_26, COLOR_BL_FG, COLOR_BL_DARK);
-}
-
-void ui_bootloader_first(const image_header *const hdr) {
+void ui_bootloader_first(const image_header* const hdr) {
   ui_bootloader_page_current = 0;
   uint8_t se_state;
   char se_info[64] = {0};
@@ -748,14 +772,14 @@ void ui_bootloader_first(const image_header *const hdr) {
                       FONT_PJKS_BOLD_38, COLOR_BL_FG, COLOR_BL_BG);
 
   if (ble_name_state()) {
-    char *ble_name;
+    char* ble_name;
     ble_name = ble_get_name();
     display_text_center(DISPLAY_RESX / 2, SUBTITLE_OFFSET_Y, ble_name, -1,
                         FONT_NORMAL, COLOR_BL_SUBTITLE, COLOR_BL_BG);
     ble_name_show = true;
   }
   if (hdr) {
-    const char *ver_str = format_ver("%d.%d.%d", (hdr->onekey_version));
+    const char* ver_str = format_ver("%d.%d.%d", (hdr->onekey_version));
     display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY - 125, ver_str, -1,
                         FONT_NORMAL, COLOR_BL_SUBTITLE, COLOR_BL_BG);
   }
@@ -787,11 +811,11 @@ void ui_bootloader_first(const image_header *const hdr) {
                       FONT_PJKS_BOLD_26, COLOR_BL_FG, COLOR_BL_DARK);
 }
 
-void ui_bootloader_second(const image_header *const hdr) {
+void ui_bootloader_second(const image_header* const hdr) {
   ui_bootloader_page_current = 1;
 
   int offset_x = 32, offset_y = 95, offset_seg = 44, offset_line = 30;
-  const char *ver_str = NULL;
+  const char* ver_str = NULL;
 
   ui_title_update();
   display_bar_radius_ex(BOARD_OFFSET_X, 50, BUTTON_FULL_WIDTH, 627,
@@ -832,7 +856,7 @@ void ui_bootloader_second(const image_header *const hdr) {
   display_text(offset_x, offset_y, "Serial Number", -1, FONT_PJKS_BOLD_26,
                COLOR_BL_TAGVALUE, COLOR_BL_PANEL);
   offset_y += offset_line;
-  char *dev_serial;
+  char* dev_serial;
   if (device_get_serial(&dev_serial)) {
     display_text(offset_x, offset_y, dev_serial, -1, FONT_NORMAL, COLOR_BL_FG,
                  COLOR_BL_PANEL);
@@ -845,7 +869,7 @@ void ui_bootloader_second(const image_header *const hdr) {
   display_text(offset_x, offset_y, "SE", -1, FONT_PJKS_BOLD_26,
                COLOR_BL_TAGVALUE, COLOR_BL_PANEL);
   offset_y += offset_line;
-  const char *se_version = se_get_version();
+  const char* se_version = se01_get_version();
   char se_version_str[32] = {0};
   strcat(se_version_str, "THD89-");
   strcat(se_version_str, se_version);
@@ -888,18 +912,22 @@ void ui_bootloader_device_test(void) {
   display_text_center(DISPLAY_RESX / 2, 277, "Test Mode", -1, FONT_PJKS_BOLD_38,
                       COLOR_BL_FG, COLOR_BL_BG);
 
-  display_bar(8, BUTTON_OFFSET_Y, 231, BUTTON_HEIGHT, COLOR_BL_DARK);
-  display_text_center(DISPLAY_RESX / 4, 755, "device test", -1,
-                      FONT_PJKS_BOLD_26, COLOR_BL_FG, COLOR_BL_DARK);
-  display_bar(241, BUTTON_OFFSET_Y, 231, BUTTON_HEIGHT, COLOR_BL_DARK);
-  display_text_center(DISPLAY_RESX - DISPLAY_RESX / 4, 755, "aging test", -1,
-                      FONT_PJKS_BOLD_26, COLOR_BL_FG, COLOR_BL_DARK);
+  ui_confirm_cancel_buttons("Back", "Enter", COLOR_BL_DARK, COLOR_BL_FAIL);
 }
 
-void ui_bootloader_page_switch(const image_header *const hdr) {
+void ui_bootloader_generate_trng_data() {
+  ui_bootloader_page_current = 3;
+  ui_logo_onekey();
+  ui_screen_confirm("TRNG Generate", "Will generate 2 * 10MB Random Data",
+                    "The process may take up to 30 mins",
+                    "Enter Boardloader to obtain results at ",
+                    "\"TRNG_Test_Data\" Folder");
+}
+
+void ui_bootloader_page_switch(const image_header* const hdr) {
   int response;
 
-  // static uint32_t click = 0, click_pre = 0, click_now = 0;
+  static uint32_t click = 0, click_pre = 0, click_now = 0;
 
   if (ui_bootloader_page_current == 0) {
     response = ui_input_poll(INPUT_NEXT, false);
@@ -911,27 +939,62 @@ void ui_bootloader_page_switch(const image_header *const hdr) {
       ui_bootloader_first(hdr);
     }
   } else if (ui_bootloader_page_current == 1) {
-    // click_now = HAL_GetTick();
-    // if ((click_now - click_pre) > (1000 / 2)) {
-    //   click = 0;
-    // }
-    response = ui_input_poll(
-        INPUT_PREVIOUS | INPUT_RESTART | INPUT_VERSION_INFO, false);
+    click_now = HAL_GetTick();
+    if ((click_now - click_pre) > (1000 / 2)) {
+      click = 0;
+    }
+    response = ui_input_poll(INPUT_PREVIOUS | INPUT_RESTART |
+                                 INPUT_BOOT_VERSION_TEXT | INPUT_BUILD_ID_TEXT,
+                             false);
     if (INPUT_PREVIOUS == response) {
       display_clear();
       ui_bootloader_first(hdr);
     } else if (INPUT_RESTART == response) {
       HAL_NVIC_SystemReset();
+    } else if (INPUT_BOOT_VERSION_TEXT == response) {
+      click++;
+      click_pre = click_now;
+      if (click == 5) {
+        click = 0;
+        display_clear();
+        ui_bootloader_device_test();
+        click_pre = click_now;
+      }
+    } else if (INPUT_BUILD_ID_TEXT == response) {
+      click++;
+      click_pre = click_now;
+      if (click == 5) {
+        click = 0;
+        display_clear();
+        ui_bootloader_generate_trng_data();
+        click_pre = click_now;
+      }
     }
-    // else if (INPUT_VERSION_INFO == response) {
-    //   click++;
-    //   click_pre = click_now;
-    //   if (click == 5) {
-    //     click = 0;
-    //     display_clear();
-    //     ui_bootloader_device_test();
-    //     click_pre = click_now;
-    //   }
-    // }
+  } else if (ui_bootloader_page_current == 2) {
+    response = ui_input_poll(INPUT_PREVIOUS | INPUT_RESTART, false);
+    if (INPUT_PREVIOUS == response) {
+      display_clear();
+      ui_bootloader_first(hdr);
+    } else if (INPUT_RESTART == response) {
+      device_burnin_test_clear_flag();
+    }
+    click_now = HAL_GetTick();
+    if (click_now - click_pre > (1000 * 3)) {
+      display_clear();
+      ui_bootloader_first(hdr);
+    }
+  } else if (ui_bootloader_page_current == 3) {
+    response = ui_input_poll(INPUT_PREVIOUS | INPUT_RESTART, false);
+    if (INPUT_PREVIOUS == response) {
+      display_clear();
+      ui_bootloader_first(hdr);
+    } else if (INPUT_RESTART == response) {
+      device_generate_trng_data();
+    }
+    click_now = HAL_GetTick();
+    if (click_now - click_pre > (1000 * 10)) {
+      display_clear();
+      ui_bootloader_first(hdr);
+    }
   }
 }

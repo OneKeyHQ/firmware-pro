@@ -174,7 +174,7 @@ translations = [
     "Use This Passphrase?",
     "Model",
     "Storage",
-    "Incorrect PIN, this is your last attempt.",
+    "Incorrect PIN, this is your last attempt",
     "Modify Fee",
     "Amount (You Spend)",
     "New Fee",
@@ -744,5 +744,7 @@ translations = [
     "Are you sure to disable Air Gap mode? After disable, it will be able to connect your device via USB or Bluetooth.",
     "Select the chain you need, then click Create button.",
     "ETH and EVM‒compatible chains",
+    "fingerprint not recognized, try again",
+    "Use fingerprint or tap to unlock",
 ]
 # fmt: on

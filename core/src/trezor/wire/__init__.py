@@ -380,7 +380,8 @@ class Context:
 
     async def signal(self):
         await SIGNAL_CHANNEL.take()
-        await self.write(failure(loop.TASK_CLOSED))
+        if self.iface.iface_num() == utils.SPI_IFACE_NUM:
+            await self.write(failure(loop.TASK_CLOSED))
         SIGNAL_CHANNEL.publish("done")
 
 
@@ -444,6 +445,12 @@ async def _handle_single_message(
             MessageType.WebAuthnRemoveResidentCredential,
         ]:
             await ctx.write(unsupported_yet("WebAuthn"))
+        elif msg.type in [
+            MessageType.ResetDevice,
+            MessageType.RecoveryDevice,
+            MessageType.BackupDevice,
+        ]:
+            await ctx.write(unsupported())
         else:
             await ctx.write(unexpected_message())
         return None
@@ -608,3 +615,7 @@ def unsupported_yet(name: str) -> Failure:
     return Failure(
         code=FailureType.UnexpectedMessage, message=f"{name} not supported yet"
     )
+
+
+def unsupported() -> Failure:
+    return Failure(code=FailureType.UnexpectedMessage, message="Not support")

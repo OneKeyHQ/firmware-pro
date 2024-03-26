@@ -252,14 +252,16 @@ STATIC mp_obj_t mod_trezorio_fingerprint_list_template(void) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorio_fingerprint_list_template_obj,
                                  mod_trezorio_fingerprint_list_template);
 
-///  def sleep() -> None:
+///  def sleep() -> bool:
 ///      """
 ///      make fingerprint sensor to sleep mode.
 ///      """
 
 STATIC mp_obj_t mod_trezorio_fingerprint_sleep(void) {
-  fingerprint_enter_sleep();
-  return mp_const_none;
+  if (fingerprint_enter_sleep() == 0) {
+    return mp_const_true;
+  }
+  return mp_const_false;
 }
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorio_fingerprint_sleep_obj,

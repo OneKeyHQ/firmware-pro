@@ -27,18 +27,18 @@ def find_message_handler_module(msg_type: int) -> str:
       need to load any of the modules into memory until we actually need them
     """
     # debug
-    if __debug__ and msg_type == MessageType.LoadDevice:
-        return "apps.debug.load_device"
-
+    if __debug__:
+        if msg_type == MessageType.LoadDevice:
+            return "apps.debug.load_device"
+        if msg_type == MessageType.ResetDevice:
+            return "apps.management.reset_device"
+        if msg_type == MessageType.RecoveryDevice:
+            return "apps.management.recovery_device"
+        if msg_type == MessageType.BackupDevice:
+            return "apps.management.backup_device"
     # management
-    if msg_type == MessageType.ResetDevice:
-        return "apps.management.reset_device"
-    if msg_type == MessageType.BackupDevice:
-        return "apps.management.backup_device"
     if msg_type == MessageType.WipeDevice:
         return "apps.management.wipe_device"
-    if msg_type == MessageType.RecoveryDevice:
-        return "apps.management.recovery_device"
     if msg_type == MessageType.ApplySettings:
         return "apps.management.apply_settings"
     if msg_type == MessageType.ApplyFlags:
@@ -322,6 +322,17 @@ def find_message_handler_module(msg_type: int) -> str:
             return "apps.nervos.get_address"
         if msg_type == MessageType.NervosSignTx:
             return "apps.nervos.sign_tx"
+
+        if msg_type == MessageType.NostrGetPublicKey:
+            return "apps.nostr.get_public_key"
+        if msg_type == MessageType.NostrSignEvent:
+            return "apps.nostr.sign_event"
+        if msg_type == MessageType.NostrEncryptMessage:
+            return "apps.nostr.encrypt"
+        if msg_type == MessageType.NostrDecryptMessage:
+            return "apps.nostr.decrypt"
+        if msg_type == MessageType.NostrSignSchnorr:
+            return "apps.nostr.schnorr"
 
         # UR
         if msg_type == MessageType.URCryptoHdkey:

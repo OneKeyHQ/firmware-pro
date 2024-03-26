@@ -2,7 +2,6 @@ from trezorio import fingerprint
 
 from storage import device
 from trezor import config, loop, motor, utils
-from trezor.crypto import se_thd89
 
 from ..i18n import gettext as _, keys as i18n_keys
 from ..lv_colors import lv_colors
@@ -28,7 +27,8 @@ def has_takers():
 
 def is_available() -> bool:
     return (
-        device.is_fingerprint_unlock_enabled()
+        device.is_initialized()
+        and device.is_fingerprint_unlock_enabled()
         and config.is_unlocked()
         and has_fingerprints()
         and failed_count() < utils.MAX_FP_ATTEMPTS
@@ -39,20 +39,40 @@ def failed_count() -> int:
     return device.finger_failed_count()
 
 
+def get_fingerprint_count() -> int:
+    try:
+        count = fingerprint.get_template_count()
+    except Exception as e:
+        if __debug__:
+            print(f"get fingerprint count failed: {e}")
+        count = 0
+    return count
+
+
 def has_fingerprints() -> bool:
-    return fingerprint.get_template_count() > 0
+    return get_fingerprint_count() > 0
 
 
-def lock():
-    se_thd89.fingerprint_lock()
+def get_fingerprint_list():
+    try:
+        fingers = fingerprint.list_template()
+    except Exception as e:
+        if __debug__:
+            print(f"get fingerprint list failed: {e}")
+        return ()
+    return fingers or ()
+
+
+def lock() -> bool:
+    return config.fingerprint_lock()
 
 
 def unlock() -> bool:
-    return se_thd89.fingerprint_unlock()
+    return config.fingerprint_unlock()
 
 
 def is_unlocked() -> bool:
-    return se_thd89.fingerprint_is_unlocked()
+    return config.fingerprint_is_unlocked()
 
 
 class RequestAddFingerprintScreen(FullSizeWindow):

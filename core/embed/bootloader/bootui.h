@@ -49,6 +49,8 @@ void ui_screen_install_start(void);
 void ui_screen_install_progress_erase(int pos, int len);
 void ui_screen_install_progress_upload(int pos);
 
+void ui_screen_confirm(char* title, char* note_l1, char* note_l2, char* note_l3,
+                       char* note_l4);
 void ui_screen_progress_bar_prepare(char* title, char* notes);
 void ui_screen_progress_bar_update(char* msg_status, char* notes, int progress);
 
@@ -58,7 +60,7 @@ void ui_screen_wipe_progress(int pos, int len);
 void ui_screen_wipe_done(void);
 
 void ui_screen_done(int restart_seconds, secbool full_redraw);
-
+void ui_screen_success(char* title, char* notes);
 void ui_screen_fail(void);
 
 void ui_fadein(void);
@@ -72,16 +74,8 @@ void ui_fadeout(void);
 #define INPUT_NEXT 0x10          // Next icon
 #define INPUT_PREVIOUS 0x20      // Previous icon
 #define INPUT_RESTART 0x40       // Restart icon
-#define INPUT_VERSION_INFO 0x80         // Touchscreen
-
-enum BAT_LEVEL {
-  BAT_LEVEL_0,
-  BAT_LEVEL_25,
-  BAT_LEVEL_50,
-  BAT_LEVEL_75,
-  BAT_LEVEL_100,
-  BAT_LEVEL_CHARGING
-};
+#define INPUT_BOOT_VERSION_TEXT 0x80     // Boot Version
+#define INPUT_BUILD_ID_TEXT 0x0100         // Build ID
 
 // clang-format on
 

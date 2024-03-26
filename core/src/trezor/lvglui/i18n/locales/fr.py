@@ -174,7 +174,7 @@ translations = [
     "Utiliser cette phrase secrète?",
     "Modèle",
     "Stockage",
-    "PIN incorrect, c'est votre dernière tentative.",
+    "PIN incorrect, c'est votre dernière tentative",
     "Modifier la redevance",
     "Montant (vous dépensez)",
     "Nouveaux frais",
@@ -744,5 +744,7 @@ translations = [
     "Êtes-vous sûr de désactiver le mode Air Gap ? Après désactivation, il pourra connecter votre appareil via Bluetooth ou USB.",
     "Sélectionnez la chaîne dont vous avez besoin, puis cliquez sur le bouton Créer.",
     "Chaînes compatibles ETH et EVM",
+    "empreinte digitale non reconnue, réessayez",
+    "Utilisez l'empreinte digitale ou appuyez pour déverrouiller",
 ]
 # fmt: on

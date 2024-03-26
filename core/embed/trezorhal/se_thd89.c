@@ -142,8 +142,10 @@ static secbool se_transmit_mac_ex(uint8_t addr, uint8_t *session_key,
   APDU_P2 = p2;
   APDU_P3 = 0x00;
 
+  memset(iv_random, 0x00, sizeof(iv_random));
+
   if (!se_random_encrypted_ex(addr, session_key, iv_random, 16)) {
-    return secfalse;
+    ensure(secfalse, "se_random_encrypted_ex failed");
   }
 
   if (data != NULL && data_len != 0) {
@@ -153,7 +155,7 @@ static secbool se_transmit_mac_ex(uint8_t addr, uint8_t *session_key,
     data_len += pad_len;
     // header + data + mac
     if (data_len > SE_BUF_MAX_LEN - 7 - 4) {
-      return secfalse;
+      ensure(secfalse, "data_len too long");
     }
 
     memmove(APDU_DATA, data, data_len - pad_len);
@@ -190,12 +192,12 @@ static secbool se_transmit_mac_ex(uint8_t addr, uint8_t *session_key,
   }
   if (se_recv_len) {
     if ((se_recv_len - 4) % AES_BLOCK_SIZE) {
-      return secfalse;
+      ensure(secfalse, "se_recv_len error");
     }
 
     cal_mac(session_key, se_recv_buffer, se_recv_len - 4, mac);
     if (memcmp(mac, se_recv_buffer + se_recv_len - 4, 4) != 0) {
-      return secfalse;
+      ensure(secfalse, "se_recv_buffer mac error");
     }
 
     se_recv_len -= 4;
@@ -213,18 +215,18 @@ static secbool se_transmit_mac_ex(uint8_t addr, uint8_t *session_key,
         pad_len++;
       } else {
         memset(APDU, 0x00, sizeof(APDU));
-        return secfalse;
+        ensure(secfalse, "se_recv_buffer pad error");
       }
     }
     se_recv_len -= pad_len;
 
     if (recv_len == NULL) {
-      return sectrue;
+      ensure(secfalse, "recv_len is NULL");
     }
 
     if (*recv_len < se_recv_len) {
       memset(APDU, 0x00, sizeof(APDU));
-      return secfalse;
+      ensure(secfalse, "recv_len too short");
     }
     *recv_len = se_recv_len;
     if (recv) {
@@ -265,20 +267,28 @@ secbool se_random_encrypted_ex(uint8_t addr, uint8_t *session_key,
   uint8_t cmd[7] = {0xa4, 0x84, 0x00, 0x00, 0x02};
   uint8_t mac[4];
   uint8_t pad_len;
+  secbool ret;
   cmd[5] = (len >> 8) & 0xff;
   cmd[6] = len & 0xff;
-  if (!thd89_transmit_ex(addr, cmd, sizeof(cmd), se_recv_buffer, &recv_len)) {
-    return secfalse;
+
+  for (int retry = 0; retry < 3; retry++) {
+    recv_len = SE_BUF_MAX_LEN;
+    ret = thd89_transmit_ex(addr, cmd, sizeof(cmd), se_recv_buffer, &recv_len);
+    if (ret == sectrue) {
+      break;
+    }
   }
+
+  ensure(ret, "thd89_transmit_ex failed");
 
   if (recv_len) {
     if ((recv_len - 4) % AES_BLOCK_SIZE) {
-      return secfalse;
+      ensure(secfalse, "recv_len error");
     }
 
     cal_mac(session_key, se_recv_buffer, recv_len - 4, mac);
     if (memcmp(mac, se_recv_buffer + recv_len - 4, 4) != 0) {
-      return secfalse;
+      ensure(secfalse, "mac error");
     }
 
     recv_len -= 4;
@@ -293,13 +303,13 @@ secbool se_random_encrypted_ex(uint8_t addr, uint8_t *session_key,
       } else if (se_recv_buffer[recv_len - 1 - i] == 0x00) {
         pad_len++;
       } else {
-        return secfalse;
+        ensure(secfalse, "pad error");
       }
     }
     recv_len -= pad_len;
 
     if (recv_len != len) {
-      return secfalse;
+      ensure(secfalse, "recv_len error");
     }
   }
 
@@ -554,53 +564,337 @@ secbool se_get_sn(char **serial) {
   return sectrue;
 }
 
-char *se_get_version(void) {
-  uint8_t get_ver[5] = {0x00, 0xf7, 0x00, 00, 0x00};
-  static char ver[8] = {0};
-  uint16_t ver_len = sizeof(ver);
+static int _se_get_ver_info(uint8_t addr, uint8_t cmd, uint8_t *out,
+                            uint16_t in_len) {
+  uint8_t get_ver[5] = {0x00, 0xf7, 0x00, cmd, 0x00};
+  uint16_t len = in_len;
 
-  if (!thd89_transmit(get_ver, sizeof(get_ver), (uint8_t *)ver, &ver_len)) {
-    return NULL;
+  if (!thd89_transmit_ex(addr, get_ver, sizeof(get_ver), out, &len)) {
+    memset(out, 0, in_len);
+    return 0;
   }
-
-  return ver;
+  return len;
 }
 
-char *se_get_hash(void) {
-  uint8_t get_hash[5] = {0x00, 0xf7, 0x00, 0x02, 0x00};
-  static char hash[32] = {0};
-  uint16_t len = 32;
-
-  if (!thd89_transmit(get_hash, sizeof(get_hash), (uint8_t *)hash, &len)) {
-    return NULL;
-  }
-
-  return hash;
+int se_get_version(uint8_t addr, char *ver, uint16_t in_len) {
+  return _se_get_ver_info(addr, 0x00, (uint8_t *)ver, in_len);
 }
 
-char *se_get_build_id(void) {
-  uint8_t get_build_id[5] = {0x00, 0xf7, 0x00, 0x01, 0x00};
+int se_get_build_id(uint8_t addr, char *build_id, uint16_t in_len) {
+  return _se_get_ver_info(addr, 0x01, (uint8_t *)build_id, in_len);
+}
+
+int se_get_hash(uint8_t addr, uint8_t *hash, uint16_t in_len) {
+  return _se_get_ver_info(addr, 0x02, hash, in_len);
+}
+
+int se_get_boot_version(uint8_t addr, char *ver, uint16_t in_len) {
+  return _se_get_ver_info(addr, 0x03, (uint8_t *)ver, in_len);
+}
+
+int se_get_boot_build_id(uint8_t addr, char *build_id, uint16_t in_len) {
+  return _se_get_ver_info(addr, 0x04, (uint8_t *)build_id, in_len);
+}
+
+int se_get_boot_hash(uint8_t addr, uint8_t *hash, uint16_t in_len) {
+  return _se_get_ver_info(addr, 0x05, hash, in_len);
+}
+
+char *se01_get_version(void) {
+  static char version[16] = {0};
+  if (strlen(version) > 0) {
+    return version;
+  }
+  int len = se_get_version(THD89_1ST_ADDRESS, version, sizeof(version));
+  if (len == 0) {
+    return NULL;
+  }
+  return version;
+}
+
+char *se01_get_build_id(void) {
   static char build_id[8] = {0};
-  uint16_t len = sizeof(build_id);
-
-  if (!thd89_transmit(get_build_id, sizeof(get_build_id), (uint8_t *)build_id,
-                      &len)) {
+  if (strlen(build_id) > 0) {
+    return build_id;
+  }
+  int len = se_get_build_id(THD89_1ST_ADDRESS, build_id, sizeof(build_id));
+  if (len == 0) {
     return NULL;
   }
-
   return build_id;
 }
 
-char *se_fp_get_version(void) {
-  uint8_t get_ver[5] = {0x00, 0xf7, 0x00, 00, 0x00};
-  static char ver[8] = {0};
-  uint16_t ver_len = sizeof(ver);
-
-  if (!thd89_fp_transmit(get_ver, sizeof(get_ver), (uint8_t *)ver, &ver_len)) {
+uint8_t *se01_get_hash(void) {
+  static uint8_t hash[32] = {0};
+  static bool hash_init = false;
+  if (hash_init) {
+    return hash;
+  }
+  if (se_get_hash(THD89_1ST_ADDRESS, hash, sizeof(hash)) == 0) {
     return NULL;
   }
+  hash_init = true;
+  return hash;
+}
 
-  return ver;
+char *se01_get_boot_version(void) {
+  static char version[16] = {0};
+  if (strlen(version) > 0) {
+    return version;
+  }
+  int len = se_get_boot_version(THD89_1ST_ADDRESS, version, sizeof(version));
+  if (len == 0) {
+    return NULL;
+  }
+  return version;
+}
+
+char *se01_get_boot_build_id(void) {
+  static char build_id[8] = {0};
+  if (strlen(build_id) > 0) {
+    return build_id;
+  }
+  int len = se_get_boot_build_id(THD89_1ST_ADDRESS, build_id, sizeof(build_id));
+  if (len == 0) {
+    return NULL;
+  }
+  return build_id;
+}
+
+uint8_t *se01_get_boot_hash(void) {
+  static uint8_t hash[32] = {0};
+  static bool hash_init = false;
+  if (hash_init) {
+    return hash;
+  }
+  if (se_get_boot_hash(THD89_1ST_ADDRESS, hash, sizeof(hash)) == 0) {
+    return NULL;
+  }
+  hash_init = true;
+  return hash;
+}
+
+char *se02_get_version(void) {
+  static char version[16] = {0};
+  if (strlen(version) > 0) {
+    return version;
+  }
+  int len = se_get_version(THD89_2ND_ADDRESS, version, sizeof(version));
+  if (len == 0) {
+    return NULL;
+  }
+  return version;
+}
+
+char *se02_get_build_id(void) {
+  static char build_id[8] = {0};
+  if (strlen(build_id) > 0) {
+    return build_id;
+  }
+  int len = se_get_build_id(THD89_2ND_ADDRESS, build_id, sizeof(build_id));
+  if (len == 0) {
+    return NULL;
+  }
+  return build_id;
+}
+
+uint8_t *se02_get_hash(void) {
+  static uint8_t hash[32] = {0};
+  static bool hash_init = false;
+  if (hash_init) {
+    return hash;
+  }
+  if (se_get_hash(THD89_2ND_ADDRESS, hash, sizeof(hash)) == 0) {
+    return NULL;
+  }
+  hash_init = true;
+  return hash;
+}
+
+char *se02_get_boot_version(void) {
+  static char version[16] = {0};
+  if (strlen(version) > 0) {
+    return version;
+  }
+  int len = se_get_boot_version(THD89_2ND_ADDRESS, version, sizeof(version));
+  if (len == 0) {
+    return NULL;
+  }
+  return version;
+}
+
+char *se02_get_boot_build_id(void) {
+  static char build_id[8] = {0};
+  if (strlen(build_id) > 0) {
+    return build_id;
+  }
+  int len = se_get_boot_build_id(THD89_2ND_ADDRESS, build_id, sizeof(build_id));
+  if (len == 0) {
+    return NULL;
+  }
+  return build_id;
+}
+
+uint8_t *se02_get_boot_hash(void) {
+  static uint8_t hash[32] = {0};
+  static bool hash_init = false;
+  if (hash_init) {
+    return hash;
+  }
+  if (se_get_boot_hash(THD89_2ND_ADDRESS, hash, sizeof(hash)) == 0) {
+    return NULL;
+  }
+  hash_init = true;
+  return hash;
+}
+
+char *se03_get_version(void) {
+  static char version[16] = {0};
+  if (strlen(version) > 0) {
+    return version;
+  }
+  int len = se_get_version(THD89_3RD_ADDRESS, version, sizeof(version));
+  if (len == 0) {
+    return NULL;
+  }
+  return version;
+}
+
+char *se03_get_build_id(void) {
+  static char build_id[8] = {0};
+  if (strlen(build_id) > 0) {
+    return build_id;
+  }
+  int len = se_get_build_id(THD89_3RD_ADDRESS, build_id, sizeof(build_id));
+  if (len == 0) {
+    return NULL;
+  }
+  return build_id;
+}
+
+uint8_t *se03_get_hash(void) {
+  static uint8_t hash[32] = {0};
+  static bool hash_init = false;
+  if (hash_init) {
+    return hash;
+  }
+  if (se_get_hash(THD89_3RD_ADDRESS, hash, sizeof(hash)) == 0) {
+    return NULL;
+  }
+  hash_init = true;
+  return hash;
+}
+
+char *se03_get_boot_version(void) {
+  static char version[16] = {0};
+  if (strlen(version) > 0) {
+    return version;
+  }
+  int len = se_get_boot_version(THD89_3RD_ADDRESS, version, sizeof(version));
+  if (len == 0) {
+    return NULL;
+  }
+  return version;
+}
+
+char *se03_get_boot_build_id(void) {
+  static char build_id[8] = {0};
+  if (strlen(build_id) > 0) {
+    return build_id;
+  }
+  int len = se_get_boot_build_id(THD89_3RD_ADDRESS, build_id, sizeof(build_id));
+  if (len == 0) {
+    return NULL;
+  }
+  return build_id;
+}
+
+uint8_t *se03_get_boot_hash(void) {
+  static uint8_t hash[32] = {0};
+  static bool hash_init = false;
+  if (hash_init) {
+    return hash;
+  }
+  if (se_get_boot_hash(THD89_3RD_ADDRESS, hash, sizeof(hash)) == 0) {
+    return NULL;
+  }
+  hash_init = true;
+  return hash;
+}
+
+char *se04_get_version(void) {
+  static char version[16] = {0};
+  if (strlen(version) > 0) {
+    return version;
+  }
+  int len = se_get_version(THD89_FINGER_ADDRESS, version, sizeof(version));
+  if (len == 0) {
+    return NULL;
+  }
+  return version;
+}
+
+char *se04_get_build_id(void) {
+  static char build_id[8] = {0};
+  if (strlen(build_id) > 0) {
+    return build_id;
+  }
+  int len = se_get_build_id(THD89_FINGER_ADDRESS, build_id, sizeof(build_id));
+  if (len == 0) {
+    return NULL;
+  }
+  return build_id;
+}
+
+uint8_t *se04_get_hash(void) {
+  static uint8_t hash[32] = {0};
+  static bool hash_init = false;
+  if (hash_init) {
+    return hash;
+  }
+  if (se_get_hash(THD89_FINGER_ADDRESS, hash, sizeof(hash)) == 0) {
+    return NULL;
+  }
+  hash_init = true;
+  return hash;
+}
+
+char *se04_get_boot_version(void) {
+  static char version[16] = {0};
+  if (strlen(version) > 0) {
+    return version;
+  }
+  int len = se_get_boot_version(THD89_FINGER_ADDRESS, version, sizeof(version));
+  if (len == 0) {
+    return NULL;
+  }
+  return version;
+}
+
+char *se04_get_boot_build_id(void) {
+  static char build_id[8] = {0};
+  if (strlen(build_id) > 0) {
+    return build_id;
+  }
+  int len =
+      se_get_boot_build_id(THD89_FINGER_ADDRESS, build_id, sizeof(build_id));
+  if (len == 0) {
+    return NULL;
+  }
+  return build_id;
+}
+
+uint8_t *se04_get_boot_hash(void) {
+  static uint8_t hash[32] = {0};
+  static bool hash_init = false;
+  if (hash_init) {
+    return hash;
+  }
+  if (se_get_boot_hash(THD89_FINGER_ADDRESS, hash, sizeof(hash)) == 0) {
+    return NULL;
+  }
+  hash_init = true;
+  return hash;
 }
 
 secbool se_get_ecdh_pubkey(uint8_t addr, uint8_t *key) {
@@ -692,10 +986,9 @@ static secbool se_hasPin_ex(uint8_t addr, uint8_t *session_key) {
   uint8_t hasPin = 0xff;
   uint16_t len = sizeof(hasPin);
 
-  if (!se_transmit_mac_ex(addr, session_key, SE_INS_PIN, 0x00, 0x00, NULL, 0,
-                          &hasPin, &len)) {
-    return secfalse;
-  }
+  ensure(se_transmit_mac_ex(addr, session_key, SE_INS_PIN, 0x00, 0x00, NULL, 0,
+                            &hasPin, &len),
+         "get pin failed");
 
   // 0x55 exist ,0xff not
   return sectrue * (hasPin == 0x55);

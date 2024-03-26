@@ -54,6 +54,16 @@
   TO_STR(VERSION_MAJOR) "." TO_STR(VERSION_MINOR) "." TO_STR(VERSION_PATCH)
 #define PIXEL_STEP 5
 
+typedef struct {
+  char version[16];
+  char build_id[16];
+} board_info_t;
+
+const board_info_t board_info __attribute__((section(".version_section"))) = {
+    .version = VERSION_STR,
+    .build_id = BUILD_COMMIT,
+};
+
 #if PRODUCTION
 const uint8_t BOARDLOADER_KEY_M = 4;
 const uint8_t BOARDLOADER_KEY_N = 7;
@@ -249,10 +259,9 @@ static secbool try_bootloader_update(bool do_update, bool auto_reboot) {
   char *new_bootloader_path_p = NULL;
 
   // check file exists
-  if (emmc_fs_path_exist(new_bootloader_path)){
+  if (emmc_fs_path_exist(new_bootloader_path)) {
     new_bootloader_path_p = new_bootloader_path;
-  }
-  else if (emmc_fs_path_exist(new_bootloader_path_legacy)){
+  } else if (emmc_fs_path_exist(new_bootloader_path_legacy)) {
     new_bootloader_path_p = new_bootloader_path_legacy;
   }
   if (new_bootloader_path_p == NULL) return secfalse;

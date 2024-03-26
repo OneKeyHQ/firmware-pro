@@ -22,7 +22,7 @@ int fingerprint_delete(uint8_t id);
 int fingerprint_delete_all(void);
 int fingerprint_get_count(uint8_t* count);
 int fingerprint_get_list(uint8_t* list, uint8_t len);
-void fingerprint_enter_sleep(void);
+int fingerprint_enter_sleep(void);
 void fingerprint_test(void);
 void fp_test(void);
 

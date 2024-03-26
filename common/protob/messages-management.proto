@@ -47,6 +47,32 @@ message GetFeatures {
 }
 
 /**
+ * Request: Ask for device details (no device reset)
+ * @start
+ * @next Features
+ */
+message OnekeyGetFeatures {
+}
+
+enum OneKeyDeviceType {
+    CLASSIC = 0x00;
+    CLASSIC1S = 0x01;
+    MINI = 0x02;
+    TOUCH = 0x03;
+    PRO = 0x05;
+}
+
+enum OneKeySeType {
+    THD89 = 0x00;
+    SE608A = 0x01;
+}
+
+enum OneKeySEState {
+    BOOT = 0x00;
+    APP = 0x01;
+}
+
+/**
  * Response: Reports various information about the device
  * @end
  */
@@ -135,26 +161,15 @@ message Features {
     optional string boardloader_version = 519;
     optional bool busy = 41;                    // is the device busy, showing "Do not disconnect"?
 
-    enum OneKeyDeviceType {
-        CLASSIC = 0x00;
-        CLASSIC1S = 0x01;
-        MINI = 0x02;
-        TOUCH = 0x03;
-        PRO = 0x05;
-    }
     optional OneKeyDeviceType onekey_device_type = 600;
-    enum OneKeySeType {
-        THD89 = 0x00;
-        SE608A = 0x01;
-    }
     optional OneKeySeType onekey_se_type = 601;
     optional string onekey_board_version = 602;
     optional bytes onekey_board_hash = 603;
     optional string onekey_boot_version = 604;
     optional bytes onekey_boot_hash = 605;
-    optional string onekey_se_version = 606;
-    optional bytes onekey_se_hash = 607;
-    optional string onekey_se_build_id = 608;
+    optional string onekey_se01_version = 606;
+    optional bytes onekey_se01_hash = 607;
+    optional string onekey_se01_build_id = 608;
     optional string onekey_firmware_version = 609;
     optional bytes onekey_firmware_hash	 = 610;
     optional string onekey_firmware_build_id = 611;
@@ -164,6 +179,64 @@ message Features {
     optional string onekey_ble_version = 615;
     optional string onekey_ble_build_id = 616;
     optional bytes onekey_ble_hash = 617;
+    optional string onekey_se02_version = 618;
+    optional string onekey_se03_version = 619;
+    optional string onekey_se04_version = 620;
+    optional OneKeySEState onekey_se01_state = 621;
+    optional OneKeySEState onekey_se02_state = 622;
+    optional OneKeySEState onekey_se03_state = 623;
+    optional OneKeySEState onekey_se04_state = 624;
+}
+
+/**
+ * Response: Reports various information about the device
+ * @end
+ */
+message OnekeyFeatures {
+    optional OneKeyDeviceType onekey_device_type = 1;
+    optional string onekey_board_version = 2;
+    optional string onekey_boot_version = 3;
+    optional string onekey_firmware_version = 4;
+    optional bytes onekey_board_hash = 5;
+    optional bytes onekey_boot_hash = 6;
+    optional bytes onekey_firmware_hash	 = 7;
+    optional string onekey_board_build_id = 8;
+    optional string onekey_boot_build_id = 9;
+    optional string onekey_firmware_build_id = 10;
+    optional string onekey_serial_no = 11;    
+    optional string onekey_ble_name = 12;
+    optional string onekey_ble_version = 13;
+    optional string onekey_ble_build_id = 14;
+    optional bytes onekey_ble_hash = 15;
+    optional OneKeySeType onekey_se_type = 16;
+    optional OneKeySEState onekey_se01_state = 17;
+    optional OneKeySEState onekey_se02_state = 18;
+    optional OneKeySEState onekey_se03_state = 19;
+    optional OneKeySEState onekey_se04_state = 20;    
+    optional string onekey_se01_version = 21;
+    optional string onekey_se02_version = 22;
+    optional string onekey_se03_version = 23;
+    optional string onekey_se04_version = 24;
+    optional bytes onekey_se01_hash = 25;
+    optional bytes onekey_se02_hash = 26;
+    optional bytes onekey_se03_hash = 27;
+    optional bytes onekey_se04_hash = 28;
+    optional string onekey_se01_build_id = 29;
+    optional string onekey_se02_build_id = 30;
+    optional string onekey_se03_build_id = 31;
+    optional string onekey_se04_build_id = 32;    
+    optional string onekey_se01_boot_version = 33;
+    optional string onekey_se02_boot_version = 34;
+    optional string onekey_se03_boot_version = 35;
+    optional string onekey_se04_boot_version = 36;
+    optional bytes onekey_se01_boot_hash = 37;
+    optional bytes onekey_se02_boot_hash = 38;
+    optional bytes onekey_se03_boot_hash = 39;
+    optional bytes onekey_se04_boot_hash = 40;
+    optional string onekey_se01_boot_build_id = 41;
+    optional string onekey_se02_boot_build_id = 42;
+    optional string onekey_se03_boot_build_id = 43;
+    optional string onekey_se04_boot_build_id = 44;    
 }
 
 /**

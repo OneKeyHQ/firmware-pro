@@ -96,6 +96,8 @@ class QRTask:
             eth_req = EthSignRequest.from_cbor(ur.cbor)
             if eth_req.get_data_type() == RequestType_TypedData:
                 self.mulit_pkg = True
+            else:
+                self.mulit_pkg = False
             self.req = await EthSignRequest.gen_transaction(ur)
             if __debug__:
                 print("req: ", type(self.req))

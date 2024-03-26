@@ -81,6 +81,13 @@ void fpsensor_irq_enable(void)
     HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 }
 
+void fpsensor_data_cache_clear(void)
+{
+    memset(fp_data_cache, 0, FINGER_DATA_TOTAL_SIZE);
+    fpsensor_cache.list_data_valid = false;
+    memset(fpsensor_cache.template_data_valid, 0, MAX_FINGERPRINT_COUNT);
+}
+
 void fpsensor_irq_disable(void)
 {
     fp_touched = false;
@@ -434,24 +441,39 @@ bool fpsensor_data_init(void)
         if ( crc != fp_crc32(p_data, TEMPLATE_LENGTH) )
         {
             memset(p_data, 0, TEMPLATE_LENGTH);
+            se_fp_write(TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_TOTAL_LENGTH, "\xff\xff\xff\xff", 4, 0, 0);
         }
-        se_fp_write(TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_TOTAL_LENGTH, "\xff\xff\xff\xff", 4, 0, 0);
     }
     data_inited = true;
     return true;
 }
 
-bool fpsensor_data_save(void)
+bool fpsensor_data_save(bool update_all, uint8_t id)
 {
     uint8_t* p_data;
     uint32_t crc;
     uint8_t list[MAX_FINGERPRINT_COUNT] = {0};
     uint8_t counter = 0;
-    for ( uint8_t i = 0; i < MAX_FINGERPRINT_COUNT; i++ )
+    if ( update_all )
     {
-        if ( fpsensor_cache.template_data_valid[i] )
+        for ( uint8_t i = 0; i < MAX_FINGERPRINT_COUNT; i++ )
         {
-            list[counter++] = i;
+            if ( fpsensor_cache.template_data_valid[i] )
+            {
+                list[counter++] = i;
+            }
+        }
+    }
+    else
+    {
+        if ( fpsensor_cache.template_data_valid[id] )
+        {
+            list[0] = id;
+            counter = 1;
+        }
+        else
+        {
+            return false;
         }
     }
 
@@ -471,6 +493,47 @@ bool fpsensor_data_save(void)
                 TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_TOTAL_LENGTH + TEMPLATE_LENGTH, (uint8_t*)&crc,
                 TEMPLATE_DATA_CRC_LEN, 0, 0
             ),
+            "se_fp_write failed"
+        );
+    }
+    return true;
+}
+
+bool fpsensor_data_delete(bool all, uint8_t id)
+{
+    uint8_t* p_data;
+    uint8_t list[MAX_FINGERPRINT_COUNT] = {0};
+    uint8_t counter = 0;
+    if ( all )
+    {
+        for ( uint8_t i = 0; i < MAX_FINGERPRINT_COUNT; i++ )
+        {
+            if ( fpsensor_cache.template_data_valid[i] )
+            {
+                list[counter++] = i;
+            }
+        }
+    }
+    else
+    {
+        if ( fpsensor_cache.template_data_valid[id] )
+        {
+            list[0] = id;
+            counter = 1;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    for ( uint8_t i = 0; i < counter; i++ )
+    {
+        p_data = fp_data_cache + TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_LENGTH;
+        memset(p_data, 0, TEMPLATE_LENGTH);
+
+        ensure(
+            se_fp_write(TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_TOTAL_LENGTH, p_data, 4, 0, 0),
             "se_fp_write failed"
         );
     }

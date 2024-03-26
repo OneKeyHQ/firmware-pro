@@ -22,7 +22,8 @@ def show_pin_timeout(seconds: int, progress: int, message: str) -> bool:
         # ui.display.text_center(ui.WIDTH // 2, 37, message, ui.BOLD, ui.FG, ui.BG)
 
     # if not utils.DISABLE_ANIMATION:
-    ui.display.loader(progress, False, 0, ui.FG, ui.BG)
+    else:
+        ui.display.loader(progress, False, 0, ui.FG, ui.BG)
 
     if seconds != _previous_seconds:
         if seconds == 0:

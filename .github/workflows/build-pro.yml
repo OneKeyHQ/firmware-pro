@@ -27,7 +27,7 @@ jobs:
           echo "SHORT_HASH=$SHORT_HASH" >> $GITHUB_ENV
           echo "ARTIFACTS_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"" >> $GITHUB_ENV
 
-      - name: "Build boardloader bootloader firmware"
+      - name: "Build boardloader bootloader firmware for production"
         env:
           PRODUCTION: 1
         run: |
@@ -39,12 +39,12 @@ jobs:
           nix-shell --run "poetry run make -C core build_bootloader"
           nix-shell --run "poetry run make -C core build_firmware"
           nix-shell --run "poetry run core/tools/headertool.py -h core/build/firmware/pro*Stable*.bin -S 1:${{ secrets.SECRET_KEY_1 }} -S 2:${{ secrets.SECRET_KEY_2 }}"
-          mkdir -p core/build/output/boardloader && mkdir -p core/build/output/bootloader && mkdir -p core/build/output/firmware
-          cp ./core/build/boardloader/boardloader.bin core/build/output/boardloader
-          cp ./core/build/bootloader/pro.bootloader*Stable*.bin core/build/output/bootloader
-          cp ./core/build/firmware/pro*Stable*.bin core/build/output/firmware
-          tools/hash.py -t bootloader -f core/build/bootloader/bootloader.bin > core/build/output/bootloader/sha256.txt
-          tools/hash.py -t firmware -f core/build/firmware/pro.*.bin > core/build/output/firmware/sha256.txt
+          mkdir -p core/build/output/prod
+          cp ./core/build/boardloader/boardloader.bin core/build/output/prod
+          cp ./core/build/bootloader/pro.bootloader*Stable*.bin core/build/output/prod
+          cp ./core/build/firmware/pro*Stable*.bin core/build/output/prod
+          tools/hash.py -t bootloader -f core/build/bootloader/bootloader.bin > core/build/output/prod/bootloader_sha256.txt
+          tools/hash.py -t firmware -f core/build/firmware/pro.*.bin > core/build/output/prod/firmware_sha256.txt
 
       - name: "Build boardloader bootloader firmware for qa"
         env:
@@ -61,9 +61,11 @@ jobs:
           nix-shell --run "poetry run core/tools/headertool.py -h core/build/bootloader/pro.bootloader*Stable*.bin -S 1:${{ secrets.SECRET_QA_KEY_1 }} -S 2:${{ secrets.SECRET_QA_KEY_2 }}"
           nix-shell --run "poetry run core/tools/headertool.py -h core/build/firmware/pro*Stable*.bin -S 1:${{ secrets.SECRET_QA_KEY_1 }} -S 2:${{ secrets.SECRET_QA_KEY_2 }}"
           mkdir -p core/build/output/qa
-          cp ./core/build/boardloader/boardloader.bin ./core/build/bootloader/pro.bootloader*Stable*.bin ./core/build/firmware/pro*Stable*.bin core/build/output/qa
-          tools/hash.py -t bootloader -f core/build/bootloader/bootloader.bin > core/build/output/qa/sha256.txt
-          tools/hash.py -t firmware -f core/build/firmware/pro.*.bin >> core/build/output/qa/sha256.txt
+          cp ./core/build/boardloader/boardloader.bin core/build/output/qa
+          cp ./core/build/bootloader/pro.bootloader*Stable*.bin core/build/output/qa
+          cp ./core/build/firmware/pro*Stable*.bin core/build/output/qa
+          tools/hash.py -t bootloader -f core/build/bootloader/bootloader.bin > core/build/output/qa/bootloader_sha256.txt
+          tools/hash.py -t firmware -f core/build/firmware/pro.*.bin >> core/build/output/qa/firmware_sha256.txt
 
       - name: "Upload Artifacts"
         uses: actions/upload-artifact@v3

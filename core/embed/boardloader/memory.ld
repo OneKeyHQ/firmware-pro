@@ -23,6 +23,8 @@ axiram_end = ORIGIN(AXIRAM) + LENGTH(AXIRAM);
 sram_start = ORIGIN(SRAM);
 sram_end = ORIGIN(SRAM) + LENGTH(SRAM);
 
+_codelen = SIZEOF(.vector_table) + SIZEOF(.text) + SIZEOF(.rodata) + SIZEOF(.data);
+
 SECTIONS {
   .vector_table : ALIGN(512) {
     KEEP(*(.vector_table));
@@ -42,6 +44,14 @@ SECTIONS {
     *(.data*);
     . = ALIGN(4); /* make the section size a multiple of the word size */
   } >SRAM AT>FLASH
+
+  
+  .version_section :
+  {
+    ASSERT (_codelen <= LENGTH(FLASH) - 32, "Error: Code exceeds memory space!");
+    . = ORIGIN(FLASH) + LENGTH(FLASH) - 32;
+    KEEP(*(.version_section));
+  } > FLASH
 
   .bss : ALIGN(4) {
     *(.bss*);

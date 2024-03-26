@@ -67,6 +67,10 @@ class MainScreen(Screen):
                 StyleWrapper().text_align_center().text_color(lv_colors.WHITE), 0
             )
         else:
+            self.add_style(
+                StyleWrapper().bg_img_src(homescreen),
+                0,
+            )
             if hasattr(self, "dev_state"):
                 from apps.base import get_state
 
@@ -76,8 +80,6 @@ class MainScreen(Screen):
                 else:
                     self.dev_state.delete()
                     del self.dev_state
-
-            self.set_style_bg_img_src(homescreen, 0)
             if self.bottom_tips:
                 self.bottom_tips.set_text(_(i18n_keys.BUTTON__SWIPE_TO_SHOW_APPS))
                 self.up_arrow.align_to(self.bottom_tips, lv.ALIGN.OUT_TOP_MID, 0, -8)
@@ -92,7 +94,7 @@ class MainScreen(Screen):
             self.dev_state.show(dev_state)
 
         self.add_style(
-            StyleWrapper().bg_img_src(homescreen).bg_img_opa(int(lv.OPA.COVER * 0.92)),
+            StyleWrapper().bg_img_src(homescreen),
             0,
         )
 
@@ -322,8 +324,8 @@ class MainScreen(Screen):
                 start_cb=self.show_anim_start_cb,
                 delay=15 if not __debug__ else APP_DRAWER_UP_DELAY,
                 del_cb=self.show_anim_del_cb,
-                time=50 if not __debug__ else APP_DRAWER_UP_TIME,
-                path_cb=lv.anim_t.path_ease_out
+                time=130 if not __debug__ else APP_DRAWER_UP_TIME,
+                path_cb=lv.anim_t.path_ease_in
                 if not __debug__
                 else APP_DRAWER_UP_PATH_CB,
             )
@@ -331,10 +333,10 @@ class MainScreen(Screen):
                 0,
                 800,
                 self.set_position,
-                path_cb=lv.anim_t.path_ease_in_out
+                path_cb=lv.anim_t.path_ease_out
                 if not __debug__
                 else APP_DRAWER_DOWN_PATH_CB,
-                time=150 if not __debug__ else APP_DRAWER_DOWN_TIME,
+                time=50 if not __debug__ else APP_DRAWER_DOWN_TIME,
                 start_cb=self.dismiss_anim_start_cb,
                 del_cb=self.dismiss_anim_del_cb,
                 delay=0 if not __debug__ else APP_DRAWER_DOWN_DELAY,
@@ -719,7 +721,7 @@ class NftManager(Screen):
         io.fatfs.unlink(self.img_path[2:])
         io.fatfs.unlink("1:/res/nfts/desc/" + self.file_name.split(".")[0] + ".json")
         if device.get_homescreen() == self.img_path:
-            device.set_homescreen("A:/res/wallpaper-1.jpg")
+            device.set_homescreen(utils.get_default_wallpaper())
         self.load_screen(self.prev_scr, destroy_self=True)
 
     def _load_scr(self, scr: "Screen", back: bool = False) -> None:
@@ -3063,7 +3065,7 @@ class WallPaperManage(Screen):
         io.fatfs.unlink(self.img_path[2:])
         io.fatfs.unlink(self.zoom_path[2:])
         if device.get_homescreen() == self.img_path:
-            device.set_homescreen("A:/res/wallpaper-1.jpg")
+            device.set_homescreen(utils.get_default_wallpaper())
         self.load_screen(self.prev_scr, destroy_self=True)
 
     # def cancel_callback(self):
@@ -3137,30 +3139,30 @@ class SecurityScreen(Screen):
             elif target == self.usb_lock:
                 UsbLockSetting(self)
             elif target == self.fingerprint:
-                from trezor.lvglui.scrs import fingerprints
+                # from trezor.lvglui.scrs import fingerprints
 
-                if fingerprints.has_fingerprints():
-                    # from trezor import config
+                # if fingerprints.has_fingerprints():
+                #     # from trezor import config
 
-                    # if config.has_pin():
-                    #     config.lock()
-                    from apps.common.request_pin import verify_user_pin
+                #     # if config.has_pin():
+                #     #     config.lock()
+                from apps.common.request_pin import verify_user_pin
 
-                    workflow.spawn(
-                        verify_user_pin(
-                            re_loop=False,
-                            allow_cancel=True,
-                            callback=lambda: FingerprintSetting(self),
-                            allow_fingerprint=False,
-                        )
+                workflow.spawn(
+                    verify_user_pin(
+                        re_loop=False,
+                        allow_cancel=True,
+                        callback=lambda: FingerprintSetting(self),
+                        allow_fingerprint=False,
                     )
-                else:
+                )
+                # else:
 
-                    workflow.spawn(
-                        fingerprints.add_fingerprint(
-                            0, callback=lambda: FingerprintSetting(self)
-                        )
-                    )
+                #     workflow.spawn(
+                #         fingerprints.add_fingerprint(
+                #             0, callback=lambda: FingerprintSetting(self)
+                #         )
+                #     )
             else:
                 if __debug__:
                     print("unknown")
@@ -3236,13 +3238,11 @@ class FingerprintSetting(Screen):
             self.container_fun.delete()
             self.tips.delete()
 
-        from trezorio import fingerprint
+        from . import fingerprints
 
-        self.fingerprint_list = fingerprint.list_template() or []
+        self.fingerprint_list = fingerprints.get_fingerprint_list()
 
-        if __debug__:
-            print("self.fingerprint_list", self.fingerprint_list)
-        counter = fingerprint.get_template_count()
+        counter = fingerprints.get_fingerprint_count()
         self.added_fingerprints = []
         if counter > 0:
             for ids in self.fingerprint_list:

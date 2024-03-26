@@ -61,6 +61,13 @@ def firmware_hash(
 
 
 # extmod/modtrezorutils/modtrezorutils.c
+def onekey_firmware_hash() -> bytes:
+    """
+    Computes the sha256 hash of the firmware
+    """
+
+
+# extmod/modtrezorutils/modtrezorutils.c
 def firmware_vendor() -> str:
     """
     Returns the firmware vendor string from the vendor header.
@@ -110,21 +117,56 @@ def board_hash() -> bytes:
 
 
 # extmod/modtrezorutils/modtrezorutils.c
-def se_version() -> str:
+def board_build_id() -> str:
+    """
+    Returns the boardloader build_id.
+    """
+
+
+# extmod/modtrezorutils/modtrezorutils.c
+def boot_build_id() -> str:
+    """
+    Returns the bootloader build_id.
+    """
+
+
+# extmod/modtrezorutils/modtrezorutils.c
+def se_version(se_addr: int) -> str:
     """
     Returns the se version string.
     """
 
 
 # extmod/modtrezorutils/modtrezorutils.c
-def se_hash() -> bytes:
+def se_hash(se_addr: int) -> bytes:
     """
     Returns the se hash.
     """
 
 
 # extmod/modtrezorutils/modtrezorutils.c
-def se_build_id() -> str:
+def se_build_id(se_addr: int) -> str:
+    """
+    Returns the se build id string.
+    """
+
+
+# extmod/modtrezorutils/modtrezorutils.c
+def se_boot_version(se_addr: int) -> str:
+    """
+    Returns the se version string.
+    """
+
+
+# extmod/modtrezorutils/modtrezorutils.c
+def se_boot_hash(se_addr: int) -> bytes:
+    """
+    Returns the se hash.
+    """
+
+
+# extmod/modtrezorutils/modtrezorutils.c
+def se_boot_build_id(se_addr: int) -> str:
     """
     Returns the se build id string.
     """

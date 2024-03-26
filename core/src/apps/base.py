@@ -21,6 +21,8 @@ if TYPE_CHECKING:
         DoPreauthorized,
         CancelAuthorization,
         SetBusy,
+        OnekeyGetFeatures,
+        OnekeyFeatures,
     )
 
 
@@ -82,19 +84,15 @@ def get_features() -> Features:
         onekey_device_type=OneKeyDeviceType.PRO,
         onekey_se_type=OneKeySeType.THD89,
         onekey_board_version=utils.board_version(),
-        onekey_board_hash=utils.board_hash(),
         onekey_boot_version=utils.boot_version(),
-        onekey_boot_hash=utils.boot_hash(),
-        onekey_se_version=utils.se_version(),
-        onekey_se_hash=utils.se_hash(),
-        onekey_se_build_id=utils.se_build_id(),
+        onekey_se01_version=storage.device.get_se01_version(),
+        onekey_se02_version=storage.device.get_se02_version(),
+        onekey_se03_version=storage.device.get_se03_version(),
+        onekey_se04_version=storage.device.get_se04_version(),
         onekey_firmware_version=utils.ONEKEY_VERSION,
-        onekey_firmware_build_id=utils.BUILD_ID[-7:].decode(),
         onekey_serial_no=storage_serial_no,
         onekey_ble_name=uart.get_ble_name(),
         onekey_ble_version=uart.get_ble_version(),
-        onekey_ble_build_id=uart.get_ble_build_id(),
-        onekey_ble_hash=uart.get_ble_hash(),
     )
 
     if utils.BITCOIN_ONLY:
@@ -151,6 +149,61 @@ def get_features() -> Features:
     return f
 
 
+def get_onekey_features() -> OnekeyFeatures:
+    from trezor.enums import OneKeyDeviceType, OneKeySeType
+    from trezor.messages import OnekeyFeatures
+    from trezor import uart
+
+    storage_serial_no = storage.device.get_serial()
+    serial_no = storage_serial_no
+    if serial_no[0:2] == "PR":
+        serial_no = "TC" + serial_no[2:]
+    f = OnekeyFeatures(
+        onekey_device_type=OneKeyDeviceType.PRO,
+        onekey_serial_no=storage_serial_no,
+        onekey_se_type=OneKeySeType.THD89,
+        onekey_board_version=utils.board_version(),
+        onekey_board_hash=utils.board_hash(),
+        onekey_board_build_id=utils.board_build_id(),
+        onekey_boot_version=utils.boot_version(),
+        onekey_boot_hash=utils.boot_hash(),
+        onekey_boot_build_id=utils.boot_build_id(),
+        onekey_firmware_version=utils.ONEKEY_VERSION,
+        onekey_firmware_build_id=utils.BUILD_ID[-7:].decode(),
+        onekey_firmware_hash=utils.onekey_firmware_hash(),
+        onekey_ble_name=uart.get_ble_name(),
+        onekey_ble_version=uart.get_ble_version(),
+        onekey_ble_build_id=uart.get_ble_build_id(),
+        onekey_ble_hash=uart.get_ble_hash(),
+        onekey_se01_version=storage.device.get_se01_version(),
+        onekey_se01_hash=storage.device.get_se01_hash(),
+        onekey_se01_build_id=storage.device.get_se01_build_id(),
+        onekey_se01_boot_version=storage.device.get_se01_boot_version(),
+        onekey_se01_boot_hash=storage.device.get_se01_boot_hash(),
+        onekey_se01_boot_build_id=storage.device.get_se01_boot_build_id(),
+        onekey_se02_version=storage.device.get_se02_version(),
+        onekey_se02_hash=storage.device.get_se02_hash(),
+        onekey_se02_build_id=storage.device.get_se02_build_id(),
+        onekey_se02_boot_version=storage.device.get_se02_boot_version(),
+        onekey_se02_boot_hash=storage.device.get_se02_boot_hash(),
+        onekey_se02_boot_build_id=storage.device.get_se02_boot_build_id(),
+        onekey_se03_version=storage.device.get_se03_version(),
+        onekey_se03_hash=storage.device.get_se03_hash(),
+        onekey_se03_build_id=storage.device.get_se03_build_id(),
+        onekey_se03_boot_version=storage.device.get_se03_boot_version(),
+        onekey_se03_boot_hash=storage.device.get_se03_boot_hash(),
+        onekey_se03_boot_build_id=storage.device.get_se03_boot_build_id(),
+        onekey_se04_version=storage.device.get_se04_version(),
+        onekey_se04_hash=storage.device.get_se04_hash(),
+        onekey_se04_build_id=storage.device.get_se04_build_id(),
+        onekey_se04_boot_version=storage.device.get_se04_boot_version(),
+        onekey_se04_boot_hash=storage.device.get_se04_boot_hash(),
+        onekey_se04_boot_build_id=storage.device.get_se04_boot_build_id(),
+    )
+
+    return f
+
+
 async def handle_Initialize(
     ctx: wire.Context | wire.QRContext, msg: Initialize
 ) -> Features:
@@ -200,6 +253,12 @@ async def handle_Initialize(
 
 async def handle_GetFeatures(ctx: wire.Context, msg: GetFeatures) -> Features:
     return get_features()
+
+
+async def handle_OnekeyGetFeatures(
+    ctx: wire.Context, msg: OnekeyGetFeatures
+) -> OnekeyFeatures:
+    return get_onekey_features()
 
 
 async def handle_Cancel(ctx: wire.Context, msg: Cancel) -> Success:
@@ -327,6 +386,7 @@ ALLOW_WHILE_LOCKED = (
     MessageType.Initialize,
     MessageType.EndSession,
     MessageType.GetFeatures,
+    MessageType.OnekeyGetFeatures,
     MessageType.Cancel,
     MessageType.LockDevice,
     MessageType.DoPreauthorized,
@@ -542,6 +602,7 @@ def reload_settings_from_storage(timeout_ms: int | None = None) -> None:
 def boot() -> None:
     workflow_handlers.register(MessageType.Initialize, handle_Initialize)
     workflow_handlers.register(MessageType.GetFeatures, handle_GetFeatures)
+    workflow_handlers.register(MessageType.OnekeyGetFeatures, handle_OnekeyGetFeatures)
     workflow_handlers.register(MessageType.Cancel, handle_Cancel)
     workflow_handlers.register(MessageType.LockDevice, handle_LockDevice)
     workflow_handlers.register(MessageType.EndSession, handle_EndSession)

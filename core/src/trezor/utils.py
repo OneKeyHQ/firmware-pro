@@ -25,10 +25,16 @@ from trezorutils import (  # noqa: F401; FIRMWARE_SECTORS_COUNT,; firmware_secto
     reset,
     usb_data_connected,
     board_hash,
+    board_build_id,
     boot_hash,
+    boot_build_id,
     se_version,
     se_hash,
     se_build_id,
+    se_boot_version,
+    se_boot_hash,
+    se_boot_build_id,
+    onekey_firmware_hash,
 )
 
 if not EMULATOR:
@@ -45,6 +51,8 @@ else:
 # pyright: on
 
 BLE_NAME: str | None = None
+BLE_BUILD_ID: str | None = None
+BLE_HASH: bytes | None = None
 DISABLE_ANIMATION = 0
 BLE_CONNECTED: bool | None = None
 BATTERY_CAP: int | None = None
@@ -57,6 +65,7 @@ _COLLECTING_FINGERPRINT = False
 _PIN_VERIFIED_SINCE_BOOT = False
 FLASH_LED_BRIGHTNESS: int | None = None
 _BACKUP_WITH_LITE_FIRST = False
+_COLOR_FLAG: str | None = None
 
 if __debug__:
     MAX_FP_ATTEMPTS = 50
@@ -127,7 +136,12 @@ def mark_pin_verified() -> None:
 
 
 def turn_on_lcd_if_possible() -> bool:
-    return lcd_resume()
+    resumed = lcd_resume()
+    if resumed:
+        from trezor import workflow, uart
+
+        workflow.spawn(uart.handle_fingerprint())
+    return resumed
 
 
 def lcd_resume() -> bool:
@@ -257,6 +271,22 @@ def mark_backup_with_keytag_1st():
 
 def is_backup_with_lite_1st():
     return _BACKUP_WITH_LITE_FIRST
+
+
+def get_default_wallpaper():
+    global _COLOR_FLAG
+    if _COLOR_FLAG is None:
+        import storage
+
+        serial = storage.device.get_serial()
+        color_flag = serial[-1]
+        _COLOR_FLAG = color_flag
+    if _COLOR_FLAG == "A":  # black shell
+        return "A:/res/wallpaper-1.jpg"
+    elif _COLOR_FLAG == "B":  # white shell
+        return "A:/res/wallpaper-2.jpg"
+    else:
+        return "A:/res/wallpaper-1.jpg"
 
 
 def unimport_begin() -> set[str]:

@@ -3,6 +3,7 @@
 
 #include "bip32.h"
 #include "secbool.h"
+#include "thd89.h"
 
 #define SESSION_KEYLEN (16)
 
@@ -30,9 +31,36 @@ secbool se_ecdsa_get_pubkey(uint32_t *address, uint8_t count, uint8_t *pubkey);
 secbool se_reset_storage(void);
 secbool se_set_sn(const char *serial, uint8_t len);
 secbool se_get_sn(char **serial);
-char *se_get_version(void);
-char *se_get_hash(void);
-char *se_get_build_id(void);
+int se_get_version(uint8_t addr, char *ver, uint16_t in_len);
+int se_get_build_id(uint8_t addr, char *build_id, uint16_t in_len);
+int se_get_hash(uint8_t addr, uint8_t *hash, uint16_t in_len);
+int se_get_boot_version(uint8_t addr, char *ver, uint16_t in_len);
+int se_get_boot_build_id(uint8_t addr, char *build_id, uint16_t in_len);
+int se_get_boot_hash(uint8_t addr, uint8_t *hash, uint16_t in_len);
+char *se01_get_version(void);
+char *se01_get_build_id(void);
+uint8_t *se01_get_hash(void);
+char *se01_get_boot_version(void);
+char *se01_get_boot_build_id(void);
+uint8_t *se01_get_boot_hash(void);
+char *se02_get_version(void);
+char *se02_get_build_id(void);
+uint8_t *se02_get_hash(void);
+char *se02_get_boot_version(void);
+char *se02_get_boot_build_id(void);
+uint8_t *se02_get_boot_hash(void);
+char *se03_get_version(void);
+char *se03_get_build_id(void);
+uint8_t *se03_get_hash(void);
+char *se03_get_boot_version(void);
+char *se03_get_boot_build_id(void);
+uint8_t *se03_get_boot_hash(void);
+char *se04_get_version(void);
+char *se04_get_build_id(void);
+uint8_t *se04_get_hash(void);
+char *se04_get_boot_version(void);
+char *se04_get_boot_build_id(void);
+uint8_t *se04_get_boot_hash(void);
 secbool se_isInitialized(void);
 secbool se_hasPin(void);
 secbool se_setPin(const char *pin);

@@ -194,12 +194,13 @@ FirmwareHeader = c.Struct(
     "fix_version" / VersionLong,
     "onekey_version" / VersionLong,
     "_reserved" / c.Padding(4),
-    "hashes" / c.Bytes(32)[16],
+    "hashes" / c.Bytes(32)[16],    
 
     "v1_signatures" / c.Bytes(64)[V1_SIGNATURE_SLOTS],
     "v1_key_indexes" / c.Int8ul[V1_SIGNATURE_SLOTS],  # pylint: disable=E1136
 
-    "_reserved" / c.Padding(220),
+    "_reserved" / c.Padding(204),
+    "build_id" / c.Bytes(16),
     "sigmask" / c.Byte,
     "signature" / c.Bytes(64),
 

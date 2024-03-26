@@ -3,11 +3,12 @@ from micropython import const
 from typing import TYPE_CHECKING
 
 from storage import device
-from trezor import config, io, log, loop, motor, utils
+from trezor import config, io, log, loop, motor, utils, workflow
 from trezor.lvglui import StatusBar
 from trezor.lvglui.scrs.charging import ChargingPromptScr
 from trezor.ui import display
 
+import usb
 from apps import base
 
 if TYPE_CHECKING:
@@ -39,8 +40,6 @@ BLE_ENABLED: bool | None = None
 NRF_VERSION: str | None = None
 BLE_CTRL = io.BLE()
 FLASH_LED_BRIGHTNESS: int | None = None
-BLE_BUILD_ID: str | None = None
-BLE_HASH: bytes | None = None
 BUTTON_PRESSING = False
 
 
@@ -48,25 +47,25 @@ async def handle_fingerprint():
     from trezorio import fingerprint
     from trezor.lvglui.scrs import fingerprints
 
+    global BUTTON_PRESSING
     while True:
-        fingerprint.sleep()
+        if any(
+            (
+                BUTTON_PRESSING,
+                utils.is_collecting_fingerprint(),
+                display.backlight() == 0,
+                not fingerprints.is_available(),
+                fingerprints.is_unlocked(),
+            )
+        ):
+            return
+
+        if not fingerprint.sleep():
+            await loop.sleep(100)
+            continue
         state = await loop.wait(io.FINGERPRINT_STATE)
         if __debug__:
             print(f"state == {state}")
-
-        if any(
-            (
-                not fingerprints.has_fingerprints(),
-                not device.is_fingerprint_unlock_enabled(),
-                not config.is_unlocked(),
-                fingerprints.is_unlocked(),
-                utils.is_collecting_fingerprint(),
-                display.backlight() == 0,
-                BUTTON_PRESSING,
-            )
-        ):
-            await loop.sleep(2000)
-            continue
 
         try:
             detected = fingerprint.detect()
@@ -78,8 +77,7 @@ async def handle_fingerprint():
                     print("finger detected ....")
                 try:
                     match_id = fingerprint.match()
-                    fps = fingerprint.list_template()
-                    assert fps is not None
+                    fps = fingerprints.get_fingerprint_list()
                     assert match_id in fps
                 except Exception as e:
                     if __debug__:
@@ -128,8 +126,8 @@ async def handle_fingerprint():
                         if __debug__:
                             print(f"uart unlock result {res}")
                         await base.unlock_device()
-                    await loop.sleep(2000)
-                    continue
+                    # await loop.sleep(2000)
+                    return
             else:
                 await loop.sleep(200)
         except Exception as e:
@@ -143,6 +141,7 @@ async def handle_usb_state():
     global CHARGING
     while True:
         try:
+            previous_usb_bus_state = usb.bus.state()
             usb_state = loop.wait(io.USB_STATE)
             state = await usb_state
             if state:
@@ -152,7 +151,7 @@ async def handle_usb_state():
                     prompt.show()
                 StatusBar.get_instance().show_usb(True)
                 # deal with charging state
-                # CHARGING = True
+                CHARGING = True
                 StatusBar.get_instance().show_charging(True)
                 if utils.BATTERY_CAP:
                     StatusBar.get_instance().set_battery_img(
@@ -163,17 +162,16 @@ async def handle_usb_state():
                 utils.lcd_resume()
                 StatusBar.get_instance().show_usb(False)
                 # deal with charging state
-                # CHARGING = False
+                CHARGING = False
                 StatusBar.get_instance().show_charging()
                 if utils.BATTERY_CAP:
                     StatusBar.get_instance().set_battery_img(
                         utils.BATTERY_CAP, CHARGING
                     )
                     _request_charging_status()
-            import usb
-
-            if usb.bus.state() == 1 and (
-                not CHARGING or CHARING_TYPE == 2
+            current_usb_bus_state = usb.bus.state()
+            if (
+                current_usb_bus_state == previous_usb_bus_state
             ):  # not enable or disable airgap mode
                 usb_auto_lock = device.is_usb_lock_enabled()
                 if usb_auto_lock and device.is_initialized() and config.has_pin():
@@ -185,24 +183,23 @@ async def handle_usb_state():
                         else:
                             config.lock()
                         await safe_reloop()
-                        # single to restart the main loop
-                        raise loop.TASK_CLOSED
-                # elif not usb_auto_lock and not state:
-                #     await safe_reloop()
+                        await workflow.spawn(utils.internal_reloop())
+                elif not usb_auto_lock and not state:
+                    await safe_reloop(ack=False)
             base.reload_settings_from_storage()
         except Exception as exec:
             if __debug__:
                 log.exception(__name__, exec)
             loop.clear()
-            return  # pylint: disable=lost-exception
 
 
-async def safe_reloop():
+async def safe_reloop(ack=True):
     from trezor import wire
     from trezor.lvglui.scrs.homescreen import change_state
 
     change_state()
-    await wire.signal_ack()
+    if ack:
+        await wire.signal_ack()
 
 
 async def handle_uart():
@@ -310,10 +307,11 @@ async def _deal_button_press(value: bytes) -> None:
                     else:
                         config.lock()
                 await loop.race(safe_reloop(), loop.sleep(200))
-                # single to restart the main loop
-                raise loop.TASK_CLOSED
+                workflow.spawn(utils.internal_reloop())
+                return
         else:
             utils.turn_on_lcd_if_possible()
+
     elif res == _PRESS_LONG:
         from trezor.lvglui.scrs.homescreen import PowerOff
         from trezor.qr import close_camera
@@ -355,7 +353,7 @@ async def _deal_charging_state(value: bytes) -> None:
         _POWER_STATUS_CHARGING,
     ):
         if res != _POWER_STATUS_CHARGING:
-            utils.turn_on_lcd_if_possible()
+            utils.lcd_resume()
         if CHARGING:
             return
         CHARGING = True
@@ -440,15 +438,13 @@ def _retrieve_nrf_version(value: bytes) -> None:
 
 
 def _retrieve_ble_build_id(value: bytes) -> None:
-    global BLE_BUILD_ID
     if value != b"":
-        BLE_BUILD_ID = value.decode("utf-8")
+        utils.BLE_BUILD_ID = value.decode("utf-8")
 
 
 def _retrieve_ble_hash(value: bytes) -> None:
-    global BLE_HASH
     if value != b"":
-        BLE_HASH = value
+        utils.BLE_HASH = value
 
 
 def _request_ble_name():
@@ -499,12 +495,10 @@ def fetch_ble_info():
     if BLE_ENABLED is None:
         BLE_CTRL.ctrl(0x81, b"\x04")
 
-    global BLE_BUILD_ID
-    if BLE_BUILD_ID is None:
+    if utils.BLE_BUILD_ID is None:
         BLE_CTRL.ctrl(0x83, b"\x05")
 
-    global BLE_HASH
-    if BLE_HASH is None:
+    if utils.BLE_HASH is None:
         BLE_CTRL.ctrl(0x83, b"\x06")
 
 
@@ -572,11 +566,11 @@ def get_ble_version() -> str:
 
 
 def get_ble_build_id() -> str:
-    return BLE_BUILD_ID if BLE_BUILD_ID else ""
+    return utils.BLE_BUILD_ID if utils.BLE_BUILD_ID else ""
 
 
 def get_ble_hash() -> bytes:
-    return BLE_HASH if BLE_HASH else b""
+    return utils.BLE_HASH if utils.BLE_HASH else b""
 
 
 def is_ble_opened() -> bool:

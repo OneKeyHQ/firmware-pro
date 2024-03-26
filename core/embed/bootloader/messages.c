@@ -43,14 +43,6 @@
 #define MSG_HEADER1_LEN 9
 #define MSG_HEADER2_LEN 1
 
-#define UPDATE_BLE 0x5A
-#define UPDATE_ST 0x55
-#define UPDATE_THD89 0xAA
-
-static uint8_t update_mode = 0;
-
-#define BLE_INIT_DATA_LEN 512
-
 secbool msg_parse_header(const uint8_t *buf, uint16_t *msg_id,
                          uint32_t *msg_size) {
   if (buf[0] != '?' || buf[1] != '#' || buf[2] != '#') {
@@ -365,35 +357,41 @@ static void send_msg_features(uint8_t iface_num,
       MSG_SEND_ASSIGN_STRING_LEN(onekey_version, ver_str, 5);
       MSG_SEND_ASSIGN_STRING_LEN(onekey_firmware_version, ver_str, 5);
 
-      uint8_t *fimware_hash = get_firmware_hash(hdr);
-      MSG_SEND_ASSIGN_BYTES(onekey_firmware_hash, fimware_hash, 32);
     } else {
       MSG_SEND_ASSIGN_VALUE(firmware_present, false);
     }
     if (ble_name_state()) {
       MSG_SEND_ASSIGN_STRING_LEN(ble_name, ble_get_name(), BLE_NAME_LEN);
+      MSG_SEND_ASSIGN_STRING_LEN(onekey_ble_name, ble_get_name(), BLE_NAME_LEN);
     }
     if (ble_ver_state()) {
-      MSG_SEND_ASSIGN_STRING_LEN(ble_ver, ble_get_ver(), 5);
+      char *ble_version = ble_get_ver();
+      MSG_SEND_ASSIGN_STRING_LEN(ble_ver, ble_version, strlen(ble_version));
+      MSG_SEND_ASSIGN_STRING_LEN(onekey_ble_version, ble_version, strlen(ble_version));
     }
     if (ble_switch_state()) {
       MSG_SEND_ASSIGN_VALUE(ble_enable, ble_get_switch());
     }
-    char *se_version = se_get_version();
-    if (se_version) {
-      MSG_SEND_ASSIGN_STRING_LEN(se_ver, se_version, strlen(se_version));
-      MSG_SEND_ASSIGN_STRING_LEN(onekey_se_version, se_version,
-                                 strlen(se_version));
-    }
-    char *se_hash = se_get_hash();
-    if (se_hash) {
-      MSG_SEND_ASSIGN_BYTES(onekey_se_hash, se_hash, 32);
-    }
-    char *se_build_id = se_get_build_id();
-    if (se_build_id) {
-      MSG_SEND_ASSIGN_STRING_LEN(onekey_se_build_id, se_build_id,
-                                 strlen(se_build_id));
-    }
+
+    uint8_t state;
+    char *se_version;
+
+#define GET_SE_INFO(se_prefix)                                               \
+  do {                                                                       \
+    if (se_prefix##_get_state(&state)) {                                     \
+      MSG_SEND_ASSIGN_VALUE(onekey_##se_prefix##_state, state);              \
+      se_version = se_prefix##_get_version();                                \
+      if (se_version) {                                                      \
+        MSG_SEND_ASSIGN_STRING_LEN(onekey_##se_prefix##_version, se_version, \
+                                   strlen(se_version));                      \
+      }                                                                      \
+    }                                                                        \
+  } while (0)
+
+    GET_SE_INFO(se01);
+    GET_SE_INFO(se02);
+    GET_SE_INFO(se03);
+    GET_SE_INFO(se04);
 
     char *serial = NULL;
     if (device_get_serial(&serial)) {
@@ -403,8 +401,8 @@ static void send_msg_features(uint8_t iface_num,
     char *board_version = get_boardloader_version();
     MSG_SEND_ASSIGN_STRING_LEN(boardloader_version, board_version,
                                strlen(board_version));
-    uint8_t *board_hash = get_boardloader_hash();
-    MSG_SEND_ASSIGN_BYTES(onekey_board_hash, board_hash, 32);
+    MSG_SEND_ASSIGN_STRING_LEN(onekey_board_version, board_version,
+                               strlen(board_version));
 
     int boot_version_len = strlen((VERSTR(VERSION_MAJOR) "." VERSTR(
         VERSION_MINOR) "." VERSTR(VERSION_PATCH)));
@@ -412,15 +410,117 @@ static void send_msg_features(uint8_t iface_num,
                                (VERSTR(VERSION_MAJOR) "." VERSTR(
                                    VERSION_MINOR) "." VERSTR(VERSION_PATCH)),
                                boot_version_len);
-    uint8_t *boot_hash = get_bootloader_hash();
-    MSG_SEND_ASSIGN_BYTES(onekey_boot_hash, boot_hash, 32);
-    MSG_SEND_ASSIGN_STRING_LEN(onekey_boot_build_id, (char *)BUILD_COMMIT,
-                               strlen((char *)BUILD_COMMIT));
-    MSG_SEND_ASSIGN_VALUE(onekey_device_type, OneKeyDeviceType_TOUCH_PRO);
+    MSG_SEND_ASSIGN_VALUE(onekey_device_type, OneKeyDeviceType_PRO);
     MSG_SEND_ASSIGN_VALUE(onekey_se_type, OneKeySeType_THD89);
   }
 
   MSG_SEND(Features);
+}
+
+static void send_msg_features_ex(uint8_t iface_num,
+                                 const vendor_header *const vhdr,
+                                 const image_header *const hdr) {
+  MSG_SEND_INIT(OnekeyFeatures);
+
+  if (vhdr && hdr) {
+    const char *ver_str = format_ver("%d.%d.%d", hdr->onekey_version);
+    MSG_SEND_ASSIGN_STRING_LEN(onekey_firmware_version, ver_str, 5);
+
+    uint8_t *fimware_hash = get_firmware_hash();
+    MSG_SEND_ASSIGN_BYTES(onekey_firmware_hash, fimware_hash, 32);
+  }
+  if (ble_name_state()) {
+    MSG_SEND_ASSIGN_STRING_LEN(onekey_ble_name, ble_get_name(), BLE_NAME_LEN);
+  }
+  if (ble_ver_state()) {
+    char *ble_version = ble_get_ver();
+      MSG_SEND_ASSIGN_STRING_LEN(onekey_ble_version, ble_version, strlen(ble_version));
+  }
+  uint8_t state;
+  char *se_version, *se_build_id;
+  uint8_t *se_hash;
+
+#define GET_SE_INFO_EX(se_prefix)                                              \
+  do {                                                                         \
+    if (se_prefix##_get_state(&state)) {                                       \
+      MSG_SEND_ASSIGN_VALUE(onekey_##se_prefix##_state, state);                \
+                                                                               \
+      se_hash = se_prefix##_get_boot_hash();                                   \
+      if (se_hash) {                                                           \
+        MSG_SEND_ASSIGN_BYTES(onekey_##se_prefix##_boot_hash, se_hash, 32);    \
+      }                                                                        \
+                                                                               \
+      se_build_id = se_prefix##_get_boot_build_id();                           \
+      if (se_build_id) {                                                       \
+        MSG_SEND_ASSIGN_STRING_LEN(onekey_##se_prefix##_boot_build_id,         \
+                                   se_build_id, strlen(se_build_id));          \
+      }                                                                        \
+                                                                               \
+      if (state) {                                                             \
+        /* APP */                                                              \
+        se_version = se_prefix##_get_version();                                \
+        if (se_version) {                                                      \
+          MSG_SEND_ASSIGN_STRING_LEN(onekey_##se_prefix##_version, se_version, \
+                                     strlen(se_version));                      \
+        }                                                                      \
+        se_hash = se_prefix##_get_hash();                                      \
+        if (se_hash) {                                                         \
+          MSG_SEND_ASSIGN_BYTES(onekey_##se_prefix##_hash, se_hash, 32);       \
+        }                                                                      \
+        se_build_id = se_prefix##_get_build_id();                              \
+        if (se_build_id) {                                                     \
+          MSG_SEND_ASSIGN_STRING_LEN(onekey_##se_prefix##_build_id,            \
+                                     se_build_id, strlen(se_build_id));        \
+        }                                                                      \
+        se_version = se_prefix##_get_boot_version();                           \
+        if (se_version) {                                                      \
+          MSG_SEND_ASSIGN_STRING_LEN(onekey_##se_prefix##_boot_version,        \
+                                     se_version, strlen(se_version));          \
+        }                                                                      \
+      } else {                                                                 \
+        /* BOOT */                                                             \
+        se_version = se_prefix##_get_version();                                \
+        if (se_version) {                                                      \
+          MSG_SEND_ASSIGN_STRING_LEN(onekey_##se_prefix##_boot_version,        \
+                                     se_version, strlen(se_version));          \
+        }                                                                      \
+      }                                                                        \
+    }                                                                          \
+  } while (0)
+
+  GET_SE_INFO_EX(se01);
+  GET_SE_INFO_EX(se02);
+  GET_SE_INFO_EX(se03);
+  GET_SE_INFO_EX(se04);
+
+  char *board_build_id = get_boardloader_build_id();
+  MSG_SEND_ASSIGN_STRING_LEN(onekey_board_build_id, board_build_id,
+                             strlen(board_build_id));
+
+  char *serial = NULL;
+  if (device_get_serial(&serial)) {
+    MSG_SEND_ASSIGN_STRING_LEN(onekey_serial_no, serial, strlen(serial));
+  }
+  char *board_version = get_boardloader_version();
+  MSG_SEND_ASSIGN_STRING_LEN(onekey_board_version, board_version,
+                             strlen(board_version));
+  uint8_t *board_hash = get_boardloader_hash();
+  MSG_SEND_ASSIGN_BYTES(onekey_board_hash, board_hash, 32);
+
+  int boot_version_len = strlen((VERSTR(VERSION_MAJOR) "." VERSTR(
+      VERSION_MINOR) "." VERSTR(VERSION_PATCH)));
+  MSG_SEND_ASSIGN_STRING_LEN(onekey_boot_version,
+                             (VERSTR(VERSION_MAJOR) "." VERSTR(
+                                 VERSION_MINOR) "." VERSTR(VERSION_PATCH)),
+                             boot_version_len);
+  uint8_t *boot_hash = get_bootloader_hash();
+  MSG_SEND_ASSIGN_BYTES(onekey_boot_hash, boot_hash, 32);
+  MSG_SEND_ASSIGN_STRING_LEN(onekey_boot_build_id, (char *)BUILD_COMMIT,
+                             strlen((char *)BUILD_COMMIT));
+  MSG_SEND_ASSIGN_VALUE(onekey_device_type, OneKeyDeviceType_PRO);
+  MSG_SEND_ASSIGN_VALUE(onekey_se_type, OneKeySeType_THD89);
+
+  MSG_SEND(OnekeyFeatures);
 }
 
 void process_msg_Initialize(uint8_t iface_num, uint32_t msg_size, uint8_t *buf,
@@ -437,6 +537,15 @@ void process_msg_GetFeatures(uint8_t iface_num, uint32_t msg_size, uint8_t *buf,
   MSG_RECV_INIT(GetFeatures);
   MSG_RECV(GetFeatures);
   send_msg_features(iface_num, vhdr, hdr);
+}
+
+void process_msg_OnekeyGetFeatures(uint8_t iface_num, uint32_t msg_size,
+                                   uint8_t *buf,
+                                   const vendor_header *const vhdr,
+                                   const image_header *const hdr) {
+  MSG_RECV_INIT(OnekeyGetFeatures);
+  MSG_RECV(OnekeyGetFeatures);
+  send_msg_features_ex(iface_num, vhdr, hdr);
 }
 
 void process_msg_Ping(uint8_t iface_num, uint32_t msg_size, uint8_t *buf) {
@@ -484,555 +593,8 @@ void process_msg_Reboot(uint8_t iface_num, uint32_t msg_size, uint8_t *buf) {
   }
 }
 
-static uint32_t firmware_remaining, firmware_len, firmware_block,
-    chunk_requested, thd89_offset;
-
-void process_msg_FirmwareErase(uint8_t iface_num, uint32_t msg_size,
-                               uint8_t *buf) {
-  firmware_remaining = 0;
-  firmware_block = 0;
-  chunk_requested = 0;
-
-  MSG_RECV_INIT(FirmwareErase);
-  MSG_RECV(FirmwareErase);
-
-  firmware_len = firmware_remaining = msg_recv.has_length ? msg_recv.length : 0;
-  if ((firmware_remaining > 0) &&
-      ((firmware_remaining % sizeof(uint32_t)) == 0) &&
-      (firmware_remaining <= (FIRMWARE_SECTORS_COUNT * IMAGE_CHUNK_SIZE))) {
-    // request new firmware
-    chunk_requested = (firmware_remaining > IMAGE_INIT_CHUNK_SIZE)
-                          ? IMAGE_INIT_CHUNK_SIZE
-                          : firmware_remaining;
-    MSG_SEND_INIT(FirmwareRequest);
-    MSG_SEND_ASSIGN_VALUE(offset, 0);
-    MSG_SEND_ASSIGN_VALUE(length, chunk_requested);
-    MSG_SEND(FirmwareRequest);
-  } else {
-    // invalid firmware size
-    MSG_SEND_INIT(Failure);
-    MSG_SEND_ASSIGN_VALUE(code, FailureType_Failure_ProcessError);
-    MSG_SEND_ASSIGN_STRING(message, "Wrong firmware size");
-    MSG_SEND(Failure);
-  }
-}
-
-static uint32_t chunk_size = 0;
-
-#if defined(STM32H747xx)
-// SRAM is unused, so we can use it for chunk buffer
-uint8_t *const chunk_buffer = (uint8_t *const)0x24000000;
-uint8_t *const thd89_buffer = (uint8_t *const)(0x24000000 + 0x20000);
-#else
-// SRAM is unused, so we can use it for chunk buffer
-uint8_t *const chunk_buffer = (uint8_t *const)0x20000000;
-#endif
-// __attribute__((section(".buf"))) uint32_t chunk_buffer[IMAGE_CHUNK_SIZE / 4];
-
-// #define CHUNK_BUFFER_PTR ((const uint8_t *const)&chunk_buffer)
-
-/* we don't use secbool/sectrue/secfalse here as it is a nanopb api */
-static bool _read_payload(pb_istream_t *stream, const pb_field_t *field,
-                          void **arg) {
-#define BUFSIZE 32768
-
-  uint32_t offset = (uint32_t)(*arg);
-  uint32_t buffer_size = BUFSIZE;
-
-  if (update_mode == UPDATE_BLE || update_mode == UPDATE_THD89) {
-    buffer_size = 4096;
-  }
-
-  if (stream->bytes_left > IMAGE_CHUNK_SIZE) {
-    chunk_size = 0;
-    return false;
-  }
-
-  if (offset == 0) {
-    // clear chunk buffer
-    memset(chunk_buffer, 0xFF, IMAGE_CHUNK_SIZE);
-  }
-
-  uint32_t chunk_written = offset;
-  chunk_size = offset + stream->bytes_left;
-
-  while (stream->bytes_left) {
-    // update loader but skip first block
-    if (update_mode == UPDATE_BLE) {
-      ui_screen_install_progress_upload(1000 * chunk_written / firmware_len);
-    } else if (update_mode == UPDATE_THD89) {
-      ui_screen_install_progress_upload(1000 * (chunk_written + thd89_offset) /
-                                        firmware_len);
-    } else {
-      if (firmware_block > 0) {
-        ui_screen_install_progress_upload(
-            250 + 750 * (firmware_block * IMAGE_CHUNK_SIZE + chunk_written) /
-                      (firmware_block * IMAGE_CHUNK_SIZE + firmware_remaining));
-      }
-    }
-
-    // read data
-    if (!pb_read(stream, (pb_byte_t *)(chunk_buffer + chunk_written),
-                 (stream->bytes_left > buffer_size) ? buffer_size
-                                                    : stream->bytes_left)) {
-      chunk_size = 0;
-      return false;
-    }
-    chunk_written += buffer_size;
-  }
-
-  if (update_mode == UPDATE_BLE) {
-    ui_screen_install_progress_upload(1000 * chunk_written / firmware_len);
-  }
-
-  return true;
-}
-
 secbool load_vendor_header_keys(const uint8_t *const data,
                                 vendor_header *const vhdr);
-
-static int version_compare(uint32_t vera, uint32_t verb) {
-  int a, b;
-  a = vera & 0xFF;
-  b = verb & 0xFF;
-  if (a != b) return a - b;
-  a = (vera >> 8) & 0xFF;
-  b = (verb >> 8) & 0xFF;
-  if (a != b) return a - b;
-  a = (vera >> 16) & 0xFF;
-  b = (verb >> 16) & 0xFF;
-  if (a != b) return a - b;
-  a = (vera >> 24) & 0xFF;
-  b = (verb >> 24) & 0xFF;
-  return a - b;
-}
-
-static void detect_installation(vendor_header *current_vhdr,
-                                image_header *current_hdr,
-                                const vendor_header *const new_vhdr,
-                                const image_header *const new_hdr,
-                                secbool *is_new, secbool *is_upgrade,
-                                secbool *is_downgrade_wipe) {
-  *is_new = secfalse;
-  *is_upgrade = secfalse;
-  *is_downgrade_wipe = secfalse;
-  if (sectrue !=
-      load_vendor_header_keys((const uint8_t *)FIRMWARE_START, current_vhdr)) {
-    *is_new = sectrue;
-    return;
-  }
-  if (sectrue !=
-      load_image_header((const uint8_t *)FIRMWARE_START + current_vhdr->hdrlen,
-                        FIRMWARE_IMAGE_MAGIC, FIRMWARE_IMAGE_MAXSIZE,
-                        current_vhdr->vsig_m, current_vhdr->vsig_n,
-                        current_vhdr->vpub, current_hdr)) {
-    *is_new = sectrue;
-    return;
-  }
-  uint8_t hash1[32], hash2[32];
-  vendor_header_hash(new_vhdr, hash1);
-  vendor_header_hash(current_vhdr, hash2);
-  if (0 != memcmp(hash1, hash2, 32)) {
-    return;
-  }
-  if (version_compare(new_hdr->onekey_version, current_hdr->onekey_version) <
-      0) {
-    *is_downgrade_wipe = sectrue;
-    return;
-  }
-  *is_upgrade = sectrue;
-}
-
-static int firmware_upload_chunk_retry = FIRMWARE_UPLOAD_CHUNK_RETRY_COUNT;
-static uint32_t headers_offset = 0;
-static uint32_t read_offset = 0;
-
-int process_msg_FirmwareUpload(uint8_t iface_num, uint32_t msg_size,
-                               uint8_t *buf) {
-  MSG_RECV_INIT(FirmwareUpload);
-  MSG_RECV_CALLBACK(payload, _read_payload, read_offset);
-  const secbool r = MSG_RECV(FirmwareUpload);
-
-  if (sectrue != r || chunk_size != (chunk_requested + read_offset)) {
-    MSG_SEND_INIT(Failure);
-    MSG_SEND_ASSIGN_VALUE(code, FailureType_Failure_ProcessError);
-    MSG_SEND_ASSIGN_STRING(message, "Invalid chunk size");
-    MSG_SEND(Failure);
-    return -1;
-  }
-
-  static image_header hdr, ble_hdr;
-  static image_header_th89 thd89_hdr;
-  static secbool is_upgrade = secfalse;
-  static secbool is_downgrade_wipe = secfalse;
-
-  if (firmware_block == 0) {
-    if (headers_offset == 0) {
-      if (memcmp(chunk_buffer, "TF89", 4) == 0) {
-        if (sectrue !=
-            load_thd89_image_header(chunk_buffer, FIRMWARE_IMAGE_MAGIC_THD89,
-                                    FIRMWARE_IMAGE_MAXSIZE_THD89, &thd89_hdr)) {
-          send_failure(iface_num, FailureType_Failure_ProcessError,
-                       "Invalid firmware header");
-          return -3;
-        }
-        if (thd89_hdr.i2c_address != 0) {
-          thd89_boot_set_address(thd89_hdr.i2c_address);
-        }
-        char se_ver[16] = {0}, boot_ver[16] = {0};
-        strncpy(se_ver, se_get_version_ex(), sizeof(se_ver));
-        if (!se_back_to_boot_progress()) {
-          send_failure(iface_num, FailureType_Failure_ProcessError,
-                       "SE back to boot error");
-          return -1;
-        }
-
-        strncpy(boot_ver, se_get_version_ex(), sizeof(boot_ver));
-
-        if (!se_verify_firmware(chunk_buffer, IMAGE_HEADER_SIZE)) {
-          send_failure(iface_num, FailureType_Failure_ProcessError,
-                       "SE verify header error");
-          return -1;
-        }
-
-        ui_fadeout();
-        ui_install_thd89_confirm(se_ver, boot_ver);
-        ui_fadein();
-
-        int response = INPUT_CANCEL;
-        response = ui_input_poll(INPUT_CONFIRM | INPUT_CANCEL, true);
-
-        if (INPUT_CANCEL == response) {
-          ui_fadeout();
-          ui_bootloader_first(NULL);
-          ui_fadein();
-          send_user_abort(iface_num, "Firmware install cancelled");
-          update_mode = 0;
-          return -4;
-        }
-
-        headers_offset = IMAGE_HEADER_SIZE;
-
-        update_mode = UPDATE_THD89;
-
-        thd89_offset = 0;
-
-      } else if (memcmp(chunk_buffer, "5283", 4) == 0) {
-        if (sectrue !=
-            load_ble_image_header(chunk_buffer, FIRMWARE_IMAGE_MAGIC_BLE,
-                                  FIRMWARE_IMAGE_MAXSIZE_BLE, &ble_hdr)) {
-          MSG_SEND_INIT(Failure);
-          MSG_SEND_ASSIGN_VALUE(code, FailureType_Failure_ProcessError);
-          MSG_SEND_ASSIGN_STRING(message, "Invalid firmware header");
-          MSG_SEND(Failure);
-          return -3;
-        }
-        ui_fadeout();
-        ui_install_ble_confirm();
-        ui_fadein();
-
-        int response = INPUT_CANCEL;
-        response = ui_input_poll(INPUT_CONFIRM | INPUT_CANCEL, true);
-
-        if (INPUT_CANCEL == response) {
-          ui_fadeout();
-          ui_bootloader_first(NULL);
-          ui_fadein();
-          send_user_abort(iface_num, "Firmware install cancelled");
-          update_mode = 0;
-          return -4;
-        }
-
-        headers_offset = IMAGE_HEADER_SIZE;
-
-        update_mode = UPDATE_BLE;
-
-      } else {
-        update_mode = UPDATE_ST;
-        // first block and headers are not yet parsed
-        vendor_header vhdr;
-        if (sectrue != load_vendor_header_keys(chunk_buffer, &vhdr)) {
-          MSG_SEND_INIT(Failure);
-          MSG_SEND_ASSIGN_VALUE(code, FailureType_Failure_ProcessError);
-          MSG_SEND_ASSIGN_STRING(message, "Invalid vendor header");
-          MSG_SEND(Failure);
-          return -2;
-        }
-        if (sectrue != load_image_header(chunk_buffer + vhdr.hdrlen,
-                                         FIRMWARE_IMAGE_MAGIC,
-                                         FIRMWARE_IMAGE_MAXSIZE, vhdr.vsig_m,
-                                         vhdr.vsig_n, vhdr.vpub, &hdr)) {
-          MSG_SEND_INIT(Failure);
-          MSG_SEND_ASSIGN_VALUE(code, FailureType_Failure_ProcessError);
-          MSG_SEND_ASSIGN_STRING(message, "Invalid firmware header");
-          MSG_SEND(Failure);
-          return -3;
-        }
-
-        vendor_header current_vhdr;
-        image_header current_hdr;
-        secbool is_new = secfalse;
-        detect_installation(&current_vhdr, &current_hdr, &vhdr, &hdr, &is_new,
-                            &is_upgrade, &is_downgrade_wipe);
-
-        int response = INPUT_CANCEL;
-        if (sectrue == is_new) {
-          // new installation - auto confirm
-          response = INPUT_CONFIRM;
-        } else if (sectrue == is_upgrade) {
-          // firmware upgrade
-          ui_fadeout();
-          ui_install_confirm(&current_hdr, &hdr);
-          ui_fadein();
-          response = ui_input_poll(INPUT_CONFIRM | INPUT_CANCEL, true);
-
-        } else {
-          // downgrade with wipe or new firmware vendor
-          ui_fadeout();
-          ui_screen_install_confirm_newvendor_or_downgrade_wipe(
-              &vhdr, &hdr, is_downgrade_wipe);
-          ui_fadein();
-          response = ui_input_poll(INPUT_CONFIRM | INPUT_CANCEL, true);
-        }
-
-        if (INPUT_CANCEL == response) {
-          ui_fadeout();
-          ui_bootloader_first(&current_hdr);
-          ui_fadein();
-          send_user_abort(iface_num, "Firmware install cancelled");
-          update_mode = 0;
-          return -4;
-        }
-
-        headers_offset = IMAGE_HEADER_SIZE + vhdr.hdrlen;
-      }
-
-      ui_fadeout();
-      ui_screen_install_start();
-      ui_fadein();
-
-      read_offset = chunk_requested;
-      firmware_remaining -= read_offset;
-
-      chunk_requested = (firmware_remaining > (IMAGE_CHUNK_SIZE - read_offset))
-                            ? (IMAGE_CHUNK_SIZE - read_offset)
-                            : firmware_remaining;
-
-      if (chunk_requested) {
-        // request the rest of the first chunk
-        MSG_SEND_INIT(FirmwareRequest);
-        MSG_SEND_ASSIGN_VALUE(offset, read_offset);
-        MSG_SEND_ASSIGN_VALUE(length, chunk_requested);
-        MSG_SEND(FirmwareRequest);
-
-        return (int)firmware_remaining;
-      }
-
-    } else {
-      // first block with the headers parsed -> the first chunk is now complete
-      read_offset = 0;
-
-      if (update_mode == UPDATE_BLE || update_mode == UPDATE_THD89) {
-      } else {
-        // if firmware is not upgrade, erase storage
-        if (sectrue != is_upgrade) {
-          se_reset_storage();
-          ensure(
-              flash_erase_sectors(STORAGE_SECTORS, STORAGE_SECTORS_COUNT, NULL),
-              NULL);
-        }
-        ensure(flash_erase_sectors(FIRMWARE_SECTORS, FIRMWARE_SECTORS_COUNT,
-                                   ui_screen_install_progress_erase),
-               NULL);
-      }
-    }
-  }
-  static BLAKE2S_CTX ctx;
-  static bool packet_flag = false;
-
-  if (update_mode == UPDATE_BLE) {
-    uint8_t *p_init = (uint8_t *)chunk_buffer + headers_offset;
-    uint32_t init_data_len = p_init[0] + (p_init[1] << 8);
-    bool update_status = false;
-
-    MSG_SEND_INIT(Success);
-    MSG_SEND_ASSIGN_STRING(message, "Bluetooth download success");
-    MSG_SEND(Success);
-
-    hal_delay(200);
-
-    update_status = updateBle(p_init + 4, init_data_len,
-                              chunk_buffer + headers_offset + BLE_INIT_DATA_LEN,
-                              ble_hdr.codelen - BLE_INIT_DATA_LEN);
-
-    if (update_status == false) {
-      return -6;
-    } else {
-      return 0;
-    }
-  } else if (update_mode == UPDATE_THD89) {
-    memcpy(thd89_buffer + thd89_offset, chunk_buffer, chunk_size);
-    thd89_offset += chunk_size;
-    if ((firmware_remaining - chunk_requested) == 0) {
-      if (thd89_offset - IMAGE_HEADER_SIZE != thd89_hdr.codelen) {
-        send_failure(iface_num, FailureType_Failure_ProcessError,
-                     "SE len error");
-        return -1;
-      }
-
-      // ui start install
-      ui_fadeout();
-      ui_screen_install_start();
-      ui_fadein();
-      // ui start install
-      if (!se_update_firmware(thd89_buffer + IMAGE_HEADER_SIZE,
-                              thd89_hdr.codelen,
-                              ui_screen_install_progress_upload)) {
-        send_failure(iface_num, FailureType_Failure_ProcessError,
-                     "SE update error");
-        return -1;
-      }
-
-      if (!se_check_firmware()) {
-        send_failure(iface_num, FailureType_Failure_ProcessError,
-                     "SE firmware check error");
-        return -1;
-      }
-
-      if (!se_active_app_progress()) {
-        send_failure(iface_num, FailureType_Failure_ProcessError,
-                     "SE firmware activate error");
-        return -1;
-      }
-    }
-  } else {
-    // should not happen, but double-check
-    if (firmware_block >= FIRMWARE_SECTORS_COUNT) {
-      MSG_SEND_INIT(Failure);
-      MSG_SEND_ASSIGN_VALUE(code, FailureType_Failure_ProcessError);
-      MSG_SEND_ASSIGN_STRING(message, "Firmware too big");
-      MSG_SEND(Failure);
-      return -5;
-    }
-
-    if ((firmware_remaining - chunk_requested) == 0) {
-      if (packet_flag) {
-        uint8_t hash[BLAKE2S_DIGEST_LENGTH];
-        blake2s_Update(&ctx, chunk_buffer + headers_offset,
-                       chunk_size - headers_offset);
-        blake2s_Final(&ctx, hash, BLAKE2S_DIGEST_LENGTH);
-        if (memcmp(hdr.hashes + (firmware_block / 2) * 32, hash,
-                   BLAKE2S_DIGEST_LENGTH) != 0) {
-          if (firmware_upload_chunk_retry > 0) {
-            --firmware_upload_chunk_retry;
-            MSG_SEND_INIT(FirmwareRequest);
-            MSG_SEND_ASSIGN_VALUE(offset, firmware_block * IMAGE_CHUNK_SIZE);
-            MSG_SEND_ASSIGN_VALUE(length, chunk_requested);
-            MSG_SEND(FirmwareRequest);
-            return (int)firmware_remaining;
-          }
-
-          MSG_SEND_INIT(Failure);
-          MSG_SEND_ASSIGN_VALUE(code, FailureType_Failure_ProcessError);
-          MSG_SEND_ASSIGN_STRING(message, "Invalid chunk hash");
-          MSG_SEND(Failure);
-          return -6;
-        }
-        packet_flag = false;
-      } else {
-        if (sectrue != check_single_hash(hdr.hashes + (firmware_block / 2) * 32,
-                                         chunk_buffer + headers_offset,
-                                         chunk_size - headers_offset)) {
-          if (firmware_upload_chunk_retry > 0) {
-            --firmware_upload_chunk_retry;
-            MSG_SEND_INIT(FirmwareRequest);
-            MSG_SEND_ASSIGN_VALUE(offset, firmware_block * IMAGE_CHUNK_SIZE);
-            MSG_SEND_ASSIGN_VALUE(length, chunk_requested);
-            MSG_SEND(FirmwareRequest);
-            return (int)firmware_remaining;
-          }
-
-          MSG_SEND_INIT(Failure);
-          MSG_SEND_ASSIGN_VALUE(code, FailureType_Failure_ProcessError);
-          MSG_SEND_ASSIGN_STRING(message, "Invalid chunk hash");
-          MSG_SEND(Failure);
-          return -6;
-        }
-      }
-    } else {
-      if ((firmware_block % 2) == 0) {
-        packet_flag = true;
-        blake2s_Init(&ctx, BLAKE2S_DIGEST_LENGTH);
-        blake2s_Update(&ctx, chunk_buffer + headers_offset,
-                       chunk_size - headers_offset);
-
-      } else {
-        packet_flag = false;
-        uint8_t hash[BLAKE2S_DIGEST_LENGTH];
-        blake2s_Update(&ctx, chunk_buffer + headers_offset,
-                       chunk_size - headers_offset);
-        blake2s_Final(&ctx, hash, BLAKE2S_DIGEST_LENGTH);
-        if (memcmp(hdr.hashes + (firmware_block / 2) * 32, hash,
-                   BLAKE2S_DIGEST_LENGTH) != 0) {
-          if (firmware_upload_chunk_retry > 0) {
-            --firmware_upload_chunk_retry;
-            MSG_SEND_INIT(FirmwareRequest);
-            MSG_SEND_ASSIGN_VALUE(offset, firmware_block * IMAGE_CHUNK_SIZE);
-            MSG_SEND_ASSIGN_VALUE(length, chunk_requested);
-            MSG_SEND(FirmwareRequest);
-            return (int)firmware_remaining;
-          }
-
-          MSG_SEND_INIT(Failure);
-          MSG_SEND_ASSIGN_VALUE(code, FailureType_Failure_ProcessError);
-          MSG_SEND_ASSIGN_STRING(message, "Invalid chunk hash");
-          MSG_SEND(Failure);
-          return -6;
-        }
-      }
-    }
-
-    ensure(flash_unlock_write(), NULL);
-
-#if defined(STM32H747xx)
-    const uint32_t *const src = (const uint32_t *const)chunk_buffer;
-    for (int i = 0; i < chunk_size / (sizeof(uint32_t) * 8); i++) {
-      ensure(flash_write_words(FIRMWARE_SECTORS[firmware_block],
-                               i * (sizeof(uint32_t) * 8),
-                               (uint32_t *)&src[8 * i]),
-             NULL);
-    }
-
-#else
-    const uint32_t *const src = (const uint32_t *const)chunk_buffer;
-    for (int i = 0; i < chunk_size / sizeof(uint32_t); i++) {
-      ensure(flash_write_word(FIRMWARE_SECTORS[firmware_block],
-                              i * sizeof(uint32_t), src[i]),
-             NULL);
-    }
-#endif
-    ensure(flash_lock_write(), NULL);
-  }
-
-  headers_offset = 0;
-  firmware_remaining -= chunk_requested;
-  firmware_block++;
-  firmware_upload_chunk_retry = FIRMWARE_UPLOAD_CHUNK_RETRY_COUNT;
-
-  if (firmware_remaining > 0) {
-    chunk_requested = (firmware_remaining > IMAGE_CHUNK_SIZE)
-                          ? IMAGE_CHUNK_SIZE
-                          : firmware_remaining;
-    MSG_SEND_INIT(FirmwareRequest);
-    MSG_SEND_ASSIGN_VALUE(offset, firmware_block * IMAGE_CHUNK_SIZE);
-    MSG_SEND_ASSIGN_VALUE(length, chunk_requested);
-    MSG_SEND(FirmwareRequest);
-  } else {
-    MSG_SEND_INIT(Success);
-    MSG_SEND(Success);
-  }
-  return (int)firmware_remaining;
-}
 
 int process_msg_WipeDevice(uint8_t iface_num, uint32_t msg_size, uint8_t *buf) {
 #if PRODUCTION_MODEL == 'H'
@@ -1227,34 +789,5 @@ void process_msg_SESignMessage(uint8_t iface_num, uint32_t msg_size,
     MSG_SEND(SEMessageSignature);
   } else {
     send_failure(iface_num, FailureType_Failure_ProcessError, "SE sign failed");
-  }
-}
-
-void process_msg_FirmwareEraseBLE(uint8_t iface_num, uint32_t msg_size,
-                                  uint8_t *buf) {
-  firmware_remaining = 0;
-  firmware_block = 0;
-  chunk_requested = 0;
-
-  MSG_RECV_INIT(FirmwareErase_ex);
-  MSG_RECV(FirmwareErase_ex);
-
-  firmware_remaining = msg_recv.has_length ? msg_recv.length : 0;
-  if ((firmware_remaining > 0) &&
-      (firmware_remaining <= FIRMWARE_IMAGE_MAXSIZE_BLE)) {
-    // request new firmware
-    chunk_requested = (firmware_remaining > IMAGE_INIT_CHUNK_SIZE)
-                          ? IMAGE_INIT_CHUNK_SIZE
-                          : firmware_remaining;
-    MSG_SEND_INIT(FirmwareRequest);
-    MSG_SEND_ASSIGN_VALUE(offset, 0);
-    MSG_SEND_ASSIGN_VALUE(length, chunk_requested);
-    MSG_SEND(FirmwareRequest);
-  } else {
-    // invalid firmware size
-    MSG_SEND_INIT(Failure);
-    MSG_SEND_ASSIGN_VALUE(code, FailureType_Failure_ProcessError);
-    MSG_SEND_ASSIGN_STRING(message, "Wrong firmware size");
-    MSG_SEND(Failure);
   }
 }

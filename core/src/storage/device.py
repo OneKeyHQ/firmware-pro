@@ -10,6 +10,11 @@ if TYPE_CHECKING:
     from trezor.enums import BackupType
     from typing_extensions import Literal
 
+SE_1ST_ADDRESS = const(0x10 << 1)
+SE_2ND_ADDRESS = const(0x11 << 1)
+SE_3RD_ADDRESS = const(0x12 << 1)
+SE_4TH_ADDRESS = const(0x13 << 1)
+
 # Namespace:
 _NAMESPACE = common.APP_DEVICE
 _BRIGHTNESS_VALUE: int | None = None
@@ -42,7 +47,35 @@ _USE_FINGERPRINT_UNLOCK_VALUE: bool | None = None
 _AIRGAP_MODE_VALUE: bool | None = None
 _HAS_PROMPTED_FINGERPRINT_VALUE: bool | None = None
 _FINGER_FAILED_COUNT_VALUE: int | None = None
-
+_SE01_HASH_VALUE: bytes | None = None
+_SE01_BUILDID_VALUE: str | None = None
+_SE01_VERSION_VALUE: str | None = None
+_SE01_BOOT_HASH_VALUE: bytes | None = None
+_SE01_BOOT_BUILDID_VALUE: str | None = None
+_SE01_BOOT_VERSION_VALUE: str | None = None
+_SE02_HASH_VALUE: bytes | None = None
+_SE02_BUILDID_VALUE: str | None = None
+_SE02_VERSION_VALUE: str | None = None
+_SE02_BOOT_HASH_VALUE: bytes | None = None
+_SE02_BOOT_BUILDID_VALUE: str | None = None
+_SE02_BOOT_VERSION_VALUE: str | None = None
+_SE03_HASH_VALUE: bytes | None = None
+_SE03_BUILDID_VALUE: str | None = None
+_SE03_VERSION_VALUE: str | None = None
+_SE03_BOOT_HASH_VALUE: bytes | None = None
+_SE03_BOOT_BUILDID_VALUE: str | None = None
+_SE03_BOOT_VERSION_VALUE: str | None = None
+_SE04_HASH_VALUE: bytes | None = None
+_SE04_BUILDID_VALUE: str | None = None
+_SE04_VERSION_VALUE: str | None = None
+_SE04_BOOT_HASH_VALUE: bytes | None = None
+_SE04_BOOT_BUILDID_VALUE: str | None = None
+_SE04_BOOT_VERSION_VALUE: str | None = None
+_STORAGE_SIZE_VALUE: str | None = None
+_SERIAL_NUMBER_VALUE: str | None = None
+_DEVICE_ID_VALUE: str | None = None
+_TREZOR_COMPATIBLE_VALUE: bool | None = None
+_NEEDS_BACKUP_VALUE: bool | None = None
 if utils.USE_THD89:
     import uctypes
 
@@ -242,7 +275,6 @@ if utils.USE_THD89:
     _AIRGAP_MODE = struct_public["airgap_mode"][0]
     _HAS_PROMPTED_FINGERPRINT = struct_public["has_prompted_fingerprint"][0]
     _FINGER_FAILED_COUNT = struct_public["finger_failed_count"][0]
-
     U2F_COUNTER = 0x00  # u2f counter
 
     # recovery key
@@ -356,7 +388,10 @@ def get_firmware_version() -> str:
 def get_storage() -> str:
     if utils.EMULATOR:
         return "14 GB"
-    return config.get_capacity()
+    global _STORAGE_SIZE_VALUE
+    if _STORAGE_SIZE_VALUE is None:
+        _STORAGE_SIZE_VALUE = config.get_capacity()
+    return _STORAGE_SIZE_VALUE
 
 
 def set_ble_name(name: str) -> None:
@@ -366,10 +401,13 @@ def set_ble_name(name: str) -> None:
 
 
 def get_ble_name() -> str:
-    ble_name = common.get(_NAMESPACE, _BLE_NAME, public=True)
-    if ble_name is None:
-        return "P2170" if utils.EMULATOR else ""
-    return ble_name.decode()
+    global _BLE_NAME_VALUE
+    if _BLE_NAME_VALUE is None:
+        ble_name = common.get(_NAMESPACE, _BLE_NAME, public=True)
+        if ble_name is None:
+            return "P2170" if utils.EMULATOR else ""
+        _BLE_NAME_VALUE = ble_name.decode()
+    return _BLE_NAME_VALUE
 
 
 def ble_enabled() -> bool:
@@ -417,8 +455,11 @@ def get_model() -> str:
 
 def get_serial() -> str:
     if utils.EMULATOR:
-        return "TC01WBD202206030544190000099"
-    return config.get_serial()
+        return "PRB00O0000B"  # emulator serial number
+    global _SERIAL_NUMBER_VALUE
+    if _SERIAL_NUMBER_VALUE is None:
+        _SERIAL_NUMBER_VALUE = config.get_serial()
+    return _SERIAL_NUMBER_VALUE
 
 
 def set_brightness(brightness: int) -> None:
@@ -631,11 +672,14 @@ def _new_device_id() -> str:
 
 
 def get_device_id() -> str:
-    dev_id = common.get(_NAMESPACE, DEVICE_ID, public=True)
-    if not dev_id:
-        dev_id = _new_device_id().encode()
-        common.set(_NAMESPACE, DEVICE_ID, dev_id, public=True)
-    return dev_id.decode()
+    global _DEVICE_ID_VALUE
+    if _DEVICE_ID_VALUE is None:
+        dev_id = common.get(_NAMESPACE, DEVICE_ID, public=True)
+        if not dev_id:
+            dev_id = _new_device_id().encode()
+            common.set(_NAMESPACE, DEVICE_ID, dev_id, public=True)
+        _DEVICE_ID_VALUE = dev_id.decode()
+    return _DEVICE_ID_VALUE
 
 
 def get_rotation() -> int:
@@ -751,7 +795,7 @@ def get_homescreen() -> str | None:
     if _HOMESCREEN_VALUE is None:
         homescreen = common.get(_NAMESPACE, _HOMESCREEN, public=True)
         _HOMESCREEN_VALUE = (
-            homescreen.decode() if homescreen else "A:/res/wallpaper-1.jpg"
+            homescreen.decode() if homescreen else utils.get_default_wallpaper()
         )
     return _HOMESCREEN_VALUE
 
@@ -791,15 +835,19 @@ def store_mnemonic_secret(
 def needs_backup() -> bool:
     if utils.EMULATOR:
         return common.get_bool(_NAMESPACE, _NEEDS_BACKUP)
-    else:
-        return config.get_needs_backup()
+    global _NEEDS_BACKUP_VALUE
+    if _NEEDS_BACKUP_VALUE is None:
+        _NEEDS_BACKUP_VALUE = config.get_needs_backup()
+    return _NEEDS_BACKUP_VALUE
 
 
 def set_backed_up(stat: bool) -> None:
     if utils.EMULATOR:
-        common.delete(_NAMESPACE, _NEEDS_BACKUP)
-    else:
-        config.set_needs_backup(stat)
+        return common.delete(_NAMESPACE, _NEEDS_BACKUP)
+    global _NEEDS_BACKUP_VALUE
+    config.set_needs_backup(stat)
+    _NEEDS_BACKUP_VALUE = stat
+    return None
 
 
 def unfinished_backup() -> bool:
@@ -1025,19 +1073,25 @@ def set_experimental_features(enabled: bool) -> None:
 def is_trezor_compatible() -> bool:
     if utils.EMULATOR:  # in order to work with hwi
         return False
-    enabled = common.get(_NAMESPACE, _TREZOR_COMPATIBLE, public=True)
-    if enabled == common._FALSE_BYTE:
-        return False
-    return True
+    global _TREZOR_COMPATIBLE_VALUE
+    if _TREZOR_COMPATIBLE_VALUE is None:
+        enabled = common.get(_NAMESPACE, _TREZOR_COMPATIBLE, public=True)
+        if enabled == common._FALSE_BYTE:
+            _TREZOR_COMPATIBLE_VALUE = False
+        else:
+            _TREZOR_COMPATIBLE_VALUE = True
+    return _TREZOR_COMPATIBLE_VALUE
 
 
 def enable_trezor_compatible(enable: bool) -> None:
+    global _TREZOR_COMPATIBLE_VALUE
     common.set(
         _NAMESPACE,
         _TREZOR_COMPATIBLE,
         common._TRUE_BYTE if enable else common._FALSE_BYTE,
         public=True,
     )
+    _TREZOR_COMPATIBLE_VALUE = enable
 
 
 def is_airgap_mode() -> bool:
@@ -1056,6 +1110,174 @@ def enable_airgap_mode(enable: bool) -> None:
         public=True,
     )
     _AIRGAP_MODE_VALUE = enable
+
+
+def get_se01_hash() -> bytes:
+    global _SE01_HASH_VALUE
+    if _SE01_HASH_VALUE is None:
+        _SE01_HASH_VALUE = utils.se_hash(SE_1ST_ADDRESS)
+    return _SE01_HASH_VALUE
+
+
+def get_se01_build_id() -> str:
+    global _SE01_BUILDID_VALUE
+    if _SE01_BUILDID_VALUE is None:
+        _SE01_BUILDID_VALUE = utils.se_build_id(SE_1ST_ADDRESS)
+    return _SE01_BUILDID_VALUE
+
+
+def get_se01_version() -> str:
+    global _SE01_VERSION_VALUE
+    if _SE01_VERSION_VALUE is None:
+        _SE01_VERSION_VALUE = utils.se_version(SE_1ST_ADDRESS)
+    return _SE01_VERSION_VALUE
+
+
+def get_se01_boot_hash() -> bytes:
+    global _SE01_BOOT_HASH_VALUE
+    if _SE01_BOOT_HASH_VALUE is None:
+        _SE01_BOOT_HASH_VALUE = utils.se_boot_hash(SE_1ST_ADDRESS)
+    return _SE01_BOOT_HASH_VALUE
+
+
+def get_se01_boot_build_id() -> str:
+    global _SE01_BOOT_BUILDID_VALUE
+    if _SE01_BOOT_BUILDID_VALUE is None:
+        _SE01_BOOT_BUILDID_VALUE = utils.se_boot_build_id(SE_1ST_ADDRESS)
+    return _SE01_BOOT_BUILDID_VALUE
+
+
+def get_se01_boot_version() -> str:
+    global _SE01_BOOT_VERSION_VALUE
+    if _SE01_BOOT_VERSION_VALUE is None:
+        _SE01_BOOT_VERSION_VALUE = utils.se_boot_version(SE_1ST_ADDRESS)
+    return _SE01_BOOT_VERSION_VALUE
+
+
+def get_se02_hash() -> bytes:
+    global _SE02_HASH_VALUE
+    if _SE02_HASH_VALUE is None:
+        _SE02_HASH_VALUE = utils.se_hash(SE_2ND_ADDRESS)
+    return _SE02_HASH_VALUE
+
+
+def get_se02_build_id() -> str:
+    global _SE02_BUILDID_VALUE
+    if _SE02_BUILDID_VALUE is None:
+        _SE02_BUILDID_VALUE = utils.se_build_id(SE_2ND_ADDRESS)
+    return _SE02_BUILDID_VALUE
+
+
+def get_se02_version() -> str:
+    global _SE02_VERSION_VALUE
+    if _SE02_VERSION_VALUE is None:
+        _SE02_VERSION_VALUE = utils.se_version(SE_2ND_ADDRESS)
+    return _SE02_VERSION_VALUE
+
+
+def get_se02_boot_hash() -> bytes:
+    global _SE02_BOOT_HASH_VALUE
+    if _SE02_BOOT_HASH_VALUE is None:
+        _SE02_BOOT_HASH_VALUE = utils.se_boot_hash(SE_2ND_ADDRESS)
+    return _SE02_BOOT_HASH_VALUE
+
+
+def get_se02_boot_build_id() -> str:
+    global _SE02_BOOT_BUILDID_VALUE
+    if _SE02_BOOT_BUILDID_VALUE is None:
+        _SE02_BOOT_BUILDID_VALUE = utils.se_boot_build_id(SE_2ND_ADDRESS)
+    return _SE02_BOOT_BUILDID_VALUE
+
+
+def get_se02_boot_version() -> str:
+    global _SE02_BOOT_VERSION_VALUE
+    if _SE02_BOOT_VERSION_VALUE is None:
+        _SE02_BOOT_VERSION_VALUE = utils.se_boot_version(SE_2ND_ADDRESS)
+    return _SE02_BOOT_VERSION_VALUE
+
+
+def get_se03_hash() -> bytes:
+    global _SE03_HASH_VALUE
+    if _SE03_HASH_VALUE is None:
+        _SE03_HASH_VALUE = utils.se_hash(SE_3RD_ADDRESS)
+    return _SE03_HASH_VALUE
+
+
+def get_se03_build_id() -> str:
+    global _SE03_BUILDID_VALUE
+    if _SE03_BUILDID_VALUE is None:
+        _SE03_BUILDID_VALUE = utils.se_build_id(SE_3RD_ADDRESS)
+    return _SE03_BUILDID_VALUE
+
+
+def get_se03_version() -> str:
+    global _SE03_VERSION_VALUE
+    if _SE03_VERSION_VALUE is None:
+        _SE03_VERSION_VALUE = utils.se_version(SE_3RD_ADDRESS)
+    return _SE03_VERSION_VALUE
+
+
+def get_se03_boot_hash() -> bytes:
+    global _SE03_BOOT_HASH_VALUE
+    if _SE03_BOOT_HASH_VALUE is None:
+        _SE03_BOOT_HASH_VALUE = utils.se_boot_hash(SE_3RD_ADDRESS)
+    return _SE03_BOOT_HASH_VALUE
+
+
+def get_se03_boot_build_id() -> str:
+    global _SE03_BOOT_BUILDID_VALUE
+    if _SE03_BOOT_BUILDID_VALUE is None:
+        _SE03_BOOT_BUILDID_VALUE = utils.se_boot_build_id(SE_3RD_ADDRESS)
+    return _SE03_BOOT_BUILDID_VALUE
+
+
+def get_se03_boot_version() -> str:
+    global _SE03_BOOT_VERSION_VALUE
+    if _SE03_BOOT_VERSION_VALUE is None:
+        _SE03_BOOT_VERSION_VALUE = utils.se_boot_version(SE_3RD_ADDRESS)
+    return _SE03_BOOT_VERSION_VALUE
+
+
+def get_se04_hash() -> bytes:
+    global _SE04_HASH_VALUE
+    if _SE04_HASH_VALUE is None:
+        _SE04_HASH_VALUE = utils.se_hash(SE_4TH_ADDRESS)
+    return _SE04_HASH_VALUE
+
+
+def get_se04_build_id() -> str:
+    global _SE04_BUILDID_VALUE
+    if _SE04_BUILDID_VALUE is None:
+        _SE04_BUILDID_VALUE = utils.se_build_id(SE_4TH_ADDRESS)
+    return _SE04_BUILDID_VALUE
+
+
+def get_se04_version() -> str:
+    global _SE04_VERSION_VALUE
+    if _SE04_VERSION_VALUE is None:
+        _SE04_VERSION_VALUE = utils.se_version(SE_4TH_ADDRESS)
+    return _SE04_VERSION_VALUE
+
+
+def get_se04_boot_hash() -> bytes:
+    global _SE04_BOOT_HASH_VALUE
+    if _SE04_BOOT_HASH_VALUE is None:
+        _SE04_BOOT_HASH_VALUE = utils.se_boot_hash(SE_4TH_ADDRESS)
+    return _SE04_BOOT_HASH_VALUE
+
+
+def get_se04_boot_build_id() -> str:
+    global _SE04_BOOT_BUILDID_VALUE
+    if _SE04_BOOT_BUILDID_VALUE is None:
+        _SE04_BOOT_BUILDID_VALUE = utils.se_boot_build_id(SE_4TH_ADDRESS)
+    return _SE04_BOOT_BUILDID_VALUE
+
+
+def get_se04_boot_version() -> str:
+    global _SE04_BOOT_VERSION_VALUE
+    if _SE04_BOOT_VERSION_VALUE is None:
+        _SE04_BOOT_VERSION_VALUE = utils.se_boot_version(SE_4TH_ADDRESS)
+    return _SE04_BOOT_VERSION_VALUE
 
 
 def clear_global_cache() -> None:
@@ -1082,12 +1304,20 @@ def clear_global_cache() -> None:
     global _FLAGS_VALUE
     global _UNFINISHED_BACKUP_VALUE
     global _NO_BACKUP_VALUE
+    global _NEEDS_BACKUP_VALUE
     global _BACKUP_TYPE_VALUE
     global _SAFETY_CHECK_LEVEL_VALUE
     global _AIRGAP_MODE_VALUE
     global _USE_FINGERPRINT_UNLOCK_VALUE
     global _HAS_PROMPTED_FINGERPRINT_VALUE
     global _FINGER_FAILED_COUNT_VALUE
+    global _SE01_HASH_VALUE
+    global _SE01_BUILDID_VALUE
+    global _SE01_VERSION_VALUE
+    global _DEVICE_ID_VALUE
+    global _STORAGE_SIZE_VALUE
+    global _SERIAL_NUMBER_VALUE
+    global _TREZOR_COMPATIBLE_VALUE
 
     _LANGUAGE_VALUE = None
     _LABEL_VALUE = None
@@ -1112,9 +1342,17 @@ def clear_global_cache() -> None:
     _FLAGS_VALUE = None
     _UNFINISHED_BACKUP_VALUE = None
     _NO_BACKUP_VALUE = None
+    _NEEDS_BACKUP_VALUE = None
     _BACKUP_TYPE_VALUE = None
     _SAFETY_CHECK_LEVEL_VALUE = None
     _AIRGAP_MODE_VALUE = None
     _USE_FINGERPRINT_UNLOCK_VALUE = None
     _HAS_PROMPTED_FINGERPRINT_VALUE = None
     _FINGER_FAILED_COUNT_VALUE = None
+    _SE01_HASH_VALUE = None
+    _SE01_BUILDID_VALUE = None
+    _SE01_VERSION_VALUE = None
+    _STORAGE_SIZE_VALUE = None
+    _DEVICE_ID_VALUE = None
+    _SERIAL_NUMBER_VALUE = None
+    _TREZOR_COMPATIBLE_VALUE = None

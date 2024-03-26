@@ -172,6 +172,27 @@ def se_export_mnemonic() -> bytes:
 
 
 # extmod/modtrezorconfig/modtrezorconfig.c
+def fingerprint_is_unlocked() -> bool:
+    """
+    Returns True if fingerprint is unlocked, False otherwise.
+    """
+
+
+# extmod/modtrezorconfig/modtrezorconfig.c
+def fingerprint_lock() -> bool:
+    """
+    fingerprint lock.
+    """
+
+
+# extmod/modtrezorconfig/modtrezorconfig.c
+def fingerprint_unlock() -> bool:
+    """
+    fingerprint unlock.
+    """
+
+
+# extmod/modtrezorconfig/modtrezorconfig.c
 def init(
    ui_wait_callback: Callable[[int, int, str], bool] | None = None
 ) -> None:

@@ -224,6 +224,7 @@ LIST_KEY__PUBLIC_KEY__COLON = 101
 TITLE__STR_PUBLIC_KEY = 102
 # Message
 LIST_KEY__MESSAGE__COLON = 103
+TITLE__MESSAGE = 103
 # Sign
 BUTTON__SIGN = 104
 # Sign {} Message
@@ -382,7 +383,7 @@ TITLE__USE_THIS_PASSPHRASE = 171
 ITEM__MODEL = 172
 # Storage
 ITEM__STORAGE = 173
-# Incorrect PIN, this is your last attempt.
+# Incorrect PIN, this is your last attempt
 MSG__INCORRECT_PIN_THIS_IS_YOUR_LAST_ATTEMPT = 174
 # Modify Fee
 TITLE__MODIFY_FEE = 175
@@ -1623,4 +1624,8 @@ CONTENT__ARE_YOU_SURE_TO_DISABLE_AIRGAP_MODE = 741
 SUBTITLE__ADD_ACCOUNT_2__TUTORIAL_AFTER_INIT = 742
 # ETH and EVM‒compatible chains
 CONTENT__ETH_AND_EVM_POWERED_NETWORK = 743
+# fingerprint not recognized, try again
+MSG__FINGERPRINT_NOT_RECOGNIZED_TRY_AGAIN = 744
+# Use fingerprint or tap to unlock
+MSG__USE_FINGERPRINT_OR_TAP_TO_UNLOCK = 745
 # fmt: on

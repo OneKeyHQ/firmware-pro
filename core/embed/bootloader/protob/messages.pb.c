@@ -12,7 +12,13 @@ PB_BIND(Initialize, Initialize, AUTO)
 PB_BIND(GetFeatures, GetFeatures, AUTO)
 
 
+PB_BIND(OnekeyGetFeatures, OnekeyGetFeatures, AUTO)
+
+
 PB_BIND(Features, Features, 2)
+
+
+PB_BIND(OnekeyFeatures, OnekeyFeatures, 2)
 
 
 PB_BIND(Ping, Ping, 2)
@@ -112,6 +118,7 @@ PB_BIND(SESignMessage, SESignMessage, 2)
 
 
 PB_BIND(SEMessageSignature, SEMessageSignature, AUTO)
+
 
 
 

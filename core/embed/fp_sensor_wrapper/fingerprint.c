@@ -71,10 +71,14 @@ void fingerprint_init(void)
     fingerprint_enter_sleep();
 }
 
-void fingerprint_enter_sleep(void)
+int fingerprint_enter_sleep(void)
 {
-    FpsSleep(256);
+    if ( FpsSleep(256) != 0 )
+    {
+        return -1;
+    }
     fpsensor_irq_enable();
+    return 0;
 }
 
 int fingerprint_detect(void)
@@ -131,7 +135,7 @@ int fingerprint_save(uint8_t id)
     {
         return -1;
     }
-    fpsensor_data_save();
+    fpsensor_data_save(false, id);
     return 0;
 }
 
@@ -186,7 +190,7 @@ int fingerprint_delete(uint8_t id)
 
         return -1;
     }
-    fpsensor_data_save();
+    fpsensor_data_delete(false, id);
     return 0;
 }
 
@@ -196,7 +200,7 @@ int fingerprint_delete_all(void)
     {
         return -1;
     }
-    fpsensor_data_save();
+    fpsensor_data_delete(true, 0);
     return 0;
 }
 

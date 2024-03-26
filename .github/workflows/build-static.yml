@@ -25,17 +25,20 @@ jobs:
           mkdir dist
           wget -P dist/ https://web.onekey-asset.com/hardware/pro/resource/resource-base-v4.8.0.zip
 
-      - name: "Clean only emulator used resources"
-        run: >
-          pushd core/src/trezor/lvglui/res &&
-          rm  *-emu.bin;
-          popd
-
-      - name: "Diff two folders and output the delta to a new folder"
+      - name: "LFS pull"
         run: |
           sudo apt update
           sudo apt install -y xattr git-lfs
           git lfs pull
+
+      - name: "Clean only emulator used resources"
+        run: >
+          pushd core/src/trezor/lvglui/res &&
+          rm *-emu.bin;
+          popd
+
+      - name: "Diff two folders and output the delta to a new folder"
+        run: |
           mkdir dist/res-4.8.0-${{ env.FIRMWARE_VERSION }}
           unzip dist/resource-base-v4.8.0.zip -d dist
           ls core/src/trezor/lvglui/res |xargs -I{} xattr -d com.apple.quarantine core/src/trezor/lvglui/res/{}

@@ -391,6 +391,13 @@ def get_features(client: "TrezorClient") -> messages.Features:
 
 
 @cli.command()
+@with_client
+def get_onekey_features(client: "TrezorClient") -> messages.Features:
+    """Retrieve device features and settings."""
+    return client.refresh_onekey_features()
+
+
+@cli.command()
 def usb_reset() -> None:
     """Perform USB reset on stuck devices.
 
