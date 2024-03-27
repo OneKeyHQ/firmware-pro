@@ -832,8 +832,7 @@ void device_burnin_test(bool force) {
   jpeg_init();
   motor_init();
 
-  nfc_init();
-  nfc_pwr_ctl(true);
+  nfc_init();  
 
   previous_remain = 0;
   previous = 0;
@@ -966,6 +965,7 @@ void device_burnin_test(bool force) {
           }
 
           display_printf("Poll card...\n");
+          nfc_pwr_ctl(true);
           HAL_TIM_Base_Stop(&TimHandle);
           while (1) {
             if (nfc_poll_card() == NFC_STATUS_OPERACTION_SUCCESS) {
@@ -980,6 +980,7 @@ void device_burnin_test(bool force) {
               }
             }
           }
+          nfc_pwr_ctl(false);
           display_printf("Card test passed\n");
           HAL_TIM_Base_Start(&TimHandle);
           break;
@@ -1036,11 +1037,20 @@ void device_burnin_test(bool force) {
     }
 
     flashled_now = HAL_GetTick();
-    if (flashled_now - flashled_pre > 3000) {
-      flashled_pre = flashled_now;
-      flashled_value = flashled_value ? 0 : 1;
-      ble_set_flashled(flashled_value);
+    if(flashled_value){
+      if (flashled_now - flashled_pre > 1000) {
+        flashled_pre = flashled_now;
+        flashled_value = 0;
+        ble_set_flashled(flashled_value);
+      }
+    }else{
+      if (flashled_now - flashled_pre > 10000) {
+        flashled_pre = flashled_now;
+        flashled_value = 1;
+        ble_set_flashled(flashled_value);
+      }
     }
+    
 
 #define FONT_HEIGHT 25
 
