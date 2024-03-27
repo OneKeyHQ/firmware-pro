@@ -15,6 +15,9 @@ from trezorutils import (  # noqa: F401; FIRMWARE_SECTORS_COUNT,; firmware_secto
     VERSION_MAJOR,
     VERSION_MINOR,
     VERSION_PATCH,
+    BW_STANDARD,
+    BW_URL,
+    BW_MINIMAL,
     consteq,
     firmware_hash,
     firmware_vendor,
@@ -35,6 +38,8 @@ from trezorutils import (  # noqa: F401; FIRMWARE_SECTORS_COUNT,; firmware_secto
     se_boot_hash,
     se_boot_build_id,
     onekey_firmware_hash,
+    get_tick,
+    bytewords_decode,
 )
 
 if not EMULATOR:

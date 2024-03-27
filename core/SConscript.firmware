@@ -459,7 +459,6 @@ if PRODUCTION_MODEL == 'H':
         'embed/trezorhal/gt911.c',
         'embed/trezorhal/spi_legacy.c',
         'embed/trezorhal/camera.c',
-        'embed/trezorhal/camera_qrcode.c',
         'embed/trezorhal/nfc.c',
         'embed/trezorhal/heap_4.c',
         'embed/trezorhal/qspi_flash.c',
@@ -594,6 +593,8 @@ SOURCE_ZBAR = [
     'embed/zbar/symbol.c',
     'embed/zbar/zbar_malloc.c',
     'embed/zbar/decoder/qr_finder.c',
+    'embed/bytewords/bc_bytewords.c',
+    'embed/trezorhal/camera_qrcode.c',
 ]
 SOURCE_ZBAR.extend(Glob('embed/zbar/qrcode/*.c'))
 
@@ -698,7 +699,8 @@ if PRODUCTION_MODEL == 'H':
             'embed/quirc/lib',
             'embed/zbar',
             'embed/zbar/qrcode',
-            'embed/zbar/decoder',  
+            'embed/zbar/decoder', 
+            'embed/bytewords/', 
         ] + CPPPATH_MOD,
         CPPDEFINES=[
             'TREZOR_MODEL_'+TREZOR_MODEL,

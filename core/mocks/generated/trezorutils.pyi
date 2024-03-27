@@ -178,6 +178,23 @@ def usb_data_connected() -> bool:
     Returns whether USB has been enumerated/configured
     (and is not just connected by cable without data pins)
     """
+
+
+# extmod/modtrezorutils/modtrezorutils.c
+def get_tick() -> int:
+    """
+    Returns sysytick
+    """
+
+
+# extmod/modtrezorutils/modtrezorutils.c
+def bytewords_decode(
+   style: int,
+   in_string: str,
+) -> bytes:
+    """
+    bytewords decode
+    """
 SCM_REVISION: bytes
 BUILD_ID: bytes
 VERSION_MAJOR: int
@@ -187,3 +204,6 @@ MODEL: str
 EMULATOR: bool
 BITCOIN_ONLY: bool
 FIRMWARE_SECTORS_COUNT: int
+BW_STANDARD: int
+BW_URL: int
+BW_MINIMAL: int

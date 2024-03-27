@@ -33,6 +33,8 @@
 #define ZBAR_VERSION_MINOR 10
 
 #define 	PRIx32   "lx"
+
+#define NDEBUG 1
 #if 0
 /* Define to 1 if you have the `atexit' function. */
 #define HAVE_ATEXIT 1

@@ -9,7 +9,7 @@
 
 static struct quirc* qr_decoder;
 
-uint8_t rgb565_to_gray(uint16_t rgb565)
+static inline uint8_t rgb565_to_gray(uint16_t rgb565)
 {
     // Extract R, G, B values from RGB565
     int r = ((rgb565 >> 11) & 0x1F) << 3;
@@ -23,14 +23,17 @@ uint8_t rgb565_to_gray(uint16_t rgb565)
 }
 
 static uint8_t* gray_value = (uint8_t*)(CAM_BUF_ADDRESS);
-int zbar_decode_buffer(uint8_t* raw, uint8_t* out, uint32_t len)
+static inline int zbar_decode_buffer(uint8_t* raw, uint8_t* out, uint32_t len)
 {
     uint16_t* rgb565_value = (uint16_t*)raw;
     int qr_code_len = 0;
 
-    for ( int i = 0; i < WIN_W * WIN_H; i++ )
+    for ( int i = 0; i < WIN_W * WIN_H / 4; i++ )
     {
-        gray_value[i] = rgb565_to_gray(rgb565_value[i]);
+        gray_value[4 * i] = rgb565_to_gray(rgb565_value[4 * i]);
+        gray_value[4 * i + 1] = rgb565_to_gray(rgb565_value[4 * i + 1]);
+        gray_value[4 * i + 2] = rgb565_to_gray(rgb565_value[4 * i + 2]);
+        gray_value[4 * i + 3] = rgb565_to_gray(rgb565_value[4 * i + 3]);
     }
 
     zbar_image_scanner_t* scanner = NULL;
@@ -39,15 +42,24 @@ int zbar_decode_buffer(uint8_t* raw, uint8_t* out, uint32_t len)
 
     /* configure the reader */
     zbar_image_scanner_set_config(scanner, 0, ZBAR_CFG_ENABLE, 1);
+    zbar_image_scanner_set_config(scanner, 0, ZBAR_CFG_X_DENSITY, 2);
+    zbar_image_scanner_set_config(scanner, 0, ZBAR_CFG_Y_DENSITY, 2);
 
     /* wrap image data */
     zbar_image_t* image = zbar_image_create();
     zbar_image_set_format(image, *(int*)"Y800");
     zbar_image_set_size(image, WIN_W, WIN_H);
-    zbar_image_set_data(image, gray_value, WIN_W * WIN_H, zbar_image_free_data);
+    zbar_image_set_data(image, (uint8_t*)gray_value, WIN_W * WIN_H, zbar_image_free_data);
 
     /* scan the image for barcodes */
-    zbar_scan_image(scanner, image);
+    int n = zbar_scan_image(scanner, image);
+
+    if ( n != 1 )
+    {
+        zbar_image_destroy(image);
+        zbar_image_scanner_destroy(scanner);
+        return 0;
+    }
     /* extract results */
     const zbar_symbol_t* symbol = zbar_image_first_symbol(image);
     for ( ; symbol; symbol = zbar_symbol_next(symbol) )

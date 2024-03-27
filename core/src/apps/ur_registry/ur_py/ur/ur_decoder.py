@@ -11,6 +11,8 @@ from .fountain_encoder import Part as FountainEncoderPart
 from .ur import UR
 from .utils import drop_first, is_ur_type
 
+from trezor.utils import get_tick, bytewords_decode, BW_MINIMAL
+
 
 class InvalidScheme(Exception):
     pass
@@ -49,7 +51,8 @@ class URDecoder:
 
     @staticmethod
     def decode_by_type(type, body):
-        cbor = Bytewords.decode(Bytewords_Style_minimal, body)
+        # cbor = Bytewords.decode(Bytewords_Style_minimal, body)
+        cbor = bytewords_decode(BW_MINIMAL,body)
         return UR(type, cbor)
 
     @staticmethod
@@ -126,12 +129,11 @@ class URDecoder:
 
             # Parse the sequence component and the fragment, and make sure they agree.
             (seq_num, seq_len) = URDecoder.parse_sequence_component(seq)
-            cbor = Bytewords.decode(Bytewords_Style_minimal, fragment)
-
+            # cbor = Bytewords.decode(Bytewords_Style_minimal, fragment)
+            cbor = bytewords_decode(BW_MINIMAL,fragment)
             part = FountainEncoderPart.from_cbor(cbor)
             if seq_num != part.seq_num or seq_len != part.seq_len:
                 return False
-
             # Process the part
             if not self.fountain_decoder.receive_part(part):
                 return False

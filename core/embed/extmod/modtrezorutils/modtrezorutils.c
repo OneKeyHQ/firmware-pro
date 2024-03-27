@@ -22,7 +22,9 @@
 #ifndef TREZOR_EMULATOR
 #include "supervise.h"
 #endif
+#include "bc_bytewords.h"
 #include "se_thd89.h"
+#include "secure_heap.h"
 #include "sha2.h"
 #include "version.h"
 
@@ -513,6 +515,51 @@ STATIC mp_obj_t mod_trezorutils_usb_data_connected() {
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorutils_usb_data_connected_obj,
                                  mod_trezorutils_usb_data_connected);
 
+/// def get_tick() -> int:
+///     """
+///     Returns sysytick
+///     """
+STATIC mp_obj_t mod_trezorutils_get_tick(void) {
+  uint32_t tick_cnts = 0;
+
+  tick_cnts = HAL_GetTick();
+
+  return mp_obj_new_int_from_uint(tick_cnts);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorutils_get_tick_obj,
+                                 mod_trezorutils_get_tick);
+
+/// def bytewords_decode(
+///    style: int,
+///    in_string: str,
+/// ) -> bytes:
+///     """
+///     bytewords decode
+///     """
+STATIC mp_obj_t mod_trezorutils_bytewords_decode(mp_obj_t type,
+                                                 mp_obj_t in_str) {
+  int style = mp_obj_get_int(type);
+  mp_buffer_info_t inbuf = {0};
+  mp_get_buffer_raise(in_str, &inbuf, MP_BUFFER_READ);
+
+  uint8_t *outbuf = NULL;
+  size_t outlen = 0;
+
+  if (!bytewords_decode(style, (const char *)inbuf.buf, &outbuf, &outlen)) {
+    mp_raise_msg(&mp_type_ValueError, "bytewords decode failed.");
+  }
+
+  vstr_t vstr = {0};
+  vstr_init_len(&vstr, outlen);
+  memcpy(vstr.buf, outbuf, outlen);
+  vPortFree(outbuf);
+
+  return mp_obj_new_str_from_vstr(&mp_type_bytes, &vstr);
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_trezorutils_bytewords_decode_obj,
+                                 mod_trezorutils_bytewords_decode);
+
 STATIC mp_obj_str_t mod_trezorutils_revision_obj = {
     {&mp_type_bytes}, 0, sizeof(SCM_REVISION) - 1, (const byte *)SCM_REVISION};
 
@@ -533,6 +580,9 @@ MP_DEFINE_STR_OBJ(mp_ONEKEY_VERSION, ONEKEY_VERSION);
 /// EMULATOR: bool
 /// BITCOIN_ONLY: bool
 /// FIRMWARE_SECTORS_COUNT: int
+/// BW_STANDARD: int
+/// BW_URL: int
+/// BW_MINIMAL: int
 
 STATIC const mp_rom_map_elem_t mp_module_trezorutils_globals_table[] = {
     {MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_trezorutils)},
@@ -576,6 +626,7 @@ STATIC const mp_rom_map_elem_t mp_module_trezorutils_globals_table[] = {
 
     {MP_ROM_QSTR(MP_QSTR_usb_data_connected),
      MP_ROM_PTR(&mod_trezorutils_usb_data_connected_obj)},
+    {MP_ROM_QSTR(MP_QSTR_get_tick), MP_ROM_PTR(&mod_trezorutils_get_tick_obj)},
     // various built-in constants
     {MP_ROM_QSTR(MP_QSTR_SCM_REVISION),
      MP_ROM_PTR(&mod_trezorutils_revision_obj)},
@@ -608,6 +659,11 @@ STATIC const mp_rom_map_elem_t mp_module_trezorutils_globals_table[] = {
 #if USE_THD89
     {MP_ROM_QSTR(MP_QSTR_USE_THD89), mp_const_true},
 #endif
+    {MP_ROM_QSTR(MP_QSTR_BW_STANDARD), MP_ROM_INT(bw_standard)},
+    {MP_ROM_QSTR(MP_QSTR_BW_URL), MP_ROM_INT(bw_uri)},
+    {MP_ROM_QSTR(MP_QSTR_BW_MINIMAL), MP_ROM_INT(bw_minimal)},
+    {MP_ROM_QSTR(MP_QSTR_bytewords_decode),
+     MP_ROM_PTR(&mod_trezorutils_bytewords_decode_obj)},
 };
 
 STATIC MP_DEFINE_CONST_DICT(mp_module_trezorutils_globals,
