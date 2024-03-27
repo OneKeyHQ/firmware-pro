@@ -375,6 +375,8 @@ if TYPE_CHECKING:
         NervosAddress = 11702
         NervosSignTx = 11703
         NervosSignedTx = 11704
+        NervosTxRequest = 11705
+        NervosTxAck = 11706
         DeviceBackToBoot = 903
         RebootToBoardloader = 904
         DeviceInfoSettings = 10001
