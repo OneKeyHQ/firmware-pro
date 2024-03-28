@@ -369,6 +369,8 @@ if TYPE_CHECKING:
         NostrDecryptedMessage = 11507
         NostrSignSchnorr = 11508
         NostrSignedSchnorr = 11509
+        LnurlAuth = 11600
+        LnurlAuthResp = 11601
         URCryptoHdkey = 21000
         URResponse = 21001
         NervosGetAddress = 11701
