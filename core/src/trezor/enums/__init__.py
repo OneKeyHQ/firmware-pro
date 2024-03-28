@@ -369,12 +369,16 @@ if TYPE_CHECKING:
         NostrDecryptedMessage = 11507
         NostrSignSchnorr = 11508
         NostrSignedSchnorr = 11509
+        LnurlAuth = 11600
+        LnurlAuthResp = 11601
         URCryptoHdkey = 21000
         URResponse = 21001
         NervosGetAddress = 11701
         NervosAddress = 11702
         NervosSignTx = 11703
         NervosSignedTx = 11704
+        NervosTxRequest = 11705
+        NervosTxAck = 11706
         DeviceBackToBoot = 903
         RebootToBoardloader = 904
         DeviceInfoSettings = 10001

@@ -510,11 +510,15 @@ enum MessageType {
     MessageType_NostrSignSchnorr = 11508 [(wire_in) = true];
     MessageType_NostrSignedSchnorr = 11509 [(wire_out) = true];
 
+    // lnurl
+    MessageType_LnurlAuth = 11600 [(wire_in) = true];
+    MessageType_LnurlAuthResp = 11601 [(wire_out) = true];
+
     // Uniform Resources [21000:22000]
     MessageType_URCryptoHdkey = 21000 [(wire_in) = true];
     MessageType_URResponse = 21001 [(wire_out) = true];
 
-     // nervos
+    // nervos
     MessageType_NervosGetAddress = 11701 [(wire_in) = true];
     MessageType_NervosAddress = 11702 [(wire_out) = true];
     MessageType_NervosSignTx = 11703 [(wire_in) = true];
