@@ -832,7 +832,7 @@ void device_burnin_test(bool force) {
   jpeg_init();
   motor_init();
 
-  nfc_init();  
+  nfc_init();
 
   previous_remain = 0;
   previous = 0;
@@ -1037,20 +1037,19 @@ void device_burnin_test(bool force) {
     }
 
     flashled_now = HAL_GetTick();
-    if(flashled_value){
+    if (flashled_value) {
       if (flashled_now - flashled_pre > 1000) {
         flashled_pre = flashled_now;
         flashled_value = 0;
         ble_set_flashled(flashled_value);
       }
-    }else{
+    } else {
       if (flashled_now - flashled_pre > 10000) {
         flashled_pre = flashled_now;
         flashled_value = 1;
         ble_set_flashled(flashled_value);
       }
     }
-    
 
 #define FONT_HEIGHT 25
 
