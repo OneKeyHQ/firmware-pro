@@ -701,7 +701,7 @@ translations = [
     "Reemplácelo con otro OneKey Lite e inténtelo nuevamente.",
     "Importación interrumpida",
     "Escanear",
-    "Conectar billetera",
+    "Conexión de código QR",
     "Seleccione la billetera a la que desea conectarse",
     "Conectar a {}",
     "Abra {} y escanee el código QR a continuación",

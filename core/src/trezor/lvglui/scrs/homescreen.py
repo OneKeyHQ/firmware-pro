@@ -959,6 +959,7 @@ class WalletList(Screen):
         )
         self.onekey.text_layout_vertical(pad_top=17, pad_ver=20)
         self.onekey.disable()
+        self.onekey.add_flag(lv.obj.FLAG.HIDDEN)
 
         self.okx = ListItemBtn(
             self.container,

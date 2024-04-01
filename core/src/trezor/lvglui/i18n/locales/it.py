@@ -701,7 +701,7 @@ translations = [
     "Sostituiscilo con un altro OneKey Lite e riprova.",
     "Importazione interrotta",
     "Scansione",
-    "Connetti il portafoglio",
+    "Connessione QR Code",
     "Seleziona il portafoglio a cui desideri connetterti",
     "Connetti a {}",
     "Apri {} e scansiona il codice QR qui sotto",

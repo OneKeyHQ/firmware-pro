@@ -1529,7 +1529,7 @@ TITLE__NO_BACKUP_ON_THIS_CARD_DESC = 698
 TITLE__IMPORT_INTERRUPTED = 699
 # Scan
 APP__SCAN = 700
-# Connect App Wallet
+# QR Code Connect
 APP__CONNECT_WALLET = 701
 TITLE__CONNECT_APP_WALLET = 701
 # Select the wallet you want to connect to
