@@ -746,5 +746,7 @@ translations = [
     "Chaînes compatibles ETH et EVM",
     "empreinte digitale non reconnue, réessayez",
     "Utilisez l'empreinte digitale ou appuyez pour déverrouiller",
+    "Micrologiciel SE",
+    "Chargeur de démarrage SE",
 ]
 # fmt: on

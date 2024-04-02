@@ -746,5 +746,8 @@ translations = [
     "Cadenas compatibles con ETH y EVM",
     "huella digital no reconocida, inténtalo de nuevo",
     "Use huella digital o toque para desbloquear",
+    "Firmware SE",
+    "Gestor de arranque SE",
+
 ]
 # fmt: on

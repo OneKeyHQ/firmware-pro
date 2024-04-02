@@ -21,7 +21,12 @@ from .components.anim import Anim
 from .components.banner import LEVEL, Banner
 from .components.button import ListItemBtn, ListItemBtnWithSwitch, NormalButton
 from .components.container import ContainerFlexCol, ContainerFlexRow, ContainerGrid
-from .components.listitem import DisplayItemWithFont_30, ImgGridItem
+from .components.listitem import (
+    DisplayItemWithFont_30,
+    DisplayItemWithFont_TextPairs,
+    ImgGridItem,
+)
+from .deviceinfo import DeviceInfoManager
 from .widgets.style import StyleWrapper
 
 
@@ -2528,121 +2533,67 @@ class AboutSetting(Screen):
             self._init = True
         else:
             return
-        model = device.get_model()
-        version = device.get_firmware_version()
-        serial = device.get_serial()
-
-        ble_name = device.get_ble_name() or uart.get_ble_name()
-        ble_version = uart.get_ble_version()
-        # storage = device.get_storage()
-        boot_version = utils.boot_version()
-        board_version = utils.board_version()
+        preloaded_info = DeviceInfoManager.instance().get_info()
         super().__init__(
             prev_scr=prev_scr, title=_(i18n_keys.TITLE__ABOUT_DEVICE), nav_back=True
         )
-
         self.container = ContainerFlexCol(self.content_area, self.title, padding_row=0)
         self.container.add_dummy()
         self.model = DisplayItemWithFont_30(
-            self.container, _(i18n_keys.ITEM__MODEL), model
+            self.container, _(i18n_keys.ITEM__MODEL), preloaded_info["model"]
         )
-        # self.model.label.add_style(
-        #     StyleWrapper().text_font(font_GeistRegular26).text_color(lv_colors.LIGHT_GRAY), 0
-        # )
-        # self.model.label_top.add_style(StyleWrapper().text_color(lv_colors.WHITE), 0)
-        # self.model.set_style_bg_color(lv_colors.BLACK, 0)
-
         self.ble_mac = DisplayItemWithFont_30(
             self.container,
             _(i18n_keys.ITEM__BLUETOOTH_NAME),
-            ble_name,
+            preloaded_info["ble_name"],
         )
-        # self.ble_mac.label.add_style(
-        #     StyleWrapper().text_font(font_GeistRegular26).text_color(lv_colors.LIGHT_GRAY), 0
-        # )
-        # self.ble_mac.label_top.add_style(StyleWrapper().text_color(lv_colors.WHITE), 0)
-        # self.ble_mac.set_style_bg_color(lv_colors.BLACK, 0)
-
-        # self.storage = DisplayItemWithFont_30(
-        #     self.container,
-        #     _(i18n_keys.ITEM__STORAGE),
-        #     storage,
-        # )
-        # self.storage.label.add_style(
-        #     StyleWrapper().text_font(font_GeistRegular26).text_color(lv_colors.LIGHT_GRAY), 0
-        # )
-        # self.storage.label_top.add_style(StyleWrapper().text_color(lv_colors.WHITE), 0)
-        # self.storage.set_style_bg_color(lv_colors.BLACK, 0)
-
         self.version = DisplayItemWithFont_30(
-            self.container, _(i18n_keys.ITEM__SYSTEM_VERSION), version
+            self.container, _(i18n_keys.ITEM__SYSTEM_VERSION), preloaded_info["version"]
         )
-        # self.version.label.add_style(
-        #     StyleWrapper().text_font(font_GeistRegular26).text_color(lv_colors.LIGHT_GRAY), 0
-        # )
-        # self.version.label_top.add_style(StyleWrapper().text_color(lv_colors.WHITE), 0)
-        # self.version.set_style_bg_color(lv_colors.BLACK, 0)
-
         self.ble_version = DisplayItemWithFont_30(
             self.container,
             _(i18n_keys.ITEM__BLUETOOTH_VERSION),
-            ble_version,
+            preloaded_info["ble_version"],
         )
-        # self.ble_version.label.add_style(
-        #     StyleWrapper().text_font(font_GeistRegular26).text_color(lv_colors.LIGHT_GRAY), 0
-        # )
-        # self.ble_version.label_top.add_style(
-        #     StyleWrapper().text_color(lv_colors.WHITE), 0
-        # )
-        # self.ble_version.set_style_bg_color(lv_colors.BLACK, 0)
-
         self.boot_version = DisplayItemWithFont_30(
-            self.container, _(i18n_keys.ITEM__BOOTLOADER_VERSION), boot_version
+            self.container,
+            _(i18n_keys.ITEM__BOOTLOADER_VERSION),
+            preloaded_info["boot_version"],
         )
-        # self.boot_version.label.add_style(
-        #     StyleWrapper().text_font(font_GeistRegular26).text_color(lv_colors.LIGHT_GRAY), 0
-        # )
-        # self.boot_version.label_top.add_style(
-        #     StyleWrapper().text_color(lv_colors.WHITE), 0
-        # )
-        # self.boot_version.set_style_bg_color(lv_colors.BLACK, 0)
-
         self.board_version = DisplayItemWithFont_30(
             self.container,
             _(i18n_keys.ITEM__BOARDLOADER_VERSION),
-            board_version,
+            preloaded_info["board_version"],
         )
-        # self.board_version.label.add_style(
-        #     StyleWrapper().text_font(font_GeistRegular26).text_color(lv_colors.LIGHT_GRAY), 0
-        # )
-        # self.board_version.label_top.add_style(
-        #     StyleWrapper().text_color(lv_colors.WHITE), 0
-        # )
-        # self.board_version.set_style_bg_color(lv_colors.BLACK, 0)
-        self.build_id = DisplayItemWithFont_30(
-            self.container, _(i18n_keys.ITEM__BUILD_ID), utils.BUILD_ID[-7:]
+        se_firmware_content_pairs = [
+            ("01:", preloaded_info["onekey_se01_version"]),
+            ("02:", preloaded_info["onekey_se02_version"]),
+            ("03:", preloaded_info["onekey_se03_version"]),
+            ("04:", preloaded_info["onekey_se04_version"]),
+        ]
+        self.se_firmware = DisplayItemWithFont_TextPairs(
+            self.container,
+            _(i18n_keys.ITEM__SE_FIRMWARE),
+            se_firmware_content_pairs,
         )
-        # self.build_id.label.add_style(
-        #     StyleWrapper().text_font(font_GeistRegular26).text_color(lv_colors.LIGHT_GRAY), 0
-        # )
-        # self.build_id.label_top.add_style(StyleWrapper().text_color(lv_colors.WHITE), 0)
-        # self.build_id.set_style_bg_color(lv_colors.BLACK, 0)
-
+        se_boot_content_pairs = [
+            ("01:", preloaded_info["onekey_se01_boot_version"]),
+            ("02:", preloaded_info["onekey_se02_boot_version"]),
+            ("03:", preloaded_info["onekey_se03_boot_version"]),
+            ("04:", preloaded_info["onekey_se04_boot_version"]),
+        ]
+        self.se_bootloader = DisplayItemWithFont_TextPairs(
+            self.container,
+            _(i18n_keys.ITEM__SE_BOOTLOADER),
+            se_boot_content_pairs,
+        )
         self.serial = DisplayItemWithFont_30(
-            self.container, _(i18n_keys.ITEM__SERIAL_NUMBER), serial
+            self.container, _(i18n_keys.ITEM__SERIAL_NUMBER), preloaded_info["serial"]
         )
-        # self.serial.label.add_style(
-        #     StyleWrapper().text_font(font_GeistRegular26).text_color(lv_colors.LIGHT_GRAY), 0
-        # )
-        # self.serial.label_top.add_style(StyleWrapper().text_color(lv_colors.WHITE), 0)
-        # self.serial.set_style_bg_color(lv_colors.BLACK, 0)
+
         self.serial.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
         self.fcc_id = DisplayItemWithFont_30(self.container, "FCC ID", "2BB8VT1")
-        # self.fcc_id.label.add_style(
-        #     StyleWrapper().text_font(font_GeistRegular26).text_color(lv_colors.LIGHT_GRAY), 0
-        # )
-        # self.fcc_id.label_top.add_style(StyleWrapper().text_color(lv_colors.WHITE), 0)
-        # self.fcc_id.set_style_bg_color(lv_colors.BLACK, 0)
+
         self.fcc_icon = lv.img(self.fcc_id)
         self.fcc_icon.set_src("A:/res/fcc-logo.png")
         self.fcc_icon.align(lv.ALIGN.RIGHT_MID, 0, -5)
@@ -2652,19 +2603,14 @@ class AboutSetting(Screen):
         )
         self.trezor_mode.align_to(self.container, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 8)
         self.trezor_mode.add_style(StyleWrapper().radius(40), 0)
-        # self.trezor_mode.set_style_bg_color(lv_colors.BLACK, 0)
+
         if not device.is_trezor_compatible():
             self.trezor_mode.clear_state()
 
-        # self.board_loader = ListItemBtn(
-        #     self.container, _(i18n_keys.ITEM__BOARDLOADER), has_next=False
-        # )
-        # self.board_loader.set_style_bg_color(lv_colors.BLACK, 0)
-        # self.board_loader.add_flag(lv.obj.FLAG.HIDDEN)
         self.firmware_update = NormalButton(
             self.content_area, _(i18n_keys.BUTTON__SYSTEM_UPDATE)
         )
-        # self.firmware_update.add_style(StyleWrapper().bg_color(lv_colors.ONEKEY_BLACK_3), 0)
+
         self.firmware_update.align_to(self.trezor_mode, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
         self.serial.add_event_cb(self.on_long_pressed, lv.EVENT.LONG_PRESSED, None)
         self.container.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)

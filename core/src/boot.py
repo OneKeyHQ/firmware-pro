@@ -55,6 +55,7 @@ async def boot_animation() -> None:
 
     bootscreen = BootScreen()
     # wait for bootscreen animation to finish
+    utils.onekey_firmware_hash()
     await loop.sleep(500)
     bootscreen.del_delayed(100)
     loop.close(lvgl_task)

@@ -746,5 +746,7 @@ translations = [
     "Catene compatibili con ETH ed EVM",
     "impronta digitale non riconosciuta, riprovare",
     "Usa l'impronta digitale o tocca per sbloccare",
+    "Firmware SE",
+    "Bootloader SE",
 ]
 # fmt: on

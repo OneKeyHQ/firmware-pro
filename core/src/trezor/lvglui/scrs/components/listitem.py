@@ -286,3 +286,68 @@ class ImgGridItem(lv.img):
             self.check.clear_flag(lv.obj.FLAG.HIDDEN)
         else:
             self.check.add_flag(lv.obj.FLAG.HIDDEN)
+
+
+class DisplayItemWithTextPairs(lv.obj):
+    def __init__(
+        self,
+        parent,
+        title,
+        content_pairs,
+        bg_color=lv_colors.ONEKEY_GRAY_3,
+        radius=0,
+        font=font_GeistRegular26,
+    ):
+        super().__init__(parent)
+        self.remove_style_all()
+        self.set_size(456, lv.SIZE.CONTENT)
+        self.add_style(
+            StyleWrapper()
+            .bg_color(bg_color)
+            .bg_opa(lv.OPA.COVER)
+            .min_height(82)
+            .border_width(0)
+            .pad_hor(24)
+            .pad_ver(12)
+            .radius(radius)
+            .text_font(font)
+            .text_align_left(),
+            0,
+        )
+
+        if title:
+            self.label_top = lv.label(self)
+            self.label_top.set_recolor(True)
+            self.label_top.set_size(lv.pct(100), lv.SIZE.CONTENT)
+            self.label_top.set_long_mode(lv.label.LONG.WRAP)
+            self.label_top.set_text(title)
+            self.label_top.set_align(lv.ALIGN.TOP_LEFT)
+            self.label_top.add_style(
+                StyleWrapper()
+                .text_color(lv_colors.ONEKEY_GRAY_4)
+                .text_letter_space(-1),
+                0,
+            )
+
+        y_offset = self.label_top.get_height() + 40
+        for left_text, right_text in content_pairs:
+            label_left = lv.label(self)
+            label_left.set_text(left_text)
+            label_left.align(lv.ALIGN.TOP_LEFT, 0, y_offset)
+            label_right = lv.label(self)
+            label_right.set_text(right_text)
+            label_right.align(lv.ALIGN.TOP_RIGHT, 0, y_offset)
+            y_offset += max(label_left.get_height(), label_right.get_height()) + 40
+
+
+class DisplayItemWithFont_TextPairs(DisplayItemWithTextPairs):
+    def __init__(
+        self,
+        parent,
+        title,
+        content_pairs,
+        bg_color=lv_colors.ONEKEY_GRAY_3,
+        radius: int = 0,
+        font=font_GeistRegular30,
+    ):
+        super().__init__(parent, title, content_pairs, bg_color, radius, font)

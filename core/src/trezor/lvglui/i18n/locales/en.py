@@ -746,5 +746,7 @@ translations = [
     "ETH and EVM‒compatible chains",
     "fingerprint not recognized, try again",
     "Use fingerprint or tap to unlock",
+    "SE Firmware",
+    "SE Bootloader",
 ]
 # fmt: on

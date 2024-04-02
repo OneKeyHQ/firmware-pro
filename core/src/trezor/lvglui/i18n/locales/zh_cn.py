@@ -746,5 +746,7 @@ translations = [
     "ETH 和 EVM 兼容链",
     "指纹识别失败，请重试",
     "轻触屏幕或指纹解锁",
+    "SE Firmware",
+    "SE Bootloader",
 ]
 # fmt: on
