@@ -959,6 +959,7 @@ class WalletList(Screen):
         )
         self.onekey.text_layout_vertical(pad_top=17, pad_ver=20)
         self.onekey.disable()
+        self.onekey.add_flag(lv.obj.FLAG.HIDDEN)
 
         self.okx = ListItemBtn(
             self.container,
@@ -2575,7 +2576,7 @@ class AboutSetting(Screen):
         # self.storage.set_style_bg_color(lv_colors.BLACK, 0)
 
         self.version = DisplayItemWithFont_30(
-            self.container, _(i18n_keys.ITEM__SYSTEM_VERSION), version
+            self.container, _(i18n_keys.ITEM__SYSTEM_VERSION), f"{version}-internal"
         )
         # self.version.label.add_style(
         #     StyleWrapper().text_font(font_GeistRegular26).text_color(lv_colors.LIGHT_GRAY), 0

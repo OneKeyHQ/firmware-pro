@@ -701,7 +701,7 @@ translations = [
     "Replace it with another OneKey Lite and try again.",
     "Import Interrupted",
     "Scan",
-    "Connect App Wallet",
+    "QR Code Connect",
     "Select the wallet you want to connect to",
     "Connect to {}",
     "Open {} and scan the QR code below",
