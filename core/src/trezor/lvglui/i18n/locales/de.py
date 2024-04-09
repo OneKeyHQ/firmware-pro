@@ -662,7 +662,7 @@ translations = [
     "Verwenden Sie zum Entsperren den Fingerabdruck oder wischen Sie nach oben",
     "Fingerabdruck entsperrt",
     "Ungültiger Fingerabdruck, bitte versuchen Sie es erneut.",
-    "Ihr PIN-Code ist erforderlich, um die Entsperrung per Fingerabdruck zu aktivieren.",
+    "Fehlergrenze erreicht, bitte geben Sie den PIN-Code ein.",
     "Zum Entsperren nach oben wischen",
     "Ermöglichen Sie die gleichzeitige Aufzeichnung von bis zu 3 Fingerabdrücken.",
     "Gerät entsperren",
@@ -723,7 +723,7 @@ translations = [
     "OneKey-Wallet",
     "Fingerabdruck {}",
     "Aufladen",
-    "Scannen Sie den in der App angezeigten QR-Code",
+    "QR-Code scannen oder Nachricht signieren",
     "Nicht unterstütztes Datenformat",
     "Der QR-Codetyp wird nicht unterstützt. Bitte versuchen Sie es erneut.",
     "Ungültige Transaktion",
@@ -746,7 +746,7 @@ translations = [
     "ETH- und EVM-kompatible Ketten",
     "Fingerabdruck nicht erkannt, versuchen Sie es erneut",
     "Verwenden Sie zum Entsperren den Fingerabdruck oder tippen Sie darauf",
-    "SE-Firmware",
-    "SE-Bootloader",
+    "SE Firmware",
+    "SE Bootloader",
 ]
 # fmt: on

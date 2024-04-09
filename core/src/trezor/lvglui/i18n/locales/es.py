@@ -662,7 +662,7 @@ translations = [
     "Use huella digital o deslice hacia arriba para desbloquear",
     "Huella digital desbloqueada",
     "Huella digital no válida, vuelva a intentarlo.",
-    "Se requiere su código PIN para habilitar el desbloqueo de huellas digitales.",
+    "Límite de errores alcanzado, ingrese PIN.",
     "Desliza hacia arriba para desbloquear",
     "Permite grabar hasta 3 huellas dactilares simultáneamente.",
     "Desbloquear dispositivo",
@@ -723,7 +723,7 @@ translations = [
     "OneKey Wallet",
     "Huella dactilar {}",
     "Cargando",
-    "Escanee el código QR que se muestra en la aplicación",
+    "Escanee el código QR de la transacción o firme el mensaje",
     "Formato de datos no admitido",
     "El tipo de código QR no es compatible. Inténtelo de nuevo.",
     "Transacción inválida",
@@ -747,7 +747,6 @@ translations = [
     "huella digital no reconocida, inténtalo de nuevo",
     "Use huella digital o toque para desbloquear",
     "Firmware SE",
-    "Gestor de arranque SE",
-
+    "Cargador de arranque SE",
 ]
 # fmt: on

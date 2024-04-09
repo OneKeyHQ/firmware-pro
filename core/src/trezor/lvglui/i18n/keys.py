@@ -1443,7 +1443,7 @@ MSG__USE_FINGERPRINT_OR_SWIPE_UP_TO_UNLOCK = 659
 MSG__FINGERPRINT_UNLOCKED = 660
 # Invalid fingerprint, please retry.
 MSG__INVALID_FINGERPRINT_PLEASE_RETRY = 661
-# Your PIN code is required to enable fingerprint unlock.
+# Errors limit reached, please enter PIN code.
 MSG__YOUR_PIN_CODE_REQUIRED_TO_ENABLE_FINGERPRINT_UNLOCK = 662
 # Swipe up to unlock
 MSG__SWIPE_UP_TO_UNLOCK = 663
@@ -1581,7 +1581,7 @@ ITEM__ONEKEY_WALLET = 720
 FORM__FINGER_STR = 721
 # Charging
 MSG__CHARGING = 722
-# Scan the QR Code displayed\non the app
+# Scan transaction QR code or sign message
 CONTENT__SCAN_THE_QR_CODE_DISPLAYED_ON_THE_APP = 723
 # Unsupported data format
 TITLE__DATA_FORMAT_NOT_SUPPORT = 724
@@ -1628,6 +1628,8 @@ CONTENT__ETH_AND_EVM_POWERED_NETWORK = 743
 MSG__FINGERPRINT_NOT_RECOGNIZED_TRY_AGAIN = 744
 # Use fingerprint or tap to unlock
 MSG__USE_FINGERPRINT_OR_TAP_TO_UNLOCK = 745
-# fmt: on
+# SE Firmware
 ITEM__SE_FIRMWARE = 746
+# SE Bootloader
 ITEM__SE_BOOTLOADER = 747
+# fmt: on

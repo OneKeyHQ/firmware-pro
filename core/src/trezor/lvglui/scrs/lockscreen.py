@@ -88,7 +88,7 @@ class LockScreen(Screen):
                 )
                 # self._show_fingerprint_prompt_if_necessary()
             else:
-                self.tap_tip.set_text(_(i18n_keys.MSG__SWIPE_UP_TO_UNLOCK))
+                self.tap_tip.set_text(_(i18n_keys.LOCKED_TEXT__TAP_TO_UNLOCK))
 
         self.tap_tip.set_size(456, lv.SIZE.CONTENT)
         self.tap_tip.align(lv.ALIGN.BOTTOM_MID, 0, 0)
