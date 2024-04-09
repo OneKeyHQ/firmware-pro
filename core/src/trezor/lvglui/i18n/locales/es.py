@@ -645,7 +645,7 @@ translations = [
     "¡Forma alternativa de desbloqueo de PIN! Habilite el sensor de identidad de huellas dactilares y le facilitará el acceso a OneKey Pro.",
     "Agregar huella digital",
     "Empezar",
-    "Coloque su dedo en el sensor ubicado en el costado del teléfono.",
+    "Coloque su dedo en el sensor ubicado en el lado del dispositivo.",
     "Colocar el dedo",
     "Coloque su dedo en el botón de encendido y luego levántelo, repitiendo este paso.",
     "Ajustar el dedo",

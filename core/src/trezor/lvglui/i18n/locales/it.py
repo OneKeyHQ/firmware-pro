@@ -645,7 +645,7 @@ translations = [
     "Modo alternativo allo sblocco tramite PIN! Abilita il sensore di identità delle impronte digitali e semplifica l'accesso a OneKey Pro.",
     "Aggiungi impronta digitale",
     "Iniziare",
-    "Posiziona il dito sul sensore situato sul lato del telefono.",
+    "Posiziona il tuo dito sul sensore situato sul lato del dispositivo.",
     "Posiziona il dito",
     "Metti il dito sul pulsante di accensione e sollevalo successivamente, ripetendo questo passaggio.",
     "Regola il dito",

@@ -645,7 +645,7 @@ translations = [
     "Alternative way to PIN unlocking! Enable fingerprint identity sensor and makes it easy for you to get into OneKey Pro.",
     "Add Fingerprint",
     "Get Started",
-    "Place your finger on the sensor located on the side of the phone.",
+    "Place your finger on the sensor located on the side of the device.",
     "Place Finger",
     "Put your finger on the power button and lift it afterwards, repeating this step.",
     "Adjust Finger",

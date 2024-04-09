@@ -1407,7 +1407,7 @@ TITLE__FINGERPRINT_DESC = 642
 BUTTON__ADD_FINGERPRINT = 643
 # Get Started
 TITLE__GET_STARTED = 644
-# Place your finger on the sensor located on the side of the phone.
+# Place your finger on the sensor located on the side of the device.
 CONTENT__PLACE_YOUR_FINGER_ON_THE_SENSOR_LOCATED_ON_THE_SIDE_OF_THE_PHONE = 645
 # Place Finger
 TITLE__PLACE_FINGER = 646

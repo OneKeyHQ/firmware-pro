@@ -645,7 +645,7 @@ translations = [
     "Alternative Möglichkeit zur PIN-Entsperrung! Aktivieren Sie den Fingerabdruck-Identitätssensor und erleichtern Sie den Einstieg in OneKey Pro.",
     "Fingerabdruck hinzufügen",
     "Loslegen",
-    "Legen Sie Ihren Finger auf den Sensor an der Seite des Telefons.",
+    "Legen Sie Ihren Finger auf den Sensor, der sich an der Seite des Geräts befindet.",
     "Finger platzieren",
     "Legen Sie Ihren Finger auf den Netzschalter und heben Sie ihn anschließend an. Wiederholen Sie diesen Schritt.",
     "Finger anpassen",

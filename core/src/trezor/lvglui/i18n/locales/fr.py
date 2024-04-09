@@ -645,7 +645,7 @@ translations = [
     "Méthode alternative au déverrouillage du code PIN ! Activez le capteur d'identité par empreinte digitale et facilitez l'accès à OneKey Pro.",
     "Ajouter empreinte",
     "Commencer",
-    "Placez votre doigt sur le capteur situé sur le côté du téléphone.",
+    "Placez votre doigt sur le capteur situé sur le côté de l'appareil.",
     "Placer le doigt",
     "Mettez votre doigt sur le bouton d'alimentation et soulevez-le ensuite en répétant cette étape.",
     "Ajuster le doigt",
