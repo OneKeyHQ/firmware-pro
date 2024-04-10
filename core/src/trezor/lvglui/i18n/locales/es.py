@@ -747,6 +747,5 @@ translations = [
     "huella digital no reconocida, inténtalo de nuevo",
     "Use huella digital o toque para desbloquear",
     "Firmware SE",
-    "Cargador de arranque SE",
 ]
 # fmt: on

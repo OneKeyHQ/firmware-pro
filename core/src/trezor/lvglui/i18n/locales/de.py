@@ -747,6 +747,5 @@ translations = [
     "Fingerabdruck nicht erkannt, versuchen Sie es erneut",
     "Verwenden Sie zum Entsperren den Fingerabdruck oder tippen Sie darauf",
     "SE Firmware",
-    "SE Bootloader",
 ]
 # fmt: on

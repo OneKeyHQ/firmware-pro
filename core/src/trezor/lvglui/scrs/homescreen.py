@@ -2585,7 +2585,7 @@ class AboutSetting(Screen):
         ]
         self.se_bootloader = DisplayItemWithFont_TextPairs(
             self.container,
-            _(i18n_keys.ITEM__SE_BOOTLOADER),
+            "SE Bootloader",
             se_boot_content_pairs,
         )
         self.serial = DisplayItemWithFont_30(
