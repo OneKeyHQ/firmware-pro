@@ -652,12 +652,14 @@ int main(void) {
   thd89_reset();
   thd89_init();
 
+  // verify ble before se, leave more time for se to boot
+  device_verify_ble();
+
   uint8_t se_mode = se_get_state();
   // all se in app mode
   if (se_mode == 0) {
     device_para_init();
   }
-  device_verify_ble();
 
   if ((!device_serial_set() || !se_has_cerrificate()) && se_mode == 0) {
     display_clear();
