@@ -7,12 +7,18 @@
 #include "display.h"
 #include "mipi_lcd.h"
 #include "irq.h"
+#include "systick.h"
 
 #define CAMERA_CAPTURE_MODE 0 // 0: snapshot mode, 1: continuous mode
 
 static I2C_HandleTypeDef* i2c_handle_camera = NULL;
 static volatile bool capture_done = false;
 static volatile bool camera_opened = false;
+// power on in bootloader
+static volatile bool camera_powered = true;
+static volatile bool camera_configured = false;
+
+#define camera_delay(x) dwt_delay_ms(x)
 
 DCMI_HandleTypeDef DCMI_Handle;
 DMA_HandleTypeDef DMA_DCMI_Handle;
@@ -135,12 +141,18 @@ void DCMI_IRQHandler(void)
 void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef* hdcmi)
 {
 #if CAMERA_CAPTURE_MODE == 0
-    camera_stop();
+    camera_dcmi_stop();
 #else
     camera_suspend();
 #endif
     capture_done = true;
 }
+
+#define CAMERA_RST_HIGH()  HAL_GPIO_WritePin(GPIOJ, GPIO_PIN_6, GPIO_PIN_SET)
+#define CAMERA_RST_LOW()   HAL_GPIO_WritePin(GPIOJ, GPIO_PIN_6, GPIO_PIN_RESET)
+
+#define CAMERA_PWDN_HIGH() HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11, GPIO_PIN_SET)
+#define CAMERA_PWDN_LOW()  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11, GPIO_PIN_RESET)
 
 void camera_io_init()
 {
@@ -157,11 +169,13 @@ void camera_io_init()
     GPIO_InitStructure.Pin = GPIO_PIN_6;
     HAL_GPIO_Init(GPIOJ, &GPIO_InitStructure);
 
-    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(GPIOJ, GPIO_PIN_6, GPIO_PIN_RESET);
-    HAL_Delay(10);
-    HAL_GPIO_WritePin(GPIOJ, GPIO_PIN_6, GPIO_PIN_SET);
-    HAL_Delay(20);
+    CAMERA_PWDN_LOW();
+    CAMERA_RST_LOW();
+    camera_delay(10);
+    CAMERA_RST_HIGH();
+    camera_delay(20);
+
+    camera_powered = true;
 }
 
 unsigned char camera_sccb_read_reg(unsigned char reg_addr, unsigned char* data)
@@ -219,14 +233,22 @@ void camera_start(uint8_t* buffer_address, uint32_t mode)
         camera_resume();
         return;
     }
+
     HAL_DCMI_Start_DMA(&DCMI_Handle, mode, (uint32_t)buffer_address, (WIN_W * WIN_H) / 2);
     camera_opened = true;
+}
+
+void camera_dcmi_stop(void)
+{
+    HAL_DCMI_Stop(&DCMI_Handle);
+    camera_opened = false;
 }
 
 void camera_stop(void)
 {
     HAL_DCMI_Stop(&DCMI_Handle);
     camera_opened = false;
+    camera_power_off();
 }
 
 void camera_suspend(void)
@@ -241,6 +263,7 @@ void camera_resume(void)
 
 void camera_capture_start(void)
 {
+    camera_power_on();
 #if CAMERA_CAPTURE_MODE == 0
     camera_start((uint8_t*)CAM_BUF_ADDRESS, DCMI_MODE_SNAPSHOT);
 #else
@@ -256,7 +279,7 @@ int camera_capture_done(void)
     {
         if ( (HAL_GetTick() - tickstart) > 200 )
         {
-            camera_stop();
+            camera_dcmi_stop();
             return 0;
         }
     }
@@ -264,13 +287,8 @@ int camera_capture_done(void)
     return 1;
 }
 
-int camera_init(void)
+void camera_config_init(void)
 {
-    i2c_handle_camera = &i2c_handles[i2c_find_channel_by_device(I2C_CAMERA)];
-    i2c_init_by_device(I2C_CAMERA);
-
-    camera_get_id();
-
     volatile unsigned char ret = 0;
     for ( int i = 0; default_regs[i][0]; i++ )
     {
@@ -281,8 +299,45 @@ int camera_init(void)
             ensure_ex(ret, 0, "camera init failed");
         }
     }
+}
+
+int camera_init(void)
+{
+    i2c_handle_camera = &i2c_handles[i2c_find_channel_by_device(I2C_CAMERA)];
+    i2c_init_by_device(I2C_CAMERA);
+
+    camera_get_id();
 
     dcmi_init();
 
-    return ret;
+    return 0;
+}
+
+void camera_power_off(void)
+{
+    CAMERA_PWDN_HIGH();
+    camera_delay(10);
+    CAMERA_RST_LOW();
+    camera_delay(10);
+    camera_powered = false;
+    camera_configured = false;
+}
+
+void camera_power_on(void)
+{
+    if ( !camera_powered )
+    {
+        CAMERA_PWDN_LOW();
+        CAMERA_RST_LOW();
+        camera_delay(10);
+        CAMERA_RST_HIGH();
+        camera_delay(20);
+        camera_powered = true;
+    }
+
+    if ( !camera_configured )
+    {
+        camera_config_init();
+        camera_configured = true;
+    }
 }

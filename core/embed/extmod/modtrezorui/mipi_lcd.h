@@ -76,6 +76,13 @@ void lcd_pwm_init(void);
 
 void display_fp(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
                 const uint8_t *data);
+void lcd_refresh_suspend(void);
+
+void lcd_refresh_resume(void);
+
+void lcd_sleepin(void);
+
+void lcd_sleepout(void);
 
 #ifdef __cplusplus
 }

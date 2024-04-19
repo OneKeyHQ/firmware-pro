@@ -144,6 +144,7 @@ async def handle_usb_state():
             previous_usb_bus_state = usb.bus.state()
             usb_state = loop.wait(io.USB_STATE)
             state = await usb_state
+            utils.lcd_resume()
             if state:
                 if display.backlight() == 0:
                     prompt = ChargingPromptScr.get_instance()
@@ -159,7 +160,6 @@ async def handle_usb_state():
                     )
                 motor.vibrate()
             else:
-                utils.lcd_resume()
                 StatusBar.get_instance().show_usb(False)
                 # deal with charging state
                 CHARGING = False
@@ -387,6 +387,7 @@ async def _deal_ble_status(value: bytes) -> None:
     if res == _BLE_STATUS_CONNECTED:
         utils.BLE_CONNECTED = True
         # show icon in status bar
+        utils.lcd_resume()
         StatusBar.get_instance().show_ble(StatusBar.BLE_STATE_CONNECTED)
     elif res == _BLE_STATUS_DISCONNECTED:
         utils.BLE_CONNECTED = False

@@ -66,6 +66,17 @@ void ble_usart_init(void) {
   HAL_NVIC_EnableIRQ(UART4_IRQn);
 
   __HAL_UART_ENABLE_IT(huart, UART_IT_RXFNE);
+  __HAL_UART_ENABLE_IT(huart, UART_IT_ERR);
+}
+
+void usart_enable_stop_wup(void) {
+  HAL_UARTEx_EnableStopMode(huart);
+  __HAL_UART_ENABLE_IT(huart, UART_IT_WUF);
+}
+
+void usart_disable_stop_wup(void) {
+  HAL_UARTEx_DisableStopMode(huart);
+  __HAL_UART_DISABLE_IT(huart, UART_IT_WUF);
 }
 
 void ble_usart_send_byte(uint8_t data) {
@@ -160,9 +171,7 @@ static void usart_rev_package(uint8_t *buf) {
 }
 
 void UART4_IRQHandler(void) {
-  if (__HAL_UART_GET_FLAG(huart, UART_FLAG_ORE) != 0) {
-    __HAL_UART_CLEAR_FLAG(huart, UART_CLEAR_OREF);
-  }
+  HAL_UART_IRQHandler(huart);
   if (__HAL_UART_GET_FLAG(huart, UART_FLAG_RXFNE) != 0) {
     memset(usart_fifo, 0x00, sizeof(usart_fifo));
     usart_rev_package(usart_fifo);

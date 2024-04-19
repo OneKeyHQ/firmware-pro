@@ -195,6 +195,13 @@ def bytewords_decode(
     """
     bytewords decode
     """
+
+
+# extmod/modtrezorutils/modtrezorutils.c
+def enter_lowpower(restart: bool, seconds: int) -> None:
+    """
+    Enter lowpower mode.
+    """
 SCM_REVISION: bytes
 BUILD_ID: bytes
 VERSION_MAJOR: int

@@ -71,6 +71,9 @@ void ble_cmd_req(uint8_t cmd, uint8_t value);
 void ble_cmd_req_ex(uint8_t cmd, const uint8_t *value, uint32_t value_len);
 void ble_uart_poll(void);
 
+#define ble_disconnect() ble_cmd_req(BLE_BT, BLE_BT_DISCON)
+#define ble_power_off() ble_cmd_req(BLE_PWR, BLE_PWR_SYS_OFF)
+
 #if !EMULATOR
 bool ble_is_enable(void);
 bool ble_name_state(void);

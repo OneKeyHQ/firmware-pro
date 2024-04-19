@@ -679,3 +679,25 @@ void display_fp(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
     fb_write_pixel(x + i % w, y + i / w, grayscale_to_rgb565(data[i]));
   }
 }
+
+void lcd_sleepin(void) {
+  st7701_dsi(0x28);  // DISPOFF
+  st7701_dsi(0x10);  // SLPIN
+}
+
+void lcd_sleepout(void) {
+  st7701_dsi(0x11);  // SLPOUT
+  st7701_dsi(0x29);  // DISPON
+}
+
+void lcd_refresh_suspend(void) {
+  lcd_sleepin();
+  __HAL_DSI_DISABLE(&hlcd_dsi);
+  __HAL_LTDC_DISABLE(&hlcd_ltdc);
+}
+
+void lcd_refresh_resume(void) {
+  __HAL_DSI_ENABLE(&hlcd_dsi);
+  __HAL_LTDC_ENABLE(&hlcd_ltdc);
+  lcd_sleepout();
+}

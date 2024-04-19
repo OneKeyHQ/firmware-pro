@@ -199,3 +199,32 @@ int sdram_init(void) {
 
   return HAL_OK;
 }
+
+void sdram_handler_init(void) {
+  if (!hsdram[0].Instance) {
+    hsdram[0].Instance = FMC_SDRAM_DEVICE;
+    hsdram[0].Init.SDBank = FMC_SDRAM_BANK2;
+    hsdram[0].State = HAL_SDRAM_STATE_READY;
+  }
+}
+
+void sdram_set_self_refresh(void) {
+  sdram_handler_init();
+
+  Command.CommandMode = FMC_SDRAM_CMD_SELFREFRESH_MODE;
+  Command.CommandTarget = FMC_SDRAM_CMD_TARGET_BANK2;
+  Command.AutoRefreshNumber = 1;
+  Command.ModeRegisterDefinition = 0;
+
+  HAL_SDRAM_SendCommand(&hsdram[0], &Command, FMC_SDRAM_TIMEOUT);
+}
+
+void sdram_set_normal_mode(void) {
+  sdram_handler_init();
+
+  Command.CommandMode = FMC_SDRAM_CMD_NORMAL_MODE;
+  Command.CommandTarget = FMC_SDRAM_CMD_TARGET_BANK2;
+  Command.AutoRefreshNumber = 1;
+  Command.ModeRegisterDefinition = 0;
+  HAL_SDRAM_SendCommand(&hsdram[0], &Command, FMC_SDRAM_TIMEOUT);
+}

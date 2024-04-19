@@ -36,6 +36,7 @@ void fpsensor_delay_ms(uint32_t num);
 void fpsensor_irq_enable(void);
 void fpsensor_irq_disable(void);
 int fpsensor_detect(void);
+void fpsensor_state_set(bool state);
 
 bool fpsensor_data_init(void);
 bool fpsensor_data_save(bool update_all, uint8_t id);

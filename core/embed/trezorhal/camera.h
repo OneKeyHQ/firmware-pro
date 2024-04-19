@@ -24,6 +24,7 @@ uint32_t dcmi_get_error();
 void camera_io_init(void);
 int camera_init(void);
 void camera_start(uint8_t* buffer_address, uint32_t mode);
+void camera_dcmi_stop(void);
 void camera_stop(void);
 void camera_suspend(void);
 void camera_resume(void);
@@ -33,6 +34,8 @@ unsigned short camera_get_id(void);
 unsigned char camera_is_online(void);
 void camera_capture_start(void);
 int camera_capture_done(void);
+void camera_power_off(void);
+void camera_power_on(void);
 
 #define camera_enter_sleep_mode() HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11, GPIO_PIN_SET)
 #define camera_exit_sleep_mode()  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11, GPIO_PIN_RESET)

@@ -53,4 +53,6 @@
 
 int sdram_init(void);
 
+void sdram_set_self_refresh(void);
+void sdram_set_normal_mode(void);
 #endif

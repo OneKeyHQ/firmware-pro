@@ -40,6 +40,7 @@ from trezorutils import (  # noqa: F401; FIRMWARE_SECTORS_COUNT,; firmware_secto
     onekey_firmware_hash,
     get_tick,
     bytewords_decode,
+    enter_lowpower,
 )
 
 if not EMULATOR:

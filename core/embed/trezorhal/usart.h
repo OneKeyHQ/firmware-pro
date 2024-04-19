@@ -40,5 +40,7 @@ void ble_usart_send(uint8_t *buf, uint32_t len);
 secbool ble_usart_can_read(void);
 uint32_t ble_usart_read(uint8_t *buf, uint32_t lenth);
 void usart_print(const char *text, int text_len);
+void usart_enable_stop_wup(void);
+void usart_disable_stop_wup(void);
 
 #endif

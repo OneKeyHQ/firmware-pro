@@ -60,6 +60,9 @@ uint32_t touch_read(void);
 uint32_t touch_click(void);
 uint32_t touch_is_detected(void);
 uint32_t boot_touch_detect(uint32_t timeout);
+void touch_enter_sleep_mode(void);
+void touch_enable_irq(void);
+void touch_disable_irq(void);
 static inline uint16_t touch_unpack_x(uint32_t evt) {
   return (evt >> 12) & 0xFFF;
 }

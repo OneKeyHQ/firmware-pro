@@ -42,6 +42,7 @@
 #ifndef TREZOR_EMULATOR
 #include "br_check.h"
 #include "image.h"
+#include "low_power.h"
 #include "mini_printf.h"
 #endif
 
@@ -560,6 +561,20 @@ STATIC mp_obj_t mod_trezorutils_bytewords_decode(mp_obj_t type,
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_trezorutils_bytewords_decode_obj,
                                  mod_trezorutils_bytewords_decode);
 
+/// def enter_lowpower(restart: bool, seconds: int) -> None:
+///     """
+///     Enter lowpower mode.
+///     """
+STATIC mp_obj_t mod_trezorutils_enter_lowpower(mp_obj_t restart,
+                                               mp_obj_t seconds) {
+  int val_ms = mp_obj_get_int(seconds);
+  bool val_restart = mp_obj_is_true(restart);
+  enter_stop_mode(val_restart, val_ms / 1000);
+  return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_trezorutils_enter_lowpower_obj,
+                                 mod_trezorutils_enter_lowpower);
+
 STATIC mp_obj_str_t mod_trezorutils_revision_obj = {
     {&mp_type_bytes}, 0, sizeof(SCM_REVISION) - 1, (const byte *)SCM_REVISION};
 
@@ -664,6 +679,8 @@ STATIC const mp_rom_map_elem_t mp_module_trezorutils_globals_table[] = {
     {MP_ROM_QSTR(MP_QSTR_BW_MINIMAL), MP_ROM_INT(bw_minimal)},
     {MP_ROM_QSTR(MP_QSTR_bytewords_decode),
      MP_ROM_PTR(&mod_trezorutils_bytewords_decode_obj)},
+    {MP_ROM_QSTR(MP_QSTR_enter_lowpower),
+     MP_ROM_PTR(&mod_trezorutils_enter_lowpower_obj)},
 };
 
 STATIC MP_DEFINE_CONST_DICT(mp_module_trezorutils_globals,

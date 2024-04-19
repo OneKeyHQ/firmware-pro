@@ -61,18 +61,9 @@ void EXTI15_10_IRQHandler(void)
     HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_15);
 }
 
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+void fpsensor_state_set(bool state)
 {
-    uint8_t irq_status[2];
-    if ( GPIO_Pin == GPIO_PIN_15 )
-    {
-        fpsensor_read_irq_with_clear(irq_status, 2);
-        if ( irq_status[1] & 0x01 )
-        {
-            fp_touched = true;
-            HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);
-        }
-    }
+    fp_touched = state;
 }
 
 void fpsensor_irq_enable(void)
@@ -91,6 +82,7 @@ void fpsensor_data_cache_clear(void)
 void fpsensor_irq_disable(void)
 {
     fp_touched = false;
+    __HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_15);
     HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);
 }
 

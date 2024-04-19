@@ -83,6 +83,12 @@ uint32_t touch_is_detected(void) {
   return GPIO_PIN_RESET == HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_2);
 }
 
+void touch_enter_sleep_mode(void) { gt911_enter_sleep(); }
+
+void touch_enable_irq(void) { gt911_enable_irq(); }
+
+void touch_disable_irq(void) { gt911_disable_irq(); }
+
 #else
 
 static I2C_HandleTypeDef *i2c_handle_touchpanel = NULL;

@@ -4,6 +4,7 @@
 #include "gt911.h"
 #include "common.h"
 #include "i2c.h"
+#include "irq.h"
 
 static I2C_HandleTypeDef *i2c_handle_touchpanel = NULL;
 // static uint8_t gt911_data[256];
@@ -107,6 +108,28 @@ uint32_t gt911_read_location(void) {
 
   return xy;
 }
+
+void gt911_enter_sleep(void) {
+  uint8_t data[1] = {0x05};
+  gt911_write(GTP_REG_SLEEP, data, 1);
+}
+
+void gt911_enable_irq(void) {
+  GPIO_InitTypeDef GPIO_InitStructure;
+
+  GPIO_InitStructure.Pin = GPIO_PIN_2;
+  GPIO_InitStructure.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStructure.Pull = GPIO_NOPULL;
+  GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+  NVIC_SetPriority(EXTI2_IRQn, IRQ_PRI_GPIO);
+  HAL_NVIC_EnableIRQ(EXTI2_IRQn);
+}
+
+void gt911_disable_irq(void) { HAL_NVIC_DisableIRQ(EXTI2_IRQn); }
+
+void EXTI2_IRQHandler(void) { HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_2); }
 
 void gt911_test(void) {
   while (1) {
