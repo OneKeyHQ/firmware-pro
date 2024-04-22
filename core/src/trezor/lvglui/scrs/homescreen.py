@@ -234,37 +234,10 @@ class MainScreen(Screen):
             )
             pressed_desc_style = StyleWrapper().text_opa(lv.OPA._70)
 
-            self.settings = lv.imgbtn(self)
-            self.settings.set_size(216, 216)
-            self.settings.set_pos(16, 148)
-            self.settings.set_style_bg_img_src("A:/res/app-settings.jpg", 0)
-            self.settings.add_style(click_style, lv.PART.MAIN | lv.STATE.PRESSED)
-            self.settings.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
-            self.settings_desc = lv.label(self)
-            self.settings_desc.set_text(_(i18n_keys.APP__SETTINGS))
-            self.settings_desc.add_style(default_desc_style, 0)
-            self.settings_desc.add_style(
-                pressed_desc_style, lv.PART.MAIN | lv.STATE.PRESSED
-            )
-            self.settings_desc.align_to(self.settings, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
-
-            self.scan = lv.imgbtn(self)
-            self.scan.set_size(216, 216)
-            self.scan.align_to(self.settings, lv.ALIGN.OUT_RIGHT_MID, 16, 0)
-            self.scan.set_style_bg_img_src("A:/res/app-scan.jpg", 0)
-            self.scan.add_style(click_style, lv.PART.MAIN | lv.STATE.PRESSED)
-            self.scan.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
-            self.scan_desc = lv.label(self)
-            self.scan_desc.set_text(_(i18n_keys.APP__SCAN))
-            self.scan_desc.add_style(default_desc_style, 0)
-            self.scan_desc.add_style(
-                pressed_desc_style, lv.PART.MAIN | lv.STATE.PRESSED
-            )
-            self.scan_desc.align_to(self.scan, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
-
             self.connect = lv.imgbtn(self)
             self.connect.set_size(216, 216)
-            self.connect.align_to(self.settings, lv.ALIGN.OUT_BOTTOM_MID, 0, 77)
+            # self.connect.align_to(self.settings, lv.ALIGN.OUT_BOTTOM_MID, 0, 77)
+            self.connect.set_pos(16, 148)
             self.connect.set_style_bg_img_src("A:/res/app-connect.jpg", 0)
             self.connect.add_style(click_style, lv.PART.MAIN | lv.STATE.PRESSED)
             self.connect.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
@@ -276,9 +249,38 @@ class MainScreen(Screen):
             )
             self.connect_desc.align_to(self.connect, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
 
+            self.scan = lv.imgbtn(self)
+            self.scan.set_size(216, 216)
+            self.scan.align_to(self.connect, lv.ALIGN.OUT_RIGHT_MID, 16, 0)
+            self.scan.set_style_bg_img_src("A:/res/app-scan.jpg", 0)
+            self.scan.add_style(click_style, lv.PART.MAIN | lv.STATE.PRESSED)
+            self.scan.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
+            self.scan_desc = lv.label(self)
+            self.scan_desc.set_text(_(i18n_keys.APP__SCAN))
+            self.scan_desc.add_style(default_desc_style, 0)
+            self.scan_desc.add_style(
+                pressed_desc_style, lv.PART.MAIN | lv.STATE.PRESSED
+            )
+            self.scan_desc.align_to(self.scan, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
+
+            self.settings = lv.imgbtn(self)
+            self.settings.set_size(216, 216)
+            # self.settings.set_pos(16, 148)
+            self.settings.align_to(self.connect, lv.ALIGN.OUT_BOTTOM_MID, 0, 77)
+            self.settings.set_style_bg_img_src("A:/res/app-settings.jpg", 0)
+            self.settings.add_style(click_style, lv.PART.MAIN | lv.STATE.PRESSED)
+            self.settings.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
+            self.settings_desc = lv.label(self)
+            self.settings_desc.set_text(_(i18n_keys.APP__SETTINGS))
+            self.settings_desc.add_style(default_desc_style, 0)
+            self.settings_desc.add_style(
+                pressed_desc_style, lv.PART.MAIN | lv.STATE.PRESSED
+            )
+            self.settings_desc.align_to(self.settings, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
+
             self.guide = lv.imgbtn(self)
             self.guide.set_size(216, 216)
-            self.guide.align_to(self.connect, lv.ALIGN.OUT_RIGHT_MID, 16, 0)
+            self.guide.align_to(self.settings, lv.ALIGN.OUT_RIGHT_MID, 16, 0)
             self.guide.set_style_bg_img_src("A:/res/app-tips.jpg", 0)
             self.guide.add_style(click_style, lv.PART.MAIN | lv.STATE.PRESSED)
             self.guide.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
@@ -482,7 +484,7 @@ class MainScreen(Screen):
                 elif target == self.scan:
                     ScanScreen(self.parent)
                 elif target == self.connect:
-                    WalletList(self.parent)
+                    ConnectWalletWays(self.parent)
                 elif target == self.img_down:
                     self.dismiss()
 
@@ -927,16 +929,238 @@ class SettingsScreen(Screen):
         lv.scr_load(scr)
 
 
-class WalletList(Screen):
+class ConnectWalletWays(Screen):
     def __init__(self, prev_scr=None):
         if not hasattr(self, "_init"):
             self._init = True
             kwargs = {
                 "prev_scr": prev_scr,
                 "title": _(i18n_keys.TITLE__CONNECT_APP_WALLET),
-                "subtitle": _(
-                    i18n_keys.CONTENT__SELECT_THE_WALLET_YOU_WANT_TO_CONNECT_TO
-                ),
+                "subtitle": _(i18n_keys.TITLE__CONNECT_APP_WALLET_DESC),
+                "nav_back": True,
+            }
+            super().__init__(**kwargs)
+        else:
+            return
+        airgap_enabled = device.is_airgap_mode()
+        if airgap_enabled:
+            self.waring_bar = Banner(
+                self.content_area,
+                LEVEL.WARNING,
+                _(i18n_keys.MSG__BLUETOOTH_AND_USB_HAS_DISABLED_IN_AIR_GAP_MODE),
+            )
+            self.waring_bar.align_to(self.subtitle, lv.ALIGN.OUT_BOTTOM_MID, 0, 40)
+        self.container = ContainerFlexCol(
+            self.content_area, self.subtitle, padding_row=2
+        )
+        if airgap_enabled:
+            self.container.align_to(self.waring_bar, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
+
+        self.by_ble = ListItemBtn(
+            self.container,
+            _(i18n_keys.ITEM__BLUETOOTH),
+            left_img_src="A:/res/connect-way-ble-on.png",
+        )
+        self.by_usb = ListItemBtn(
+            self.container,
+            _(i18n_keys.ITEM__USB),
+            left_img_src="A:/res/connect-way-usb-on.png",
+        )
+        if airgap_enabled:
+            self.by_ble.disable()
+            self.by_ble.img_left.set_src("A:/res/connect-way-ble-off.png")
+            self.by_usb.disable()
+            self.by_usb.img_left.set_src("A:/res/connect-way-usb-off.png")
+
+        self.by_qrcode = ListItemBtn(
+            self.container,
+            _(i18n_keys.BUTTON__QRCODE),
+            left_img_src="A:/res/connect-way-qrcode.png",
+        )
+        self.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
+
+    def on_click(self, event_obj):
+        code = event_obj.code
+        target = event_obj.get_target()
+        if code == lv.EVENT.CLICKED:
+            if target == self.by_ble:
+                ConnectWalletGuide("ble", self)
+            elif target == self.by_usb:
+                ConnectWalletGuide("usb", self)
+            elif target == self.by_qrcode:
+                WalletList(self)
+            else:
+                return
+
+    def _load_scr(self, scr: "Screen", back: bool = False) -> None:
+        lv.scr_load(scr)
+
+
+class ConnectWalletGuide(Screen):
+    def __init__(self, c_type, prev_scr=None):
+        if not hasattr(self, "_init"):
+            self._init = True
+            assert c_type in ["ble", "usb"], "Invalid connection type"
+            self.connect_type = c_type
+            kwargs = {
+                "prev_scr": prev_scr,
+                "title": _(i18n_keys.TITLE__BLUETOOTH_CONNECT)
+                if c_type == "ble"
+                else _(i18n_keys.TITLE__USB_CONNECT),
+                "subtitle": _(i18n_keys.CONTENT__SELECT_THE_WALLET_YOU_WANT_TO_CONNECT),
+                "nav_back": True,
+            }
+            super().__init__(**kwargs)
+        else:
+            return
+
+        self.container = ContainerFlexCol(
+            self.content_area, self.subtitle, padding_row=2
+        )
+
+        self.onekey = ListItemBtn(
+            self.container,
+            _(i18n_keys.ITEM__ONEKEY_WALLET),
+            "BTC·ETH·TRON·SOL·NEAR ...",
+            left_img_src="A:/res/ok-logo-48.png",
+        )
+        self.onekey.text_layout_vertical(pad_top=17, pad_ver=20)
+
+        self.mm = ListItemBtn(
+            self.container,
+            _(i18n_keys.ITEM__METAMASK_WALLET),
+            _(i18n_keys.CONTENT__ETH_AND_EVM_POWERED_NETWORK),
+            left_img_src="A:/res/mm-logo-48.png",
+        )
+        self.mm.text_layout_vertical()
+        if self.connect_type == "ble":
+            self.mm.add_flag(lv.obj.FLAG.HIDDEN)
+
+        self.okx = ListItemBtn(
+            self.container,
+            _(i18n_keys.ITEM__OKX_WALLET),
+            "BTC·ETH·TRON·SOL·NEAR ...",
+            left_img_src="A:/res/okx-logo-48.png",
+        )
+        self.okx.text_layout_vertical(pad_top=17, pad_ver=20)
+
+        self.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
+
+    def on_click(self, event_obj):
+        code = event_obj.code
+        target = event_obj.get_target()
+        if code == lv.EVENT.CLICKED:
+            if target not in [self.onekey, self.mm, self.okx]:
+                return
+            from trezor.lvglui.scrs.template import ConnectWalletTutorial
+
+            if target == self.onekey:
+                title = _(i18n_keys.ITEM__ONEKEY_WALLET)
+                subtitle = (
+                    _(i18n_keys.CONTENT__IOS_ANDROID)
+                    if self.connect_type == "ble"
+                    else _(i18n_keys.CONTENT__DESKTOP_BROWSER_EXTENSION)
+                )
+                steps = [
+                    (
+                        _(i18n_keys.FORM__DOWNLOAD_ONEKEY_APP),
+                        _(i18n_keys.FORM__DOWNLOAD_ONEKEY_APP_MOBILE)
+                        if self.connect_type == "ble"
+                        else _(i18n_keys.FORM__DOWNLOAD_ONEKEY_APP_DESKTOP),
+                    ),
+                    (
+                        _(i18n_keys.FORM__CONNECT_VIA_BLUETOOTH)
+                        if self.connect_type == "ble"
+                        else _(i18n_keys.FORM__CONNECT_YOUR_DEVICE),
+                        _(i18n_keys.FORM__CONNECT_VIA_BLUETOOTH_DESC)
+                        if self.connect_type == "ble"
+                        else _(i18n_keys.FORM__CONNECT_YOUR_DEVICE_DESC),
+                    ),
+                    (
+                        _(i18n_keys.FORM__PAIR_DEVICES)
+                        if self.connect_type == "ble"
+                        else _(i18n_keys.FORM__START_THE_CONNECTION),
+                        _(i18n_keys.FORM__PAIR_DEVICES_DESC)
+                        if self.connect_type == "ble"
+                        else _(i18n_keys.FORM__START_THE_CONNECTION_DESC),
+                    ),
+                ]
+                logo = "A:/res/ok-logo-96.png"
+                url = (
+                    "https://help.onekey.so/hc/articles/9541173629455"
+                    if self.connect_type == "ble"
+                    else "https://help.onekey.so/hc/articles/9402090066319"
+                )
+            elif target == self.mm:
+                title = _(i18n_keys.ITEM__METAMASK_WALLET)
+                subtitle = _(i18n_keys.CONTENT__BROWSER_EXTENSION)
+                steps = [
+                    (
+                        _(i18n_keys.FORM__ACCESS_WALLET),
+                        _(i18n_keys.FORM__OPEN_METAMASK_IN_YOUR_BROWSER),
+                    ),
+                    (
+                        _(i18n_keys.FORM__CONNECT_HARDWARE_WALLET),
+                        _(i18n_keys.FORM__CONNECT_HARDWARE_WALLET_DESC),
+                    ),
+                    (
+                        _(i18n_keys.FORM__UNLOCK_ACCOUNT),
+                        _(i18n_keys.FORM__UNLOCK_ACCOUNT_DESC),
+                    ),
+                ]
+                logo = "A:/res/mm-logo-96.png"
+                url = "https://help.onekey.so/hc/articles/8910581291151#tab-item-generated-0"
+            else:
+                title = _(i18n_keys.ITEM__OKX_WALLET)
+                subtitle = (
+                    _(i18n_keys.CONTENT__IOS_ANDROID)
+                    if self.connect_type == "ble"
+                    else _(i18n_keys.CONTENT__BROWSER_EXTENSION)
+                )
+                steps = [
+                    (
+                        _(i18n_keys.FORM__ACCESS_WALLET),
+                        _(i18n_keys.FORM__ACCESS_WALLET_DESC)
+                        if self.connect_type == "ble"
+                        else _(i18n_keys.FORM__OPEN_THE_OKX_WALLET_EXTENSION),
+                    ),
+                    (
+                        _(i18n_keys.FORM__CONNECT_VIA_BLUETOOTH)
+                        if self.connect_type == "ble"
+                        else _(i18n_keys.FORM__INSTALL_ONEKEY_BRIDGE),
+                        _(i18n_keys.FORM__CONNECT_VIA_BLUETOOTH_DESC)
+                        if self.connect_type == "ble"
+                        else _(i18n_keys.FORM__INSTALL_ONEKEY_BRIDGE_DESC),
+                    ),
+                    (
+                        _(i18n_keys.FORM__IMPORT_WALLET_ACCOUNTS),
+                        _(i18n_keys.FORM__IMPORT_WALLET_ACCOUNTS_DESC)
+                        if self.connect_type == "ble"
+                        else _(
+                            i18n_keys.FORM__OKX_EXTENSION_IMPORT_WALLET_ACCOUNTS_DESC
+                        ),
+                    ),
+                ]
+                logo = "A:/res/okx-logo-96.png"
+                url = (
+                    "https://help.onekey.so/hc/articles/8925272484111#tab-item-generated-1"
+                    if self.connect_type == "ble"
+                    else "https://help.onekey.so/hc/articles/8925272484111#tab-item-generated-0"
+                )
+            ConnectWalletTutorial(title, subtitle, steps, url, logo)
+
+    def _load_scr(self, scr: "Screen", back: bool = False) -> None:
+        lv.scr_load(scr)
+
+
+class WalletList(Screen):
+    def __init__(self, prev_scr=None):
+        if not hasattr(self, "_init"):
+            self._init = True
+            kwargs = {
+                "prev_scr": prev_scr,
+                "title": _(i18n_keys.TITLE__QR_CODE_CONNECT),
+                "subtitle": _(i18n_keys.CONTENT__SELECT_THE_WALLET_YOU_WANT_TO_CONNECT),
                 "nav_back": True,
             }
             super().__init__(**kwargs)
@@ -964,7 +1188,7 @@ class WalletList(Screen):
         )
         self.onekey.text_layout_vertical(pad_top=17, pad_ver=20)
         self.onekey.disable()
-        self.onekey.add_flag(lv.obj.FLAG.HIDDEN)
+        # self.onekey.add_flag(lv.obj.FLAG.HIDDEN)
 
         self.okx = ListItemBtn(
             self.container,
@@ -2673,7 +2897,9 @@ class TrezorModeToggle(FullSizeWindow):
                 bg_color=lv_colors.ONEKEY_YELLOW, text_color=lv_colors.BLACK
             )
             self.tips_bar = Banner(
-                self.content_area, 2, _(i18n_keys.MSG__DO_NOT_CHANGE_THIS_SETTING)
+                self.content_area,
+                LEVEL.WARNING,
+                _(i18n_keys.MSG__DO_NOT_CHANGE_THIS_SETTING),
             )
             self.tips_bar.align(lv.ALIGN.TOP_LEFT, 8, 8)
             self.title.align_to(self.tips_bar, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 16)
@@ -2757,7 +2983,9 @@ class PowerOff(FullSizeWindow):
             title=_(i18n_keys.TITLE__POWER_OFF),
             confirm_text=_(i18n_keys.BUTTON__POWER_OFF),
             cancel_text=_(i18n_keys.BUTTON__CANCEL),
-            subtitle="",
+            subtitle=_(i18n_keys.CONTENT__POWER_OFF_LOW_BATTERY_DESC)
+            if utils.is_low_battery()
+            else None,
         )
         self.btn_yes.enable(lv_colors.ONEKEY_RED_1, text_color=lv_colors.BLACK)
         self.re_loop = re_loop

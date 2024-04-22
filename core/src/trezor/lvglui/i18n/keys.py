@@ -1529,7 +1529,7 @@ TITLE__NO_BACKUP_ON_THIS_CARD_DESC = 698
 TITLE__IMPORT_INTERRUPTED = 699
 # Scan
 APP__SCAN = 700
-# QR Code Connect
+# Connect\nApp Wallet
 APP__CONNECT_WALLET = 701
 TITLE__CONNECT_APP_WALLET = 701
 # Select the wallet you want to connect to
@@ -1630,4 +1630,88 @@ MSG__FINGERPRINT_NOT_RECOGNIZED_TRY_AGAIN = 744
 MSG__USE_FINGERPRINT_OR_TAP_TO_UNLOCK = 745
 # SE Firmware
 ITEM__SE_FIRMWARE = 746
+# Low battery (<10%). To keep the battery healthy, please ensure the device is
+# fully charged before long-term storage.
+CONTENT__POWER_OFF_LOW_BATTERY_DESC = 747
+# Select the way to connect
+TITLE__CONNECT_APP_WALLET_DESC = 748
+# Bluetooth Connect
+TITLE__BLUETOOTH_CONNECT = 749
+# Select the wallet you want to connect
+CONTENT__SELECT_THE_WALLET_YOU_WANT_TO_CONNECT = 750
+# iOS & Android
+CONTENT__IOS_ANDROID = 751
+# Download OneKey App
+FORM__DOWNLOAD_ONEKEY_APP = 752
+# Download OneKey App Desktop from:\nonekey.so/download
+FORM__DOWNLOAD_ONEKEY_APP_DESKTOP = 753
+# Connect via Bluetooth
+FORM__CONNECT_VIA_BLUETOOTH = 754
+# Turn on Bluetooth on both devices. Keep the wallet close to your phone, and
+# click on the detected OneKey Pro device name.
+FORM__CONNECT_VIA_BLUETOOTH_DESC = 755
+# Pair Devices
+FORM__PAIR_DEVICES = 756
+# Enter the pair code shown on your OneKey Pro hardware wallet in the OneKey A
+# pp to pair your devices.
+FORM__PAIR_DEVICES_DESC = 757
+# Learn More
+ACTION__LEARN_MORE = 758
+# Scan the QR code to view the detailed tutorial
+CONTENT__SCAN_THE_QR_CODE_TO_VIEW_THE_DETAILED_TUTORIAL = 759
+# Access Wallet
+FORM__ACCESS_WALLET = 760
+# Open the OKX Mobile App, go to Wallet, select "I already have one" > "Hardwa
+# re wallet" > "OneKey".
+FORM__ACCESS_WALLET_DESC = 761
+# Import Wallet Accounts
+FORM__IMPORT_WALLET_ACCOUNTS = 762
+# Enter your PIN when prompted, wait for the wallet list, and choose the accou
+# nt to import.
+FORM__IMPORT_WALLET_ACCOUNTS_DESC = 763
+# USB Connect
+TITLE__USB_CONNECT = 764
+# Desktop & Browser Extension
+CONTENT__DESKTOP_BROWSER_EXTENSION = 765
+# Download OneKey App Mobile from:\nonekey.so/download
+FORM__DOWNLOAD_ONEKEY_APP_MOBILE = 766
+# Connect Your Device
+FORM__CONNECT_YOUR_DEVICE = 767
+# Connect your OneKey Pro to the computer using a USB cable.
+FORM__CONNECT_YOUR_DEVICE_DESC = 768
+# Start the Connection
+FORM__START_THE_CONNECTION = 769
+# Open the OneKey App Desktop and select "Connect Hardware Wallet".
+FORM__START_THE_CONNECTION_DESC = 770
+# Browser Extension
+CONTENT__BROWSER_EXTENSION = 771
+# Open MetaMask in your browser, click on the account name, and select "Add ac
+# count or hardware wallet" at the bottom.
+FORM__OPEN_METAMASK_IN_YOUR_BROWSER = 772
+# Connect Hardware Wallet
+FORM__CONNECT_HARDWARE_WALLET = 773
+# Choose "TREZOR", click "Continue", select "Allow once for this session", and
+# follow the on-screen instructions to export. Input your OneKey wallet PIN w
+# hen prompted.
+FORM__CONNECT_HARDWARE_WALLET_DESC = 774
+# Unlock Account
+FORM__UNLOCK_ACCOUNT = 775
+# From the list of accounts, select the one you wish to connect and click "Unl
+# ock".
+FORM__UNLOCK_ACCOUNT_DESC = 776
+# Open the OKX wallet extension, select "Import Wallet" > "Hardware wallet" >
+# "OneKey".
+FORM__OPEN_THE_OKX_WALLET_EXTENSION = 777
+# Install OneKey Bridge
+FORM__INSTALL_ONEKEY_BRIDGE = 778
+# Download and install OneKey Bridge if prompted, then refresh, choose your de
+# vice, and enter your PIN.
+FORM__INSTALL_ONEKEY_BRIDGE_DESC = 779
+# Once connected, select the account to import and click "Connect" at the bott
+# om.
+FORM__OKX_EXTENSION_IMPORT_WALLET_ACCOUNTS_DESC = 780
+# QR Code Connect
+TITLE__QR_CODE_CONNECT = 781
+# Bluetooth and USB has disabled in Air Gap Mode
+MSG__BLUETOOTH_AND_USB_HAS_DISABLED_IN_AIR_GAP_MODE = 782
 # fmt: on

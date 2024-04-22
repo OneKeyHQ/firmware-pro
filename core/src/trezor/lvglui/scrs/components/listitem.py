@@ -199,7 +199,7 @@ class CardHeader(lv.obj):
         self.icon.align(lv.ALIGN.TOP_LEFT, 0, 0)
         self.label = lv.label(self)
         self.label.set_text(title)
-        self.label.set_size(300, lv.SIZE.CONTENT)
+        self.label.set_size(360, lv.SIZE.CONTENT)
         self.label.set_long_mode(lv.label.LONG.WRAP)
         self.label.align_to(self.icon, lv.ALIGN.OUT_RIGHT_MID, 8, 0)
         self.line = lv.line(self)

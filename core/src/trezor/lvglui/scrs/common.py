@@ -248,7 +248,8 @@ class FullSizeWindow(lv.obj):
                     self.content_area, self.title, (0, 16), subtitle
                 )
         else:
-            self.icon.align(lv.ALIGN.TOP_MID, 0, 0)
+            if hasattr(self, "icon") and self.icon:
+                self.icon.align(lv.ALIGN.TOP_MID, 0, 0)
 
         if options:
             self.content_area.set_height(646)

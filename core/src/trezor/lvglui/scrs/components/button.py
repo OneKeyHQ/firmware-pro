@@ -185,7 +185,8 @@ class ListItemBtn(lv.btn):
             0,
         )
         self.label_left.set_style_text_color(lv_colors.WHITE_2, 0)
-        self.label_right.set_style_text_color(lv_colors.ONEKEY_GRAY_1, 0)
+        if hasattr(self, "label_right"):
+            self.label_right.set_style_text_color(lv_colors.ONEKEY_GRAY_1, 0)
         self.clear_flag(lv.obj.FLAG.CLICKABLE)
 
 

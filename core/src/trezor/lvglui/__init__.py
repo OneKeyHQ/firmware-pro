@@ -127,10 +127,14 @@ class StatusBar(lv.obj):
         super().__init__(lv.layer_top())
         self.set_size(lv.pct(100), 44)
         from trezor.lvglui.scrs.widgets.style import StyleWrapper
+        from trezor.lvglui.scrs import font_GeistRegular20
 
         self.add_style(
             StyleWrapper()
             .border_width(0)
+            .text_font(font_GeistRegular20)
+            .text_letter_space(-1)
+            .text_color(lv.color_hex(0xFFFFFF))
             .bg_opa(lv.OPA.TRANSP)
             .pad_column(0)
             .pad_ver(6)
@@ -158,15 +162,9 @@ class StatusBar(lv.obj):
 
         # battery capacity percent
         self.percent = lv.label(self)
-        from trezor.lvglui.scrs import font_GeistRegular20
 
         self.percent.add_style(
-            StyleWrapper()
-            .text_font(font_GeistRegular20)
-            .text_letter_space(-1)
-            .text_color(lv.color_hex(0xFFFFFF))
-            .pad_hor(5)
-            .pad_ver(3),
+            StyleWrapper().pad_hor(5).pad_ver(3),
             0,
         )
         self.percent.add_flag(lv.obj.FLAG.HIDDEN)
@@ -180,14 +178,42 @@ class StatusBar(lv.obj):
         self.charging.set_src("A:/res/charging.png")
         self.charging.add_flag(lv.obj.FLAG.HIDDEN)
 
-    def show_ble(self, status: int):
-        if status == StatusBar.BLE_STATE_CONNECTED:
-            icon_path = "A:/res/ble-connected.png"
-        elif status == StatusBar.BLE_STATE_ENABLED:
-            icon_path = "A:/res/ble-enabled.png"
+        # air gap mode tips
+        self.air_gap_tips = lv.label(lv.layer_top())
+        self.air_gap_tips.set_text("Air Gap Mode")
+        self.air_gap_tips.add_style(
+            StyleWrapper()
+            .text_font(font_GeistRegular20)
+            .text_color(lv.color_hex(0xFFFFFF))
+            .pad_hor(4)
+            .pad_ver(0),
+            0,
+        )
+        self.air_gap_tips.align_to(
+            self,
+            lv.ALIGN.OUT_BOTTOM_LEFT,
+            0,
+            -((44 - self.air_gap_tips.get_height()) // 2) - 9,
+        )
+        self.air_gap_tips.add_flag(lv.obj.FLAG.HIDDEN)
+        if device.is_airgap_mode():
+            self.air_gap_tips.clear_flag(lv.obj.FLAG.HIDDEN)
+            self.ble.add_flag(lv.obj.FLAG.HIDDEN)
+
+    def show_ble(self, status: int = 0, show: bool = True):
+        if show:
+            if status == StatusBar.BLE_STATE_CONNECTED:
+                icon_path = "A:/res/ble-connected.png"
+            elif status == StatusBar.BLE_STATE_ENABLED:
+                icon_path = "A:/res/ble-enabled.png"
+            else:
+                icon_path = "A:/res/ble-disabled.png"
+            self.ble.set_src(icon_path)
+            if self.ble.has_flag(lv.obj.FLAG.HIDDEN) and not device.is_airgap_mode():
+                self.ble.clear_flag(lv.obj.FLAG.HIDDEN)
         else:
-            icon_path = "A:/res/ble-disabled.png"
-        self.ble.set_src(icon_path)
+            if not self.ble.has_flag(lv.obj.FLAG.HIDDEN):
+                self.ble.add_flag(lv.obj.FLAG.HIDDEN)
 
     def show_usb(self, show: bool = False):
         if show:
@@ -214,6 +240,16 @@ class StatusBar(lv.obj):
         icon_path = retrieve_icon_path(value, charging)
         self.battery.clear_flag(lv.obj.FLAG.HIDDEN)
         self.battery.set_src(icon_path)
+
+    def show_air_gap_mode_tips(self, show: bool = False):
+        if show:
+            if self.air_gap_tips.has_flag(lv.obj.FLAG.HIDDEN):
+                self.air_gap_tips.clear_flag(lv.obj.FLAG.HIDDEN)
+                self.ble.add_flag(lv.obj.FLAG.HIDDEN)
+        else:
+            if not self.air_gap_tips.has_flag(lv.obj.FLAG.HIDDEN):
+                self.air_gap_tips.add_flag(lv.obj.FLAG.HIDDEN)
+                self.ble.clear_flag(lv.obj.FLAG.HIDDEN)
 
 
 def retrieve_icon_path(value: int, charging: bool) -> str:

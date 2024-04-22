@@ -13,7 +13,6 @@ from trezor.ui.layouts import (
     backup_with_lite,
     confirm_backup,
     confirm_reset_device,
-    enable_airgap_mode,
     request_strength,
     show_onekey_app_guide,
 )
@@ -128,7 +127,7 @@ async def reset_device(ctx: wire.Context, msg: ResetDevice) -> Success:
                 await backup_with_lite(ctx, secret)
                 await layout.show_backup_success(ctx)
         # ask user to open air-gapped mode
-        await enable_airgap_mode()
+        # await enable_airgap_mode()
 
         if isinstance(ctx, wire.DummyContext):
             utils.make_show_app_guide()

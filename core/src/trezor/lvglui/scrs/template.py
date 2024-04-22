@@ -9,6 +9,7 @@ from ..lv_symbols import LV_SYMBOLS
 from . import (
     font_GeistMono28,
     font_GeistRegular20,
+    font_GeistRegular30,
     font_GeistSemiBold26,
     font_GeistSemiBold38,
     font_GeistSemiBold48,
@@ -3161,3 +3162,95 @@ class AirGapToggleTips(FullSizeWindow):
             else:
                 return
             self.show_dismiss_anim()
+
+
+class ConnectWalletTutorial(FullSizeWindow):
+    def __init__(
+        self,
+        title: str,
+        sub_title,
+        steps: list[tuple[str, str]],
+        website_url,
+        logo_path,
+    ):
+        super().__init__(
+            title,
+            sub_title,
+            confirm_text=_(i18n_keys.BUTTON__DONE),
+            cancel_text=_(i18n_keys.ACTION__LEARN_MORE),
+            anim_dir=0,
+        )
+        self.website_url = website_url
+        self.logo_path = logo_path
+        self.container = ContainerFlexCol(self.content_area, self.subtitle, pos=(0, 40))
+        for i, step in enumerate(steps):
+            self.group = ContainerFlexCol(
+                self.container, None, padding_row=0, no_align=True
+            )
+            self.item_group_header = CardHeader(
+                self.group,
+                step[0],
+                f"A:/res/group-icon-num-{i+1}.png",
+            )
+            self.item_group_body = DisplayItem(
+                self.group,
+                None,
+                step[1],
+            )
+            self.item_group_body.add_style(
+                StyleWrapper().text_color(lv_colors.ONEKEY_GRAY_4), 0
+            )
+            self.group.add_dummy()
+
+    def eventhandler(self, event_obj):
+        code = event_obj.code
+        target = event_obj.get_target()
+        if code == lv.EVENT.CLICKED:
+            if utils.lcd_resume():
+                return
+            if target == self.btn_yes:
+                self.destroy(10)
+            elif target == self.btn_no:
+                ConnectWalletTutorial.ShowOnlineWebsiteQR(
+                    self.website_url, self.logo_path
+                )
+
+    class ShowOnlineWebsiteQR(FullSizeWindow):
+        def __init__(self, qr_content: str, logo_path):
+            super().__init__(
+                None,
+                None,
+                anim_dir=0,
+                cancel_text=_(i18n_keys.BUTTON__CLOSE),
+            )
+            import gc
+
+            gc.collect()
+            gc.threshold(int(18248 * 1.5))  # type: ignore["threshold" is not a known member of module]
+            self.qr = QRCode(self.content_area, qr_content, logo_path)
+            self.qr.align_to(self.content_area, lv.ALIGN.TOP_MID, 0, 16)
+
+            self.desc = lv.label(self.content_area)
+            self.desc.set_size(456, lv.SIZE.CONTENT)
+            self.desc.set_long_mode(lv.label.LONG.WRAP)
+            self.desc.add_style(
+                StyleWrapper()
+                .text_font(font_GeistRegular30)
+                .text_color(lv_colors.LIGHT_GRAY)
+                .pad_hor(12)
+                .pad_ver(16),
+                0,
+            )
+            self.desc.set_text(
+                _(i18n_keys.CONTENT__SCAN_THE_QR_CODE_TO_VIEW_THE_DETAILED_TUTORIAL)
+            )
+            self.desc.align_to(self.qr, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
+
+        def eventhandler(self, event_obj):
+            code = event_obj.code
+            target = event_obj.get_target()
+            if code == lv.EVENT.CLICKED:
+                if utils.lcd_resume():
+                    return
+                if target == self.btn_no:
+                    self.destroy(10)

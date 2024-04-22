@@ -197,11 +197,19 @@ def play_dead():
     loop.pop_tasks_on_iface(SPI_IFACE_NUM)
 
 
+def is_low_battery():
+    if BATTERY_CAP is not None and BATTERY_CAP < 10:
+        return True
+    return False
+
+
 def disable_airgap_mode():
     from storage import device
     from trezor import uart
+    from trezor.lvglui import StatusBar
 
     device.enable_airgap_mode(False)
+    StatusBar.get_instance().show_air_gap_mode_tips(False)
     uart.ctrl_ble(enable=True)
     import usb
 
@@ -215,8 +223,10 @@ def disable_airgap_mode():
 def enable_airgap_mode():
     from storage import device
     from trezor import uart
+    from trezor.lvglui import StatusBar
 
     device.enable_airgap_mode(True)
+    StatusBar.get_instance().show_air_gap_mode_tips(True)
     uart.ctrl_ble(enable=False)
     import usb
 
