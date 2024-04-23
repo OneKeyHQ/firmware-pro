@@ -1,7 +1,8 @@
+import utime
+
 from trezor import utils
 from trezor.lvglui.scrs.components.button import NormalButton
 from trezor.lvglui.scrs.components.pageable import PageAbleMessage
-import utime
 
 from ..i18n import gettext as _, keys as i18n_keys
 from ..lv_colors import lv_colors
@@ -3133,7 +3134,7 @@ class AirGapToggleTips(FullSizeWindow):
             if enable
             else _(i18n_keys.BUTTON__DISABLE),
             cancel_text=_(i18n_keys.BUTTON__CANCEL),
-            anim_dir=2,
+            anim_dir=0,
         )
         self.last_click_time = 0
         self.click_interval = 1000
@@ -3142,7 +3143,7 @@ class AirGapToggleTips(FullSizeWindow):
     def eventhandler(self, event_obj):
         current_time = utime.ticks_ms()
         if utime.ticks_diff(current_time, self.last_click_time) < self.click_interval:
-            return  
+            return
         self.last_click_time = current_time
         code = event_obj.code
         target = event_obj.get_target()
@@ -3162,6 +3163,9 @@ class AirGapToggleTips(FullSizeWindow):
             else:
                 return
             self.show_dismiss_anim()
+
+    def destroy(self, delay_ms=100):
+        return self.del_delayed(100)
 
 
 class ConnectWalletTutorial(FullSizeWindow):

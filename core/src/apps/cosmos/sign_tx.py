@@ -19,8 +19,7 @@ import ujson as json
 from apps.common import paths
 from apps.common.keychain import Keychain, auto_keychain
 
-from . import ICON, PRIMARY_COLOR
-from .networks import formatAmont, getChainHrp, getChainName
+from .networks import formatAmont, getChainHrp, getChainName, retrieve_theme_by_hrp
 from .transaction import DelegateTxn, SendTxn, Transaction
 
 
@@ -31,7 +30,6 @@ async def sign_tx(
 
     await paths.validate_path(ctx, keychain, msg.address_n)
     node = keychain.derive(msg.address_n)
-    ctx.primary_color, ctx.icon_path = lv.color_hex(PRIMARY_COLOR), ICON
     public_key = node.public_key()
     privkey = node.private_key()
 
@@ -49,7 +47,8 @@ async def sign_tx(
         convertedbits = bech32.convertbits(h, 8, 5)
         assert convertedbits is not None, "Unsuccessful bech32.convertbits call"
         signer = bech32.bech32_encode(hrp, convertedbits, bech32.Encoding.BECH32)
-
+    primary_color, ctx.icon_path = retrieve_theme_by_hrp(hrp)
+    ctx.primary_color = lv.color_hex(primary_color)
     if tx.amount is not None and tx.denom is not None:
         fee = formatAmont(tx.chain_id, tx.amount, tx.denom)
     else:

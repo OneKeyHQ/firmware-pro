@@ -9,7 +9,7 @@ from trezor.ui.layouts import show_address
 from apps.common import paths
 from apps.common.keychain import Keychain, auto_keychain
 
-from . import ICON, PRIMARY_COLOR
+from .networks import retrieve_theme_by_hrp
 
 if TYPE_CHECKING:
     from trezor.wire import Context
@@ -32,7 +32,8 @@ async def get_address(
     address = bech32.bech32_encode(hrp, convertedbits, bech32.Encoding.BECH32)
     if msg.show_display:
         path = paths.address_n_to_str(msg.address_n)
-        ctx.primary_color, ctx.icon_path = lv.color_hex(PRIMARY_COLOR), ICON
+        primary_color, ctx.icon_path = retrieve_theme_by_hrp(hrp)
+        ctx.primary_color = lv.color_hex(primary_color)
         await show_address(
             ctx,
             address=address,
