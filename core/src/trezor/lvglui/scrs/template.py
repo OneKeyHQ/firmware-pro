@@ -3135,7 +3135,7 @@ class AirGapToggleTips(FullSizeWindow):
             anim_dir=2,
         )
         self.last_click_time = 0
-        self.click_interval = 500
+        self.click_interval = 1000
         self.callback_obj = callback_obj
 
     def eventhandler(self, event_obj):
