@@ -53,16 +53,17 @@ async def sign_tx(
         message, is_versioned_message = Message.deserialize(msg.raw_tx)
     except BaseException as e:
         raise wire.DataError(f"Invalid message {e}")
-    _is_multisig = message.header.num_required_signatures > 1  # noqa: F841
+    sigs_count = message.header.num_required_signatures
+    multiple_signers = sigs_count > 1  # noqa: F841
     accounts_keys = message.account_keys
+    fee_payer = accounts_keys[0]
     # verify fee payer
-    if accounts_keys[0].get() != signer_pub_key_bytes:
-        if __debug__:
-            print(
-                f"Invalid signer used got {str(PublicKey(accounts_keys[0].get()))}, expect {str(PublicKey(signer_pub_key_bytes))}"
-            )
-        else:
+    if not multiple_signers:
+        if fee_payer.get() != signer_pub_key_bytes:
             raise wire.DataError("Invalid signer used")
+    else:
+        if PublicKey(signer_pub_key_bytes) not in accounts_keys[:sigs_count]:
+            raise wire.DataError("Invalid transaction params")
 
     # recent_blockhash is something like nonce in ethereum
     _recent_blockhash = message.recent_blockhash  # noqa: F841
@@ -76,9 +77,7 @@ async def sign_tx(
         from apps.common.signverify import decode_message
 
         message_hex = decode_message(sha256(msg.raw_tx).digest())
-        await confirm_sol_blinding_sign(
-            ctx, str(PublicKey(signer_pub_key_bytes)), message_hex
-        )
+        await confirm_sol_blinding_sign(ctx, str(fee_payer), message_hex)
     else:
         # enumerate instructions in message
         for i in message.instructions:
