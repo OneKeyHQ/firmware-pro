@@ -1661,6 +1661,14 @@ def _networks_iterator() -> Iterator[NetworkInfoTuple]:
         0xD2D2D2,  # primary_color
     )
     yield (
+        11155111,  # chain_id
+        1,  # slip44
+        "tETH",  # symbol
+        "Sepolia",  # name
+        "evm-teth.png",  # name
+        0x969696,  # primary_color
+    )
+    yield (
         13371337,  # chain_id
         60,  # slip44
         "TPEP",  # symbol
