@@ -40,6 +40,11 @@ class URDecoder:
         self.expected_type = None
         self.result = None
 
+    def reset(self):
+        self.fountain_decoder.reset()
+        self.expected_type = None
+        self.result = None
+
     @staticmethod
     def decode(str):
         (type, components) = URDecoder.parse(str)

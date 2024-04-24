@@ -163,6 +163,7 @@ def scan_qr(callback_obj):
                 try:
                     decoder.receive_part(qr_data.decode("utf-8"))
                 except Exception:
+                    decoder.reset()
                     await callback_obj.error_feedback()
                     await loop.sleep(100)
                     continue
@@ -177,6 +178,9 @@ def scan_qr(callback_obj):
 
                                 uart.flashled_close()
                                 break
+                            else:
+                                decoder.reset()
+                                continue
             await loop.sleep(1)
 
     workflow.spawn(camear_scan())

@@ -54,6 +54,18 @@ class FountainDecoder:
         self.mixed_parts = {}
         self.queued_parts = []
 
+    def reset(self):
+        self.received_part_indexes.clear()
+        self.last_part_indexes = None
+        self.processed_parts_count = 0
+        self.result = None
+        self.expected_part_indexes = None
+        self.expected_fragment_len = None
+        self.expected_message_len = None
+        self.expected_checksum = None
+        self.simple_parts.clear()
+        self.mixed_parts.clear()
+        self.queued_parts.clear()
     def expected_part_count(self):
         return len(self.expected_part_indexes)  # TODO: Handle None?
 
