@@ -42,13 +42,13 @@ async def update_res(ctx: wire.Context, msg: ResourceUpdate) -> Success:
     is_update_boot = msg.file_name == BOOTLOADER_NAME
     if show_update_res_confirm(is_update_boot):
         await confirm_update_res(ctx, is_update_boot)
-        msg.file_name = BOOTLOADER_TEMP_NAME
+    file_name = BOOTLOADER_TEMP_NAME if is_update_boot else msg.file_name
     res_size = msg.data_length
     initial_data = msg.initial_data_chunk
     if blake2s(initial_data).digest() != msg.hash:
         raise wire.DataError("Date digest is inconsistent")
 
-    file_path = make_file_path(msg.file_name, is_update_boot)
+    file_path = make_file_path(file_name, is_update_boot)
     data_left = res_size - REQUEST_CHUNK_SIZE
     offset = REQUEST_CHUNK_SIZE
     try:
