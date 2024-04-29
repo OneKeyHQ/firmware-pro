@@ -61,10 +61,11 @@ extern secbool load_vendor_header_keys(const uint8_t* const data,
 
 #define BACKLIGHT_NORMAL 150
 
-#define COLOR_BL_BG COLOR_BLACK                // background
-#define COLOR_BL_FG COLOR_WHITE                // foreground
-#define COLOR_BL_FAIL RGB16(0xFF, 0x00, 0x00)  // red
-#define COLOR_BL_DONE RGB16(0x00, 0xFF, 0x33)  // green
+#define COLOR_BL_BG COLOR_BLACK                  // background
+#define COLOR_BL_FG COLOR_WHITE                  // foreground
+#define COLOR_BL_FAIL RGB16(0xFF, 0x00, 0x00)    // red
+#define COLOR_BL_DANGER RGB16(0xFF, 0x11, 0x00)  // onekey red
+#define COLOR_BL_DONE RGB16(0x00, 0xFF, 0x33)    // green
 #define COLOR_BL_PROCESS COLOR_PROCESS
 #define COLOR_BL_GRAY RGB16(0x99, 0x99, 0x99)      // gray
 #define COLOR_BL_DARK RGB16(0x2D, 0x2D, 0x2D)      // gray
@@ -811,7 +812,7 @@ void ui_bootloader_first(const image_header* const hdr) {
                       FONT_PJKS_BOLD_26, COLOR_BL_FG, COLOR_BL_DARK);
 }
 
-void ui_bootloader_second(const image_header* const hdr) {
+void ui_bootloader_view_details(const image_header* const hdr) {
   ui_bootloader_page_current = 1;
 
   int offset_x = 32, offset_y = 95, offset_seg = 44, offset_line = 30;
@@ -898,7 +899,29 @@ void ui_bootloader_second(const image_header* const hdr) {
   display_text(offset_x, offset_y, BUILD_ID + strlen(BUILD_ID) - 7, -1,
                FONT_NORMAL, COLOR_BL_FG, COLOR_BL_PANEL);
 
-  ui_confirm_cancel_buttons("Back", "Restart", COLOR_BL_DARK, COLOR_BL_DONE);
+  ui_confirm_cancel_buttons("Back", "Restart", COLOR_BL_DARK, COLOR_BL_DANGER);
+}
+
+void ui_bootloader_restart_confirm(void) {
+  ui_bootloader_page_current = 4;
+
+  ui_title_update();
+  int title_offset_y = 90;
+  int title_offset_x = 12;
+  display_text(title_offset_x, title_offset_y, "Restart Device?", -1,
+               FONT_PJKS_BOLD_38, COLOR_BL_FG, COLOR_BL_BG);
+
+  display_text(title_offset_x, title_offset_y + 46,
+               "Restarting will exit the device from", -1, FONT_NORMAL,
+               COLOR_BL_SUBTITLE, COLOR_BL_BG);
+  display_text(title_offset_x, title_offset_y + 76,
+               "update mode and interrupt the", -1, FONT_NORMAL,
+               COLOR_BL_SUBTITLE, COLOR_BL_BG);
+  display_text(title_offset_x, title_offset_y + 106, "upgrade process.", -1,
+               FONT_NORMAL, COLOR_BL_SUBTITLE, COLOR_BL_BG);
+
+  ui_confirm_cancel_buttons("Cancel", "Restart", COLOR_BL_DARK,
+                            COLOR_BL_DANGER);
 }
 
 void ui_bootloader_factory(void) {
@@ -933,7 +956,7 @@ void ui_bootloader_page_switch(const image_header* const hdr) {
     response = ui_input_poll(INPUT_NEXT, false);
     if (INPUT_NEXT == response) {
       display_clear();
-      ui_bootloader_second(hdr);
+      ui_bootloader_view_details(hdr);
     }
     if (!ble_name_show && ble_name_state()) {
       ui_bootloader_first(hdr);
@@ -950,7 +973,8 @@ void ui_bootloader_page_switch(const image_header* const hdr) {
       display_clear();
       ui_bootloader_first(hdr);
     } else if (INPUT_RESTART == response) {
-      HAL_NVIC_SystemReset();
+      display_clear();
+      ui_bootloader_restart_confirm();
     } else if (INPUT_BOOT_VERSION_TEXT == response) {
       click++;
       click_pre = click_now;
@@ -995,6 +1019,14 @@ void ui_bootloader_page_switch(const image_header* const hdr) {
     if (click_now - click_pre > (1000 * 10)) {
       display_clear();
       ui_bootloader_first(hdr);
+    }
+  } else if (ui_bootloader_page_current == 4) {
+    response = ui_input_poll(INPUT_PREVIOUS | INPUT_RESTART, false);
+    if (INPUT_PREVIOUS == response) {
+      display_clear();
+      ui_bootloader_view_details(hdr);
+    } else if (INPUT_RESTART == response) {
+      HAL_NVIC_SystemReset();
     }
   }
 }
