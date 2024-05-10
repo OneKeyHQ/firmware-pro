@@ -171,7 +171,12 @@ static void usart_rev_package(uint8_t *buf) {
 }
 
 void UART4_IRQHandler(void) {
-  HAL_UART_IRQHandler(huart);
+  volatile uint8_t data = 0;
+  (void)data;
+  if (__HAL_UART_GET_FLAG(huart, UART_FLAG_ORE) != 0) {
+    __HAL_UART_CLEAR_FLAG(huart, UART_CLEAR_OREF);
+    data = (uint8_t)(huart->Instance->RDR);
+  }
   if (__HAL_UART_GET_FLAG(huart, UART_FLAG_RXFNE) != 0) {
     memset(usart_fifo, 0x00, sizeof(usart_fifo));
     usart_rev_package(usart_fifo);
