@@ -70,8 +70,12 @@ void ble_usart_init(void) {
 }
 
 void usart_enable_stop_wup(void) {
-  HAL_UARTEx_EnableStopMode(huart);
+  UART_WakeUpTypeDef WakeUpSelection;
+
+  WakeUpSelection.WakeUpEvent = UART_WAKEUP_ON_STARTBIT;
+  HAL_UARTEx_StopModeWakeUpSourceConfig(huart, WakeUpSelection);
   __HAL_UART_ENABLE_IT(huart, UART_IT_WUF);
+  HAL_UARTEx_EnableStopMode(huart);
 }
 
 void usart_disable_stop_wup(void) {
@@ -173,9 +177,12 @@ static void usart_rev_package(uint8_t *buf) {
 void UART4_IRQHandler(void) {
   volatile uint8_t data = 0;
   (void)data;
+  if (__HAL_UART_GET_FLAG(huart, UART_FLAG_WUF)) {
+    __HAL_UART_CLEAR_FLAG(huart, UART_CLEAR_WUF);
+  }
   if (__HAL_UART_GET_FLAG(huart, UART_FLAG_ORE) != 0) {
-    __HAL_UART_CLEAR_FLAG(huart, UART_CLEAR_OREF);
     data = (uint8_t)(huart->Instance->RDR);
+    __HAL_UART_CLEAR_FLAG(huart, UART_CLEAR_OREF);
   }
   if (__HAL_UART_GET_FLAG(huart, UART_FLAG_RXFNE) != 0) {
     memset(usart_fifo, 0x00, sizeof(usart_fifo));
