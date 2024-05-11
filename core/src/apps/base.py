@@ -486,6 +486,9 @@ def screen_off_if_possible() -> None:
         return
 
     if ui.display.backlight():
+        from trezor import uart
+        uart.flashled_close()
+        
         if config.is_unlocked():
             ui.display.backlight(ui.style.BACKLIGHT_LOW)
         workflow.idle_timer.set(3 * 1000, lock_device_if_unlocked)
