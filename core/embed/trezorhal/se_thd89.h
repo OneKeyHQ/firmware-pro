@@ -110,6 +110,13 @@ secbool se_gen_session_seed(const char *passphrase, bool cardano);
 secbool se_derive_keys(HDNode *out, const char *curve,
                        const uint32_t *address_n, size_t address_n_count,
                        uint32_t *fingerprint);
+secbool se_derive_xmr_key(const char *curve, const uint32_t *address_n,
+                          size_t address_n_count, uint8_t *pubkey,
+                          uint8_t *prikey_hash);
+secbool se_derive_xmr_private_key(const uint8_t *pubkey, const uint32_t index,
+                                  uint8_t *prikey);
+secbool se_xmr_get_tx_key(const uint8_t *rand, const uint8_t *hash,
+                          uint8_t *out);
 secbool se_node_sign_digest(const uint8_t *hash, uint8_t *sig, uint8_t *by);
 int se_ecdsa_sign_digest(const uint8_t curve, const uint8_t canonical,
                          const uint8_t *digest, uint8_t *sig, uint8_t *pby);

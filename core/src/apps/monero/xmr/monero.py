@@ -143,13 +143,23 @@ def generate_tx_spend_and_key_image(
     :param received_index: subaddress index this payment was received to
     :return:
     """
-    if crypto.sc_iszero(ack.spend_key_private):
-        raise ValueError("Watch-only wallet not supported")
+    from trezor import utils
 
-    # derive secret key with subaddress - step 1: original CN derivation
-    scalar_step1 = crypto_helpers.derive_secret_key(
-        recv_derivation, real_output_index, ack.spend_key_private
-    )
+    if utils.USE_THD89:
+        from trezor.crypto import se_thd89
+
+        recv_derivation = crypto_helpers.encodepoint(recv_derivation)
+        # derive secret key with subaddress - step 1: original CN derivation
+        scalar_step1 = se_thd89.derive_xmr_private(recv_derivation, real_output_index)
+        scalar_step1 = crypto_helpers.decodeint(scalar_step1)
+    else:
+        if crypto.sc_iszero(ack.spend_key_private):
+            raise ValueError("Watch-only wallet not supported")
+
+        # derive secret key with subaddress - step 1: original CN derivation
+        scalar_step1 = crypto_helpers.derive_secret_key(
+            recv_derivation, real_output_index, ack.spend_key_private
+        )
 
     # step 2: add Hs(SubAddr || a || index_major || index_minor)
     subaddr_sk = None

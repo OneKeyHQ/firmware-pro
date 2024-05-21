@@ -498,6 +498,68 @@ secbool se_derive_keys(HDNode *out, const char *curve,
   return sectrue;
 }
 
+secbool se_derive_xmr_key(const char *curve, const uint32_t *address_n,
+                          size_t address_n_count, uint8_t *pubkey,
+                          uint8_t *prikey_hash) {
+  uint8_t resp[64];
+  uint16_t resp_len = sizeof(resp);
+
+  uint8_t len = strlen(curve);
+  APDU_DATA[0] = len;
+  memcpy(APDU_DATA + 1, curve, len);
+  len += 1;
+
+  memcpy(APDU_DATA + len, (uint8_t *)address_n, address_n_count * 4);
+  len += address_n_count * 4;
+
+  if (!se_transmit_mac(SE_INS_DERIVE, 0x00, 0x01, APDU_DATA, len, resp,
+                       &resp_len)) {
+    return secfalse;
+  }
+  memcpy((void *)pubkey, resp, 32);
+  memcpy((void *)prikey_hash, resp + 32, 32);
+
+  return sectrue;
+}
+
+secbool se_derive_xmr_private_key(const uint8_t *pubkey, const uint32_t index,
+                                  uint8_t *prikey) {
+  uint8_t resp[32];
+  uint16_t resp_len = sizeof(resp);
+
+  uint8_t data[32 + 4];
+
+  memcpy(data, pubkey, 32);
+  memcpy(data + 32, &index, 4);
+
+  if (!se_transmit_mac(SE_INS_DERIVE, 0x00, 0x02, data, sizeof(data), resp,
+                       &resp_len)) {
+    return secfalse;
+  }
+  memcpy(prikey, resp, 32);
+
+  return sectrue;
+}
+
+secbool se_xmr_get_tx_key(const uint8_t *rand, const uint8_t *hash,
+                          uint8_t *out) {
+  uint8_t resp[32];
+  uint16_t resp_len = sizeof(resp);
+
+  uint8_t data[32 + 32];
+
+  memcpy(data, rand, 32);
+  memcpy(data + 32, hash, 32);
+
+  if (!se_transmit_mac(SE_INS_DERIVE, 0x00, 0x03, data, sizeof(data), resp,
+                       &resp_len)) {
+    return secfalse;
+  }
+  memcpy(out, resp, 32);
+
+  return sectrue;
+}
+
 static secbool _se_reset_storage(void) {
   uint8_t rand[16];
 
