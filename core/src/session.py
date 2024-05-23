@@ -3,6 +3,7 @@ from trezor import log, loop, utils
 from trezor.lvglui import lvgl_tick
 from trezor.qr import handle_qr_ctx, handle_qr_task
 from trezor.uart import (
+    fetch_all,
     handle_ble_info,
     handle_fingerprint,
     handle_uart,
@@ -44,6 +45,7 @@ if display.backlight() == 0:
 apps.base.set_homescreen()
 
 loop.schedule(handle_fingerprint())
+loop.schedule(fetch_all())
 loop.schedule(handle_uart())
 
 loop.schedule(handle_ble_info())

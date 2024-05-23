@@ -5,7 +5,8 @@ from typing import TYPE_CHECKING
 from storage import device
 from trezor import config, io, log, loop, motor, utils, workflow
 from trezor.lvglui import StatusBar
-from trezor.lvglui.scrs.charging import ChargingPromptScr
+
+# from trezor.lvglui.scrs.charging import ChargingPromptScr
 from trezor.ui import display
 
 import usb
@@ -146,10 +147,10 @@ async def handle_usb_state():
             state = await usb_state
             utils.lcd_resume()
             if state:
-                if display.backlight() == 0:
-                    prompt = ChargingPromptScr.get_instance()
-                    await loop.sleep(300)
-                    prompt.show()
+                # if display.backlight() == 0:
+                #     prompt = ChargingPromptScr.get_instance()
+                #     await loop.sleep(300)
+                #     prompt.show()
                 StatusBar.get_instance().show_usb(True)
                 # deal with charging state
                 CHARGING = True
@@ -203,7 +204,7 @@ async def safe_reloop(ack=True):
 
 
 async def handle_uart():
-    fetch_all()
+    # await fetch_all()
     while True:
         try:
             await process_push()
@@ -352,8 +353,6 @@ async def _deal_charging_state(value: bytes) -> None:
         _USB_STATUS_PLUG_IN,
         _POWER_STATUS_CHARGING,
     ):
-        if res != _POWER_STATUS_CHARGING:
-            utils.lcd_resume()
         if CHARGING:
             return
         CHARGING = True
@@ -361,13 +360,15 @@ async def _deal_charging_state(value: bytes) -> None:
         if utils.BATTERY_CAP:
             StatusBar.get_instance().set_battery_img(utils.BATTERY_CAP, CHARGING)
     elif res in (_USB_STATUS_PLUG_OUT, _POWER_STATUS_CHARGING_FINISHED):
-        if not CHARGING:
-            return
+        # if not CHARGING:
+        #     return
         CHARGING = False
-        StatusBar.get_instance().show_charging()
+        StatusBar.get_instance().show_charging(False)
         StatusBar.get_instance().show_usb(False)
         if utils.BATTERY_CAP:
             StatusBar.get_instance().set_battery_img(utils.BATTERY_CAP, CHARGING)
+    if display.backlight() == 0:
+        utils.lcd_resume()
 
 
 async def _deal_pair_res(value: bytes) -> None:
@@ -473,15 +474,19 @@ def _request_charging_status():
     BLE_CTRL.ctrl(0x82, b"\x05")
 
 
-def fetch_all():
+async def fetch_all():
     """Request some important data."""
-    flashled_close()
-    _request_ble_name()
-    _request_ble_version()
-    _request_ble_status()
-    _request_battery_level()
-    _request_charging_status()
-    _fetch_flashled_brightness()
+    while True:
+        if display.backlight():
+            flashled_close()
+            _request_ble_name()
+            _request_ble_version()
+            _request_ble_status()
+            _request_battery_level()
+            _request_charging_status()
+            _fetch_flashled_brightness()
+            return
+        await loop.sleep(100)
 
 
 def fetch_ble_info():

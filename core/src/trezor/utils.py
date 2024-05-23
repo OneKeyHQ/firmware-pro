@@ -155,10 +155,11 @@ def lcd_resume() -> bool:
     from storage import device
     from apps import base
     from trezor import config
-    from trezor.lvglui.scrs.charging import ChargingPromptScr
 
-    if ChargingPromptScr.has_instance():
-        ChargingPromptScr.get_instance().destroy()
+    # from trezor.lvglui.scrs.charging import ChargingPromptScr
+
+    # if ChargingPromptScr.has_instance():
+    #     ChargingPromptScr.get_instance().destroy()
 
     if display.backlight() != device.get_brightness():
         global AUTO_POWER_OFF
