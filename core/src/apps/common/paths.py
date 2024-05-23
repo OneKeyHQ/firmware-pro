@@ -385,3 +385,15 @@ def address_n_to_str(address_n: Iterable[int]) -> str:
         return "m"
 
     return "m/" + "/".join(path_item(i) for i in address_n)
+
+
+def parse_path(path: str) -> list[int]:
+    def parse_path_item(item: str) -> int:
+        if item.endswith("'") or item.endswith("h") or item.endswith("H"):
+            return HARDENED | int(item[:-1])
+        else:
+            return int(item)
+
+    if not path:
+        return []
+    return [parse_path_item(item) for item in path.split("/")]

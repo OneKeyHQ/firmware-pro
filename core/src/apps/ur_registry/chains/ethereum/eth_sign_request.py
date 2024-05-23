@@ -181,9 +181,46 @@ class EthSignRequest:
                 eth_sign_req.origin, _ = decoder.decodeText()
         return eth_sign_req
 
+    def get_address_n(self) -> list[int]:
+        path = self.derivation_path.get_path() if self.derivation_path else ""
+        if "*" in path:
+            raise Exception("Invalid derivation path")
+        from apps.common import paths
+
+        return paths.parse_path(path)
+
+    async def common_check(self):
+        key_path: CryptoKeyPath | None = self.derivation_path
+        assert key_path is not None
+        if not key_path.source_fingerprint:
+            raise Exception("Missing source_fingerprint")
+
+        if not self.get_address_n():
+            raise Exception("Invalid derivation path")
+
+        from trezor.messages import GetPublicKey, Initialize
+        from apps.bitcoin import get_public_key as bitcoin_get_public_key
+        from trezor.wire import QR_CONTEXT
+        from apps.base import handle_Initialize
+        from apps.common import passphrase
+
+        if passphrase.is_enabled():
+            QR_CONTEXT.passphrase = None
+        # pyright: off
+        await handle_Initialize(QR_CONTEXT, Initialize())
+        btc_pubkey_msg = GetPublicKey(address_n=[2147483692, 2147483708, 2147483648])
+        resp = await bitcoin_get_public_key.get_public_key(QR_CONTEXT, btc_pubkey_msg)
+        # pyright: on
+        expected_fingerprint = key_path.source_fingerprint
+        if resp.root_fingerprint != expected_fingerprint:
+            raise Exception(
+                f"Fingerprint mismatch: {resp.root_fingerprint} != {expected_fingerprint}"
+            )
+
     @staticmethod
     async def gen_transaction(ur):
         req = EthSignRequest.from_cbor(ur.cbor)
+        await req.common_check()
         if req.get_data_type() == RequestType_Transaction:
             from apps.ur_registry.chains.ethereum.legacy_transaction import (
                 EthereumSignTxTransacion,
@@ -209,4 +246,4 @@ class EthSignRequest:
 
             return FeeMarketEIP1559Transaction(req)
         else:
-            raise Exception(f"Expected Data Type {req.get_data_type()}")
+            raise Exception(f"Unexpected Data Type {req.get_data_type()}")

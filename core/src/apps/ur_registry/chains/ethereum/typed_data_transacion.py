@@ -6,7 +6,6 @@ from trezor import io, messages
 from trezor.enums import EthereumDataType
 from trezor.wire import QR_CONTEXT
 
-from . import get_derivation_path
 from .eth_sign_request import EthSignRequest
 
 LOCAL_CTL = io.LOCAL_CTL()
@@ -148,7 +147,7 @@ class EthereumTypedDataTransacion:
         data = EthereumTypedDataTransacion.sanitize_typed_data(msg)
 
         request = messages.EthereumSignTypedData(
-            address_n=get_derivation_path(),
+            address_n=self.req.get_address_n(),
             primary_type=data["primaryType"],
             metamask_v4_compat=True,
             definitions=None,

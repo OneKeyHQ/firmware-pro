@@ -13,6 +13,8 @@ def is_enabled() -> bool:
 
 async def get(ctx: wire.Context) -> str:
     if is_enabled():
+        if isinstance(ctx, wire.QRContext) and ctx.passphrase is not None:
+            return ctx.passphrase
         return await _request_from_user(ctx)
     else:
         return ""
@@ -26,6 +28,8 @@ async def _request_from_user(ctx: wire.Context) -> str:
         from trezor.ui.layouts import request_passphrase_on_device
 
         passphrase = await request_passphrase_on_device(ctx, _MAX_PASSPHRASE_LEN)
+        if isinstance(ctx, wire.QRContext):
+            ctx.passphrase = passphrase
     else:
         passphrase = await _request_on_host(ctx)
     if len(passphrase.encode()) > _MAX_PASSPHRASE_LEN:

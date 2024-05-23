@@ -4,7 +4,6 @@ from trezor.messages import EthereumSignTx
 
 from apps.ur_registry.rlp import decode
 
-from . import get_derivation_path
 from .eth_sign_request import EthSignRequest
 
 
@@ -19,7 +18,7 @@ class EthereumSignTxTransacion:
 
     # Format: rlp([nonce, gasPrice, gasLimit, to, value, data, v, r, s])
     @staticmethod
-    def fromSerializedTx(serialized, chainId):
+    def fromSerializedTx(serialized, chainId, address_n):
         tx = decode(serialized)
         if tx is None:
             raise Exception("Decode error")
@@ -36,7 +35,7 @@ class EthereumSignTxTransacion:
 
         # pyright: off
         return EthereumSignTx(
-            address_n=get_derivation_path(),
+            address_n=address_n,
             nonce=nonce,
             gas_price=gasPrice,
             gas_limit=gasLimit,
@@ -51,7 +50,7 @@ class EthereumSignTxTransacion:
     @staticmethod
     def get_tx(req: EthSignRequest):
         return EthereumSignTxTransacion.fromSerializedTx(
-            req.get_sign_data(), req.get_chain_id()
+            req.get_sign_data(), req.get_chain_id(), req.get_address_n()
         )
 
     async def run(self):

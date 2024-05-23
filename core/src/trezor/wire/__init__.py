@@ -145,6 +145,7 @@ class QRContext:
         self.msg_out = None
         self.msg_in = None
         self.ready = False
+        self.passphrase: str | None = None
 
     async def _call(
         self,

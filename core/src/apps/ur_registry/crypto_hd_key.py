@@ -62,7 +62,7 @@ class CryptoHDKey:
         use_info: CryptoCoinInfo,
         origin: CryptoKeyPath,
         children: CryptoKeyPath,
-        parent_fingerprint: list[int],
+        parent_fingerprint: int,
         name: bytes,
         note: bytes,
     ):
@@ -98,8 +98,8 @@ class CryptoHDKey:
     def get_children(self) -> CryptoKeyPath | None:
         return self.children
 
-    def get_parent_fingerprint(self) -> list[int]:
-        return self.parent_fingerprint if self.parent_fingerprint is not None else []
+    def get_parent_fingerprint(self) -> int:
+        return self.parent_fingerprint or 0
 
     def get_name(self) -> bytes:
         return self.name if self.name is not None else b""
@@ -112,11 +112,7 @@ class CryptoHDKey:
         chain_code = (
             self.get_chain_code() if self.get_chain_code() is not None else bytes(32)
         )
-        parent_fingerprint = (
-            self.get_parent_fingerprint()
-            if self.get_parent_fingerprint() is not None
-            else [0, 0, 0, 0]
-        )
+        parent_fingerprint = self.get_parent_fingerprint() or 0
 
         depth = 0
         index = 0
@@ -141,7 +137,7 @@ class CryptoHDKey:
         output = bytearray(b"")
         output.extend(bytes(version))  # 4
         output.extend(depth.to_bytes(1, "big"))  # 1
-        output.extend(bytes(parent_fingerprint))  # 4
+        output.extend(parent_fingerprint.to_bytes(4, "big"))  # 4
         output.extend(index.to_bytes(4, "big"))  # 4
         output.extend(chain_code)  # 32
         output.extend(key)  # 33
@@ -210,9 +206,7 @@ class CryptoHDKey:
 
             if self.parent_fingerprint is not None:
                 encoder.encodeInteger(PARENT_FINGERPRINT)
-                encoder.encodeInteger(
-                    int.from_bytes(bytes(self.parent_fingerprint), "big")
-                )
+                encoder.encodeInteger(self.parent_fingerprint)
 
             if self.name is not None:
                 encoder.encodeInteger(NAME)
@@ -287,7 +281,7 @@ def generateCryptoHDKeyForETHStandard(pubkey):
                 PathComponent.new(60, True),
                 PathComponent.new(0, True),
             ],
-            list(pubkey.root_fingerprint.to_bytes(4, "big")),
+            pubkey.root_fingerprint,
             3,
         ),
         CryptoKeyPath(
@@ -298,7 +292,7 @@ def generateCryptoHDKeyForETHStandard(pubkey):
             None,
             0,
         ),
-        list(pubkey.node.fingerprint.to_bytes(4, "big")),
+        pubkey.node.fingerprint,
         "OneKey".encode(),
         "account.standard".encode(),
     )

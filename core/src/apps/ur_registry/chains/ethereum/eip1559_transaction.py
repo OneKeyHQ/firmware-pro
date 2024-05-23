@@ -5,7 +5,6 @@ from trezor.messages import EthereumSignTxEIP1559
 
 from apps.ur_registry.rlp import decode
 
-from . import get_derivation_path
 from .eth_sign_request import EthSignRequest
 
 TRANSACTION_TYPE = 2
@@ -23,7 +22,7 @@ class FeeMarketEIP1559Transaction:
     # Format: `0x02 || rlp([chainId, nonce, maxPriorityFeePerGas, maxFeePerGas, gasLimit, to, value, data,
     # accessList, signatureYParity, signatureR, signatureS])`
     @staticmethod
-    def fromSerializedTx(serialized):
+    def fromSerializedTx(serialized, address_n):
         if serialized[0] != TRANSACTION_TYPE:
             raise Exception("Invalid serialized tx input: not an EIP-1559 transaction")
 
@@ -53,7 +52,7 @@ class FeeMarketEIP1559Transaction:
             data_length=len(data_initial_chunk),
             data_initial_chunk=data_initial_chunk,
             chain_id=int.from_bytes(chainId, "big"),
-            address_n=get_derivation_path(),
+            address_n=address_n,
             to=hexlify(to).decode(),
             access_list=accessList,
         )
@@ -61,7 +60,9 @@ class FeeMarketEIP1559Transaction:
 
     @staticmethod
     def get_tx(req: EthSignRequest):
-        return FeeMarketEIP1559Transaction.fromSerializedTx(req.get_sign_data())
+        return FeeMarketEIP1559Transaction.fromSerializedTx(
+            req.get_sign_data(), req.get_address_n()
+        )
 
     async def run(self):
         from apps.ethereum.sign_tx_eip1559 import sign_tx_eip1559

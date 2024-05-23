@@ -1,6 +1,5 @@
 from trezor.messages import EthereumSignMessage
 
-from . import get_derivation_path
 from .eth_sign_request import EthSignRequest
 
 
@@ -13,10 +12,10 @@ class EthereumPersonalMessageTransacion:
     async def initial_tx(self):
         pass
 
-    def get_tx(self, msg):
+    def get_tx(self):
         return EthereumSignMessage(
-            address_n=get_derivation_path(),
-            message=msg,
+            address_n=self.req.get_address_n(),
+            message=self.req.get_sign_data(),
         )
 
     async def run(self):
@@ -26,7 +25,7 @@ class EthereumPersonalMessageTransacion:
         from apps.ur_registry.ur_py.ur.ur_encoder import UREncoder
 
         # pyright: off
-        tx = self.get_tx(self.req.get_sign_data())
+        tx = self.get_tx()
         self.resp = await sign_message(wire.QR_CONTEXT, tx)
         self.signature = self.resp.signature
         eth_signature = EthSignature(

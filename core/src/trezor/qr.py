@@ -98,10 +98,26 @@ class QRTask:
                 self.mulit_pkg = True
             else:
                 self.mulit_pkg = False
-            self.req = await EthSignRequest.gen_transaction(ur)
-            if __debug__:
-                print("req: ", type(self.req))
-            return True
+            try:
+                self.req = await EthSignRequest.gen_transaction(ur)
+                if __debug__:
+                    print("req: ", type(self.req))
+            except Exception as e:
+                if __debug__:
+                    import sys
+
+                    sys.print_exception(e)  # type: ignore["print_exception" is not a known member of module]
+                from trezor.ui.layouts import show_error_no_interact
+
+                await show_error_no_interact(
+                    title=_(i18n_keys.TITLE__INVALID_TRANSACTION),
+                    subtitle=_(
+                        i18n_keys.CONTENT__TX_DATA_IS_INCORRECT_PLEASE_TRY_AGAIN
+                    ),
+                )
+                self.ur = None
+            else:
+                return True
         elif ur.type == "crypto-psbt":
             if __debug__:
                 print("TODO crypto-psbt")

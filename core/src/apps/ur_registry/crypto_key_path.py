@@ -47,7 +47,12 @@ class PathComponent:
 
 
 class CryptoKeyPath:
-    def __init__(self, components=None, source_fingerprint=None, depth=None):
+    def __init__(
+        self,
+        components: list[PathComponent],
+        source_fingerprint: int = None,
+        depth: int | None = None,
+    ):
         self.components = components
         self.source_fingerprint = source_fingerprint
         self.depth = depth
@@ -67,13 +72,13 @@ class CryptoKeyPath:
     def get_components(self) -> list[PathComponent]:
         return self.components
 
-    def get_source_fingerprint(self) -> list[int]:
-        return self.source_fingerprint if self.source_fingerprint is not None else []
+    def get_source_fingerprint(self) -> int | None:
+        return self.source_fingerprint
 
     def get_depth(self):
         return self.depth
 
-    def get_path(self):
+    def get_path(self) -> str | None:
         if self.components is None:
             return None
 
@@ -130,7 +135,7 @@ class CryptoKeyPath:
 
         if self.source_fingerprint is not None:
             encoder.encodeInteger(SOURCE_FINGERPRINT)
-            encoder.encodeInteger(int.from_bytes(bytes(self.source_fingerprint), "big"))
+            encoder.encodeInteger(self.source_fingerprint)
         if self.depth is not None:
             encoder.encodeInteger(DEPTH)
             encoder.encodeInteger(self.depth)
@@ -148,9 +153,10 @@ class CryptoKeyPath:
 
     @staticmethod
     def decode(decoder):
-        keypath = CryptoKeyPath()
-        keypath.components = []
         size, _ = decoder.decodeMapSize()
+        components = []
+        source_fingerprint = None
+        depth = None
         for _ in range(size):
             value, _ = decoder.decodeInteger()
             if value == COMPONENTS:
@@ -173,15 +179,15 @@ class CryptoKeyPath:
                         hardened = value == cbor_lite.Tag_Minor_true
                         if previous_type is cbor_lite.Tag_Major_array:
                             p = PathComponent.new(None, hardened)
-                            keypath.components.append(p)
+                            components.append(p)
                         if previous_type is cbor_lite.Tag_Major_unsignedInteger:
                             p = PathComponent.new(path_index, hardened)
-                            keypath.components.append(p)
+                            components.append(p)
 
             if value == SOURCE_FINGERPRINT:
                 value, _ = decoder.decodeInteger()
-                keypath.source_fingerprint = list(value.to_bytes(4, "big"))
+                source_fingerprint = value
             if value == DEPTH:
                 value, _ = decoder.decodeInteger()
-                keypath.depth = value
-        return keypath
+                depth = value
+        return CryptoKeyPath(components, source_fingerprint, depth)
