@@ -128,9 +128,10 @@ int32_t spi_slave_init()
     gpio.Pull = GPIO_PULLUP;
     gpio.Speed = GPIO_SPEED_FREQ_LOW;
     gpio.Pin = GPIO_PIN_5 | GPIO_PIN_6;
-    HAL_GPIO_Init(GPIOK, &gpio);
+    // set pin before config port direction to avoid unwanted reset to bluetooth chip
     HAL_GPIO_WritePin(GPIOK, GPIO_PIN_5, GPIO_PIN_SET);
     HAL_GPIO_WritePin(GPIOK, GPIO_PIN_6, GPIO_PIN_SET);
+    HAL_GPIO_Init(GPIOK, &gpio);
 
     // SPI2: PA11(NSS),PA9(SCK)
     gpio.Mode = GPIO_MODE_AF_PP;
