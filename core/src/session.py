@@ -4,6 +4,7 @@ from trezor.lvglui import lvgl_tick
 from trezor.qr import handle_qr_ctx, handle_qr_task
 from trezor.uart import (
     ctrl_wireless_charge,
+    disconnect_ble,
     fetch_all,
     handle_ble_info,
     handle_fingerprint,
@@ -30,6 +31,7 @@ if __debug__:
 
 def stop_mode(reset_timer: bool = False):
     ctrl_wireless_charge(True)
+    disconnect_ble()
     utils.enter_lowpower(reset_timer, storage.device.get_autoshutdown_delay_ms())
 
 

@@ -501,6 +501,9 @@ def _request_charging_status():
     """Request charging status."""
     BLE_CTRL.ctrl(0x82, b"\x05")
 
+def disconnect_ble():
+    if utils.BLE_CONNECTED:
+        BLE_CTRL.ctrl(0x81, b"\x03")
 
 async def fetch_all():
     """Request some important data."""
