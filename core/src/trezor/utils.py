@@ -72,6 +72,8 @@ _PIN_VERIFIED_SINCE_BOOT = False
 FLASH_LED_BRIGHTNESS: int | None = None
 _BACKUP_WITH_LITE_FIRST = False
 _COLOR_FLAG: str | None = None
+CHARGEING_BY_WIRELESS = False
+CHARGE_ENABLE = True
 
 if __debug__:
     MAX_FP_ATTEMPTS = 50
