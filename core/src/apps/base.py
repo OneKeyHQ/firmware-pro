@@ -461,7 +461,7 @@ def lock_device() -> None:
     if storage.device.is_initialized() and config.has_pin():
         from trezor.lvglui.scrs import fingerprints
 
-        if fingerprints.is_available() and fingerprints.is_unlocked():
+        if fingerprints.is_available():
             fingerprints.lock()
         else:
             if __debug__:

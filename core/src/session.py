@@ -3,6 +3,8 @@ from trezor import log, loop, utils
 from trezor.lvglui import lvgl_tick
 from trezor.qr import handle_qr_ctx, handle_qr_task
 from trezor.uart import (
+    ctrl_wireless_charge,
+    disconnect_ble,
     fetch_all,
     handle_ble_info,
     handle_fingerprint,
@@ -27,19 +29,29 @@ if __debug__:
     apps.debug.boot()
 
 
+def stop_mode(reset_timer: bool = False):
+    ctrl_wireless_charge(True)
+    disconnect_ble()
+    utils.enter_lowpower(reset_timer, storage.device.get_autoshutdown_delay_ms())
+
+
 async def handle_stop_mode():
     while True:
         # leave enough time for usb to be detected
         await loop.sleep(200)
 
         if display.backlight():  # screen is on
+            ctrl_wireless_charge(False)
             return
-        utils.enter_lowpower(False, storage.device.get_autoshutdown_delay_ms())
+        stop_mode(False)
 
 
 # if the screen is off, enter low power mode after reloop
 if display.backlight() == 0:
-    utils.enter_lowpower(True, storage.device.get_autoshutdown_delay_ms())
+    stop_mode(True)
+else:
+    if utils.CHARGEING_BY_WIRELESS:
+        apps.base.screen_off_if_possible()
 
 # run main event loop and specify which screen is the default
 apps.base.set_homescreen()

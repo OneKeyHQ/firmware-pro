@@ -20,8 +20,8 @@ _PREFIX = const(42330)  # 0xA55A
 _FORMAT = ">HHB"
 _HEADER_LEN = const(5)
 # fmt: off
-_CMD_BLE_NAME = _PRESS_SHORT = _USB_STATUS_PLUG_IN = _BLE_STATUS_CONNECTED = _BLE_PAIR_SUCCESS = const(1)
-_PRESS_LONG = _USB_STATUS_PLUG_OUT = _BLE_STATUS_DISCONNECTED = _BLE_PAIR_FAILED = _CMD_BLE_STATUS = const(2)
+_CMD_BLE_NAME = _PRESS_SHORT = _USB_STATUS_PLUG_IN = _BLE_STATUS_CONNECTED = _BLE_PAIR_SUCCESS = CHARGE_START = const(1)
+_PRESS_LONG = _USB_STATUS_PLUG_OUT = _BLE_STATUS_DISCONNECTED = _BLE_PAIR_FAILED = _CMD_BLE_STATUS = CHARGE_BY_WIRELESS = const(2)
 _BTN_PRESS = const(0x20)
 _BTN_RELEASE = const(0x40)
 # fmt: on
@@ -349,8 +349,11 @@ async def _deal_charging_state(value: bytes) -> None:
     global CHARGING, CHARING_TYPE
     res, CHARING_TYPE = ustruct.unpack(">BB", value)
 
+    if display.backlight() == 0:
+        utils.lcd_resume()
+
     if res in (
-        _USB_STATUS_PLUG_IN,
+        CHARGE_START,
         _POWER_STATUS_CHARGING,
     ):
         if CHARGING:
@@ -359,7 +362,34 @@ async def _deal_charging_state(value: bytes) -> None:
         StatusBar.get_instance().show_charging(True)
         if utils.BATTERY_CAP:
             StatusBar.get_instance().set_battery_img(utils.BATTERY_CAP, CHARGING)
+        if CHARING_TYPE == CHARGE_BY_WIRELESS:
+            if utils.CHARGEING_BY_WIRELESS:
+                return
+            utils.CHARGEING_BY_WIRELESS = True
+
+            if device.is_initialized():
+                if utils.is_initialization_processing():
+                    return
+                utils.AUTO_POWER_OFF = True
+                from trezor.lvglui.scrs import fingerprints
+
+                if config.has_pin() and config.is_unlocked():
+                    if fingerprints.is_available():
+                        if fingerprints.is_unlocked():
+                            fingerprints.lock()
+                    else:
+                        config.lock()
+                await loop.race(safe_reloop(), loop.sleep(200))
+                workflow.spawn(utils.internal_reloop())
+                return
+        else:
+            if utils.CHARGEING_BY_WIRELESS:
+                utils.CHARGEING_BY_WIRELESS = False
+            ctrl_charge_switch(True)
+
     elif res in (_USB_STATUS_PLUG_OUT, _POWER_STATUS_CHARGING_FINISHED):
+        if utils.CHARGEING_BY_WIRELESS:
+            utils.CHARGEING_BY_WIRELESS = False
         # if not CHARGING:
         #     return
         CHARGING = False
@@ -367,8 +397,6 @@ async def _deal_charging_state(value: bytes) -> None:
         StatusBar.get_instance().show_usb(False)
         if utils.BATTERY_CAP:
             StatusBar.get_instance().set_battery_img(utils.BATTERY_CAP, CHARGING)
-    if display.backlight() == 0:
-        utils.lcd_resume()
 
 
 async def _deal_pair_res(value: bytes) -> None:
@@ -473,6 +501,9 @@ def _request_charging_status():
     """Request charging status."""
     BLE_CTRL.ctrl(0x82, b"\x05")
 
+def disconnect_ble():
+    if utils.BLE_CONNECTED:
+        BLE_CTRL.ctrl(0x81, b"\x03")
 
 async def fetch_all():
     """Request some important data."""
@@ -581,3 +612,28 @@ def get_ble_hash() -> bytes:
 
 def is_ble_opened() -> bool:
     return BLE_ENABLED if BLE_ENABLED is not None else True
+
+
+def ctrl_charge_switch(enable: bool) -> None:
+    """Request to open or close charge.
+    @param enable: True to open, False to close
+    """
+    if enable:
+        if not utils.CHARGE_ENABLE:
+            BLE_CTRL.ctrl(0x82, b"\x06")
+            utils.CHARGE_ENABLE = True
+    else:
+        if utils.CHARGE_ENABLE:
+            BLE_CTRL.ctrl(0x82, b"\x07")
+            utils.CHARGE_ENABLE = False
+
+def ctrl_wireless_charge(enable: bool) -> None:
+    """Request to open or close charge.
+    @param enable: True to open, False to close
+    """
+    if enable:
+        if utils.CHARGEING_BY_WIRELESS and not utils.CHARGE_ENABLE:
+            ctrl_charge_switch(True)
+    else:
+        if utils.CHARGEING_BY_WIRELESS and utils.CHARGE_ENABLE:            
+            ctrl_charge_switch(False)

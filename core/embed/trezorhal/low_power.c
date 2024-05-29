@@ -103,7 +103,6 @@ void enter_stop_mode(bool restart, uint32_t shutdown_seconds) {
     seconds = shutdown_seconds;
   }
   camera_power_off();
-  ble_disconnect();
   fpsensor_irq_disable();
   touch_enable_irq();
   usart_enable_stop_wup();
