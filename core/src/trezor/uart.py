@@ -34,7 +34,6 @@ _CMD_SIDE_BUTTON_PRESS = const(10)
 _CMD_LED_BRIGHTNESS = const(12)
 _CMD_BLE_BUILD_ID = const(16)
 _CMD_BLE_HASH = const(17)
-CHARGING = False
 CHARING_TYPE = 0  # 1 VIA USB / 2 VIA WIRELESS
 SCREEN: PairCodeDisplay | None = None
 BLE_ENABLED: bool | None = None
@@ -139,7 +138,6 @@ async def handle_fingerprint():
 
 
 async def handle_usb_state():
-    global CHARGING
     while True:
         try:
             previous_usb_bus_state = usb.bus.state()
@@ -153,21 +151,21 @@ async def handle_usb_state():
                 #     prompt.show()
                 StatusBar.get_instance().show_usb(True)
                 # deal with charging state
-                CHARGING = True
+                utils.CHARGING = True
                 StatusBar.get_instance().show_charging(True)
                 if utils.BATTERY_CAP:
                     StatusBar.get_instance().set_battery_img(
-                        utils.BATTERY_CAP, CHARGING
+                        utils.BATTERY_CAP, utils.CHARGING
                     )
                 motor.vibrate()
             else:
                 StatusBar.get_instance().show_usb(False)
                 # deal with charging state
-                CHARGING = False
+                utils.CHARGING = False
                 StatusBar.get_instance().show_charging()
                 if utils.BATTERY_CAP:
                     StatusBar.get_instance().set_battery_img(
-                        utils.BATTERY_CAP, CHARGING
+                        utils.BATTERY_CAP, utils.CHARGING
                     )
                     _request_charging_status()
             current_usb_bus_state = usb.bus.state()
@@ -250,7 +248,7 @@ async def process_push() -> None:
         # current battery level, 0-100 only effective when not charging
         res = ustruct.unpack(">B", value)[0]
         utils.BATTERY_CAP = res
-        StatusBar.get_instance().set_battery_img(res, CHARGING)
+        StatusBar.get_instance().set_battery_img(res, utils.CHARGING)
 
     elif cmd == _CMD_SIDE_BUTTON_PRESS:
         # 1 short press 2 long press
@@ -341,27 +339,30 @@ async def _deal_button_press(value: bytes) -> None:
         BUTTON_PRESSING = False
 
 
+def _turn_on_lcd():
+    if display.backlight() == 0:
+        utils.lcd_resume()
+
+
 async def _deal_charging_state(value: bytes) -> None:
     """THIS DOESN'T WORK CORRECT DUE TO THE PUSHED STATE, ONLY USED AS A FALLBACK WHEN
     CHARGING WITH A CHARGER NOW.
 
     """
-    global CHARGING, CHARING_TYPE
+    global CHARING_TYPE
     res, CHARING_TYPE = ustruct.unpack(">BB", value)
-
-    if display.backlight() == 0:
-        utils.lcd_resume()
 
     if res in (
         CHARGE_START,
         _POWER_STATUS_CHARGING,
     ):
-        if CHARGING:
+        if utils.CHARGING:
             return
-        CHARGING = True
+        _turn_on_lcd()
+        utils.CHARGING = True
         StatusBar.get_instance().show_charging(True)
         if utils.BATTERY_CAP:
-            StatusBar.get_instance().set_battery_img(utils.BATTERY_CAP, CHARGING)
+            StatusBar.get_instance().set_battery_img(utils.BATTERY_CAP, utils.CHARGING)
         if CHARING_TYPE == CHARGE_BY_WIRELESS:
             if utils.CHARGEING_BY_WIRELESS:
                 return
@@ -390,13 +391,15 @@ async def _deal_charging_state(value: bytes) -> None:
     elif res in (_USB_STATUS_PLUG_OUT, _POWER_STATUS_CHARGING_FINISHED):
         if utils.CHARGEING_BY_WIRELESS:
             utils.CHARGEING_BY_WIRELESS = False
-        # if not CHARGING:
+        # if not utils.CHARGING:
         #     return
-        CHARGING = False
+        utils.CHARGING = False
+        ctrl_charge_switch(True)
+        _turn_on_lcd()
         StatusBar.get_instance().show_charging(False)
         StatusBar.get_instance().show_usb(False)
         if utils.BATTERY_CAP:
-            StatusBar.get_instance().set_battery_img(utils.BATTERY_CAP, CHARGING)
+            StatusBar.get_instance().set_battery_img(utils.BATTERY_CAP, utils.CHARGING)
 
 
 async def _deal_pair_res(value: bytes) -> None:
@@ -501,9 +504,11 @@ def _request_charging_status():
     """Request charging status."""
     BLE_CTRL.ctrl(0x82, b"\x05")
 
+
 def disconnect_ble():
     if utils.BLE_CONNECTED:
         BLE_CTRL.ctrl(0x81, b"\x03")
+
 
 async def fetch_all():
     """Request some important data."""
@@ -626,6 +631,7 @@ def ctrl_charge_switch(enable: bool) -> None:
         if utils.CHARGE_ENABLE:
             BLE_CTRL.ctrl(0x82, b"\x07")
             utils.CHARGE_ENABLE = False
+
 
 def ctrl_wireless_charge(enable: bool) -> None:
     """Request to open or close charge.

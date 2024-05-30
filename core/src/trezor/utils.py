@@ -74,6 +74,7 @@ _BACKUP_WITH_LITE_FIRST = False
 _COLOR_FLAG: str | None = None
 CHARGEING_BY_WIRELESS = False
 CHARGE_ENABLE = True
+CHARGING = False
 
 if __debug__:
     MAX_FP_ATTEMPTS = 50
