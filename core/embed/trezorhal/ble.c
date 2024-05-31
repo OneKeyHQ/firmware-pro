@@ -1,6 +1,7 @@
 #include "ble.h"
 #include "common.h"
 #include "display.h"
+#include "spi_legacy.h"
 #include "usart.h"
 
 uint8_t battery_cap = 0xFF;
@@ -421,4 +422,12 @@ void ble_refresh_dev_info(void) {
     hal_delay(5);
     ble_uart_poll();
   }
+}
+
+// IO initialization is required before calling the function
+void ble_reset(void) {
+  BLE_RST_PIN_LOW();
+  hal_delay(5);
+  BLE_RST_PIN_HIGH();
+  hal_delay(10);
 }

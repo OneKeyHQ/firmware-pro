@@ -639,6 +639,7 @@ int main(void) {
   // bt/pm
   ble_usart_init();
   spi_slave_init();
+  ble_reset();
 
   // misc/feedback
   random_delays_init();

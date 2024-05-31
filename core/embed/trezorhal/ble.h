@@ -99,6 +99,7 @@ bool ble_get_battery_voltage(uint16_t *voltage);
 bool ble_get_battery_charging_current(uint16_t *current);
 bool ble_get_battery_discharging_current(uint16_t *current);
 bool ble_get_battery_inner_temp(uint16_t *temp);
+void ble_reset(void);
 
 #else
 #define ble_name_state(...) false
