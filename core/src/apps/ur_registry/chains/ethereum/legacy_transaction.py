@@ -29,10 +29,8 @@ class EthereumSignTxTransacion:
         gasPrice = tx[1]
         gasLimit = tx[2]
         to = tx[3]
-        gasLimit = tx[4]
-        value = tx[5]
-        data = tx[6]
-
+        value = tx[4]
+        data = tx[5]
         # pyright: off
         return EthereumSignTx(
             address_n=address_n,
@@ -65,7 +63,7 @@ class EthereumSignTxTransacion:
         self.signature = (
             self.resp.signature_r
             + self.resp.signature_s
-            + self.resp.signature_v.to_bytes(1, "big")
+            + self.resp.signature_v.to_bytes(4, "big")
         )
         eth_signature = EthSignature(
             request_id=self.req.get_request_id(),
