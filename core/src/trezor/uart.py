@@ -562,7 +562,8 @@ def _ctrl_flashled(enable: bool, brightness=15) -> None:
 
 def _fetch_flashled_brightness() -> None:
     """Request to get led brightness."""
-    BLE_CTRL.ctrl(0x85, b"\x02")
+    if utils.FLASH_LED_BRIGHTNESS is None:
+        BLE_CTRL.ctrl(0x85, b"\x02")
 
 
 def flashled_open() -> None:
@@ -573,8 +574,9 @@ def flashled_open() -> None:
 
 def flashled_close() -> None:
     """Request to close led."""
-    utils.FLASH_LED_BRIGHTNESS = 0
-    _ctrl_flashled(False)
+    if utils.FLASH_LED_BRIGHTNESS is not None and utils.FLASH_LED_BRIGHTNESS > 0:
+        utils.FLASH_LED_BRIGHTNESS = 0
+        _ctrl_flashled(False)
 
 
 def is_flashled_opened() -> bool:
@@ -636,5 +638,5 @@ def ctrl_wireless_charge(enable: bool) -> None:
         if utils.CHARGEING_BY_WIRELESS and not utils.CHARGE_ENABLE:
             ctrl_charge_switch(True)
     else:
-        if utils.CHARGEING_BY_WIRELESS and utils.CHARGE_ENABLE:            
+        if utils.CHARGEING_BY_WIRELESS and utils.CHARGE_ENABLE:
             ctrl_charge_switch(False)
