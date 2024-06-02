@@ -499,7 +499,7 @@ def shutdown_device() -> None:
     from trezor import uart
 
     if storage.device.is_initialized():
-        if not uart.CHARGING:
+        if not utils.CHARGING:
             uart.ctrl_power_off()
 
 
