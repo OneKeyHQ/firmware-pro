@@ -143,7 +143,7 @@ async def handle_usb_state():
             previous_usb_bus_state = usb.bus.state()
             usb_state = loop.wait(io.USB_STATE)
             state = await usb_state
-            utils.lcd_resume()
+            utils.turn_on_lcd_if_possible()
             if state:
                 # if display.backlight() == 0:
                 #     prompt = ChargingPromptScr.get_instance()
@@ -339,11 +339,6 @@ async def _deal_button_press(value: bytes) -> None:
         BUTTON_PRESSING = False
 
 
-def _turn_on_lcd():
-    if display.backlight() == 0:
-        utils.lcd_resume()
-
-
 async def _deal_charging_state(value: bytes) -> None:
     """THIS DOESN'T WORK CORRECT DUE TO THE PUSHED STATE, ONLY USED AS A FALLBACK WHEN
     CHARGING WITH A CHARGER NOW.
@@ -358,7 +353,6 @@ async def _deal_charging_state(value: bytes) -> None:
     ):
         if utils.CHARGING:
             return
-        _turn_on_lcd()
         utils.CHARGING = True
         StatusBar.get_instance().show_charging(True)
         if utils.BATTERY_CAP:
@@ -395,11 +389,12 @@ async def _deal_charging_state(value: bytes) -> None:
         #     return
         utils.CHARGING = False
         ctrl_charge_switch(True)
-        _turn_on_lcd()
         StatusBar.get_instance().show_charging(False)
         StatusBar.get_instance().show_usb(False)
         if utils.BATTERY_CAP:
             StatusBar.get_instance().set_battery_img(utils.BATTERY_CAP, utils.CHARGING)
+
+    utils.turn_on_lcd_if_possible()
 
 
 async def _deal_pair_res(value: bytes) -> None:
