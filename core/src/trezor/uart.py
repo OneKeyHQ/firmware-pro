@@ -430,6 +430,7 @@ async def _deal_ble_status(value: bytes) -> None:
         if config.is_unlocked():
             device.set_ble_status(enable=True)
     elif res == _BLE_STATUS_CLOSED:
+        utils.BLE_CONNECTED = False
         if not device.is_initialized():
             StatusBar.get_instance().show_ble(StatusBar.BLE_STATE_ENABLED)
             ctrl_ble(True)
