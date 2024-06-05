@@ -544,9 +544,9 @@ def ctrl_ble(enable: bool) -> None:
     """Request to open or close ble.
     @param enable: True to open, False to close
     """
-    if (not device.ble_enabled() or not device.is_initialized()) and enable:
+    if enable:
         BLE_CTRL.ctrl(0x81, b"\x01")
-    elif device.ble_enabled() and not enable:
+    else:
         BLE_CTRL.ctrl(0x81, b"\x02")
 
 
