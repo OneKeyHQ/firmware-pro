@@ -1,6 +1,7 @@
 # pyright: off
 import gc
 import sys
+from micropython import const
 from typing import TYPE_CHECKING
 
 from trezorutils import (  # noqa: F401; FIRMWARE_SECTORS_COUNT,; firmware_sector_size,; get_firmware_chunk,
@@ -72,7 +73,10 @@ _PIN_VERIFIED_SINCE_BOOT = False
 FLASH_LED_BRIGHTNESS: int | None = None
 _BACKUP_WITH_LITE_FIRST = False
 _COLOR_FLAG: str | None = None
-CHARGEING_BY_WIRELESS = False
+CHARGE_WIRELESS_STOP = const(0)
+CHARGE_WIRELESS_START = const(1)
+CHARGE_WIRELESS_CHARGING = const(2)
+CHARGE_WIRELESS_STATUS = CHARGE_WIRELESS_STOP
 CHARGE_ENABLE = True
 CHARGING = False
 

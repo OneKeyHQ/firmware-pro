@@ -50,7 +50,8 @@ async def handle_stop_mode():
 if display.backlight() == 0:
     stop_mode(True)
 else:
-    if utils.CHARGEING_BY_WIRELESS:
+    if utils.CHARGE_WIRELESS_STATUS == utils.CHARGE_WIRELESS_START:
+        utils.CHARGE_WIRELESS_STATUS = utils.CHARGE_WIRELESS_CHARGING
         apps.base.screen_off_if_possible()
 
 # run main event loop and specify which screen is the default

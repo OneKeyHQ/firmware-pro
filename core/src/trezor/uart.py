@@ -358,9 +358,9 @@ async def _deal_charging_state(value: bytes) -> None:
         if utils.BATTERY_CAP:
             StatusBar.get_instance().set_battery_img(utils.BATTERY_CAP, utils.CHARGING)
         if CHARING_TYPE == CHARGE_BY_WIRELESS:
-            if utils.CHARGEING_BY_WIRELESS:
+            if utils.CHARGE_WIRELESS_STATUS != utils.CHARGE_WIRELESS_STOP:
                 return
-            utils.CHARGEING_BY_WIRELESS = True
+            utils.CHARGE_WIRELESS_STATUS = utils.CHARGE_WIRELESS_START
 
             if device.is_initialized():
                 if utils.is_initialization_processing():
@@ -376,15 +376,14 @@ async def _deal_charging_state(value: bytes) -> None:
                         config.lock()
                 await loop.race(safe_reloop(), loop.sleep(200))
                 workflow.spawn(utils.internal_reloop())
-                return
         else:
-            if utils.CHARGEING_BY_WIRELESS:
-                utils.CHARGEING_BY_WIRELESS = False
+            if utils.CHARGE_WIRELESS_STATUS != utils.CHARGE_WIRELESS_STOP:
+                utils.CHARGE_WIRELESS_STATUS = utils.CHARGE_WIRELESS_STOP
             ctrl_charge_switch(True)
 
     elif res in (_USB_STATUS_PLUG_OUT, _POWER_STATUS_CHARGING_FINISHED):
-        if utils.CHARGEING_BY_WIRELESS:
-            utils.CHARGEING_BY_WIRELESS = False
+        if utils.CHARGE_WIRELESS_STATUS != utils.CHARGE_WIRELESS_STOP:
+            utils.CHARGE_WIRELESS_STATUS = utils.CHARGE_WIRELESS_STOP
         # if not utils.CHARGING:
         #     return
         utils.CHARGING = False
@@ -636,8 +635,14 @@ def ctrl_wireless_charge(enable: bool) -> None:
     @param enable: True to open, False to close
     """
     if enable:
-        if utils.CHARGEING_BY_WIRELESS and not utils.CHARGE_ENABLE:
+        if (
+            utils.CHARGE_WIRELESS_STATUS != utils.CHARGE_WIRELESS_STOP
+            and not utils.CHARGE_ENABLE
+        ):
             ctrl_charge_switch(True)
     else:
-        if utils.CHARGEING_BY_WIRELESS and utils.CHARGE_ENABLE:
+        if (
+            utils.CHARGE_WIRELESS_STATUS != utils.CHARGE_WIRELESS_STOP
+            and utils.CHARGE_ENABLE
+        ):
             ctrl_charge_switch(False)
