@@ -621,11 +621,11 @@ def ctrl_charge_switch(enable: bool) -> None:
     @param enable: True to open, False to close
     """
     if enable:
-        if not utils.CHARGE_ENABLE:
+        if utils.CHARGE_ENABLE is None or not utils.CHARGE_ENABLE:
             BLE_CTRL.ctrl(0x82, b"\x06")
             utils.CHARGE_ENABLE = True
     else:
-        if utils.CHARGE_ENABLE:
+        if utils.CHARGE_ENABLE is None or utils.CHARGE_ENABLE:
             BLE_CTRL.ctrl(0x82, b"\x07")
             utils.CHARGE_ENABLE = False
 
@@ -634,15 +634,6 @@ def ctrl_wireless_charge(enable: bool) -> None:
     """Request to open or close charge.
     @param enable: True to open, False to close
     """
-    if enable:
-        if (
-            utils.CHARGE_WIRELESS_STATUS != utils.CHARGE_WIRELESS_STOP
-            and not utils.CHARGE_ENABLE
-        ):
-            ctrl_charge_switch(True)
-    else:
-        if (
-            utils.CHARGE_WIRELESS_STATUS != utils.CHARGE_WIRELESS_STOP
-            and utils.CHARGE_ENABLE
-        ):
-            ctrl_charge_switch(False)
+    if utils.CHARGE_WIRELESS_STATUS == utils.CHARGE_WIRELESS_STOP:
+        return
+    ctrl_charge_switch(enable)
