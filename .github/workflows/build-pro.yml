@@ -17,7 +17,7 @@ jobs:
         id: vars
         run: |
           BOOT_VERSION=$(./tools/version.sh ./core/embed/bootloader/version.h)
-          FIRMWARE_VERSION=$(cat ./core/embed/firmware/version.h | grep "ONEKEY_VERSION " | awk -F "[\"\"]" '{print $2}')
+          FIRMWARE_VERSION=$(cat ./core/embed/firmware/version.h | grep -E '#define ONEKEY_VERSION_(MAJOR|MINOR|PATCH)' | awk '{printf "%s.", $3}' | sed 's/\.$//')
           BUILD_DATE=$(date +"%Y%m%d")
           SHORT_HASH=$(git rev-parse --short HEAD)
 
