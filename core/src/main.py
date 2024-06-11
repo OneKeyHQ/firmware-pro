@@ -45,12 +45,15 @@ with unimport_manager:
 
 # === Prepare the USB interfaces first. Do not connect to the host yet.
 # usb imports trezor.utils and trezor.io which is a C module
-import usb
+import usb  # noqa: F401
 
 # start the USB
+# import storage.device
+# if not storage.device.is_airgap_mode():
+#     usb.bus.open(storage.device.get_device_id())
+
 import storage.device
-if not storage.device.is_airgap_mode():
-    usb.bus.open(storage.device.get_device_id())
+storage.device.get_device_id()
 
 # initialize the status bar
 StatusBar.get_instance()
