@@ -45,6 +45,8 @@ extern uint8_t dev_pwr_sta;
 #define BLE_PWR_EMMC_ON 0x03
 #define BLE_PWR_EQ 0x04
 #define BLE_PWR_CHARGING 0x05
+#define BLE_PWR_CHARGE_ENABLE 0x06
+#define BLE_PWR_CHARGE_DISABLE 0x07
 #define BLE_VER 0x83
 #define BLE_VER_ADV 0x01
 #define BLE_VER_FW 0x02

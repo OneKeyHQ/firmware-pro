@@ -314,7 +314,8 @@ void ble_uart_poll(void) {
       break;
     case BLE_CMD_PLUG_STA:
       get_ble_charging = true;
-      if (ble_usart_msg.cmd_vale[0] == 1 || ble_usart_msg.cmd_vale[0] == 3) {
+      if (ble_usart_msg.cmd_vale[0] == 1 || ble_usart_msg.cmd_vale[0] == 3 ||
+          ble_usart_msg.cmd_vale[0] == 4) {
         dev_pwr_sta = 1;
         if (ble_usart_msg.cmd_vale[1] == CHARGE_BY_USB ||
             ble_usart_msg.cmd_vale[1] == CHARGE_BY_WIRELESS) {

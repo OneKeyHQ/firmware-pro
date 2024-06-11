@@ -265,6 +265,30 @@ static void usb_switch(void) {
   }
 }
 
+static void charge_switch(void) {
+  static bool charge_configured = false;
+  static bool charge_enabled = false;
+
+  if (!ble_charging_state()) {
+    ble_cmd_req(BLE_PWR, BLE_PWR_CHARGING);
+    return;
+  }
+
+  if (ble_get_charge_type() == CHARGE_BY_USB) {
+    if (!charge_enabled || !charge_configured) {
+      charge_configured = true;
+      charge_enabled = true;
+      ble_cmd_req(BLE_PWR, BLE_PWR_CHARGE_ENABLE);
+    }
+  } else {
+    if (charge_enabled || !charge_configured) {
+      charge_configured = true;
+      charge_enabled = false;
+      ble_cmd_req(BLE_PWR, BLE_PWR_CHARGE_DISABLE);
+    }
+  }
+}
+
 static secbool bootloader_usb_loop(const vendor_header* const vhdr,
                                    const image_header* const hdr) {
   // if both are NULL, we don't have a firmware installed
@@ -279,6 +303,8 @@ static secbool bootloader_usb_loop(const vendor_header* const vhdr,
       ble_uart_poll();
 
       usb_switch();
+
+      charge_switch();
 
       // check usb
       if (USB_PACKET_SIZE == spi_slave_poll(buf)) {
