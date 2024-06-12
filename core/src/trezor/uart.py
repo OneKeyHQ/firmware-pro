@@ -140,7 +140,7 @@ async def handle_fingerprint():
 async def handle_usb_state():
     while True:
         try:
-            previous_usb_bus_state = usb.bus.state()
+            utils.AIRGAP_MODE_CHANGED = False
             usb_state = loop.wait(io.USB_STATE)
             state = await usb_state
             utils.turn_on_lcd_if_possible()
@@ -168,10 +168,7 @@ async def handle_usb_state():
                         utils.BATTERY_CAP, utils.CHARGING
                     )
                     _request_charging_status()
-            current_usb_bus_state = usb.bus.state()
-            if (
-                current_usb_bus_state == previous_usb_bus_state
-            ):  # not enable or disable airgap mode
+            if not utils.AIRGAP_MODE_CHANGED:  # not enable or disable airgap mode
                 usb_auto_lock = device.is_usb_lock_enabled()
                 if usb_auto_lock and device.is_initialized() and config.has_pin():
                     from trezor.lvglui.scrs import fingerprints
@@ -185,6 +182,8 @@ async def handle_usb_state():
                         await workflow.spawn(utils.internal_reloop())
                 elif not usb_auto_lock and not state:
                     await safe_reloop(ack=False)
+            else:
+                utils.AIRGAP_MODE_CHANGED = False
             base.reload_settings_from_storage()
         except Exception as exec:
             if __debug__:

@@ -79,6 +79,7 @@ CHARGE_WIRELESS_CHARGING = const(2)
 CHARGE_WIRELESS_STATUS = CHARGE_WIRELESS_STOP
 CHARGE_ENABLE: bool | None = None
 CHARGING = False
+AIRGAP_MODE_CHANGED = False
 
 if __debug__:
     MAX_FP_ATTEMPTS = 50
@@ -216,9 +217,12 @@ def disable_airgap_mode():
     from trezor import uart
     from trezor.lvglui import StatusBar
 
+    global AIRGAP_MODE_CHANGED
+
     device.enable_airgap_mode(False)
     StatusBar.get_instance().show_air_gap_mode_tips(False)
     uart.ctrl_ble(enable=True)
+    AIRGAP_MODE_CHANGED = True
     import usb
 
     if usb.bus.state() == 0:
@@ -233,9 +237,12 @@ def enable_airgap_mode():
     from trezor import uart
     from trezor.lvglui import StatusBar
 
+    global AIRGAP_MODE_CHANGED
+
     device.enable_airgap_mode(True)
     StatusBar.get_instance().show_air_gap_mode_tips(True)
     uart.ctrl_ble(enable=False)
+    AIRGAP_MODE_CHANGED = True
     import usb
 
     if usb.bus.state() == 1:
