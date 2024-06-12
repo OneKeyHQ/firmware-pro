@@ -213,7 +213,7 @@ bool SPI_6_INIT()
     spi_handles[SPI_6].Init.CLKPolarity = SPI_POLARITY_LOW;
     spi_handles[SPI_6].Init.CLKPhase = SPI_PHASE_1EDGE;
     spi_handles[SPI_6].Init.NSS = SPI_NSS_SOFT;
-    spi_handles[SPI_6].Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
+    spi_handles[SPI_6].Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_32;
     spi_handles[SPI_6].Init.FirstBit = SPI_FIRSTBIT_LSB;
     spi_handles[SPI_6].Init.TIMode = SPI_TIMODE_DISABLE;
     spi_handles[SPI_6].Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
