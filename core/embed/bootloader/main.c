@@ -455,6 +455,8 @@ secbool bootloader_usb_loop_factory(const vendor_header* const vhdr,
   // let's show a webusb landing page in this case
   usb_init_all((vhdr == NULL && hdr == NULL) ? sectrue : secfalse);
 
+  usb_start();
+
   uint8_t buf[USB_PACKET_SIZE];
   int r;
 
