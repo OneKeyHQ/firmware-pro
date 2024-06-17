@@ -86,8 +86,6 @@ int fingerprint_detect(void)
     return FpsDetectFinger();
 }
 
-  #include "mipi_lcd.h"
-
 FP_RESULT fingerprint_enroll(uint8_t counter)
 {
 

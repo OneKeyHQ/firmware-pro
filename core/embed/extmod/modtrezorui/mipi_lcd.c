@@ -447,7 +447,7 @@ void st7701_init_sequence(void) {
   st7701_dsi(0xe8, 0x00, 0x0e);  // ?
   st7701_dsi(0xff, 0x77, 0x01, 0x00, 0x00,
              0x00);  // CND2BKxSEL select bank0 without cmd2
-  st7701_dsi(0x11);  // SLPOUT
+  st7701_dsi(MIPI_DCS_EXIT_SLEEP_MODE);  // SLPOUT
   HAL_Delay(120);    // delay
   st7701_dsi(0xff, 0x77, 0x01, 0x00, 0x00,
              0x13);              // CND2BKxSEL select bank3 with cmd2
@@ -461,7 +461,7 @@ void st7701_init_sequence(void) {
   st7701_dsi(MIPI_DCS_SET_TEAR_ON, 0x00);
   st7701_dsi(MIPI_DCS_WRITE_CONTROL_DISPLAY, 0x2C);
   st7701_dsi(MIPI_DCS_SET_PIXEL_FORMAT, 0x50);
-  st7701_dsi(0x29);  // DISPON
+  st7701_dsi(MIPI_DCS_SET_DISPLAY_ON);  // DISPON
   HAL_Delay(20);     // delay
   st7701_dsi(0xff, 0x77, 0x01, 0x00, 0x00,
              0x10);              // CND2BKxSEL select bank1 with cmd2
@@ -680,24 +680,32 @@ void display_fp(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
   }
 }
 
-void lcd_sleepin(void) {
-  st7701_dsi(0x28);  // DISPOFF
-  st7701_dsi(0x10);  // SLPIN
-}
-
-void lcd_sleepout(void) {
-  st7701_dsi(0x11);  // SLPOUT
-  st7701_dsi(0x29);  // DISPON
-}
-
 void lcd_refresh_suspend(void) {
-  lcd_sleepin();
+  // wait transfer
+  while (HAL_DMA2D_PollForTransfer(&hlcd_dma2d, 30) != HAL_OK)
+    ;
+  // lcd sleep
+  st7701_dsi(MIPI_DCS_SET_DISPLAY_OFF);
+  HAL_Delay(25);
+  st7701_dsi(MIPI_DCS_ENTER_SLEEP_MODE);
+  HAL_Delay(120);
+  // clock down
   __HAL_DSI_DISABLE(&hlcd_dsi);
   __HAL_LTDC_DISABLE(&hlcd_ltdc);
+  // lcd reset
+  HAL_GPIO_WritePin(LCD_RESET_GPIO_PORT, LCD_RESET_PIN, GPIO_PIN_RESET);
+  HAL_Delay(50);
 }
 
 void lcd_refresh_resume(void) {
-  __HAL_DSI_ENABLE(&hlcd_dsi);
+  // lcd reset
+  HAL_GPIO_WritePin(LCD_RESET_GPIO_PORT, LCD_RESET_PIN, GPIO_PIN_RESET);
+  HAL_Delay(50);
+  HAL_GPIO_WritePin(LCD_RESET_GPIO_PORT, LCD_RESET_PIN, GPIO_PIN_SET);
+  HAL_Delay(120);
+  // clock up
   __HAL_LTDC_ENABLE(&hlcd_ltdc);
-  lcd_sleepout();
+  __HAL_DSI_ENABLE(&hlcd_dsi);
+  // lcd wakeup / re-init
+  st7701_init_sequence();
 }
