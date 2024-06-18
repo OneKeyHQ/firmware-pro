@@ -841,6 +841,7 @@ void device_burnin_test(bool force) {
   battery_pre = battery_now = HAL_GetTick();
 
   ble_set_flashled(flashled_value);
+  ble_cmd_req(BLE_PWR, BLE_PWR_CHARGE_ENABLE);
 
   do {
     ble_uart_poll();

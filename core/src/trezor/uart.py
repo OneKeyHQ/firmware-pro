@@ -307,8 +307,15 @@ async def _deal_button_press(value: bytes) -> None:
                 await loop.race(safe_reloop(), loop.sleep(200))
                 workflow.spawn(utils.internal_reloop())
                 return
+            else:
+                if utils.CHARGE_WIRELESS_STATUS != utils.CHARGE_WIRELESS_STOP:
+                    ctrl_charge_switch(True)
+                    return
         else:
             utils.turn_on_lcd_if_possible()
+            if not device.is_initialized():
+                if utils.CHARGE_WIRELESS_STATUS != utils.CHARGE_WIRELESS_STOP:
+                    ctrl_charge_switch(False)
 
     elif res == _PRESS_LONG:
         from trezor.lvglui.scrs.homescreen import PowerOff
@@ -375,6 +382,8 @@ async def _deal_charging_state(value: bytes) -> None:
                         config.lock()
                 await loop.race(safe_reloop(), loop.sleep(200))
                 workflow.spawn(utils.internal_reloop())
+            else:
+                ctrl_charge_switch(False)
         else:
             if utils.CHARGE_WIRELESS_STATUS != utils.CHARGE_WIRELESS_STOP:
                 utils.CHARGE_WIRELESS_STATUS = utils.CHARGE_WIRELESS_STOP
