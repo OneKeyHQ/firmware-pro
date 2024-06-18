@@ -691,13 +691,15 @@ void lcd_sleepout(void) {
 }
 
 void lcd_refresh_suspend(void) {
-  lcd_sleepin();
   __HAL_DSI_DISABLE(&hlcd_dsi);
   __HAL_LTDC_DISABLE(&hlcd_ltdc);
+  HAL_GPIO_WritePin(LCD_RESET_GPIO_PORT, LCD_RESET_PIN, GPIO_PIN_RESET);
 }
 
 void lcd_refresh_resume(void) {
+  HAL_GPIO_WritePin(LCD_RESET_GPIO_PORT, LCD_RESET_PIN, GPIO_PIN_SET);
+  HAL_Delay(30);
   __HAL_DSI_ENABLE(&hlcd_dsi);
   __HAL_LTDC_ENABLE(&hlcd_ltdc);
-  lcd_sleepout();
+  st7701_init_sequence();
 }
