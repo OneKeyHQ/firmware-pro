@@ -162,13 +162,13 @@ def lcd_resume() -> bool:
     from trezor.ui import display
     from storage import device
     from apps import base
-    from trezor import config
+    from trezor import config, uart
 
     # from trezor.lvglui.scrs.charging import ChargingPromptScr
 
     # if ChargingPromptScr.has_instance():
     #     ChargingPromptScr.get_instance().destroy()
-
+    uart.ctrl_wireless_charge(False)
     if display.backlight() != device.get_brightness():
         global AUTO_POWER_OFF
         display.backlight(device.get_brightness())

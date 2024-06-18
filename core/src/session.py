@@ -41,7 +41,6 @@ async def handle_stop_mode():
         await loop.sleep(200)
 
         if display.backlight():  # screen is on
-            ctrl_wireless_charge(False)
             return
         stop_mode(False)
 
