@@ -5,11 +5,21 @@ package hw.trezor.messages.ur;
 option java_package = "com.satoshilabs.trezor.lib.protobuf";
 option java_outer_classname = "TrezorMessageUR";
 
+/**
+ * Request:
+ * @start
+ * @next URResponse
+ * @next Failure
+ */
 message URCryptoHdkey {
     repeated uint32 address_n = 1;
     optional bool show_display = 2;
 }
 
+/**
+ * Response:
+ * @end
+ */
 message URResponse {
     optional string data = 1;                // Sui address as hex-encoded string
 }
