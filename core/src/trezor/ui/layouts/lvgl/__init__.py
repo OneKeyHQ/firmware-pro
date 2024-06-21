@@ -75,6 +75,8 @@ __all__ = (
     "confirm_nostrmessage",
     "confirm_lnurl_auth",
     "show_error_no_interact",
+    "confirm_ton_transfer",
+    "confirm_ton_jetton_transfer",
 )
 
 
@@ -2007,6 +2009,35 @@ async def confirm_polkadot_balances(
             interact(ctx, screen, "polkadot_balance", ButtonRequestType.ProtectCall)
         )
 
+async def confirm_ton_transfer(
+    ctx: wire.GenericContext,
+    from_addr: str,
+    to_addr: str,
+    amount: str,
+    memo: str | None,
+):
+    from trezor.lvglui.scrs.template import TonTransfer
+
+    screen = TonTransfer(from_addr, to_addr, amount, memo, ctx.primary_color)
+
+    await raise_if_cancelled(
+        interact(ctx, screen, "confirm_ton_transfer", ButtonRequestType.ProtectCall)
+    )
+
+def confirm_ton_jetton_transfer(
+    ctx: wire.GenericContext,
+    address: str,
+):
+    return confirm_address(
+        ctx,
+        _(i18n_keys.TITLE__UNKNOWN_TOKEN),
+        address,
+        description=_(i18n_keys.LIST_KEY__CONTRACT_ADDRESS__COLON),
+        br_type="unknown_token",
+        icon="A:/res/warning.png",
+        icon_color=ui.ORANGE,
+        br_code=ButtonRequestType.SignTx,
+    )
 
 async def confirm_tron_freeze(
     ctx: wire.GenericContext,

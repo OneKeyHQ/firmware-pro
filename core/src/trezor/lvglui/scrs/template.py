@@ -1013,7 +1013,37 @@ class EIP712DOMAIN(FullSizeWindow):
             )
         self.container.add_dummy()
 
-
+class TonTransfer(FullSizeWindow):
+    def __init__(
+        self,
+        address_from,
+        address_to,
+        amount,
+        memo,
+        primary_color=None,
+    ):
+        super().__init__(
+            _(i18n_keys.TITLE__SIGN_STR_TRANSACTION).format("TON"),
+            None,
+            _(i18n_keys.BUTTON__CONTINUE),
+            _(i18n_keys.BUTTON__REJECT),
+            primary_color=primary_color,
+        )
+        self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
+        self.item1 = DisplayItem(
+            self.container, _(i18n_keys.LIST_KEY__AMOUNT__COLON), amount
+        )
+        self.item2 = DisplayItem(
+            self.container, _(i18n_keys.LIST_KEY__TO__COLON), address_to
+        )
+        self.item3 = DisplayItem(
+            self.container, _(i18n_keys.LIST_KEY__FROM__COLON), address_from
+        )
+        if memo:
+            self.item4 = DisplayItem(
+                self.container, _(i18n_keys.LIST_KEY__MEMO__COLON), memo
+            )
+            
 class TransactionDetailsTRON(FullSizeWindow):
     def __init__(
         self,
