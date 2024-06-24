@@ -799,8 +799,6 @@ apps.ton
 import apps.ton
 apps.ton.get_address
 import apps.ton.get_address
-apps.ton.sign_jetton_transfer
-import apps.ton.sign_jetton_transfer
 apps.ton.sign_message
 import apps.ton.sign_message
 apps.ton.tonsdk

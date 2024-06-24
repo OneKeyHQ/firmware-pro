@@ -419,8 +419,6 @@ enum MessageType {
     MessageType_TonAddress = 11902 [(wire_out) = true];
     MessageType_TonSignMessage = 11903 [(wire_in) = true];
     MessageType_TonSignedMessage = 11904 [(wire_out) = true];
-    MessageType_TonSignJettonTransfer = 11905 [(wire_in) = true];
-    MessageType_TonSignedJettonTransfer = 11906 [(wire_out) = true];
 
     // tron
     MessageType_TronGetAddress = 10501 [(wire_in) = true];

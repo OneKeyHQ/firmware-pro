@@ -68,8 +68,11 @@ def get_address(client: "TrezorClient",
 @cli.command()
 @click.option("-n", "--address", required=True, help=PATH_HELP)
 @click.option("-d", "--destination", type=str, required=True)
-@click.option("-a", "--amount", type=int, required=True)
-@click.option("-p", "--payload", type=str)
+@click.option("-j", "--jetton_master_address", type=str)
+@click.option("-ta", "--ton_amount", type=int, required=True)
+@click.option("-ja", "--jetton_amount", type=int)
+@click.option("-f", "--fwd_fee", type=int)
+@click.option("-c", "--comment", type=str)
 @click.option("-m", "--mode", type=int)
 @click.option("-s", "--seqno", type=int, required=True)
 # @click.option("-e", "--expire_at", type=int, required=True)
@@ -82,11 +85,14 @@ def get_address(client: "TrezorClient",
 def sign_message(client: "TrezorClient",
                 address: str,
                 destination: str,
-                amount: int,
+                jetton_master_address: str,
+                ton_amount: int,
+                jetton_amount: int,
+                fwd_fee: int,
                 mode: int,
                 seqno: int,
                 # expire_at: int,
-                payload: str,
+                comment: str,
                 version: messages.TonWalletVersion,
                 wallet_id: int,
                 workchain: messages.TonWorkChain,
@@ -100,67 +106,14 @@ def sign_message(client: "TrezorClient",
                 client,
                 address_n,
                 destination,
-                amount,
-                mode,
-                seqno,
-                expire_at,
-                payload,
-                version,
-                wallet_id,
-                workchain,
-                bounceable,
-                test_only
-    ).signature.hex()
-
-    return {"signature": f"0x{signature}"}
-
-
-@cli.command()
-@click.option("-n", "--address", required=True, help=PATH_HELP)
-@click.option("-d", "--destination", type=str, required=True)
-@click.option("-j", "--jetton_master_address", type=str, required=True)
-@click.option("-ta", "--ton_amount", type=int, required=True)
-@click.option("-ja", "--jetton_amount", type=int, required=True)
-@click.option("-p", "--payload", type=str)
-@click.option("-m", "--mode", type=int)
-@click.option("-s", "--seqno", type=int, required=True)
-# @click.option("-e", "--expire_at", type=int, required=True)
-@click.option("-v", "--version", type=ChoiceType(WALLET_VERSION), default="v3r2")
-@click.option("-i", "--wallet-id", type=int, default=698983191)
-@click.option("-w", "--workchain", type=ChoiceType(WORKCHAIN), default="base")
-@click.option("-b", "--bounceable", is_flag=True)
-@click.option("-t", "--test-only", is_flag=True)
-@with_client
-def sign_jetton_transfer(client: "TrezorClient",
-                address: str,
-                destination: str,
-                jetton_master_address: str,
-                ton_amount: int,
-                jetton_amount: int,
-                mode: int,
-                seqno: int,
-                # expire_at: int,
-                payload: str,
-                version: messages.TonWalletVersion,
-                wallet_id: int,
-                workchain: messages.TonWorkChain,
-                bounceable: bool,
-                test_only: bool
-                ) -> bytes:
-    """Sign Ton Jetton Transaction."""
-    address_n = tools.parse_path(address)
-    expire_at = int(time.time()) + 300
-    signature = ton.sign_jetton_transfer(
-                client,
-                address_n,
-                destination,
                 jetton_master_address,
                 ton_amount,
                 jetton_amount,
+                fwd_fee,
                 mode,
                 seqno,
                 expire_at,
-                payload,
+                comment,
                 version,
                 wallet_id,
                 workchain,
