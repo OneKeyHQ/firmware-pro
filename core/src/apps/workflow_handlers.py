@@ -235,6 +235,12 @@ def find_message_handler_module(msg_type: int) -> str:
         if msg_type == MessageType.ConfluxSignMessageCIP23:
             return "apps.conflux.sign_message_cip23"
 
+        # ton
+        if msg_type == MessageType.TonGetAddress:
+            return "apps.ton.get_address"
+        if msg_type == MessageType.TonSignMessage:
+            return "apps.ton.sign_message"
+            
         # tron
         if msg_type == MessageType.TronGetAddress:
             return "apps.tron.get_address"
