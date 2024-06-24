@@ -303,8 +303,6 @@ if TYPE_CHECKING:
         TonAddress = 11902
         TonSignMessage = 11903
         TonSignedMessage = 11904
-        TonSignJettonTransfer = 11905
-        TonSignedJettonTransfer = 11906
         TronGetAddress = 10501
         TronAddress = 10502
         TronSignTx = 10503

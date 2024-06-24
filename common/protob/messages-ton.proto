@@ -42,7 +42,7 @@ message TonAddress {
 }
 
 /**
- * Request: Ask Device to sign ton message
+ * Request: Require Device to sign toncoin/jetton message
  * @start
  * @next TonSignedMessage
  * @next Failure
@@ -50,16 +50,19 @@ message TonAddress {
 message TonSignMessage {
     repeated uint32 address_n = 1;                                  // BIP-32 path to derive the key from master node
     required string destination = 2;                                // destination address of the message
-    required uint64 amount = 3;                                     // token value
-    optional string payload = 4;                                    // message comment, will be displayed on device
-    optional uint32 mode = 5;                                       // message modes
-    required uint32 seqno = 6;                                      // message sequence number
-    required uint32 expire_at = 7;                                  // message expiration time
-    optional TonWalletVersion wallet_version = 8 [default=V3R2];    // ton wallet version
-    optional uint32 wallet_id = 9 [default=698983191];              // 698983191 is the default subwallet_id value
-    optional TonWorkChain workchain = 10 [default=BASECHAIN];       // 0: BaseChain, 1: MasterChain
-    optional bool is_bounceable = 11 [default=false];               // bounceable flag
-    optional bool is_testnet_only = 12 [default=false];             // testnet only flag
+    optional string jetton_master_address = 3;                      // Jetton master smart contract address
+    required uint64 ton_amount = 4;                                 // TON value for gas, average fee for sending any amount of a custom Jettons is 0.037 TON.
+    optional uint64 jetton_amount = 5;                              // jetton value (by nanojetton)
+    optional uint64 fwd_fee = 6;                                    // toncoin is needed to transfer notification message
+    optional string comment = 7;                                    // message comment
+    optional uint32 mode = 8;                                       // message modes
+    required uint32 seqno = 9;                                      // message sequence number
+    required uint32 expire_at = 10;                                 // message expiration time
+    optional TonWalletVersion wallet_version = 11 [default=V3R2];   // ton wallet version
+    optional uint32 wallet_id = 12 [default=698983191];             // 698983191 is the default subwallet_id value
+    optional TonWorkChain workchain = 13 [default=BASECHAIN];       // 0: BaseChain, 1: MasterChain
+    optional bool is_bounceable = 14 [default=false];               // bounceable flag
+    optional bool is_testnet_only = 15 [default=false];             // testnet only flag
 }
 
 /**
@@ -67,36 +70,5 @@ message TonSignMessage {
  * @end
  */
 message TonSignedMessage {
-    optional bytes signature = 1;                   // signed transaction message
-}
-
-/**
- * Request: Ask Device to sign jetton transaction
- * @start
- * @next TonSignedJettonTransfer
- * @next Failure
- */
-message TonSignJettonTransfer {
-    repeated uint32 address_n = 1;                                  // BIP-32 path to derive the key from master node
-    required string destination = 2;                                // destination address of the message
-    required string jetton_master_address = 3;                      // Jetton master smart contract address
-    required uint64 ton_amount = 4;                                 // TON value for gas, average fee for sending any amount of a custom Jettons is 0.037 TON.
-    required uint64 jetton_amount = 5;                              // jetton value (by nanojetton)
-    optional string payload = 6;                                    // not supported on jetton
-    optional uint32 mode = 7;                                       // message modes
-    required uint32 seqno = 8;                                      // message sequence number
-    required uint32 expire_at = 9;                                  // message expiration time
-    optional TonWalletVersion wallet_version = 10 [default=V3R2];   // ton wallet version
-    optional uint32 wallet_id = 11 [default=698983191];             // 698983191 is the default subwallet_id value
-    optional TonWorkChain workchain = 12 [default=BASECHAIN];       // 0: BaseChain, 1: MasterChain
-    optional bool is_bounceable = 13 [default=false];               // bounceable flag
-    optional bool is_testnet_only = 14 [default=false];             // testnet only flag
-}
-
-/**
- * Response: transaction signature corresponding to TonSignJetton
- * @end
- */
-message TonSignedJettonTransfer {
     optional bytes signature = 1;                   // signed transaction message
 }

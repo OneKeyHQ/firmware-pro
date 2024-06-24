@@ -240,8 +240,6 @@ def find_message_handler_module(msg_type: int) -> str:
             return "apps.ton.get_address"
         if msg_type == MessageType.TonSignMessage:
             return "apps.ton.sign_message"
-        if msg_type == MessageType.TonSignJettonTransfer:
-            return "apps.ton.sign_jetton_transfer"
             
         # tron
         if msg_type == MessageType.TronGetAddress:

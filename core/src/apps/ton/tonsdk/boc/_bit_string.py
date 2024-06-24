@@ -94,7 +94,7 @@ class BitString:
     def get_used_bits(self):
         return self.cursor
 
-    def write_bit_array(self, ba: bytearray):
+    def write_bit_array(self, ba: bytearray|bytes):
         """Writes a bytearray as a bit array one bit by one."""
         for b in ba.decode("utf-8"):
             self.write_bit(b)

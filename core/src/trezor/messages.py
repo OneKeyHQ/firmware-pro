@@ -8383,8 +8383,11 @@ if TYPE_CHECKING:
     class TonSignMessage(protobuf.MessageType):
         address_n: "list[int]"
         destination: "str"
-        amount: "int"
-        payload: "str | None"
+        jetton_master_address: "str | None"
+        ton_amount: "int"
+        jetton_amount: "int | None"
+        fwd_fee: "int | None"
+        comment: "str | None"
         mode: "int | None"
         seqno: "int"
         expire_at: "int"
@@ -8398,11 +8401,14 @@ if TYPE_CHECKING:
             self,
             *,
             destination: "str",
-            amount: "int",
+            ton_amount: "int",
             seqno: "int",
             expire_at: "int",
             address_n: "list[int] | None" = None,
-            payload: "str | None" = None,
+            jetton_master_address: "str | None" = None,
+            jetton_amount: "int | None" = None,
+            fwd_fee: "int | None" = None,
+            comment: "str | None" = None,
             mode: "int | None" = None,
             wallet_version: "TonWalletVersion | None" = None,
             wallet_id: "int | None" = None,
@@ -8428,60 +8434,6 @@ if TYPE_CHECKING:
 
         @classmethod
         def is_type_of(cls, msg: Any) -> TypeGuard["TonSignedMessage"]:
-            return isinstance(msg, cls)
-
-    class TonSignJettonTransfer(protobuf.MessageType):
-        address_n: "list[int]"
-        destination: "str"
-        jetton_master_address: "str"
-        ton_amount: "int"
-        jetton_amount: "int"
-        payload: "str | None"
-        mode: "int | None"
-        seqno: "int"
-        expire_at: "int"
-        wallet_version: "TonWalletVersion"
-        wallet_id: "int"
-        workchain: "TonWorkChain"
-        is_bounceable: "bool"
-        is_testnet_only: "bool"
-
-        def __init__(
-            self,
-            *,
-            destination: "str",
-            jetton_master_address: "str",
-            ton_amount: "int",
-            jetton_amount: "int",
-            seqno: "int",
-            expire_at: "int",
-            address_n: "list[int] | None" = None,
-            payload: "str | None" = None,
-            mode: "int | None" = None,
-            wallet_version: "TonWalletVersion | None" = None,
-            wallet_id: "int | None" = None,
-            workchain: "TonWorkChain | None" = None,
-            is_bounceable: "bool | None" = None,
-            is_testnet_only: "bool | None" = None,
-        ) -> None:
-            pass
-
-        @classmethod
-        def is_type_of(cls, msg: Any) -> TypeGuard["TonSignJettonTransfer"]:
-            return isinstance(msg, cls)
-
-    class TonSignedJettonTransfer(protobuf.MessageType):
-        signature: "bytes | None"
-
-        def __init__(
-            self,
-            *,
-            signature: "bytes | None" = None,
-        ) -> None:
-            pass
-
-        @classmethod
-        def is_type_of(cls, msg: Any) -> TypeGuard["TonSignedJettonTransfer"]:
             return isinstance(msg, cls)
 
     class TronGetAddress(protobuf.MessageType):

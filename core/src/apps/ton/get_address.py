@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from trezor import utils
+from trezor import wire
 from trezor.lvglui.scrs import lv
 from trezor.enums import TonWalletVersion, TonWorkChain
 from trezor.messages import TonAddress, TonGetAddress
@@ -33,6 +33,8 @@ async def get_address(
         wallet_version = WalletVersionEnum.v4r1
     elif msg.wallet_version == TonWalletVersion.V4R2:
         wallet_version = WalletVersionEnum.v4r2
+    else:
+        raise wire.DataError("Invalid wallet version.")
     
     wallet = Wallets.ALL[wallet_version](public_key=public_key, wallet_id=msg.wallet_id, wc=workchain)
     address = wallet.address.to_string(
