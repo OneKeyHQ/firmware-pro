@@ -225,11 +225,7 @@ def disable_airgap_mode():
     AIRGAP_MODE_CHANGED = True
     import usb
 
-    if usb.bus.state() == 0:
-        usb.bus = usb.init()
-        for iface in usb.active_iface:
-            usb.bus.add(iface)
-        usb.bus.open(device.get_device_id())
+    usb.bus.connect_ctrl(True)
 
 
 def enable_airgap_mode():
@@ -245,8 +241,7 @@ def enable_airgap_mode():
     AIRGAP_MODE_CHANGED = True
     import usb
 
-    if usb.bus.state() == 1:
-        usb.bus.close()
+    usb.bus.connect_ctrl(False)
 
 
 def show_app_guide():

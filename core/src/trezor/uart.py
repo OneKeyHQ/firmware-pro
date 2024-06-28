@@ -142,7 +142,13 @@ async def handle_usb_state():
         try:
             utils.AIRGAP_MODE_CHANGED = False
             usb_state = loop.wait(io.USB_STATE)
-            state = await usb_state
+            state, enable = await usb_state
+            if enable is not None and not device.is_airgap_mode():
+                import usb
+
+                usb.bus.connect_ctrl(enable)
+                continue
+
             utils.turn_on_lcd_if_possible()
             if state:
                 # if display.backlight() == 0:
@@ -248,7 +254,6 @@ async def process_push() -> None:
         res = ustruct.unpack(">B", value)[0]
         utils.BATTERY_CAP = res
         StatusBar.get_instance().set_battery_img(res, utils.CHARGING)
-
     elif cmd == _CMD_SIDE_BUTTON_PRESS:
         # 1 short press 2 long press
         await _deal_button_press(value)
@@ -383,11 +388,6 @@ async def _deal_charging_state(value: bytes) -> None:
             if utils.CHARGE_WIRELESS_STATUS != utils.CHARGE_WIRELESS_STOP:
                 utils.CHARGE_WIRELESS_STATUS = utils.CHARGE_WIRELESS_STOP
             ctrl_charge_switch(True)
-            if not device.is_airgap_mode() and usb.bus.state() == 0:
-                usb.bus = usb.init()
-                for iface in usb.active_iface:
-                    usb.bus.add(iface)
-                usb.bus.open(device.get_device_id())
 
     elif res in (_USB_STATUS_PLUG_OUT, _POWER_STATUS_CHARGING_FINISHED):
         if utils.CHARGE_WIRELESS_STATUS != utils.CHARGE_WIRELESS_STOP:
@@ -400,9 +400,6 @@ async def _deal_charging_state(value: bytes) -> None:
         StatusBar.get_instance().show_usb(False)
         if utils.BATTERY_CAP:
             StatusBar.get_instance().set_battery_img(utils.BATTERY_CAP, utils.CHARGING)
-        if res == _USB_STATUS_PLUG_OUT:
-            if usb.bus.state() == 1:
-                usb.bus.close()
 
     utils.turn_on_lcd_if_possible()
 

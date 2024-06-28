@@ -479,6 +479,7 @@ if PRODUCTION_MODEL == 'H':
         'embed/trezorhal/usbd_ctlreq.c',
         'embed/trezorhal/usbd_ioreq.c',
         'embed/trezorhal/usbd_desc.c',
+        'embed/trezorhal/usbd_ulpi.c',
         'embed/trezorhal/thd89.c',
         'embed/trezorhal/se_thd89.c',
 	    'embed/trezorhal/trans_fifo.c',
