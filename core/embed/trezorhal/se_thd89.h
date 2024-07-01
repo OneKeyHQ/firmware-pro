@@ -159,4 +159,5 @@ secbool se_fp_write(uint16_t offset, const void *val_dest, uint16_t len,
 secbool se_fp_read(uint16_t offset, void *val_dest, uint16_t len, uint8_t index,
                    uint8_t total);
 
+int se_lite_card_ecdh(const uint8_t *publickey, uint8_t *sessionkey);
 #endif

@@ -8,15 +8,13 @@
 #include "scp11.h"
 #include "sha2.h"
 
+#include "se_thd89.h"
+
 const static uint8_t sd_cert_verify_pubkey[65] = {
     "\x04\x21\x46\xE7\x94\x1C\x2E\xBE\xBD\xC4\x7A\x1B\xFA\x52\x9A\x81\x5F\x2C"
     "\x3C\x55\x75\x78\x62\xC3\x78\x23\x60\x21\xD4\x99\xC3\x2E\xD5\x2F\x93\x54"
     "\xB7\x0D\x81\x38\xAD\x52\x74\x76\xB7\x26\x21\x2B\x97\xD6\x78\x77\xD5\x5F"
     "\x45\x9C\xB7\xE2\xD5\xF8\x5E\xF9\xD7\x93\x02"};
-
-const static uint8_t device_private_key[32] = {
-    "\x33\xA4\xA9\xBB\x6D\x18\x96\xD2\xE3\x8D\x92\x8A\x1B\xDC\x8A\x6B\x83\x15"
-    "\xA8\xB7\xBF\x3D\x21\xB1\xC2\xAF\x09\xAB\x91\x2A\xB6\x8B"};
 
 const static uint8_t device_certificate[] = {
     "\x7F\x21\x81\xDB\x93\x10\x43\x45\x52\x54\x5F\x4F\x43\x45\x5F\x45\x43\x4B"
@@ -384,10 +382,15 @@ bool scp11_open_secure_channel(scp11_context *scp11_ctx) {
                    scp11_ctx->sd_cert.lv_GPC_TLV_SCP11CRT_PUBKEY.len,
                    scp11_ctx->mutual_auth.sd_public_key);
 
-  if (0 != ecdh_multiply(&nist256p1, scp11_ctx->mutual_auth.oce_private_key,
-                         scp11_ctx->mutual_auth.sd_public_key, shsss_key)) {
+  //  use se
+  if (0 !=
+      se_lite_card_ecdh(scp11_ctx->mutual_auth.sd_public_key + 1, shsss_key)) {
     return false;
   }
+  // if (0 != ecdh_multiply(&nist256p1, scp11_ctx->mutual_auth.oce_private_key,
+  //                        scp11_ctx->mutual_auth.sd_public_key, shsss_key)) {
+  //   return false;
+  // }
 
   if (0 != ecdh_multiply(&nist256p1,
                          scp11_ctx->mutual_auth.oce_temp_private_key,
@@ -453,7 +456,8 @@ void scp11_init(scp11_context *scp11_ctx) {
          sizeof(device_certificate) - 1);
   scp11_ctx->oce_cert.raw_len = sizeof(device_certificate) - 1;
 
-  memcpy(scp11_ctx->mutual_auth.oce_private_key, device_private_key, 32);
+  // private key stored in SE
+  // memcpy(scp11_ctx->mutual_auth.oce_private_key, device_private_key, 32);
 
   scp11_ctx->response_msg.data_len = sizeof(scp11_ctx->response_msg.data);
 

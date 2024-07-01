@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#define SCP03_MAC_SIZE 8
+
 typedef struct {
   uint32_t counter;
   uint8_t icv[16];

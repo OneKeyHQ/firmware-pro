@@ -1,12 +1,11 @@
 #include <string.h>
 
+#include "aes/aes.h"
 #include "cmac.h"
 #include "lite_card.h"
 #include "nfc.h"
 #include "scp03.h"
 #include "scp11.h"
-
-#include "display.h"
 
 static scp11_context scp11_ctx = {0};
 static scp03_context scp03_ctx = {0};
@@ -68,6 +67,11 @@ bool lite_card_send_safeapdu(uint8_t* apdu, uint16_t apdu_len,
   uint8_t mac[16];
   memcpy(data_buffer, apdu, apdu_len);
 
+  if (apdu_len == 4) {
+    data_buffer[4] = 0;
+    apdu_len = 5;
+  }
+
   // encrypt data
   scp03_generate_icv(scp11_ctx.session_key.s_enc, &scp03_ctx, true);
   scp03_encrypt(scp11_ctx.session_key.s_enc, scp03_ctx.icv, data_buffer + 5,
@@ -97,8 +101,22 @@ bool lite_card_send_safeapdu(uint8_t* apdu, uint16_t apdu_len,
     return false;
   }
 
+  if (buffer_len == 0) {
+    if (sw1sw2[0] == 0x90 && sw1sw2[1] == 0x00) {
+      return false;
+    }
+    if (sw1sw2[0] == 0x63) {
+      return false;
+    }
+    return true;
+  }
+
   // enc data len + mac len
-  if (buffer_len < 24) {
+  if (buffer_len < AES_BLOCK_SIZE + SCP03_MAC_SIZE) {
+    return false;
+  }
+
+  if ((buffer_len - SCP03_MAC_SIZE) % AES_BLOCK_SIZE != 0) {
     return false;
   }
 
@@ -197,31 +215,26 @@ bool lite_card_safe_apdu_test(void) {
   resp_len = sizeof(resp);
   if (!lite_card_apdu(reset_card, sizeof(reset_card), resp, &resp_len, sw1sw2,
                       true)) {
-    display_printf("Failed to reset card");
     return false;
   }
   resp_len = sizeof(resp);
   if (!lite_card_apdu(check_pin, sizeof(check_pin), resp, &resp_len, sw1sw2,
                       true)) {
-    display_printf("Failed to check pin");
     return false;
   }
 
   resp_len = sizeof(resp);
   if (!lite_card_apdu(set_pin, sizeof(set_pin), resp, &resp_len, sw1sw2,
                       true)) {
-    display_printf("Failed to set pin");
     return false;
   }
 
   resp_len = sizeof(resp);
   if (!lite_card_apdu(check_pin, sizeof(check_pin), resp, &resp_len, sw1sw2,
                       true)) {
-    display_printf("Failed to check pin");
     return false;
   }
   if (resp[0] != 0) {
-    display_printf("Pin set failed");
     return false;
   }
 
@@ -231,7 +244,6 @@ bool lite_card_safe_apdu_test(void) {
   resp_len = sizeof(resp);
   if (!lite_card_apdu(verify_pin, sizeof(verify_pin), resp, &resp_len, sw1sw2,
                       true)) {
-    display_printf("Failed to check pin");
     return false;
   }
   return true;

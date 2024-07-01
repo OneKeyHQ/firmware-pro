@@ -1702,6 +1702,18 @@ int se_curve25519_ecdh(const uint8_t *publickey, uint8_t *sessionkey) {
   return 0;
 }
 
+int se_lite_card_ecdh(const uint8_t *publickey, uint8_t *sessionkey) {
+  uint8_t resp[128];
+  uint16_t resp_len = sizeof(resp);
+
+  if (!se_transmit_mac(SE_INS_ECDH, 0x00, 0x02, (uint8_t *)publickey, 64, resp,
+                       &resp_len)) {
+    return -1;
+  }
+  memcpy(sessionkey, resp, resp_len);
+  return 0;
+}
+
 int se_get_shared_key(const char *curve, const uint8_t *peer_public_key,
                       uint8_t *session_key) {
   if (strcmp(curve, NIST256P1_NAME) == 0 ||
