@@ -128,6 +128,7 @@ class ZcashV4(Bitcoinlike):
         keychain: Keychain,
         coin: CoinInfo,
         approver: approvers.Approver | None,
+        skip_verify_inputs: bool = False,
     ) -> None:
         ensure(coin.overwintered)
         super().__init__(tx, keychain, coin, approver)

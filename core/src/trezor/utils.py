@@ -328,7 +328,9 @@ def unimport_end(mods: set[str], collect: bool = True) -> None:
     # static check that the size of sys.modules never grows above value of
     # MICROPY_LOADED_MODULES_DICT_SIZE, so that the sys.modules dict is never
     # reallocated at run-time
-    assert len(sys.modules) <= 160, "Please bump preallocated size in mpconfigport.h"
+    assert (
+        len(sys.modules) <= 180
+    ), f"Please bump preallocated size in mpconfigport.h by size {len(sys.modules) - 180}"
     for mod in sys.modules:  # pylint: disable=consider-using-dict-items
         if mod not in mods:
             # remove reference from sys.modules
@@ -580,6 +582,10 @@ class BufferReader:
         self.offset += 1
         return byte
 
+    def tell(self) -> int:
+        """Return the current offset."""
+        return self.offset
+
 
 def obj_eq(self: Any, __o: Any) -> bool:
     """
@@ -661,3 +667,18 @@ if __debug__:
 
     def dump_protobuf(msg: MessageType) -> str:
         return "\n".join(dump_protobuf_lines(msg))
+
+    def mem_trace(name: str | None = None, x=None, collect: bool = False) -> None:
+        # don't use f-string here, as it may allocate memory
+        print(
+            "Mem trace: ",
+            name,
+            "===",
+            x,
+            ", ... F: ",
+            gc.mem_free(),  # type: ignore["mem_free" is not a known member of module]
+            ", A: ",
+            gc.mem_alloc(),  # type: ignore["mem_alloc" is not a known member of module]
+        )
+        if collect:
+            gc.collect()

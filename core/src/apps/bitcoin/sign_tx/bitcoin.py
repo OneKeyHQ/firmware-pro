@@ -80,7 +80,8 @@ class Bitcoin:
         # Verify the transaction input amounts by requesting each previous transaction
         # and checking its output amount. Verify external inputs which have already
         # been signed or which come with a proof of non-ownership.
-        await self.step3_verify_inputs()
+        if not self.skip_verify_inputs:
+            await self.step3_verify_inputs()
 
         # Check that inputs are unchanged. Serialize inputs and sign the non-segwit ones.
         await self.step4_serialize_inputs()
@@ -100,9 +101,10 @@ class Bitcoin:
         keychain: Keychain,
         coin: CoinInfo,
         approver: approvers.Approver | None,
+        skip_verify_inputs: bool = False,
     ) -> None:
         global _SERIALIZED_TX_BUFFER
-
+        self.skip_verify_inputs = skip_verify_inputs
         self.tx_info = TxInfo(self, helpers.sanitize_sign_tx(tx, coin))
         self.keychain = keychain
         self.coin = coin
@@ -323,7 +325,7 @@ class Bitcoin:
     async def step7_finish(self) -> None:
         if self.serialize:
             self.write_tx_footer(self.serialized_tx, self.tx_info.tx)
-        if __debug__:
+        if __debug__ and not self.skip_verify_inputs:
             progress.assert_finished()
         await helpers.request_tx_finish(self.tx_req)
 

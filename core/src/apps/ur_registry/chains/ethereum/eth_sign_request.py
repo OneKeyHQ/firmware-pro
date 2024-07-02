@@ -218,7 +218,7 @@ class EthSignRequest:
             )
 
     @staticmethod
-    async def gen_transaction(ur):
+    async def gen_request(ur):
         req = EthSignRequest.from_cbor(ur.cbor)
         await req.common_check()
         if req.get_data_type() == RequestType_Transaction:

@@ -396,4 +396,6 @@ def parse_path(path: str) -> list[int]:
 
     if not path:
         return []
+    if path.startswith("m/"):
+        path = path[2:]
     return [parse_path_item(item) for item in path.split("/")]

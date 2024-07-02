@@ -159,10 +159,10 @@ class CBOREncoder:
         length = self.encodeTagAndValue(Tag_Major_semantic, Tag_Minor_cborEncodedData)
         return length + self.encodeBytes(value)
 
-    def encodeText(self, value):
+    def encodeText(self, value: str):
         str_len = len(value)
         length = self.encodeTagAndValue(Tag_Major_textString, str_len)
-        self.buf.extend(value)
+        self.buf.extend(value.encode())
         return length + str_len
 
     def encodeArraySize(self, value):
@@ -269,6 +269,7 @@ class CBORDecoder:
                 -1 - value,
                 length,
             )  # TODO: Check that this is the right way -- do we need to use struct.unpack()?
+        raise Exception("Not an Integer")
 
     def decodeBool(self, flags=Flag_None):
         (tag, value, length) = self.decodeTagAndValue(flags)
@@ -323,7 +324,7 @@ class CBORDecoder:
         if end - self.pos < byte_length:
             raise Exception("Not enough input")
 
-        value = bytes(self.buf[self.pos : self.pos + byte_length])
+        value = bytes(self.buf[self.pos : self.pos + byte_length]).decode()
         self.pos += byte_length
         return (value, size_length + byte_length)
 
