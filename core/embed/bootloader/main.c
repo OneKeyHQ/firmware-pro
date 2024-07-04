@@ -193,7 +193,7 @@ void BusFault_Handler(void) {
                        "Firmware reinstall may required",
                        "If the issue persists, contact support.");
       } else {
-        error_shutdown("Internal error", "Cleanup failed",
+        error_shutdown("Internal flash ECC error", "Cleanup failed",
                        "Reboot to try again",
                        "If the issue persists, contact support.");
       }
