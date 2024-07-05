@@ -446,9 +446,9 @@ void st7701_init_sequence(void) {
              0x13);              // CND2BKxSEL select bank3 with cmd2
   st7701_dsi(0xe8, 0x00, 0x0e);  // ?
   st7701_dsi(0xff, 0x77, 0x01, 0x00, 0x00,
-             0x00);  // CND2BKxSEL select bank0 without cmd2
+             0x00);                      // CND2BKxSEL select bank0 without cmd2
   st7701_dsi(MIPI_DCS_EXIT_SLEEP_MODE);  // SLPOUT
-  HAL_Delay(120);    // delay
+  HAL_Delay(120);                        // delay
   st7701_dsi(0xff, 0x77, 0x01, 0x00, 0x00,
              0x13);              // CND2BKxSEL select bank3 with cmd2
   st7701_dsi(0xe8, 0x00, 0x0c);  // ?
@@ -462,7 +462,7 @@ void st7701_init_sequence(void) {
   st7701_dsi(MIPI_DCS_WRITE_CONTROL_DISPLAY, 0x2C);
   st7701_dsi(MIPI_DCS_SET_PIXEL_FORMAT, 0x50);
   st7701_dsi(MIPI_DCS_SET_DISPLAY_ON);  // DISPON
-  HAL_Delay(20);     // delay
+  HAL_Delay(20);                        // delay
   st7701_dsi(0xff, 0x77, 0x01, 0x00, 0x00,
              0x10);              // CND2BKxSEL select bank1 with cmd2
   st7701_dsi(0xe5, 0x00, 0x00);  // ?

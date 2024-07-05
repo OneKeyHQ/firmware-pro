@@ -111,3 +111,53 @@ class ContainerGrid(lv.obj):
         )
         self.set_grid_align(lv.GRID_ALIGN.SPACE_AROUND, lv.GRID_ALIGN.END)
         self.set_layout(lv.LAYOUT_GRID.value)
+
+
+class ContainerFlexColBottom(lv.obj):
+    def __init__(
+        self,
+        parent,
+        align_base,
+        align=lv.ALIGN.OUT_BOTTOM_MID,
+        pos: tuple = (0, 40),
+        padding_row: int = 8,
+        clip_corner: bool = True,
+        no_align: bool = False,
+    ) -> None:
+        super().__init__(parent)
+        self.remove_style_all()
+        self.set_size(456, lv.SIZE.CONTENT)
+        if not no_align:
+            if align_base is None:
+                self.align(lv.ALIGN.BOTTOM_MID, 0, -8)
+            else:
+                self.align_to(align_base, align, 0, pos[1])
+        self.add_style(
+            StyleWrapper()
+            .bg_opa(lv.OPA.TRANSP)
+            .radius(40)
+            .border_width(0)
+            .pad_hor(0)
+            .clip_corner(True if clip_corner else False)
+            .pad_row(padding_row),
+            0,
+        )
+        self.clear_flag(lv.obj.FLAG.CLICKABLE)
+        self.set_flex_flow(lv.FLEX_FLOW.COLUMN)
+        self.set_flex_align(
+            lv.FLEX_ALIGN.END, lv.FLEX_ALIGN.CENTER, lv.FLEX_ALIGN.CENTER
+        )
+        self.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
+
+        # 添加顶部填充占位符
+        self.spacer = lv.obj(self)
+        self.spacer.remove_style_all()
+        self.spacer.set_size(
+            lv.pct(100), lv.SIZE.CONTENT
+        )  # 使用 lv.SIZE.CONTENT 替代 FLEXIBLE
+
+    def add_dummy(self):
+        dummy = lv.obj(self)
+        dummy.remove_style_all()
+        dummy.set_size(lv.pct(100), 12)
+        dummy.add_style(StyleWrapper().bg_color(lv_colors.ONEKEY_GRAY_3).bg_opa(), 0)

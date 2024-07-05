@@ -1,5 +1,3 @@
-from trezorio import nfc
-
 import storage.device
 from trezor import log, loop, utils
 from trezor.lvglui import lvgl_tick
@@ -29,60 +27,6 @@ if __debug__:
     import apps.debug
 
     apps.debug.boot()
-
-
-async def nfc_test():
-    nfc.pwr_ctrl(True)
-    while True:
-        await loop.sleep(100)
-        if nfc.poll_card():
-            print("Card detected")
-            # select mf
-            print("Select MF")
-            resp, sw1sw2 = nfc.send_recv(b"\x00\xa4\x04\x00")
-            print("Response: ", resp)
-            print("SW1SW2: ", sw1sw2)
-            # reset card
-            print("Reset card")
-            resp, sw1sw2 = nfc.send_recv(
-                b"\x80\xcb\x80\x00\x05\xdf\xfe\x02\x82\x05", True
-            )
-            print("Response: ", resp)
-            print("SW1SW2: ", sw1sw2)
-            # set pin
-            print("Set pin")
-            resp, sw1sw2 = nfc.send_recv(
-                b"\x80\xcb\x80\x00\x0e\xdf\xfe\x0b\x82\x04\x08\x00\x06\x31\x32\x33\x34\x35\x36",
-                True,
-            )
-            print("Response: ", resp)
-            print("SW1SW2: ", sw1sw2)
-
-            print("Select applet")
-            resp, sw1sw2 = nfc.send_recv(
-                b"\x00\xa4\x04\x00\x08\xD1\x56\x00\x01\x32\x83\x40\x01"
-            )
-            print("Response: ", resp)
-            print("SW1SW2: ", sw1sw2)
-
-            print("Verify pin(correct)")
-            resp, sw1sw2 = nfc.send_recv(
-                b"\x80\x20\x00\x00\x07\x06\x31\x32\x33\x34\x35\x36", True
-            )
-            print("Response: ", resp)
-            print("SW1SW2: ", sw1sw2)
-
-            print("Verify pin(incorrect)")
-            resp, sw1sw2 = nfc.send_recv(
-                b"\x80\x20\x00\x00\x07\x06\x31\x32\x33\x34\x35\x37", True
-            )
-            print("Response: ", resp)
-            print("SW1SW2: ", sw1sw2)
-
-            return
-
-        else:
-            print("No card detected")
 
 
 def stop_mode(reset_timer: bool = False):
@@ -126,7 +70,6 @@ loop.schedule(handle_qr_task())
 loop.schedule(lvgl_tick())
 loop.schedule(handle_stop_mode())
 
-loop.schedule(nfc_test())
 
 utils.set_up()
 if utils.show_app_guide():

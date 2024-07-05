@@ -240,7 +240,7 @@ bool pn532_inListPassiveTarget(void)
     uint16_t response_length = sizeof(response);
     if ( !pn532_transceive(
              PN532_COMMAND_INLISTPASSIVETARGET, params, sizeof(params), response, &response_length,
-             PN532_TIMEOUT_MS_NORMAL
+             PN532_TIMEOUT_MS_NORMAL_PASSSIVETARGET
          ) )
     {
         return false;

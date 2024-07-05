@@ -27,13 +27,16 @@ if TYPE_CHECKING:
 DRY_RUN_ALLOWED_FIELDS = ("dry_run", "word_count", "enforce_wordlist", "type")
 
 
-async def recovery_device(ctx: wire.Context, msg: RecoveryDevice) -> Success:
+async def recovery_device(
+    ctx: wire.Context, msg: RecoveryDevice, type: str = "phrase"
+) -> Success:
     """
     Recover BIP39/SLIP39 seed into empty device.
     Recovery is also possible with replugged Trezor. We call this process Persistence.
     User starts the process here using the RecoveryDevice msg and then they can unplug
     the device anytime and continue without a computer.
     """
+
     _validate(msg)
     utils.mark_initialization_processing()
     if not msg.dry_run:
@@ -51,7 +54,7 @@ async def recovery_device(ctx: wire.Context, msg: RecoveryDevice) -> Success:
     #     return await recovery_process(ctx)
 
     try:
-        await _continue_dialog(ctx, msg)
+        # await _continue_dialog(ctx, msg)
 
         if isinstance(ctx, wire.DummyContext):
             utils.play_dead()
@@ -66,6 +69,7 @@ async def recovery_device(ctx: wire.Context, msg: RecoveryDevice) -> Success:
         newpin = None
 
         if not msg.dry_run:
+
             # set up pin if requested
             if msg.pin_protection:
                 newpin = await request_pin_confirm(ctx, allow_cancel=False)
@@ -81,7 +85,7 @@ async def recovery_device(ctx: wire.Context, msg: RecoveryDevice) -> Success:
         storage.recovery.set_in_progress(True)
         storage.recovery.set_dry_run(bool(msg.dry_run))
         # workflow.set_default(recovery_homescreen)
-        result = await recovery_process(ctx)
+        result = await recovery_process(ctx, type)
     except BaseException as e:
         raise e
     else:

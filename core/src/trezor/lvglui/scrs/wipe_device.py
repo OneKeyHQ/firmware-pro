@@ -121,3 +121,66 @@ class WipeDeviceSuccess(FullSizeWindow):
             from apps.base import set_homescreen
 
             set_homescreen()
+
+
+class WipeDeviceTipsTmp(FullSizeWindow):
+    def __init__(self):
+        title = "This Card Contains Backup"  # 标题
+        subtitle = "if you continue,your previous backup will be fully overwritten and will be lost forever"  # 副标题
+        icon_path = "A:/res/warning.png"
+        super().__init__(
+            title,
+            subtitle,
+            "Overwrite",  # 滑动重置按钮文本
+            _(i18n_keys.BUTTON__CANCEL),  # 取消按钮文本
+            icon_path=icon_path,
+            # hold_confirm=True,  # 保持确认
+        )
+        self.container = ContainerFlexCol(
+            self.content_area,
+            self.subtitle,
+            padding_row=8,  # 行内边距
+            clip_corner=False,
+        )
+        self.item1 = ListItemWithLeadingCheckbox(
+            self.container,
+            _(i18n_keys.CHECK__DEVICE_WIPE_DEVICE_FACTORY_RESET_1),  # 复选框项1文本
+            radius=40,  # 圆角半径
+        )
+        print("slider_enable start")
+        self.slider_enable(False)  # 禁用滑动条
+        self.container.add_event_cb(
+            self.on_value_changed, lv.EVENT.VALUE_CHANGED, None
+        )  # 添加事件回调
+        self.cb_cnt = 0  # 初始化复选框计数器
+
+    def slider_enable(self, enable: bool = True):
+        if enable:
+            print("slider_enable true")  # 打印调试信息：开始备份
+            self.btn_yes.add_flag(lv.obj.FLAG.CLICKABLE)  # 添加可点击标志
+            self.btn_yes.enable(
+                bg_color=lv_colors.ONEKEY_GREEN, text_color=lv_colors.BLACK
+            )  # 启用确认按钮并设置为绿色
+
+        else:
+            print("slider_enable false")
+            self.btn_yes.clear_flag(lv.obj.FLAG.CLICKABLE)  # 清除可点击标志
+            self.btn_yes.enable(
+                bg_color=lv_colors.ONEKEY_BLACK_1, text_color=lv_colors.ONEKEY_GRAY
+            )  # 禁用确认按钮并设置为灰色
+
+    def on_value_changed(self, event_obj):
+        code = event_obj.code
+        target = event_obj.get_target()
+        if code == lv.EVENT.VALUE_CHANGED:  # 值改变事件
+            if target == self.item1.checkbox:
+                if target.get_state() & lv.STATE.CHECKED:  # 复选框选中状态
+                    self.item1.enable_bg_color()  # 启用背景颜色
+                    self.cb_cnt += 1  # 复选框计数器加1
+                else:
+                    self.item1.enable_bg_color(False)  # 禁用背景颜色
+                    self.cb_cnt -= 1  # 复选框计数器减1
+            if self.cb_cnt == 1:
+                self.slider_enable()  # 启用滑动条
+            elif self.cb_cnt < 1:
+                self.slider_enable(False)  # 禁用滑动条

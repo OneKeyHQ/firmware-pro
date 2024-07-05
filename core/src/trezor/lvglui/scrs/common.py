@@ -188,44 +188,44 @@ class FullSizeWindow(lv.obj):
         primary_color=lv_colors.ONEKEY_GREEN,
         sub_icon_path: str | None = None,
     ):
-        super().__init__(lv.scr_act())
+        super().__init__(lv.scr_act())  # 调用父类的初始化方法，设置当前屏幕为活动屏幕
 
         if __debug__:
-            self.layout_title = title
-            self.layout_subtitle = subtitle
+            self.layout_title = title  # 保存调试模式下的标题
+            self.layout_subtitle = subtitle  # 保存调试模式下的副标题
 
-        self.channel = loop.chan()
-        self.anim_dir = anim_dir
-        self.set_size(lv.pct(100), lv.pct(100))
-        self.align(lv.ALIGN.TOP_MID, 0, 0)
-        self.show_load_anim()
+        self.channel = loop.chan()  # 创建一个通信通道
+        self.anim_dir = anim_dir  # 设置动画方向
+        self.set_size(lv.pct(100), lv.pct(100))  # 设置屏幕大小为100%宽高
+        self.align(lv.ALIGN.TOP_MID, 0, 0)  # 屏幕顶部对齐
+        self.show_load_anim()  # 显示加载动画
         self.add_style(
             StyleWrapper()
-            .bg_color(lv_colors.BLACK)
-            .pad_all(0)
-            .border_width(0)
-            .radius(0),
+            .bg_color(lv_colors.BLACK)  # 背景颜色设置为黑色
+            .pad_all(0)  # 设置内边距为0
+            .border_width(0)  # 设置边框宽度为0
+            .radius(0),  # 设置圆角为0
             0,
         )
-        self.hold_confirm = hold_confirm
-        self.content_area = lv.obj(self)
-        self.content_area.set_size(lv.pct(100), lv.SIZE.CONTENT)
-        self.content_area.align(lv.ALIGN.TOP_MID, 0, 44)
-        self.content_area.set_scrollbar_mode(lv.SCROLLBAR_MODE.ACTIVE)
+        self.hold_confirm = hold_confirm  # 是否保持确认按钮状态
+        self.content_area = lv.obj(self)  # 创建内容区域对象
+        self.content_area.set_size(lv.pct(100), lv.SIZE.CONTENT)  # 设置内容区域大小
+        self.content_area.align(lv.ALIGN.TOP_MID, 0, 44)  # 内容区域顶部对齐
+        self.content_area.set_scrollbar_mode(lv.SCROLLBAR_MODE.ACTIVE)  # 设置滚动条模式为激活状态
         self.content_area.add_style(
             StyleWrapper()
-            .bg_color(lv_colors.BLACK)
-            .pad_all(0)
-            .pad_bottom(24)
-            .border_width(0)
-            .radius(0),
+            .bg_color(lv_colors.BLACK)  # 内容区域背景颜色设置为黑色
+            .pad_all(0)  # 设置内容区域内边距为0
+            .pad_bottom(24)  # 设置内容区域底部内边距为24
+            .border_width(0)  # 设置内容区域边框宽度为0
+            .radius(0),  # 设置内容区域圆角为0
             0,
         )
         self.content_area.add_style(
-            StyleWrapper().bg_color(lv_colors.WHITE_3),
+            StyleWrapper().bg_color(lv_colors.WHITE_3),  # 内容区域滚动条颜色设置为白色
             lv.PART.SCROLLBAR | lv.STATE.DEFAULT,
         )
-        self.content_area.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
+        self.content_area.add_flag(lv.obj.FLAG.EVENT_BUBBLE)  # 添加事件冒泡标志
         if icon_path:
             self.icon = lv.img(self.content_area)
             self.icon.remove_style_all()
@@ -344,30 +344,33 @@ class FullSizeWindow(lv.obj):
             try:
                 value = await loop.race(
                     confirm_signal(), input_signal(), self.channel.take()
-                )
+                )  # 并行等待多个信号，返回最先完成的信号值
             except Result as result:
                 # Result exception was raised, this means this layout is complete.
+                # 如果引发了Result异常，这意味着该布局完成。
                 value = result.value
             return value
 
         else:
-            return await self.channel.take()
+            return await self.channel.take()  # 非调试模式下，等待通道中的数据
 
     if __debug__:
 
         def notify_change(self):
             from apps.debug import notify_layout_change
 
-            notify_layout_change(self)
+            notify_layout_change(self)  # 通知布局变化
 
         def read_content(self) -> list[str]:
-            return [self.layout_title or ""] + [self.layout_subtitle or ""]
+            return [self.layout_title or ""] + [
+                self.layout_subtitle or ""
+            ]  # 读取标题和副标题内容
 
     def destroy(self, delay_ms=400):
-        self.del_delayed(delay_ms)
+        self.del_delayed(delay_ms)  # 延迟销毁对象
 
     def _delete_cb(self, _anim):
-        self.del_delayed(100)
+        self.del_delayed(100)  # 延迟100ms后删除对象
 
     def _load_anim_hor(self):
         Anim(
@@ -376,7 +379,7 @@ class FullSizeWindow(lv.obj):
             self._set_x,
             time=120 if not __debug__ else SETTINGS_MOVE_TIME,
             delay=80 if not __debug__ else SETTINGS_MOVE_DELAY,
-        ).start_anim()
+        ).start_anim()  # 开始水平加载动画
 
     def _load_anim_ver(self):
         self.set_y(800)
@@ -386,7 +389,7 @@ class FullSizeWindow(lv.obj):
             self._set_y,
             time=120 if not __debug__ else SETTINGS_MOVE_TIME,
             delay=80 if not __debug__ else SETTINGS_MOVE_DELAY,
-        ).start_anim()
+        ).start_anim()  # 开始垂直加载动画
 
     def _set_y(self, y):
         try:

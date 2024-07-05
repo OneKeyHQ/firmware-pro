@@ -44,14 +44,18 @@ STATIC mp_obj_t mod_trezorio_NFC_send_recv(size_t n_args,
   uint8_t resp[256] = {0};
   uint16_t resp_len = sizeof(resp);
 
-  if (!lite_card_apdu((uint8_t *)apdu.buf, apdu.len, resp, &resp_len, sw1sw2,
-                      safe)) {
-    mp_raise_msg(&mp_type_RuntimeError, "Failed to send APDU");
-  }
+  bool success = lite_card_apdu((uint8_t *)apdu.buf, apdu.len, resp, &resp_len,
+                                sw1sw2, safe);
 
   mp_obj_tuple_t *tuple = MP_OBJ_TO_PTR(mp_obj_new_tuple(2, NULL));
 
   tuple->items[0] = mp_obj_new_str_copy(&mp_type_bytes, resp, resp_len);
+
+  if (!success) {
+    sw1sw2[0] = 0x99;
+    sw1sw2[1] = 0x99;
+  }
+
   tuple->items[1] = mp_obj_new_str_copy(&mp_type_bytes, sw1sw2, 2);
 
   return MP_OBJ_FROM_PTR(tuple);

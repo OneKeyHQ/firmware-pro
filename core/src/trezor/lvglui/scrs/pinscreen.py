@@ -184,6 +184,74 @@ class InputLitePin(FullSizeWindow):
         self.destroy()
 
 
+class InputLitePinConfirm(FullSizeWindow):
+    def __init__(self, title):
+        super().__init__(
+            title=title,
+            subtitle=None,
+            anim_dir=0,
+        )
+        self.title.add_style(
+            StyleWrapper()
+            .text_font(font_GeistSemiBold48)
+            .text_align_center()
+            .text_letter_space(0),
+            0,
+        )
+        self.title.align(lv.ALIGN.TOP_MID, 0, 24)
+        self.clear_flag(lv.obj.FLAG.SCROLLABLE)
+        self.keyboard = NumberKeyboard(self, max_len=6, min_len=6)
+        self.keyboard.add_event_cb(self.on_event, lv.EVENT.READY, None)
+        self.keyboard.add_event_cb(self.on_event, lv.EVENT.CANCEL, None)
+        self.keyboard.add_event_cb(self.on_event, lv.EVENT.VALUE_CHANGED, None)
+        self.input_result = None
+
+    def on_event(self, event_obj):
+        code = event_obj.code
+        if code == lv.EVENT.VALUE_CHANGED:
+            utils.lcd_resume()
+            return
+        elif code == lv.EVENT.READY:
+            input = self.keyboard.ta.get_text()
+            if len(input) < 6:
+                return
+            self.input_result = input
+            self.channel.publish(self.input_result)
+        elif code == lv.EVENT.CANCEL:
+            self.channel.publish(0)
+
+        self.clean()
+        self.destroy()
+
+
+async def pin_mismatch(ctx) -> None:
+    from trezor.ui.layouts import show_warning
+
+    await show_warning(
+        ctx=ctx,
+        br_type="pin_not_match",
+        header=_(i18n_keys.TITLE__NOT_MATCH),
+        content=_(i18n_keys.SUBTITLE__SETUP_SET_PIN_PIN_NOT_MATCH),
+        icon="A:/res/danger.png",
+        btn_yes_bg_color=lv_colors.ONEKEY_BLACK,
+    )
+
+
+async def request_lite_pin(ctx, prompt: str) -> str:
+    pin_screen = InputLitePinConfirm(prompt)
+    pin = await ctx.wait(pin_screen.request())
+    return pin
+
+
+async def request_lite_pin_confirm(ctx) -> str:
+    while True:
+        pin1 = await request_lite_pin(ctx, _(i18n_keys.TITLE__ENTER_ONEKEY_LITE_PIN))
+        pin2 = await request_lite_pin(ctx, _(i18n_keys.TITLE__ENTER_PIN_AGAIN))
+        if pin1 == pin2:
+            return pin1
+        await pin_mismatch(ctx)
+
+
 class SetupComplete(FullSizeWindow):
     def __init__(self, subtitle=""):
         super().__init__(

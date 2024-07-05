@@ -5,9 +5,10 @@
 #include "pn532_stub.h"
 #include "pn532_defines.h"
 
-#define PN532_FRAME_DATA_MAX_LENGTH    255
-#define PN532_TIMEOUT_MS_NORMAL        50
-#define PN532_TIMEOUT_MS_DATA_EXCHANGE 1000
+#define PN532_FRAME_DATA_MAX_LENGTH            255
+#define PN532_TIMEOUT_MS_NORMAL                200
+#define PN532_TIMEOUT_MS_DATA_EXCHANGE         1800
+#define PN532_TIMEOUT_MS_NORMAL_PASSSIVETARGET 30
 
 typedef struct
 {
