@@ -50,11 +50,11 @@ async def recovery_device(
         if msg.language is not None:
             storage.device.set_language(msg.language)
             i18n_refresh()
-    # if storage.recovery.is_in_progress():
-    #     return await recovery_process(ctx)
+        # if storage.recovery.is_in_progress():
+        #     return await recovery_process(ctx)
 
     try:
-        # await _continue_dialog(ctx, msg)
+        await _continue_dialog(ctx, msg)
 
         if isinstance(ctx, wire.DummyContext):
             utils.play_dead()

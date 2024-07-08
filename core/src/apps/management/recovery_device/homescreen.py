@@ -59,7 +59,7 @@ async def _continue_recovery_process_lite(
     words_length = 0
 
     secret = await backup_with_lite_import(ctx)
-    print("secret",secret)
+
     if secret == 0:
         raise RuntimeError("secret is zero")
     if isinstance(secret, str):

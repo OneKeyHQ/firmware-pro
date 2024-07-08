@@ -930,11 +930,11 @@ class SettingsScreen(Screen):
                         from trezor import wire
 
                         workflow.spawn(backup_with_lite(wire.DUMMY_CONTEXT, b""))
-                    # if target == self.nfc_test_import:
-                    #     from trezor.ui.layouts.lvgl.lite import backup_with_lite_import
-                    #     from trezor import wire
+                    if target == self.nfc_test_import:
+                        from trezor.ui.layouts.lvgl.lite import backup_with_lite_import
+                        from trezor import wire
 
-                    #     workflow.spawn(backup_with_lite_import(wire.DUMMY_CONTEXT, b""))
+                        workflow.spawn(backup_with_lite_import(wire.DUMMY_CONTEXT))
 
     def _load_scr(self, scr: "Screen", back: bool = False) -> None:
         lv.scr_load(scr)
@@ -1315,11 +1315,11 @@ class BackupWallet(Screen):
                         DUMMY_CONTEXT,
                         RecoveryDevice(dry_run=True, enforce_wordlist=True),
                     )
-                )  # 启动恢复设备流程，传入 DUMMY_CONTEXT 和 RecoveryDevice 消息
+                )
                 # pyright: on
 
     def _load_scr(self, scr: "Screen", back: bool = False) -> None:
-        lv.scr_load(scr)  # 加载屏幕
+        lv.scr_load(scr)
 
 
 class ConnectWallet(FullSizeWindow):

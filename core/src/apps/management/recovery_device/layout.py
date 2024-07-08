@@ -120,13 +120,11 @@ async def show_dry_run_result(
             header=_(i18n_keys.TITLE__CORRECT),
         )
         # if not is_slip39 and not __debug__:
-        if not is_slip39: 
+        if not is_slip39:
             if utils.is_backup_with_lite_1st():
                 await backup_with_lite(ctx, mnemonics, recovery_check=True)
-                # await backup_with_keytag(ctx, mnemonics, recovery_check=True)
             else:
                 await backup_with_keytag(ctx, mnemonics, recovery_check=True)
-                # await backup_with_lite(ctx, mnemonics, recovery_check=True)
 
     else:
         if is_slip39:
