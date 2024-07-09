@@ -267,8 +267,6 @@ async def start_check_pin_mnemonicmphrase(self, pin, mnemonic, card_num):
         handle_sw1sw2_connect_error(self)
         return
 
-    # maxresp_formatted = " ".join(f"{b:02X}" for b in numresp)
-
     if card_type == "OLD":
         _, sw1sw2 = nfc.send_recv(
             b"\x00\xa4\x04\x00\x08\xD1\x56\x00\x01\x32\x83\x40\x01"
@@ -339,12 +337,22 @@ async def start_check_pin_mnemonicmphrase(self, pin, mnemonic, card_num):
         _, importsw1sw2 = nfc.send_recv(apdu_command)
     else:
         _, importsw1sw2 = nfc.send_recv(apdu_command, True)
+
+    print("importsw1sw2", importsw1sw2)
     if importsw1sw2 == LITE_CARD_DISCONECT_STATUS:
         handle_sw1sw2_connect_error(self)
         return
-    self.channel.publish(LITE_CARD_OPERATE_SUCCESS)
+
+    if importsw1sw2 == LITE_CARD_SUCCESS_STATUS:
+        self.channel.publish(LITE_CARD_OPERATE_SUCCESS)
+        self.clean()
+        self.destroy()
+        return
+
+    self.channel.publish(LITE_CARD_CONNECT_FAILURE)
     self.clean()
     self.destroy()
+    return
 
 
 async def start_set_pin_mnemonicmphrase(self, pin, mnemonic, card_num):
@@ -414,13 +422,23 @@ async def start_set_pin_mnemonicmphrase(self, pin, mnemonic, card_num):
     lc = seed_length.to_bytes(1, "big")
 
     apdu_command = b"\x80\x3b\x00\x00" + lc + payload_bytes
-    _, importsw1sw2 = nfc.send_recv(apdu_command)
+    if card_type == "OLD":
+        _, importsw1sw2 = nfc.send_recv(apdu_command)
+    else:
+        _, importsw1sw2 = nfc.send_recv(apdu_command, True)
+
     if importsw1sw2 == LITE_CARD_DISCONECT_STATUS:
         self.stop_animation()
         handle_sw1sw2_connect_error(self)
         return
 
-    self.channel.publish(LITE_CARD_OPERATE_SUCCESS)
+    if importsw1sw2 == LITE_CARD_SUCCESS_STATUS:
+        self.channel.publish(LITE_CARD_OPERATE_SUCCESS)
+        self.clean()
+        self.destroy()
+        return
+
+    self.channel.publish(LITE_CARD_CONNECT_FAILURE)
     self.clean()
     self.destroy()
     return

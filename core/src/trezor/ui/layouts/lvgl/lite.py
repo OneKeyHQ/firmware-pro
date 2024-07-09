@@ -18,6 +18,8 @@ from trezor.lvglui.scrs.pinscreen import InputLitePin, request_lite_pin_confirm
 
 LITE_CARD_BUTTON_CONFIRM = 1
 LITE_CARD_BUTTON_CANCLE = 0
+LITE_CARD_BLANK = 2
+LITE_CARD_WITH_DATA = 3
 
 
 async def show_fullsize_window(
@@ -70,7 +72,8 @@ async def backup_with_lite(
     async def handle_pin_setup(card_num, mnemonics):
         pin = await request_lite_pin_confirm(ctx)
         if pin:
-            await handle_second_placement(card_num, pin, mnemonics)
+            flag = await handle_second_placement(card_num, pin, mnemonics)
+            return flag
         else:
             pass
 
@@ -267,14 +270,19 @@ async def backup_with_lite(
                 first_char = carddata[0]
                 first_char_num = int(first_char)
                 card_num = carddata[1:]
-                if first_char_num == 2:
+                if first_char_num == LITE_CARD_BLANK:
                     flag = await handle_pin_setup(card_num, mnemonics)
-                elif first_char_num == 3:
+                elif first_char_num == LITE_CARD_WITH_DATA:
                     flag = await handle_existing_data(card_num, mnemonics)
-                    if flag in [3, 4, 5, 6]:
-                        continue
-                    elif flag == 2:
-                        return 2
+                if flag in [
+                    LITE_CARD_CONNECT_FAILURE,
+                    LITE_CARD_NOT_SAME,
+                    LITE_CARD_HAS_BEEN_RESET,
+                    LITE_CARD_PIN_ERROR,
+                ]:
+                    continue
+                elif flag == LITE_CARD_OPERATE_SUCCESS:
+                    return LITE_CARD_OPERATE_SUCCESS
             elif status_code == LITE_CARD_BUTTON_CANCLE:
                 continue
         elif start_flag == LITE_CARD_BUTTON_CANCLE:
