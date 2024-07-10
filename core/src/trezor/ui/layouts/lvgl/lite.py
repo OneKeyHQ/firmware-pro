@@ -145,7 +145,8 @@ async def backup_with_lite(
         from trezor.lvglui.scrs.wipe_device import WipeLiteCardTips
 
         confirm_screen = WipeLiteCardTips()
-        if await ctx.wait(confirm_screen.request()):
+        confirm_screen_flag = await ctx.wait(confirm_screen.request())
+        if confirm_screen_flag:
             pin = await input_pin(ctx)
             place_again_data_card = True
             if pin:

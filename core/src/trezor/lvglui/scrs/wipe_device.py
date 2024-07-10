@@ -159,7 +159,7 @@ class WipeLiteCardTips(FullSizeWindow):
 
         else:
             self.btn_yes.clear_flag(lv.obj.FLAG.CLICKABLE)
-            self.btn_yes.enable(
+            self.btn_yes.disable(
                 bg_color=lv_colors.ONEKEY_BLACK_1, text_color=lv_colors.ONEKEY_GRAY
             )
 
