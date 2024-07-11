@@ -690,7 +690,7 @@ translations = [
     "Il PIN è stato inserito in modo errato più di 10 volte. OneKey Lite è stato autocancellato per impedire il cracking della forza bruta dei dati di backup.",
     "capito",
     "Connessione fallita",
-    "Assicurati che la scheda sia vicina alla parte superiore sinistra del dispositivo, quindi riprova.",
+    "Assicurati che la scheda sia posizionata saldamente contro il retro del dispositivo, quindi riprova.",
     "Backup interrotto",
     "Seleziona il modo in cui desideri eseguire il backup. Dopo aver verificato la frase di ripristino, utilizzeremo la frase inserita come backup.",
     "Eseguire il backup con Lite/KeyTag?",

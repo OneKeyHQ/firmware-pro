@@ -1504,8 +1504,8 @@ TITLE__LITE_HAS_BEEN_RESET_DESC = 687
 BUTTON__I_GOT_IT = 688
 # Connect Failed
 TITLE__CONNECT_FAILED = 689
-# Make sure the card is close to the upper left part of the device, and then t
-# ry again.
+# Make sure the card is placed firmly against the back of the device, then try
+# again.
 CONTENT__MAKE_SURE_THE_CARD_IS_CLOSE_TO_THE_UPPER_LEFT = 690
 # Backup Interrupted
 TITLE__BACKUP_INTERRUPTED = 691

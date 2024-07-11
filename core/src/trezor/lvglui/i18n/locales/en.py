@@ -690,7 +690,7 @@ translations = [
     "The PIN has been entered incorrectly more than 10 times. OneKey Lite has been self-erased to prevent brute force cracking of the backup data.",
     "I Got It",
     "Connect Failed",
-    "Make sure the card is close to the upper left part of the device, and then try again.",
+    "Make sure the card is placed firmly against the back of the device, then try again.",
     "Backup Interrupted",
     "Select the way you want to back up. After verifying the recovery phrase, we will use the phrase you entered for backup.",
     "Back Up with Lite / KeyTag?",

@@ -690,7 +690,7 @@ translations = [
     "El PIN se ha introducido incorrectamente más de 10 veces. OneKey Lite se ha autoborrado para evitar el descifrado por fuerza bruta de los datos de la copia de seguridad.",
     "Lo tengo",
     "Conexión fallida",
-    "Asegúrese de que la tarjeta esté cerca de la parte superior izquierda del dispositivo y luego vuelva a intentarlo.",
+    "Asegúrese de que la tarjeta esté colocada firmemente contra la parte posterior del dispositivo y vuelva a intentarlo.",
     "Copia de seguridad interrumpida",
     "Seleccione la forma en que desea realizar la copia de seguridad. Después de verificar la frase de recuperación, usaremos la frase que ingresó como copia de seguridad.",
     "¿Hacer copia de seguridad con Lite/KeyTag?",

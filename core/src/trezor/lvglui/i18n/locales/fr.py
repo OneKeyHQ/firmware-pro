@@ -690,7 +690,7 @@ translations = [
     "Le code PIN a été saisi incorrectement plus de 10 fois. OneKey Lite a été auto-effacé pour empêcher le craquage par force brute des données de sauvegarde.",
     "J'ai compris",
     "Echec de connexion",
-    "Assurez-vous que la carte est proche de la partie supérieure gauche de l'appareil, puis réessayez.",
+    "Assurez-vous que la carte est fermement placée contre l'arrière de l'appareil, puis réessayez.",
     "Sauvegarde interrompue",
     "Sélectionnez la manière dont vous souhaitez sauvegarder. Après avoir vérifié la phrase de récupération, nous utiliserons la phrase que vous avez saisie pour la sauvegarde.",
     "Sauvegarder avec Lite/KeyTag ?",

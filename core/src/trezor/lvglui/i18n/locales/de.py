@@ -690,7 +690,7 @@ translations = [
     "Die PIN wurde mehr als 10 Mal falsch eingegeben. OneKey Lite wurde selbst gelöscht, um ein brutales Knacken der Sicherungsdaten zu verhindern.",
     "Ich habe es",
     "Verbindung fehlgeschlagen",
-    "Stellen Sie sicher, dass sich die Karte in der Nähe des oberen linken Teils des Geräts befindet, und versuchen Sie es dann erneut.",
+    "Stellen Sie sicher, dass die Karte fest an der Rückseite des Geräts anliegt, und versuchen Sie es dann erneut.",
     "Sicherung unterbrochen",
     "Wählen Sie die Art und Weise aus, wie Sie sichern möchten. Nachdem wir die Wiederherstellungsphrase überprüft haben, verwenden wir die von Ihnen eingegebene Phrase zur Sicherung.",
     "Mit Lite/KeyTag sichern?",
