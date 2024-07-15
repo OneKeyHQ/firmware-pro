@@ -289,7 +289,6 @@ def _show_xpub(xpub: str, title: str, cancel: str) -> Paginated:
         pages.append(text)
 
     content = Paginated(pages)
-
     content.pages[-1] = Confirm(
         content.pages[-1],
         cancel=cancel,

@@ -100,12 +100,15 @@ async def backup_with_lite(
                         trash_scr.set_pin_mnemonicmphrase(pin, card_num, mnemonics)
                         final_status_code = await ctx.wait(trash_scr.request())
                         if final_status_code == LITE_CARD_OPERATE_SUCCESS:
-                            await show_fullsize_window(
+
+                            from trezor.ui.layouts import show_success
+
+                            await show_success(
                                 ctx,
                                 _(i18n_keys.TITLE__BACK_UP_COMPLETE),
                                 _(i18n_keys.TITLE__BACKUP_COMPLETED_DESC),
-                                _(i18n_keys.BUTTON__I_GOT_IT),
-                                icon_path="A:/res/success.png",
+                                header=_(i18n_keys.TITLE__BACK_UP_COMPLETE),
+                                button=_(i18n_keys.BUTTON__I_GOT_IT),
                             )
                             return LITE_CARD_OPERATE_SUCCESS
                         elif final_status_code == LITE_CARD_NOT_SAME:
@@ -175,12 +178,14 @@ async def backup_with_lite(
                                 )
                                 final_status_code = await ctx.wait(trash_scr.request())
                                 if final_status_code == LITE_CARD_OPERATE_SUCCESS:
-                                    await show_fullsize_window(
+                                    from trezor.ui.layouts import show_success
+
+                                    await show_success(
                                         ctx,
                                         _(i18n_keys.TITLE__BACK_UP_COMPLETE),
                                         _(i18n_keys.TITLE__BACKUP_COMPLETED_DESC),
-                                        _(i18n_keys.BUTTON__I_GOT_IT),
-                                        icon_path="A:/res/success.png",
+                                        header=_(i18n_keys.TITLE__BACK_UP_COMPLETE),
+                                        button=_(i18n_keys.BUTTON__I_GOT_IT),
                                     )
                                     return LITE_CARD_OPERATE_SUCCESS
                                 # lite card disconnect
@@ -287,16 +292,20 @@ async def backup_with_lite(
             elif status_code == LITE_CARD_BUTTON_CANCLE:
                 continue
         elif start_flag == LITE_CARD_BUTTON_CANCLE:
-            back_up_page_flag = await show_fullsize_window(
-                ctx,
-                _(i18n_keys.TITLE__EXIT_BACKUP_PROCESS),
-                _(i18n_keys.TITLE__EXIT_BACKUP_PROCESS_DESC),
-                _(i18n_keys.BUTTON__EXIT),
-                _(i18n_keys.BUTTON__CANCEL),
-            )
-            if back_up_page_flag == LITE_CARD_BUTTON_CONFIRM:
+            from trezor.ui.layouts import show_lite_card_exit
+
+            try:
+                back_up_page_flag = await ctx.wait(
+                    show_lite_card_exit(
+                        ctx,
+                        _(i18n_keys.TITLE__EXIT_BACKUP_PROCESS),
+                        _(i18n_keys.TITLE__EXIT_BACKUP_PROCESS_DESC),
+                        _(i18n_keys.BUTTON__EXIT),
+                        _(i18n_keys.BUTTON__CANCEL),
+                    )
+                )
                 return
-            elif back_up_page_flag == LITE_CARD_BUTTON_CANCLE:
+            except wire.ActionCancelled:
                 continue
 
 

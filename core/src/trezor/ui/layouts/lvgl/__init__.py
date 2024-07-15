@@ -28,6 +28,7 @@ __all__ = (
     "show_error_and_raise",
     "show_pubkey",
     "show_success",
+    "show_lite_card_exit",
     "show_xpub",
     "show_warning",
     "confirm_output",
@@ -470,6 +471,30 @@ def show_success(
         button_confirm=button,
         button_cancel=None,
         icon="A:/res/success.png",
+        icon_color=ui.GREEN,
+    )
+
+
+def show_lite_card_exit(
+    ctx: wire.GenericContext,
+    br_type: str,
+    content: str,
+    header: str = "Success",
+    subheader: str | None = None,
+    button: str = "Exit",
+    cacelbutton: str = "Cancel",
+) -> Awaitable[None]:
+
+    return _show_modal(
+        ctx,
+        br_type=br_type,
+        br_code=ButtonRequestType.Success,
+        header=header,
+        subheader=subheader,
+        content=content,
+        button_confirm=button,
+        button_cancel=cacelbutton,
+        icon=None,
         icon_color=ui.GREEN,
     )
 
