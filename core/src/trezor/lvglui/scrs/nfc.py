@@ -21,6 +21,21 @@ LITE_CARD_OPERATE_SUCCESS = 2
 LITE_CARD_SUCCESS_STATUS = b"\x90\x00"
 LITE_CARD_DISCONECT_STATUS = b"\x99\x99"
 
+get_serial_number = b"\x80\xcb\x80\x00\x05\xdf\xff\x02\x81\x01"
+old_applet = b"\x00\xa4\x04\x00\x08\xD1\x56\x00\x01\x32\x83\x40\x01"
+new_applet = (
+    b"\x00\xa4\x04\x00\x0E\x6F\x6E\x65\x6B\x65\x79\x2E\x62\x61\x63\x6B\x75\x70\x01"
+)
+get_pin_retry_count = b"\x80\xcb\x80\x00\x05\xdf\xff\x02\x81\x02"
+reset_card = b"\x80\xcb\x80\x00\x05\xdf\xfe\x02\x82\x05"
+get_pin_status = b"\x80\xcb\x80\x00\x05\xdf\xff\x02\x81\x05"
+select_primary_safety = b"\x00\xa4\x04\x00"
+export_data = b"\x80\x4b\x00\x00"
+backup_data = b"\x80\x3b\x00\x00"
+setup_new_pin = b"\x80\xcb\x80\x00\x0e\xdf\xfe\x0b\x82\x04\x08\x00\x06"
+get_backup_status = b"\x80\x6A\x00\x00"
+verify_pin = b"\x80\x20\x00\x00\x07\x06"
+
 
 async def handle_sw1sw2_connect_error(self):
     self.channel.publish(LITE_CARD_CONNECT_FAILURE)
@@ -58,18 +73,18 @@ async def run_card_search(self):
 
 async def get_card_num(self):
     card_num = None
-    card_num, sw1sw2 = nfc.send_recv(b"\x80\xcb\x80\x00\x05\xdf\xff\x02\x81\x01")
+    card_num, sw1sw2 = nfc.send_recv(get_serial_number)
     if sw1sw2 == LITE_CARD_DISCONECT_STATUS:
         await handle_sw1sw2_connect_error(self)
         return card_num, LITE_CARD_ERROR_REPONSE
     elif sw1sw2 == LITE_CARD_SUCCESS_STATUS:
         pass
     else:
-        _, sw1sw2 = nfc.send_recv(b"\x00\xa4\x04\x00")
+        _, sw1sw2 = nfc.send_recv(select_primary_safety)
         if sw1sw2 == LITE_CARD_DISCONECT_STATUS:
             await handle_sw1sw2_connect_error(self)
             return card_num, LITE_CARD_ERROR_REPONSE
-        card_num, sw1sw2 = nfc.send_recv(b"\x80\xcb\x80\x00\x05\xdf\xff\x02\x81\x01")
+        card_num, sw1sw2 = nfc.send_recv(get_serial_number)
         if sw1sw2 == LITE_CARD_DISCONECT_STATUS:
             await handle_sw1sw2_connect_error(self)
             return card_num, LITE_CARD_ERROR_REPONSE
@@ -97,18 +112,15 @@ async def check_card_data(self):
     card_num, status = await get_card_num(self)
     if status == LITE_CARD_ERROR_REPONSE:
         return
-
-    pinresp, pinsw1sw2 = nfc.send_recv(b"\x80\xcb\x80\x00\x05\xdf\xff\x02\x81\x05")
+    pinresp, pinsw1sw2 = nfc.send_recv(get_pin_status)
     if pinsw1sw2 == LITE_CARD_DISCONECT_STATUS:
         await handle_sw1sw2_connect_error(self)
         return
-
     if pinsw1sw2 == LITE_CARD_SUCCESS_STATUS and pinresp == b"\x02":
         if card_num is not None:
             data = "2" + str(card_num)
             await handle_cleanup(self, data)
             return
-
     elif pinsw1sw2 == LITE_CARD_SUCCESS_STATUS:
         if card_num is not None:
             data = "3" + str(card_num)
@@ -119,6 +131,23 @@ async def check_card_data(self):
         return
 
 
+async def check_best_try_restcard(self):
+    numresp, numsw1sw2 = nfc.send_recv(get_pin_retry_count)
+    if numsw1sw2 == LITE_CARD_DISCONECT_STATUS:
+        await handle_sw1sw2_connect_error(self)
+        return LITE_CARD_ERROR_REPONSE
+
+    if numresp in [b"\x01", b"\x00"] and numsw1sw2 == LITE_CARD_SUCCESS_STATUS:
+
+        _, restsw1sw2 = nfc.send_recv(reset_card, True)
+        if restsw1sw2 == LITE_CARD_DISCONECT_STATUS:
+            await handle_sw1sw2_connect_error(self)
+            return LITE_CARD_ERROR_REPONSE
+        await handle_cleanup(self, LITE_CARD_HAS_BEEN_RESET)
+        return LITE_CARD_ERROR_REPONSE
+    return LITE_CARD_SUCCESS_REPONSE
+
+
 async def start_import_pin_mnemonicmphrase(self, pin):
 
     card_num, status = await get_card_num(self)
@@ -127,60 +156,55 @@ async def start_import_pin_mnemonicmphrase(self, pin):
     card_type = get_card_type(card_num)
 
     if card_type == "OLD":
-        resp, sw1sw2 = nfc.send_recv(
-            b"\x00\xa4\x04\x00\x08\xD1\x56\x00\x01\x32\x83\x40\x01"
-        )
-
+        _, sw1sw2 = nfc.send_recv(select_primary_safety)
         if sw1sw2 == LITE_CARD_DISCONECT_STATUS:
             await handle_sw1sw2_connect_error(self)
             return
-
     elif card_type == "NEW":
-        resp, sw1sw2 = nfc.send_recv(
-            b"\x00\xa4\x04\x00\x0E\x6F\x6E\x65\x6B\x65\x79\x2E\x62\x61\x63\x6B\x75\x70\x01"
-        )
+        pass
+    else:
+        return LITE_CARD_CONNECT_FAILURE
 
+    if card_type == "OLD":
+        status = await check_best_try_restcard(self)
+        if status == LITE_CARD_ERROR_REPONSE:
+            return
+
+    if card_type == "NEW":
+        resp, sw1sw2 = nfc.send_recv(new_applet)
         if sw1sw2 == LITE_CARD_DISCONECT_STATUS:
             await handle_sw1sw2_connect_error(self)
             return
 
-    resp, sw1sw2 = nfc.send_recv(b"\x80\xcb\x80\x00\x05\xdf\xff\x02\x81\x02")
-    if sw1sw2 == LITE_CARD_DISCONECT_STATUS:
-        await handle_sw1sw2_connect_error(self)
-        return
-
-    if resp in [b"\x01", b"\x00"] and sw1sw2 == LITE_CARD_SUCCESS_STATUS:
-
-        _, restsw1sw2 = nfc.send_recv(b"\x80\xcb\x80\x00\x05\xdf\xfe\x02\x82\x05", True)
-        if restsw1sw2 == LITE_CARD_DISCONECT_STATUS:
-            await handle_sw1sw2_connect_error(self)
+    if card_type == "NEW":
+        status = await check_best_try_restcard(self)
+        if status == LITE_CARD_ERROR_REPONSE:
             return
-        await handle_cleanup(self, LITE_CARD_HAS_BEEN_RESET)
-        return
 
-    pinresp, pinsw1sw2 = nfc.send_recv(b"\x80\xcb\x80\x00\x05\xdf\xff\x02\x81\x05")
+    pinresp, pinsw1sw2 = nfc.send_recv(get_pin_status)
     if pinsw1sw2 == LITE_CARD_DISCONECT_STATUS:
         await handle_sw1sw2_connect_error(self)
         return
-
     if pinsw1sw2 == LITE_CARD_SUCCESS_STATUS and pinresp == b"\x02":
         await handle_cleanup(self, LITE_CARD_NO_BACKUP)
         return
-
     if card_type == "NEW":
-        resp, sw1sw2 = nfc.send_recv(b"\x80\x6A\x00\x00")
-
+        resp, sw1sw2 = nfc.send_recv(get_backup_status)
         state = resp[0]
-
         if sw1sw2 == LITE_CARD_DISCONECT_STATUS:
             await handle_sw1sw2_connect_error(self)
             return
         elif (state & 0x02) != 0x02:
             await handle_cleanup(self, LITE_CARD_NO_BACKUP)
             return
+    if card_type == "OLD":
+        resp, sw1sw2 = nfc.send_recv(old_applet)
+        if sw1sw2 == LITE_CARD_DISCONECT_STATUS:
+            await handle_sw1sw2_connect_error(self)
+            return
 
     pin_bytes = "".join(pin).encode()
-    command_data = b"\x80\x20\x00\x00\x07\x06" + pin_bytes
+    command_data = verify_pin + pin_bytes
     resp, sw1sw2 = nfc.send_recv(command_data, True)
     if sw1sw2 == LITE_CARD_DISCONECT_STATUS:
         await handle_sw1sw2_connect_error(self)
@@ -191,22 +215,18 @@ async def start_import_pin_mnemonicmphrase(self, pin):
         print(f"PIN verification failed. Remaining retries: {retry_count}")
         pin_status = f"63C{retry_count:X}"
         await handle_cleanup(self, pin_status)
-        return retry_count
+        return
 
     if card_type == "OLD":
-        exportresp, exportsw1sw2 = nfc.send_recv(b"\x80\x4b\x00\x00")
+        exportresp, exportsw1sw2 = nfc.send_recv(export_data)
     else:
-        exportresp, exportsw1sw2 = nfc.send_recv(b"\x80\x4b\x00\x00", True)
+        exportresp, exportsw1sw2 = nfc.send_recv(export_data, True)
     if exportsw1sw2 == LITE_CARD_DISCONECT_STATUS or len(exportresp) < 8:
         await handle_sw1sw2_connect_error(self)
         return
-
     decoder = MnemonicEncoder()
-
     encoded_mnemonic_str, _, _ = decoder.parse_card_data(exportresp)
-
     decoded_mnemonics = decoder.decode_mnemonics(encoded_mnemonic_str)
-
     await handle_cleanup(self, decoded_mnemonics)
 
 
@@ -218,57 +238,41 @@ async def start_check_pin_mnemonicmphrase(self, pin, mnemonic, card_num):
     card_type = get_card_type(card_num)
 
     if card_type == "OLD":
-        _, sw1sw2 = nfc.send_recv(b"\x00\xa4\x04\x00")
+        _, sw1sw2 = nfc.send_recv(select_primary_safety)
         if sw1sw2 == LITE_CARD_DISCONECT_STATUS:
             await handle_sw1sw2_connect_error(self)
             return
     elif card_type == "NEW":
         pass
     else:
-        return 3
+        return LITE_CARD_CONNECT_FAILURE
 
     if card_num != card_num_again:
         await handle_cleanup(self, LITE_CARD_NOT_SAME)
         return
 
-    numresp, numsw1sw2 = nfc.send_recv(b"\x80\xcb\x80\x00\x05\xdf\xff\x02\x81\x02")
-    if numsw1sw2 == LITE_CARD_DISCONECT_STATUS:
-        await handle_sw1sw2_connect_error(self)
-        return
-
-    if numresp in [b"\x01", b"\x00"] and numsw1sw2 == LITE_CARD_SUCCESS_STATUS:
-
-        _, restsw1sw2 = nfc.send_recv(b"\x80\xcb\x80\x00\x05\xdf\xfe\x02\x82\x05", True)
-        if restsw1sw2 == LITE_CARD_DISCONECT_STATUS:
-            await handle_sw1sw2_connect_error(self)
+    if card_type == "OLD":
+        status = await check_best_try_restcard(self)
+        if status == LITE_CARD_ERROR_REPONSE:
             return
-        await handle_cleanup(self, LITE_CARD_HAS_BEEN_RESET)
-
-    numresp, numsw1sw2 = nfc.send_recv(b"\x80\xcb\x80\x00\x05\xdf\xff\x02\x81\x03")
-    if numsw1sw2 == LITE_CARD_DISCONECT_STATUS:
-        await handle_sw1sw2_connect_error(self)
-        return
 
     if card_type == "OLD":
-        _, sw1sw2 = nfc.send_recv(
-            b"\x00\xa4\x04\x00\x08\xD1\x56\x00\x01\x32\x83\x40\x01"
-        )
-
+        _, sw1sw2 = nfc.send_recv(old_applet)
     else:
-        _, sw1sw2 = nfc.send_recv(
-            b"\x00\xa4\x04\x00\x0E\x6f\x6e\x65\x6b\x65\x79\x2e\x62\x61\x63\x6b\x75\x70\x01"
-        )
+        _, sw1sw2 = nfc.send_recv(new_applet)
+
+    if card_type == "NEW":
+        status = await check_best_try_restcard(self)
+        if status == LITE_CARD_ERROR_REPONSE:
+            return
 
     # verify pin
     pin_bytes = "".join(pin).encode()
-    command_data = b"\x80\x20\x00\x00\x07\x06" + pin_bytes
-
+    command_data = verify_pin + pin_bytes
     _, sw1sw2 = nfc.send_recv(command_data, True)
-
     if sw1sw2 == LITE_CARD_DISCONECT_STATUS:
         await handle_sw1sw2_connect_error(self)
         return
-
     if sw1sw2[0] == 0x63 and (sw1sw2[1] & 0xF0) == 0xC0:
         retry_count = sw1sw2[1] & 0x0F
         print(f"PIN verification failed. Remaining retries: {retry_count}")
@@ -278,9 +282,7 @@ async def start_check_pin_mnemonicmphrase(self, pin, mnemonic, card_num):
         return retry_count
 
     if card_type == "NEW":
-        command_data = (
-            b"\x80\xcb\x80\x00\x0e\xdf\xfe\x0b\x82\x04\x08\x00\x06" + pin_bytes
-        )
+        command_data = setup_new_pin + pin_bytes
         _, sw1sw2 = nfc.send_recv(command_data, True)
         if sw1sw2 == LITE_CARD_DISCONECT_STATUS:
             await handle_sw1sw2_connect_error(self)
@@ -288,7 +290,7 @@ async def start_check_pin_mnemonicmphrase(self, pin, mnemonic, card_num):
 
     # verify pin
     pin_bytes = "".join(pin).encode()
-    command_data = b"\x80\x20\x00\x00\x07\x06" + pin_bytes
+    command_data = verify_pin + pin_bytes
     _, sw1sw2 = nfc.send_recv(command_data, True)
 
     if sw1sw2 == LITE_CARD_DISCONECT_STATUS:
@@ -308,17 +310,12 @@ async def start_check_pin_mnemonicmphrase(self, pin, mnemonic, card_num):
     )
 
     seed_length = len(payload_bytes)
-
     lc = seed_length.to_bytes(1, "big")
-
-    apdu_command = b"\x80\x3b\x00\x00" + lc + payload_bytes
-
+    apdu_command = backup_data + lc + payload_bytes
     if card_type == "OLD":
         _, importsw1sw2 = nfc.send_recv(apdu_command)
     else:
         _, importsw1sw2 = nfc.send_recv(apdu_command, True)
-
-    print("importsw1sw2", importsw1sw2)
     if importsw1sw2 == LITE_CARD_DISCONECT_STATUS:
         await handle_sw1sw2_connect_error(self)
         return
@@ -341,64 +338,57 @@ async def start_set_pin_mnemonicmphrase(self, pin, mnemonic, card_num):
         return
     card_type = get_card_type(card_num_again)
     if card_type == "OLD":
-
-        _, restsw1sw2 = nfc.send_recv(b"\x80\xcb\x80\x00\x05\xdf\xfe\x02\x82\x05", True)
+        _, restsw1sw2 = nfc.send_recv(reset_card, True)
         if restsw1sw2 == LITE_CARD_DISCONECT_STATUS:
             await handle_sw1sw2_connect_error(self)
             return
-
     if card_num != card_num_again:
         await handle_cleanup(self, LITE_CARD_NOT_SAME)
         return
 
+    # reset card
+    if card_type == "OLD":
+        _, sw1sw2 = nfc.send_recv(reset_card, True)
+        if sw1sw2 == LITE_CARD_DISCONECT_STATUS:
+            await handle_sw1sw2_connect_error(self)
+            return
+    # select app
+    if card_type == "NEW":
+        _, sw1sw2 = nfc.send_recv(new_applet)
+        if sw1sw2 == LITE_CARD_DISCONECT_STATUS:
+            await handle_sw1sw2_connect_error(self)
+            return
     # set pin
     pin_bytes = "".join(pin).encode()
-    command_data = b"\x80\xcb\x80\x00\x0e\xdf\xfe\x0b\x82\x04\x08\x00\x06" + pin_bytes
+    command_data = setup_new_pin + pin_bytes
 
     _, sw1sw2 = nfc.send_recv(command_data, True)
     if sw1sw2 == LITE_CARD_DISCONECT_STATUS:
         await handle_sw1sw2_connect_error(self)
         return
 
-    # select app
     if card_type == "OLD":
-        _, sw1sw2 = nfc.send_recv(
-            b"\x00\xa4\x04\x00\x08\xD1\x56\x00\x01\x32\x83\x40\x01"
-        )
-
-    else:
-        _, sw1sw2 = nfc.send_recv(
-            b"\x00\xa4\x04\x00\x0E\x6f\x6e\x65\x6b\x65\x79\x2e\x62\x61\x63\x6b\x75\x70\x01"
-        )
-
-    if sw1sw2 == LITE_CARD_DISCONECT_STATUS:
-        await handle_sw1sw2_connect_error(self)
-        return
+        _, sw1sw2 = nfc.send_recv(old_applet)
 
     # verify pin
     pin_bytes = "".join(pin).encode()
-    command_data = b"\x80\x20\x00\x00\x07\x06" + pin_bytes
+    command_data = verify_pin + pin_bytes
 
-    _, sw1sw2 = nfc.send_recv(command_data, True)
+    restsw1sw2, sw1sw2 = nfc.send_recv(command_data, True)
 
     encoder = MnemonicEncoder()
     encoded_mnemonic = encoder.encode_mnemonics(mnemonic)
-
     encoded_mnemonic_str = str(encoded_mnemonic)
-
     version = "01"
     lang = "00"
     meta = "ffff" + version + lang
     payload = encoded_mnemonic_str + meta
-
     payload_bytes = bytes(
         int(payload[i : i + 2], 16) for i in range(0, len(payload), 2)
     )
-
     seed_length = len(payload_bytes)
     lc = seed_length.to_bytes(1, "big")
-
-    apdu_command = b"\x80\x3b\x00\x00" + lc + payload_bytes
+    apdu_command = backup_data + lc + payload_bytes
     if card_type == "OLD":
         _, importsw1sw2 = nfc.send_recv(apdu_command)
     else:
@@ -408,7 +398,6 @@ async def start_set_pin_mnemonicmphrase(self, pin, mnemonic, card_num):
         self.stop_animation()
         await handle_sw1sw2_connect_error(self)
         return
-
     if importsw1sw2 == LITE_CARD_SUCCESS_STATUS:
         await handle_cleanup(self, LITE_CARD_OPERATE_SUCCESS)
         return
@@ -420,13 +409,11 @@ class MnemonicEncoder:
     def encode_mnemonics(self, seed):
         n = 2048
         words = seed.split()
-
         i = 0
         while words:
             w = words.pop()
             k = bip39.find(w)
             i = i * n + k
-
         return i
 
     def int_to_hex_str(self, num):
@@ -452,7 +439,6 @@ class MnemonicEncoder:
             index = int(encoded_int % n)
             encoded_int = encoded_int // n
             words.append(bip39.get_word(index))
-
         # v1 fix
         fix_fill_count = 0
         supported_mnemonic_length = [12, 15, 18, 21, 24]
@@ -462,7 +448,6 @@ class MnemonicEncoder:
             if len(words) < length:
                 fix_fill_count = length - len(words)
                 break
-
         for _unused in range(fix_fill_count):
             words.append(bip39.get_word(0))
 
@@ -473,7 +458,6 @@ class MnemonicEncoder:
         encoded_mnemonic_bytes = data[:-4]
         version_bytes = data[-4:-3]
         lang_bytes = data[-3:-2]
-
         encoded_mnemonic_str = self.bytes_to_hex_str(encoded_mnemonic_bytes)
         version = self.bytes_to_hex_str(version_bytes)
         lang = self.bytes_to_hex_str(lang_bytes)
@@ -492,11 +476,9 @@ class SearchDeviceScreen(FullSizeWindow):
         self.img_bg = lv.img(self.content_area)
         self.img_bg.set_src("A:/res/nfc-bg.png")
         self.img_bg.align_to(self.subtitle, lv.ALIGN.OUT_BOTTOM_MID, 0, 125)
-
         self.img_searching = lv.img(self.content_area)
         self.img_searching.set_src("A:/res/nfc-icon-searching.png")
         self.img_searching.align_to(self.img_bg, lv.ALIGN.CENTER, 0, 0)
-
         self.anim = lv.anim_t()
         self.anim.init()
         self.anim.set_var(self.img_bg)

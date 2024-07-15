@@ -295,7 +295,7 @@ async def backup_with_lite(
             from trezor.ui.layouts import show_lite_card_exit
 
             try:
-                back_up_page_flag = await ctx.wait(
+                await ctx.wait(
                     show_lite_card_exit(
                         ctx,
                         _(i18n_keys.TITLE__EXIT_BACKUP_PROCESS),
