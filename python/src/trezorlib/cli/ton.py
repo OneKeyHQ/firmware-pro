@@ -46,7 +46,7 @@ def cli():
 @click.option("-b", "--bounceable", is_flag=True)
 @click.option("-t", "--test-only", is_flag=True)
 @click.option("-i", "--wallet-id", type=int, default=698983191)
-@click.option("-v", "--version", type=ChoiceType(WALLET_VERSION), default="v3r2")
+@click.option("-v", "--version", type=ChoiceType(WALLET_VERSION), default="v4r2")
 @click.option("-w", "--workchain", type=ChoiceType(WORKCHAIN), default="base")
 @click.option("-d", "--show-display", is_flag=True)
 @with_client
@@ -76,7 +76,7 @@ def get_address(client: "TrezorClient",
 @click.option("-m", "--mode", type=int)
 @click.option("-s", "--seqno", type=int, required=True)
 # @click.option("-e", "--expire_at", type=int, required=True)
-@click.option("-v", "--version", type=ChoiceType(WALLET_VERSION), default="v3r2")
+@click.option("-v", "--version", type=ChoiceType(WALLET_VERSION), default="v4r2")
 @click.option("-i", "--wallet-id", type=int, default=698983191)
 @click.option("-w", "--workchain", type=ChoiceType(WORKCHAIN), default="base")
 @click.option("-b", "--bounceable", is_flag=True)

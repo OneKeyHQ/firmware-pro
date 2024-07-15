@@ -9,6 +9,7 @@ from ..utils import (
     crc32c,
     read_n_bytes_uint_from_array,
     tree_walk,
+    int_to_hex,
 )
 from ._bit_string import BitString
 
@@ -108,10 +109,10 @@ class Cell:
         for ref in self.refs:
             ref_hash = ref.bytes_hash()
             ref_index_int = cells_index[ref_hash]
-            ref_index_hex = format(ref_index_int, "x")
+            ref_index_hex = int_to_hex(ref_index_int)
             if len(ref_index_hex) % 2:
                 ref_index_hex = "0" + ref_index_hex
-            reference = bytes.fromhex(ref_index_hex)
+            reference = unhexlify(ref_index_hex)
             repr_arr.append(reference)
 
         x = b""
@@ -121,8 +122,9 @@ class Cell:
         return x
     
     def to_boc(self, has_idx=True, hash_crc32=True, has_cache_bits=False, flags=0):
-        root_cell = self
-
+        root_cell = Cell()
+        root_cell.write_cell(self)
+        
         all_cells = root_cell.tree_walk()
         topological_order = all_cells[0]
         cells_index = all_cells[1]

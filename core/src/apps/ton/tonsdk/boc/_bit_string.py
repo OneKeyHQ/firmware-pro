@@ -76,7 +76,10 @@ class BitString:
                 raise Exception(f"Incorrect TopUppedArray {array}, {fullfilled_bytes}")
 
     def get_top_upped_array(self) -> bytearray:
-        ret = self
+        ret = BitString(self.length)
+        ret.array = self.array[:]
+        ret.cursor = self.cursor
+        
         tu = math.ceil(ret.cursor / 8) * 8 - ret.cursor
         if tu > 0:
             tu -= 1

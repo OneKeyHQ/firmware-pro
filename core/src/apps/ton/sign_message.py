@@ -65,13 +65,16 @@ async def sign_message(
 
         body = JettonWallet().create_transfer_body(
             Address(msg.destination),
-            msg.jetton_amount
+            msg.jetton_amount,
+            msg.fwd_fee,
+            msg.comment,
+            wallet.address
         )
 
         digest = wallet.create_transaction_digest(
             to_addr=msg.destination, 
             amount=msg.ton_amount, 
-            seqno=msg.seqno, 
+            seqno=msg.seqno,
             expire_at=msg.expire_at, 
             payload=body,
         )
@@ -100,9 +103,9 @@ async def sign_message(
     return TonSignedMessage(signature=signature)
 
 def check_jetton_transfer(msg: TonSignMessage):
-    if msg.jetton_amount is None and msg.jetton_master_address is None and msg.fwd_fee is None:
+    if msg.jetton_amount is None and msg.jetton_master_address is None:
         return False 
-    elif msg.jetton_amount is not None and msg.jetton_master_address is not None and msg.fwd_fee is not None:
+    elif msg.jetton_amount is not None and msg.jetton_master_address is not None:
         return True
     else:
         raise wire.DataError("Invalid jetton transfer message.")
