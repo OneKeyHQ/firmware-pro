@@ -796,6 +796,9 @@ int main(void) {
   // check if firmware valid again to make sure
   ensure(validate_firmware_headers(&vhdr, &hdr), "invalid firmware header");
   ensure(validate_firmware_code(&vhdr, &hdr), "invalid firmware code");
+  
+  // check bluetooth key
+  device_verify_ble();
 
   // check bluetooth key
   device_verify_ble();
