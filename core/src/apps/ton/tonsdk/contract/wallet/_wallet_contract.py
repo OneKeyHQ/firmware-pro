@@ -9,7 +9,6 @@ if TYPE_CHECKING:
 else:
     IntEnum = int
 
-
 class SendModeEnum(IntEnum):
     carry_all_remaining_balance = 128
     carry_all_remaining_incoming_value = 64
@@ -69,6 +68,5 @@ class WalletContract(Contract):
         signing_message = self.create_signing_message(expire_at, seqno)
         signing_message.bits.write_uint8(send_mode)
         signing_message.refs.append(order)
-
+        
         return signing_message.bytes_hash()
-    

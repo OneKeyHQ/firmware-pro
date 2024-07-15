@@ -7,6 +7,7 @@ from ._utils import (
     move_to_end,
     read_n_bytes_uint_from_array,
     tree_walk,
+    int_to_hex,
 )
 
 __all__ = [
@@ -18,4 +19,5 @@ __all__ = [
     "crc16",
     "read_n_bytes_uint_from_array",
     "compare_bytes",
+    "int_to_hex",
 ]

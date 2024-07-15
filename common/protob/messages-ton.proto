@@ -53,12 +53,12 @@ message TonSignMessage {
     optional string jetton_master_address = 3;                      // Jetton master smart contract address
     required uint64 ton_amount = 4;                                 // TON value for gas, average fee for sending any amount of a custom Jettons is 0.037 TON.
     optional uint64 jetton_amount = 5;                              // jetton value (by nanojetton)
-    optional uint64 fwd_fee = 6;                                    // toncoin is needed to transfer notification message
+    optional uint64 fwd_fee = 6[default=0];                         // toncoin is needed to transfer notification message
     optional string comment = 7;                                    // message comment
-    optional uint32 mode = 8;                                       // message modes
+    optional uint32 mode = 8[default=3];                            // message modes
     required uint32 seqno = 9;                                      // message sequence number
     required uint32 expire_at = 10;                                 // message expiration time
-    optional TonWalletVersion wallet_version = 11 [default=V3R2];   // ton wallet version
+    optional TonWalletVersion wallet_version = 11 [default=V4R2];   // ton wallet version
     optional uint32 wallet_id = 12 [default=698983191];             // 698983191 is the default subwallet_id value
     optional TonWorkChain workchain = 13 [default=BASECHAIN];       // 0: BaseChain, 1: MasterChain
     optional bool is_bounceable = 14 [default=false];               // bounceable flag

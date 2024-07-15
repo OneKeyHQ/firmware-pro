@@ -124,7 +124,8 @@ class Contract:
             common_msg_info.bits.write_bit(0)
 
         if body:
-            if common_msg_info.bits.get_free_bits() >= body.bits.get_used_bits():
+            if False:
+            # if common_msg_info.bits.get_free_bits() >= body.bits.get_used_bits():
                 common_msg_info.bits.write_bit(0)
                 common_msg_info.write_cell(body)
             else:
