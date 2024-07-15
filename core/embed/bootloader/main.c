@@ -674,6 +674,9 @@ static BOOT_TARGET decide_boot_target(vendor_header* const vhdr,
     return boot_target;
   }
 
+  // all check passed, manual set, since default ram value will be random
+  boot_target = BOOT_TARGET_NORMAL;
+
   return boot_target;
 }
 
