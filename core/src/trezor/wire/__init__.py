@@ -428,15 +428,6 @@ async def _handle_single_message(
         from trezor.enums import MessageType
 
         if msg.type in [
-            MessageType.MoneroGetAddress,
-            MessageType.MoneroGetWatchKey,
-            MessageType.MoneroTransactionInitRequest,
-            MessageType.MoneroKeyImageExportInitRequest,
-            MessageType.MoneroGetTxKeyRequest,
-            MessageType.MoneroLiveRefreshStartRequest,
-        ]:
-            await ctx.write(unsupported_yet("Monero"))
-        elif msg.type in [
             MessageType.WebAuthnListResidentCredentials,
             MessageType.WebAuthnAddResidentCredential,
             MessageType.WebAuthnRemoveResidentCredential,
