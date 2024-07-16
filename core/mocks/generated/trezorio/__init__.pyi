@@ -129,39 +129,6 @@ class MOTOR:
         """
 
 
-# extmod/modtrezorio/modtrezorio-nfc.h
-class NFC:
-    """
-    """
-
-    def __init__(
-        self,
-    ) -> None:
-        """
-        """
-
-    def pwr_ctrl(self, on_off: bool) -> int:
-        """
-        Control NFC power.
-        """
-
-    def wait_card(self, timeout_ms: int) -> int:
-        """
-        Wait for card with timeout.
-        """
-
-    def send_recv(self, send: bytearray) -> Tuple[int, bytearray]:
-        """
-        Send receive data through NFC.
-        """
-
-    def send_recv_single_shot(self, send: bytearray, timeout_ms: int) ->
-    Tuple[int, bytearray]:
-        """
-        Wait for card, then send receive data through NFC.
-        """
-
-
 # extmod/modtrezorio/modtrezorio-poll.h
 def poll(ifaces: Iterable[int], list_ref: list, timeout_ms: int) -> bool:
     """

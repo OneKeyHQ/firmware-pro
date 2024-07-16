@@ -188,6 +188,7 @@ if TREZOR_MODEL in ('T',):
         'embed/trezorhal/fatfs/diskio.c',
     ]
     SOURCE_MOD.extend(Glob('embed/pn532/*.c'))
+    SOURCE_MOD.extend(Glob('embed/lite_card/*.c'))
 
 # modtrezorui
 CPPPATH_MOD += [
@@ -571,6 +572,10 @@ SOURCE_DEBUG_UTILS.extend(Glob('embed/debug_utils/*.c'))
 SOURCE_PN532_WRAPPER = []
 SOURCE_PN532_WRAPPER.extend(Glob('embed/pn532/*.c'))
 
+# lite card wrapper
+SOURCE_LITE_CARD_WRAPPER = []
+SOURCE_LITE_CARD_WRAPPER.extend(Glob('embed/lite_card/*.c'))
+
 # fp_sensor wrapper
 SOURCE_FP_SENSOR_WRAPPER = []
 SOURCE_FP_SENSOR_WRAPPER.extend(Glob('embed/fp_sensor_wrapper/*.c'))
@@ -705,6 +710,7 @@ if PRODUCTION_MODEL == 'H':
             'embed/zbar/qrcode',
             'embed/zbar/decoder', 
             'embed/bytewords/', 
+            'embed/lite_card',
         ] + CPPPATH_MOD,
         CPPDEFINES=[
             'TREZOR_MODEL_'+TREZOR_MODEL,
@@ -833,6 +839,7 @@ if FROZEN:
     SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'trezor/ui/layouts/common.py'))
     SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'trezor/ui/layouts/reset.py'))
     SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'trezor/ui/layouts/recovery.py'))
+    SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'trezor/ui/layouts/lite.py'))
     if EVERYTHING:
         SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'trezor/ui/layouts/altcoin.py'))
         SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'trezor/ui/layouts/webauthn.py'))

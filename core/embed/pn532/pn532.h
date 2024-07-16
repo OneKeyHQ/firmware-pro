@@ -1,30 +1,48 @@
-#ifndef _PN532_
-#define _PN532_
+#ifndef _PN532_H_
+#define _PN532_H_
 
-#include <stdint.h>
-#include <stdbool.h>
-
+#include "pn532_spi.h"
+#include "pn532_stub.h"
 #include "pn532_defines.h"
 
-#include "pn532_interface.h"
+#define PN532_FRAME_DATA_MAX_LENGTH            255
+#define PN532_TIMEOUT_MS_NORMAL                200
+#define PN532_TIMEOUT_MS_DATA_EXCHANGE         1800
+#define PN532_TIMEOUT_MS_NORMAL_PASSSIVETARGET 30
 
-typedef struct _PN532
+typedef struct
 {
-    void (*PowerOn)(void);
-    void (*PowerOff)(void);
+    void (*delay_ms)(uint32_t timeout);
+    pn532_stub_t* stub_controller;
+    pn532_spi_t* spi_controller;
+} pn532_controller_t;
 
-    // Miscellaneous
-    bool (*Diagnose)(PN532_DIAG, uint8_t*, uint8_t);
-    bool (*GetFirmwareVersion)(PN532_FW_VER*);
-    bool (*SAMConfiguration)(PN532_SAM_MODE, uint8_t, bool);
-    bool (*InListPassiveTarget
-    )(PN532_InListPassiveTarget_Params params, PN532_InListPassiveTarget_Results* results);
-    bool (*InDataExchange
-    )(uint8_t Tg, uint8_t* DataOut, uint16_t DataOut_len, uint8_t* Status, uint8_t* DataIn,
-      uint16_t* DataIn_len);
-} PN532;
+typedef union
+{
+    struct __attribute__((packed))
+    {
+        uint8_t preamble;
+        uint8_t start_code1;
+        uint8_t start_code2;
+        uint8_t len;
+        uint8_t lcs;
+        uint8_t tfi;
+        uint8_t data[PN532_FRAME_DATA_MAX_LENGTH - 1];
+        uint8_t dcs;
+        uint8_t postamble;
+    };
+    uint8_t raw[PN532_FRAME_DATA_MAX_LENGTH + 7];
 
-extern PN532* pn532;
-void PN532_LibrarySetup();
+} pn532_frame_t;
 
-#endif //_PN532_
+void pn532_init(void);
+void pn532_power_ctl(bool on_off);
+bool pn532_getFirmwareVersion(uint8_t* response, uint16_t* response_length);
+bool pn532_SAMConfiguration(void);
+bool pn532_inListPassiveTarget(void);
+bool pn532_inDataExchange(
+    uint8_t* send_data, uint8_t send_data_length, uint8_t* response, uint16_t* response_length
+);
+bool pn532_tgGetStatus(uint8_t* status);
+
+#endif

@@ -1,117 +1,80 @@
 
 #include "embed/extmod/trezorobj.h"
+
+#include "lite_card.h"
 #include "nfc.h"
 
-/// package: trezorio.__init__
+/// package: trezorio.nfc
 
-/// class NFC:
-///     """
-///     """
-typedef struct _mp_obj_NFC_t {
-  mp_obj_base_t base;
-} mp_obj_NFC_t;
-
-/// def __init__(
-///     self,
-/// ) -> None:
-///     """
-///     """
-STATIC mp_obj_t mod_trezorio_NFC_make_new(const mp_obj_type_t* type,
-                                          size_t n_args, size_t n_kw,
-                                          const mp_obj_t* args) {
-  mp_arg_check_num(n_args, n_kw, 0, 0, false);
-
-  mp_obj_NFC_t* o = m_new_obj(mp_obj_NFC_t);
-  o->base.type = type;
-
-  return MP_OBJ_FROM_PTR(o);
-}
-
-/// def pwr_ctrl(self, on_off: bool) -> int:
+/// def pwr_ctrl(on_off: bool) -> bool:
 ///     """
 ///     Control NFC power.
 ///     """
-STATIC mp_obj_t mod_trezorio_NFC_pwr_ctrl(mp_obj_t self, mp_obj_t on_off) {
-  return mp_obj_new_int(nfc_pwr_ctl(mp_obj_is_true(on_off)));
+STATIC mp_obj_t mod_trezorio_NFC_pwr_ctrl(mp_obj_t on_off) {
+  return nfc_pwr_ctl(mp_obj_is_true(on_off)) ? mp_const_true : mp_const_false;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_trezorio_NFC_pwr_ctrl_obj,
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorio_NFC_pwr_ctrl_obj,
                                  mod_trezorio_NFC_pwr_ctrl);
 
-/// def wait_card(self, timeout_ms: int) -> int:
+/// def poll_card() -> bool:
 ///     """
-///     Wait for card with timeout.
+///     Poll card.
 ///     """
-STATIC mp_obj_t mod_trezorio_NFC_wait_card(mp_obj_t self, mp_obj_t timeout_ms) {
-  return mp_obj_new_int(nfc_wait_card(mp_obj_get_int(timeout_ms)));
+STATIC mp_obj_t mod_trezorio_NFC_poll_card(void) {
+  return nfc_poll_card() ? mp_const_true : mp_const_false;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_trezorio_NFC_wait_card_obj,
-                                 mod_trezorio_NFC_wait_card);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorio_NFC_poll_card_obj,
+                                 mod_trezorio_NFC_poll_card);
 
-/// def send_recv(self, send: bytearray) -> Tuple[int, bytearray]:
+/// def send_recv(apdu: bytes, safe: bool = False) -> tuple[bytes, bytes]:
 ///     """
 ///     Send receive data through NFC.
 ///     """
-STATIC mp_obj_t mod_trezorio_NFC_send_recv(mp_obj_t self, mp_obj_t send) {
-  mp_buffer_info_t buf_capdu = {0};
-  mp_get_buffer_raise(send, &buf_capdu, MP_BUFFER_READ);
-  uint8_t buf_rapdu[PN532_InDataExchange_BUFF_SIZE];
-  size_t len_rapdu = PN532_InDataExchange_BUFF_SIZE;
+STATIC mp_obj_t mod_trezorio_NFC_send_recv(size_t n_args,
+                                           const mp_obj_t *args) {
+  bool safe = n_args > 1 && args[1] == mp_const_true;
+  mp_buffer_info_t apdu = {0};
+  mp_get_buffer_raise(args[0], &apdu, MP_BUFFER_READ);
 
-  NFC_STATUS status = nfc_send_recv(buf_capdu.buf, (uint16_t)buf_capdu.len,
-                                    buf_rapdu, (uint16_t*)&len_rapdu);
+  if (apdu.len > 255) {
+    mp_raise_msg(&mp_type_ValueError, "APDU too long");
+  }
 
-  mp_obj_t result[2];
-  result[0] = mp_obj_new_int(status);
-  result[1] = mp_obj_new_bytes(buf_rapdu, len_rapdu);
+  uint8_t sw1sw2[2] = {0};
+  uint8_t resp[256] = {0};
+  uint16_t resp_len = sizeof(resp);
 
-  return mp_obj_new_tuple(2, result);
+  bool success = lite_card_apdu((uint8_t *)apdu.buf, apdu.len, resp, &resp_len,
+                                sw1sw2, safe);
+
+  mp_obj_tuple_t *tuple = MP_OBJ_TO_PTR(mp_obj_new_tuple(2, NULL));
+
+  tuple->items[0] = mp_obj_new_str_copy(&mp_type_bytes, resp, resp_len);
+
+  if (!success) {
+    sw1sw2[0] = 0x99;
+    sw1sw2[1] = 0x99;
+  }
+
+  tuple->items[1] = mp_obj_new_str_copy(&mp_type_bytes, sw1sw2, 2);
+
+  return MP_OBJ_FROM_PTR(tuple);
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_trezorio_NFC_send_recv_obj,
-                                 mod_trezorio_NFC_send_recv);
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_trezorio_NFC_send_recv_obj, 1, 2,
+                                           mod_trezorio_NFC_send_recv);
 
-/// def send_recv_single_shot(self, send: bytearray, timeout_ms: int) ->
-/// Tuple[int, bytearray]:
-///     """
-///     Wait for card, then send receive data through NFC.
-///     """
-STATIC mp_obj_t mod_trezorio_NFC_send_recv_single_shot(mp_obj_t self,
-                                                       mp_obj_t send,
-                                                       mp_obj_t timeout_ms) {
-  mp_buffer_info_t buf_capdu = {0};
-  mp_get_buffer_raise(send, &buf_capdu, MP_BUFFER_READ);
-  uint8_t buf_rapdu[PN532_InDataExchange_BUFF_SIZE];
-  size_t len_rapdu = PN532_InDataExchange_BUFF_SIZE;
-
-  NFC_STATUS status =
-      nfc_send_recv_aio(buf_capdu.buf, (uint16_t)buf_capdu.len, buf_rapdu,
-                        (uint16_t*)&len_rapdu, mp_obj_get_int(timeout_ms));
-
-  mp_obj_t result[2];
-  result[0] = mp_obj_new_int(status);
-  result[1] = mp_obj_new_bytes(buf_rapdu, len_rapdu);
-
-  return mp_obj_new_tuple(2, result);
-}
-STATIC MP_DEFINE_CONST_FUN_OBJ_3(mod_trezorio_NFC_send_recv_single_shot_obj,
-                                 mod_trezorio_NFC_send_recv_single_shot);
-
-// class attr
-STATIC const mp_rom_map_elem_t mod_trezorio_NFC_locals_dict_table[] = {
+STATIC const mp_rom_map_elem_t mod_trezorio_NFC_globals_table[] = {
     {MP_ROM_QSTR(MP_QSTR_pwr_ctrl), MP_ROM_PTR(&mod_trezorio_NFC_pwr_ctrl_obj)},
-    {MP_ROM_QSTR(MP_QSTR_wait_card),
-     MP_ROM_PTR(&mod_trezorio_NFC_wait_card_obj)},
+    {MP_ROM_QSTR(MP_QSTR_poll_card),
+     MP_ROM_PTR(&mod_trezorio_NFC_poll_card_obj)},
     {MP_ROM_QSTR(MP_QSTR_send_recv),
      MP_ROM_PTR(&mod_trezorio_NFC_send_recv_obj)},
-    {MP_ROM_QSTR(MP_QSTR_send_recv_single_shot),
-     MP_ROM_PTR(&mod_trezorio_NFC_send_recv_single_shot_obj)},
 };
 
-STATIC MP_DEFINE_CONST_DICT(mod_trezorio_NFC_locals_dict,
-                            mod_trezorio_NFC_locals_dict_table);
+STATIC MP_DEFINE_CONST_DICT(mod_trezorio_NFC_globals,
+                            mod_trezorio_NFC_globals_table);
 
-STATIC const mp_obj_type_t mod_trezorio_NFC_type = {
-    {&mp_type_type},
-    .name = MP_QSTR_NFC,
-    .make_new = mod_trezorio_NFC_make_new,
-    .locals_dict = (void*)&mod_trezorio_NFC_locals_dict,
+STATIC const mp_obj_module_t mod_trezorcrypto_NFC_module = {
+    .base = {&mp_type_module},
+    .globals = (mp_obj_dict_t *)&mod_trezorio_NFC_globals,
 };

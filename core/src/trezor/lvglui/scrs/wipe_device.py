@@ -121,3 +121,60 @@ class WipeDeviceSuccess(FullSizeWindow):
             from apps.base import set_homescreen
 
             set_homescreen()
+
+
+class WipeLiteCardTips(FullSizeWindow):
+    def __init__(self):
+        title = _(i18n_keys.TITLE__CARD_CONTAINS_BACKUP)
+        subtitle = _(i18n_keys.TITLE__CARD_CONTAINS_BACKUP_DESC)
+        icon_path = "A:/res/warning.png"
+        super().__init__(
+            title,
+            subtitle,
+            _(i18n_keys.BUTTON__OVERWRITE),
+            _(i18n_keys.BUTTON__CANCEL),
+            icon_path=icon_path,
+        )
+        self.container = ContainerFlexCol(
+            self.content_area,
+            self.subtitle,
+            padding_row=8,
+            clip_corner=False,
+        )
+        self.item1 = ListItemWithLeadingCheckbox(
+            self.container,
+            _(i18n_keys.FORM__I_UNDERSTAND_THAT_THE_BACKUP_WILL_BE_OVERWRITTEN),
+            radius=40,
+        )
+        self.slider_enable(False)
+        self.container.add_event_cb(self.on_value_changed, lv.EVENT.VALUE_CHANGED, None)
+        self.cb_cnt = 0
+
+    def slider_enable(self, enable: bool = True):
+        if enable:
+            self.btn_yes.add_flag(lv.obj.FLAG.CLICKABLE)
+            self.btn_yes.enable(
+                bg_color=lv_colors.ONEKEY_GREEN, text_color=lv_colors.BLACK
+            )
+
+        else:
+            self.btn_yes.clear_flag(lv.obj.FLAG.CLICKABLE)
+            self.btn_yes.disable(
+                bg_color=lv_colors.ONEKEY_BLACK_1, text_color=lv_colors.ONEKEY_GRAY
+            )
+
+    def on_value_changed(self, event_obj):
+        code = event_obj.code
+        target = event_obj.get_target()
+        if code == lv.EVENT.VALUE_CHANGED:
+            if target == self.item1.checkbox:
+                if target.get_state() & lv.STATE.CHECKED:
+                    self.item1.enable_bg_color()
+                    self.cb_cnt += 1
+                else:
+                    self.item1.enable_bg_color(False)
+                    self.cb_cnt -= 1
+            if self.cb_cnt == 1:
+                self.slider_enable()
+            elif self.cb_cnt < 1:
+                self.slider_enable(False)

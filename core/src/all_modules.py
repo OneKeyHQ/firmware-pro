@@ -347,6 +347,8 @@ trezor.ui.layouts.lvgl.altcoin
 import trezor.ui.layouts.lvgl.altcoin
 trezor.ui.layouts.lvgl.common
 import trezor.ui.layouts.lvgl.common
+trezor.ui.layouts.lvgl.lite
+import trezor.ui.layouts.lvgl.lite
 trezor.ui.layouts.lvgl.recovery
 import trezor.ui.layouts.lvgl.recovery
 trezor.ui.layouts.lvgl.reset

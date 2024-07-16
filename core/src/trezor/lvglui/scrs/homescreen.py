@@ -814,6 +814,12 @@ class SettingsScreen(Screen):
                 left_img_src="A:/res/about.png",
                 has_next=False,
             )
+            self.nfc_test_import = ListItemBtn(
+                self.container,
+                "NFC test import",
+                left_img_src="A:/res/about.png",
+                has_next=False,
+            )
         self.general = ListItemBtn(
             self.container,
             _(i18n_keys.ITEM__GENERAL),
@@ -920,10 +926,15 @@ class SettingsScreen(Screen):
                     if target == self.anim_test:
                         AnimationSettings(self)
                     if target == self.nfc_test:
-                        from trezor.ui.layouts import backup_with_lite
+                        from trezor.ui.layouts.lvgl.lite import backup_with_lite
                         from trezor import wire
 
                         workflow.spawn(backup_with_lite(wire.DUMMY_CONTEXT, b""))
+                    if target == self.nfc_test_import:
+                        from trezor.ui.layouts.lvgl.lite import backup_with_lite_import
+                        from trezor import wire
+
+                        workflow.spawn(backup_with_lite_import(wire.DUMMY_CONTEXT))
 
     def _load_scr(self, scr: "Screen", back: bool = False) -> None:
         lv.scr_load(scr)
@@ -1276,7 +1287,7 @@ class BackupWallet(Screen):
             left_img_src="A:/res/icon-lite-48.png",
         )
         # hide lite backup for now
-        self.lite.add_flag(lv.obj.FLAG.HIDDEN)
+        # self.lite.add_flag(lv.obj.FLAG.HIDDEN)
 
         self.keytag = ListItemBtn(
             self.container,

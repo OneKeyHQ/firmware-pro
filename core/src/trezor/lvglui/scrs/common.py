@@ -347,6 +347,7 @@ class FullSizeWindow(lv.obj):
                 )
             except Result as result:
                 # Result exception was raised, this means this layout is complete.
+
                 value = result.value
             return value
 

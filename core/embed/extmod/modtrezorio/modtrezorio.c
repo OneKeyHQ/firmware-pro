@@ -107,7 +107,7 @@ STATIC const mp_rom_map_elem_t mp_module_trezorio_globals_table[] = {
     {MP_ROM_QSTR(MP_QSTR_USB_STATE), MP_ROM_INT(USB_STATE_IFACE)},
     {MP_ROM_QSTR(MP_QSTR_FINGERPRINT_STATE), MP_ROM_INT(FINGERPRINT_IFACE)},
     {MP_ROM_QSTR(MP_QSTR_MOTOR), MP_ROM_PTR(&mod_trezorio_MOTOR_type)},
-    {MP_ROM_QSTR(MP_QSTR_NFC), MP_ROM_PTR(&mod_trezorio_NFC_type)},
+    {MP_ROM_QSTR(MP_QSTR_nfc), MP_ROM_PTR(&mod_trezorcrypto_NFC_module)},
 #elif defined TREZOR_MODEL_1 || defined TREZOR_MODEL_R
     {MP_ROM_QSTR(MP_QSTR_BUTTON), MP_ROM_INT(BUTTON_IFACE)},
     {MP_ROM_QSTR(MP_QSTR_BUTTON_PRESSED),

@@ -7,12 +7,12 @@ from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
 from trezor.lvglui.lv_colors import lv_colors
 from trezor.ui.layouts import (
     backup_with_keytag,
-    backup_with_lite,
     confirm_action,
     show_success,
     show_warning,
 )
 from trezor.ui.layouts.common import button_request
+from trezor.ui.layouts.lvgl.lite import backup_with_lite
 from trezor.ui.layouts.lvgl.recovery import (  # noqa: F401
     continue_recovery,
     request_word,
@@ -119,13 +119,12 @@ async def show_dry_run_result(
             button=_(i18n_keys.BUTTON__CONTINUE),
             header=_(i18n_keys.TITLE__CORRECT),
         )
-        if not is_slip39 and not __debug__:
+        # if not is_slip39 and not __debug__:
+        if not is_slip39:
             if utils.is_backup_with_lite_1st():
                 await backup_with_lite(ctx, mnemonics, recovery_check=True)
-                await backup_with_keytag(ctx, mnemonics, recovery_check=True)
             else:
                 await backup_with_keytag(ctx, mnemonics, recovery_check=True)
-                await backup_with_lite(ctx, mnemonics, recovery_check=True)
 
     else:
         if is_slip39:
@@ -200,7 +199,7 @@ async def homescreen_dialog(
     info_func: Callable | None = None,
 ) -> None:
     while True:
-        if await continue_recovery(ctx, button_label, text, subtext, info_func):
+        if await continue_recovery(ctx, button_label, text, subtext, info_func):  # 继续恢复
             # go forward in the recovery process
             break
         # user has chosen to abort, confirm the choice

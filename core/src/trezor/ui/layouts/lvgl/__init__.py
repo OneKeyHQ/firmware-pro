@@ -28,6 +28,7 @@ __all__ = (
     "show_error_and_raise",
     "show_pubkey",
     "show_success",
+    "show_lite_card_exit",
     "show_xpub",
     "show_warning",
     "confirm_output",
@@ -470,6 +471,30 @@ def show_success(
         button_confirm=button,
         button_cancel=None,
         icon="A:/res/success.png",
+        icon_color=ui.GREEN,
+    )
+
+
+def show_lite_card_exit(
+    ctx: wire.GenericContext,
+    br_type: str,
+    content: str,
+    header: str = "Success",
+    subheader: str | None = None,
+    button: str = "Exit",
+    cacelbutton: str = "Cancel",
+) -> Awaitable[None]:
+
+    return _show_modal(
+        ctx,
+        br_type=br_type,
+        br_code=ButtonRequestType.Success,
+        header=header,
+        subheader=subheader,
+        content=content,
+        button_confirm=button,
+        button_cancel=cacelbutton,
+        icon=None,
         icon_color=ui.GREEN,
     )
 
@@ -1877,96 +1902,6 @@ async def backup_with_keytag(
                         break
             break
         else:
-            break
-
-
-async def backup_with_lite(
-    ctx: wire.GenericContext, mnemonics: bytes, recovery_check: bool = False
-):
-    # TODO: Not support now
-    if not __debug__:
-        return
-    from trezor.lvglui.scrs.common import FullSizeWindow, lv
-    from trezor.lvglui.scrs.pinscreen import InputLitePin
-
-    while True:
-        ask_screen = FullSizeWindow(
-            _(i18n_keys.TITLE__BACK_UP_WITH_LITE),
-            _(i18n_keys.TITLE__BACK_UP_WITH_LITE_DESC),
-            confirm_text=_(i18n_keys.BUTTON__BACKUP),
-            cancel_text=_(i18n_keys.BUTTON__NOT_NOW),
-            icon_path="A:/res/icon-lite.png",
-            anim_dir=0,
-        )
-        ask_screen.btn_layout_ver()
-        if await ctx.wait(ask_screen.request()):
-            while True:
-                start_scr = FullSizeWindow(
-                    _(i18n_keys.TITLE__GET_STARTED),
-                    _(i18n_keys.CONTENT__PLACE_LITE_DEVICE_FIGURE_CLICK_CONTINUE),
-                    confirm_text=_(i18n_keys.BUTTON__CONTINUE),
-                    cancel_text=_(i18n_keys.BUTTON__BACK),
-                    anim_dir=0,
-                )
-                start_scr.img = lv.img(start_scr.content_area)
-                start_scr.img.set_src("A:/res/nfc-start.png")
-                start_scr.img.align_to(
-                    start_scr.subtitle, lv.ALIGN.OUT_BOTTOM_MID, 0, 52
-                )
-                if await ctx.wait(start_scr.request()):
-                    if __debug__:
-                        print("Lite backup start")
-                    pin = await ctx.wait(InputLitePin().request())
-                    if __debug__:
-                        print(f"Got lite pin {pin}")
-                    if not pin:
-                        if __debug__:
-                            print("Lite pin cancelled")
-                        continue
-
-                    from trezor.lvglui.scrs.nfc import SearchDeviceScreen
-
-                    search_scr = SearchDeviceScreen()
-                    # from trezorio import NFC
-
-                    # nfc_controler = NFC()
-                    # res = nfc_controler.pwr_ctrl(True)
-                    # print(f"nfc power on {res}")
-                    # # res = nfc_controler.wait_card(1000)
-                    # status, res = nfc_controler.send_recv_single_shot(
-                    #     b"\x80\xcb\x80\x00\x05\xdf\xff\x02\x81\x01", 1000
-                    # )
-                    # print(f"nfc wait card status {status} and result {res}")
-                    # nfc_controler.send_recv(b'\x00\x00\x00\x00')
-                    # nfc_controler.send_recv_single_shot(b'\x00\x00\x00\x00', 100)
-                    # get serial number
-                    # status, res = nfc_controler.send_recv_single_shot(
-                    #     b"\x80\xcb\x80\x00\x05\xdf\xff\x02\x81\x01", 100
-                    # )
-
-                    # TODO: 1. start nfc
-                    # TODO: 2. searching device
-                    # TODO: 3. select primary security domain
-                    # TODO: 4. select backup APP ......
-
-                    if await ctx.wait(search_scr.request()):
-                        break
-
-                    # finally show backup success
-                    await show_success(
-                        ctx,
-                        "Lite backup success",
-                        _(i18n_keys.TITLE__BACKUP_COMPLETED_DESC),
-                        _(i18n_keys.TITLE__BACKUP_COMPLETED),
-                        button=_(i18n_keys.BUTTON__CONTINUE),
-                    )
-                else:
-                    if __debug__:
-                        print("Lite backup cancelled")
-                    break
-        else:
-            if __debug__:
-                print("Lite backup skipped")
             break
 
 

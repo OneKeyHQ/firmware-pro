@@ -10,7 +10,6 @@ from trezor.lvglui.scrs import fingerprints
 from trezor.messages import EntropyAck, EntropyRequest, Success
 from trezor.ui.layouts import (
     backup_with_keytag,
-    backup_with_lite,
     confirm_backup,
     confirm_reset_device,
     request_strength,
@@ -124,7 +123,7 @@ async def reset_device(ctx: wire.Context, msg: ResetDevice) -> Success:
         if perform_backup:
             if not __debug__:
                 await backup_with_keytag(ctx, secret)
-                await backup_with_lite(ctx, secret)
+                # await backup_with_lite(ctx, secret)
                 await layout.show_backup_success(ctx)
         # ask user to open air-gapped mode
         # await enable_airgap_mode()

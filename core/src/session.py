@@ -70,6 +70,7 @@ loop.schedule(handle_qr_task())
 loop.schedule(lvgl_tick())
 loop.schedule(handle_stop_mode())
 
+
 utils.set_up()
 if utils.show_app_guide():
     from trezor.ui.layouts import show_onekey_app_guide
