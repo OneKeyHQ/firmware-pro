@@ -182,3 +182,29 @@ def sign_message(msg: bytes) -> bytes:
     """
     Sign message.
     """
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
+def derive_xmr(
+    path: Sequence[int]
+    digest: bytes,
+) -> tuple[bytes, bytes]:
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
+def derive_xmr_privare(
+    deriv: bytes
+    index: int,
+) -> bytes:
+    """
+    base + H_s(derivation || varint(output_index))
+    """
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
+def xmr_get_tx_key(
+    rand: bytes
+    hash: bytes,
+) -> bytes:
+    base + H_s(derivation || varint(output_index))
+    """

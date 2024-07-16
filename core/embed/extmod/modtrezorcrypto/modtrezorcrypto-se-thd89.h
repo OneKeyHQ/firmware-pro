@@ -616,6 +616,90 @@ STATIC mp_obj_t mod_trezorcrypto_se_thd89_sign_message(mp_obj_t msg) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorcrypto_se_thd89_sign_message_obj,
                                  mod_trezorcrypto_se_thd89_sign_message);
 
+/// def derive_xmr(
+///     path: Sequence[int]
+///     digest: bytes,
+/// ) -> tuple[bytes, bytes]:
+STATIC mp_obj_t mod_trezorcrypto_se_thd89_derive_xmr(mp_obj_t path) {
+  // get path objects and length
+  size_t plen = 0;
+  mp_obj_t *pitems = NULL;
+  mp_obj_get_array(path, &plen, &pitems);
+  if (plen > 32) {
+    mp_raise_ValueError("Path cannot be longer than 32 indexes");
+  }
+
+  uint32_t address_n[plen];
+
+  for (uint32_t pi = 0; pi < plen; pi++) {
+    address_n[pi] = trezor_obj_get_uint(pitems[pi]);
+  }
+
+  uint8_t pubkey[32], prikey_hash[32];
+  if (!se_derive_xmr_key("ed25519", address_n, plen, pubkey, prikey_hash)) {
+    mp_raise_ValueError("Failed to derive path");
+  }
+  mp_obj_tuple_t *tuple = MP_OBJ_TO_PTR(mp_obj_new_tuple(2, NULL));
+  tuple->items[0] = mp_obj_new_bytes(pubkey, 32);
+  tuple->items[1] = mp_obj_new_bytes(prikey_hash, 32);
+
+  return MP_OBJ_FROM_PTR(tuple);
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorcrypto_se_thd89_derive_xmr_obj,
+                                 mod_trezorcrypto_se_thd89_derive_xmr);
+
+/// def derive_xmr_privare(
+///     deriv: bytes
+///     index: int,
+/// ) -> bytes:
+///     """
+///     base + H_s(derivation || varint(output_index))
+///     """
+STATIC mp_obj_t mod_trezorcrypto_se_thd89_derive_xmr_private(mp_obj_t deriv,
+                                                             mp_obj_t index) {
+  mp_buffer_info_t pub_key = {0};
+  mp_get_buffer_raise(deriv, &pub_key, MP_BUFFER_READ);
+
+  uint32_t idx = mp_obj_get_int(index);
+
+  uint8_t out_pri[32];
+  if (!se_derive_xmr_private_key(pub_key.buf, idx, out_pri)) {
+    mp_raise_ValueError("Failed to derive private key");
+  }
+
+  return mp_obj_new_str_copy(&mp_type_bytes, (const uint8_t *)out_pri, 32);
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(
+    mod_trezorcrypto_se_thd89_derive_xmr_private_obj,
+    mod_trezorcrypto_se_thd89_derive_xmr_private);
+
+/// def xmr_get_tx_key(
+///     rand: bytes
+///     hash: bytes,
+/// ) -> bytes:
+///     base + H_s(derivation || varint(output_index))
+///     """
+STATIC mp_obj_t mod_trezorcrypto_se_thd89_xmr_get_tx_key(mp_obj_t rand,
+                                                         mp_obj_t hash) {
+  mp_buffer_info_t rand_r = {0};
+  mp_get_buffer_raise(rand, &rand_r, MP_BUFFER_READ);
+
+  mp_buffer_info_t hash_h = {0};
+  mp_get_buffer_raise(hash, &hash_h, MP_BUFFER_READ);
+
+  uint8_t out_pri[32];
+  if (!se_xmr_get_tx_key(rand_r.buf, hash_h.buf, out_pri)) {
+    mp_raise_ValueError("Failed to get tx key");
+  }
+
+  return mp_obj_new_str_copy(&mp_type_bytes, (const uint8_t *)out_pri, 32);
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_trezorcrypto_se_thd89_xmr_get_tx_key_obj,
+                                 mod_trezorcrypto_se_thd89_xmr_get_tx_key);
+
 STATIC const mp_rom_map_elem_t mod_trezorcrypto_se_thd89_globals_table[] = {
     {MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_se_thd89)},
     {MP_ROM_QSTR(MP_QSTR_check),
@@ -662,6 +746,12 @@ STATIC const mp_rom_map_elem_t mod_trezorcrypto_se_thd89_globals_table[] = {
      MP_ROM_PTR(&mod_trezorcrypto_se_thd89_read_certificate_obj)},
     {MP_ROM_QSTR(MP_QSTR_sign_message),
      MP_ROM_PTR(&mod_trezorcrypto_se_thd89_sign_message_obj)},
+    {MP_ROM_QSTR(MP_QSTR_derive_xmr),
+     MP_ROM_PTR(&mod_trezorcrypto_se_thd89_derive_xmr_obj)},
+    {MP_ROM_QSTR(MP_QSTR_derive_xmr_private),
+     MP_ROM_PTR(&mod_trezorcrypto_se_thd89_derive_xmr_private_obj)},
+    {MP_ROM_QSTR(MP_QSTR_xmr_get_tx_key),
+     MP_ROM_PTR(&mod_trezorcrypto_se_thd89_xmr_get_tx_key_obj)},
 };
 STATIC MP_DEFINE_CONST_DICT(mod_trezorcrypto_se_thd89_globals,
                             mod_trezorcrypto_se_thd89_globals_table);
