@@ -29,10 +29,17 @@ async def recovery_homescreen() -> None:
     await recovery_process(ctx)
 
 
-async def recovery_process(ctx: wire.GenericContext) -> Success:
-    wire.AVOID_RESTARTING_FOR = (MessageType.Initialize, MessageType.GetFeatures)
+async def recovery_process(ctx: wire.GenericContext, type: str = "phrase") -> Success:
+    wire.AVOID_RESTARTING_FOR = (
+        MessageType.Initialize,
+        MessageType.GetFeatures,
+    )
     try:
-        return await _continue_recovery_process(ctx)
+        if type == "phrase":
+            return await _continue_recovery_process(ctx)
+        else:
+            return await _continue_recovery_process_lite(ctx)
+
     except recover.RecoveryAborted:
         dry_run = storage.recovery.is_dry_run()
         if dry_run:
@@ -43,7 +50,44 @@ async def recovery_process(ctx: wire.GenericContext) -> Success:
         raise wire.ActionCancelled
 
 
-async def _continue_recovery_process(ctx: wire.GenericContext) -> Success:
+async def _continue_recovery_process_lite(
+    ctx: wire.GenericContext,
+) -> Success:
+
+    from trezor.ui.layouts.lvgl.lite import backup_with_lite_import
+
+    words_length = 0
+
+    secret = await backup_with_lite_import(ctx)
+
+    if secret == 0:
+        raise RuntimeError("secret is zero")
+    if isinstance(secret, str):
+        words_length = len(secret.split())
+
+    is_slip39 = backup_types.is_slip39_word_count(words_length)
+
+    if is_slip39:
+        secret, share = recover.process_slip39(words=str(secret))
+    else:
+        secret = recover.process_bip39(words=str(secret))
+        share = None
+
+    if is_slip39 and share is None:
+        raise RuntimeError("SLIP-39 share should not be None")
+
+    backup_type = backup_types.infer_backup_type(is_slip39, share)
+
+    if secret is None:
+        raise ValueError("Secret cannot be None")
+    result = await _finish_recovery(ctx, secret, backup_type)
+
+    return result
+
+
+async def _continue_recovery_process(
+    ctx: wire.GenericContext,
+) -> Success:
     # gather the current recovery state from storage
     dry_run = storage.recovery.is_dry_run()
     word_count, backup_type = recover.load_slip39_state()

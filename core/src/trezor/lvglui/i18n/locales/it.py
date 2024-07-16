@@ -788,6 +788,7 @@ translations = [
     "Conferma Indirizzo",
     "Torna all'app e scansiona il codice QR qui sotto.",
     "Reti compatibili con BTC ed EVM",
+    "Reti compatibili con ETH ed EVM",
     "Apri OneKey e scansiona il codice QR qui sotto",
     "Esporta Account",
     "Connessione in corso...",

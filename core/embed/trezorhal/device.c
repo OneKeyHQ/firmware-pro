@@ -577,9 +577,8 @@ static bool _nfc_test() {
   nfc_init();
   nfc_pwr_ctl(true);
   while (1) {
-    if (nfc_poll_card() == NFC_STATUS_OPERACTION_SUCCESS) {
-      if (nfc_select_aid((uint8_t *)"\xD1\x56\x00\x01\x32\x83\x40\x01", 8) ==
-          NFC_STATUS_OPERACTION_SUCCESS) {
+    if (nfc_poll_card()) {
+      if (nfc_select_aid((uint8_t *)"\xD1\x56\x00\x01\x32\x83\x40\x01", 8)) {
         nfc_pwr_ctl(false);
         return true;
       }
@@ -587,7 +586,7 @@ static bool _nfc_test() {
       if (nfc_select_aid(
               (uint8_t
                    *)"\x6f\x6e\x65\x6b\x65\x79\x2e\x62\x61\x63\x6b\x75\x70\x01",
-              14) == NFC_STATUS_OPERACTION_SUCCESS) {
+              14)) {
         nfc_pwr_ctl(false);
         return true;
       }
@@ -985,14 +984,14 @@ void device_burnin_test(bool force) {
           nfc_pwr_ctl(true);
           HAL_TIM_Base_Stop(&TimHandle);
           while (1) {
-            if (nfc_poll_card() == NFC_STATUS_OPERACTION_SUCCESS) {
+            if (nfc_poll_card()) {
               if (nfc_select_aid((uint8_t *)"\xD1\x56\x00\x01\x32\x83\x40\x01",
-                                 8) == NFC_STATUS_OPERACTION_SUCCESS) {
+                                 8)) {
                 break;
               } else if (nfc_select_aid(
                              (uint8_t *)"\x6f\x6e\x65\x6b\x65\x79\x2e\x62"
                                         "\x61\x63\x6b\x75\x70\x01",
-                             14) == NFC_STATUS_OPERACTION_SUCCESS) {
+                             14)) {
                 break;
               }
             }

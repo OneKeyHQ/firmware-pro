@@ -766,7 +766,7 @@ translations = [
     "요청이 있을 때 PIN을 입력하고, 지갑 목록이 나타나면 가져올 계정을 선택하세요.",
     "USB 연결",
     "데스크톱 & 브라우저 확장 프로그램",
-    "다음에서 OneKey App Mobile을 다운로드하세요: onekey.so/download",
+    "다음에서 OneKey App Mobile을 다운로드하세요:onekey.so/download",
     "장치 연결하기",
     "OneKey Pro를 컴퓨터에 USB 케이블을 사용하여 연결하세요.",
     "연결 시작",
@@ -788,6 +788,7 @@ translations = [
     "주소 확인",
     "앱으로 돌아가서 아래의 QR 코드를 스캔하세요.",
     "BTC 및 EVM\u0036호환 네트워크",
+    "ETH 및 EVM 호환 네트워크",
     "OneKey를 열고 아래 QR 코드를 스캔하세요.",
     "계정 내보내기",
     "연결 중...",

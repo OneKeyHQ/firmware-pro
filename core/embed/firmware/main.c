@@ -60,6 +60,7 @@
 #include "fingerprint.h"
 #include "mipi_lcd.h"
 #include "motor.h"
+#include "nfc.h"
 #include "qspi_flash.h"
 #include "se_thd89.h"
 #include "spi_legacy.h"
@@ -172,6 +173,8 @@ int main(void) {
   emmc_init();
   timer_init();
   fingerprint_init();
+
+  nfc_init();
 
   device_test(false);
 
