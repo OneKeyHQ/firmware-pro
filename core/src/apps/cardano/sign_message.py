@@ -1,13 +1,14 @@
 from typing import TYPE_CHECKING
 
 from trezor import utils
-from trezor.crypto import hashlib
 from trezor.ui.layouts import confirm_signverify
 
 from apps.common import cbor
 from apps.common.signverify import decode_message
 
 from . import seed
+from .addresses import assert_params_cond
+from .helpers.paths import SCHEMA_STAKING_ANY_ACCOUNT
 
 if TYPE_CHECKING:
     from trezor.wire import Context
@@ -41,12 +42,28 @@ async def sign_message(
     if msg.network_id != network_ids.MAINNET:
         raise wire.ProcessError("Invalid Networ ID")
 
-    address = addresses.derive_human_readable(
+    address_type = msg.address_type if msg.address_type else CardanoAddressType.BASE
+    address_n = msg.address_n
+    staking_path = None
+    if address_type == CardanoAddressType.BYRON:
+        raise wire.ProcessError("Byron addresses are not supported")
+    elif address_type in (CardanoAddressType.BASE, CardanoAddressType.REWARD):
+        assert_params_cond(len(msg.address_n) == 5)
+        staking_path = msg.address_n[:3]
+        staking_path.extend([2, 0])
+        assert_params_cond(SCHEMA_STAKING_ANY_ACCOUNT.match(staking_path))
+        if address_type == CardanoAddressType.REWARD:
+            address_n = None
+    elif address_type in (CardanoAddressType.ENTERPRISE,):
+        pass
+    else:
+        raise wire.ProcessError(f"Address type {address_type}not supported")
+    address_bytes = addresses.derive_bytes(
         keychain,
         CardanoAddressParametersType(
-            address_type=CardanoAddressType.ENTERPRISE,
-            address_n=msg.address_n,
-            address_n_staking=[],
+            address_type=address_type,
+            address_n=address_n,
+            address_n_staking=staking_path,
             staking_key_hash=None,
             certificate_pointer=None,
             script_payment_hash=None,
@@ -55,6 +72,7 @@ async def sign_message(
         protocol_magics.MAINNET,
         msg.network_id,
     )
+    address = addresses.encode_human_readable(address_bytes)
     await confirm_signverify(
         ctx, "ADA", decode_message(msg.message), address, verify=False
     )
@@ -65,9 +83,6 @@ async def sign_message(
         verification_key = node.public_key()[1:]
     else:
         verification_key = ed25519.publickey(node.private_key())
-    verification_key_hash = hashlib.blake2b(verification_key, outlen=28).digest()
-    KEY_NONE = 6  # Payment key hash only
-    header = (KEY_NONE << 4 | msg.network_id).to_bytes(1, "big")
     # Sign1Message
     # msg = Sign1Message(
     #     phdr={
@@ -85,7 +100,7 @@ async def sign_message(
     #     }
     # )
     # Sign1Message.phdr
-    phdr = {1: -8, "address": header + verification_key_hash}  # Algorithm: EdDSA,
+    phdr = {1: -8, "address": address_bytes}  # Algorithm: EdDSA,
     phdr_encoded = cbor.encode(phdr)
 
     # Sign1Message.uhdr
@@ -96,8 +111,7 @@ async def sign_message(
 
     sig_structure = ["Signature1", phdr_encoded, b"", payload]
     data = cbor.encode(sig_structure)
-    signature = ed25519.sign(node.private_key(), data)
-
+    signature = ed25519.sign_ext(node.private_key(), node.private_key_ext(), data)
     message = [phdr_encoded, uhdr, payload, signature]
     signed_message = cbor.encode(message)
 
@@ -108,5 +122,4 @@ async def sign_message(
         -2: verification_key,  # OKPKpX: public key
     }
     key = cbor.encode(key_to_return)
-
     return CardanoMessageSignature(signature=signed_message, key=key)
