@@ -346,7 +346,7 @@ translations = [
     "Descarga las aplicaciones OneKey en",
     "Descargar",
     "Conectar billetera",
-    "Toca el botón Conectar-Billetera, luego selecciona Conectar-OneKey-Billetera-Física.",
+    "Toca \"Conectar monedero de hardware\".",
     "Conecta el dispositivo: {}.",
     "Toca el botón Crear billetera.",
     "Más tarde, la aplicación OneKey recuperará las cuentas que usaste anteriormente.",
@@ -801,5 +801,7 @@ translations = [
     "Los dos OneKey Lite utilizados para la conexión no son iguales.",
     "¿Salir del proceso de copia de seguridad?",
     "Si sale ahora, deberá volver a verificar su frase de recuperación cuando vuelva a ingresar. ¿Seguro que quieres salir?",
+    "Frase de recuperación no compatible",
+    "La actual cartera de hardware solo admite frases de recuperación de 12, 18 y 24 palabras. Esta copia de seguridad Lite no se puede restaurar.",
 ]
 # fmt: on

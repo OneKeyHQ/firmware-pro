@@ -2889,7 +2889,7 @@ class AboutSetting(Screen):
         )
 
         self.serial.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
-        self.fcc_id = DisplayItemWithFont_30(self.container, "FCC ID", "2BB8VT1")
+        self.fcc_id = DisplayItemWithFont_30(self.container, "FCC ID", "2BB8VP1")
 
         self.fcc_icon = lv.img(self.fcc_id)
         self.fcc_icon.set_src("A:/res/fcc-logo.png")

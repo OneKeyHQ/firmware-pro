@@ -346,7 +346,7 @@ translations = [
     "Download OneKey apps at",
     "Download",
     "Connect Wallet",
-    "Tap Connect-Wallet button, then select Connect-OneKey-Hardware-Wallet.",
+    "Tap \"Connect hardware wallet\".",
     "Connect the device: {}.",
     "Tap Create-Wallet button.",
     "Later, OneKey app will recover accounts you previously used.",
@@ -801,5 +801,7 @@ translations = [
     "The two OneKey Lite used for connection are not the same.",
     "Exit Backup Process?",
     "If you exit now, you will need to re-verify your recovery phrase when you re-enter. Are you sure you want to exit?",
+    "Unsupported Recovery Phrase",
+    "The current hardware wallet only supports 12, 18, and 24-word recovery phrases. This Lite backup cannot be restored.",
 ]
 # fmt: on

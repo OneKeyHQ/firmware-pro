@@ -346,7 +346,7 @@ translations = [
     "Scarica le app OneKey su",
     "Scarica",
     "Collega il portafoglio",
-    "Tocca il pulsante Connect-Wallet, quindi seleziona Connect-OneKey-Hardware-Wallet.",
+    "Tocca \"Collega portafoglio hardware\".",
     "Collega il dispositivo: {}.",
     "Tocca il pulsante Crea portafoglio.",
     "Successivamente, l'app OneKey recupererà gli account che hai utilizzato in precedenza.",
@@ -801,5 +801,7 @@ translations = [
     "I due OneKey Lite utilizzati per la connessione non sono uguali.",
     "Uscire dal processo di backup?",
     "Se esci adesso, dovrai verificare nuovamente la frase di recupero quando rientri. Sei sicuro di voler uscire?",
+    "Frase di recupero non supportata",
+    "Il portafoglio hardware attuale supporta solo frasi di recupero da 12, 18 e 24 parole. Questo backup Lite non può essere ripristinato.",
 ]
 # fmt: on

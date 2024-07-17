@@ -346,7 +346,7 @@ translations = [
     "Laden Sie OneKey-Apps unter herunter",
     "Download",
     "Brieftasche verbinden",
-    "Tippen Sie auf die Schaltfläche Connect-Wallet und wählen Sie dann Connect-OneKey-Hardware-Wallet.",
+    "Tippen Sie auf \"Hardware Wallet verbinden\".",
     "Schließen Sie das Gerät an: {}.",
     "Tippen Sie auf die Schaltfläche Wallet erstellen.",
     "Später stellt die OneKey-App zuvor verwendete Konten wieder her.",
@@ -801,5 +801,7 @@ translations = [
     "Die beiden für die Verbindung verwendeten OneKey Lite sind nicht gleich.",
     "Sicherungsvorgang beenden?",
     "Wenn Sie jetzt beenden, müssen Sie Ihre Wiederherstellungsphrase beim erneuten Aufrufen erneut bestätigen. Möchten Sie wirklich beenden?",
+    "Nicht unterstützte Wiederherstellungsphrase",
+    "Die aktuelle Hardware-Wallet unterstützt nur Wiederherstellungsphrasen mit 12, 18 und 24 Wörtern. Diese Lite-Sicherung kann nicht wiederhergestellt werden.",
 ]
 # fmt: on
