@@ -8,7 +8,14 @@ from trezor.langs import langs, langs_keys
 from trezor.lvglui.i18n import gettext as _, i18n_refresh, keys as i18n_keys
 from trezor.lvglui.lv_colors import lv_colors
 from trezor.lvglui.scrs.components.pageable import Indicator
-from trezor.qr import close_camera, get_hd_key, retrieval_hd_key, save_app_obj, scan_qr
+from trezor.qr import (
+    close_camera,
+    get_hd_key,
+    retrieval_encoder,
+    retrieval_hd_key,
+    save_app_obj,
+    scan_qr,
+)
 from trezor.ui import display, style
 
 import ujson as json
@@ -1182,12 +1189,11 @@ class WalletList(Screen):
         self.onekey = ListItemBtn(
             self.container,
             _(i18n_keys.ITEM__ONEKEY_WALLET),
-            # "BTC·ETH·TRON·SOL·NEAR ...",
-            _(i18n_keys.CONTENT__COMING_SOON),
+            "BTC·EVM",
             left_img_src="A:/res/ok-logo-48.png",
         )
         self.onekey.text_layout_vertical(pad_top=17, pad_ver=20)
-        self.onekey.disable()
+        # self.onekey.disable()
         # self.onekey.add_flag(lv.obj.FLAG.HIDDEN)
 
         self.okx = ListItemBtn(
@@ -1209,6 +1215,7 @@ class WalletList(Screen):
                 workflow.spawn(gen_hd_key(self.refresh))
         else:
             retrieval_hd_key()
+            retrieval_encoder()
 
     def on_click(self, event_obj):
         code = event_obj.code
@@ -1216,24 +1223,43 @@ class WalletList(Screen):
         if code == lv.EVENT.CLICKED:
             if target not in [self.onekey, self.mm, self.okx]:
                 return
-            qr_data = (
-                retrieval_hd_key() if device.is_passphrase_enabled() else get_hd_key()
-            )
-            if qr_data is None:
-                from trezor.qr import gen_hd_key
-
-                workflow.spawn(
-                    gen_hd_key(lambda: lv.event_send(target, lv.EVENT.CLICKED, None))
-                )
-                return
             if target == self.onekey:
+                from trezor.qr import gen_multi_accounts, get_encoder
+                from apps.common import passphrase
+
+                if passphrase.is_enabled():
+                    encoder = retrieval_encoder()
+                else:
+                    encoder = get_encoder()
+                if encoder is None:
+                    workflow.spawn(
+                        gen_multi_accounts(
+                            lambda: lv.event_send(target, lv.EVENT.CLICKED, None)
+                        )
+                    )
+                    return
                 ConnectWallet(
                     _(i18n_keys.ITEM__ONEKEY_WALLET),
                     "Ethereum, Polygon, Avalanche, Base and other EVM networks.",
-                    qr_data,
+                    None,
                     "A:/res/ok-logo-96.png",
+                    encoder,
                 )
             elif target == self.mm:
+                qr_data = (
+                    retrieval_hd_key()
+                    if device.is_passphrase_enabled()
+                    else get_hd_key()
+                )
+                if qr_data is None:
+                    from trezor.qr import gen_hd_key
+
+                    workflow.spawn(
+                        gen_hd_key(
+                            lambda: lv.event_send(target, lv.EVENT.CLICKED, None)
+                        )
+                    )
+                    return
                 ConnectWallet(
                     _(i18n_keys.ITEM__METAMASK_WALLET),
                     "Ethereum, Polygon, Avalanche, Base and other EVM networks.",
@@ -1241,6 +1267,7 @@ class WalletList(Screen):
                     "A:/res/mm-logo-96.png",
                 )
             elif target == self.okx:
+                qr_data = b""
                 ConnectWallet(
                     _(i18n_keys.ITEM__OKX_WALLET),
                     "Ethereum, Bitcoin, Polygon, Solana, OKT Chain, TRON and other networks.",
@@ -1312,7 +1339,7 @@ class BackupWallet(Screen):
 
 
 class ConnectWallet(FullSizeWindow):
-    def __init__(self, wallet_name, support_chains, qr_data, icon_path):
+    def __init__(self, wallet_name, support_chains, qr_data, icon_path, encoder=None):
         super().__init__(
             _(i18n_keys.TITLE__CONNECT_STR_WALLET).format(wallet_name),
             _(i18n_keys.CONTENT__OPEN_STR_WALLET_AND_SCAN_THE_QR_CODE_BELOW).format(
@@ -1328,9 +1355,11 @@ class ConnectWallet(FullSizeWindow):
         gc.threshold(int(18248 * 1.5))  # type: ignore["threshold" is not a known member of module]
         from trezor.lvglui.scrs.components.qrcode import QRCode
 
+        self.encoder = encoder
+        data = qr_data if encoder is None else encoder.next_part()
         self.qr = QRCode(
             self.content_area,
-            qr_data,
+            data,
             icon_path=icon_path,
         )
         self.qr.align_to(self.subtitle, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 40)
@@ -1365,19 +1394,36 @@ class ConnectWallet(FullSizeWindow):
         self.label_bottom.add_style(
             StyleWrapper().text_font(font_GeistRegular26).pad_ver(12).pad_hor(0), 0
         )
+        self.scrolling = False
+        self.content_area.clear_flag(lv.obj.FLAG.SCROLL_ELASTIC)
+        self.content_area.clear_flag(lv.obj.FLAG.SCROLL_MOMENTUM)
+        self.content_area.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
         self.label_bottom.set_long_mode(lv.label.LONG.WRAP)
         self.label_bottom.set_text(support_chains)
         self.label_bottom.align_to(self.line, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 0)
         self.panel.align_to(self.qr, lv.ALIGN.OUT_BOTTOM_MID, 0, 32)
         self.nav_back.add_event_cb(self.on_nav_back, lv.EVENT.CLICKED, None)
         self.add_event_cb(self.on_nav_back, lv.EVENT.GESTURE, None)
+        self.add_event_cb(self.on_scroll_begin, lv.EVENT.SCROLL_BEGIN, None)
+        self.add_event_cb(self.on_scroll_end, lv.EVENT.SCROLL_END, None)
+        if encoder is not None:
+            workflow.spawn(self.update_qr())
+
+    def on_scroll_begin(self, event_obj):
+        self.scrolling = True
+
+    def on_scroll_end(self, event_obj):
+        self.scrolling = False
 
     def on_nav_back(self, event_obj):
         code = event_obj.code
         target = event_obj.get_target()
         if code == lv.EVENT.CLICKED:
             if target == self.nav_back.nav_btn:
-                self.destroy()
+                if self.encoder is not None:
+                    self.channel.publish(1)
+                else:
+                    self.destroy()
         elif code == lv.EVENT.GESTURE:
             _dir = lv.indev_get_act().get_gesture_dir()
             if _dir == lv.DIR.RIGHT:
@@ -1385,6 +1431,21 @@ class ConnectWallet(FullSizeWindow):
 
     def destroy(self, delay_ms=200):
         self.delete()
+
+    async def update_qr(self):
+        while True:
+            stop_single = self.request()
+            racer = loop.race(stop_single, loop.sleep(100))
+            await racer
+            if stop_single in racer.finished:
+                self.destroy()
+                return
+            if self.scrolling:
+                await loop.sleep(5000)
+                continue
+            assert self.encoder is not None
+            qr_data = self.encoder.next_part()
+            self.qr.update(qr_data, len(qr_data))
 
 
 class ScanScreen(Screen):
@@ -2817,7 +2878,7 @@ class AboutSetting(Screen):
         )
 
         self.serial.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
-        self.fcc_id = DisplayItemWithFont_30(self.container, "FCC ID", "2BB8VT1")
+        self.fcc_id = DisplayItemWithFont_30(self.container, "FCC ID", "2BB8VP1")
 
         self.fcc_icon = lv.img(self.fcc_id)
         self.fcc_icon.set_src("A:/res/fcc-logo.png")

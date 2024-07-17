@@ -313,6 +313,4 @@ class FountainDecoder:
                     parts, received, mixed_s, queued, res
                 )
             )
-
-
 # pyright: on

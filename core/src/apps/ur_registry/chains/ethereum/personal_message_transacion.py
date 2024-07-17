@@ -6,11 +6,8 @@ from .eth_sign_request import EthSignRequest
 class EthereumPersonalMessageTransacion:
     def __init__(self, req: EthSignRequest):
         self.req = req
-        self.resp = None
         self.qr = None
-
-    async def initial_tx(self):
-        pass
+        self.encoder = None
 
     def get_tx(self):
         return EthereumSignMessage(
@@ -26,12 +23,12 @@ class EthereumPersonalMessageTransacion:
 
         # pyright: off
         tx = self.get_tx()
-        self.resp = await sign_message(wire.QR_CONTEXT, tx)
-        self.signature = self.resp.signature
+        resp = await sign_message(wire.QR_CONTEXT, tx)
+        self.signature = resp.signature
         eth_signature = EthSignature(
             request_id=self.req.get_request_id(),
             signature=self.signature,
-            origin="OneKey".encode(),
+            origin="OneKey Pro".encode(),
         )
         ur = eth_signature.ur_encode()
         encoded = UREncoder.encode(ur).upper()

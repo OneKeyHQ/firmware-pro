@@ -3,6 +3,8 @@ from trezor import io, log, loop, utils
 
 import lvgl as lv  # type: ignore[Import "lvgl" could not be resolved]
 
+DEFAULT_DISPLAY = None
+
 
 async def lvgl_tick():
     from trezor import workflow
@@ -51,16 +53,17 @@ def init_lvgl() -> None:
 
 
 def init_theme() -> None:
-    dispp = lv.disp_get_default()
+    global DEFAULT_DISPLAY
+    DEFAULT_DISPLAY = lv.disp_get_default()
     theme = lv.theme_default_init(
-        dispp,
+        DEFAULT_DISPLAY,
         lv.palette_main(lv.PALETTE.BLUE),
         lv.palette_main(lv.PALETTE.RED),
         True,
         lv.font_default(),
     )
     # dispp.set_bg_color(lv.color_hex(0x000000))
-    dispp.set_theme(theme)
+    DEFAULT_DISPLAY.set_theme(theme)
 
 
 def init_file_system() -> None:
@@ -95,8 +98,9 @@ def get_elapsed() -> int:
     """Get elapsed time since last user activity(e.g. click).
     @return: elapsed time in milliseconds
     """
-    disp = lv.disp_get_default()
-    return disp.get_inactive_time()
+    # disp = lv.disp_get_default()
+    assert DEFAULT_DISPLAY is not None
+    return DEFAULT_DISPLAY.get_inactive_time()
 
 
 try:

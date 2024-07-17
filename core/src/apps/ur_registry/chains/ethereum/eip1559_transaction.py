@@ -13,11 +13,8 @@ TRANSACTION_TYPE = 2
 class FeeMarketEIP1559Transaction:
     def __init__(self, req: EthSignRequest):
         self.req = req
-        self.resp = None
         self.qr = None
-
-    async def initial_tx(self):
-        pass
+        self.encoder = None
 
     # Format: `0x02 || rlp([chainId, nonce, maxPriorityFeePerGas, maxFeePerGas, gasLimit, to, value, data,
     # accessList, signatureYParity, signatureR, signatureS])`
@@ -71,16 +68,14 @@ class FeeMarketEIP1559Transaction:
 
         # pyright: off
         req = self.get_tx(self.req)
-        self.resp = await sign_tx_eip1559(wire.QR_CONTEXT, req)
+        resp = await sign_tx_eip1559(wire.QR_CONTEXT, req)
         self.signature = (
-            self.resp.signature_r
-            + self.resp.signature_s
-            + self.resp.signature_v.to_bytes(1, "big")
+            resp.signature_r + resp.signature_s + resp.signature_v.to_bytes(1, "big")
         )
         eth_signature = EthSignature(
             request_id=self.req.get_request_id(),
             signature=self.signature,
-            origin="OneKey".encode(),
+            origin="OneKey Pro".encode(),
         )
         ur = eth_signature.ur_encode()
         encoded = UREncoder.encode(ur).upper()

@@ -9,8 +9,6 @@ from trezor.lvglui.i18n import gettext as _, i18n_refresh, keys as i18n_keys
 from trezor.lvglui.scrs import fingerprints
 from trezor.messages import EntropyAck, EntropyRequest, Success
 from trezor.ui.layouts import (
-    backup_with_keytag,
-    backup_with_lite,
     confirm_backup,
     confirm_reset_device,
     request_strength,
@@ -109,6 +107,7 @@ async def reset_device(ctx: wire.Context, msg: ResetDevice) -> Success:
         # generate and display backup information for the master secret
         if perform_backup:
             await backup_seed(ctx, msg.backup_type, secret)
+            await layout.show_backup_success(ctx)
         # write settings and master secret into storage
         if msg.label is not None:
             storage.device.set_label(msg.label)
@@ -121,11 +120,11 @@ async def reset_device(ctx: wire.Context, msg: ResetDevice) -> Success:
             no_backup=bool(msg.no_backup),
         )
         # if we backed up the wallet, show success message
-        if perform_backup:
-            if not __debug__:
-                await backup_with_keytag(ctx, secret)
-                await backup_with_lite(ctx, secret)
-                await layout.show_backup_success(ctx)
+        # if perform_backup:
+        #     if not __debug__:
+        #         await backup_with_keytag(ctx, secret)
+        #         # await backup_with_lite(ctx, secret)
+        #         await layout.show_backup_success(ctx)
         # ask user to open air-gapped mode
         # await enable_airgap_mode()
 

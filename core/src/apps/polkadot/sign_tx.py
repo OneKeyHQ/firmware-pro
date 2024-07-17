@@ -28,7 +28,7 @@ async def sign_tx(
         public_key = ed25519.publickey(node.private_key())
     address_type = helper.get_address_type(msg.network)
     address = helper.ss58_encode(public_key, address_type)
-    chain_name, symbol, decimal = helper.update_chain_res(ctx, msg.network)
+    chain_name, symbol, decimal = helper.retrieval_chain_res(ctx, msg.network)
     tx = transaction.Transaction.deserialize(msg.raw_tx, msg.network)
     await tx.layout(ctx, address, chain_name, symbol, decimal)
     await confirm_final(ctx, chain_name)

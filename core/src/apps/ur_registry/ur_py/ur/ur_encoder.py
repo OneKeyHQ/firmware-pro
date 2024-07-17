@@ -11,7 +11,7 @@ from .fountain_encoder import FountainEncoder
 
 class UREncoder:
     # Start encoding a (possibly) multi-part UR.
-    def __init__(self, ur, max_fragment_len, first_seq_num=0, min_fragment_len=10):
+    def __init__(self, ur, max_fragment_len : int = 200 , first_seq_num=0, min_fragment_len=10):
         self.ur = ur
         self.fountain_encoder = FountainEncoder(
             ur.cbor, max_fragment_len, first_seq_num, min_fragment_len
@@ -21,7 +21,7 @@ class UREncoder:
     @staticmethod
     def encode(ur):
         body = Bytewords.encode(Bytewords_Style_minimal, ur.cbor)
-        return UREncoder.encode_ur([ur.type, body])
+        return UREncoder._encode_ur([ur.registry_type, body])
 
     def last_part_indexes(self):
         return self.fountain_encoder.last_part_indexes()
@@ -42,20 +42,20 @@ class UREncoder:
         if self.is_single_part():
             return UREncoder.encode(self.ur)
         else:
-            return UREncoder.encode_part(self.ur.type, part)
+            return UREncoder._encode_part(self.ur.registry_type, part)
 
     @staticmethod
-    def encode_part(type, part):
+    def _encode_part(type, part) -> str:
         seq = "{}-{}".format(part.seq_num, part.seq_len)
         body = Bytewords.encode(Bytewords_Style_minimal, part.cbor())
-        result = UREncoder.encode_ur([type, seq, body])
+        result = UREncoder._encode_ur([type, seq, body])
         return result
 
     @staticmethod
-    def encode_uri(scheme, path_components):
+    def _encode_uri(scheme, path_components):
         path = "/".join(path_components)
         return ":".join([scheme, path])
 
     @staticmethod
-    def encode_ur(path_components):
-        return UREncoder.encode_uri("ur", path_components)
+    def _encode_ur(path_components):
+        return UREncoder._encode_uri("ur", path_components).upper()

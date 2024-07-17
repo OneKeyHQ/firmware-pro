@@ -1,10 +1,10 @@
 # https://github.com/BlockchainCommons/Research/blob/master/papers/bcr-2020-007-hdkey.md
+
 from trezor import wire
 from trezor.crypto import base58
-from trezor.messages import URCryptoHdkey, URResponse
 
-from .crypto_coin_info import CryptoCoinInfo, Ethereum, MainNet
-from .crypto_key_path import CryptoKeyPath, PathComponent
+from .crypto_coin_info import CryptoCoinInfo
+from .crypto_key_path import CryptoKeyPath
 from .ur_py.ur.cbor_lite import CBORDecoder, CBOREncoder
 from .ur_py.ur.ur import UR
 from .ur_py.ur.ur_encoder import UREncoder
@@ -59,12 +59,12 @@ class CryptoHDKey:
         is_private_key: bool,
         key: bytes,
         chain_code: bytes,
-        use_info: CryptoCoinInfo,
-        origin: CryptoKeyPath,
-        children: CryptoKeyPath,
-        parent_fingerprint: int,
-        name: bytes,
-        note: bytes,
+        use_info: CryptoCoinInfo | None,
+        origin: CryptoKeyPath | None,
+        children: CryptoKeyPath | None,
+        parent_fingerprint: int | None,
+        name: str | None,
+        note: str | None,
     ):
         self.is_master = False
         self.is_private_key = is_private_key
@@ -101,11 +101,11 @@ class CryptoHDKey:
     def get_parent_fingerprint(self) -> int:
         return self.parent_fingerprint or 0
 
-    def get_name(self) -> bytes:
-        return self.name if self.name is not None else b""
+    def get_name(self) -> str:
+        return self.name if self.name is not None else ""
 
-    def get_note(self) -> bytes:
-        return self.note if self.note is not None else b""
+    def get_note(self) -> str:
+        return self.note if self.note is not None else ""
 
     def get_bip32_key(self) -> str:
         key = self.get_key()
@@ -228,7 +228,7 @@ class CryptoHDKey:
         return CryptoHDKey.decode(decoder)
 
     @staticmethod
-    def decode(decoder):
+    def decode(decoder: CBORDecoder):
         key_path = CryptoHDKey()
         size, _ = decoder.decodeMapSize()
         for _ in range(size):
@@ -268,59 +268,22 @@ class CryptoHDKey:
         return key_path
 
 
-def generateCryptoHDKeyForETHStandard(pubkey):
-    hdkey = CryptoHDKey()
-    hdkey.new_extended_key(
-        False,
-        pubkey.node.public_key,
-        pubkey.node.chain_code,
-        CryptoCoinInfo(Ethereum, MainNet),
-        CryptoKeyPath(
-            [
-                PathComponent.new(44, True),
-                PathComponent.new(60, True),
-                PathComponent.new(0, True),
-            ],
-            pubkey.root_fingerprint,
-            3,
-        ),
-        CryptoKeyPath(
-            [
-                PathComponent.new(0, False),
-                PathComponent.new(None, False),
-            ],
-            None,
-            0,
-        ),
-        pubkey.node.fingerprint,
-        "OneKey".encode(),
-        "account.standard".encode(),
-    )
-
-    ur = hdkey.ur_encode()
-    encoded = UREncoder.encode(ur)
-    return encoded.upper()
-
-
 async def genCryptoHDKeyForETHStandard(ctx: wire.Context) -> str:
     from trezor.messages import GetPublicKey
     from apps.bitcoin import get_public_key as bitcoin_get_public_key
+    from apps.common import paths
+    from . import helpers
+    from apps.common import passphrase
 
-    # import usb
+    if passphrase.is_enabled():
+        wire.QR_CONTEXT.passphrase = None
 
     # "m/44'/60'/0'"
-    btc_pubkey_msg = GetPublicKey(address_n=[2147483692, 2147483708, 2147483648])
+    btc_pubkey_msg = GetPublicKey(
+        address_n=paths.parse_path(helpers.ETH_STANDARD_PREFIX)
+    )
     resp = await bitcoin_get_public_key.get_public_key(ctx, btc_pubkey_msg)
-    ur_encoded = generateCryptoHDKeyForETHStandard(resp)
-    return ur_encoded
-
-
-async def crypto_hd_key(ctx: wire.Context, msg: URCryptoHdkey) -> URResponse:
-    from trezor.messages import GetPublicKey
-    from apps.bitcoin import get_public_key as bitcoin_get_public_key
-
-    btc_pubkey_msg = GetPublicKey(address_n=msg.address_n)
-    resp = await bitcoin_get_public_key.get_public_key(ctx, btc_pubkey_msg)
-    ur_encoded = generateCryptoHDKeyForETHStandard(resp)
-
-    return URResponse(data=ur_encoded)
+    hdkey = helpers.generate_hdkey_ETHStandard(ctx, resp)
+    ur = hdkey.ur_encode()
+    encoded = UREncoder.encode(ur)
+    return encoded.upper()

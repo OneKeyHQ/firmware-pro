@@ -40,13 +40,16 @@ class Address(FullSizeWindow):
         multisig_index: int | None = 0,
         addr_type=None,
         evm_chain_id: int | None = None,
+        qr_first: bool = False,
     ):
         super().__init__(
             title,
             None,
             confirm_text=_(i18n_keys.BUTTON__DONE),
-            cancel_text=_(i18n_keys.BUTTON__QRCODE),
-            anim_dir=2,
+            cancel_text=_(i18n_keys.BUTTON__QRCODE)
+            if not qr_first
+            else _(i18n_keys.BUTTON__ADDRESS),
+            anim_dir=0,
             primary_color=primary_color,
         )
         self.path = path
@@ -56,16 +59,23 @@ class Address(FullSizeWindow):
         self.address_qr = address_qr
         self.icon = icon_path
         self.addr_type = addr_type
+        self.evm_chin_id = evm_chain_id
         if primary_color:
             self.title.add_style(StyleWrapper().text_color(primary_color), 0)
-
-        self.show_address(evm_chain_id=evm_chain_id)
+        self.qr_first = qr_first
+        if qr_first:
+            self.show_qr_code(self.qr_first)
+        else:
+            self.show_address(evm_chain_id=evm_chain_id)
 
     def show_address(self, evm_chain_id: int | None = None):
         self.current = self.SHOW_TYPE.ADDRESS
         if hasattr(self, "qr"):
             self.qr.delete()
             del self.qr
+        if hasattr(self, "subtitle"):
+            self.subtitle.delete()
+            del self.subtitle
         self.btn_no.label.set_text(_(i18n_keys.BUTTON__QRCODE))
 
         self.item_addr = DisplayItem(self.content_area, None, self.address, radius=40)
@@ -113,7 +123,7 @@ class Address(FullSizeWindow):
                 "A:/res/group-icon-more.png",
             )
 
-    def show_qr_code(self):
+    def show_qr_code(self, has_tips: bool = False):
         self.current = self.SHOW_TYPE.QRCODE
         if hasattr(self, "container"):
             self.container.delete()
@@ -121,13 +131,32 @@ class Address(FullSizeWindow):
         if hasattr(self, "xpub_group"):
             self.xpub_group.delete()
             del self.xpub_group
+        if hasattr(self, "item_addr"):
+            self.item_addr.delete()
+            del self.item_addr
         self.btn_no.label.set_text(_(i18n_keys.BUTTON__ADDRESS))
+        if has_tips:
+            from .components.label import SubTitle
+
+            self.subtitle = SubTitle(
+                self.content_area,
+                self.title,
+                (0, 16),
+                _(
+                    i18n_keys.CONTENT__RETUNRN_TO_THE_APP_AND_SCAN_THE_SIGNED_TX_QR_CODE_BELOW
+                ),
+            )
         self.qr = QRCode(
             self.content_area,
             self.address if self.address_qr is None else self.address_qr,
             self.icon,
         )
-        self.qr.align_to(self.title, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 30)
+        self.qr.align_to(
+            self.title if not has_tips else self.subtitle,
+            lv.ALIGN.OUT_BOTTOM_LEFT,
+            0,
+            30,
+        )
 
     def eventhandler(self, event_obj):
         code = event_obj.code
@@ -136,9 +165,9 @@ class Address(FullSizeWindow):
             utils.lcd_resume()
             if target == self.btn_no:
                 if self.current == self.SHOW_TYPE.ADDRESS:
-                    self.show_qr_code()
+                    self.show_qr_code(self.qr_first)
                 else:
-                    self.show_address()
+                    self.show_address(self.evm_chin_id)
             elif target == self.btn_yes:
                 self.show_unload_anim()
                 self.channel.publish(1)
@@ -187,6 +216,7 @@ class Message(FullSizeWindow):
         icon_path,
         verify: bool = False,
         evm_chain_id: int | None = None,
+        item_addr_title: str | None = None,
     ):
         super().__init__(
             title,
@@ -234,7 +264,11 @@ class Message(FullSizeWindow):
                 str(evm_chain_id),
             )
         self.item_addr = DisplayItem(
-            self.container, _(i18n_keys.LIST_KEY__ADDRESS__COLON), address
+            self.container,
+            _(i18n_keys.LIST_KEY__ADDRESS__COLON)
+            if not item_addr_title
+            else item_addr_title,
+            address,
         )
         self.container.add_dummy()
 
@@ -1090,6 +1124,64 @@ class TransactionDetailsTRON(FullSizeWindow):
             self.group_fees, _(i18n_keys.LIST_KEY__TOTAL_AMOUNT__COLON), total_amount
         )
         self.group_fees.add_dummy()
+
+
+class TransactionDetailsNear(FullSizeWindow):
+    def __init__(
+        self,
+        title,
+        address_from,
+        address_to,
+        amount,
+        primary_color,
+        icon_path,
+        striped=False,
+    ):
+        super().__init__(
+            title,
+            None,
+            _(i18n_keys.BUTTON__CONTINUE),
+            _(i18n_keys.BUTTON__REJECT),
+            primary_color=primary_color,
+            icon_path="A:/res/icon-send.png",
+            sub_icon_path=icon_path,
+        )
+        self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
+
+        if striped:
+            self.group_amounts = ContainerFlexCol(
+                self.container, None, padding_row=0, no_align=True
+            )
+            self.item_group_header = CardHeader(
+                self.group_amounts,
+                _(i18n_keys.LIST_KEY__AMOUNT__COLON),
+                "A:/res/group-icon-amount.png",
+            )
+            self.group_body_amount = DisplayItem(
+                self.group_amounts,
+                None,
+                amount,
+            )
+            self.group_amounts.add_dummy()
+        self.group_directions = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_directions,
+            _(i18n_keys.FORM__DIRECTIONS),
+            "A:/res/group-icon-directions.png",
+        )
+        self.item_group_body_to_addr = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__TO__COLON),
+            address_to,
+        )
+        self.item_group_body_from_addr = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__FROM__COLON),
+            address_from,
+        )
+        self.group_directions.add_dummy()
 
 
 class SecurityCheck(FullSizeWindow):
@@ -3063,13 +3155,14 @@ class TronAssetFreeze(FullSizeWindow):
         self.group_more.add_dummy()
 
 
-class Signature(FullSizeWindow):
+class UrResponse(FullSizeWindow):
     def __init__(
         self,
         title,
         subtitle,
         qr_code,
         primary_color,
+        encoder=None,
     ):
         super().__init__(
             title,
@@ -3083,14 +3176,38 @@ class Signature(FullSizeWindow):
         gc.collect()
         gc.threshold(int(18248 * 1.5))  # type: ignore["threshold" is not a known member of module]
         self.qr_code = qr_code
+        self.encoder = encoder
         self.qr = QRCode(
             self.content_area,
-            self.qr_code,
+            self.qr_code if self.qr_code else encoder.next_part(),  # type: ignore["next_part" is not a known member of "None"]
         )
         self.qr.align_to(self.subtitle, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 30)
+        self.content_area.clear_flag(lv.obj.FLAG.SCROLL_ELASTIC)
+        self.content_area.clear_flag(lv.obj.FLAG.SCROLL_MOMENTUM)
+        self.content_area.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
+        if encoder is not None:
+            from trezor import workflow
+
+            workflow.spawn(self.update_qr())
 
     def destroy(self, delay_ms=400):
         return self.delete()
+
+    async def update_qr(self):
+        from trezor import loop
+
+        while True:
+            stop_single = self.request()
+            racer = loop.race(stop_single, loop.sleep(100))
+            await racer
+            if stop_single in racer.finished:
+                self.destroy()
+                return
+            # if self.scrolling:
+            #     await loop.sleep(5000)
+            #     continue
+            qr_data = self.encoder.next_part()  # type: ignore["next_part" is not a known member of "None"]
+            self.qr.update(qr_data, len(qr_data))
 
 
 class ErrorFeedback(FullSizeWindow):

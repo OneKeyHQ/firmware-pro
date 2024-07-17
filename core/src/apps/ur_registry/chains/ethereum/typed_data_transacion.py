@@ -2,20 +2,18 @@ import re
 from typing import Any, Optional
 from ubinascii import unhexlify
 
-from trezor import io, messages
+from trezor import messages
 from trezor.enums import EthereumDataType
 from trezor.wire import QR_CONTEXT
 
 from .eth_sign_request import EthSignRequest
 
-LOCAL_CTL = io.LOCAL_CTL()
-
 
 class EthereumTypedDataTransacion:
     def __init__(self, req: EthSignRequest):
         self.req = req
-        self.resp = None
         self.qr = None
+        self.encoder = None
 
     def get_data(self):
         return self.req.get_sign_data().decode()
@@ -140,7 +138,7 @@ class EthereumTypedDataTransacion:
             f"Unsupported data type for direct field encoding: {type_name}"
         )
 
-    async def initial_tx(self):
+    async def run(self):
         import ujson as json
 
         msg = json.loads(self.get_data())
@@ -160,82 +158,83 @@ class EthereumTypedDataTransacion:
 
         # pyright: off
         task = sign_typed_data(QR_CONTEXT, request)
-        self.resp = await loop.spawn(task)
+        loop.spawn(self.interact())
+        resp = await loop.spawn(task)
+        await QR_CONTEXT.interact_stop()
         # pyright: on
-        self.signature = self.resp.signature
+        self.signature = resp.signature
         eth_signature = EthSignature(
             request_id=self.req.get_request_id(),
             signature=self.signature,
-            origin="OneKey".encode(),
+            origin="OneKey Pro".encode(),
         )
         ur = eth_signature.ur_encode()
         encoded = UREncoder.encode(ur).upper()
         self.qr = encoded
 
-    async def run(self):
+    async def interact(self):
         import ujson as json
 
         msg = json.loads(self.get_data())
         data = EthereumTypedDataTransacion.sanitize_typed_data(msg)
         types = msg["types"]
+        while True:
+            response = await QR_CONTEXT.qr_receive()
+            if response is None:
+                if __debug__:
+                    print("eth sign type data interaction finished")
+                break
 
-        response = await QR_CONTEXT.qr_ctx_resp()
-        if response is None:
-            return
-
-        if messages.EthereumTypedDataStructRequest.is_type_of(response):
-            struct_name = response.name
-            members: list["messages.EthereumStructMember"] = []
-            for field in types[struct_name]:
-                field_type = EthereumTypedDataTransacion.get_field_type(
-                    field["type"], types
-                )
-                struct_member = messages.EthereumStructMember(
-                    type=field_type,
-                    name=field["name"],
-                )
-                members.append(struct_member)
-
-            request = messages.EthereumTypedDataStructAck(members=members)
-            await QR_CONTEXT.qr_ctx_req(request)
-            LOCAL_CTL.ctrl(True)
-        elif messages.EthereumTypedDataValueRequest.is_type_of(response):
-            root_index = response.member_path[0]
-            # Index 0 is for the domain data, 1 is for the actual message
-            if root_index == 0:
-                member_typename = "EIP712Domain"
-                member_data = data["domain"]
-            elif root_index == 1:
-                member_typename = data["primaryType"]
-                member_data = data["message"]
-            else:
-                raise ValueError("Root index can only be 0 or 1")
-
-            for index in response.member_path[1:]:
-                if isinstance(member_data, dict):
-                    member_def = types[member_typename][index]
-                    member_typename = member_def["type"]
-                    member_data = member_data[member_def["name"]]
-                elif isinstance(member_data, list):
-                    member_typename = EthereumTypedDataTransacion.typeof_array(
-                        member_typename
+            if messages.EthereumTypedDataStructRequest.is_type_of(response):
+                struct_name = response.name
+                members: list["messages.EthereumStructMember"] = []
+                for field in types[struct_name]:
+                    field_type = EthereumTypedDataTransacion.get_field_type(
+                        field["type"], types
                     )
-                    member_data = member_data[index]
+                    struct_member = messages.EthereumStructMember(
+                        type=field_type,
+                        name=field["name"],
+                    )
+                    members.append(struct_member)
 
-            if isinstance(member_data, list):
-                # Sending the length as uint16
-                encoded_data = len(member_data).to_bytes(2, "big")
+                response = messages.EthereumTypedDataStructAck(members=members)
+                await QR_CONTEXT.qr_send(response)
+            elif messages.EthereumTypedDataValueRequest.is_type_of(response):
+                root_index = response.member_path[0]
+                # Index 0 is for the domain data, 1 is for the actual message
+                if root_index == 0:
+                    member_typename = "EIP712Domain"
+                    member_data = data["domain"]
+                elif root_index == 1:
+                    member_typename = data["primaryType"]
+                    member_data = data["message"]
+                else:
+                    raise ValueError("Root index can only be 0 or 1")
+
+                for index in response.member_path[1:]:
+                    if isinstance(member_data, dict):
+                        member_def = types[member_typename][index]
+                        member_typename = member_def["type"]
+                        member_data = member_data[member_def["name"]]
+                    elif isinstance(member_data, list):
+                        member_typename = EthereumTypedDataTransacion.typeof_array(
+                            member_typename
+                        )
+                        member_data = member_data[index]
+
+                if isinstance(member_data, list):
+                    # Sending the length as uint16
+                    encoded_data = len(member_data).to_bytes(2, "big")
+                else:
+                    encoded_data = EthereumTypedDataTransacion.encode_data(
+                        member_data, member_typename
+                    )
+
+                response = messages.EthereumTypedDataValueAck(value=encoded_data)
+                await QR_CONTEXT.qr_send(response)
+            elif messages.ButtonRequest.is_type_of(response):
+                response = messages.ButtonAck()
+                await QR_CONTEXT.qr_send(response)
             else:
-                encoded_data = EthereumTypedDataTransacion.encode_data(
-                    member_data, member_typename
-                )
-
-            request = messages.EthereumTypedDataValueAck(value=encoded_data)
-            await QR_CONTEXT.qr_ctx_req(request)
-            LOCAL_CTL.ctrl(True)
-        elif messages.ButtonRequest.is_type_of(response):
-            request = messages.ButtonAck()
-            await QR_CONTEXT.qr_ctx_req(request)
-            LOCAL_CTL.ctrl(True)
-        else:
-            raise ValueError(f"Error messages {response}.")
+                raise ValueError(f"Error messages {response}.")

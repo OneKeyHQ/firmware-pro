@@ -673,8 +673,6 @@ apps.near
 import apps.near
 apps.near.get_address
 import apps.near.get_address
-apps.near.layout
-import apps.near.layout
 apps.near.sign_tx
 import apps.near.sign_tx
 apps.near.transaction
@@ -809,16 +807,44 @@ apps.tron.tokens
 import apps.tron.tokens
 apps.ur_registry.account
 import apps.ur_registry.account
+apps.ur_registry.chains.bitcoin
+import apps.ur_registry.chains.bitcoin
+apps.ur_registry.chains.bitcoin.crypto_psbt
+import apps.ur_registry.chains.bitcoin.crypto_psbt
+apps.ur_registry.chains.bitcoin.message
+import apps.ur_registry.chains.bitcoin.message
+apps.ur_registry.chains.bitcoin.psbt
+import apps.ur_registry.chains.bitcoin.psbt
+apps.ur_registry.chains.bitcoin.psbt.key
+import apps.ur_registry.chains.bitcoin.psbt.key
+apps.ur_registry.chains.bitcoin.psbt.psbt
+import apps.ur_registry.chains.bitcoin.psbt.psbt
+apps.ur_registry.chains.bitcoin.psbt.script
+import apps.ur_registry.chains.bitcoin.psbt.script
+apps.ur_registry.chains.bitcoin.psbt.serialize
+import apps.ur_registry.chains.bitcoin.psbt.serialize
+apps.ur_registry.chains.bitcoin.psbt.tx
+import apps.ur_registry.chains.bitcoin.psbt.tx
+apps.ur_registry.chains.bitcoin.transaction
+import apps.ur_registry.chains.bitcoin.transaction
 apps.ur_registry.chains.chains
 import apps.ur_registry.chains.chains
+apps.ur_registry.chains.hardware_requests.get_multi_accounts
+import apps.ur_registry.chains.hardware_requests.get_multi_accounts
+apps.ur_registry.chains.hardware_requests.hardware_call
+import apps.ur_registry.chains.hardware_requests.hardware_call
+apps.ur_registry.chains.hardware_requests.verify_address
+import apps.ur_registry.chains.hardware_requests.verify_address
 apps.ur_registry.crypto_coin_info
 import apps.ur_registry.crypto_coin_info
 apps.ur_registry.crypto_hd_key
 import apps.ur_registry.crypto_hd_key
 apps.ur_registry.crypto_key_path
 import apps.ur_registry.crypto_key_path
-apps.ur_registry.multi_accounts
-import apps.ur_registry.multi_accounts
+apps.ur_registry.crypto_multi_accounts
+import apps.ur_registry.crypto_multi_accounts
+apps.ur_registry.helpers
+import apps.ur_registry.helpers
 apps.ur_registry.registry_types
 import apps.ur_registry.registry_types
 apps.ur_registry.rlp

@@ -84,7 +84,7 @@ def ss58_encode(address: bytes, ss58_format: int = 42) -> str:
     return base58.encode(input_bytes + checksum[:checksum_length])
 
 
-def update_chain_res(ctx: Context, network: str) -> tuple[str, str, int]:
+def retrieval_chain_res(ctx: Context, network: str) -> tuple[str, str, int]:
     chain_name = "Polkadot"
     symbol = POLKADOT_TICKER
     decimal = COIN_AMOUNT_DECIMAL_PLACES

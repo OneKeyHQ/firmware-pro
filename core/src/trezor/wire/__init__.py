@@ -38,7 +38,7 @@ reads the message's header. When the message type is known the first handler is 
 from typing import TYPE_CHECKING
 
 from storage.cache import InvalidSessionError
-from trezor import io, log, loop, protobuf, utils, workflow
+from trezor import log, loop, protobuf, utils, workflow
 from trezor.enums import FailureType
 from trezor.messages import ButtonRequest, Failure
 from trezor.wire import codec_v1
@@ -142,9 +142,8 @@ class QRContext:
         self.primary_color = None
         self.icon_path = ""
         self.name = ""
-        self.msg_out = None
-        self.msg_in = None
-        self.ready = False
+        self.request = loop.chan()
+        self.response = loop.chan()
         self.passphrase: str | None = None
 
     async def _call(
@@ -172,7 +171,7 @@ class QRContext:
                 "write: %s",
                 msg.MESSAGE_NAME,
             )
-        self.msg_out = msg
+        self.request.publish(msg)
 
     async def read(
         self, expected_type: type[LoadedMessageType]
@@ -183,10 +182,7 @@ class QRContext:
                 "expect: %s",
                 expected_type.MESSAGE_NAME,
             )
-        local = loop.wait(io.LOCAL)
-        await local
-        self.msg_out = None
-        return self.msg_in
+        return await self.response.take()
 
     async def read_any(
         self, expected_wire_types: Iterable[int]
@@ -198,16 +194,16 @@ class QRContext:
                 expected_wire_types,
             )
 
-        # Load the full message into a buffer, parse out type and data payload
-        local = loop.wait(io.LOCAL)
-        await local
-        return self.msg_in
+        return await self.response.take()
 
-    async def qr_ctx_resp(self) -> protobuf.MessageType | None:
-        return self.msg_out
+    async def qr_send(self, msg: protobuf.MessageType):
+        return self.response.publish(msg)
 
-    async def qr_ctx_req(self, msg: protobuf.MessageType) -> None:
-        self.msg_in = msg
+    async def qr_receive(self) -> protobuf.MessageType | None:
+        return await self.request.take()
+
+    async def interact_stop(self):
+        return self.request.publish(None)
 
     async def signal(self):
         await SIGNAL_CHANNEL.take()

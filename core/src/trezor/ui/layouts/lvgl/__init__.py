@@ -70,7 +70,7 @@ __all__ = (
     "confirm_sign_typed_hash",
     "confirm_polkadot_balances",
     "should_show_details",
-    "show_signature",
+    "show_ur_response",
     "enable_airgap_mode",
     "confirm_nostrmessage",
     "confirm_lnurl_auth",
@@ -302,6 +302,7 @@ async def show_address(
     is_multisig = len(xpubs) > 0
     from trezor.lvglui.scrs.template import Address
 
+    by_qr = isinstance(ctx, wire.QRContext)
     if is_multisig:
         return await interact(
             ctx,
@@ -314,6 +315,7 @@ async def show_address(
                 xpubs,
                 address_qr,
                 multisig_index,
+                qr_first=by_qr,
             ),
             "show_address",
             ButtonRequestType.Address,
@@ -329,6 +331,7 @@ async def show_address(
             address_qr=address_qr,
             addr_type=addr_type,
             evm_chain_id=evm_chain_id,
+            qr_first=by_qr,
         ),
         "show_address",
         ButtonRequestType.Address,
@@ -2108,25 +2111,22 @@ async def confirm_tron_common(
     )
 
 
-async def show_signature(
+async def show_ur_response(
     ctx: wire.GenericContext,
-    qr_code: str,
+    title: str,
+    qr_code: str | None,
+    encoder=None,
 ) -> None:
-    from trezor.lvglui.scrs.template import Signature
+    from trezor.lvglui.scrs.template import UrResponse
 
-    await interact(
-        ctx,
-        Signature(
-            _(i18n_keys.TITLE__EXPORT_SIGNED_TRANSACTION),
-            _(
-                i18n_keys.CONTENT__RETUNRN_TO_THE_APP_AND_SCAN_THE_SIGNED_TX_QR_CODE_BELOW
-            ),
-            qr_code=qr_code,
-            primary_color=ctx.primary_color,
-        ),
-        "show_signature",
-        ButtonRequestType.SignTx,
+    screen = UrResponse(
+        title,
+        _(i18n_keys.CONTENT__RETUNRN_TO_THE_APP_AND_SCAN_THE_SIGNED_TX_QR_CODE_BELOW),
+        qr_code=qr_code,
+        encoder=encoder,
+        primary_color=ctx.primary_color,
     )
+    await ctx.wait(screen.request())
 
 
 async def confirm_nostrmessage(
@@ -2180,8 +2180,35 @@ async def confirm_lnurl_auth(
                 ctx.icon_path,
                 True,
                 None,
+                _(i18n_keys.LIST_KEY__DOMAIN__COLON),
             ),
             br_type,
             ButtonRequestType.Other,
         )
     )
+
+
+async def confirm_near_transfer(
+    ctx: wire.GenericContext,
+    sender: str,
+    receiver: str,
+    amount: str,
+) -> None:
+    from trezor.lvglui.scrs.template import TransactionDetailsNear
+    from trezor.strings import strip_amount
+
+    striped_amount, striped = strip_amount(amount)
+    title = _(i18n_keys.TITLE__SEND_MULTILINE).format(striped_amount)
+    if await should_show_details(ctx, receiver, title):
+        screen = TransactionDetailsNear(
+            title,
+            sender,
+            receiver,
+            amount,
+            ctx.primary_color,
+            ctx.icon_path,
+            striped=striped,
+        )
+        await raise_if_cancelled(
+            interact(ctx, screen, "near_transfer", ButtonRequestType.ProtectCall)
+        )

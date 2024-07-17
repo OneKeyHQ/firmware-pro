@@ -5,13 +5,13 @@
 # Licensed under the "BSD-2-Clause Plus Patent License"
 #
 
-from .bytewords import Bytewords, Bytewords_Style_minimal
+# from .bytewords import Bytewords, Bytewords_Style_minimal
 from .fountain_decoder import FountainDecoder
 from .fountain_encoder import Part as FountainEncoderPart
 from .ur import UR
 from .utils import drop_first, is_ur_type
 
-from trezor.utils import get_tick, bytewords_decode, BW_MINIMAL
+from trezor.utils import bytewords_decode, BW_MINIMAL
 
 
 class InvalidScheme(Exception):
@@ -135,7 +135,7 @@ class URDecoder:
             # Parse the sequence component and the fragment, and make sure they agree.
             (seq_num, seq_len) = URDecoder.parse_sequence_component(seq)
             # cbor = Bytewords.decode(Bytewords_Style_minimal, fragment)
-            cbor = bytewords_decode(BW_MINIMAL,fragment)
+            cbor = bytewords_decode(BW_MINIMAL, fragment)
             part = FountainEncoderPart.from_cbor(cbor)
             if seq_num != part.seq_num or seq_len != part.seq_len:
                 return False
