@@ -1126,6 +1126,64 @@ class TransactionDetailsTRON(FullSizeWindow):
         self.group_fees.add_dummy()
 
 
+class TransactionDetailsNear(FullSizeWindow):
+    def __init__(
+        self,
+        title,
+        address_from,
+        address_to,
+        amount,
+        primary_color,
+        icon_path,
+        striped=False,
+    ):
+        super().__init__(
+            title,
+            None,
+            _(i18n_keys.BUTTON__CONTINUE),
+            _(i18n_keys.BUTTON__REJECT),
+            primary_color=primary_color,
+            icon_path="A:/res/icon-send.png",
+            sub_icon_path=icon_path,
+        )
+        self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
+
+        if striped:
+            self.group_amounts = ContainerFlexCol(
+                self.container, None, padding_row=0, no_align=True
+            )
+            self.item_group_header = CardHeader(
+                self.group_amounts,
+                _(i18n_keys.LIST_KEY__AMOUNT__COLON),
+                "A:/res/group-icon-amount.png",
+            )
+            self.group_body_amount = DisplayItem(
+                self.group_amounts,
+                None,
+                amount,
+            )
+            self.group_amounts.add_dummy()
+        self.group_directions = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_directions,
+            _(i18n_keys.FORM__DIRECTIONS),
+            "A:/res/group-icon-directions.png",
+        )
+        self.item_group_body_to_addr = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__TO__COLON),
+            address_to,
+        )
+        self.item_group_body_from_addr = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__FROM__COLON),
+            address_from,
+        )
+        self.group_directions.add_dummy()
+
+
 class SecurityCheck(FullSizeWindow):
     def __init__(self):
         super().__init__(

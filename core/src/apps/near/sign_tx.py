@@ -10,7 +10,6 @@ from apps.common import paths
 from apps.common.keychain import Keychain, auto_keychain
 
 from . import ICON, PRIMARY_COLOR
-from .layout import require_confirm_tx
 from .transaction import Action_Transfer, Transaction
 
 
@@ -30,17 +29,20 @@ async def sign_tx(
     except BaseException as e:
         raise wire.DataError(f"Invalid message {e}")
 
-    from trezor.ui.layouts.lvgl import confirm_final
-
     if tx.action.action_type == Action_Transfer:
+        from trezor.ui.layouts.lvgl import confirm_near_transfer
+        from trezor.strings import format_amount
 
-        await require_confirm_tx(ctx, tx.receiverId, tx.action.amount)
+        await confirm_near_transfer(
+            ctx, address, tx.receiverId, format_amount(tx.action.amount, 24) + " NEAR"
+        )
     else:
         from trezor.ui.layouts.lvgl import confirm_blind_sign_common
 
         await confirm_blind_sign_common(ctx, address, msg.raw_tx)
 
-    hash = sha256(msg.raw_tx).digest()
-    signature = ed25519.sign(node.private_key(), hash)
+    signature = ed25519.sign(node.private_key(), sha256(msg.raw_tx).digest())
+    from trezor.ui.layouts.lvgl import confirm_final
+
     await confirm_final(ctx, "NEAR")
     return NearSignedTx(signature=signature)

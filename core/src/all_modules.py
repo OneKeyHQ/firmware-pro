@@ -675,8 +675,6 @@ apps.near
 import apps.near
 apps.near.get_address
 import apps.near.get_address
-apps.near.layout
-import apps.near.layout
 apps.near.sign_tx
 import apps.near.sign_tx
 apps.near.transaction

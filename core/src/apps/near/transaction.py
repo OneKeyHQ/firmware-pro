@@ -16,6 +16,7 @@ Action_Stake = 4
 Action_AddKey = 5
 Action_DeleteKey = 6
 Action_DeleteAccount = 7
+# Action_Delegate = 8 # Introduced with NEP-366 to enable meta transactions
 
 
 class Action:

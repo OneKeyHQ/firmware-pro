@@ -2121,3 +2121,29 @@ async def confirm_lnurl_auth(
             ButtonRequestType.Other,
         )
     )
+
+
+async def confirm_near_transfer(
+    ctx: wire.GenericContext,
+    sender: str,
+    receiver: str,
+    amount: str,
+) -> None:
+    from trezor.lvglui.scrs.template import TransactionDetailsNear
+    from trezor.strings import strip_amount
+
+    striped_amount, striped = strip_amount(amount)
+    title = _(i18n_keys.TITLE__SEND_MULTILINE).format(striped_amount)
+    if await should_show_details(ctx, receiver, title):
+        screen = TransactionDetailsNear(
+            title,
+            sender,
+            receiver,
+            amount,
+            ctx.primary_color,
+            ctx.icon_path,
+            striped=striped,
+        )
+        await raise_if_cancelled(
+            interact(ctx, screen, "near_transfer", ButtonRequestType.ProtectCall)
+        )
