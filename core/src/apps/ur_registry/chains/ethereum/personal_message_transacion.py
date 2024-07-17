@@ -28,7 +28,7 @@ class EthereumPersonalMessageTransacion:
         eth_signature = EthSignature(
             request_id=self.req.get_request_id(),
             signature=self.signature,
-            origin="OneKey Pro",
+            origin="OneKey Pro".encode(),
         )
         ur = eth_signature.ur_encode()
         encoded = UREncoder.encode(ur).upper()

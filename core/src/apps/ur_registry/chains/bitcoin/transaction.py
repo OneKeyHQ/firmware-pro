@@ -244,8 +244,6 @@ class SignPsbt:
             wire.QR_CONTEXT, btc_pubkey_msg
         )
         master_fp = resp.root_fingerprint.to_bytes(4, "big")
-        # if __debug__:
-        #     master_fp = b'\x92\xbdh}'
         # pyright: on
         # Do multiple passes for multisig
         passes = 1
@@ -336,9 +334,9 @@ class SignPsbt:
 
                 # Find key to sign with
                 found = False  # Whether we have found a key to sign with
-                # found_in_sigs = (
-                #     False  # Whether we have found one of our keys in the signatures
-                # )
+                found_in_sigs = (
+                    False  # Whether we have found one of our keys in the signatures
+                )
                 our_keys = 0
                 # path_last_ours = None  # The path of the last key that is ours. We will use this if we need to ignore this input because it is already signed.
                 if txinputtype.script_type in ECDSA_SCRIPT_TYPES:
@@ -349,7 +347,7 @@ class SignPsbt:
                             if (
                                 key in psbt_in.partial_sigs
                             ):  # This key already has a signature
-                                # found_in_sigs = True
+                                found_in_sigs = True
                                 continue
                             if (
                                 not found
@@ -371,7 +369,7 @@ class SignPsbt:
                                     "Key fingerprint does not match master key"
                                 )
                 elif txinputtype.script_type in SCHNORR_SCRIPT_TYPES:
-                    # found_in_sigs = len(psbt_in.tap_key_sig) > 0
+                    found_in_sigs = len(psbt_in.tap_key_sig) > 0
                     for key, (_, origin) in psbt_in.tap_bip32_paths.items():
                         # Assume key path signing
                         if (
@@ -391,21 +389,21 @@ class SignPsbt:
                                     f"Key fingerprint {origin.fingerprint} does not match master key {master_fp}"
                                 )
                             else:
-                                raise MismatchError(
-                                    "Key fingerprint does not match master key"
-                                )
+                                raise Exception("Key fingerprint does not match master key")
 
                 # Determine if we need to do more passes to sign everything
                 if our_keys > passes:
                     passes = our_keys
 
-                if not found:  # None of our keys were in hd_keypaths or in partial_sigs
+                if (
+                    not found and not found_in_sigs
+                ):  # None of our keys were in hd_keypaths or in partial_sigs
                     # This input is not one of ours
                     raise Exception("Invalid input params")
-                # elif not found and found_in_sigs:
-                #     # All of our keys are in partial_sigs, pick the first key that is ours, sign with it,
-                #     # and ignore whatever signature is produced for this input
-                #     raise Exception("Invalid input params")
+                elif not found and found_in_sigs:
+                    # All of our keys are in partial_sigs, pick the first key that is ours, sign with it,
+                    # and ignore whatever signature is produced for this input
+                    raise Exception("Invalid input params")
 
                 # append to inputs
                 inputs.append(txinputtype)
@@ -473,7 +471,7 @@ class SignPsbt:
                                 txoutput.address = None
                 elif wit and ver == 1:
                     for key, (_, origin) in psbt_out.tap_bip32_paths.items():
-                        # Assume key path change
+                        # Assume key path signing
                         if (
                             key == psbt_out.tap_internal_key
                             and origin.fingerprint == master_fp

@@ -807,5 +807,6 @@ translations = [
     "Incompatibilità del portafoglio",
     "Il portafoglio selezionato nell'app non corrisponde al portafoglio hardware. Si prega di controllare e riprovare.",
     "Firma del messaggio non standard.",
+    "Il portafoglio hardware attuale supporta solo frasi di recupero da 12, 18 e 24 parole. Questo backup Lite non può essere ripristinato.",
 ]
 # fmt: on

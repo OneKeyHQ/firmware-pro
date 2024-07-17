@@ -102,7 +102,7 @@ class QRTask:
                 elif self.req.encoder is not None:
                     await show_ur_response(
                         wire.QR_CONTEXT,
-                        None,
+                        _(i18n_keys.CONTENT__EXPORT_ACCOUNT),
                         None,
                         self.req.encoder,
                     )
@@ -121,7 +121,7 @@ class QRTask:
                 elif self.req.encoder is not None:
                     await show_ur_response(
                         wire.QR_CONTEXT,
-                        None,
+                        _(i18n_keys.TITLE__EXPORT_SIGNED_TRANSACTION),
                         None,
                         self.req.encoder,
                     )
@@ -142,8 +142,8 @@ class QRTask:
 
         if registry_type not in [
             "eth-sign-request",
-            # "onekey-app-call-device",
-            # "crypto-psbt",
+            "onekey-app-call-device",
+            "crypto-psbt",
         ]:
             if __debug__:
                 print(f"unsupported type {registry_type}")
@@ -165,13 +165,6 @@ class QRTask:
                     self.req = await EthSignRequest.gen_request(ur)
                     if __debug__:
                         print("req: ", type(self.req))
-                except MismatchError:
-                    from trezor.ui.layouts import show_error_no_interact
-
-                    await show_error_no_interact(
-                        title=_(i18n_keys.CONTENT__WALLET_MISMATCH),
-                        subtitle=_(i18n_keys.CONTENT__WALLET_MISMATCH_DESC),
-                    )
                 except Exception as e:
                     if __debug__:
                         import sys
@@ -196,13 +189,6 @@ class QRTask:
                     self.req = await HardwareCall.gen_request(ur)
                     if __debug__:
                         print("req: ", type(self.req))
-                except MismatchError:
-                    from trezor.ui.layouts import show_error_no_interact
-
-                    await show_error_no_interact(
-                        title=_(i18n_keys.CONTENT__WALLET_MISMATCH),
-                        subtitle=_(i18n_keys.CONTENT__WALLET_MISMATCH_DESC),
-                    )
                 except Exception as e:
                     if __debug__:
                         import sys
@@ -381,15 +367,6 @@ async def handle_qr_task():
                 #     utils.mem_trace(__name__, 7)
                 await qr_task.finish()
                 utils.unimport_end(mods)
-        except MismatchError:
-            from trezor.ui.layouts import show_error_no_interact
-
-            await show_error_no_interact(
-                title=_(i18n_keys.CONTENT__WALLET_MISMATCH),
-                subtitle=_(i18n_keys.CONTENT__WALLET_MISMATCH_DESC),
-            )
-            loop.clear()
-            return  # pylint: disable=lost-exception
         except Exception as exec:
             if __debug__:
                 log.exception(__name__, exec)

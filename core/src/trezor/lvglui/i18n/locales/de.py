@@ -807,5 +807,6 @@ translations = [
     "Unstimmigkeit der Geldbörse",
     "Ihre in der App ausgewählte Wallet stimmt nicht mit der Hardware-Wallet überein. Bitte überprüfen Sie dies und versuchen Sie es erneut.",
     "Nicht standardmäßige Nachrichtensignatur.",
+    "Die aktuelle Hardware-Wallet unterstützt nur Wiederherstellungsphrasen mit 12, 18 und 24 Wörtern. Diese Lite-Sicherung kann nicht wiederhergestellt werden.",
 ]
 # fmt: on

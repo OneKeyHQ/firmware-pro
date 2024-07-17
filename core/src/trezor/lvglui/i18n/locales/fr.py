@@ -807,5 +807,6 @@ translations = [
     "Incompatibilité de portefeuille",
     "Votre portefeuille sélectionné dans l'application ne correspond pas au portefeuille matériel. Veuillez vérifier et réessayer.",
     "Signature de message non standard.",
+    "Le portefeuille matériel actuel ne prend en charge que les phrases de récupération de 12, 18 et 24 mots. Cette sauvegarde Lite ne peut pas être restaurée.",
 ]
 # fmt: on

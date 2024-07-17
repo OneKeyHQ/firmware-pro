@@ -807,5 +807,6 @@ translations = [
     "Wallet Mismatch",
     "Your selected wallet in the app does not match the hardware wallet. Please check and try again.",
     "Non-standard message signature.",
+    "The current hardware wallet only supports 12, 18, and 24-word recovery phrases. This Lite backup cannot be restored.",
 ]
 # fmt: on

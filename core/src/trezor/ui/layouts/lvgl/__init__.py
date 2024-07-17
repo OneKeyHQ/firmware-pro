@@ -2050,7 +2050,7 @@ async def confirm_tron_common(
 
 async def show_ur_response(
     ctx: wire.GenericContext,
-    title: str | None,
+    title: str,
     qr_code: str | None,
     encoder=None,
 ) -> None:
@@ -2058,9 +2058,10 @@ async def show_ur_response(
 
     screen = UrResponse(
         title,
-        _(i18n_keys.TITLE_CONFIRM_ADDRESS_DESC),
+        _(i18n_keys.CONTENT__RETUNRN_TO_THE_APP_AND_SCAN_THE_SIGNED_TX_QR_CODE_BELOW),
         qr_code=qr_code,
         encoder=encoder,
+        primary_color=ctx.primary_color,
     )
     await ctx.wait(screen.request())
 
