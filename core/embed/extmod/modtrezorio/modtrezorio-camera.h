@@ -32,23 +32,20 @@ STATIC mp_obj_t mod_trezorio_camera_scan_qrcode(mp_obj_t x, mp_obj_t y) {
   uint32_t pos_x = trezor_obj_get_uint(x);
   uint32_t pos_y = trezor_obj_get_uint(y);
 
-  vstr_t qr_data = {0};
-  vstr_init_len(&qr_data, 1024);
+  uint8_t qr_code[512] = {0};
 
   uint32_t qr_len;
 
-  qr_len = camera_qr_decode(pos_x, pos_y, (uint8_t *)qr_data.buf, qr_data.len);
+  qr_len = camera_qr_decode(pos_x, pos_y, (uint8_t *)qr_code, sizeof(qr_code));
 
   if (qr_len == 0) {
     return mp_const_none;
   }
-  if (qr_len > qr_data.len) {
+  if (qr_len > sizeof(qr_code)) {
     mp_raise_ValueError("QR code buffer too small");
   }
 
-  qr_data.len = qr_len;
-
-  return mp_obj_new_str_from_vstr(&mp_type_bytes, &qr_data);
+  return mp_obj_new_bytes(qr_code, qr_len);
 }
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_trezorio_camera_scan_qrcode_obj,

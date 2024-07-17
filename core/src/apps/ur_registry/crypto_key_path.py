@@ -95,22 +95,21 @@ class CryptoKeyPath:
             path += "/"
         return path[:-1]
 
-    def from_path(self, path, fingerprint):
+    @staticmethod
+    def from_path(path, fingerprint):
         n = path.split("/")
         if n[0] == "m" or n[0] == "M":
             n = n[1:]
 
         components = []
         for x in n:
-            if x.endswith(("h", "'")):
-                p = PathComponent(True, int(x[:-1]), False)
+            if x.endswith("'") or x.endswith("h") or x.endswith("H"):
+                p = PathComponent(int(x[:-1]), False, True)
             else:
-                p = PathComponent(False, int(x[:-1]), False)
+                p = PathComponent(int(x), False, False)
             components.append(p)
 
-        self.components = components
-        self.source_fingerprint = fingerprint
-        self.depth = None
+        return CryptoKeyPath(components, fingerprint, len(components))
 
     def cbor_encode(self):
         encoder = CBOREncoder()

@@ -47,6 +47,7 @@ if TYPE_CHECKING:
             keychain: Keychain,
             coin: CoinInfo,
             approver: approvers.Approver | None,
+            skip_verify_inputs: bool = False,
         ) -> None:
             ...
 
@@ -78,8 +79,10 @@ async def sign_tx(
                 signer_class = zcash_v4.ZcashV4
         else:
             signer_class = bitcoinlike.Bitcoinlike
-
-    signer = signer_class(msg, keychain, coin, approver).signer()
+    if isinstance(ctx, wire.QRContext):
+        signer = signer_class(msg, keychain, coin, approver, True).signer()
+    else:
+        signer = signer_class(msg, keychain, coin, approver).signer()
 
     res: TxAckType | bool | None = None
     ctx.primary_color, ctx.icon_path = (

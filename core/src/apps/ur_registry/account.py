@@ -36,7 +36,7 @@ class Account:
         chain = get_coin_name(coin_type)
         path = origin.get_path() if origin is not None else ""
         public_key = hexlify(hdkey.get_key()).decode()
-        name = hdkey.get_name().decode()
+        name = hdkey.get_name()
         chain_code = hexlify(hdkey.get_chain_code()).decode()
         extended_public_key = ""
         if (
@@ -45,7 +45,7 @@ class Account:
             and hdkey.get_origin() is not None
         ):
             extended_public_key = hdkey.get_bip32_key()
-        note = hdkey.get_note().decode()
+        note = hdkey.get_note()
         source_fingerprint = (
             origin.get_source_fingerprint() if origin is not None else None
         )

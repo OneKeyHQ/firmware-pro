@@ -143,6 +143,7 @@ class Decred(Bitcoin):
         keychain: Keychain,
         coin: CoinInfo,
         approver: approvers.Approver | None,
+        skip_verify_inputs: bool = False,
     ) -> None:
         ensure(coin.decred)
         self.h_prefix = HashWriter(blake256())

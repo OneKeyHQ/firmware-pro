@@ -13,14 +13,14 @@ class InvalidType(Exception):
 
 
 class UR:
-    def __init__(self, type, cbor):
-        if not is_ur_type(type):
+    def __init__(self, registry_type, cbor):
+        if not is_ur_type(registry_type):
             raise InvalidType()
 
-        self.type = type
+        self.registry_type = registry_type
         self.cbor = cbor
 
     def __eq__(self, obj):
         if obj is None:
             return False
-        return self.type == obj.type and self.cbor == obj.cbor
+        return self.registry_type == obj.registry_type and self.cbor == obj.cbor

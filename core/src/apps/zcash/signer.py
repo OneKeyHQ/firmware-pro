@@ -39,6 +39,7 @@ class Zcash(Bitcoinlike):
         keychain: Keychain,
         coin: CoinInfo,
         approver: Approver | None,
+        skip_verify_inputs: bool = False,
     ) -> None:
         ensure(coin.overwintered)
         if tx.version != 5:

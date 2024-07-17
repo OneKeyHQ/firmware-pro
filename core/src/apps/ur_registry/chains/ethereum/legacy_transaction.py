@@ -10,11 +10,8 @@ from .eth_sign_request import EthSignRequest
 class EthereumSignTxTransacion:
     def __init__(self, req: EthSignRequest):
         self.req = req
-        self.resp = None
         self.qr = None
-
-    async def initial_tx(self):
-        pass
+        self.encoder = None
 
     # Format: rlp([nonce, gasPrice, gasLimit, to, value, data, v, r, s])
     @staticmethod
@@ -59,16 +56,14 @@ class EthereumSignTxTransacion:
 
         # pyright: off
         tx = self.get_tx(self.req)
-        self.resp = await sign_tx(wire.QR_CONTEXT, tx)
+        resp = await sign_tx(wire.QR_CONTEXT, tx)
         self.signature = (
-            self.resp.signature_r
-            + self.resp.signature_s
-            + self.resp.signature_v.to_bytes(4, "big")
+            resp.signature_r + resp.signature_s + resp.signature_v.to_bytes(4, "big")
         )
         eth_signature = EthSignature(
             request_id=self.req.get_request_id(),
             signature=self.signature,
-            origin="OneKey".encode(),
+            origin="OneKey Pro".encode(),
         )
         ur = eth_signature.ur_encode()
         encoded = UREncoder.encode(ur).upper()

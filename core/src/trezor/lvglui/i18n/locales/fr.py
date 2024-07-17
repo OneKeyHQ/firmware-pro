@@ -346,7 +346,7 @@ translations = [
     "Téléchargez les applications OneKey sur",
     "Télécharger",
     "Connecter le portefeuille",
-    "Appuyez sur le bouton Connect-Wallet, puis sélectionnez Connect-OneKey-Hardware-Wallet.",
+    "Appuyez sur \"Connecter le portefeuille matériel\".",
     "Connectez l'appareil: {}.",
     "Appuyez sur le bouton Créer un portefeuille.",
     "Plus tard, l'application OneKey récupérera les comptes que vous avez précédemment utilisés.",
@@ -801,5 +801,7 @@ translations = [
     "Les deux OneKey Lite utilisés pour la connexion ne sont pas les mêmes.",
     "Quitter le processus de sauvegarde ?",
     "Si vous quittez maintenant, vous devrez revérifier votre phrase de récupération lorsque vous reviendrez. Êtes-vous sûr de vouloir quitter?",
+    "Phrase de récupération non prise en charge",
+    "Le portefeuille matériel actuel ne prend en charge que les phrases de récupération de 12, 18 et 24 mots. Cette sauvegarde Lite ne peut pas être restaurée.",
 ]
 # fmt: on

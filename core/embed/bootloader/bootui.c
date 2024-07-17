@@ -908,16 +908,16 @@ void ui_bootloader_restart_confirm(void) {
   ui_title_update();
   int title_offset_y = 90;
   int title_offset_x = 12;
-  display_text(title_offset_x, title_offset_y, "Restart Device?", -1,
+  display_text(title_offset_x, title_offset_y, "Restart  Device?", -1,
                FONT_PJKS_BOLD_38, COLOR_BL_FG, COLOR_BL_BG);
 
   display_text(title_offset_x, title_offset_y + 46,
-               "Restarting will exit the device from", -1, FONT_NORMAL,
+               "Restarting  will  exit  the  device  from", -1, FONT_NORMAL,
                COLOR_BL_SUBTITLE, COLOR_BL_BG);
   display_text(title_offset_x, title_offset_y + 76,
-               "update mode and interrupt the", -1, FONT_NORMAL,
+               "update  mode  and  interrupt  the", -1, FONT_NORMAL,
                COLOR_BL_SUBTITLE, COLOR_BL_BG);
-  display_text(title_offset_x, title_offset_y + 106, "upgrade process.", -1,
+  display_text(title_offset_x, title_offset_y + 106, "upgrade  process.", -1,
                FONT_NORMAL, COLOR_BL_SUBTITLE, COLOR_BL_BG);
 
   ui_confirm_cancel_buttons("Cancel", "Restart", COLOR_BL_DARK,
