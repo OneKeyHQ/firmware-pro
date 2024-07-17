@@ -25,19 +25,19 @@ class Transaction:
     @staticmethod
     def _readAccountIdLookupOfT_V15(rawtx: codec.base.ScaleBytes, address_type) -> str:
         value = rawtx.get_next_bytes(1)[0]
-        if value == 0:
+        if value == 0:  # Id
             accountid = helper.ss58_encode(rawtx.get_next_bytes(32), address_type)
-        elif value == 1:
+        elif value == 1:  # Index
             obj = codec.types.Compact(rawtx)
             accountid = str(obj.decode(check_remaining=False))
-        elif value == 2:
+        elif value == 2:  # Raw
             obj = codec.types.Compact(rawtx)
             value = obj.decode(check_remaining=False)
             clen = int(0 if value is None else value)
             accountid = hexlify(rawtx.get_next_bytes(clen)).decode()
-        elif value == 3:
+        elif value == 3:  # Address32
             accountid = hexlify(rawtx.get_next_bytes(32)).decode()
-        elif value == 4:
+        elif value == 4:  # Address20
             accountid = hexlify(rawtx.get_next_bytes(20)).decode()
         else:
             raise Exception("Unexpected value")

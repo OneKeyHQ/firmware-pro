@@ -11,7 +11,7 @@ class ScaleBytes:
         elif type(data) is bytes:
             self.data = bytearray(data)
         elif type(data) is str and data[0:2] == "0x":
-            self.data = unhexlify(data[2:].lower().replace("0x", ""))
+            self.data = unhexlify(data[2:].lower())
         else:
             raise ValueError(
                 f"Provided data is not in supported format: provided '{type(data)}'"
@@ -56,7 +56,7 @@ class ScaleBytes:
         if type(data) == bytes:
             data = bytearray(data)
         elif type(data) == str and data[0:2] == "0x":
-            data = unhexlify(data[2:].lower().replace("0x", ""))
+            data = unhexlify(data[2:].lower())
 
         return ScaleBytes(self.data + data)
 
@@ -134,7 +134,7 @@ class ScaleDecoder:
             "h160",
             "h256",
             "h512",
-            "[u8; 4]",
+            "[u8; 2]",
             "[u8; 4]",
             "[u8; 8]",
             "[u8; 16]",
@@ -201,7 +201,7 @@ class ScaleDecoder:
         return self.value_serialized
 
     def process(self):
-        return
+        pass
 
 
 class ScaleType(ScaleDecoder):

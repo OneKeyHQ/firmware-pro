@@ -30,7 +30,7 @@ async def get_address(
 
     if msg.show_display:
         path = paths.address_n_to_str(msg.address_n)
-        chain_name, _, _ = helper.update_chain_res(ctx, msg.network)
+        chain_name, _, _ = helper.retrieval_chain_res(ctx, msg.network)
         await show_address(
             ctx,
             address=address,
