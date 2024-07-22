@@ -315,20 +315,16 @@ async def start_check_pin_mnemonicmphrase(self, pin, mnemonic, card_num):
     seed_length = len(payload_bytes)
     lc = seed_length.to_bytes(1, "big")
     apdu_command = CMD_BACKUP_DATA + lc + payload_bytes
-
     if card_type == "OLD":
         _, importsw1sw2 = nfc.send_recv(apdu_command)
     else:
         _, importsw1sw2 = nfc.send_recv(apdu_command, True)
-
     if importsw1sw2 == LITE_CARD_DISCONECT_STATUS:
         await handle_sw1sw2_connect_error(self)
         return
-
     if importsw1sw2 == LITE_CARD_SUCCESS_STATUS:
         await handle_cleanup(self, LITE_CARD_OPERATE_SUCCESS)
         return
-
     self.channel.publish(LITE_CARD_CONNECT_FAILURE)
     await loop.sleep(180)
     self.clean()
