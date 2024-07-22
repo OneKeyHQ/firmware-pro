@@ -415,7 +415,6 @@ class MnemonicEncoder:
             k = bip39.find(w)
             i = i * n + k
         result_str = str(i)
-
         if len(result_str) % 2 != 0:
             result_str = "0" + result_str
         return result_str
