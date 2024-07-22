@@ -11,6 +11,7 @@ from trezor.lvglui.scrs.nfc import (
     LITE_CARD_NOT_SAME,
     LITE_CARD_OPERATE_SUCCESS,
     LITE_CARD_PIN_ERROR,
+    LITE_CARD_UNSUPPORTED_WORD_COUNT,
     SearchDeviceScreen,
     TransferDataScreen,
 )
@@ -71,7 +72,7 @@ async def backup_with_lite(
 ):
     async def handle_pin_setup(card_num, mnemonics):
         pin = await request_lite_pin_confirm(ctx)
-        if pin:
+        if pin and pin != LITE_CARD_BUTTON_CANCLE:
             flag = await handle_second_placement(card_num, pin, mnemonics)
             return flag
         else:
@@ -367,8 +368,16 @@ async def backup_with_lite_import(ctx: wire.GenericContext):
                                 _(i18n_keys.BUTTON__I_GOT_IT),
                                 icon_path="A:/res/danger.png",
                             )
-                            return LITE_CARD_HAS_BEEN_RESET
-
+                            first_placement = False
+                        elif mnemonic_phrase == LITE_CARD_UNSUPPORTED_WORD_COUNT:
+                            await show_fullsize_window(
+                                ctx,
+                                _(i18n_keys.TITLE__UNSUPPORTED_RECOVERY_PHRASE),
+                                _(i18n_keys.TITLE__UNSUPPORTED_RECOVERY_PHRASE_DESC),
+                                _(i18n_keys.BUTTON__I_GOT_IT),
+                                icon_path="A:/res/danger.png",
+                            )
+                            first_placement = False
                         elif str(mnemonic_phrase).startswith("63C"):
                             retry_count = int(str(mnemonic_phrase)[-1], 16)
                             flag = await show_fullsize_window(

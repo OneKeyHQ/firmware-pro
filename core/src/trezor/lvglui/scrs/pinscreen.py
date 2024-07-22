@@ -231,7 +231,9 @@ async def pin_mismatch(ctx) -> None:
         ctx=ctx,
         br_type="pin_not_match",
         header=_(i18n_keys.TITLE__NOT_MATCH),
-        content=_(i18n_keys.SUBTITLE__SETUP_SET_PIN_PIN_NOT_MATCH),
+        content=_(
+            i18n_keys.CONTENT__THE_TWO_ONEKEY_LITE_USED_FOR_CONNECTION_ARE_NOT_THE_SAME
+        ),
         icon="A:/res/danger.png",
         btn_yes_bg_color=lv_colors.ONEKEY_BLACK,
     )
@@ -246,7 +248,11 @@ async def request_lite_pin(ctx, prompt: str) -> str:
 async def request_lite_pin_confirm(ctx) -> str:
     while True:
         pin1 = await request_lite_pin(ctx, _(i18n_keys.TITLE__ENTER_ONEKEY_LITE_PIN))
-        pin2 = await request_lite_pin(ctx, _(i18n_keys.TITLE__ENTER_PIN_AGAIN))
+        if pin1 == 0:
+            return pin1
+        pin2 = await request_lite_pin(ctx, _(i18n_keys.TITLE__CONFIRM_ONEKEY_LITE_PIN))
+        if pin2 == 0:
+            return pin2
         if pin1 == pin2:
             return pin1
         await pin_mismatch(ctx)
