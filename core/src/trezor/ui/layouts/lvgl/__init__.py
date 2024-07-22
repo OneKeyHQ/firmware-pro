@@ -76,7 +76,7 @@ __all__ = (
     "confirm_lnurl_auth",
     "show_error_no_interact",
     "confirm_ton_transfer",
-    "confirm_ton_jetton_transfer",
+    "confirm_unknown_token_transfer",
 )
 
 
@@ -2024,7 +2024,7 @@ async def confirm_ton_transfer(
         interact(ctx, screen, "confirm_ton_transfer", ButtonRequestType.ProtectCall)
     )
 
-def confirm_ton_jetton_transfer(
+def confirm_unknown_token_transfer(
     ctx: wire.GenericContext,
     address: str,
 ):

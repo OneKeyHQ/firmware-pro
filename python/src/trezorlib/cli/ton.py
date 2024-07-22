@@ -61,8 +61,9 @@ def get_address(client: "TrezorClient",
                 ) -> str:
     """Get Ton address for specified path."""
     address_n = tools.parse_path(address)
-    _address = ton.get_address(client, address_n, version, workchain, bounceable, test_only, wallet_id, show_display).address
-    return {"address": f"{_address}"}
+    resp = ton.get_address(client, address_n, version, workchain, bounceable, test_only, wallet_id, show_display)
+    public_key = resp.public_key.hex()
+    return {"public_key": f"{public_key}", "address": f"{resp.address}"}
 
 
 @cli.command()
