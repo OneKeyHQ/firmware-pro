@@ -801,6 +801,8 @@ apps.ton.get_address
 import apps.ton.get_address
 apps.ton.sign_message
 import apps.ton.sign_message
+apps.ton.tokens
+import apps.ton.tokens
 apps.ton.tonsdk
 import apps.ton.tonsdk
 apps.ton.tonsdk.boc

@@ -7,7 +7,6 @@ from trezor import wire
 from trezor.lvglui.scrs import lv
 from trezor.enums import TonWalletVersion, TonWorkChain
 from trezor.messages import TonSignMessage, TonSignedMessage
-from trezor.ui.layouts import show_address
 from trezor.strings import format_amount
 
 from apps.common import paths,seed
@@ -16,8 +15,7 @@ from apps.common.keychain import Keychain, auto_keychain
 from .tonsdk.contract.wallet import Wallets, WalletVersionEnum
 from .tonsdk.utils._address import Address
 from .tonsdk.contract.token.ft import JettonWallet
-from .import ICON, PRIMARY_COLOR
-
+from .import ICON, PRIMARY_COLOR, tokens
 if TYPE_CHECKING:
     from trezor.wire import Context
 
@@ -50,18 +48,26 @@ async def sign_message(
 
     # disply
     ctx.primary_color, ctx.icon_path = lv.color_hex(PRIMARY_COLOR), ICON
-    from trezor.ui.layouts import confirm_final, confirm_ton_transfer
+    from trezor.ui.layouts import confirm_final, confirm_ton_transfer, confirm_unknown_token_transfer, confirm_output
 
     if is_jetton_transfer:
-        recipient = Address(msg.destination).to_string(True, True)
-        format_value = f"{format_amount(msg.jetton_amount, 9)} TOKEN"
+        token = tokens.token_by_address(
+            "TON_TOKEN", msg.jetton_master_address
+        )
 
-        from trezor.ui.layouts import confirm_ton_jetton_transfer
-        await confirm_ton_jetton_transfer(ctx, address=msg.jetton_master_address)
+        recipient = Address(msg.destination).to_string(True, True)
+        format_value = f"{format_amount(msg.jetton_amount, 9)} {token.symbol}"
         
+        if token is tokens.UNKNOWN_TOKEN:
+            # unknown token, confirm contract address
+            await confirm_unknown_token_transfer(
+                ctx, msg.jetton_master_address
+            )
+        await confirm_output(ctx, recipient, format_value)
+
         await confirm_ton_transfer(ctx, address, recipient, format_value, msg.comment)
 
-        await confirm_final(ctx, "TOKEN")
+        await confirm_final(ctx, token.symbol)
 
         body = JettonWallet().create_transfer_body(
             Address(msg.destination),
