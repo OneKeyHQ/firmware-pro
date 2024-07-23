@@ -16,6 +16,7 @@ LITE_CARD_NOT_SAME = 4
 LITE_CARD_HAS_BEEN_RESET = 5
 LITE_CARD_PIN_ERROR = 6
 LITE_CARD_NO_BACKUP = 8
+LITE_CARD_UNSUPPORTED_WORD_COUNT = 9
 LITE_CARD_DISCONNECT = 99
 LITE_CARD_OPERATE_SUCCESS = 2
 LITE_CARD_SUCCESS_STATUS = b"\x90\x00"
@@ -227,6 +228,10 @@ async def start_import_pin_mnemonicmphrase(self, pin):
     decoder = MnemonicEncoder()
     encoded_mnemonic_str, _, _ = decoder.parse_card_data(exportresp)
     decoded_mnemonics = decoder.decode_mnemonics(encoded_mnemonic_str)
+    word_count = len(decoded_mnemonics.split())
+    if word_count in [15, 21]:
+        await handle_cleanup(self, LITE_CARD_UNSUPPORTED_WORD_COUNT)
+        return
     await handle_cleanup(self, decoded_mnemonics)
 
 
@@ -298,9 +303,7 @@ async def start_check_pin_mnemonicmphrase(self, pin, mnemonic, card_num):
         return
 
     encoder = MnemonicEncoder()
-    encoded_mnemonic = encoder.encode_mnemonics(mnemonic)
-    encoded_mnemonic_str = str(encoded_mnemonic)
-
+    encoded_mnemonic_str = encoder.encode_mnemonics(mnemonic)
     version = "01"
     lang = "00"
     meta = "ffff" + version + lang
@@ -319,11 +322,9 @@ async def start_check_pin_mnemonicmphrase(self, pin, mnemonic, card_num):
     if importsw1sw2 == LITE_CARD_DISCONECT_STATUS:
         await handle_sw1sw2_connect_error(self)
         return
-
     if importsw1sw2 == LITE_CARD_SUCCESS_STATUS:
         await handle_cleanup(self, LITE_CARD_OPERATE_SUCCESS)
         return
-
     self.channel.publish(LITE_CARD_CONNECT_FAILURE)
     await loop.sleep(180)
     self.clean()
@@ -377,8 +378,7 @@ async def start_set_pin_mnemonicmphrase(self, pin, mnemonic, card_num):
     restsw1sw2, sw1sw2 = nfc.send_recv(command_data, True)
 
     encoder = MnemonicEncoder()
-    encoded_mnemonic = encoder.encode_mnemonics(mnemonic)
-    encoded_mnemonic_str = str(encoded_mnemonic)
+    encoded_mnemonic_str = encoder.encode_mnemonics(mnemonic)
     version = "01"
     lang = "00"
     meta = "ffff" + version + lang
@@ -414,7 +414,10 @@ class MnemonicEncoder:
             w = words.pop()
             k = bip39.find(w)
             i = i * n + k
-        return i
+        result_str = str(i)
+        if len(result_str) % 2 != 0:
+            result_str = "0" + result_str
+        return result_str
 
     def int_to_hex_str(self, num):
         """Convert an integer to a hexadecimal string."""
@@ -448,8 +451,7 @@ class MnemonicEncoder:
             if len(words) < length:
                 fix_fill_count = length - len(words)
                 break
-        for _unused in range(fix_fill_count):
-            words.append(bip39.get_word(0))
+        words.extend([bip39.get_word(0)] * fix_fill_count)
 
         return " ".join(words)
 

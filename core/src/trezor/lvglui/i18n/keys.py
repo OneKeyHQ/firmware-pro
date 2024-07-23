@@ -1790,4 +1790,9 @@ TITLE__EXIT_BACKUP_PROCESS = 799
 # If you exit now, you will need to re-verify your recovery phrase when you re
 # -enter. Are you sure you want to exit?
 TITLE__EXIT_BACKUP_PROCESS_DESC = 800
+# Unsupported Recovery Phrase
+TITLE__UNSUPPORTED_RECOVERY_PHRASE = 801
+# The current hardware wallet only supports 12, 18, and 24-word recovery phras
+# es. This Lite backup cannot be restored.
+TITLE__UNSUPPORTED_RECOVERY_PHRASE_DESC = 802
 # fmt: on
