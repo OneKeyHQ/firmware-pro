@@ -723,7 +723,7 @@ translations = [
     "OneKey Wallet",
     "Huella dactilar {}",
     "Cargando",
-    "Escanee el código QR de la transacción o firme el mensaje",
+    "Escanee el código QR que se muestra en la aplicación",
     "Formato de datos no admitido",
     "El tipo de código QR no es compatible. Inténtelo de nuevo.",
     "Transacción inválida",
@@ -788,7 +788,6 @@ translations = [
     "Confirmar dirección",
     "Regresa a la aplicación y escanea el código QR que se muestra a continuación.",
     "Redes compatibles con BTC y EVM",
-    "Redes compatibles con ETH y EVM",
     "Abra OneKey y escanee el código QR a continuación",
     "Exportar cuenta",
     "Conectando...",
@@ -802,6 +801,7 @@ translations = [
     "¿Salir del proceso de copia de seguridad?",
     "Si sale ahora, deberá volver a verificar su frase de recuperación cuando vuelva a ingresar. ¿Seguro que quieres salir?",
     "Frase de recuperación no compatible",
-    "La actual cartera de hardware solo admite frases de recuperación de 12, 18 y 24 palabras. Esta copia de seguridad Lite no se puede restaurar.",
+    "La actual cartera de hardware solo admite frases de recuperación de 12, 18 y 24 palabras.\nEsta copia de seguridad Lite no se puede restaurar.",
+    "Abra OneKey y escanee el código QR, compatible con redes BTC y EVM.",
 ]
 # fmt: on

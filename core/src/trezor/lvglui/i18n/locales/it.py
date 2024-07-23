@@ -723,7 +723,7 @@ translations = [
     "OneKey Wallet",
     "Impronta digitale {}",
     "In carica",
-    "Scansiona il codice QR della transazione o firma il messaggio",
+    "Scansiona il codice QR visualizzato sull'app",
     "Formato dati non supportato",
     "Il tipo di codice QR non è supportato, riprova.",
     "Transazione non valida",
@@ -788,7 +788,6 @@ translations = [
     "Conferma Indirizzo",
     "Torna all'app e scansiona il codice QR qui sotto.",
     "Reti compatibili con BTC ed EVM",
-    "Reti compatibili con ETH ed EVM",
     "Apri OneKey e scansiona il codice QR qui sotto",
     "Esporta Account",
     "Connessione in corso...",
@@ -802,6 +801,7 @@ translations = [
     "Uscire dal processo di backup?",
     "Se esci adesso, dovrai verificare nuovamente la frase di recupero quando rientri. Sei sicuro di voler uscire?",
     "Frase di recupero non supportata",
-    "Il portafoglio hardware attuale supporta solo frasi di recupero da 12, 18 e 24 parole. Questo backup Lite non può essere ripristinato.",
+    "Il portafoglio hardware attuale supporta solo frasi di recupero da 12, 18 e 24 parole.\nQuesto backup Lite non può essere ripristinato.",
+    "Apri OneKey e scansiona il codice QR, supportando le reti BTC ed EVM.",
 ]
 # fmt: on

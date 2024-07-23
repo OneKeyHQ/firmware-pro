@@ -40,6 +40,8 @@ async def show_fullsize_window(
         anim_dir=0,
     )
     screen.btn_layout_ver()
+    if hasattr(screen, "subtitle"):
+        screen.subtitle.set_recolor(True)
     result = await ctx.wait(screen.request())
     return result
 
@@ -234,7 +236,7 @@ async def backup_with_lite(
                                         ctx,
                                         _(i18n_keys.TITLE__LITE_PIN_ERROR),
                                         _(i18n_keys.TITLE__LITE_PIN_ERROR_DESC).format(
-                                            retry_count
+                                            f"#FF0000 {retry_count}#"
                                         ),
                                         _(i18n_keys.BUTTON__I_GOT_IT),
                                         icon_path="A:/res/danger.png",
@@ -384,7 +386,7 @@ async def backup_with_lite_import(ctx: wire.GenericContext):
                                 ctx,
                                 _(i18n_keys.TITLE__LITE_PIN_ERROR),
                                 _(i18n_keys.TITLE__LITE_PIN_ERROR_DESC).format(
-                                    retry_count
+                                    f"#FF0000 {retry_count}#"
                                 ),
                                 _(i18n_keys.BUTTON__I_GOT_IT),
                                 icon_path="A:/res/danger.png",

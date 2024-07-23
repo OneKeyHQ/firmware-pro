@@ -54,8 +54,7 @@ async def recovery_device(
         #     return await recovery_process(ctx)
 
     try:
-        await _continue_dialog(ctx, msg)
-
+        # await _continue_dialog(ctx, msg)
         if isinstance(ctx, wire.DummyContext):
             utils.play_dead()
 
