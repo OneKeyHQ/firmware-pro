@@ -9,7 +9,6 @@ from trezor.lvglui import StatusBar
 # from trezor.lvglui.scrs.charging import ChargingPromptScr
 from trezor.ui import display
 
-import usb
 from apps import base
 
 if TYPE_CHECKING:
@@ -32,6 +31,7 @@ _CMD_DEVICE_CHARGING_STATUS = const(8)
 _CMD_BATTERY_STATUS = const(9)
 _CMD_SIDE_BUTTON_PRESS = const(10)
 _CMD_LED_BRIGHTNESS = const(12)
+_CMD_BATTERY_INFO = const(13)
 _CMD_BLE_BUILD_ID = const(16)
 _CMD_BLE_HASH = const(17)
 CHARING_TYPE = 0  # 1 VIA USB / 2 VIA WIRELESS
@@ -41,6 +41,7 @@ NRF_VERSION: str | None = None
 BLE_CTRL = io.BLE()
 FLASH_LED_BRIGHTNESS: int | None = None
 BUTTON_PRESSING = False
+wireless_charge_screen_off_task = None
 
 
 async def handle_fingerprint():
@@ -266,6 +267,8 @@ async def process_push() -> None:
     elif cmd == _CMD_LED_BRIGHTNESS:
         # retrieve led brightness
         _retrieve_flashled_brightness(value)
+    elif cmd == _CMD_BATTERY_INFO:
+        _deal_battery_info(value)
     elif cmd == _CMD_BLE_BUILD_ID:
         _retrieve_ble_build_id(value)
     elif cmd == _CMD_BLE_HASH:
@@ -312,10 +315,6 @@ async def _deal_button_press(value: bytes) -> None:
                 await loop.race(safe_reloop(), loop.sleep(200))
                 workflow.spawn(utils.internal_reloop())
                 return
-            else:
-                if utils.CHARGE_WIRELESS_STATUS != utils.CHARGE_WIRELESS_STOP:
-                    ctrl_charge_switch(True)
-                    return
         else:
             utils.turn_on_lcd_if_possible()
 
@@ -359,47 +358,38 @@ async def _deal_charging_state(value: bytes) -> None:
         CHARGE_START,
         _POWER_STATUS_CHARGING,
     ):
-        if utils.CHARGING:
-            return
-        utils.CHARGING = True
         StatusBar.get_instance().show_charging(True)
         if utils.BATTERY_CAP:
-            StatusBar.get_instance().set_battery_img(utils.BATTERY_CAP, utils.CHARGING)
+            StatusBar.get_instance().set_battery_img(utils.BATTERY_CAP, True)
         if CHARING_TYPE == CHARGE_BY_WIRELESS:
-            if utils.CHARGE_WIRELESS_STATUS != utils.CHARGE_WIRELESS_STOP:
+            if utils.CHARGE_WIRELESS_STATUS == utils.CHARGE_WIRELESS_STOP:
+                utils.CHARGE_WIRELESS_STATUS = utils.CHARGE_WIRELESS_CHARGING
+                global wireless_charge_screen_off_task
+
+                wireless_charge_screen_off_task = utils.turn_off_lcd_delay()
+
+                loop.schedule(wireless_charge_screen_off_task)
+            elif utils.CHARGE_WIRELESS_STATUS == utils.CHARGE_WIRELESS_CHARGING:
                 return
-            utils.CHARGE_WIRELESS_STATUS = utils.CHARGE_WIRELESS_START
-
-            if device.is_initialized():
-                if utils.is_initialization_processing():
-                    return
-                utils.AUTO_POWER_OFF = True
-                from trezor.lvglui.scrs import fingerprints
-
-                if config.has_pin() and config.is_unlocked():
-                    if fingerprints.is_available():
-                        if fingerprints.is_unlocked():
-                            fingerprints.lock()
-                    else:
-                        config.lock()
-                await loop.race(safe_reloop(), loop.sleep(200))
-                workflow.spawn(utils.internal_reloop())
         else:
-            if utils.CHARGE_WIRELESS_STATUS != utils.CHARGE_WIRELESS_STOP:
-                utils.CHARGE_WIRELESS_STATUS = utils.CHARGE_WIRELESS_STOP
-            ctrl_charge_switch(True)
-
-    elif res in (_USB_STATUS_PLUG_OUT, _POWER_STATUS_CHARGING_FINISHED):
-        if utils.CHARGE_WIRELESS_STATUS != utils.CHARGE_WIRELESS_STOP:
+            if utils.CHARGING:
+                return
             utils.CHARGE_WIRELESS_STATUS = utils.CHARGE_WIRELESS_STOP
-        # if not utils.CHARGING:
-        #     return
+            ctrl_charge_switch(True)
+            utils.CHARGING = True
+    elif res in (_USB_STATUS_PLUG_OUT, _POWER_STATUS_CHARGING_FINISHED):
         utils.CHARGING = False
-        ctrl_charge_switch(True)
+        ctrl_charge_switch(False)
         StatusBar.get_instance().show_charging(False)
         StatusBar.get_instance().show_usb(False)
         if utils.BATTERY_CAP:
-            StatusBar.get_instance().set_battery_img(utils.BATTERY_CAP, utils.CHARGING)
+            StatusBar.get_instance().set_battery_img(utils.BATTERY_CAP, False)
+
+        if utils.CHARGE_WIRELESS_STATUS == utils.CHARGE_WIRELESS_CHARGING:
+            utils.CHARGE_WIRELESS_STATUS = utils.CHARGE_WIRELESS_STOP
+            global wireless_charge_screen_off_task
+            if wireless_charge_screen_off_task:
+                loop.close(wireless_charge_screen_off_task)
 
     utils.turn_on_lcd_if_possible()
 
@@ -456,6 +446,14 @@ def _retrieve_flashled_brightness(value: bytes) -> None:
             print("flag:", flag)
             print(f"flash led brightness: {FLASH_LED_BRIGHTNESS}")
         utils.FLASH_LED_BRIGHTNESS = FLASH_LED_BRIGHTNESS
+
+
+def _deal_battery_info(value: bytes) -> None:
+    res, val = ustruct.unpack(">BH", value)
+    if res == 4:
+        utils.BATTERY_TEMP = val
+        if val <= 38 and display.backlight() == 0:
+            ctrl_wireless_charge(True)
 
 
 def _retrieve_ble_name(value: bytes) -> None:
@@ -545,6 +543,11 @@ def fetch_ble_info():
 
     if utils.BLE_HASH is None:
         BLE_CTRL.ctrl(0x83, b"\x06")
+
+
+def fetch_battery_temperature():
+    BLE_CTRL.ctrl(0x86, b"\x04")
+    # BLE_CTRL.ctrl(0x86, b"\x05")
 
 
 def ctrl_ble(enable: bool) -> None:
@@ -645,3 +648,27 @@ def ctrl_wireless_charge(enable: bool) -> None:
     if utils.CHARGE_WIRELESS_STATUS == utils.CHARGE_WIRELESS_STOP:
         return
     ctrl_charge_switch(enable)
+
+
+def get_wireless_charge_status() -> bool:
+    if utils.CHARGE_WIRELESS_STATUS == utils.CHARGE_WIRELESS_STOP:
+        return True
+    if utils.CHARGE_ENABLE:
+        return True
+    return False
+
+
+def stop_mode(reset_timer: bool = False):
+    disconnect_ble()
+
+    lp_timer_enable = False
+    wireless_charge = get_wireless_charge_status()
+
+    if not wireless_charge:
+        lp_timer_enable = True
+
+    utils.enter_lowpower(
+        reset_timer, device.get_autoshutdown_delay_ms(), lp_timer_enable
+    )
+    if not wireless_charge:
+        fetch_battery_temperature()
