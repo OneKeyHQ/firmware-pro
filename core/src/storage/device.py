@@ -10,6 +10,13 @@ if TYPE_CHECKING:
     from trezor.enums import BackupType
     from typing_extensions import Literal
 
+HOMESCREEN_MAXSIZE = 16384
+LABEL_MAXLENGTH = const(32)
+LANGUAGE_MAXLENGTH = const(16)
+HOMESCREEN_PATH_MAXSIZE = const(128)
+BLE_NAME_MAXLENGTH = const(16)
+BLE_VERSION_MAXLENGTH = const(8)
+
 SE_1ST_ADDRESS = const(0x10 << 1)
 SE_2ND_ADDRESS = const(0x11 << 1)
 SE_3RD_ADDRESS = const(0x12 << 1)
@@ -103,19 +110,25 @@ if utils.USE_THD89:
     struct_language: uctypes.StructDict = {
         "has_value": 0 | uctypes.UINT8,
         "size": 1 | uctypes.UINT16,
-        "language": (3 | uctypes.ARRAY, 17 | uctypes.UINT8),
+        "language": (3 | uctypes.ARRAY, LANGUAGE_MAXLENGTH + 1 | uctypes.UINT8),
     }
 
-    struct_label: uctypes.StructDict = {
+    struct_label_deprecated: uctypes.StructDict = {
         "has_value": 0 | uctypes.UINT8,
         "size": 1 | uctypes.UINT16,
         "uuid": (3 | uctypes.ARRAY, 13 | uctypes.UINT8),
     }
 
+    struct_label: uctypes.StructDict = {
+        "has_value": 0 | uctypes.UINT8,
+        "size": 1 | uctypes.UINT16,
+        "uuid": (3 | uctypes.ARRAY, LABEL_MAXLENGTH + 1 | uctypes.UINT8),
+    }
+
     struct_homescreen: uctypes.StructDict = {
         "has_value": 0 | uctypes.UINT8,
         "size": 1 | uctypes.UINT16,
-        "uuid": (3 | uctypes.ARRAY, 128 | uctypes.UINT8),
+        "uuid": (3 | uctypes.ARRAY, HOMESCREEN_PATH_MAXSIZE | uctypes.UINT8),
     }
 
     struct_sessionkey: uctypes.StructDict = {
@@ -127,13 +140,13 @@ if utils.USE_THD89:
     struct_ble_name: uctypes.StructDict = {
         "has_value": 0 | uctypes.UINT8,
         "size": 1 | uctypes.UINT16,
-        "ble_name": (3 | uctypes.ARRAY, 16 | uctypes.UINT8),
+        "ble_name": (3 | uctypes.ARRAY, BLE_NAME_MAXLENGTH | uctypes.UINT8),
     }
 
     struct_ble_version: uctypes.StructDict = {
         "has_value": 0 | uctypes.UINT8,
         "size": 1 | uctypes.UINT16,
-        "ble_version": (3 | uctypes.ARRAY, 8 | uctypes.UINT8),
+        "ble_version": (3 | uctypes.ARRAY, BLE_VERSION_MAXLENGTH | uctypes.UINT8),
     }
 
     struct_SD_auth_key: uctypes.StructDict = {
@@ -152,8 +165,8 @@ if utils.USE_THD89:
     offset += uctypes.sizeof(struct_uuid, uctypes.LITTLE_ENDIAN)
     struct_public["language"] = (offset, struct_language)
     offset += uctypes.sizeof(struct_language, uctypes.LITTLE_ENDIAN)
-    struct_public["label"] = (offset, struct_label)
-    offset += uctypes.sizeof(struct_label, uctypes.LITTLE_ENDIAN)
+    struct_public["label_deprecated"] = (offset, struct_label_deprecated)
+    offset += uctypes.sizeof(struct_label_deprecated, uctypes.LITTLE_ENDIAN)
     struct_public["use_passphrase"] = (offset, struct_bool)
     offset += uctypes.sizeof(struct_bool, uctypes.LITTLE_ENDIAN)
     struct_public["passphrase_always_on_device"] = (offset, struct_bool)
@@ -218,6 +231,8 @@ if utils.USE_THD89:
     offset += uctypes.sizeof(struct_bool, uctypes.LITTLE_ENDIAN)
     struct_public["finger_failed_count"] = (offset, struct_uint32)
     offset += uctypes.sizeof(struct_uint32, uctypes.LITTLE_ENDIAN)
+    struct_public["label"] = (offset, struct_label)
+    offset += uctypes.sizeof(struct_label, uctypes.LITTLE_ENDIAN)
 
     # public_field = uctypes.struct(0, struct_public, uctypes.LITTLE_ENDIAN)
     assert (
@@ -347,9 +362,6 @@ _DEFAULT_SAFETY_CHECK_LEVEL = SAFETY_CHECK_LEVEL_STRICT
 if TYPE_CHECKING:
     StorageSafetyCheckLevel = Literal[0, 1]
 
-HOMESCREEN_MAXSIZE = 16384
-LABEL_MAXLENGTH = 32
-
 if __debug__:
     AUTOLOCK_DELAY_MINIMUM = AUTOSHUTDOWN_DELAY_MINIMUM = 10 * 1000  # 10 seconds
 else:
@@ -395,6 +407,8 @@ def get_storage() -> str:
 
 
 def set_ble_name(name: str) -> None:
+    if len(name.encode("utf-8")) > BLE_NAME_MAXLENGTH:
+        raise ValueError
     global _BLE_NAME_VALUE
     common.set(_NAMESPACE, _BLE_NAME, name.encode(), True)
     _BLE_NAME_VALUE = name
@@ -436,6 +450,8 @@ def set_ble_status(enable: bool) -> None:
 
 def set_ble_version(version: str) -> None:
     """Set ble firmware version."""
+    if len(version.encode("utf-8")) > BLE_VERSION_MAXLENGTH:
+        raise ValueError
     global _BLE_VERSION_VALUE
     common.set(_NAMESPACE, _BLE_VERSION, version.encode(), True)
     _BLE_VERSION_VALUE = version
@@ -713,7 +729,7 @@ def get_label() -> str:
 
 def set_label(label: str) -> None:
     global _LABEL_VALUE
-    if len(label) > LABEL_MAXLENGTH:
+    if len(label.encode("utf-8")) > LABEL_MAXLENGTH:
         raise ValueError  # label too long
     common.set(_NAMESPACE, _LABEL, label.encode(), True)  # public
     _LABEL_VALUE = label
@@ -734,6 +750,9 @@ def get_language() -> str:
 def set_language(lang: str) -> None:
     global _LANGUAGE_VALUE
     from trezor.langs import langs_keys
+
+    if len(lang.encode("utf-8")) > LANGUAGE_MAXLENGTH:
+        raise ValueError  # language too long
 
     if lang == "en-US":
         lang = "en"
@@ -801,8 +820,8 @@ def get_homescreen() -> str | None:
 
 
 def set_homescreen(full_path: str) -> None:
-    # if len(homescreen) > HOMESCREEN_MAXSIZE:
-    #     raise ValueError  # homescreen too large
+    if len(full_path.encode("utf-8")) > HOMESCREEN_PATH_MAXSIZE:
+        raise ValueError  # homescreen too large
     global _HOMESCREEN_VALUE
     common.set(_NAMESPACE, _HOMESCREEN, full_path.encode(), public=True)
     _HOMESCREEN_VALUE = full_path
