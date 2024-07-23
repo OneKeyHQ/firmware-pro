@@ -761,7 +761,7 @@ TITLE__DOWNLOAD__TUTORIAL_AFTER_INIT = 344
 ITEM__DOWNLOAD = 344
 # Connect Wallet
 TITLE__CONNECT__TUTORIAL_AFTER_INIT = 345
-# Tap Connect-Wallet button, then select Connect-OneKey-Hardware-Wallet.
+# Tap "Connect hardware wallet".
 SUBTITLE__CONNECT_2__TUTORIAL_AFTER_INIT = 346
 # Connect the device: {}.
 SUBTITLE__CONNECT_3__TUTORIAL_AFTER_INIT = 347
@@ -1751,4 +1751,9 @@ TITLE__EXIT_BACKUP_PROCESS = 799
 # If you exit now, you will need to re-verify your recovery phrase when you re
 # -enter. Are you sure you want to exit?
 TITLE__EXIT_BACKUP_PROCESS_DESC = 800
+# Unsupported Recovery Phrase
+TITLE__UNSUPPORTED_RECOVERY_PHRASE = 801
+# The current hardware wallet only supports 12, 18, and 24-word recovery phras
+# es. This Lite backup cannot be restored.
+TITLE__UNSUPPORTED_RECOVERY_PHRASE_DESC = 802
 # fmt: on
