@@ -794,7 +794,7 @@ translations = [
     "ETH 和 EVM 兼容网络",
     "打开 OneKey，扫描下方二维码",
     "导出账户",
-    "连接中……",
+    "连接中...",
     "设置 OneKey Lite PIN",
     "我已知晓备份将被覆盖",
     "确认 OneKey Lite PIN",

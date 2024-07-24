@@ -470,7 +470,7 @@ class MnemonicEncoder:
 class SearchDeviceScreen(FullSizeWindow):
     def __init__(self):
         super().__init__(
-            _(i18n_keys.TITLE__SEARCHING),
+            _(i18n_keys.TITLE__CONNECTING),
             _(i18n_keys.CONTENT__KEEP_LITE_DEVICE_TOGETHER_BACKUP_COMPLETE),
             cancel_text=_(i18n_keys.BUTTON__CANCEL),
             anim_dir=0,
