@@ -723,7 +723,7 @@ translations = [
     "OneKey-Wallet",
     "Fingerabdruck {}",
     "Aufladen",
-    "QR-Code scannen oder Nachricht signieren",
+    "Scannen Sie den auf der App angezeigten QR-Code",
     "Nicht unterstütztes Datenformat",
     "Der QR-Codetyp wird nicht unterstützt. Bitte versuchen Sie es erneut.",
     "Ungültige Transaktion",
@@ -788,7 +788,6 @@ translations = [
     "Adresse bestätigen",
     "Kehren Sie zur App zurück und scannen Sie den untenstehenden QR-Code.",
     "BTC- und EVM-kompatible Netzwerke",
-    "ETH‒ und EVM‒kompatible Netzwerke",
     "Öffnen Sie OneKey und scannen Sie den untenstehenden QR-Code",
     "Konto exportieren",
     "Verbinden ...",
@@ -802,6 +801,7 @@ translations = [
     "Sicherungsvorgang beenden?",
     "Wenn Sie jetzt beenden, müssen Sie Ihre Wiederherstellungsphrase beim erneuten Aufrufen erneut bestätigen. Möchten Sie wirklich beenden?",
     "Nicht unterstützte Wiederherstellungsphrase",
-    "Die aktuelle Hardware-Wallet unterstützt nur Wiederherstellungsphrasen mit 12, 18 und 24 Wörtern. Diese Lite-Sicherung kann nicht wiederhergestellt werden.",
+    "Die aktuelle Hardware-Wallet unterstützt nur Wiederherstellungsphrasen mit 12, 18 und 24 Wörtern.\nDiese Lite-Sicherung kann nicht wiederhergestellt werden.",
+    "Öffnen Sie OneKey und scannen Sie den QR-Code. BTC- und EVM-Netzwerke werden unterstützt.",
 ]
 # fmt: on
