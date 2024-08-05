@@ -799,8 +799,12 @@ apps.ton
 import apps.ton
 apps.ton.get_address
 import apps.ton.get_address
+apps.ton.layout
+import apps.ton.layout
 apps.ton.sign_message
 import apps.ton.sign_message
+apps.ton.sign_proof
+import apps.ton.sign_proof
 apps.ton.tokens
 import apps.ton.tokens
 apps.ton.tonsdk

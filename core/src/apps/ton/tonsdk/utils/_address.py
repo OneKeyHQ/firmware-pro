@@ -140,6 +140,9 @@ class Address:
                 address_base_64 = address_base_64.replace("+", "-").replace("/", "_")
 
             return str(address_base_64)
-
+    
+    def get_hash_part(self):
+        return self.hash_part
+    
     def to_buffer(self):
         return self.hash_part + bytearray([self.wc, self.wc, self.wc, self.wc])

@@ -281,10 +281,6 @@ if not utils.BITCOIN_ONLY:
     ConfluxSignMessage = 10117
     ConfluxSignMessageCIP23 = 10118
     ConfluxMessageSignature = 10119
-    TonGetAddress = 11901
-    TonAddress = 11902
-    TonSignMessage = 11903
-    TonSignedMessage = 11904
     TronGetAddress = 10501
     TronAddress = 10502
     TronSignTx = 10503
@@ -365,6 +361,12 @@ if not utils.BITCOIN_ONLY:
     NervosSignedTx = 11704
     NervosTxRequest = 11705
     NervosTxAck = 11706
+    TonGetAddress = 11901
+    TonAddress = 11902
+    TonSignMessage = 11903
+    TonSignedMessage = 11904
+    TonSignProof = 11905
+    TonSignedProof = 11906
     DeviceBackToBoot = 903
     RebootToBoardloader = 904
     DeviceInfoSettings = 10001

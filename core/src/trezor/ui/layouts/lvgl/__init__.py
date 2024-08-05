@@ -76,6 +76,8 @@ __all__ = (
     "confirm_lnurl_auth",
     "show_error_no_interact",
     "confirm_ton_transfer",
+    "confirm_ton_connect",
+    "confirm_ton_signverify",
     "confirm_unknown_token_transfer",
 )
 
@@ -939,7 +941,7 @@ async def confirm_sign_identity(
         primary_color=ctx.primary_color,
     )
     await raise_if_cancelled(
-        interact(ctx, screen, "sign_identity", ButtonRequestType.Other)
+        interact(ctx, screen, "sign_identity", ButtonRequestType.Other)  
     )
 
 
@@ -2022,6 +2024,53 @@ async def confirm_ton_transfer(
 
     await raise_if_cancelled(
         interact(ctx, screen, "confirm_ton_transfer", ButtonRequestType.ProtectCall)
+    )
+
+async def confirm_ton_connect(
+    ctx: wire.GenericContext,
+    domain: str,
+    addr: str,
+    payload: str | None,
+):
+    from trezor.lvglui.scrs.template import TonConnect
+
+    screen = TonConnect(domain, addr, payload, ctx.primary_color)
+
+    await raise_if_cancelled(
+        interact(ctx, screen, "confirm_ton_connect", ButtonRequestType.ProtectCall)
+    )
+
+async def confirm_ton_signverify(
+    ctx: wire.GenericContext,
+    coin: str,
+    message: str,
+    address: str,
+    domain: str,
+    verify: bool,
+) -> None:
+    if verify:
+        header = _(i18n_keys.TITLE__VERIFY_STR_MESSAGE).format(coin)
+        br_type = "verify_message"
+    else:
+        header = _(i18n_keys.TITLE__SIGN_STR_MESSAGE).format(coin)
+        br_type = "sign_message"
+    from trezor.lvglui.scrs.template import TonMessage
+
+    await raise_if_cancelled(
+        interact(
+            ctx,
+            TonMessage(
+                header,
+                address,
+                message,
+                domain,
+                ctx.primary_color,
+                ctx.icon_path,
+                verify,
+            ),
+            br_type,
+            ButtonRequestType.Other,
+        )
     )
 
 def confirm_unknown_token_transfer(

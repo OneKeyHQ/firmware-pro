@@ -16,8 +16,15 @@ from .tonsdk.contract.wallet import Wallets, WalletVersionEnum
 from .tonsdk.utils._address import Address
 from .tonsdk.contract.token.ft import JettonWallet
 from .import ICON, PRIMARY_COLOR, tokens
+
 if TYPE_CHECKING:
     from trezor.wire import Context
+
+from .layout import (
+    require_confirm_fee,
+    require_confirm_unknown_token,
+    require_show_overview,
+)
 
 @auto_keychain(__name__)
 async def sign_message(
@@ -46,7 +53,7 @@ async def sign_message(
     address = wallet.address.to_string(
         is_user_friendly=True, is_url_safe=True, is_bounceable=msg.is_bounceable, is_test_only=msg.is_testnet_only)
 
-    # disply
+    # display
     ctx.primary_color, ctx.icon_path = lv.color_hex(PRIMARY_COLOR), ICON
     from trezor.ui.layouts import confirm_final, confirm_ton_transfer, confirm_unknown_token_transfer, confirm_output
 
@@ -89,11 +96,34 @@ async def sign_message(
         recipient = Address(msg.destination).to_string(True, True)
         format_value = f"{format_amount(msg.ton_amount, 9)} TON"
 
-        from trezor.ui.layouts import confirm_output
-        await confirm_output(ctx, recipient, format_value)
+        # touch
+        # from trezor.ui.layouts import confirm_output
+        # await confirm_output(ctx, recipient, format_value)
 
-        await confirm_ton_transfer(ctx, address, recipient, format_value, msg.comment)
+        # await confirm_ton_transfer(ctx, address, recipient, format_value, msg.comment)
         
+        # await confirm_final(ctx, "TON")
+
+        show_details = await require_show_overview(
+            ctx,
+            recipient,
+            msg.ton_amount,
+            None,
+        )
+        if show_details:
+            # has_raw_data = True if token is None and msg.data_length > 0 else False
+
+            await require_confirm_fee(
+                ctx,
+                from_address=address,
+                to_address=recipient,
+                value=msg.ton_amount,
+                gas_price=11,
+                gas_limit=22,
+                token=None,
+                raw_data=None,
+            )
+
         await confirm_final(ctx, "TON")
 
         digest = wallet.create_transaction_digest(

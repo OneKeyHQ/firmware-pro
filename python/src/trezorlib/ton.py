@@ -65,3 +65,31 @@ def sign_message(client: "TrezorClient",
             is_test_only=test_only,
         )
     )
+
+@expect(messages.TonSignedProof)
+def sign_proof(client: "TrezorClient",
+                n: "Address",
+                expire_at: int,
+                appdomain: str,
+                comment: str,
+                version: messages.TonWalletVersion=messages.TonWalletVersion.V4R2,
+                wallet_id: int = 698983191,
+                workchain: messages.TonWorkChain=messages.TonWorkChain.BASECHAIN,
+                bounceable: bool = False,
+                test_only: bool = False):
+    appdomain = appdomain.encode("utf-8")
+    if comment is not None:
+        comment = comment.encode("utf-8")
+    return client.call(
+        messages.TonSignProof(
+            address_n=n,
+            appdomain=appdomain,
+            comment=comment,
+            expire_at=expire_at,
+            version=version,
+            wallet_id=wallet_id,
+            workchain=workchain,
+            bounceable=bounceable,
+            is_test_only=test_only,
+        )
+    )

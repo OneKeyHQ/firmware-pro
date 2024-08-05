@@ -123,3 +123,43 @@ def sign_message(client: "TrezorClient",
     ).signature.hex()
 
     return {"signature": f"0x{signature}"}
+
+@cli.command()
+@click.option("-n", "--address", required=True, help=PATH_HELP)
+@click.option("-a", "--appdomain", required=True, type=str)
+@click.option("-c", "--comment", type=str)
+@click.option("-v", "--version", type=ChoiceType(WALLET_VERSION), default="v4r2")
+@click.option("-i", "--wallet-id", type=int, default=698983191)
+@click.option("-w", "--workchain", type=ChoiceType(WORKCHAIN), default="base")
+@click.option("-b", "--bounceable", is_flag=True)
+@click.option("-t", "--test-only", is_flag=True)
+@with_client
+def sign_proof(client: "TrezorClient",
+                address: str,
+                # expire_at: int,
+                appdomain: str,
+                comment: str,
+                version: messages.TonWalletVersion,
+                wallet_id: int,
+                workchain: messages.TonWorkChain,
+                bounceable: bool,
+                test_only: bool
+                ) -> bytes:
+    """Sign Ton Proof."""
+    address_n = tools.parse_path(address)
+    # expire_at = int(time.time()) + 300
+    expire_at = 1979465599
+    signature = ton.sign_proof(
+                client,
+                address_n,
+                expire_at,
+                appdomain,
+                comment,
+                version,
+                wallet_id,
+                workchain,
+                bounceable,
+                test_only
+    ).signature.hex()
+
+    return {"signature": f"0x{signature}"}
