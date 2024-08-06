@@ -83,7 +83,12 @@ static void copyflash2sdram(void) {
   volatile uint32_t *src = (volatile uint32_t *)&_flash2_load_addr;
 
   while (dst < end) {
-    *dst++ = *src++;
+    *dst = *src;
+    if (*dst != *src) {
+      error_shutdown("Internal error", "(CF2S)", NULL, NULL);
+    }
+    dst++;
+    src++;
   }
 }
 
