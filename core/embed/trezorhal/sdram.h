@@ -52,7 +52,7 @@
 #define FMC_SDRAM_ADDRESS_END ((uint32_t)0xD0000000 + (32 * 1024 * 1024))
 
 int sdram_init(void);
-
+int sdram_gpio_reinit(void);
 void sdram_set_self_refresh(void);
 void sdram_set_normal_mode(void);
 #endif
