@@ -640,6 +640,22 @@ static bool _fp_test(void) {
   }
 }
 
+static bool _sdram_test(void) {
+  uint32_t *sdram_addr = (uint32_t *)(FMC_SDRAM_ADDRESS + 1024 * 1024);
+  uint32_t i = 0;
+  while (1) {
+    for (i = 0; i < 31 * 1024 * 1024 / 4; i++) {
+      sdram_addr[i] = i;
+    }
+    for (i = 0; i < 31 * 1024 * 1024 / 4; i++) {
+      if (sdram_addr[i] != i) {
+        return false;
+      }
+    }
+    return true;
+  }
+}
+
 void device_test(bool force) {
   if (flash_otp_is_locked(FLASH_OTP_FACTORY_TEST) && !force) {
     return;
@@ -983,6 +999,13 @@ void device_burnin_test(bool force) {
           nfc_pwr_ctl(false);
           display_printf("Card test passed\n");
           HAL_TIM_Base_Start(&TimHandle);
+
+          if (!_sdram_test()) {
+            display_printf("SDRAM test failed\n");
+            while (1)
+              ;
+          }
+          display_printf("SDRAM test passed\n");
           break;
         default:
           break;
