@@ -215,29 +215,29 @@ int sdram_gpio_reinit(void) {
   __HAL_RCC_GPIOI_CLK_ENABLE();
 
   HAL_GPIO_DeInit(GPIOD, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_8 | GPIO_PIN_9 |
-                            GPIO_PIN_10 | GPIO_PIN_14 | GPIO_PIN_15);
+                             GPIO_PIN_10 | GPIO_PIN_14 | GPIO_PIN_15);
 
   HAL_GPIO_DeInit(GPIOE, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_7 | GPIO_PIN_8 |
-                            GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_11 |
-                            GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 |
-                            GPIO_PIN_15);
+                             GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_11 |
+                             GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 |
+                             GPIO_PIN_15);
 
   HAL_GPIO_DeInit(GPIOF, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3 |
-                            GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_11 |
-                            GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 |
-                            GPIO_PIN_15);
+                             GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_11 |
+                             GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 |
+                             GPIO_PIN_15);
   HAL_GPIO_DeInit(GPIOG, GPIO_PIN_0 | GPIO_PIN_1 |
-                            GPIO_PIN_2 /*| GPIO_PIN_3 */ | GPIO_PIN_4 |
-                            GPIO_PIN_5 | GPIO_PIN_8 | GPIO_PIN_15);
+                             GPIO_PIN_2 /*| GPIO_PIN_3 */ | GPIO_PIN_4 |
+                             GPIO_PIN_5 | GPIO_PIN_8 | GPIO_PIN_15);
 
   HAL_GPIO_DeInit(GPIOH, GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7 | GPIO_PIN_8 |
-                            GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_11 |
-                            GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 |
-                            GPIO_PIN_15); 
+                             GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_11 |
+                             GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 |
+                             GPIO_PIN_15);
 
   HAL_GPIO_DeInit(GPIOI, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3 |
-                            GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7 |
-                            GPIO_PIN_9 | GPIO_PIN_10);                  
+                             GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7 |
+                             GPIO_PIN_9 | GPIO_PIN_10);
 
   /* Common GPIO configuration */
   gpio_init_structure.Mode = GPIO_MODE_AF_PP;
@@ -268,7 +268,7 @@ int sdram_gpio_reinit(void) {
   /* GPIOG configuration */
   gpio_init_structure.Pin = GPIO_PIN_0 | GPIO_PIN_1 |
                             GPIO_PIN_2 /*| GPIO_PIN_3 */ | GPIO_PIN_4 |
-                            GPIO_PIN_5 | GPIO_PIN_8 | GPIO_PIN_15;
+                            GPIO_PIN_5 | GPIO_PIN_15;
   HAL_GPIO_Init(GPIOG, &gpio_init_structure);
 
   /* GPIOH configuration */
@@ -285,6 +285,11 @@ int sdram_gpio_reinit(void) {
                             GPIO_PIN_9 | GPIO_PIN_10;
 
   HAL_GPIO_Init(GPIOI, &gpio_init_structure);
+
+  gpio_init_structure.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  gpio_init_structure.Pin = GPIO_PIN_8;
+
+  HAL_GPIO_Init(GPIOG, &gpio_init_structure);
 
   __HAL_RCC_FMC_CLK_ENABLE();
 
