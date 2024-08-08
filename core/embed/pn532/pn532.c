@@ -24,6 +24,8 @@ void pn532_power_ctl(bool on_off)
 {
     if ( on_off )
     {
+        pn532_controller.stub_controller->chip_reset_ctl(false);
+        pn532_controller.delay_ms(5);
         pn532_controller.stub_controller->chip_reset_ctl(true);
         pn532_controller.delay_ms(20);
     }

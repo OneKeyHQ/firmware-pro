@@ -83,7 +83,12 @@ static void copyflash2sdram(void) {
   volatile uint32_t *src = (volatile uint32_t *)&_flash2_load_addr;
 
   while (dst < end) {
-    *dst++ = *src++;
+    *dst = *src;
+    if (*dst != *src) {
+      error_shutdown("Internal error", "(CF2S)", NULL, NULL);
+    }
+    dst++;
+    src++;
   }
 }
 
@@ -97,6 +102,7 @@ int main(void) {
   SCB->VTOR = (uint32_t)&_vector_offset;
 
   SystemCoreClockUpdate();
+  sdram_gpio_reinit();
 
   display_backlight(0);
   lcd_init(DISPLAY_RESX, DISPLAY_RESY, LCD_PIXEL_FORMAT_RGB565);
