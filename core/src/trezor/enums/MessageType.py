@@ -366,6 +366,8 @@ if not utils.BITCOIN_ONLY:
     ScdoSignTx = 11903
     ScdoSignedTx = 11904
     ScdoTxAck = 11905
+    ScdoSignMessage = 11906
+    ScdoSignedMessage = 11907
     DeviceBackToBoot = 903
     RebootToBoardloader = 904
     DeviceInfoSettings = 10001

@@ -117,14 +117,15 @@ async def sign_tx(
     digest = sha.get_digest()
     
     signature = secp256k1.sign(
-        node.private_key(), digest, False, secp256k1.CANONICAL_SIG_ETHEREUM
+        node.private_key(), 
+        digest, 
+        False, 
+        secp256k1.CANONICAL_SIG_ETHEREUM,
     )
 
     await confirm_final(ctx, "SCDO")
     req = ScdoSignedTx()
-    req.signature_v = signature[0] - 27
-    req.signature_r = signature[1:33]
-    req.signature_s = signature[33:]
+    req.signature=signature[1:] + bytearray([signature[0] - 27])
     return req
 
 

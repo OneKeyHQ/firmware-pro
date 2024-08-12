@@ -532,6 +532,8 @@ enum MessageType {
     MessageType_ScdoSignTx = 11903 [(wire_in) = true];
     MessageType_ScdoSignedTx = 11904 [(wire_out) = true];
     MessageType_ScdoTxAck = 11905 [(wire_in) = true];
+    MessageType_ScdoSignMessage = 11906 [(wire_in) = true];
+    MessageType_ScdoSignedMessage = 11907 [(wire_out) = true];
     
     //onekey
     MessageType_DeviceBackToBoot = 903 [(wire_in) = true];

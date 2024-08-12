@@ -107,3 +107,18 @@ def sign_tx(
         tx_type
     )
 
+@cli.command()
+@click.option("-n", "--address", required=True, help=PATH_HELP)
+@click.argument("message")
+@with_client
+def sign_message(client: "TrezorClient", address: str, message: str) -> Dict[str, str]:
+    """Sign message with Scdo address."""
+    address_n = tools.parse_path(address)
+    ret = scdo.sign_message(client, address_n, message)
+    signature = ret.signature if ret.signature is not None else b""
+    output = {
+        "message": message,
+        "address": ret.address,
+        "signature": f"0x{signature.hex()}",
+    }
+    return output

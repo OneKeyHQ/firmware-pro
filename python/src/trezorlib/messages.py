@@ -392,6 +392,8 @@ class MessageType(IntEnum):
     ScdoSignTx = 11903
     ScdoSignedTx = 11904
     ScdoTxAck = 11905
+    ScdoSignMessage = 11906
+    ScdoSignedMessage = 11907
     DeviceBackToBoot = 903
     RebootToBoardloader = 904
     DeviceInfoSettings = 10001
@@ -9270,23 +9272,17 @@ class ScdoSignedTx(protobuf.MessageType):
     MESSAGE_WIRE_TYPE = 11904
     FIELDS = {
         1: protobuf.Field("data_length", "uint32", repeated=False, required=False),
-        2: protobuf.Field("signature_v", "uint32", repeated=False, required=False),
-        3: protobuf.Field("signature_r", "bytes", repeated=False, required=False),
-        4: protobuf.Field("signature_s", "bytes", repeated=False, required=False),
+        2: protobuf.Field("signature", "bytes", repeated=False, required=False),
     }
 
     def __init__(
         self,
         *,
         data_length: Optional["int"] = None,
-        signature_v: Optional["int"] = None,
-        signature_r: Optional["bytes"] = None,
-        signature_s: Optional["bytes"] = None,
+        signature: Optional["bytes"] = None,
     ) -> None:
         self.data_length = data_length
-        self.signature_v = signature_v
-        self.signature_r = signature_r
-        self.signature_s = signature_s
+        self.signature = signature
 
 
 class ScdoTxAck(protobuf.MessageType):
@@ -9301,6 +9297,40 @@ class ScdoTxAck(protobuf.MessageType):
         data_chunk: Optional["bytes"] = None,
     ) -> None:
         self.data_chunk = data_chunk
+
+
+class ScdoSignMessage(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 11906
+    FIELDS = {
+        1: protobuf.Field("address_n", "uint32", repeated=True, required=False),
+        2: protobuf.Field("message", "bytes", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        address_n: Optional[Sequence["int"]] = None,
+        message: Optional["bytes"] = None,
+    ) -> None:
+        self.address_n: Sequence["int"] = address_n if address_n is not None else []
+        self.message = message
+
+
+class ScdoSignedMessage(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 11907
+    FIELDS = {
+        1: protobuf.Field("signature", "bytes", repeated=False, required=False),
+        2: protobuf.Field("address", "string", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        signature: Optional["bytes"] = None,
+        address: Optional["str"] = None,
+    ) -> None:
+        self.signature = signature
+        self.address = address
 
 
 class SolanaGetAddress(protobuf.MessageType):

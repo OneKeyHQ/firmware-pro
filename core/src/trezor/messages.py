@@ -7364,17 +7364,13 @@ if TYPE_CHECKING:
 
     class ScdoSignedTx(protobuf.MessageType):
         data_length: "int | None"
-        signature_v: "int | None"
-        signature_r: "bytes | None"
-        signature_s: "bytes | None"
+        signature: "bytes | None"
 
         def __init__(
             self,
             *,
             data_length: "int | None" = None,
-            signature_v: "int | None" = None,
-            signature_r: "bytes | None" = None,
-            signature_s: "bytes | None" = None,
+            signature: "bytes | None" = None,
         ) -> None:
             pass
 
@@ -7394,6 +7390,38 @@ if TYPE_CHECKING:
 
         @classmethod
         def is_type_of(cls, msg: Any) -> TypeGuard["ScdoTxAck"]:
+            return isinstance(msg, cls)
+
+    class ScdoSignMessage(protobuf.MessageType):
+        address_n: "list[int]"
+        message: "bytes | None"
+
+        def __init__(
+            self,
+            *,
+            address_n: "list[int] | None" = None,
+            message: "bytes | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["ScdoSignMessage"]:
+            return isinstance(msg, cls)
+
+    class ScdoSignedMessage(protobuf.MessageType):
+        signature: "bytes | None"
+        address: "str | None"
+
+        def __init__(
+            self,
+            *,
+            signature: "bytes | None" = None,
+            address: "str | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["ScdoSignedMessage"]:
             return isinstance(msg, cls)
 
     class SolanaGetAddress(protobuf.MessageType):

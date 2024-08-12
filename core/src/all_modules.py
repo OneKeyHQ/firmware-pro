@@ -737,6 +737,8 @@ apps.scdo.helpers
 import apps.scdo.helpers
 apps.scdo.layout
 import apps.scdo.layout
+apps.scdo.sign_message
+import apps.scdo.sign_message
 apps.scdo.sign_tx
 import apps.scdo.sign_tx
 apps.scdo.tokens

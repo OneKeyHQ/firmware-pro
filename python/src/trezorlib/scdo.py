@@ -87,11 +87,18 @@ def sign_tx(
         response = client.call(messages.ScdoTxAck(data_chunk=chunk))
         assert isinstance(response, messages.ScdoSignedTx)
 
-    assert response.signature_v is not None
-    assert response.signature_r is not None
-    assert response.signature_s is not None
+    assert response.signature is not None
 
     # https://github.com/trezor/trezor-core/pull/311
     # only signature bit returned. recalculate signature_v
 
-    return f"v: {response.signature_v}\nr: {response.signature_r.hex()}\ns: {response.signature_s.hex()}"
+    return f"signature: {response.signature.hex()}"
+
+
+@expect(messages.ScdoSignedMessage)
+def sign_message(
+    client: "TrezorClient", n: "Address", message: AnyStr
+) -> "MessageType":
+    return client.call(
+        messages.ScdoSignMessage(address_n=n, message=prepare_message_bytes(message))
+    )
