@@ -35,7 +35,7 @@ class GuideAppDownload(lv.obj):
         self.process_bar.set_style_bg_color(
             lv_colors.WHITE, lv.PART.INDICATOR | lv.STATE.DEFAULT
         )
-        self.process_bar.set_value(33, lv.ANIM.OFF)
+        self.process_bar.set_value(50, lv.ANIM.OFF)
         self.content_area = lv.obj(self)
         self.content_area.set_size(lv.pct(100), lv.SIZE.CONTENT)
         self.content_area.align_to(self.process_bar, lv.ALIGN.OUT_BOTTOM_MID, 0, 0)
@@ -144,7 +144,7 @@ class ConnectWallet(lv.obj):
         self.process_bar.set_style_bg_color(
             lv_colors.WHITE, lv.PART.INDICATOR | lv.STATE.DEFAULT
         )
-        self.process_bar.set_value(66, lv.ANIM.OFF)
+        self.process_bar.set_value(100, lv.ANIM.OFF)
 
         self.content_area = lv.obj(self)
         self.content_area.set_size(lv.pct(100), lv.SIZE.CONTENT)
