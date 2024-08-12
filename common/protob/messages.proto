@@ -526,7 +526,12 @@ enum MessageType {
     MessageType_NervosTxRequest = 11705 [(wire_out) = true];
     MessageType_NervosTxAck = 11706 [(wire_in) = true];
 
-
+    // scdo
+    MessageType_ScdoGetAddress = 11901 [(wire_in) = true];
+    MessageType_ScdoAddress = 11902 [(wire_out) = true];
+    MessageType_ScdoSignTx = 11903 [(wire_in) = true];
+    MessageType_ScdoSignedTx = 11904 [(wire_out) = true];
+    MessageType_ScdoTxAck = 11905 [(wire_in) = true];
     
     //onekey
     MessageType_DeviceBackToBoot = 903 [(wire_in) = true];

@@ -729,6 +729,18 @@ apps.polkadot.sign_tx
 import apps.polkadot.sign_tx
 apps.polkadot.transaction
 import apps.polkadot.transaction
+apps.scdo
+import apps.scdo
+apps.scdo.get_address
+import apps.scdo.get_address
+apps.scdo.helpers
+import apps.scdo.helpers
+apps.scdo.layout
+import apps.scdo.layout
+apps.scdo.sign_tx
+import apps.scdo.sign_tx
+apps.scdo.tokens
+import apps.scdo.tokens
 apps.solana
 import apps.solana
 apps.solana.constents

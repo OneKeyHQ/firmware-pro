@@ -361,6 +361,11 @@ if not utils.BITCOIN_ONLY:
     NervosSignedTx = 11704
     NervosTxRequest = 11705
     NervosTxAck = 11706
+    ScdoGetAddress = 11901
+    ScdoAddress = 11902
+    ScdoSignTx = 11903
+    ScdoSignedTx = 11904
+    ScdoTxAck = 11905
     DeviceBackToBoot = 903
     RebootToBoardloader = 904
     DeviceInfoSettings = 10001
