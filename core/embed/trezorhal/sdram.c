@@ -292,6 +292,7 @@ int sdram_gpio_reinit(void) {
   HAL_GPIO_Init(GPIOI, &gpio_init_structure);
 
   gpio_init_structure.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  gpio_init_structure.Pull = GPIO_PULLDOWN;
   gpio_init_structure.Pin = GPIO_PIN_8;
 
   HAL_GPIO_Init(GPIOG, &gpio_init_structure);
