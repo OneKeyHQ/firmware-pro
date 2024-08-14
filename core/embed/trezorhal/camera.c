@@ -101,7 +101,7 @@ static void dcmi_init()
     DMA_DCMI_Handle.Init.Mode = DMA_CIRCULAR;
     DMA_DCMI_Handle.Init.Priority = DMA_PRIORITY_HIGH;
     DMA_DCMI_Handle.Init.FIFOMode = DMA_FIFOMODE_ENABLE;
-    DMA_DCMI_Handle.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
+    DMA_DCMI_Handle.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_1QUARTERFULL;
     DMA_DCMI_Handle.Init.MemBurst = DMA_MBURST_SINGLE;
     DMA_DCMI_Handle.Init.PeriphBurst = DMA_PBURST_SINGLE;
 
@@ -140,11 +140,6 @@ void DCMI_IRQHandler(void)
 
 void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef* hdcmi)
 {
-#if CAMERA_CAPTURE_MODE == 0
-    camera_dcmi_stop();
-#else
-    camera_suspend();
-#endif
     capture_done = true;
 }
 
@@ -228,14 +223,10 @@ unsigned char camera_is_online(void)
 
 void camera_start(uint8_t* buffer_address, uint32_t mode)
 {
-    if ( camera_opened )
-    {
-        camera_resume();
-        return;
-    }
-
+    HAL_DCMI_Stop(&DCMI_Handle);
     HAL_DCMI_Start_DMA(&DCMI_Handle, mode, (uint32_t)buffer_address, (WIN_W * WIN_H) / 2);
     camera_opened = true;
+    capture_done = false;
 }
 
 void camera_dcmi_stop(void)
@@ -277,9 +268,8 @@ int camera_capture_done(void)
 
     while ( !capture_done )
     {
-        if ( (HAL_GetTick() - tickstart) > 200 )
+        if ( (HAL_GetTick() - tickstart) > 100 )
         {
-            camera_dcmi_stop();
             return 0;
         }
     }
@@ -331,13 +321,14 @@ void camera_power_on(void)
         CAMERA_RST_LOW();
         camera_delay(10);
         CAMERA_RST_HIGH();
-        camera_delay(20);
+        camera_delay(100);
         camera_powered = true;
     }
 
     if ( !camera_configured )
     {
         camera_config_init();
+        camera_delay(10);
         camera_configured = true;
     }
 }
