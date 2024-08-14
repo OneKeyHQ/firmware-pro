@@ -101,7 +101,7 @@ int main(void) {
   SCB->VTOR = (uint32_t)&_vector_offset;
 
   SystemCoreClockUpdate();
-  sdram_gpio_reinit();
+  sdram_reinit();
 
   display_backlight(0);
   lcd_init(DISPLAY_RESX, DISPLAY_RESY, LCD_PIXEL_FORMAT_RGB565);

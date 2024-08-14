@@ -205,11 +205,28 @@ int sdram_init(void) {
   return HAL_OK;
 }
 
-int sdram_gpio_reinit(void) {
+int sdram_reinit(void) {
   GPIO_InitTypeDef gpio_init_structure;
 
   /* Enable FMC clock */
   __HAL_RCC_FMC_CLK_DISABLE();
+
+  RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
+
+  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_FMC;
+  PeriphClkInitStruct.PLL2.PLL2M = 5;
+  PeriphClkInitStruct.PLL2.PLL2N = 80;
+  PeriphClkInitStruct.PLL2.PLL2P = 2;
+  PeriphClkInitStruct.PLL2.PLL2Q = 2;
+  PeriphClkInitStruct.PLL2.PLL2R = 2;
+  PeriphClkInitStruct.PLL2.PLL2RGE = RCC_PLL2VCIRANGE_2;
+  PeriphClkInitStruct.PLL2.PLL2VCOSEL = RCC_PLL2VCOWIDE;
+  PeriphClkInitStruct.FmcClockSelection = RCC_FMCCLKSOURCE_PLL2;
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK) {
+    return HAL_ERROR;
+  }
+
+  __HAL_RCC_FMC_CLK_ENABLE();
 
   /* Enable GPIOs clock */
   __HAL_RCC_GPIOD_CLK_ENABLE();
@@ -297,7 +314,39 @@ int sdram_gpio_reinit(void) {
 
   HAL_GPIO_Init(GPIOG, &gpio_init_structure);
 
-  __HAL_RCC_FMC_CLK_ENABLE();
+  FMC_SDRAM_TimingTypeDef sdram_timing;
+
+  /* SDRAM device configuration */
+  hsdram[0].Instance = FMC_SDRAM_DEVICE;
+
+  /* SDRAM handle configuration */
+  hsdram[0].Init.SDBank = FMC_SDRAM_BANK2;
+  hsdram[0].Init.ColumnBitsNumber = FMC_SDRAM_COLUMN_BITS_NUM_9;
+  hsdram[0].Init.RowBitsNumber = FMC_SDRAM_ROW_BITS_NUM_12;
+  hsdram[0].Init.MemoryDataWidth = FMC_SDRAM_MEM_BUS_WIDTH_32;
+  hsdram[0].Init.InternalBankNumber = FMC_SDRAM_INTERN_BANKS_NUM_4;
+  hsdram[0].Init.CASLatency = FMC_SDRAM_CAS_LATENCY_2;
+  hsdram[0].Init.WriteProtection = FMC_SDRAM_WRITE_PROTECTION_DISABLE;
+  hsdram[0].Init.SDClockPeriod = FMC_SDRAM_CLOCK_PERIOD_2;
+  hsdram[0].Init.ReadBurst = FMC_SDRAM_RBURST_ENABLE;
+  hsdram[0].Init.ReadPipeDelay = FMC_SDRAM_RPIPE_DELAY_2;
+
+  /* Timing configuration for 100Mhz as SDRAM clock frequency (System clock is
+   * up to 200Mhz) */
+  sdram_timing.LoadToActiveDelay = 2;
+  sdram_timing.ExitSelfRefreshDelay = 7;
+  sdram_timing.SelfRefreshTime = 4;
+  sdram_timing.RowCycleDelay = 7;
+  sdram_timing.WriteRecoveryTime = 2;
+  sdram_timing.RPDelay = 2;
+  sdram_timing.RCDDelay = 2;
+
+  /* SDRAM controller initialization */
+  if (HAL_SDRAM_Init(&hsdram[0], &sdram_timing) != HAL_OK) {
+    return HAL_ERROR;
+  }
+
+  sdram_init_sequence();
 
   return HAL_OK;
 }
