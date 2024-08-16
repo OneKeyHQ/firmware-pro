@@ -723,7 +723,7 @@ translations = [
     "OneKey Wallet",
     "Empreinte digitale {}",
     "Mise en charge",
-    "Scannez le code QR de la transaction ou signez le message",
+    "Scannez le code QR affiché sur l'application",
     "Format de données non pris en charge",
     "Le type de code QR n'est pas pris en charge, veuillez réessayer.",
     "Transaction invalide",
@@ -788,7 +788,6 @@ translations = [
     "Confirmer l'adresse",
     "Retournez à l'application et scannez le code QR ci-dessous.",
     "Réseaux compatibles BTC et EVM",
-    "Réseaux compatibles ETH et EVM",
     "Ouvrez OneKey et scannez le code QR ci-dessous",
     "Exporter le compte",
     "Connexion...",
@@ -802,6 +801,9 @@ translations = [
     "Quitter le processus de sauvegarde ?",
     "Si vous quittez maintenant, vous devrez revérifier votre phrase de récupération lorsque vous reviendrez. Êtes-vous sûr de vouloir quitter?",
     "Phrase de récupération non prise en charge",
-    "Le portefeuille matériel actuel ne prend en charge que les phrases de récupération de 12, 18 et 24 mots. Cette sauvegarde Lite ne peut pas être restaurée.",
+    "Le portefeuille matériel actuel ne prend en charge que les phrases de récupération de 12, 18 et 24 mots.\nCette sauvegarde Lite ne peut pas être restaurée.",
+    "Ouvrez OneKey et scannez le code QR, prenant en charge les réseaux BTC et EVM.",
+    "Incompatibilité de portefeuille",
+    "Votre portefeuille sélectionné dans l'application ne correspond pas au portefeuille matériel. Veuillez vérifier et réessayer.",
 ]
 # fmt: on

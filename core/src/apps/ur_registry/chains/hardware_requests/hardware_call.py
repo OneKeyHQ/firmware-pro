@@ -1,3 +1,4 @@
+from apps.ur_registry.chains import MismatchError
 from apps.ur_registry.ur_py.ur import cbor_lite
 
 
@@ -26,7 +27,7 @@ class HardwareCall:
         return self.requestId
 
     def get_params(self):
-        return self.params[0]
+        return self.params
 
     @staticmethod
     def cbor_encode(encoder: cbor_lite.CBOREncoder, obj: "HardwareCall"):
@@ -76,8 +77,8 @@ class HardwareCall:
             if __debug__:
                 print(f"Fingerprint mismatch: {xfp} != {expected_fingerprint}")
             else:
-                raise Exception(
-                    f"Fingerprint mismatch: {resp.root_fingerprint} != {expected_fingerprint}"
+                raise MismatchError(
+                    f"Fingerprint mismatch: got {resp.root_fingerprint} expected {expected_fingerprint}"
                 )
 
     @staticmethod

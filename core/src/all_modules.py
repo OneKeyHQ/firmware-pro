@@ -441,6 +441,8 @@ apps.bitcoin.authorization
 import apps.bitcoin.authorization
 apps.bitcoin.authorize_coinjoin
 import apps.bitcoin.authorize_coinjoin
+apps.bitcoin.bip322_simple
+import apps.bitcoin.bip322_simple
 apps.bitcoin.common
 import apps.bitcoin.common
 apps.bitcoin.get_address
@@ -465,6 +467,8 @@ apps.bitcoin.scripts_decred
 import apps.bitcoin.scripts_decred
 apps.bitcoin.sign_message
 import apps.bitcoin.sign_message
+apps.bitcoin.sign_taproot
+import apps.bitcoin.sign_taproot
 apps.bitcoin.sign_tx
 import apps.bitcoin.sign_tx
 apps.bitcoin.sign_tx.approvers
@@ -807,6 +811,8 @@ apps.tron.tokens
 import apps.tron.tokens
 apps.ur_registry.account
 import apps.ur_registry.account
+apps.ur_registry.chains
+import apps.ur_registry.chains
 apps.ur_registry.chains.bitcoin
 import apps.ur_registry.chains.bitcoin
 apps.ur_registry.chains.bitcoin.crypto_psbt

@@ -34,10 +34,12 @@ class SubTitle(lv.label):
         self.set_long_mode(lv.label.LONG.WRAP)
         self.set_text(text)
         self.set_size(456, lv.SIZE.CONTENT)
-
-        self.align_to(
-            align_base, lv.ALIGN.OUT_BOTTOM_MID, relative_pos[0], relative_pos[1]
-        )
+        if align_base:
+            self.align_to(
+                align_base, lv.ALIGN.OUT_BOTTOM_MID, relative_pos[0], relative_pos[1]
+            )
+        else:
+            self.align(lv.ALIGN.TOP_LEFT, 12, relative_pos[1])
         self.add_style(
             StyleWrapper()
             .text_font(font_GeistRegular30)

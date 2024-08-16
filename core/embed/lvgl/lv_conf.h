@@ -30,7 +30,7 @@
    COLOR SETTINGS
  *====================*/
 
-/*Color depth: 1 (1 byte per pixel), 8 (RGB332), 16 (RGB565), 32 (ARGB8888)*/
+/*Color depth: 1 (1 bits per pixel), 8 (RGB332), 16 (RGB565), 32 (ARGB8888)*/
 #ifndef LV_COLOR_DEPTH
 #define LV_COLOR_DEPTH 16
 #endif

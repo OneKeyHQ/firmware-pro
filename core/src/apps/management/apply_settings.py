@@ -33,14 +33,13 @@ def validate_homescreen(homescreen: bytes) -> None:
     # if grayscale:
     #     raise wire.DataError("Homescreen must be full-color TOIF image")
     internal_wallpapers = (
-        "wallpaper-1.png",
-        "wallpaper-2.png",
-        "wallpaper-3.png",
-        "wallpaper-4.png",
         "wallpaper-1.jpg",
         "wallpaper-2.jpg",
         "wallpaper-3.jpg",
         "wallpaper-4.jpg",
+        "wallpaper-5.jpg",
+        "wallpaper-6.jpg",
+        "wallpaper-7.jpg",
     )
     if not any(name == homescreen.decode() for name in internal_wallpapers):
         raise wire.DataError("Invalid homescreen")

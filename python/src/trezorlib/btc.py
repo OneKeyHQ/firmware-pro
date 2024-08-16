@@ -448,3 +448,12 @@ def authorize_coinjoin(
             script_type=script_type,
         )
     )
+
+
+@expect(messages.SignedPsbt, field="psbt", ret_type=bytes)
+def sign_taproot(
+        client: "TrezorClient",
+        coin_name: str,
+        psbt: bytes,
+) -> "MessageType":
+    return client.call(messages.SignPsbt(coin_name=coin_name, psbt=psbt))

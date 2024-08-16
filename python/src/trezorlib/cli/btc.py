@@ -242,6 +242,7 @@ def get_public_node(
             "chain_code": result.node.chain_code.hex(),
             "public_key": result.node.public_key.hex(),
         },
+        "root_fingerprint": "%08x" % result.root_fingerprint,
         "xpub": result.xpub,
     }
 
@@ -422,3 +423,17 @@ def verify_message(
 #
 # deprecated interactive signing
 # ALL BELOW is legacy code and will be dropped
+
+@cli.command()
+@click.option("-c", "--coin", default=DEFAULT_COIN)
+@click.argument("psbt")
+@with_client
+def sign_taproot(
+    client: "TrezorClient", coin: str, psbt: str
+) -> Dict[str, str]:
+    """Sign taproot transaction."""
+    psbt_bytes = bytes.fromhex(psbt)
+    signed_psbt = btc.sign_taproot(client, coin, psbt_bytes)
+    return {
+        "psbt": signed_psbt.hex(),
+    }

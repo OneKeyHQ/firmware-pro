@@ -250,6 +250,8 @@ class FullSizeWindow(lv.obj):
         else:
             if hasattr(self, "icon") and self.icon:
                 self.icon.align(lv.ALIGN.TOP_MID, 0, 0)
+            if subtitle is not None:
+                self.subtitle = SubTitle(self.content_area, None, (0, 12), subtitle)
 
         if options:
             self.content_area.set_height(646)

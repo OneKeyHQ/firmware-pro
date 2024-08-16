@@ -149,8 +149,8 @@ def mark_pin_verified() -> None:
         _PIN_VERIFIED_SINCE_BOOT = True
 
 
-def turn_on_lcd_if_possible() -> bool:
-    resumed = lcd_resume()
+def turn_on_lcd_if_possible(timeouts_ms: int | None = None) -> bool:
+    resumed = lcd_resume(timeouts_ms)
     if resumed:
         from trezor import workflow, uart
 
@@ -158,7 +158,7 @@ def turn_on_lcd_if_possible() -> bool:
     return resumed
 
 
-def lcd_resume() -> bool:
+def lcd_resume(timeouts_ms: int | None = None) -> bool:
     from trezor.ui import display
     from storage import device
     from apps import base
@@ -169,12 +169,19 @@ def lcd_resume() -> bool:
     # if ChargingPromptScr.has_instance():
     #     ChargingPromptScr.get_instance().destroy()
     uart.ctrl_wireless_charge(False)
-    if display.backlight() != device.get_brightness():
+    if display.backlight() != device.get_brightness() or timeouts_ms:
         global AUTO_POWER_OFF
         display.backlight(device.get_brightness())
         AUTO_POWER_OFF = False
+        from trezor.lvglui.scrs import fingerprints
+
+        is_device_unlocked = (config.is_unlocked()) or (
+            fingerprints.is_available() and fingerprints.is_unlocked()
+        )
         base.reload_settings_from_storage(
-            timeout_ms=SHORT_AUTO_LOCK_TIME_MS if not config.is_unlocked() else None
+            timeout_ms=(SHORT_AUTO_LOCK_TIME_MS if not timeouts_ms else timeouts_ms)
+            if not is_device_unlocked
+            else None
         )
         return True
     return False

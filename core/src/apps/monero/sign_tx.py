@@ -26,7 +26,7 @@ async def sign_tx(
     # Splitting ctx.call() to write() and read() helps to reduce memory fragmentation
     # between calls.
 
-    ctx.primary_color, ctx.icon = lv.color_hex(PRIMARY_COLOR), ICON
+    ctx.primary_color, ctx.icon_path = lv.color_hex(PRIMARY_COLOR), ICON
     while True:
         if __debug__:
             log.debug(__name__, "#### F: %s, A: %s", gc.mem_free(), gc.mem_alloc())

@@ -1174,6 +1174,15 @@ class PSBT:
             return self.fallback_locktime
         return 0
 
+    def lock_time_disabled(self) -> bool:
+        """
+        Checks if the lock time is disabled
+        """
+        return all(
+            sequence == 0xFFFFFFFF
+            for sequence in [psbt_in.sequence for psbt_in in self.inputs]
+        )
+
     def get_unsigned_tx(self) -> CTransaction:
         """
         Get the unsigned transaction represented by this PSBT

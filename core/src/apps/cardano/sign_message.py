@@ -1,9 +1,9 @@
 from typing import TYPE_CHECKING
 
-from trezor import utils
 from trezor.ui.layouts import confirm_signverify
 
 from apps.common import cbor
+from apps.common.seed import remove_ed25519_prefix
 from apps.common.signverify import decode_message
 
 from . import seed
@@ -79,10 +79,7 @@ async def sign_message(
 
     # verification_key
     node = keychain.derive(msg.address_n)
-    if utils.USE_THD89:
-        verification_key = node.public_key()[1:]
-    else:
-        verification_key = ed25519.publickey(node.private_key())
+    verification_key = remove_ed25519_prefix(node.public_key())
     # Sign1Message
     # msg = Sign1Message(
     #     phdr={

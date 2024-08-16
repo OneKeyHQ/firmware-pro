@@ -156,6 +156,8 @@ enum MessageType {
     MessageType_GetOwnershipProof = 49 [(bitcoin_only) = true, (wire_in) = true];
     MessageType_OwnershipProof = 50 [(bitcoin_only) = true, (wire_out) = true];
     MessageType_AuthorizeCoinJoin = 51 [(bitcoin_only) = true, (wire_in) = true];
+    MessageType_SignPsbt = 10052 [(bitcoin_only) = true, (wire_in) = true];
+    MessageType_SignedPsbt = 10053 [(bitcoin_only) = true, (wire_out) = true];
 
     // Crypto
     MessageType_CipherKeyValue = 23 [(bitcoin_only) = true, (wire_in) = true];
@@ -527,7 +529,7 @@ enum MessageType {
     MessageType_NervosTxAck = 11706 [(wire_in) = true];
 
 
-    
+
     //onekey
     MessageType_DeviceBackToBoot = 903 [(wire_in) = true];
     MessageType_RebootToBoardloader = 904 [(wire_in) = true];

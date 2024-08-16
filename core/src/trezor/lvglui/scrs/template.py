@@ -3161,16 +3161,15 @@ class UrResponse(FullSizeWindow):
         title,
         subtitle,
         qr_code,
-        primary_color,
         encoder=None,
     ):
         super().__init__(
             title,
             subtitle,
             confirm_text=_(i18n_keys.BUTTON__DONE),
-            primary_color=primary_color,
             anim_dir=0,
         )
+        self.btn_yes.enable(lv_colors.ONEKEY_GRAY_3, text_color=lv_colors.WHITE)
         import gc
 
         gc.collect()

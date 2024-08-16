@@ -5,6 +5,7 @@ from trezor.crypto import base58, bech32
 from trezor.crypto.base58 import sha256d_32
 from trezor.enums import InputScriptType, OutputScriptType, RequestType
 
+from apps.ur_registry.chains import MismatchError
 from apps.ur_registry.ur_py.ur.ur_encoder import UREncoder
 
 from .crypto_psbt import CryptoPSBT
@@ -243,11 +244,13 @@ class SignPsbt:
             wire.QR_CONTEXT, btc_pubkey_msg
         )
         master_fp = resp.root_fingerprint.to_bytes(4, "big")
+        # if __debug__:
+        #     master_fp = b'\x92\xbdh}'
         # pyright: on
         # Do multiple passes for multisig
         passes = 1
         p = 0
-
+        is_TESTNET = False
         while p < passes:
             # Prepare inputs
             inputs = []
@@ -333,9 +336,9 @@ class SignPsbt:
 
                 # Find key to sign with
                 found = False  # Whether we have found a key to sign with
-                found_in_sigs = (
-                    False  # Whether we have found one of our keys in the signatures
-                )
+                # found_in_sigs = (
+                #     False  # Whether we have found one of our keys in the signatures
+                # )
                 our_keys = 0
                 # path_last_ours = None  # The path of the last key that is ours. We will use this if we need to ignore this input because it is already signed.
                 if txinputtype.script_type in ECDSA_SCRIPT_TYPES:
@@ -346,18 +349,29 @@ class SignPsbt:
                             if (
                                 key in psbt_in.partial_sigs
                             ):  # This key already has a signature
-                                found_in_sigs = True
+                                # found_in_sigs = True
                                 continue
                             if (
                                 not found
                             ):  # This key does not have a signature and we don't have a key to sign with yet
+                                if not is_TESTNET and (
+                                    keypath.path[1] == (1 | 0x80000000)
+                                ):
+                                    is_TESTNET = True
                                 txinputtype.address_n = keypath.path
                                 found = True
                             our_keys += 1
                         else:
-                            raise Exception("Key fingerprint does not match master key")
+                            if __debug__:
+                                print(
+                                    f"Key fingerprint {keypath.fingerprint} does not match master key {master_fp}"
+                                )
+                            else:
+                                raise MismatchError(
+                                    "Key fingerprint does not match master key"
+                                )
                 elif txinputtype.script_type in SCHNORR_SCRIPT_TYPES:
-                    found_in_sigs = len(psbt_in.tap_key_sig) > 0
+                    # found_in_sigs = len(psbt_in.tap_key_sig) > 0
                     for key, (_, origin) in psbt_in.tap_bip32_paths.items():
                         # Assume key path signing
                         if (
@@ -365,39 +379,46 @@ class SignPsbt:
                             and origin.fingerprint == master_fp
                         ):
                             # path_last_ours = origin.path
+                            if not is_TESTNET and (origin.path[1] == (1 | 0x80000000)):
+                                is_TESTNET = True
                             txinputtype.address_n = origin.path
                             found = True
                             our_keys += 1
                             break
                         else:
-                            raise Exception("Key fingerprint does not match master key")
+                            if __debug__:
+                                print(
+                                    f"Key fingerprint {origin.fingerprint} does not match master key {master_fp}"
+                                )
+                            else:
+                                raise MismatchError(
+                                    "Key fingerprint does not match master key"
+                                )
 
                 # Determine if we need to do more passes to sign everything
                 if our_keys > passes:
                     passes = our_keys
 
-                if (
-                    not found and not found_in_sigs
-                ):  # None of our keys were in hd_keypaths or in partial_sigs
+                if not found:  # None of our keys were in hd_keypaths or in partial_sigs
                     # This input is not one of ours
                     raise Exception("Invalid input params")
-                elif not found and found_in_sigs:
-                    # All of our keys are in partial_sigs, pick the first key that is ours, sign with it,
-                    # and ignore whatever signature is produced for this input
-                    raise Exception("Invalid input params")
+                # elif not found and found_in_sigs:
+                #     # All of our keys are in partial_sigs, pick the first key that is ours, sign with it,
+                #     # and ignore whatever signature is produced for this input
+                #     raise Exception("Invalid input params")
 
                 # append to inputs
                 inputs.append(txinputtype)
             self.inputs = inputs
             # address version byte
-            # if self.chain != Chain.MAIN:
-            #     p2pkh_version = b'\x6f'
-            #     p2sh_version = b'\xc4'
-            #     bech32_hrp = 'tb'
-            # else:
-            p2pkh_version = b"\x00"
-            p2sh_version = b"\x05"
-            bech32_hrp = "bc"
+            if is_TESTNET:
+                p2pkh_version = b"\x6f"
+                p2sh_version = b"\xc4"
+                bech32_hrp = "tb"
+            else:
+                p2pkh_version = b"\x00"
+                p2sh_version = b"\x05"
+                bech32_hrp = "bc"
 
             # prepare outputs
             outputs = []
@@ -426,7 +447,14 @@ class SignPsbt:
                 if not wit or (wit and ver == 0):
                     for _, keypath in psbt_out.hd_keypaths.items():
                         if keypath.fingerprint != master_fp:
-                            raise Exception("Key fingerprint does not match master key")
+                            if __debug__:
+                                print(
+                                    f"Key fingerprint {keypath.fingerprint} does not match master key {master_fp}"
+                                )
+                            else:
+                                raise MismatchError(
+                                    "Key fingerprint does not match master key"
+                                )
                         wit, ver, prog = out.is_witness()
                         if out.is_p2pkh():
                             txoutput.address_n = keypath.path
@@ -445,7 +473,7 @@ class SignPsbt:
                                 txoutput.address = None
                 elif wit and ver == 1:
                     for key, (_, origin) in psbt_out.tap_bip32_paths.items():
-                        # Assume key path signing
+                        # Assume key path change
                         if (
                             key == psbt_out.tap_internal_key
                             and origin.fingerprint == master_fp
@@ -487,7 +515,7 @@ class SignPsbt:
             res = await bitcoin_sign_tx(
                 wire.QR_CONTEXT,
                 SignTx(
-                    coin_name="Bitcoin",
+                    coin_name="Bitcoin" if not is_TESTNET else "Testnet",
                     inputs_count=len(inputs),
                     outputs_count=len(outputs),
                     version=psbt.tx_version,

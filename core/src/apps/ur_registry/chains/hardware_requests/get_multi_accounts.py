@@ -25,35 +25,43 @@ class GetMultiAccountsRequest:
 
             keys = []
             root_fingerprint = None
-            if any(key not in params for key in ("paths", "chain")):
+            if any(key not in param for key in ("paths", "chain") for param in params):
                 raise ValueError("Invalid param")
-            chain = params["chain"]
-            paths = params["paths"]
-            if chain in ("ETH", "BTC"):
-                coin_info = crypto_coin_info.CryptoCoinInfo(
-                    crypto_coin_info.Bitcoin
-                    if chain == "BTC"
-                    else crypto_coin_info.Ethereum,
-                    crypto_coin_info.MainNet,
-                )
-                for path in paths:
-                    # pyright: off
-                    pub_key = await bitcoin_get_public_key.get_public_key(
-                        wire.QR_CONTEXT,
-                        GetPublicKey(address_n=paths_utils.parse_path(path)),
+            for param in params:
+                chain = param["chain"]
+                paths = param["paths"]
+                if chain in ("ETH", "BTC", "TBTC", "SBTC"):
+                    coin_info = crypto_coin_info.CryptoCoinInfo(
+                        crypto_coin_info.Bitcoin
+                        if chain in ["BTC", "TBTC", "SBTC"]
+                        else crypto_coin_info.Ethereum,
+                        crypto_coin_info.MainNet
+                        if chain in ["BTC", "ETH"]
+                        else crypto_coin_info.TestNet,
                     )
-                    # pyright: on
-                    if not root_fingerprint:
-                        root_fingerprint = pub_key.root_fingerprint
-                    hdkey = helpers.generate_HDKey(
-                        pub_key,
-                        coin_info,
-                        path,
-                        pub_key.root_fingerprint,
-                        None,
-                        None,
-                    )
-                    keys.append(hdkey)
+                    for path in paths:
+                        # pyright: off
+                        pub_key = await bitcoin_get_public_key.get_public_key(
+                            wire.QR_CONTEXT,
+                            GetPublicKey(
+                                address_n=paths_utils.parse_path(path),
+                                coin_name="Bitcoin"
+                                if chain in ["BTC", "ETH"]
+                                else "Testnet",
+                            ),
+                        )
+                        # pyright: on
+                        if not root_fingerprint:
+                            root_fingerprint = pub_key.root_fingerprint
+                        hdkey = helpers.generate_HDKey(
+                            pub_key,
+                            coin_info,
+                            path,
+                            pub_key.root_fingerprint,
+                            None,
+                            None,
+                        )
+                        keys.append(hdkey)
             assert root_fingerprint is not None, "Root fingerprint should not be None"
             name = helpers.reveal_name(wire.QR_CONTEXT, root_fingerprint)
             cma = CryptoMultiAccounts(

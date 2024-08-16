@@ -194,7 +194,7 @@ async def confirm_total(
         fee_amount=format_coin_amount(fee, coin, amount_unit),
         amount=format_coin_amount(spending - fee, coin, amount_unit),
         coin_shortcut=coin.coin_name,
-        fee_rate_amount=format_fee_rate(fee_rate, coin) if fee_rate >= 0 else None,
+        fee_rate_amount=format_fee_rate(fee_rate, coin) if fee_rate > 0 else None,
     )
 
 

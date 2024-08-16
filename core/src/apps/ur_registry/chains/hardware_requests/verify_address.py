@@ -11,7 +11,7 @@ class VerifyAddressRequest:
         from trezor import wire, messages
         from apps.common import paths
 
-        params = self.req.get_params()
+        params = self.req.get_params()[0]
         if any(key not in params for key in ("chain", "path", "address")):
             raise ValueError("Invalid param")
         if params["chain"] == "ETH":
@@ -25,9 +25,9 @@ class VerifyAddressRequest:
                 chain_id=int(params["chainId"]),
             )
             # pyright: off
-            address = await eth_get_address(wire.QR_CONTEXT, msg)
+            await eth_get_address(wire.QR_CONTEXT, msg)
             # pyright: on
-        elif params["chain"] == "BTC":
+        elif params["chain"] in ["BTC", "TBTC", "SBTC"]:
             from apps.bitcoin.get_address import get_address as btc_get_address
 
             if "scriptType" not in params:
@@ -37,14 +37,16 @@ class VerifyAddressRequest:
                 address_n=paths.parse_path(params["path"]),
                 show_display=True,
                 script_type=int(params["scriptType"]),
+                coin_name="Bitcoin" if params["chain"] == "BTC" else "Testnet",
             )
-            address = await btc_get_address(wire.QR_CONTEXT, msg)
+            await btc_get_address(wire.QR_CONTEXT, msg)
             # pyright: on
         else:
             raise ValueError("Invalid chain")
-        assert address.address is not None, "Address should not be None"
-        if address.address.lower() != params["address"].lower():
-            if __debug__:
-                print(f"Address mismatch: {address.address} != {params['address']}")
-            else:
-                raise ValueError("Address mismatch")
+        # assert address.address is not None, "Address should not be None"
+        # print(f"Address: {params["address"]}")
+        # if address.address.lower() != params["address"].lower():
+        #     if __debug__:
+        #         print(f"Address mismatch: {address.address} != {params['address']}")
+        #     else:
+        #         raise ValueError("Address mismatch")
