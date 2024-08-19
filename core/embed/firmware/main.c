@@ -42,8 +42,7 @@
 #include "common.h"
 #include "compiler_traits.h"
 #include "display.h"
-#include "emmc.h"
-#include "ff.h"
+#include "emmc_fs.h"
 #include "flash.h"
 #include "hardware_version.h"
 #include "image.h"
@@ -76,11 +75,6 @@
 
 // from util.s
 extern void shutdown_privileged(void);
-
-PARTITION VolToPart[FF_VOLUMES] = {
-    {0, 1},
-    {0, 2},
-};
 
 int main(void) {
   extern uint32_t _vector_offset;
