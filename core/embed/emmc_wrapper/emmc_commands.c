@@ -1,6 +1,7 @@
 #include "emmc_commands.h"
 #include "emmc_commands_macros.h"
 
+#include "fw_keys.h"
 #include "se_thd89.h"
 #include "thd89_boot.h"
 
@@ -533,14 +534,9 @@ static int check_file_contents(uint8_t iface_num, const uint8_t* buffer, uint32_
         if ( memcmp(p_data, "OKTV", 4) == 0 )
         {
             // check firmware header
-            extern const uint8_t BOOTLOADER_KEY_M;
-            extern const uint8_t BOOTLOADER_KEY_N;
-            extern const uint8_t* const BOOTLOADER_KEYS[];
-
             // check file header
             ExecuteCheck_MSGS_ADV(
-                load_vendor_header(p_data, BOOTLOADER_KEY_M, BOOTLOADER_KEY_N, BOOTLOADER_KEYS, &file_vhdr),
-                sectrue,
+                load_vendor_header(p_data, FW_KEY_M, FW_KEY_N, FW_KEYS, &file_vhdr), sectrue,
                 {
                     send_failure(
                         iface_num, FailureType_Failure_ProcessError, "Update file vender header invalid!"
@@ -892,9 +888,6 @@ int process_msg_FirmwareUpdateEmmc(uint8_t iface_num, uint32_t msg_size, uint8_t
         {
             // MCU update
             // check firmware header
-            extern const uint8_t BOOTLOADER_KEY_M;
-            extern const uint8_t BOOTLOADER_KEY_N;
-            extern const uint8_t* const BOOTLOADER_KEYS[];
 
             vendor_header file_vhdr;
             image_header file_hdr;
@@ -902,8 +895,7 @@ int process_msg_FirmwareUpdateEmmc(uint8_t iface_num, uint32_t msg_size, uint8_t
 
             // check file header
             ExecuteCheck_MSGS_ADV(
-                load_vendor_header(p_data, BOOTLOADER_KEY_M, BOOTLOADER_KEY_N, BOOTLOADER_KEYS, &file_vhdr),
-                sectrue,
+                load_vendor_header(p_data, FW_KEY_M, FW_KEY_N, FW_KEYS, &file_vhdr), sectrue,
                 {
                     send_failure(
                         iface_num, FailureType_Failure_ProcessError, "Update file vender header invalid!"
@@ -959,14 +951,13 @@ int process_msg_FirmwareUpdateEmmc(uint8_t iface_num, uint32_t msg_size, uint8_t
 
                 // vhdr
                 if ( load_vendor_header(
-                         (const uint8_t*)FIRMWARE_START, BOOTLOADER_KEY_M, BOOTLOADER_KEY_N, BOOTLOADER_KEYS,
-                         &temp_vhdr
+                         (const uint8_t*)FIRMWARE_START, FW_KEY_M, FW_KEY_N, FW_KEYS, &temp_vhdr
                      ) == sectrue )
                 {
                     memcpy(&current_vhdr, &temp_vhdr, sizeof(current_vhdr));
                 }
-                // else if ( load_vendor_header(firmware_headers_backup, BOOTLOADER_KEY_M, BOOTLOADER_KEY_N,
-                // BOOTLOADER_KEYS, &temp_vhdr) == sectrue )
+                // else if ( load_vendor_header(firmware_headers_backup, FW_KEY_M, FW_KEY_N,
+                // FW_KEYS, &temp_vhdr) == sectrue )
                 // {
                 //     memcpy(&current_vhdr, &temp_vhdr, sizeof(current_vhdr));
                 // }
