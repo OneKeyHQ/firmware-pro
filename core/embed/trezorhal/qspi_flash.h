@@ -49,6 +49,7 @@ uint32_t qspi_flash_read_id(void);
 int qspi_flash_memory_mapped(void);
 int qspi_flash_quit_memory_mapped(void);
 int qspi_flash_erase_block_64k(uint32_t address);
+int qspi_flash_erase_chip(void);
 int qspi_flash_write_page(uint8_t *data, uint32_t address, uint16_t len);
 int qspi_flash_write_buffer_unsafe(uint8_t *data, uint32_t address,
                                    uint32_t len);

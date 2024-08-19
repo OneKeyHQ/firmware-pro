@@ -471,9 +471,7 @@ void st7701_init_sequence(void) {
 #define LED_PWM_TIM_PERIOD (100)
 
 int display_backlight(int val) {
-#if TREZOR_MODEL == 1
-  val = 255;
-#endif
+
   if (val == 0 && DISPLAY_BACKLIGHT != 0) {
     // clock down
     __HAL_DSI_DISABLE(&hlcd_dsi);
@@ -496,13 +494,7 @@ int display_backlight(int val) {
 
 int display_orientation(int degrees) {
   if (degrees != DISPLAY_ORIENTATION) {
-#if defined TREZOR_MODEL_T
     if (degrees == 0 || degrees == 90 || degrees == 180 || degrees == 270) {
-#elif TREZOR_MODEL == 1
-    if (degrees == 0 || degrees == 180) {
-#else
-#error Unknown Trezor model
-#endif
       DISPLAY_ORIENTATION = degrees;
       // noop
     }

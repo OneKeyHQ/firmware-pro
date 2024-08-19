@@ -1244,6 +1244,8 @@ bool device_overwrite_serial(char *dev_serial) {
   if (!device_backup_otp(false)) return false;
 
   // change and write back
+  memset(otp_data_buffer_p->flash_otp[FLASH_OTP_DEVICE_SERIAL], 0x00,
+         FLASH_OTP_BLOCK_SIZE);
   strlcpy((char *)(otp_data_buffer_p->flash_otp[FLASH_OTP_DEVICE_SERIAL]),
           dev_serial, FLASH_OTP_BLOCK_SIZE);
 

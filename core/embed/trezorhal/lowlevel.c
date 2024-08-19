@@ -211,6 +211,14 @@ void cpu_cache_enable(void) {
   SCB_EnableDCache();
 }
 
+void cpu_cache_disable(void) {
+  /* Disable I-Cache */
+  SCB_DisableICache();
+
+  /* Disable D-Cache */
+  SCB_DisableDCache();
+}
+
 /**
  * @brief  Configure the MPU attributes as Write Through for External SDRAM.
  * @note   The Base Address is 0xD0000000 .

@@ -24,14 +24,16 @@ void pn532_power_ctl(bool on_off)
 {
     if ( on_off )
     {
+        pn532_controller.spi_controller->spi_init();
         pn532_controller.stub_controller->chip_reset_ctl(false);
-        pn532_controller.delay_ms(5);
+        pn532_controller.delay_ms(10);
         pn532_controller.stub_controller->chip_reset_ctl(true);
         pn532_controller.delay_ms(20);
     }
     else
     {
         pn532_controller.stub_controller->chip_reset_ctl(false);
+        pn532_controller.spi_controller->spi_deinit();
         pn532_controller.delay_ms(5);
     }
 }
