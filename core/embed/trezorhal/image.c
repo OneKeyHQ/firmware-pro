@@ -23,11 +23,16 @@
 #include "ed25519-donna/ed25519.h"
 
 #include "common.h"
+#include "emmc_fs.h"
 #include "flash.h"
+#include "fw_keys.h"
+#include "hardware_version.h"
 #include "image.h"
+#include "qspi_flash.h"
+#include "util_macros.h"
 
 static secbool compute_pubkey(uint8_t sig_m, uint8_t sig_n,
-                              const uint8_t *const *pub, uint8_t sigmask,
+                              const uint8_t* const* pub, uint8_t sigmask,
                               ed25519_public_key res) {
   if (0 == sig_m || 0 == sig_n) return secfalse;
   if (sig_m > sig_n) return secfalse;
@@ -50,9 +55,9 @@ static secbool compute_pubkey(uint8_t sig_m, uint8_t sig_n,
   return sectrue * (0 == ed25519_cosi_combine_publickeys(res, keys, sig_m));
 }
 
-secbool load_image_header(const uint8_t *const data, const uint32_t magic,
+secbool load_image_header(const uint8_t* const data, const uint32_t magic,
                           const uint32_t maxsize, uint8_t key_m, uint8_t key_n,
-                          const uint8_t *const *keys, image_header *const hdr) {
+                          const uint8_t* const* keys, image_header* const hdr) {
   memcpy(&hdr->magic, data, 4);
   if (hdr->magic != magic) return secfalse;
 
@@ -87,7 +92,7 @@ secbool load_image_header(const uint8_t *const data, const uint32_t magic,
   blake2s_Init(&ctx, BLAKE2S_DIGEST_LENGTH);
   blake2s_Update(&ctx, data, IMAGE_HEADER_SIZE - IMAGE_SIG_SIZE);
   for (int i = 0; i < IMAGE_SIG_SIZE; i++) {
-    blake2s_Update(&ctx, (const uint8_t *)"\x00", 1);
+    blake2s_Update(&ctx, (const uint8_t*)"\x00", 1);
   }
   blake2s_Final(&ctx, hdr->fingerprint, BLAKE2S_DIGEST_LENGTH);
 
@@ -97,11 +102,11 @@ secbool load_image_header(const uint8_t *const data, const uint32_t magic,
 
   return sectrue *
          (0 == ed25519_sign_open(hdr->fingerprint, BLAKE2S_DIGEST_LENGTH, pub,
-                                 *(const ed25519_signature *)hdr->sig));
+                                 *(const ed25519_signature*)hdr->sig));
 }
 
-secbool load_ble_image_header(const uint8_t *const data, const uint32_t magic,
-                              const uint32_t maxsize, image_header *const hdr) {
+secbool load_ble_image_header(const uint8_t* const data, const uint32_t magic,
+                              const uint32_t maxsize, image_header* const hdr) {
   memcpy(&hdr->magic, data, 4);
   if (hdr->magic != magic) return secfalse;
 
@@ -133,9 +138,9 @@ secbool load_ble_image_header(const uint8_t *const data, const uint32_t magic,
   return sectrue;
 }
 
-secbool load_thd89_image_header(const uint8_t *const data, const uint32_t magic,
+secbool load_thd89_image_header(const uint8_t* const data, const uint32_t magic,
                                 const uint32_t maxsize,
-                                image_header_th89 *const hdr) {
+                                image_header_th89* const hdr) {
   memcpy(&hdr->magic, data, 4);
   if (hdr->magic != magic) return secfalse;
 
@@ -159,8 +164,8 @@ secbool load_thd89_image_header(const uint8_t *const data, const uint32_t magic,
   return sectrue;
 }
 
-secbool read_vendor_header(const uint8_t *const data,
-                           vendor_header *const vhdr) {
+secbool read_vendor_header(const uint8_t* const data,
+                           vendor_header* const vhdr) {
   memcpy(&vhdr->magic, data, 4);
   if (vhdr->magic != 0x56544B4F) return secfalse;  // OKTV
 
@@ -189,7 +194,7 @@ secbool read_vendor_header(const uint8_t *const data,
 
   memcpy(&vhdr->vstr_len, data + 32 + vhdr->vsig_n * 32, 1);
 
-  vhdr->vstr = (const char *)(data + 32 + vhdr->vsig_n * 32 + 1);
+  vhdr->vstr = (const char*)(data + 32 + vhdr->vsig_n * 32 + 1);
 
   vhdr->vimg = data + 32 + vhdr->vsig_n * 32 + 1 + vhdr->vstr_len;
   // align to 4 bytes
@@ -203,9 +208,9 @@ secbool read_vendor_header(const uint8_t *const data,
   return sectrue;
 }
 
-secbool load_vendor_header(const uint8_t *const data, uint8_t key_m,
-                           uint8_t key_n, const uint8_t *const *keys,
-                           vendor_header *const vhdr) {
+secbool load_vendor_header(const uint8_t* const data, uint8_t key_m,
+                           uint8_t key_n, const uint8_t* const* keys,
+                           vendor_header* const vhdr) {
   if (sectrue != read_vendor_header(data, vhdr)) {
     return secfalse;
   }
@@ -217,7 +222,7 @@ secbool load_vendor_header(const uint8_t *const data, uint8_t key_m,
   blake2s_Init(&ctx, BLAKE2S_DIGEST_LENGTH);
   blake2s_Update(&ctx, data, vhdr->hdrlen - IMAGE_SIG_SIZE);
   for (int i = 0; i < IMAGE_SIG_SIZE; i++) {
-    blake2s_Update(&ctx, (const uint8_t *)"\x00", 1);
+    blake2s_Update(&ctx, (const uint8_t*)"\x00", 1);
   }
   blake2s_Final(&ctx, hash, BLAKE2S_DIGEST_LENGTH);
 
@@ -227,10 +232,10 @@ secbool load_vendor_header(const uint8_t *const data, uint8_t key_m,
 
   return sectrue *
          (0 == ed25519_sign_open(hash, BLAKE2S_DIGEST_LENGTH, pub,
-                                 *(const ed25519_signature *)vhdr->sig));
+                                 *(const ed25519_signature*)vhdr->sig));
 }
 
-void vendor_header_hash(const vendor_header *const vhdr, uint8_t *hash) {
+void vendor_header_hash(const vendor_header* const vhdr, uint8_t* hash) {
   BLAKE2S_CTX ctx;
   blake2s_Init(&ctx, BLAKE2S_DIGEST_LENGTH);
   blake2s_Update(&ctx, vhdr->vstr, vhdr->vstr_len);
@@ -238,21 +243,20 @@ void vendor_header_hash(const vendor_header *const vhdr, uint8_t *hash) {
   blake2s_Final(&ctx, hash, BLAKE2S_DIGEST_LENGTH);
 }
 
-secbool check_single_hash(const uint8_t *const hash, const uint8_t *const data,
+secbool check_single_hash(const uint8_t* const hash, const uint8_t* const data,
                           int len) {
   uint8_t h[BLAKE2S_DIGEST_LENGTH];
   blake2s(data, len, h, BLAKE2S_DIGEST_LENGTH);
   return sectrue * (0 == memcmp(h, hash, BLAKE2S_DIGEST_LENGTH));
 }
 
-#if defined(STM32H747xx)
-secbool check_image_contents(const image_header *const hdr, uint32_t firstskip,
-                             const uint8_t *sectors, int blocks) {
+secbool check_image_contents(const image_header* const hdr, uint32_t firstskip,
+                             const uint8_t* sectors, int blocks) {
   if (0 == sectors || blocks < 1) {
     return secfalse;
   }
 
-  const void *data =
+  const void* data =
       flash_get_address(sectors[0], firstskip, IMAGE_CHUNK_SIZE - firstskip);
   if (!data) {
     return secfalse;
@@ -319,25 +323,50 @@ secbool check_image_contents(const image_header *const hdr, uint32_t firstskip,
   return sectrue;
 }
 
-secbool check_image_contents_ram(const image_header *const hdr,
-                                 const uint8_t *const buffer,
-                                 size_t code_offset, size_t blocks) {
-  if (hdr == NULL || buffer == NULL || (code_offset <= 0) || (blocks <= 0)) {
+secbool check_image_contents_ADV(const vendor_header* const vhdr,
+                                 const image_header* const hdr,
+                                 const uint8_t* const code_buffer,
+                                 const size_t code_len_skipped,
+                                 const size_t code_len_check) {
+  // sanity check
+  if (
+      // vhdr == NULL || // this is allowed since bootloader image have no vhdr
+      hdr == NULL ||       // hdr pointer must valid (loose check)
+      code_buffer == NULL  // buffer pointer must valid (loose check)
+  ) {
     return false;
   }
 
+  // const vars
+  const size_t hash_chunk_size = FLASH_FIRMWARE_SECTOR_SIZE * 2;
+  const size_t first_chunk_skip =
+      ((vhdr != NULL) ? vhdr->hdrlen : 0) + hdr->hdrlen;
+
+  // vars
   secbool result = secfalse;
-
-  const uint8_t *code_data = buffer + code_offset;
-  const size_t code_len = hdr->codelen;
-  const size_t hash_chunk_size = IMAGE_CHUNK_SIZE * 2;
-
   size_t processed_size = 0;
-  size_t block = 0;
   size_t process_size = 0;
+  size_t block = (code_len_skipped + first_chunk_skip) / hash_chunk_size;
 
+  // checking process
   while (true) {
-    if (processed_size >= code_len || block >= blocks) {
+    if (processed_size == 0 && block == 0)
+      process_size = MIN((code_len_check - processed_size),
+                         (hash_chunk_size - first_chunk_skip));
+    else
+      process_size = MIN((code_len_check - processed_size), (hash_chunk_size));
+
+    if (sectrue == check_single_hash(hdr->hashes + block * 32,
+                                     code_buffer + processed_size,
+                                     process_size)) {
+      block++;
+      processed_size += process_size;
+    } else {
+      // error exit, hash mismatch
+      break;
+    }
+
+    if (processed_size >= code_len_check) {
       // make sure we actually checked something
       if (processed_size > 0)
         // flag set to valid
@@ -346,61 +375,288 @@ secbool check_image_contents_ram(const image_header *const hdr,
       // normal exit, no error found
       break;
     }
-
-    if (processed_size == 0)
-      process_size =
-          MIN((code_len - processed_size), (hash_chunk_size - code_offset));
-    else
-      process_size = MIN((code_len - processed_size), (hash_chunk_size));
-
-    if (sectrue == check_single_hash(hdr->hashes + block * 32,
-                                     code_data + processed_size,
-                                     process_size)) {
-      block++;
-      processed_size += process_size;
-    } else {
-      // error exit, hash mismatch
-      break;
-    }
   }
 
   return result;
 }
 
-#else
-secbool check_image_contents(const image_header *const hdr, uint32_t firstskip,
-                             const uint8_t *sectors, int blocks) {
-  if (0 == sectors || blocks < 1) {
+secbool install_firmware(const uint8_t* const fw_buffer, const size_t fw_size,
+                         char* error_msg, size_t error_msg_len,
+                         size_t* const processed,
+                         void (*const progress_callback)(int)) {
+  // sanity check
+  if (fw_buffer == NULL ||       // pointer invalid
+      fw_size <= 0 ||            // cannot be zero size
+      fw_size % 4 != 0 ||        // not 32 bit allined
+      error_msg == NULL ||       // must provide error reporting msg buffer
+      progress_callback == NULL  // must provide progress reporting function
+  )
     return secfalse;
-  }
-  const void *data =
-      flash_get_address(sectors[0], firstskip, IMAGE_CHUNK_SIZE - firstskip);
-  if (!data) {
-    return secfalse;
-  }
-  int remaining = hdr->codelen;
-  if (sectrue !=
-      check_single_hash(hdr->hashes, data,
-                        MIN(remaining, IMAGE_CHUNK_SIZE - firstskip))) {
-    return secfalse;
-  }
-  int block = 1;
-  remaining -= IMAGE_CHUNK_SIZE - firstskip;
-  while (remaining > 0) {
-    if (block >= blocks) {
+
+  // const vars
+  const size_t fw_internal_size =
+      FLASH_FIRMWARE_SECTOR_SIZE * FIRMWARE_INNER_SECTORS_COUNT;
+
+  // vars
+  size_t processed_size = 0;
+
+  // prepare
+  if (get_hw_ver() >= HW_VER_3P0A) {
+    // enusure dir exists and remove p2 file
+    if (!emmc_fs_dir_make("0:/data") ||
+        !emmc_fs_file_delete("0:/data/fw_p2.bin")) {
+      strncpy(error_msg, "Flash firmware prepare failed! (EMMC)",
+              error_msg_len);
       return secfalse;
     }
-    data = flash_get_address(sectors[block], 0, IMAGE_CHUNK_SIZE);
-    if (!data) {
-      return secfalse;
-    }
-    if (sectrue != check_single_hash(hdr->hashes + block * 32, data,
-                                     MIN(remaining, IMAGE_CHUNK_SIZE))) {
-      return secfalse;
-    }
-    block++;
-    remaining -= IMAGE_CHUNK_SIZE;
+  } else {
+    // not worth it, take too long (8M for 25s)
+    // if ( HAL_OK != qspi_flash_erase_chip() )
+    // {
+    //     strncpy(error_msg, "Flash firmware prepare failed! (QSPI)",
+    //     error_msg_len); return secfalse;
+    // }
   }
+
+  // install
+  while (processed_size < fw_size) {
+    if (processed_size < fw_internal_size) {
+      // install p1
+
+      // erase
+      EXEC_RETRY(
+          10, sectrue, {},
+          {
+            return flash_erase(
+                FIRMWARE_SECTORS[processed_size / FLASH_FIRMWARE_SECTOR_SIZE]);
+          },
+          {},
+          {
+            strncpy(error_msg, "Flash firmware area erease failed!",
+                    error_msg_len);
+            return secfalse;
+          });
+
+      // unlock
+      EXEC_RETRY(
+          10, sectrue, {}, { return flash_unlock_write(); }, {},
+          {
+            strncpy(error_msg, "Flash unlock failed!", error_msg_len);
+            return secfalse;
+          });
+
+      // write
+      for (size_t sector_offset = 0; sector_offset < FLASH_FIRMWARE_SECTOR_SIZE;
+           sector_offset += 32) {
+        // write with retry, max 10 retry allowed
+        EXEC_RETRY(
+            10, sectrue, {},
+            {
+              return flash_write_words(
+                  FIRMWARE_SECTORS[processed_size / FLASH_FIRMWARE_SECTOR_SIZE],
+                  sector_offset, (uint32_t*)(fw_buffer + processed_size));
+            },
+            {},
+            {
+              strncpy(error_msg, "Flash write failed!", error_msg_len);
+              return secfalse;
+            });
+
+        processed_size += ((fw_size - processed_size) > 32)
+                              ? 32  // since we could only write 32 byte a time
+                              : (fw_size - processed_size);
+      }
+
+      // lock
+      EXEC_RETRY(
+          10, sectrue, {}, { return flash_lock_write(); }, {},
+          {
+            strncpy(error_msg, "Flash unlock failed!", error_msg_len);
+            return secfalse;
+          });
+    } else {
+      // install p2
+
+      if (get_hw_ver() >= HW_VER_3P0A) {
+        // EMMC
+        uint32_t emmc_fs_processed = 0;
+        EXEC_RETRY(
+            10, true, {},
+            {
+              return emmc_fs_file_write(
+                  "0:/data/fw_p2.bin", (processed_size - fw_internal_size),
+                  (uint8_t*)(fw_buffer + processed_size),
+                  MIN((fw_size - processed_size), FLASH_FIRMWARE_SECTOR_SIZE),
+                  &emmc_fs_processed, false, true);
+            },
+            {
+              processed_size += emmc_fs_processed;
+              hal_delay(100);  // delay for visual
+            },
+            {
+              strncpy(error_msg, "Flash write failed! (EMMC)", error_msg_len);
+              return secfalse;
+            });
+      } else {
+        // QSPI
+
+        // erase
+        EXEC_RETRY(
+            10, sectrue, {},
+            {
+              return flash_erase(FIRMWARE_SECTORS[processed_size /
+                                                  FLASH_FIRMWARE_SECTOR_SIZE]);
+            },
+            {},
+            {
+              strncpy(error_msg, "Flash firmware area erease failed! (QSPI)",
+                      error_msg_len);
+              return secfalse;
+            });
+
+        // unlock
+        EXEC_RETRY(
+            10, sectrue, {}, { return flash_unlock_write(); }, {},
+            {
+              strncpy(error_msg, "Flash unlock failed! (QSPI)", error_msg_len);
+              return secfalse;
+            });
+
+        // write
+        for (size_t sector_offset = 0;
+             sector_offset < FLASH_FIRMWARE_SECTOR_SIZE; sector_offset += 32) {
+          // write with retry, max 10 retry allowed
+          EXEC_RETRY(
+              10, sectrue, {},
+              {
+                return flash_write_words(
+                    FIRMWARE_SECTORS[processed_size /
+                                     FLASH_FIRMWARE_SECTOR_SIZE],
+                    sector_offset, (uint32_t*)(fw_buffer + processed_size));
+              },
+              {},
+              {
+                strncpy(error_msg, "Flash write failed! (QSPI)", error_msg_len);
+                return secfalse;
+              });
+
+          processed_size +=
+              ((fw_size - processed_size) > 32)
+                  ? 32  // since we could only write 32 byte a time
+                  : (fw_size - processed_size);
+        }
+
+        // lock
+        EXEC_RETRY(
+            10, sectrue, {}, { return flash_lock_write(); }, {},
+            {
+              strncpy(error_msg, "Flash unlock failed! (QSPI)", error_msg_len);
+              return secfalse;
+            });
+      }
+    }
+
+    // update progress
+    progress_callback((1000 * processed_size / fw_size));
+    if (processed != NULL) *processed = processed_size;
+  }
+
+  if (get_hw_ver() < HW_VER_3P0A) {
+    // wipe unused sectors (P1 and P2 QSPI only)
+    size_t used_sector_count =
+        (processed_size / FLASH_FIRMWARE_SECTOR_SIZE) +
+        ((processed_size % FLASH_FIRMWARE_SECTOR_SIZE) != 0 ? 1 : 0);
+    while (used_sector_count < FIRMWARE_SECTORS_COUNT) {
+      flash_erase(FIRMWARE_SECTORS[used_sector_count]);
+      used_sector_count++;
+    }
+  }
+
   return sectrue;
 }
-#endif
+
+secbool verify_firmware(char* error_msg, size_t error_msg_len) {
+  // sanity check
+  if (error_msg == NULL  // must provide error reporting msg buffer
+  )
+    return secfalse;
+
+  // const vars
+  const size_t fw_internal_size =
+      FLASH_FIRMWARE_SECTOR_SIZE * FIRMWARE_INNER_SECTORS_COUNT;
+  const size_t fw_external_size =
+      FLASH_FIRMWARE_SECTOR_SIZE *
+      (FIRMWARE_SECTORS_COUNT - FIRMWARE_INNER_SECTORS_COUNT);
+
+  // vars
+  vendor_header vhdr;
+  image_header hdr;
+
+  // verify vhdr
+  ExecuteCheck_ADV(load_vendor_header((const uint8_t*)FIRMWARE_START, FW_KEY_M,
+                                      FW_KEY_N, FW_KEYS, &vhdr),
+                   sectrue, {
+                     strncpy(error_msg, "Firmware vender header invalid!",
+                             error_msg_len);
+                     return secfalse;
+                   });
+
+  // verify hdr
+  ExecuteCheck_ADV(
+      load_image_header((const uint8_t*)(FIRMWARE_START + vhdr.hdrlen),
+                        FIRMWARE_IMAGE_MAGIC, FIRMWARE_IMAGE_MAXSIZE,
+                        vhdr.vsig_m, vhdr.vsig_n, vhdr.vpub, &hdr),
+      sectrue, {
+        strncpy(error_msg, "Firmware image header invalid!", error_msg_len);
+        return secfalse;
+      });
+
+  // verify p1
+  ExecuteCheck_ADV(
+      check_image_contents_ADV(
+          &vhdr, &hdr,
+          (const uint8_t*)FIRMWARE_START + vhdr.hdrlen + hdr.hdrlen, 0,
+          fw_internal_size - (vhdr.hdrlen + hdr.hdrlen)),
+      sectrue, {
+        strncpy(error_msg, "Firmware code invalid! (P1)", error_msg_len);
+        return secfalse;
+      });
+
+  // verify p2
+
+  if (get_hw_ver() >= HW_VER_3P0A) {
+    EMMC_PATH_INFO path_info = {0};
+    uint32_t processed_len = 0;
+
+    ExecuteCheck_ADV(emmc_fs_path_info("0:data/fw_p2.bin", &path_info), true, {
+      strncpy(error_msg, "Firmware code invalid! (P2_EMMC_1)", error_msg_len);
+      return secfalse;
+    });
+
+    ExecuteCheck_ADV(emmc_fs_file_read(
+                         "0:data/fw_p2.bin", 0, (uint32_t*)0xD1C00000,
+                         MAX(path_info.size, fw_external_size), &processed_len),
+                     true, {
+                       strncpy(error_msg, "Firmware code invalid! (P2_EMMC_2)",
+                               error_msg_len);
+                       return secfalse;
+                     });
+  } else {
+    memcpy((uint8_t*)0xD1C00000, (const uint8_t*)0x90000000,
+           hdr.codelen - (fw_internal_size - (vhdr.hdrlen + hdr.hdrlen)));
+  }
+
+  ExecuteCheck_ADV(
+      check_image_contents_ADV(
+          &vhdr, &hdr, (const uint8_t*)0xD1C00000,
+          (fw_internal_size - (vhdr.hdrlen + hdr.hdrlen)),
+          hdr.codelen - (fw_internal_size - (vhdr.hdrlen + hdr.hdrlen))),
+      sectrue, {
+        memset((uint8_t*)0xD1C00000, 0x00,
+               (2 * 1024 * 1024));  // wipe the buffer if fail
+        strncpy(error_msg, "Firmware code invalid! (P2)", error_msg_len);
+        return secfalse;
+      });
+
+  return sectrue;
+}
