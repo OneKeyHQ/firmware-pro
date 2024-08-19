@@ -1201,7 +1201,6 @@ static int8_t SCSI_UserCommand(USBD_HandleTypeDef *pdev, uint8_t lun, uint8_t *p
     if(hmsc->bot_data[0]==0x5A && hmsc->bot_data[1]==0xA5)
     {
       system_reset = 1;
-           
     }
     MSC_BOT_SendCSW(pdev, USBD_CSW_CMD_PASSED);
   }

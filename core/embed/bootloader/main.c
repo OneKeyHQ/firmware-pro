@@ -46,6 +46,7 @@
 #include "rgb_led.h"
 #endif
 #include "usb.h"
+#include "usbd_desc.h"
 #include "version.h"
 
 #include "ble.h"
@@ -207,6 +208,42 @@ void UsageFault_Handler(void) {
   error_shutdown("Internal error", "(UF)", NULL, NULL);
 }
 
+static secbool get_device_serial(char* serial, size_t len) {
+  // init
+  uint8_t otp_serial[FLASH_OTP_BLOCK_SIZE] = {0};
+  memzero(otp_serial, sizeof(otp_serial));
+  memzero(serial, len);
+
+  // get OTP serial
+  if (sectrue != flash_otp_is_locked(FLASH_OTP_DEVICE_SERIAL)) return secfalse;
+
+  if (sectrue != flash_otp_read(FLASH_OTP_DEVICE_SERIAL, 0, otp_serial,
+                                sizeof(otp_serial))) {
+    return secfalse;
+  }
+
+  // make sure last element is '\0'
+  otp_serial[FLASH_OTP_BLOCK_SIZE - 1] = '\0';
+
+  // check if all is ascii
+  for (uint32_t i = 0; i < sizeof(otp_serial); i++) {
+    if (otp_serial[i] == '\0') {
+      break;
+    }
+    if (otp_serial[i] < ' ' || otp_serial[i] > '~') {
+      return secfalse;
+    }
+  }
+
+  // copy to output buffer
+  memcpy(serial, otp_serial, MIN(len, sizeof(otp_serial)));
+
+  // cutoff by strlen
+  serial[strlen(serial)] = '\0';
+
+  return sectrue;
+}
+
 static void usb_init_all(secbool usb21_landing) {
   usb_dev_info_t dev_info = {
       .device_class = 0x00,
@@ -215,13 +252,19 @@ static void usb_init_all(secbool usb21_landing) {
       .vendor_id = 0x1209,
       .product_id = 0x4F4A,
       .release_num = 0x0200,
-      .manufacturer = "OneKey Ltd.",
+      .manufacturer = "OneKey Limited",
       .product = "OneKey Pro",
       .serial_number = "000000000000000000000000",
       .interface = "Bootloader Interface",
       .usb21_enabled = sectrue,
       .usb21_landing = usb21_landing,
   };
+
+  static char serial[USB_SIZ_STRING_SERIAL];
+
+  if (sectrue == get_device_serial(serial, sizeof(serial))) {
+    dev_info.serial_number = serial;
+  }
 
   static uint8_t rx_buffer[USB_PACKET_SIZE];
 

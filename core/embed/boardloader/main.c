@@ -38,6 +38,7 @@
 #include "touch.h"
 #include "usart.h"
 #include "usb.h"
+#include "usbd_desc.h"
 #include "util_macros.h"
 #include "version.h"
 
@@ -121,8 +122,6 @@ extern volatile uint32_t system_reset;
 
 // axi ram 512k
 uint8_t *boardloader_buf = (uint8_t *)0x24000000;
-#define USB_SIZ_STRING_SERIAL \
-  0x20  // keep it same as "core/embed/trezorhal/usbd_desc.h"
 
 // this is mainly for ignore/supress faults during flash read (for check
 // purpose). if bus fault enabled, it will catched by BusFault_Handler, then we
@@ -698,6 +697,9 @@ static secbool get_device_serial(char *serial, size_t len) {
                                 sizeof(otp_serial))) {
     return secfalse;
   }
+
+  // make sure last element is '\0'
+  otp_serial[FLASH_OTP_BLOCK_SIZE - 1] = '\0';
 
   // check if all is ascii
   for (uint32_t i = 0; i < sizeof(otp_serial); i++) {
