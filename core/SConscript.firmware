@@ -566,6 +566,10 @@ elif TREZOR_MODEL in ('1',):
         'embed/trezorhal/button.c',
     ]
 
+# fw keys
+SOURCE_FW_KEYS = []
+SOURCE_FW_KEYS.extend(Glob('embed/fw_keys/fw_keys.c'))
+
 # debug utils
 SOURCE_DEBUG_UTILS = []
 SOURCE_DEBUG_UTILS.extend(Glob('embed/debug_utils/*.c'))
@@ -701,6 +705,7 @@ if PRODUCTION_MODEL == 'H':
             'vendor/micropython/lib/stm32lib/CMSIS/STM32H7xx/Include',
             'vendor/micropython/lib/cmsis/inc',
             'embed/lvgl',
+            'embed/fw_keys',
             'embed/debug_utils',
             'embed/emmc_wrapper',
             'embed/pn532',
@@ -1061,6 +1066,7 @@ env.Append(LINKFLAGS=f' -l{RUST_LIB}')
 #
 
 obj_program = []
+obj_program += env.Object(source=SOURCE_FW_KEYS)
 obj_program += env.Object(source=SOURCE_DEBUG_UTILS)
 obj_program += env.Object(source=SOURCE_FP_SENSOR_WRAPPER)
 
