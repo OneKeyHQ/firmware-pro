@@ -252,6 +252,10 @@ env.Replace(
     OBJCOPY='arm-none-eabi-objcopy', )
 
 env.Replace(
+    HEADERTOOL='tools/headertool.py',
+)
+
+env.Replace(
     TREZOR_MODEL=TREZOR_MODEL,
     PRODUCTION_MODEL=ord(PRODUCTION_MODEL), )
 
@@ -260,20 +264,6 @@ if PRODUCTION_MODEL == 'H':
     CPU_CCFLAGS = '-mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-d16 -mtune=cortex-m7 --specs=nano.specs '
     CPU_MODEL   = 'STM32H747xx'
     CORE_MODEL = 'CORE_CM7'
-elif TREZOR_MODEL in ('T', 'R'):
-    CPU_ASFLAGS = '-mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16'
-    CPU_CCFLAGS = '-mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mtune=cortex-m4 '
-    CPU_MODEL   = 'STM32F427xx'
-    RUST_TARGET = 'thumbv7em-none-eabihf'
-elif TREZOR_MODEL in ('1',):
-    CPU_ASFLAGS = '-mthumb -mcpu=cortex-m3 -mfloat-abi=soft'
-    CPU_CCFLAGS = '-mthumb -mtune=cortex-m3 -mcpu=cortex-m3 -mfloat-abi=soft '
-    CPU_MODEL   = 'STM32F405xx'
-    RUST_TARGET = 'thumbv7m-none-eabi'
-else:
-    raise ValueError('Unknown Trezor model')
-
-if PRODUCTION_MODEL == 'H':
     env.Replace(
         COPT=env.get('ENV').get('OPTIMIZE', '-Os'),
         CCFLAGS='$COPT '
@@ -321,45 +311,9 @@ if PRODUCTION_MODEL == 'H':
         ] + CPPDEFINES_MOD,
         ASFLAGS=CPU_ASFLAGS,
         ASPPFLAGS='$CFLAGS $CCFLAGS', )
-else:
-    env.Replace(
-        COPT=env.get('ENV').get('OPTIMIZE', '-Os'),
-        CCFLAGS='$COPT '
-        '-g3 '
-        '-nostdlib '
-        '-std=gnu99 -Wall -Werror -Wdouble-promotion -Wpointer-arith -Wno-missing-braces -fno-common '
-        '-fsingle-precision-constant -fdata-sections -ffunction-sections '
-        '-ffreestanding '
-        '-fstack-protector-all '
-        + CPU_CCFLAGS + CCFLAGS_MOD,
-        CCFLAGS_QSTR='-DNO_QSTR -DN_X64 -DN_X86 -DN_THUMB',
-        LINKFLAGS='-T embed/bootloader/memory.ld -Wl,--gc-sections -Wl,-Map=build/bootloader/bootloader.map -Wl,--warn-common',
-        CPPPATH=[
-            'embed/bootloader',
-            'embed/bootloader/nanopb',
-            'embed/bootloader/protob',
-            'embed/trezorhal',
-            'embed/extmod/modtrezorui',
-            'vendor/micropython/lib/stm32lib/STM32F4xx_HAL_Driver/Inc',
-            'vendor/micropython/lib/stm32lib/CMSIS/STM32F4xx/Include',
-            'vendor/micropython/lib/cmsis/inc',
-            'vendor/nanopb',
-        ] + CPPPATH_MOD,
-        CPPDEFINES=[
-            'TREZOR_MODEL_'+TREZOR_MODEL,
-            CPU_MODEL,
-            'USE_HAL_DRIVER',
-            ('STM32_HAL_H', '"<stm32f4xx.h>"'),
-            'PB_FIELD_16BIT',
-            'PB_ENCODE_ARRAYS_UNPACKED',
-            'PB_VALIDATE_UTF8',
-        ] + CPPDEFINES_MOD,
-        ASFLAGS=CPU_ASFLAGS,
-        ASPPFLAGS='$CFLAGS $CCFLAGS', )
 
-env.Replace(
-    HEADERTOOL='tools/headertool.py',
-)
+else:
+    raise ValueError('Unknown Trezor model')
 
 #
 # Program objects

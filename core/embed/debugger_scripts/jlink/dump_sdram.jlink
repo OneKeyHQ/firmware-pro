@@ -1,8 +1,0 @@
-device STM32H747XI_M7
-SelectInterface swd
-speed 25000
-Halt
-WaitHalt
-savebin sdram.bin 0xD0000000 0x10000000000
-go
-exit

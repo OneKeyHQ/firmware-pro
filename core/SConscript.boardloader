@@ -127,52 +127,6 @@ if PRODUCTION_MODEL == 'H':
         'embed/trezorhal/fatfs/ffunicode.c',
         'embed/trezorhal/fatfs/diskio.c',
     ]
-else:
-    SOURCE_MOD += [
-        'embed/extmod/modtrezorui/display.c',
-        'embed/extmod/modtrezorui/fonts/font_bitmap.c',
-    ]
-    SOURCE_STMHAL = [
-        'vendor/micropython/lib/stm32lib/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.c',
-        'vendor/micropython/lib/stm32lib/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.c',
-        'vendor/micropython/lib/stm32lib/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma.c',
-        'vendor/micropython/lib/stm32lib/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash.c',
-        'vendor/micropython/lib/stm32lib/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ex.c',
-        'vendor/micropython/lib/stm32lib/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.c',
-        'vendor/micropython/lib/stm32lib/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c.c',
-        'vendor/micropython/lib/stm32lib/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pcd.c',
-        'vendor/micropython/lib/stm32lib/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pcd_ex.c',
-        'vendor/micropython/lib/stm32lib/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr.c',
-        'vendor/micropython/lib/stm32lib/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c',
-        'vendor/micropython/lib/stm32lib/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_sd.c',
-        'vendor/micropython/lib/stm32lib/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_spi.c',
-        'vendor/micropython/lib/stm32lib/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_sram.c',
-        'vendor/micropython/lib/stm32lib/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c',
-        'vendor/micropython/lib/stm32lib/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c',
-        'vendor/micropython/lib/stm32lib/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_fmc.c',
-        'vendor/micropython/lib/stm32lib/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_sdmmc.c',
-        'vendor/micropython/lib/stm32lib/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_usb.c',
-    ]
-
-    SOURCE_BOARDLOADER = [
-        'embed/boardloader/startup.s',
-        'embed/boardloader/main.c',
-    ]
-
-    SOURCE_TREZORHAL = [
-        'embed/trezorhal/common.c',
-        'embed/trezorhal/dma.c',
-        'embed/trezorhal/image.c',
-        'embed/trezorhal/flash.c',
-        'embed/trezorhal/lowlevel.c',
-        'embed/trezorhal/mini_printf.c',
-        'embed/trezorhal/sdcard.c',
-        'embed/trezorhal/stm32.c',
-        'embed/trezorhal/systick.c',
-        'embed/trezorhal/rng.c',
-        'embed/trezorhal/util.s',
-        'embed/trezorhal/vectortable.s',
-    ]
 
 env = Environment(ENV=os.environ, CFLAGS='%s -DPRODUCTION=%s' % (ARGUMENTS.get('CFLAGS', ''), ARGUMENTS.get('PRODUCTION', '0')))
 
@@ -203,10 +157,6 @@ if PRODUCTION_MODEL == 'H':
     CPU_CCFLAGS = '-mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-d16 -mtune=cortex-m7 --specs=nano.specs '
     CPU_MODEL   = 'STM32H747xx'
     CORE_MODEL = 'CORE_CM7'
-elif TREZOR_MODEL in ('T', 'R'):
-    CPU_ASFLAGS = '-mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16'
-    CPU_CCFLAGS = '-mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mtune=cortex-m4 '
-    CPU_MODEL   = 'STM32F427xx'
 else:
     raise ValueError('Unknown Trezor model')
 
@@ -245,38 +195,6 @@ if PRODUCTION_MODEL == 'H':
             CORE_MODEL,
             'USE_HAL_DRIVER',
             ('STM32_HAL_H', '"<stm32h7xx.h>"'),
-        ] + CPPDEFINES_MOD,
-        ASFLAGS=CPU_ASFLAGS,
-        ASPPFLAGS='$CFLAGS $CCFLAGS', )
-
-else:
-    LD_FILE = '-T embed/boardloader/memory.ld '
-    env.Replace(
-        COPT=env.get('ENV').get('OPTIMIZE', '-Os'),
-        CCFLAGS='$COPT '
-        '-g3 '
-        '-nostdlib '
-        '-std=gnu99 -Wall -Werror -Wdouble-promotion -Wpointer-arith -Wno-missing-braces -fno-common '
-        '-fsingle-precision-constant -fdata-sections -ffunction-sections '
-        '-ffreestanding '
-        '-fstack-protector-all '
-        + CPU_CCFLAGS + CCFLAGS_MOD,
-        CCFLAGS_QSTR='-DNO_QSTR -DN_X64 -DN_X86 -DN_THUMB',
-        LINKFLAGS='-T embed/boardloader/memory.ld -Wl,--gc-sections -Wl,-Map=build/boardloader/boardloader.map -Wl,--warn-common',
-        CPPPATH=[
-            'embed/boardloader',
-            'embed/trezorhal',
-            'embed/extmod/modtrezorui',
-            'vendor/micropython/stmhal',
-            'vendor/micropython/lib/stm32lib/STM32F4xx_HAL_Driver/Inc',
-            'vendor/micropython/lib/stm32lib/CMSIS/STM32F4xx/Include',
-            'vendor/micropython/lib/cmsis/inc',
-        ] + CPPPATH_MOD,
-        CPPDEFINES=[
-            'TREZOR_MODEL_'+TREZOR_MODEL,
-            CPU_MODEL,
-            'USE_HAL_DRIVER',
-            ('STM32_HAL_H', '"<stm32f4xx.h>"'),
         ] + CPPDEFINES_MOD,
         ASFLAGS=CPU_ASFLAGS,
         ASPPFLAGS='$CFLAGS $CCFLAGS', )

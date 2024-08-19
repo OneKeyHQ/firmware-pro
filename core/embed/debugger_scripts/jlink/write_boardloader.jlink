@@ -1,7 +1,0 @@
-device STM32H747XI_M7
-SelectInterface swd
-speed 25000
-loadbin build/boardloader/boardloader.bin 0x08000000
-rx 100
-g
-exit
