@@ -12,8 +12,9 @@ from apps.common import address_type, coins
 from apps.common.signverify import decode_message, message_digest
 
 from . import common
-
-from .addresses import (  # address_p2wpkh,; address_p2wpkh_in_p2sh,
+from .addresses import (
+    address_p2wpkh,
+    address_p2wpkh_in_p2sh,
     address_pkh,
     address_short,
     address_to_cashaddr,
@@ -68,36 +69,34 @@ async def verify_message(ctx: wire.Context, msg: VerifyMessage) -> Success:
     digest = message_digest(coin, message)
 
     script_type = address_to_script_type(address, coin)
-    if script_type != InputScriptType.SPENDADDRESS:
-        raise wire.ProcessError("Invalid address, expected p2pkh")
-    # recid = signature[0]
-    # if 27 <= recid <= 34:
-    #     # p2pkh or no script type provided
-    #     pass  # use the script type from the address
-    # elif 35 <= recid <= 38 and script_type == InputScriptType.SPENDP2SHWITNESS:
-    #     # segwit-in-p2sh
-    #     signature = bytes([signature[0] - 4]) + signature[1:]
-    # elif 39 <= recid <= 42 and script_type == InputScriptType.SPENDWITNESS:
-    #     # native segwit
-    #     signature = bytes([signature[0] - 8]) + signature[1:]
-    # else:
-    #     raise wire.ProcessError("Invalid signature")
+    recid = signature[0]
+    if 27 <= recid <= 34:
+        # p2pkh or no script type provided
+        pass  # use the script type from the address
+    elif 35 <= recid <= 38 and script_type == InputScriptType.SPENDP2SHWITNESS:
+        # segwit-in-p2sh
+        signature = bytes([signature[0] - 4]) + signature[1:]
+    elif 39 <= recid <= 42 and script_type == InputScriptType.SPENDWITNESS:
+        # native segwit
+        signature = bytes([signature[0] - 8]) + signature[1:]
+    else:
+        raise wire.ProcessError("Invalid signature")
 
     pubkey = secp256k1.verify_recover(signature, digest)
 
     if not pubkey:
         raise wire.ProcessError("Invalid signature")
 
-    # if script_type == InputScriptType.SPENDADDRESS:
-    addr = address_pkh(pubkey, coin)
-    if not utils.BITCOIN_ONLY and coin.cashaddr_prefix is not None:
-        addr = address_to_cashaddr(addr, coin)
-    # elif script_type == InputScriptType.SPENDP2SHWITNESS:
-    #     addr = address_p2wpkh_in_p2sh(pubkey, coin)
-    # elif script_type == InputScriptType.SPENDWITNESS:
-    #     addr = address_p2wpkh(pubkey, coin)
-    # else:
-    #     raise wire.ProcessError("Invalid signature")
+    if script_type == InputScriptType.SPENDADDRESS:
+        addr = address_pkh(pubkey, coin)
+        if not utils.BITCOIN_ONLY and coin.cashaddr_prefix is not None:
+            addr = address_to_cashaddr(addr, coin)
+    elif script_type == InputScriptType.SPENDP2SHWITNESS:
+        addr = address_p2wpkh_in_p2sh(pubkey, coin)
+    elif script_type == InputScriptType.SPENDWITNESS:
+        addr = address_p2wpkh(pubkey, coin)
+    else:
+        raise wire.ProcessError("Invalid signature")
 
     if addr != address:
         raise wire.ProcessError("Invalid signature")

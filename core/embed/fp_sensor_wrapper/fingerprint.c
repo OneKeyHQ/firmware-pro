@@ -6,6 +6,7 @@
 #include "irq.h"
 #ifdef SYSTEM_VIEW
   #include "systemview.h"
+  #include "mipi_lcd.h"
 #endif
 extern uint8_t MAX_USER_COUNT;
 

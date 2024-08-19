@@ -805,5 +805,6 @@ translations = [
     "Abra OneKey y escanee el código QR, compatible con redes BTC y EVM.",
     "Incompatibilidad de billetera",
     "Tu billetera seleccionada en la aplicación no coincide con la billetera de hardware. Por favor, verifica y vuelve a intentarlo.",
+    "Firma de mensaje no estándar.",
 ]
 # fmt: on

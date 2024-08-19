@@ -805,5 +805,6 @@ translations = [
     "Open OneKey and scan the QR code, supporting BTC and EVM networks.",
     "Wallet Mismatch",
     "Your selected wallet in the app does not match the hardware wallet. Please check and try again.",
+    "Non-standard message signature.",
 ]
 # fmt: on

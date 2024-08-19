@@ -805,5 +805,6 @@ translations = [
     "Apri OneKey e scansiona il codice QR, supportando le reti BTC ed EVM.",
     "Incompatibilità del portafoglio",
     "Il portafoglio selezionato nell'app non corrisponde al portafoglio hardware. Si prega di controllare e riprovare.",
+    "Firma del messaggio non standard.",
 ]
 # fmt: on

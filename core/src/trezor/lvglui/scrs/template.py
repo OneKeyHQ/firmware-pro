@@ -217,6 +217,7 @@ class Message(FullSizeWindow):
         verify: bool = False,
         evm_chain_id: int | None = None,
         item_addr_title: str | None = None,
+        is_standard: bool = True,
     ):
         super().__init__(
             title,
@@ -235,13 +236,25 @@ class Message(FullSizeWindow):
             self.long_message = True
         else:
             self.message = message
+        if not is_standard:
+            self.warning_banner = Banner(
+                self.content_area,
+                2,
+                _(i18n_keys.CONTENT__NON_STANDARD_MESSAGE_SIGNATURE),
+            )
+            self.warning_banner.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, 40)
         self.item_message = CardItem(
             self.content_area,
             _(i18n_keys.LIST_KEY__MESSAGE__COLON),
             self.message,
             "A:/res/group-icon-data.png",
         )
-        self.item_message.align_to(self.title, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 40)
+        self.item_message.align_to(
+            self.title if is_standard else self.warning_banner,
+            lv.ALIGN.OUT_BOTTOM_LEFT,
+            0,
+            40 if is_standard else 8,
+        )
         if self.long_message:
             self.show_full_message = NormalButton(
                 self.item_message.content, _(i18n_keys.BUTTON__VIEW_DATA)

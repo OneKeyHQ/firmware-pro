@@ -232,6 +232,7 @@ def sign_message(
     message: AnyStr,
     script_type: messages.InputScriptType = messages.InputScriptType.SPENDADDRESS,
     no_script_type: bool = False,
+    is_bip322_simple: bool = False,
 ) -> "MessageType":
     return client.call(
         messages.SignMessage(
@@ -240,6 +241,7 @@ def sign_message(
             message=prepare_message_bytes(message),
             script_type=script_type,
             no_script_type=no_script_type,
+            is_bip322_simple=is_bip322_simple,
         )
     )
 

@@ -1761,4 +1761,6 @@ CONTENT__WALLET_MISMATCH = 803
 # Your selected wallet in the app does not match the hardware wallet. Please c
 # heck and try again.
 CONTENT__WALLET_MISMATCH_DESC = 804
+# Non-standard message signature.
+CONTENT__NON_STANDARD_MESSAGE_SIGNATURE = 805
 # fmt: on
