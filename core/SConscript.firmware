@@ -574,9 +574,9 @@ SOURCE_FW_KEYS.extend(Glob('embed/fw_keys/fw_keys.c'))
 SOURCE_DEBUG_UTILS = []
 SOURCE_DEBUG_UTILS.extend(Glob('embed/debug_utils/*.c'))
 
-# # emmc wrapper
-# SOURCE_EMMC_WRAPPER = []
-# SOURCE_EMMC_WRAPPER.extend(Glob('embed/emmc_wrapper/*.c'))
+# emmc wrapper
+SOURCE_EMMC_WRAPPER = []
+SOURCE_EMMC_WRAPPER.extend(Glob('embed/emmc_wrapper/emmc_fs.c'))
 
 # pn532 wrapper
 SOURCE_PN532_WRAPPER = []
@@ -1068,6 +1068,7 @@ env.Append(LINKFLAGS=f' -l{RUST_LIB}')
 obj_program = []
 obj_program += env.Object(source=SOURCE_FW_KEYS)
 obj_program += env.Object(source=SOURCE_DEBUG_UTILS)
+obj_program += env.Object(source=SOURCE_EMMC_WRAPPER)
 obj_program += env.Object(source=SOURCE_FP_SENSOR_WRAPPER)
 
 obj_program.extend(env.Object(source=SOURCE_MOD))
