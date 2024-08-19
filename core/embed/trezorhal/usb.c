@@ -26,6 +26,7 @@
 #include "usbd_desc.h"
 #include "usbd_msc.h"
 #include "usbd_msc_storage.h"
+#include "usbd_ulpi.h"
 
 #define USB_MAX_CONFIG_DESC_SIZE 256
 #define USB_MAX_STR_SIZE 62
@@ -156,7 +157,10 @@ void usb_deinit(void) {
 
 void usb_start(void) { USBD_Start(&usb_dev_handle); }
 
-void usb_stop(void) { USBD_Stop(&usb_dev_handle); }
+void usb_stop(void) {
+  usb_connect_state = false;
+  USBD_Stop(&usb_dev_handle);
+}
 
 secbool usb_configured(void) {
   static uint32_t usb_configured_last_ok = 0;
@@ -622,7 +626,7 @@ void usb_msc_init(char *serial, size_t serial_len) {
   USBD_MSC_RegisterStorage(&usb_dev_handle, &USBD_DISK_fops);
 
   /* Start Device Process */
-  USBD_Start(&usb_dev_handle);
+  // USBD_Start(&usb_dev_handle);
 }
 
 secbool is_usb_connected(void) {
@@ -630,4 +634,32 @@ secbool is_usb_connected(void) {
     return secfalse;  // Device is not configured
   }
   return sectrue;
+}
+
+void usb_config_3320_detect(void) {
+  volatile uint8_t val;
+
+  val = USB_ULPI_Read(ULPI_REGISTER_OTG_CONTROL);
+  val |= 0x80;
+  USB_ULPI_Write(ULPI_REGISTER_OTG_CONTROL, val);
+  USB_ULPI_Write(ULPI_REGISTER_FUNCTION_CONTROL_WRITE, 0x49);
+  val = USB_ULPI_Read(ULPI_REGISTER_FUNCTION_CONTROL_READ);
+  val = USB_ULPI_Read(ULPI_REGISTER_IO_POWER);
+  val |= 0x30;
+  USB_ULPI_Write(ULPI_REGISTER_IO_POWER, val);
+}
+
+bool usb_3320_host_connected(void) {
+  // volatile uint8_t val1, var2;
+  // val1 = USB_ULPI_Read(ULPI_REGISTER_LINESTATE);
+  // var2 = USB_ULPI_Read(ULPI_REGISTER_IRQ_STATUS);
+  // if (((val1 & 0x03) != 0x03) && (var2 & 0x04)) {
+  //   return true;
+  // }
+  // val1 = var2 = 0;
+  // return false;
+
+  volatile uint8_t val;
+  val = USB_ULPI_Read(ULPI_REGISTER_IRQ_STATUS);
+  return (val & 0x04) ? true : false;
 }

@@ -20,6 +20,7 @@
 #ifndef __TREZORHAL_USB_H__
 #define __TREZORHAL_USB_H__
 
+#include <stdbool.h>
 #include <stdint.h>
 #include "secbool.h"
 
@@ -146,5 +147,6 @@ void usb_stop(void);
 void usb_msc_init(char *serial, size_t serial_len);
 secbool is_usb_connected(void);
 secbool usb_configured(void);
-
+void usb_config_3320_detect(void);
+bool usb_3320_host_connected(void);
 #endif

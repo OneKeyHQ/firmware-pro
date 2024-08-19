@@ -718,6 +718,36 @@ static secbool get_device_serial(char *serial, size_t len) {
   return sectrue;
 }
 
+static void usb_connect_switch(void) {
+  static bool usb_opened = false;
+  static uint32_t counter0 = 0, counter1 = 0;
+
+  if (usb_3320_host_connected()) {
+    counter0++;
+    counter1 = 0;
+    hal_delay(1);
+    if (counter0 > 5) {
+      counter0 = 0;
+      if (!usb_opened) {
+        usb_start();
+        usb_opened = true;
+      }
+    }
+
+  } else {
+    counter0 = 0;
+    counter1++;
+    hal_delay(1);
+    if (counter1 > 5) {
+      counter1 = 0;
+      if (usb_opened) {
+        usb_stop();
+        usb_opened = false;
+      }
+    }
+  }
+}
+
 int main(void) {
   // minimal initialize
   reset_flags_reset();
@@ -779,6 +809,7 @@ int main(void) {
       usb_msc_init(serial, sizeof(serial));
 
       while (1) {
+        usb_connect_switch();
         if (system_reset == 1) {
           hal_delay(5);
           restart();
