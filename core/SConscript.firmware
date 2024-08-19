@@ -653,6 +653,17 @@ env.Replace(
     LVGL_UI=LVGL_UI,
     PRODUCTION_MODEL=ord(PRODUCTION_MODEL), )
 
+env.Replace(
+    HEADERTOOL='tools/headertool.py',
+    PYTHON='python',
+    MAKEQSTRDATA='$PYTHON vendor/micropython/py/makeqstrdata.py',
+    MAKEVERSIONHDR='$PYTHON vendor/micropython/py/makeversionhdr.py',
+    MAKEMODULEDEFS='$PYTHON vendor/micropython/py/makemoduledefs.py',
+    MPY_TOOL='$PYTHON vendor/micropython/tools/mpy-tool.py',
+    MPY_CROSS='vendor/micropython/mpy-cross/mpy-cross -O' + PYOPT,
+    PB2PY='$PYTHON ../common/protob/pb2py',
+)
+
 if PRODUCTION_MODEL == 'H':
     CPU_ASFLAGS = '-mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-d16 '
     CPU_CCFLAGS = '-mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-d16 -mtune=cortex-m7 --specs=nano.specs '
@@ -660,22 +671,6 @@ if PRODUCTION_MODEL == 'H':
     CORE_MODEL = 'CORE_CM7'
     LD_VARIANT  = ''
     RUST_TARGET = 'thumbv7em-none-eabihf'
-elif TREZOR_MODEL in ('T', 'R'):
-    CPU_ASFLAGS = '-mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16'
-    CPU_CCFLAGS = '-mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mtune=cortex-m4 '
-    CPU_MODEL   = 'STM32F427xx'
-    LD_VARIANT  = ''
-    RUST_TARGET = 'thumbv7em-none-eabihf'
-elif TREZOR_MODEL in ('1',):
-    CPU_ASFLAGS = '-mthumb -mcpu=cortex-m3 -mfloat-abi=soft'
-    CPU_CCFLAGS = '-mthumb -mtune=cortex-m3 -mcpu=cortex-m3 -mfloat-abi=soft '
-    CPU_MODEL   = 'STM32F405xx'
-    LD_VARIANT  = '' if EVERYTHING else '_min'
-    RUST_TARGET = 'thumbv7m-none-eabi'
-else:
-    raise ValueError('Unknown Trezor model')
-
-if PRODUCTION_MODEL == 'H':
     env.Replace(
         COPT=env.get('ENV').get('OPTIMIZE', '-Os'),
         CCFLAGS='$COPT '
@@ -730,48 +725,7 @@ if PRODUCTION_MODEL == 'H':
         ASFLAGS=CPU_ASFLAGS,
         ASPPFLAGS='$CFLAGS $CCFLAGS', )
 else:
-    env.Replace(
-        COPT=env.get('ENV').get('OPTIMIZE', '-Os'),
-        CCFLAGS='$COPT '
-        '-g3 '
-        '-nostdlib '
-        '-std=gnu99 -Wall -Werror -Wdouble-promotion -Wpointer-arith -Wno-missing-braces -fno-common '
-        '-fsingle-precision-constant -fdata-sections -ffunction-sections '
-        '-ffreestanding '
-        '-fstack-protector-all '
-        + CPU_CCFLAGS + CCFLAGS_MOD,
-        CCFLAGS_QSTR='-DNO_QSTR -DN_X64 -DN_X86 -DN_THUMB',
-        LINKFLAGS='-T embed/firmware/memory_${TREZOR_MODEL}%s.ld -Wl,--gc-sections -Wl,-Map=build/firmware/firmware.map -Wl,--warn-common' % LD_VARIANT,
-        CPPPATH=[
-            '.',
-            'embed/rust',
-            'embed/firmware',
-            'embed/trezorhal',
-            'embed/extmod/modtrezorui',
-            'vendor/micropython',
-            'vendor/micropython/lib/stm32lib/STM32F4xx_HAL_Driver/Inc',
-            'vendor/micropython/lib/stm32lib/CMSIS/STM32F4xx/Include',
-            'vendor/micropython/lib/cmsis/inc',
-        ] + CPPPATH_MOD,
-        CPPDEFINES=[
-            'TREZOR_MODEL_'+TREZOR_MODEL,
-            CPU_MODEL,
-            'USE_HAL_DRIVER',
-            ('STM32_HAL_H', '"<stm32f4xx.h>"'),
-        ] + CPPDEFINES_MOD,
-        ASFLAGS=CPU_ASFLAGS,
-        ASPPFLAGS='$CFLAGS $CCFLAGS', )
-
-env.Replace(
-    HEADERTOOL='tools/headertool.py',
-    PYTHON='python',
-    MAKEQSTRDATA='$PYTHON vendor/micropython/py/makeqstrdata.py',
-    MAKEVERSIONHDR='$PYTHON vendor/micropython/py/makeversionhdr.py',
-    MAKEMODULEDEFS='$PYTHON vendor/micropython/py/makemoduledefs.py',
-    MPY_TOOL='$PYTHON vendor/micropython/tools/mpy-tool.py',
-    MPY_CROSS='vendor/micropython/mpy-cross/mpy-cross -O' + PYOPT,
-    PB2PY='$PYTHON ../common/protob/pb2py',
-)
+    raise ValueError('Unknown Trezor model')
 
 #
 # Qstrings
@@ -1180,20 +1134,6 @@ if PRODUCTION_MODEL == 'H':
         '$CAT ${TARGET}.p1 ${TARGET}.p2 > $TARGET',
         '$HEADERTOOL -h $TARGET ' + ('-D' if ARGUMENTS.get('PRODUCTION', '0') == '0' else ''),
         '$DD if=$TARGET of=${TARGET}.p1 skip=0 bs=128k count=12',
-    ]
-
-elif TREZOR_MODEL in ('T', 'R'):
-    action_bin=[
-        '$OBJCOPY -O binary -j .vendorheader -j .header -j .flash -j .data --pad-to 0x08100000 $SOURCE ${TARGET}.p1',
-        '$OBJCOPY -O binary -j .flash2 $SOURCE ${TARGET}.p2',
-        '$CAT ${TARGET}.p1 ${TARGET}.p2 > $TARGET',
-        '$HEADERTOOL -h $TARGET ' + ('-D' if ARGUMENTS.get('PRODUCTION', '0') == '0' else ''),
-        '$DD if=$TARGET of=${TARGET}.p1 skip=0 bs=128k count=6',
-    ]
-elif TREZOR_MODEL in ('1',):
-    action_bin=[
-        '$OBJCOPY -O binary -j .header -j .flash -j .data $SOURCE $TARGET',
-        '../legacy/bootloader/firmware_sign.py -f $TARGET',
     ]
 else:
     raise ValueError('Unknown Trezor model')

@@ -40,9 +40,7 @@ OPENOCD_T1 = openocd -f interface/$(OPENOCD_INTERFACE).cfg -c "transport select 
 BOARDLOADER_START   = 0x08000000
 BOOTLOADER_START    = 0x08020000
 FIRMWARE_P1_START   = 0x08060000
-FIRMWARE_P2_START   = 0x08120000
-PRODTEST_START      = 0x08040000
-FIRMWARE_T1_START   = 0x08010000
+FIRMWARE_P2_START   = 0x90000000
 
 BOARDLOADER_MAXSIZE = 49152
 BOOTLOADER_MAXSIZE  = 131072
@@ -244,71 +242,37 @@ clean_cross: ## clean mpy-cross build
 
 ## flash commands:
 
-flash: flash_boardloader flash_bootloader flash_firmware ## flash everything using OpenOCD
-
-flash_boardloader: $(BOARDLOADER_BUILD_DIR)/boardloader.bin ## flash boardloader using OpenOCD
-	$(OPENOCD) -c "init; reset halt; flash write_image erase $< $(BOARDLOADER_START); exit"
-
-flash_bootloader: $(BOOTLOADER_BUILD_DIR)/bootloader.bin ## flash bootloader using OpenOCD
-	$(OPENOCD) -c "init; reset halt; flash write_image erase $< $(BOOTLOADER_START); exit"
-
-flash_bootloader_ci: $(BOOTLOADER_CI_BUILD_DIR)/bootloader.bin ## flash CI bootloader using OpenOCD
-	$(OPENOCD) -c "init; reset halt; flash write_image erase $< $(BOOTLOADER_START); exit"
-
-flash_prodtest: $(PRODTEST_BUILD_DIR)/prodtest.bin ## flash prodtest using OpenOCD
-	$(OPENOCD) -c "init; reset halt; flash write_image erase $< $(PRODTEST_START); exit"
-
-flash_firmware: $(FIRMWARE_BUILD_DIR)/firmware.bin ## flash firmware using OpenOCD
-	$(OPENOCD) -c "init; reset halt; flash write_image erase $<.p1 $(FIRMWARE_P1_START); flash write_image erase $<.p2 $(FIRMWARE_P2_START); exit"
-
-flash_firmware_t1: $(FIRMWARE_BUILD_DIR)/firmware.bin ## flash T1 core port on T1 using OpenOCD
-	$(OPENOCD_T1) -c "init; reset halt; flash write_image erase $< $(FIRMWARE_T1_START); exit"
-
-flash_combine: $(PRODTEST_BUILD_DIR)/combined.bin ## flash combined using OpenOCD
-	$(OPENOCD) -c "init; reset halt; flash write_image erase $< $(BOARDLOADER_START); exit"
-
-flash_erase: ## erase all sectors in flash bank 0
-	$(OPENOCD) -c "init; reset halt; flash info 0; flash erase_sector 0 0 last; flash erase_check 0; exit"
-
-flash_read_storage: ## read storage sectors from flash
-	$(OPENOCD) -c "init; flash read_bank 0 storage1.data 0x10000 65536; flash read_bank 0 storage2.data 0x110000 65536; exit"
-
-flash_erase_storage: ## erase storage sectors from flash
-	$(OPENOCD) -c "init; flash erase_sector 0 4 4; flash erase_sector 0 16 16; exit"
-
 flash_boardloader_jlink: $(BOARDLOADER_BUILD_DIR)/boardloader.bin ## flash bootloader using JLink
-	JLinkExe -nogui 1 -commanderscript embed/debugger_scripts/jlink/write_boardloader.jlink
+	embed/debugger_scripts/jlink/jlink_write.sh $(BOARDLOADER_BUILD_DIR)/boardloader.bin $(BOARDLOADER_START)
 
 flash_boardloader_reflash_dev_jlink: $(BOAR_DEV_REFLASH_BUILD_DIR)/boardloader_reflash_dev.bin ## flash boardloader_reflash_dev using JLink
-	JLinkExe -nogui 1 -commanderscript embed/debugger_scripts/jlink/write_boardloader_reflash_dev.jlink
+	embed/debugger_scripts/jlink/jlink_write.sh $(BOAR_DEV_REFLASH_BUILD_DIR)/boardloader_reflash_dev.bin $(BOOTLOADER_START)
 
 flash_bootloader_jlink: $(BOOTLOADER_BUILD_DIR)/bootloader.bin ## flash bootloader using JLink
-	JLinkExe -nogui 1 -commanderscript embed/debugger_scripts/jlink/write_bootloader.jlink
+	embed/debugger_scripts/jlink/jlink_write.sh $(BOOTLOADER_BUILD_DIR)/bootloader.bin $(BOOTLOADER_START)
 
-# flash_bootloader_ci_jlink: $(BOOTLOADER_CI_BUILD_DIR)/bootloader.bin ## flash CI bootloader using JLink
-# 	JLinkExe -nogui 1 -commanderscript embed/bootloader_ci/bootloader_flash.jlink
-
-erase_firmware_jlink: $(FIRMWARE_BUILD_DIR)/firmware.bin
-	JLinkExe -nogui 1 -commanderscript embed/debugger_scripts/jlink/wipe_firmware_header.jlink
+erase_firmware_jlink:
+	embed/debugger_scripts/jlink/jlink_erase.sh $(FIRMWARE_P1_START) 0x180000
+	embed/debugger_scripts/jlink/jlink_erase.sh $(FIRMWARE_P2_START) 0x200000
 
 flash_firmware_jlink: $(FIRMWARE_BUILD_DIR)/firmware.bin ## flash firmware using JLink. file names must end in .bin for JLink
 	cp -f $<.p1 $<.p1.bin
 	cp -f $<.p2 $<.p2.bin
-	JLinkExe -nogui 1 -commanderscript embed/firmware/firmware_flash.jlink
+	embed/debugger_scripts/jlink/jlink_write.sh $<.p1.bin $(FIRMWARE_P1_START)
+	embed/debugger_scripts/jlink/jlink_write.sh $<.p2.bin $(FIRMWARE_P2_START)
+	rm $<.p1.bin
+	rm $<.p2.bin
 
-# flash_firmware_t1_jlink: $(FIRMWARE_BUILD_DIR)/firmware.bin ## flash T1 core port via JLink
-# 	JLinkExe -nogui 1 -commanderscript embed/firmware/firmware_flash_t1.jlink
+dump_firmware_jlink:
+	embed/debugger_scripts/jlink/jlink_read.sh $(FIRMWARE_BUILD_DIR)/firmware.readback.p1.bin $(FIRMWARE_P1_START) 0x180000
+	embed/debugger_scripts/jlink/jlink_read.sh $(FIRMWARE_BUILD_DIR)/firmware.readback.p2.bin $(FIRMWARE_P2_START) 0x200000
 
-reboot_device_jlink: ## cause a system reset using JLink
-	JLinkExe -nogui 1 -commanderscript embed/debugger_scripts/jlink/reboot_device.jlink
-
-## openocd debug commands:
-
-openocd: ## start openocd which connects to the device
-	$(OPENOCD)
-
-openocd_reset: ## cause a system reset using OpenOCD
-	$(OPENOCD) -c "init; reset; exit"
+jlink_device_reboot: ## cause a system reset using JLink
+	embed/debugger_scripts/jlink/jlink_rebootDevice.sh 0
+jlink_device_enter_board:
+	embed/debugger_scripts/jlink/jlink_rebootDevice.sh 1
+jlink_device_enter_boot:
+	embed/debugger_scripts/jlink/jlink_rebootDevice.sh 2
 
 GDB = arm-none-eabi-gdb --nx -ex 'set remotetimeout unlimited' -ex 'set confirm off' -ex 'target remote 127.0.0.1:3333' -ex 'monitor reset halt'
 
@@ -347,12 +311,6 @@ combine: ## combine boardloader + bootloader + prodtest into one combined image
 		$(BOOTLOADER_START) $(BOOTLOADER_BUILD_DIR)/bootloader.bin \
 		$(PRODTEST_START) $(PRODTEST_BUILD_DIR)/prodtest.bin \
 		> $(PRODTEST_BUILD_DIR)/combined.bin
-
-upload: ## upload firmware using trezorctl
-	trezorctl firmware_update -f $(FIRMWARE_BUILD_DIR)/firmware.bin
-
-upload_prodtest: ## upload prodtest using trezorctl
-	trezorctl firmware_update -f $(PRODTEST_BUILD_DIR)/prodtest.bin
 
 coverage:  # generate coverage report
 	./tools/coverage-report
