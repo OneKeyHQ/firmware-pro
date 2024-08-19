@@ -76,10 +76,15 @@ async def sign_taproot(
                         f"Key fingerprint {origin.fingerprint} does not match master key {master_fp}"
                     )
                 raise wire.DataError("Wallet mismatch")
-            if not (key == input.tap_internal_key or input.tap_scripts is not None):
-                raise wire.DataError("Invalid parameters")
+            node = keychain.derive(origin.path)
+            intend_key = node.public_key()[1:]
+            assert intend_key == key, "Invalid key"
+            if not input.tap_scripts:
+                assert key == input.tap_internal_key, "Invalid internal key"
+            else:
+                script, _ = list(input.tap_scripts.keys())[0]
+                assert key in script, "Invalid script"
 
-            keychain.verify_path(origin.path)
         sig_hasher.add_input(
             txi=TxInput(
                 prev_hash=bytes(reversed(input.prev_txid)),
@@ -182,7 +187,7 @@ async def sign_taproot(
 
     for i, input in enumerate(psbt.inputs):
         for key, (_, origin) in input.tap_bip32_paths.items():
-            if key == input.tap_internal_key and not input.tap_scripts:
+            if not input.tap_scripts:
                 script_path_spending = False
                 leaf_hash = None
             else:
@@ -211,11 +216,6 @@ async def sign_taproot(
             if not script_path_spending:
                 input.tap_key_sig = signature
             else:
-                if __debug__:
-                    internal_key = node.public_key()[1:]
-                    print(f"internal key: {internal_key}")
-                    print(f"script == {script}")  # type: ignore["script" is possibly unbound]
-                    assert bytearray(internal_key) in bytearray(script)  # type: ignore["script" is possibly unbound]
                 assert leaf_hash is not None
                 input.tap_script_sigs[(key, leaf_hash)] = signature
 
