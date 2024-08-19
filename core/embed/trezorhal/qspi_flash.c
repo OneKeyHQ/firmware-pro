@@ -162,7 +162,7 @@ static int qspi_flash_write_enable(void) {
   return HAL_OK;
 }
 
-static int qspi_flash_atuo_polling_mem_ready(void) {
+static int qspi_flash_atuo_polling_mem_ready(uint32_t timeout) {
   QSPI_CommandTypeDef command = {0};
   QSPI_AutoPollingTypeDef config = {0};
 
@@ -185,15 +185,14 @@ static int qspi_flash_atuo_polling_mem_ready(void) {
   config.Interval = 0x10;
   config.AutomaticStop = QSPI_AUTOMATIC_STOP_ENABLE;
 
-  if (HAL_QSPI_AutoPolling(&hqspi, &command, &config,
-                           HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
+  if (HAL_QSPI_AutoPolling(&hqspi, &command, &config, timeout) != HAL_OK) {
     return HAL_ERROR;
   }
 
   return HAL_OK;
 }
 
-int qspi_flash_read_status1(uint8_t *status) {
+int qspi_flash_read_status1(uint8_t* status) {
   QSPI_CommandTypeDef command;
 
   command.InstructionMode = QSPI_INSTRUCTION_1_LINE;
@@ -221,7 +220,7 @@ int qspi_flash_read_status1(uint8_t *status) {
   return HAL_OK;
 }
 
-int qspi_flash_read_status2(uint8_t *status) {
+int qspi_flash_read_status2(uint8_t* status) {
   QSPI_CommandTypeDef command;
 
   command.InstructionMode = QSPI_INSTRUCTION_1_LINE;
@@ -282,7 +281,8 @@ int qspi_flash_write_status(uint8_t status1_val, uint8_t status2_val) {
     return HAL_ERROR;
   }
 
-  if (qspi_flash_atuo_polling_mem_ready() != HAL_OK) {
+  if (qspi_flash_atuo_polling_mem_ready(HAL_QPSI_TIMEOUT_DEFAULT_VALUE) !=
+      HAL_OK) {
     return HAL_ERROR;
   }
   return HAL_OK;
@@ -320,7 +320,8 @@ int qspi_flash_write_status2(uint8_t status2_val) {
     return HAL_ERROR;
   }
 
-  if (qspi_flash_atuo_polling_mem_ready() != HAL_OK) {
+  if (qspi_flash_atuo_polling_mem_ready(HAL_QPSI_TIMEOUT_DEFAULT_VALUE) !=
+      HAL_OK) {
     return HAL_ERROR;
   }
   return HAL_OK;
@@ -473,7 +474,8 @@ int qspi_flash_erase_sector(uint32_t address) {
     return HAL_ERROR;
   }
 
-  if (qspi_flash_atuo_polling_mem_ready() != HAL_OK) {
+  if (qspi_flash_atuo_polling_mem_ready(HAL_QPSI_TIMEOUT_DEFAULT_VALUE) !=
+      HAL_OK) {
     return HAL_ERROR;
   }
 
@@ -509,7 +511,8 @@ int qspi_flash_erase_block_64k(uint32_t address) {
     return HAL_ERROR;
   }
 
-  if (qspi_flash_atuo_polling_mem_ready() != HAL_OK) {
+  if (qspi_flash_atuo_polling_mem_ready(HAL_QPSI_TIMEOUT_DEFAULT_VALUE) !=
+      HAL_OK) {
     return HAL_ERROR;
   }
 
@@ -524,6 +527,10 @@ int qspi_flash_erase_chip(void) {
 
   CmdCplt = 0;
 
+  if (memory_mapped) {
+    qspi_flash_quit_memory_mapped();
+  }
+
   qspi_flash_write_enable();
 
   command.InstructionMode = QSPI_INSTRUCTION_1_LINE;
@@ -534,7 +541,7 @@ int qspi_flash_erase_chip(void) {
   command.SIOOMode = QSPI_SIOO_INST_EVERY_CMD;
 
   command.Instruction = BULK_ERASE_CMD;
-  command.AddressMode = QSPI_DATA_NONE;
+  command.AddressMode = QSPI_ADDRESS_NONE;
   command.Address = 0;
   command.DataMode = QSPI_DATA_NONE;
   command.DummyCycles = 0;
@@ -544,13 +551,20 @@ int qspi_flash_erase_chip(void) {
     return HAL_ERROR;
   }
 
-  if (qspi_flash_atuo_polling_mem_ready() != HAL_OK) {
+  // about 4ms per KB on avg. fir gd25q and w25q
+  if (qspi_flash_atuo_polling_mem_ready(sf_info.capacity_in_kilobyte * 4) !=
+      HAL_OK) {
     return HAL_ERROR;
   }
+
+  if (memory_mapped) {
+    qspi_flash_memory_mapped();
+  }
+
   return HAL_OK;
 }
 
-int qspi_flash_write_page(uint8_t *data, uint32_t address, uint16_t len) {
+int qspi_flash_write_page(uint8_t* data, uint32_t address, uint16_t len) {
   QSPI_CommandTypeDef command = {0};
 
   TxCplt = 0;
@@ -588,7 +602,8 @@ int qspi_flash_write_page(uint8_t *data, uint32_t address, uint16_t len) {
   //   ;
   // TxCplt = 0;
 
-  if (qspi_flash_atuo_polling_mem_ready() != HAL_OK) {
+  if (qspi_flash_atuo_polling_mem_ready(HAL_QPSI_TIMEOUT_DEFAULT_VALUE) !=
+      HAL_OK) {
     return HAL_ERROR;
   }
 
@@ -599,7 +614,7 @@ int qspi_flash_write_page(uint8_t *data, uint32_t address, uint16_t len) {
   return HAL_OK;
 }
 
-int qspi_flash_write_buffer_unsafe(uint8_t *data, uint32_t address,
+int qspi_flash_write_buffer_unsafe(uint8_t* data, uint32_t address,
                                    uint32_t len) {
   uint32_t page_remain = 0;
 
@@ -617,7 +632,7 @@ int qspi_flash_write_buffer_unsafe(uint8_t *data, uint32_t address,
   return HAL_OK;
 }
 
-int qspi_flash_read_buffer(uint8_t *data, uint32_t address, uint32_t len) {
+int qspi_flash_read_buffer(uint8_t* data, uint32_t address, uint32_t len) {
   QSPI_CommandTypeDef command = {0};
 
   RxCplt = 0;
@@ -709,28 +724,28 @@ int qspi_flash_quit_memory_mapped(void) {
  * @param  hqspi: QSPI handle
  * @retval None
  */
-void HAL_QSPI_CmdCpltCallback(QSPI_HandleTypeDef *hqspi) { CmdCplt++; }
+void HAL_QSPI_CmdCpltCallback(QSPI_HandleTypeDef* hqspi) { CmdCplt++; }
 
 /**
  * @brief  Rx Transfer completed callbacks.
  * @param  hqspi: QSPI handle
  * @retval None
  */
-void HAL_QSPI_RxCpltCallback(QSPI_HandleTypeDef *hqspi) { RxCplt++; }
+void HAL_QSPI_RxCpltCallback(QSPI_HandleTypeDef* hqspi) { RxCplt++; }
 
 /**
  * @brief  Tx Transfer completed callbacks.
  * @param  hqspi: QSPI handle
  * @retval None
  */
-void HAL_QSPI_TxCpltCallback(QSPI_HandleTypeDef *hqspi) { TxCplt++; }
+void HAL_QSPI_TxCpltCallback(QSPI_HandleTypeDef* hqspi) { TxCplt++; }
 
 /**
  * @brief  Status Match callbacks
  * @param  hqspi: QSPI handle
  * @retval None
  */
-void HAL_QSPI_StatusMatchCallback(QSPI_HandleTypeDef *hqspi) { StatusMatch++; }
+void HAL_QSPI_StatusMatchCallback(QSPI_HandleTypeDef* hqspi) { StatusMatch++; }
 
 /**
  * @brief  This function handles QUADSPI interrupt request.
@@ -767,14 +782,14 @@ void qspi_flash_test(void) {
   display_printf("\n ");
   uint32_t data = 0x78563412;
   for (uint8_t i = 0; i < 32; i++) {
-    qspi_flash_write_page((uint8_t *)&data, address + 4 * i, 4);
+    qspi_flash_write_page((uint8_t*)&data, address + 4 * i, 4);
   }
   memset(buf, 0, 256);
   // qspi_flash_memory_mapped();
   // qspi_flash_read_buffer(buf, address, 256);
 
   for (int i = 0; i < 128; i++) {
-    display_printf("%x ", *(uint8_t *)(0x90000000 + address + i));
+    display_printf("%x ", *(uint8_t*)(0x90000000 + address + i));
   }
   while (1)
     ;

@@ -38,6 +38,7 @@ void reset_flags_reset(void);
 #define SDRAM_DEVICE_SIZE 0x2000000U
 
 void cpu_cache_enable(void);
+void cpu_cache_disable(void);
 void mpu_config(void);
 void system_clock_config(void);
 void flash_option_bytes_init(void);
