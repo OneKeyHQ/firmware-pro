@@ -36,7 +36,7 @@
 #include "ports/stm32/pendsv.h"
 
 #include "debug_utils.h"
-
+// #include "adc.h"
 #include "bl_check.h"
 #include "board_capabilities.h"
 #include "common.h"
@@ -45,6 +45,7 @@
 #include "emmc.h"
 #include "ff.h"
 #include "flash.h"
+#include "hardware_version.h"
 #include "image.h"
 #include "mpu.h"
 #include "random_delays.h"

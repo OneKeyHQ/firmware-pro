@@ -82,6 +82,8 @@ if PRODUCTION_MODEL == 'H':
     SOURCE_STMHAL = [
         'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal.c',
         'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_cortex.c',
+        'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_adc.c',
+        'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_adc_ex.c',
         'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dcmi.c',
         'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dma.c',
         'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dma_ex.c',
@@ -175,6 +177,8 @@ SOURCE_NANOPB = [
 
 SOURCE_TREZORHAL = [
     'embed/trezorhal/system_stm32h7xx.c',
+    'embed/trezorhal/adc.c',
+    'embed/trezorhal/hardware_version.c',
     'embed/trezorhal/common.c',
     'embed/trezorhal/image.c',
     'embed/trezorhal/flash.c',
