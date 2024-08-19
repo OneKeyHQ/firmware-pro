@@ -20,12 +20,14 @@
 #include <string.h>
 #include <sys/types.h>
 
+#include "adc.h"
 #include "common.h"
 #include "compiler_traits.h"
 #include "device.h"
 #include "display.h"
 #include "flash.h"
 #include "fw_keys.h"
+#include "hardware_version.h"
 #include "image.h"
 #include "lowlevel.h"
 #include "mini_printf.h"
@@ -39,13 +41,7 @@
 #include "systick.h"
 #include "thd89.h"
 #include "thd89_boot.h"
-#ifdef TREZOR_MODEL_T
 #include "touch.h"
-#endif
-#if defined TREZOR_MODEL_R
-#include "button.h"
-#include "rgb_led.h"
-#endif
 #include "usb.h"
 #include "usbd_desc.h"
 #include "version.h"
@@ -643,20 +639,10 @@ static secbool validate_firmware_headers(vendor_header* const vhdr,
   return result;
 }
 
-static secbool validate_firmware_code(vendor_header* const vhdr,
-                                      image_header* const hdr) {
-  set_handle_flash_ecc_error(sectrue);
-  secbool result =
-      check_image_contents(hdr, IMAGE_HEADER_SIZE + vhdr->hdrlen,
-                           FIRMWARE_SECTORS, FIRMWARE_SECTORS_COUNT);
-  set_handle_flash_ecc_error(secfalse);
-  return result;
-}
-
 static BOOT_TARGET decide_boot_target(vendor_header* const vhdr,
                                       image_header* const hdr,
-                                      secbool* headers_validate_result,
-                                      secbool* headers_checked) {
+                                      secbool* headers_valid,
+                                      secbool* firmware_valid) {
   // get boot target flag
   BOOT_TARGET boot_target = *BOOT_TARGET_FLAG_ADDR;  // cache flag
   *BOOT_TARGET_FLAG_ADDR = BOOT_TARGET_NORMAL;       // consume(reset) flag
@@ -677,18 +663,13 @@ static BOOT_TARGET decide_boot_target(vendor_header* const vhdr,
   }
 
   // check firmware
-  if (sectrue == validate_firmware_headers(vhdr, hdr)) {
-    if (sectrue == validate_firmware_code(vhdr, hdr)) {
-      *headers_validate_result = sectrue;
-      *headers_checked = sectrue;
-    } else {
-      boot_target = BOOT_TARGET_BOOTLOADER;
-      *headers_checked = sectrue;
-      return boot_target;
-    }
-  } else {
-    *headers_validate_result = secfalse;
-    *headers_checked = sectrue;
+  set_handle_flash_ecc_error(sectrue);
+  *headers_valid = validate_firmware_headers(vhdr, hdr);
+  char err_msg[64];
+  *firmware_valid = verify_firmware(err_msg, sizeof(err_msg));
+  set_handle_flash_ecc_error(secfalse);
+
+  if (*headers_valid != sectrue || *firmware_valid != sectrue) {
     boot_target = BOOT_TARGET_BOOTLOADER;
     return boot_target;
   }
@@ -703,11 +684,14 @@ int main(void) {
   SystemCoreClockUpdate();
   dwt_init();
   mpu_config_bootloader();
+
   // user interface
   // lcd_para_init(DISPLAY_RESX, DISPLAY_RESY, LCD_PIXEL_FORMAT_RGB565);
   lcd_init(DISPLAY_RESX, DISPLAY_RESY, LCD_PIXEL_FORMAT_RGB565);
   lcd_pwm_init();
   touch_init();
+
+  adc_init();
 
   // keep the screen but cover the boot bar
   // display_clear();
@@ -717,11 +701,13 @@ int main(void) {
   bus_fault_enable();  // it's here since requires user interface
 
   // storages
-  qspi_flash_init();
-  qspi_flash_config();
-  qspi_flash_memory_mapped();
   ensure_emmcfs(emmc_fs_init(), "emmc_fs_init");
   ensure_emmcfs(emmc_fs_mount(true, false), "emmc_fs_mount");
+    if (get_hw_ver() < HW_VER_3P0A) {
+    qspi_flash_init();
+    qspi_flash_config();
+    qspi_flash_memory_mapped();
+  }
 
   // bt/pm
   ble_usart_init();
@@ -757,9 +743,9 @@ int main(void) {
 
 #if !PRODUCTION
 
-  if (!device_serial_set()) {
-    write_dev_dummy_serial();
-  }
+  // if (!device_serial_set()) {
+  //   write_dev_dummy_serial();
+  // }
   UNUSED(write_dev_dummy_serial);
 
   // if (!se_has_cerrificate()) {
@@ -788,21 +774,15 @@ int main(void) {
 
   vendor_header vhdr;
   image_header hdr;
-  secbool headers_valid = secfalse, headers_checked = secfalse;
+  secbool headers_valid = secfalse;
+  secbool firmware_valid = secfalse;
 
   BOOT_TARGET boot_target =
-      decide_boot_target(&vhdr, &hdr, &headers_valid, &headers_checked);
-
-  display_clear();
+      decide_boot_target(&vhdr, &hdr, &headers_valid, &firmware_valid);
 
   if (boot_target == BOOT_TARGET_BOOTLOADER) {
-    if (headers_checked == secfalse) {
-      if (sectrue == validate_firmware_headers(&vhdr, &hdr)) {
-        if (sectrue == validate_firmware_code(&vhdr, &hdr)) {
-          headers_valid = sectrue;
-        }
-      }
-    }
+    display_clear();
+
     if (sectrue == headers_valid) {
       ui_bootloader_first(&hdr);
       if (bootloader_usb_loop(&vhdr, &hdr) != sectrue) {
@@ -814,50 +794,48 @@ int main(void) {
         return 1;
       }
     }
-  }
-  // check if firmware valid again to make sure
-  ensure(validate_firmware_headers(&vhdr, &hdr), "invalid firmware header");
-  ensure(validate_firmware_code(&vhdr, &hdr), "invalid firmware code");
-  
-  // check bluetooth key
-  device_verify_ble();
+  } else if (boot_target == BOOT_TARGET_NORMAL) {
+    // check and load firmware (redundant, no need, since decide_boot_target
+    // already done this)
+    // char err_msg[64];
+    // ensure(verify_firmware(err_msg, sizeof(err_msg)), err_msg);
 
-  // check bluetooth key
-  device_verify_ble();
+    // check bluetooth key
+    device_verify_ble();
 
-  // if all VTRUST flags are unset = ultimate trust => skip the procedure
-  if ((vhdr.vtrust & VTRUST_ALL) != VTRUST_ALL) {
-    // ui_fadeout();  // no fadeout - we start from black screen
-    ui_screen_boot(&vhdr, &hdr);
-    ui_fadein();
+    // if all VTRUST flags are unset = ultimate trust => skip the procedure
+    if ((vhdr.vtrust & VTRUST_ALL) != VTRUST_ALL) {
+      // ui_fadeout();  // no fadeout - we start from black screen
+      ui_screen_boot(&vhdr, &hdr);
+      ui_fadein();
 
-    int delay = (vhdr.vtrust & VTRUST_WAIT) ^ VTRUST_WAIT;
-    if (delay > 1) {
-      while (delay > 0) {
-        ui_screen_boot_wait(delay);
+      int delay = (vhdr.vtrust & VTRUST_WAIT) ^ VTRUST_WAIT;
+      if (delay > 1) {
+        while (delay > 0) {
+          ui_screen_boot_wait(delay);
+          hal_delay(1000);
+          delay--;
+        }
+      } else if (delay == 1) {
         hal_delay(1000);
-        delay--;
       }
-    } else if (delay == 1) {
-      hal_delay(1000);
-    }
 
-    if ((vhdr.vtrust & VTRUST_CLICK) == 0) {
-      ui_screen_boot_click();
-      while (touch_read() == 0)
-        ;
-    }
+      if ((vhdr.vtrust & VTRUST_CLICK) == 0) {
+        ui_screen_boot_click();
+        while (touch_read() == 0)
+          ;
+      }
 
-    display_clear();
+      display_clear();
+
+      bus_fault_disable();
+
+      mpu_config_off();
+
+      jump_to(FIRMWARE_START + vhdr.hdrlen + IMAGE_HEADER_SIZE);
+    }
   }
-
-  // jump_to_unprivileged(FIRMWARE_START + vhdr.hdrlen + IMAGE_HEADER_SIZE);
-
-  bus_fault_disable();
-
-  mpu_config_off();
-
-  jump_to(FIRMWARE_START + vhdr.hdrlen + IMAGE_HEADER_SIZE);
-
-  return 0;
+  error_shutdown("Internal error", "Boot target invalid", "Tap to restart.",
+                 "If the issue persists, contact support.");
+  return -1;
 }

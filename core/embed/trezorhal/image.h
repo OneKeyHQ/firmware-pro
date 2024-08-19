@@ -23,15 +23,9 @@
 #include <stdint.h>
 #include "secbool.h"
 
-#if PRODUCTION_MODEL == 'H'
 #define BOARDLOADER_START 0x08000000
 #define BOOTLOADER_START 0x08020000
 #define FIRMWARE_START 0x08060000
-#else
-#define BOARDLOADER_START 0x08000000
-#define BOOTLOADER_START 0x08020000
-#define FIRMWARE_START 0x08040000
-#endif
 
 #define BOARDLOADER_SIZE (BOOTLOADER_START - BOARDLOADER_START)
 
@@ -108,47 +102,56 @@ typedef struct {
   uint8_t vsig_n;
   uint16_t vtrust;
   // uint8_t reserved[14];
-  const uint8_t *vpub[MAX_VENDOR_PUBLIC_KEYS];
+  const uint8_t* vpub[MAX_VENDOR_PUBLIC_KEYS];
   uint8_t vstr_len;
-  const char *vstr;
-  const uint8_t *vimg;
+  const char* vstr;
+  const uint8_t* vimg;
   uint8_t sigmask;
   uint8_t sig[64];
 } vendor_header;
 
-secbool __wur load_image_header(const uint8_t *const data, const uint32_t magic,
+secbool __wur load_image_header(const uint8_t* const data, const uint32_t magic,
                                 const uint32_t maxsize, uint8_t key_m,
-                                uint8_t key_n, const uint8_t *const *keys,
-                                image_header *const hdr);
+                                uint8_t key_n, const uint8_t* const* keys,
+                                image_header* const hdr);
 
-secbool __wur load_ble_image_header(const uint8_t *const data,
+secbool __wur load_ble_image_header(const uint8_t* const data,
                                     const uint32_t magic,
                                     const uint32_t maxsize,
-                                    image_header *const hdr);
+                                    image_header* const hdr);
 
-secbool __wur load_thd89_image_header(const uint8_t *const data,
+secbool __wur load_thd89_image_header(const uint8_t* const data,
                                       const uint32_t magic,
                                       const uint32_t maxsize,
-                                      image_header_th89 *const hdr);
+                                      image_header_th89* const hdr);
 
-secbool __wur load_vendor_header(const uint8_t *const data, uint8_t key_m,
-                                 uint8_t key_n, const uint8_t *const *keys,
-                                 vendor_header *const vhdr);
+secbool __wur load_vendor_header(const uint8_t* const data, uint8_t key_m,
+                                 uint8_t key_n, const uint8_t* const* keys,
+                                 vendor_header* const vhdr);
 
-secbool __wur read_vendor_header(const uint8_t *const data,
-                                 vendor_header *const vhdr);
+secbool __wur read_vendor_header(const uint8_t* const data,
+                                 vendor_header* const vhdr);
 
-void vendor_header_hash(const vendor_header *const vhdr, uint8_t *hash);
+void vendor_header_hash(const vendor_header* const vhdr, uint8_t* hash);
 
-secbool __wur check_single_hash(const uint8_t *const hash,
-                                const uint8_t *const data, int len);
+secbool __wur check_single_hash(const uint8_t* const hash,
+                                const uint8_t* const data, int len);
 
-secbool __wur check_image_contents(const image_header *const hdr,
-                                   uint32_t firstskip, const uint8_t *sectors,
+secbool __wur check_image_contents(const image_header* const hdr,
+                                   uint32_t firstskip, const uint8_t* sectors,
                                    int blocks);
 
-secbool __wur check_image_contents_ram(const image_header *const hdr,
-                                       const uint8_t *const buffer,
-                                       size_t code_offset, size_t blocks);
+secbool __wur check_image_contents_ADV(const vendor_header* const vhdr,
+                                       const image_header* const hdr,
+                                       const uint8_t* const code_buffer,
+                                       const size_t code_len_skipped,
+                                       const size_t code_len_check);
+
+// secbool __wur install_bootloader();
+secbool __wur install_firmware(const uint8_t* const fw_buffer,
+                               const size_t fw_size, char* error_msg,
+                               size_t error_msg_len, size_t* const processed,
+                               void (*const progress_callback)(int));
+secbool __wur verify_firmware(char* error_msg, size_t error_msg_len);
 
 #endif

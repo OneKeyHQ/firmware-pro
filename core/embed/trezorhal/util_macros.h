@@ -1,11 +1,18 @@
 #ifndef _UTIL_MACROS_H_
 #define _UTIL_MACROS_H_
 
-#define UNUSED_VAR(X) ((void)(X))
+#define FUN_NO_OPTMIZE __attribute__((optimize("O0")))
+
+#define UNUSED_OBJ(X) ((void)(X))
 
 #define JOIN_EXPR(a, b, c) a##_##b##_##c
-// regex ->(JOIN_EXPR\((.*), (.*), (.*)\).*,).*
+// regex -> (JOIN_EXPR\((.*), (.*), (.*)\).*,).*
 // replace -> $1 // $2_$3_$4
+
+// from exisiting enum use following (change "xx")
+// #define xx_ENUM_ITEM(CLASS, TYPE) JOIN_EXPR(xx, CLASS, TYPE)
+// regex -> ^(\s*)(\S*)(.*),
+// replace -> $1xx_ENUM_ITEM(xxCLASS, $2)$3,
 
 #define ENUM_NAME_ARRAY_ITEM(x) [x] = #x
 
@@ -19,19 +26,20 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#define EXEC_RETRY(MAX_RETRY, ON_INIT, ON_LOOP, ON_SUCCESS, ON_FALSE) \
-  {                                                                   \
-    bool loop_exec() { (ON_LOOP); }                                   \
-    bool loop_result = false;                                         \
-    (ON_INIT);                                                        \
-    for (uint32_t retry = 0; retry < MAX_RETRY; retry++) {            \
-      loop_result = loop_exec();                                      \
-      if (loop_result) break;                                         \
-    }                                                                 \
-    if (loop_result)                                                  \
-      (ON_SUCCESS);                                                   \
-    else                                                              \
-      (ON_FALSE);                                                     \
+#define EXEC_RETRY(MAX_RETRY, EXPECTED_RET, ON_INIT, ON_LOOP, ON_SUCCESS, \
+                   ON_FALSE)                                              \
+  {                                                                       \
+    typeof(EXPECTED_RET) loop_result;                                     \
+    typeof(EXPECTED_RET) loop_exec() { (ON_LOOP); }                       \
+    (ON_INIT);                                                            \
+    for (uint32_t retry = 0; retry < MAX_RETRY; retry++) {                \
+      loop_result = loop_exec();                                          \
+      if (loop_result == EXPECTED_RET) break;                             \
+    }                                                                     \
+    if (loop_result == EXPECTED_RET)                                      \
+      (ON_SUCCESS);                                                       \
+    else                                                                  \
+      (ON_FALSE);                                                         \
   }
 
 #endif  // _UTIL_MACROS_H_

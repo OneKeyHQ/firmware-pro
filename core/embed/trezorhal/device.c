@@ -22,6 +22,7 @@
 #include "ff.h"
 #include "fingerprint.h"
 #include "fp_sensor_wrapper.h"
+#include "hardware_version.h"
 #include "jpeg_dma.h"
 #include "nfc.h"
 #include "sdram.h"
@@ -683,14 +684,16 @@ void device_test(bool force) {
                  COLOR_BLACK);
   }
 
-  if (qspi_flash_read_id() == 0) {
-    display_text(0, 50, "SPI-FLASH test faild", -1, FONT_NORMAL, COLOR_RED,
-                 COLOR_BLACK);
-    while (1)
-      ;
-  } else {
-    display_text(0, 50, "SPI-FLASH test done", -1, FONT_NORMAL, COLOR_WHITE,
-                 COLOR_BLACK);
+  if (get_hw_ver() < HW_VER_3P0A) {
+    if (qspi_flash_read_id() == 0) {
+      display_text(0, 50, "SPI-FLASH test faild", -1, FONT_NORMAL, COLOR_RED,
+                   COLOR_BLACK);
+      while (1)
+        ;
+    } else {
+      display_text(0, 50, "SPI-FLASH test done", -1, FONT_NORMAL, COLOR_WHITE,
+                   COLOR_BLACK);
+    }
   }
 
   if (emmc_get_capacity_in_bytes() == 0) {
@@ -1022,13 +1025,15 @@ void device_burnin_test(bool force) {
         while (1)
           ;
       }
-      flash_id = qspi_flash_read_id();
-      if (flash_id == 0) {
-        display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY / 2,
-                            "SPI-FLASH test faild", -1, FONT_NORMAL, COLOR_RED,
-                            COLOR_BLACK);
-        while (1)
-          ;
+      if (get_hw_ver() < HW_VER_3P0A) {
+        flash_id = qspi_flash_read_id();
+        if (flash_id == 0) {
+          display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY / 2,
+                              "SPI-FLASH test faild", -1, FONT_NORMAL,
+                              COLOR_RED, COLOR_BLACK);
+          while (1)
+            ;
+        }
       }
 
       if (!se_get_rand(rand_buffer, 32)) {

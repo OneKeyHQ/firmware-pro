@@ -273,9 +273,9 @@ static secbool try_bootloader_update(bool do_update, bool auto_reboot) {
                                    FW_KEYS, &file_hdr))
     return secfalse;
 
-  if (sectrue != check_image_contents_ram(&file_hdr, boardloader_buf,
-                                          file_hdr.hdrlen,
-                                          BOOTLOADER_SECTORS_COUNT))
+  if (sectrue != check_image_contents_ADV(NULL, &file_hdr,
+                                          boardloader_buf + file_hdr.hdrlen, 0,
+                                          file_hdr.codelen))
     return secfalse;
 
   // if not actually doing the update, return as update file validate result

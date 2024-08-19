@@ -77,22 +77,6 @@
 // from util.s
 extern void shutdown_privileged(void);
 
-static void copyflash2sdram(void) {
-  extern int _flash2_load_addr, _flash2_start, _flash2_end;
-  volatile uint32_t *dst = (volatile uint32_t *)&_flash2_start;
-  volatile uint32_t *end = (volatile uint32_t *)&_flash2_end;
-  volatile uint32_t *src = (volatile uint32_t *)&_flash2_load_addr;
-
-  while (dst < end) {
-    *dst = *src;
-    if (*dst != *src) {
-      error_shutdown("Internal error", "(CF2S)", NULL, NULL);
-    }
-    dst++;
-    src++;
-  }
-}
-
 PARTITION VolToPart[FF_VOLUMES] = {
     {0, 1},
     {0, 2},
@@ -103,103 +87,56 @@ int main(void) {
   SCB->VTOR = (uint32_t)&_vector_offset;
 
   SystemCoreClockUpdate();
+  dwt_init();
+  mpu_config_firmware();
   sdram_reinit();
 
-  display_backlight(0);
   lcd_init(DISPLAY_RESX, DISPLAY_RESY, LCD_PIXEL_FORMAT_RGB565);
+  display_backlight(0);
   lcd_pwm_init();
+  touch_init();
 
-  // Enable MPU
-  mpu_config_firmware();
+  ensure_emmcfs(emmc_fs_init(), "emmc_fs_init");
+  ensure_emmcfs(emmc_fs_mount(true, false), "emmc_fs_mount");
+    if (get_hw_ver() < HW_VER_3P0A) {
+    qspi_flash_init();
+    qspi_flash_config();
+    qspi_flash_memory_mapped();
+  }
 
-  qspi_flash_init();
-  qspi_flash_config();
-  qspi_flash_memory_mapped();
+  ble_usart_init();
+  spi_slave_init();
 
   random_delays_init();
+  collect_hw_entropy();
+
+  motor_init();
+  thd89_init();
+  camera_init();
+  fingerprint_init();
+  nfc_init();
+
+  timer_init();
+  display_clear();
+  pendsv_init();
+
+  device_test(false);
+  device_burnin_test(false);
+
+  device_para_init();
+  ensure(se_sync_session_key(), "se start up failed");
 
 #ifdef RDI
   rdi_start();
 #endif
 
-  // reinitialize HAL for Trezor One
-#if defined TREZOR_MODEL_1
-  HAL_Init();
-#endif
-
-  collect_hw_entropy();
-
 #ifdef SYSTEM_VIEW
   enable_systemview();
 #endif
 
-  ble_usart_init();
-
-  // #if !defined TREZOR_MODEL_1
-  //   parse_boardloader_capabilities();
-
-#if PRODUCTION
-  // check_and_replace_bootloader();
-#endif
-  // #endif
-
-  // Init peripherals
-  pendsv_init();
-
 #if !PRODUCTION
   // enable BUS fault and USAGE fault handlers
   SCB->SHCSR |= (SCB_SHCSR_USGFAULTENA_Msk | SCB_SHCSR_BUSFAULTENA_Msk);
-#endif
-
-#if defined TREZOR_MODEL_1
-  display_init();
-  display_clear();
-  button_init();
-#endif
-  display_clear();
-
-#if defined TREZOR_MODEL_T
-  // display_init_seq();
-  // sdcard_init();
-  dwt_init();
-  touch_init();
-  spi_slave_init();
-
-  motor_init();
-
-  thd89_init();
-
-  camera_init();
-
-  emmc_init();
-  timer_init();
-  fingerprint_init();
-
-  nfc_init();
-
-  device_test(false);
-
-  device_burnin_test(false);
-
-  device_para_init();
-
-  ensure(se_sync_session_key(), "se start up failed");
-
-  copyflash2sdram();
-#endif
-
-#if defined TREZOR_MODEL_R
-  button_init();
-  display_clear();
-  rgb_led_init();
-#endif
-
-#if !defined TREZOR_MODEL_1
-  // jump to unprivileged mode
-  // http://infocenter.arm.com/help/topic/com.arm.doc.dui0552a/CHDBIBGJ.html
-  // __asm__ volatile("msr control, %0" ::"r"(0x1));
-  // __asm__ volatile("isb");
-
 #endif
 
 #ifdef USE_SECP256K1_ZKP
