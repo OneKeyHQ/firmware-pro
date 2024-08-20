@@ -115,6 +115,7 @@ if PRODUCTION_MODEL == 'H':
         'embed/trezorhal/usbd_msc_scsi.c',
         'embed/trezorhal/usbd_msc_storage.c',
         'embed/trezorhal/usbd_desc.c',
+        'embed/trezorhal/usbd_ulpi.c',
         'embed/trezorhal/ble.c',
         'embed/trezorhal/usart.c',
         'embed/trezorhal/trans_fifo.c',

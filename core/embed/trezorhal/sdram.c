@@ -47,7 +47,7 @@ static int sdram_init_sequence(void) {
   /* Step 4: Configure a Refresh command */
   Command.CommandMode = FMC_SDRAM_DEVICE_AUTOREFRESH_MODE_CMD;
   Command.CommandTarget = FMC_SDRAM_CMD_TARGET_BANK2;
-  Command.AutoRefreshNumber = 2;
+  Command.AutoRefreshNumber = 8;
   Command.ModeRegisterDefinition = 0;
 
   /* Send the command */
@@ -85,21 +85,6 @@ static int sdram_init_sequence(void) {
 
 int sdram_init(void) {
   GPIO_InitTypeDef gpio_init_structure;
-
-  RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
-
-  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_FMC;
-  PeriphClkInitStruct.PLL2.PLL2M = 5;
-  PeriphClkInitStruct.PLL2.PLL2N = 120;
-  PeriphClkInitStruct.PLL2.PLL2P = 2;
-  PeriphClkInitStruct.PLL2.PLL2Q = 2;
-  PeriphClkInitStruct.PLL2.PLL2R = 2;
-  PeriphClkInitStruct.PLL2.PLL2RGE = RCC_PLL2VCIRANGE_2;
-  PeriphClkInitStruct.PLL2.PLL2VCOSEL = RCC_PLL2VCOWIDE;
-  PeriphClkInitStruct.FmcClockSelection = RCC_FMCCLKSOURCE_PLL2;
-  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK) {
-    return HAL_ERROR;
-  }
 
   /* Enable FMC clock */
   __HAL_RCC_FMC_CLK_ENABLE();
@@ -164,6 +149,7 @@ int sdram_init(void) {
   HAL_GPIO_Init(GPIOI, &gpio_init_structure);
 
   gpio_init_structure.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  gpio_init_structure.Pull = GPIO_PULLDOWN;
   gpio_init_structure.Pin = GPIO_PIN_8;
 
   HAL_GPIO_Init(GPIOG, &gpio_init_structure);
@@ -179,7 +165,7 @@ int sdram_init(void) {
   hsdram[0].Init.RowBitsNumber = FMC_SDRAM_ROW_BITS_NUM_12;
   hsdram[0].Init.MemoryDataWidth = FMC_SDRAM_MEM_BUS_WIDTH_32;
   hsdram[0].Init.InternalBankNumber = FMC_SDRAM_INTERN_BANKS_NUM_4;
-  hsdram[0].Init.CASLatency = FMC_SDRAM_CAS_LATENCY_3;
+  hsdram[0].Init.CASLatency = FMC_SDRAM_CAS_LATENCY_2;
   hsdram[0].Init.WriteProtection = FMC_SDRAM_WRITE_PROTECTION_DISABLE;
   hsdram[0].Init.SDClockPeriod = FMC_SDRAM_CLOCK_PERIOD_2;
   hsdram[0].Init.ReadBurst = FMC_SDRAM_RBURST_ENABLE;
@@ -187,13 +173,13 @@ int sdram_init(void) {
 
   /* Timing configuration for 100Mhz as SDRAM clock frequency (System clock is
    * up to 200Mhz) */
-  sdram_timing.LoadToActiveDelay = 3;
-  sdram_timing.ExitSelfRefreshDelay = 12;
-  sdram_timing.SelfRefreshTime = 8;
-  sdram_timing.RowCycleDelay = 10;
-  sdram_timing.WriteRecoveryTime = 3;
-  sdram_timing.RPDelay = 3;
-  sdram_timing.RCDDelay = 3;
+  sdram_timing.LoadToActiveDelay = 2;
+  sdram_timing.ExitSelfRefreshDelay = 7;
+  sdram_timing.SelfRefreshTime = 4;
+  sdram_timing.RowCycleDelay = 7;
+  sdram_timing.WriteRecoveryTime = 2;
+  sdram_timing.RPDelay = 2;
+  sdram_timing.RCDDelay = 2;
 
   /* SDRAM controller initialization */
   if (HAL_SDRAM_Init(&hsdram[0], &sdram_timing) != HAL_OK) {
@@ -214,14 +200,7 @@ int sdram_reinit(void) {
   RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
 
   PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_FMC;
-  PeriphClkInitStruct.PLL2.PLL2M = 5;
-  PeriphClkInitStruct.PLL2.PLL2N = 80;
-  PeriphClkInitStruct.PLL2.PLL2P = 2;
-  PeriphClkInitStruct.PLL2.PLL2Q = 2;
-  PeriphClkInitStruct.PLL2.PLL2R = 2;
-  PeriphClkInitStruct.PLL2.PLL2RGE = RCC_PLL2VCIRANGE_2;
-  PeriphClkInitStruct.PLL2.PLL2VCOSEL = RCC_PLL2VCOWIDE;
-  PeriphClkInitStruct.FmcClockSelection = RCC_FMCCLKSOURCE_PLL2;
+  PeriphClkInitStruct.FmcClockSelection = RCC_FMCCLKSOURCE_PLL;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK) {
     return HAL_ERROR;
   }
