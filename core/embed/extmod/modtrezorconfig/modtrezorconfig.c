@@ -351,6 +351,41 @@ STATIC mp_obj_t mod_trezorconfig_set_needs_backup(mp_obj_t needs_backup) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorconfig_set_needs_backup_obj,
                                  mod_trezorconfig_set_needs_backup);
 
+/// def get_val_len(app: int, key: int, public: bool = False) -> int:
+///     """
+///     Gets the length of the value of the given key for the given app (or None
+///     if not set). Raises a RuntimeError if decryption or authentication of
+///     the stored value fails.
+///     """
+STATIC mp_obj_t mod_trezorconfig_get_val_len(size_t n_args,
+                                             const mp_obj_t *args) {
+  uint32_t key = trezor_obj_get_uint(args[1]);
+
+  bool is_private = key & (1 << 31);
+
+  secbool (*reader)(uint16_t, void *, uint16_t) =
+      is_private ? se_get_private_region : se_get_public_region;
+
+  // key is position
+  key &= ~(1 << 31);
+
+  uint8_t temp[4] = {0};
+  if (sectrue != reader(key, temp, 3)) {
+    return mp_const_none;
+  }
+  // has flag
+  if (temp[0] != 1) {
+    return mp_const_none;
+  }
+
+  uint16_t len = 0;
+  len = (temp[1] << 8) + temp[2];
+
+  return mp_obj_new_int_from_uint(len);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_trezorconfig_get_val_len_obj, 2,
+                                           3, mod_trezorconfig_get_val_len);
+
 /// def get(app: int, key: int, public: bool = False) -> bytes | None:
 ///     """
 ///     Gets the value of the given key for the given app (or None if not set).
@@ -1118,6 +1153,8 @@ STATIC const mp_rom_map_elem_t mp_module_trezorconfig_globals_table[] = {
      MP_ROM_PTR(&mod_trezorconfig_has_wipe_code_obj)},
     {MP_ROM_QSTR(MP_QSTR_change_wipe_code),
      MP_ROM_PTR(&mod_trezorconfig_change_wipe_code_obj)},
+    {MP_ROM_QSTR(MP_QSTR_get_val_len),
+     MP_ROM_PTR(&mod_trezorconfig_get_val_len_obj)},
     {MP_ROM_QSTR(MP_QSTR_get), MP_ROM_PTR(&mod_trezorconfig_get_obj)},
     {MP_ROM_QSTR(MP_QSTR_set), MP_ROM_PTR(&mod_trezorconfig_set_obj)},
     {MP_ROM_QSTR(MP_QSTR_delete), MP_ROM_PTR(&mod_trezorconfig_delete_obj)},

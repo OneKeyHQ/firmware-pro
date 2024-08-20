@@ -265,6 +265,7 @@ if utils.USE_THD89:
     DEVICE_ID = struct_public["device_id"][0]
     _VERSION = struct_public["version"][0]
     _LANGUAGE = struct_public["language"][0]
+    _LABEL_DEPRECATED = struct_public["label_deprecated"][0]
     _LABEL = struct_public["label"][0]
     _USE_PASSPHRASE = struct_public["use_passphrase"][0]
     _PASSPHRASE_ALWAYS_ON_DEVICE = struct_public["passphrase_always_on_device"][0]
@@ -723,6 +724,10 @@ def get_label() -> str:
     global _LABEL_VALUE
     if _LABEL_VALUE is None:
         label = common.get(_NAMESPACE, _LABEL, True)  # public
+        if label is None:
+            previous_label_len = common.get_val_len(_NAMESPACE, _LABEL_DEPRECATED, True)
+            if previous_label_len is not None and 0 < previous_label_len < 16:
+                label = common.get(_NAMESPACE, _LABEL_DEPRECATED, True)
         _LABEL_VALUE = label.decode() if label else utils.DEFAULT_LABEL
     return _LABEL_VALUE
 

@@ -25,6 +25,10 @@ def get(app: int, key: int, public: bool = False) -> bytes | None:
     return config.get(app, key, public)
 
 
+def get_val_len(app: int, key: int, public: bool = False) -> int | None:
+    return config.get_val_len(app, key, public)
+
+
 def delete(
     app: int, key: int, public: bool = False, writable_locked: bool = False
 ) -> None:
