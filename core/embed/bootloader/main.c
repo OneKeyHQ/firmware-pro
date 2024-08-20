@@ -246,21 +246,28 @@ static void usb_init_all(secbool usb21_landing) {
 
 static void usb_switch(void) {
   static bool usb_opened = false;
+  static uint32_t counter0 = 0, counter1 = 0;
 
-  if (!ble_charging_state()) {
-    ble_cmd_req(BLE_PWR, BLE_PWR_CHARGING);
-    return;
-  }
-
-  if (ble_get_charge_type() == CHARGE_BY_USB) {
-    if (!usb_opened) {
-      usb_start();
-      usb_opened = true;
+  if (usb_3320_host_connected()) {
+    counter0++;
+    counter1 = 0;
+    if (counter0 > 5) {
+      counter0 = 0;
+      if (!usb_opened) {
+        usb_start();
+        usb_opened = true;
+      }
     }
+
   } else {
-    if (usb_opened) {
-      usb_stop();
-      usb_opened = false;
+    counter0 = 0;
+    counter1++;
+    if (counter1 > 5) {
+      counter1 = 0;
+      if (usb_opened) {
+        usb_stop();
+        usb_opened = false;
+      }
     }
   }
 }

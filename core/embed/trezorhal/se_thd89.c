@@ -34,6 +34,21 @@
 #define SE_INS_HASHR 0xED
 #define SE_INS_HASHRAM 0xEE
 #define SE_INS_FINGERPRINT 0xEF
+#define SE_INS_FIDO 0xF9
+
+typedef enum {
+  SE_FIDO_GEN_SEED = 0x00,
+  SE_FIDO_U2F_REGISTER,
+  SE_FIDO_U2F_GEN_HANDLE,
+  SE_FIDO_U2F_VALIDATE_HANDLE,
+  SE_FIDO_U2F_AUTHENTICATE,
+  SE_FIDO_GET_COUNTER,
+  SE_FIDO_NEXT_COUNTER,
+  SE_FIDO_SET_COUNTER,
+  SE_FIDO_DERIVE_NODE,
+  SE_FIDO_NODE_SIGN,
+  SE_FIDO_ATT_SIGN,
+} SE_FIDO_P2;
 
 #define SE_PIN_RETRY_MAX 10
 
@@ -1277,9 +1292,27 @@ secbool se_getSecsta(void) {
   return secfalse;
 }
 
-secbool se_set_u2f_counter(uint32_t u2fcounter) { return sectrue; }
+secbool se_set_u2f_counter(uint32_t u2fcounter) {
+  uint8_t cmd[9] = {0x00, SE_INS_FIDO, 0x00, SE_FIDO_SET_COUNTER, 0x04};
+  uint16_t recv_len = 0;
 
-secbool se_get_u2f_counter(uint32_t *u2fcounter) { return sectrue; }
+  memcpy(cmd + 5, &u2fcounter, 4);
+
+  if (!thd89_transmit(cmd, sizeof(cmd), NULL, &recv_len)) {
+    return secfalse;
+  }
+
+  return sectrue;
+}
+
+secbool se_get_u2f_counter(uint32_t *u2fcounter) {
+  uint8_t cmd[5] = {0x00, SE_INS_FIDO, 0x00, SE_FIDO_NEXT_COUNTER, 0x00};
+  uint16_t recv_len = 4;
+  if (!thd89_transmit(cmd, sizeof(cmd), (uint8_t *)u2fcounter, &recv_len)) {
+    return secfalse;
+  }
+  return sectrue;
+}
 
 secbool se_set_mnemonic(const char *mnemonic, uint16_t len) {
   return se_transmit_mac(0xE2, 0x00, 0x00, (uint8_t *)mnemonic, len, NULL,
@@ -1926,6 +1959,15 @@ int se_slip21_node(uint8_t *data) {
   }
   return 0;
 }
+// seed without passphrase
+int se_slip21_fido_node(uint8_t *data) {
+  uint16_t resp_len = 64;
+
+  if (!se_transmit_mac(0xEB, 0x00, 0x01, NULL, 0, data, &resp_len)) {
+    return -1;
+  }
+  return 0;
+}
 
 secbool se_authorization_set(const uint32_t authorization_type,
                              const uint8_t *authorization,
@@ -2090,5 +2132,167 @@ secbool se_fp_read(uint16_t offset, void *val_dest, uint16_t len, uint8_t index,
       ui_callback(0, percent * 10, NULL);
     }
   }
+  return sectrue;
+}
+
+secbool se_gen_fido_seed(uint8_t *percent) {
+  uint8_t cmd[5] = {0x00, 0xf9, 0x00, 0x00, 0x00};
+  uint16_t recv_len = 0;
+  uint16_t sw1sw2;
+
+  if (!thd89_transmit(cmd, sizeof(cmd), NULL, &recv_len)) {
+    sw1sw2 = thd89_last_error();
+    if ((sw1sw2 & 0xff00) == 0x6c00) {
+      *percent = sw1sw2 & 0xff;
+      if (ui_callback) {
+        ui_callback(0, *percent * 10, NULL);
+      }
+      return sectrue;
+    }
+    return secfalse;
+  }
+  *percent = 100;
+  return sectrue;
+}
+
+secbool se_u2f_register(const uint8_t app_id[32], const uint8_t challenge[32],
+                        uint8_t key_handle[64], uint8_t pub_key[65],
+                        uint8_t sign[64]) {
+  uint8_t cmd[128] = {0x00, SE_INS_FIDO, 0x00, SE_FIDO_U2F_REGISTER};
+  uint8_t recv[256];
+  uint16_t recv_len = sizeof(recv);
+  memcpy(cmd + 5, app_id, 32);
+  memcpy(cmd + 5 + 32, challenge, 32);
+
+  cmd[4] = 64;
+  if (!thd89_transmit(cmd, 5 + 64, (uint8_t *)recv, &recv_len)) {
+    return secfalse;
+  }
+
+  // key_handle 64 public key 65 sign 64
+  if (recv_len != 193) {
+    return secfalse;
+  }
+  memcpy(key_handle, recv, 64);
+  memcpy(pub_key, recv + 64, 65);
+  memcpy(sign, recv + 64 + 65, 64);
+  return sectrue;
+}
+
+secbool se_u2f_gen_handle_and_node(const uint8_t app_id[32],
+                                   uint8_t key_handle[64], HDNode *out) {
+  uint8_t cmd[128] = {0x00, SE_INS_FIDO, 0x00, SE_FIDO_U2F_GEN_HANDLE};
+  uint8_t recv[256];
+  uint16_t recv_len = sizeof(recv);
+  memcpy(cmd + 5, app_id, 32);
+
+  cmd[4] = 32;
+  if (!thd89_transmit(cmd, 5 + 32, (uint8_t *)recv, &recv_len)) {
+    return secfalse;
+  }
+
+  // key_handle 64 ,fingerprint 4 + HDNode - 4(out->curve)
+  if (recv_len != 64 + sizeof(HDNode)) {
+    return secfalse;
+  }
+  memcpy(key_handle, recv, 64);
+  memcpy((void *)out, recv + 64 + 4, sizeof(HDNode) - 4);
+  out->curve = get_curve_by_name("nist256p1");
+  return sectrue;
+}
+
+secbool se_u2f_validate_handle(const uint8_t app_id[32],
+                               const uint8_t key_handle[64]) {
+  uint8_t cmd[128] = {0x00, SE_INS_FIDO, 0x00, SE_FIDO_U2F_VALIDATE_HANDLE};
+
+  memcpy(cmd + 5, app_id, 32);
+  memcpy(cmd + 5 + 32, key_handle, 64);
+
+  cmd[4] = 32 + 64;
+  if (!thd89_transmit(cmd, 5 + 96, NULL, NULL)) {
+    return secfalse;
+  }
+  return sectrue;
+}
+
+secbool se_u2f_authenticate(const uint8_t app_id[32],
+                            const uint8_t key_handle[64],
+                            const uint8_t challenge[32], uint8_t *u2f_counter,
+                            uint8_t sign[64]) {
+  uint8_t cmd[256] = {0x00, SE_INS_FIDO, 0x00, SE_FIDO_U2F_AUTHENTICATE};
+  uint8_t recv[128];
+  uint16_t recv_len = sizeof(recv);
+  memcpy(cmd + 5, app_id, 32);
+  memcpy(cmd + 5 + 32, key_handle, 64);
+  memcpy(cmd + 5 + 32 + 64, challenge, 32);
+
+  cmd[4] = 128;
+  if (!thd89_transmit(cmd, 5 + 128, (uint8_t *)recv, &recv_len)) {
+    return secfalse;
+  }
+
+  // counter 4 sign 64
+  if (recv_len != 68) {
+    return secfalse;
+  }
+  memcpy(u2f_counter, recv, 4);
+  memcpy(sign, recv + 4, 64);
+  return sectrue;
+}
+
+secbool se_derive_fido_keys(HDNode *out, const char *curve,
+                            const uint32_t *address_n, size_t address_n_count,
+                            uint32_t *fingerprint) {
+  uint8_t cmd[128] = {0x00, SE_INS_FIDO, 0x00, SE_FIDO_DERIVE_NODE};
+  uint8_t resp[256];
+  uint16_t resp_len = sizeof(resp);
+
+  uint8_t len = strlen(curve);
+  cmd[5] = len;
+  memcpy(cmd + 6, curve, len);
+  len += 1;
+
+  memcpy(cmd + 5 + len, (uint8_t *)address_n, address_n_count * 4);
+  len += address_n_count * 4;
+
+  cmd[4] = len;
+
+  if (!thd89_transmit(cmd, 5 + len, (uint8_t *)resp, &resp_len)) {
+    return secfalse;
+  }
+  out->curve = get_curve_by_name(curve);
+  if (fingerprint) {
+    memcpy(fingerprint, resp, 4);
+  }
+  memcpy((void *)out, resp + 4, sizeof(HDNode) - 4);
+
+  return sectrue;
+}
+
+secbool se_fido_hdnode_sign_digest(const uint8_t *hash, uint8_t *sig) {
+  uint8_t cmd[37] = {0x00, SE_INS_FIDO, 0x00, SE_FIDO_NODE_SIGN, 0x20};
+  uint8_t resp[64];
+  uint16_t resp_len = sizeof(resp);
+
+  memcpy(cmd + 5, hash, 32);
+
+  if (!thd89_transmit(cmd, 37, (uint8_t *)resp, &resp_len)) {
+    return secfalse;
+  }
+  memcpy(sig, resp, resp_len);
+  return sectrue;
+}
+
+secbool se_fido_att_sign_digest(const uint8_t *hash, uint8_t *sig) {
+  uint8_t cmd[37] = {0x00, SE_INS_FIDO, 0x00, SE_FIDO_ATT_SIGN, 0x20};
+  uint8_t resp[64];
+  uint16_t resp_len = sizeof(resp);
+
+  memcpy(cmd + 5, hash, 32);
+
+  if (!thd89_transmit(cmd, 37, (uint8_t *)resp, &resp_len)) {
+    return secfalse;
+  }
+  memcpy(sig, resp, resp_len);
   return sectrue;
 }

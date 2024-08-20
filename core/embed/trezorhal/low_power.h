@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-void enter_stop_mode(bool restart, uint32_t shutdown_seconds);
+void enter_stop_mode(bool restart, uint32_t shutdown_seconds, bool wake_up);
 void rtc_init(void);
 void rtc_disable(void);
 void rtc_set_period(uint32_t period);

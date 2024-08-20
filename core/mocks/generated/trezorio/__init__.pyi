@@ -225,6 +225,11 @@ class USB:
         Get USB connect state.
         """
 
+    def connect_ctrl(self, state :bool) -> None:
+        """
+        Control usb connect.
+        """
+
     def state(self) -> int:
       """
       Get USB state.

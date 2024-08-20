@@ -157,6 +157,33 @@ STATIC mp_obj_t mod_trezorio_poll(mp_obj_t ifaces, mp_obj_t list_ref,
 #endif
       else if (iface == USB_STATE_IFACE) {
         static bool usb_connect = false, usb_connect_bak = false;
+        static bool usb_open = false, usb_open_bak = false;
+        static int counter0 = 0, counter1 = 0;
+        mp_obj_tuple_t *tuple = MP_OBJ_TO_PTR(mp_obj_new_tuple(2, NULL));
+
+        if (usb_3320_host_connected()) {
+          counter1 = 0;
+          counter0++;
+          if (counter0 > 5) {
+            usb_open = true;
+            counter0 = 0;
+          }
+        } else {
+          counter0 = 0;
+          counter1++;
+          if (counter1 > 5) {
+            usb_open = false;
+            counter1 = 0;
+          }
+        }
+        if (usb_open_bak != usb_open) {
+          usb_open_bak = usb_open;
+          tuple->items[0] = mp_const_none;
+          tuple->items[1] = mp_obj_new_bool(usb_open_bak);
+          ret->items[0] = MP_OBJ_NEW_SMALL_INT(i);
+          ret->items[1] = MP_OBJ_FROM_PTR(tuple);
+          return mp_const_true;
+        }
         if (is_usb_connected() == sectrue) {
           usb_connect = true;
         } else {
@@ -164,8 +191,10 @@ STATIC mp_obj_t mod_trezorio_poll(mp_obj_t ifaces, mp_obj_t list_ref,
         }
         if (usb_connect_bak != usb_connect) {
           usb_connect_bak = usb_connect;
+          tuple->items[0] = mp_obj_new_bool(usb_connect_bak);
+          tuple->items[1] = mp_const_none;
           ret->items[0] = MP_OBJ_NEW_SMALL_INT(i);
-          ret->items[1] = mp_obj_new_bool(usb_connect_bak);
+          ret->items[1] = MP_OBJ_FROM_PTR(tuple);
           return mp_const_true;
         }
       } else if (iface == FINGERPRINT_IFACE) {

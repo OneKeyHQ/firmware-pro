@@ -199,6 +199,7 @@ SOURCE_TREZORHAL = [
     'embed/trezorhal/usbd_msc_scsi.c',
     'embed/trezorhal/usbd_msc_storage.c',
     'embed/trezorhal/usbd_desc.c',
+    'embed/trezorhal/usbd_ulpi.c',
     'embed/trezorhal/trans_fifo.c',
     'embed/trezorhal/i2c.c',
     'embed/trezorhal/spi.c',

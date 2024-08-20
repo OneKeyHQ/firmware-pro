@@ -5,7 +5,7 @@ from ubinascii import hexlify
 
 import storage.device
 from trezor import log, utils
-from trezor.crypto import bip32, chacha20poly1305, der, hashlib, hmac, random
+from trezor.crypto import bip32, chacha20poly1305, der, hashlib, hmac, random, se_thd89
 from trezor.crypto.curve import ed25519, nist256p1
 
 from apps.common import cbor, seed
@@ -59,6 +59,9 @@ class Credential:
         self.rp_id: str = ""
         self.rp_id_hash: bytes = b""
         self.user_id: bytes | None = None
+        self.pub_key: bytes = b""
+        self.signature: bytes = b""
+        self.u2f_counter: int = 0
 
     def __lt__(self, other: "Credential") -> bool:
         raise NotImplementedError
@@ -82,8 +85,12 @@ class Credential:
         dig = hashlib.sha256()
         for segment in data:
             dig.update(segment)
-        sig = nist256p1.sign(self._private_key(), dig.digest(), False)
-        return der.encode_seq((sig[1:33], sig[33:]))
+        if utils.USE_THD89:
+            sig = se_thd89.fido_sign_digest(dig.digest())
+            return der.encode_seq((sig[0:32], sig[32:]))
+        else:
+            sig = nist256p1.sign(self._private_key(), dig.digest(), False)
+            return der.encode_seq((sig[1:33], sig[33:]))
 
     def bogus_signature(self) -> bytes:
         raise NotImplementedError
@@ -171,7 +178,6 @@ class Fido2Credential(Credential):
     ) -> "Fido2Credential":
         if len(cred_id) < CRED_ID_MIN_LENGTH or cred_id[0:4] != _CRED_ID_VERSION:
             raise ValueError  # invalid length or version
-
         key = seed.derive_slip21_node_without_passphrase(
             [b"SLIP-0022", cred_id[0:4], b"Encryption key"]
         ).key()
@@ -191,6 +197,7 @@ class Fido2Credential(Credential):
         ctx = chacha20poly1305(key, iv)
         ctx.auth(rp_id_hash)
         data = ctx.decrypt(ciphertext)
+
         if not utils.consteq(ctx.finish(), tag):
             raise ValueError  # inauthentic ciphertext
 
@@ -284,12 +291,25 @@ class Fido2Credential(Credential):
         path = [HARDENED | 10022, HARDENED | int.from_bytes(self.id[:4], "big")] + [
             HARDENED | i for i in ustruct.unpack(">4L", self.id[-16:])
         ]
-        node = seed.derive_node_without_passphrase(path, _CURVE_NAME[self.curve])
+        if utils.USE_THD89:
+            node = seed.derive_fido_node_with_se(path, _CURVE_NAME[self.curve])
+        else:
+            node = seed.derive_node_without_passphrase(path, _CURVE_NAME[self.curve])
         return node.private_key()
 
     def public_key(self) -> bytes:
         if self.curve == common.COSE_CURVE_P256:
-            pubkey = nist256p1.publickey(self._private_key(), False)
+            if utils.USE_THD89:
+                path = [
+                    HARDENED | 10022,
+                    HARDENED | int.from_bytes(self.id[:4], "big"),
+                ] + [HARDENED | i for i in ustruct.unpack(">4L", self.id[-16:])]
+                node = seed.derive_fido_node_with_se(path, _CURVE_NAME[self.curve])
+                pubkey = se_thd89.uncompress_pubkey(
+                    _CURVE_NAME[self.curve], node.public_key()
+                )
+            else:
+                pubkey = nist256p1.publickey(self._private_key(), False)
             return cbor.encode(
                 {
                     common.COSE_KEY_ALG: self.algorithm,
@@ -316,6 +336,8 @@ class Fido2Credential(Credential):
             common.COSE_ALG_ES256,
             common.COSE_CURVE_P256,
         ):
+            if utils.USE_THD89:
+                self._private_key()
             return self._u2f_sign(data)
         elif (self.algorithm, self.curve) == (
             common.COSE_ALG_EDDSA,
@@ -378,7 +400,12 @@ class U2fCredential(Credential):
         return self.node.private_key()
 
     def public_key(self) -> bytes:
-        return nist256p1.publickey(self._private_key(), False)
+        if utils.USE_THD89:
+            if self.node is None:
+                return b""
+            return se_thd89.uncompress_pubkey("nist256p1", self.node.public_key())
+        else:
+            return nist256p1.publickey(self._private_key(), False)
 
     def sign(self, data: Iterable[bytes]) -> bytes:
         return self._u2f_sign(data)
@@ -387,21 +414,24 @@ class U2fCredential(Credential):
         return der.encode_seq((b"\x0a" * 32, b"\x0a" * 32))
 
     def generate_key_handle(self) -> None:
-        # derivation path is m/U2F'/r'/r'/r'/r'/r'/r'/r'/r'
-        path = [HARDENED | random.uniform(0x8000_0000) for _ in range(0, 8)]
-        nodepath = [_U2F_KEY_PATH] + path
+        if utils.USE_THD89:
+            self.id, self.node = se_thd89.u2f_gen_handle_and_node(self.rp_id_hash)
+        else:
+            # derivation path is m/U2F'/r'/r'/r'/r'/r'/r'/r'/r'
+            path = [HARDENED | random.uniform(0x8000_0000) for _ in range(0, 8)]
+            nodepath = [_U2F_KEY_PATH] + path
 
-        # prepare signing key from random path, compute decompressed public key
-        self.node = seed.derive_node_without_passphrase(nodepath, "nist256p1")
+            # prepare signing key from random path, compute decompressed public key
+            self.node = seed.derive_node_without_passphrase(nodepath, "nist256p1")
 
-        # first half of keyhandle is keypath
-        keypath = ustruct.pack("<8L", *path)
+            # first half of keyhandle is keypath
+            keypath = ustruct.pack("<8L", *path)
 
-        # second half of keyhandle is a hmac of rp_id_hash and keypath
-        mac = hmac(hmac.SHA256, self.node.private_key(), self.rp_id_hash)
-        mac.update(keypath)
+            # second half of keyhandle is a hmac of rp_id_hash and keypath
+            mac = hmac(hmac.SHA256, self.node.private_key(), self.rp_id_hash)
+            mac.update(keypath)
 
-        self.id = keypath + mac.digest()
+            self.id = keypath + mac.digest()
 
     def app_name(self) -> str:
         from . import knownapps
@@ -419,22 +449,51 @@ class U2fCredential(Credential):
         if len(key_handle) != _KEY_HANDLE_LENGTH:
             raise ValueError  # key length mismatch
 
-        # check the keyHandle and generate the signing key
-        node = U2fCredential._node_from_key_handle(rp_id_hash, key_handle, "<8L")
-        if node is None:
-            # prior to firmware version 2.0.8, keypath was serialized in a
-            # big-endian manner, instead of little endian, like in trezor-mcu.
-            # try to parse it as big-endian now and check the HMAC.
-            node = U2fCredential._node_from_key_handle(rp_id_hash, key_handle, ">8L")
-        if node is None:
-            # specific error logged in msg_authenticate_genkey
-            raise ValueError  # failed to parse key handle in either direction
+        if utils.USE_THD89:
+            cred = U2fCredential._node_from_handle_by_se(key_handle, rp_id_hash)
+            return cred
+        else:
+            # check the keyHandle and generate the signing key
+            node = U2fCredential._node_from_key_handle(rp_id_hash, key_handle, "<8L")
+            if node is None:
+                # prior to firmware version 2.0.8, keypath was serialized in a
+                # big-endian manner, instead of little endian, like in trezor-mcu.
+                # try to parse it as big-endian now and check the HMAC.
+                node = U2fCredential._node_from_key_handle(
+                    rp_id_hash, key_handle, ">8L"
+                )
+            if node is None:
+                # specific error logged in msg_authenticate_genkey
+                raise ValueError  # failed to parse key handle in either direction
 
-        cred = U2fCredential()
-        cred.id = key_handle
-        cred.rp_id_hash = rp_id_hash
-        cred.node = node
-        return cred
+            cred = U2fCredential()
+            cred.id = key_handle
+            cred.rp_id_hash = rp_id_hash
+            cred.node = node
+            return cred
+
+    @staticmethod
+    def _node_from_handle_by_se(
+        key_handle: bytes, rp_id_hash: bytes
+    ) -> "U2fCredential":
+        if len(key_handle) != _KEY_HANDLE_LENGTH:
+            raise ValueError  # key length mismatch
+        try:
+            if se_thd89.fido_u2f_validate(rp_id_hash, key_handle):
+                cred = U2fCredential()
+                cred.id = key_handle
+                cred.rp_id_hash = rp_id_hash
+                # unpack the keypath from the first half of keyhandle
+                keypath = key_handle[:32]
+                path = ustruct.unpack("<8L", keypath)
+                nodepath = [_U2F_KEY_PATH] + list(path)
+                node = seed.derive_fido_node_with_se(nodepath, "nist256p1")
+                cred.node = node
+                return cred
+            else:
+                raise ValueError
+        except Exception:
+            raise ValueError
 
     @staticmethod
     def _node_from_key_handle(

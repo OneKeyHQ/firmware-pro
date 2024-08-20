@@ -474,6 +474,19 @@ int display_backlight(int val) {
 #if TREZOR_MODEL == 1
   val = 255;
 #endif
+  if (val == 0 && DISPLAY_BACKLIGHT != 0) {
+    // clock down
+    __HAL_DSI_DISABLE(&hlcd_dsi);
+    __HAL_LTDC_DISABLE(&hlcd_ltdc);
+    // lcd reset
+    HAL_GPIO_WritePin(LCD_RESET_GPIO_PORT, LCD_RESET_PIN, GPIO_PIN_RESET);
+  } else if (val != 0 && DISPLAY_BACKLIGHT == 0) {
+    HAL_GPIO_WritePin(LCD_RESET_GPIO_PORT, LCD_RESET_PIN, GPIO_PIN_SET);
+    HAL_Delay(30);
+    __HAL_DSI_ENABLE(&hlcd_dsi);
+    __HAL_LTDC_ENABLE(&hlcd_ltdc);
+    st7701_init_sequence();
+  }
   if (DISPLAY_BACKLIGHT != val && val >= 0 && val <= 255) {
     DISPLAY_BACKLIGHT = val;
     TIM1->CCR1 = (LED_PWM_TIM_PERIOD - 1) * val / 255;

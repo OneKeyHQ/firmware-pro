@@ -8,7 +8,7 @@ import storage
 import storage.resident_credentials
 from storage.fido2 import KEY_AGREEMENT_PRIVKEY, KEY_AGREEMENT_PUBKEY
 from trezor import config, io, log, loop, ui, utils, workflow
-from trezor.crypto import aes, der, hashlib, hmac, random
+from trezor.crypto import aes, der, hashlib, hmac, random, se_thd89
 from trezor.crypto.curve import nist256p1
 from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
 from trezor.ui.components.common.confirm import Pageable
@@ -168,12 +168,15 @@ _U2FHID_IF_VERSION = const(2)  # interface version
 
 # register response
 _U2F_REGISTER_ID = const(0x05)  # version 2 registration identifier
-_FIDO_ATT_PRIV_KEY = b"q&\xac+\xf6D\xdca\x86\xad\x83\xef\x1f\xcd\xf1*W\xb5\xcf\xa2\x00\x0b\x8a\xd0'\xe9V\xe8T\xc5\n\x8b"
-_FIDO_ATT_CERT = b"0\x82\x01\xcd0\x82\x01s\xa0\x03\x02\x01\x02\x02\x04\x03E`\xc40\n\x06\x08*\x86H\xce=\x04\x03\x020.1,0*\x06\x03U\x04\x03\x0c#Trezor FIDO Root CA Serial 841513560 \x17\r200406100417Z\x18\x0f20500406100417Z0x1\x0b0\t\x06\x03U\x04\x06\x13\x02CZ1\x1c0\x1a\x06\x03U\x04\n\x0c\x13SatoshiLabs, s.r.o.1\"0 \x06\x03U\x04\x0b\x0c\x19Authenticator Attestation1'0%\x06\x03U\x04\x03\x0c\x1eTrezor FIDO EE Serial 548784040Y0\x13\x06\x07*\x86H\xce=\x02\x01\x06\x08*\x86H\xce=\x03\x01\x07\x03B\x00\x04\xd9\x18\xbd\xfa\x8aT\xac\x92\xe9\r\xa9\x1f\xcaz\xa2dT\xc0\xd1s61M\xde\x83\xa5K\x86\xb5\xdfN\xf0Re\x9a\x1do\xfc\xb7F\x7f\x1a\xcd\xdb\x8a3\x08\x0b^\xed\x91\x89\x13\xf4C\xa5&\x1b\xc7{h`o\xc1\xa33010!\x06\x0b+\x06\x01\x04\x01\x82\xe5\x1c\x01\x01\x04\x04\x12\x04\x10\xd6\xd0\xbd\xc3b\xee\xc4\xdb\xde\x8dzenJD\x870\x0c\x06\x03U\x1d\x13\x01\x01\xff\x04\x020\x000\n\x06\x08*\x86H\xce=\x04\x03\x02\x03H\x000E\x02 \x0b\xce\xc4R\xc3\n\x11'\xe5\xd5\xf5\xfc\xf5\xd6Wy\x11+\xe50\xad\x9d-TXJ\xbeE\x86\xda\x93\xc6\x02!\x00\xaf\xca=\xcf\xd8A\xb0\xadz\x9e$}\x0ff\xf4L,\x83\xf9T\xab\x95O\x896\xc15\x08\x7fX\xf1\x95"
+if utils.EMULATOR:
+    _FIDO_ATT_PRIV_KEY = b"q&\xac+\xf6D\xdca\x86\xad\x83\xef\x1f\xcd\xf1*W\xb5\xcf\xa2\x00\x0b\x8a\xd0'\xe9V\xe8T\xc5\n\x8b"
+    _FIDO_ATT_CERT = b"0\x82\x01\xcd0\x82\x01s\xa0\x03\x02\x01\x02\x02\x04\x03E`\xc40\n\x06\x08*\x86H\xce=\x04\x03\x020.1,0*\x06\x03U\x04\x03\x0c#Trezor FIDO Root CA Serial 841513560 \x17\r200406100417Z\x18\x0f20500406100417Z0x1\x0b0\t\x06\x03U\x04\x06\x13\x02CZ1\x1c0\x1a\x06\x03U\x04\n\x0c\x13SatoshiLabs, s.r.o.1\"0 \x06\x03U\x04\x0b\x0c\x19Authenticator Attestation1'0%\x06\x03U\x04\x03\x0c\x1eTrezor FIDO EE Serial 548784040Y0\x13\x06\x07*\x86H\xce=\x02\x01\x06\x08*\x86H\xce=\x03\x01\x07\x03B\x00\x04\xd9\x18\xbd\xfa\x8aT\xac\x92\xe9\r\xa9\x1f\xcaz\xa2dT\xc0\xd1s61M\xde\x83\xa5K\x86\xb5\xdfN\xf0Re\x9a\x1do\xfc\xb7F\x7f\x1a\xcd\xdb\x8a3\x08\x0b^\xed\x91\x89\x13\xf4C\xa5&\x1b\xc7{h`o\xc1\xa33010!\x06\x0b+\x06\x01\x04\x01\x82\xe5\x1c\x01\x01\x04\x04\x12\x04\x10\xd6\xd0\xbd\xc3b\xee\xc4\xdb\xde\x8dzenJD\x870\x0c\x06\x03U\x1d\x13\x01\x01\xff\x04\x020\x000\n\x06\x08*\x86H\xce=\x04\x03\x02\x03H\x000E\x02 \x0b\xce\xc4R\xc3\n\x11'\xe5\xd5\xf5\xfc\xf5\xd6Wy\x11+\xe50\xad\x9d-TXJ\xbeE\x86\xda\x93\xc6\x02!\x00\xaf\xca=\xcf\xd8A\xb0\xadz\x9e$}\x0ff\xf4L,\x83\xf9T\xab\x95O\x896\xc15\x08\x7fX\xf1\x95"
+else:
+    _FIDO_ATT_CERT = b"0\x82\x02\x960\x82\x02=\xa0\x03\x02\x01\x02\x02\x08]X\xed\x96\xdf\xc3H\xf50\n\x06\x08*\x86H\xce=\x04\x03\x020\x81\x971\x0b0\t\x06\x03U\x04\x06\x13\x02CN1\x100\x0e\x06\x03U\x04\x08\x13\x07BEIJING1\x100\x0e\x06\x03U\x04\x07\x13\x07HAIDIAN1\x1f0\x1d\x06\x03U\x04\n\x13\x16ONEKEY GLOBAL CO., LTD1\x0f0\r\x06\x03U\x04\x0b\x13\x06ONEKEY1\x140\x12\x06\x03U\x04\x03\x13\x0bONEKEY ROOT1\x1c0\x1a\x06\t*\x86H\x86\xf7\r\x01\t\x01\x16\rdev@onekey.so0\x1e\x17\r231107035200Z\x17\r331107035100Z0\x81\x961\x0b0\t\x06\x03U\x04\x06\x13\x02CN1\x100\x0e\x06\x03U\x04\x08\x13\x07BEIJING1\x100\x0e\x06\x03U\x04\x07\x13\x07HAIDIAN1\x1f0\x1d\x06\x03U\x04\n\x13\x16ONEKEY GLOBAL CO., LTD1\x0f0\r\x06\x03U\x04\x0b\x13\x06ONEKEY1\x130\x11\x06\x03U\x04\x03\x13\nONEKEY U2F1\x1c0\x1a\x06\t*\x86H\x86\xf7\r\x01\t\x01\x16\rdev@onekey.so0Y0\x13\x06\x07*\x86H\xce=\x02\x01\x06\x08*\x86H\xce=\x03\x01\x07\x03B\x00\x04 \xc4\xc2\xca(6f\xb2\xd7\xa0|%\xb7,_\xc3\xac\xfe\xb4\x9cd\xb0'\xc1\x84\xa3\xea\x10\xe8\xd0=H\xa4\xa4\x12l=\xbc\xc6\x1f\x9fT\xda\xb5\xde0\x85\xb70\x9f(*\xc7c\xafl\x0b\xf2\xfa\xa23\x88\x0fu\xa3r0p0\x0f\x06\x03U\x1d\x13\x01\x01\xff\x04\x050\x03\x01\x01\xff0\x1d\x06\x03U\x1d\x0e\x04\x16\x04\x14>,B\xa5\x9e\x85Q?\x9e\xda\xc8\xcft\xc3\x95?W\x93\xda\xb60\x0b\x06\x03U\x1d\x0f\x04\x04\x03\x02\x01\x060\x11\x06\t`\x86H\x01\x86\xf8B\x01\x01\x04\x04\x03\x02\x00\x070\x1e\x06\t`\x86H\x01\x86\xf8B\x01\r\x04\x11\x16\x0fxca certificate0\n\x06\x08*\x86H\xce=\x04\x03\x02\x03G\x000D\x02 M\xf5/\xaf\xbb\xf1fM\xbc\xf3\xe0\xd5\n\xd2\xc3'\xf5@\xaaU\x8d\xbcZBzT\xd8\xf5Y\xd4Tu\x02 @(S\xdf\x1d\xf1\xfdr\xe8_\xa7\xc0l+\xff+\xd2\xb1\x9a\xa1\x85\xf6\x08 '\xbb\xa9\xf78r\x97`"
 _BOGUS_APPID_CHROME = b"A" * 32
 _BOGUS_APPID_FIREFOX = b"\0" * 32
 _BOGUS_APPIDS = (_BOGUS_APPID_CHROME, _BOGUS_APPID_FIREFOX)
-_AAGUID = b"\xd6\xd0\xbd\xc3b\xee\xc4\xdb\xde\x8dzenJD\x87"  # First 16 bytes of SHA-256("TREZOR 2")
+_AAGUID = b"\x69\xe7\xc3\x6f\xf2\xf6\x9e\x0d\x07\xa6\xbc\xc2\x43\x26\x2e\x6b"  # First 16 bytes of SHA-256("OneKey Pro FIDO2")
 
 # authentication control byte
 _AUTH_ENFORCE = const(0x03)  # enforce user presence and sign
@@ -202,7 +205,7 @@ _RESULT_TIMEOUT = const(4)  # Request exceeded _FIDO2_CONFIRM_TIMEOUT_MS.
 
 # FIDO2 configuration.
 _ALLOW_FIDO2 = True
-_ALLOW_RESIDENT_CREDENTIALS = True
+_ALLOW_RESIDENT_CREDENTIALS = False
 _ALLOW_WINK = False
 
 # The default attestation type to use in MakeCredential responses. If false, then basic attestation will be used by default.
@@ -587,6 +590,26 @@ async def verify_user(keepalive_callback: KeepaliveCallback) -> bool:
     return ret
 
 
+async def se_gen_seed(keepalive_callback: KeepaliveCallback) -> bool:
+    from utime import sleep_ms
+
+    if storage.device._FIDO_SEED_GEN is True:
+        return True
+
+    while True:
+        try:
+            ret = se_thd89.fido_seed()
+            if ret:
+                storage.device._FIDO_SEED_GEN = True
+                return True
+            else:
+                keepalive_callback()
+                sleep_ms(100)
+                continue
+        except Exception:
+            return False
+
+
 class State:
     def __init__(self, cid: int, iface: io.HID) -> None:
         self.cid = cid
@@ -710,6 +733,28 @@ class U2fUnlock(State):
         return isinstance(other, U2fUnlock)
 
 
+class U2fSeed(State):
+    def timeout_ms(self) -> int:
+        return _U2F_CONFIRM_TIMEOUT_MS
+
+    async def confirm_dialog(self) -> bool:
+        while True:
+            try:
+                ret = se_thd89.fido_seed()
+                if ret:
+                    storage.device._FIDO_SEED_GEN = True
+                    set_homescreen()
+                    return True
+                else:
+                    await loop.sleep(100)
+                    continue
+            except Exception:
+                return False
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, U2fSeed)
+
+
 class Fido2State(State):
     def __init__(self, cid: int, iface: io.HID) -> None:
         super().__init__(cid, iface)
@@ -754,6 +799,9 @@ class Fido2Unlock(Fido2State):
 
     async def confirm_dialog(self) -> bool | "State":
         if not await verify_user(KeepaliveCallback(self.cid, self.iface)):
+            return False
+
+        if not await se_gen_seed(KeepaliveCallback(self.cid, self.iface)):
             return False
 
         set_homescreen()
@@ -1200,6 +1248,11 @@ def msg_register(req: Msg, dialog_mgr: DialogManager) -> Cmd:
         # doesn't seem to violate the protocol and at least stops Chrome from polling.
         return cmd_error(req.cid, _ERR_CHANNEL_BUSY)
 
+    if not storage.device._FIDO_SEED_GEN:
+        new_state: State = U2fSeed(req.cid, dialog_mgr.iface)
+        dialog_mgr.set_state(new_state)
+        return msg_error(req.cid, _SW_CONDITIONS_NOT_SATISFIED)
+
     # check length of input data
     if len(req.data) != 64:
         if __debug__:
@@ -1210,6 +1263,7 @@ def msg_register(req: Msg, dialog_mgr: DialogManager) -> Cmd:
     chal = req.data[:32]
     cred = U2fCredential()
     cred.rp_id_hash = req.data[32:]
+
     cred.generate_key_handle()
 
     # check equality with last request
@@ -1245,13 +1299,15 @@ def basic_attestation_sign(data: Iterable[bytes]) -> bytes:
     for segment in data:
         dig.update(segment)
     if utils.USE_THD89:
-        raise NotImplementedError
+        sig = se_thd89.fido_att_sign_digest(dig.digest())
+        return der.encode_seq((sig[:32], sig[32:]))
     else:
         sig = nist256p1.sign(_FIDO_ATT_PRIV_KEY, dig.digest(), False)
-    return der.encode_seq((sig[1:33], sig[33:]))
+        return der.encode_seq((sig[1:33], sig[33:]))
 
 
 def msg_register_sign(challenge: bytes, cred: U2fCredential) -> bytes:
+
     pubkey = cred.public_key()
 
     sig = basic_attestation_sign((b"\x00", cred.rp_id_hash, challenge, cred.id, pubkey))
@@ -1288,6 +1344,11 @@ def msg_authenticate(req: Msg, dialog_mgr: DialogManager) -> Cmd:
         if __debug__:
             log.warning(__name__, "_SW_WRONG_LENGTH req.data")
         return msg_error(req.cid, _SW_WRONG_LENGTH)
+
+    if not storage.device._FIDO_SEED_GEN:
+        new_state: State = U2fSeed(req.cid, dialog_mgr.iface)
+        dialog_mgr.set_state(new_state)
+        return msg_error(req.cid, _SW_CONDITIONS_NOT_SATISFIED)
 
     # check keyHandleLen
     khlen = req.data[_REQ_CMD_AUTHENTICATE_KHLEN]
@@ -1492,10 +1553,10 @@ def cbor_make_credential_process(req: Cmd, dialog_mgr: DialogManager) -> State |
                 cred.algorithm = alg
                 cred.curve = common.COSE_CURVE_P256
                 break
-            elif alg == common.COSE_ALG_EDDSA:
-                cred.algorithm = alg
-                cred.curve = common.COSE_CURVE_ED25519
-                break
+            # elif alg == common.COSE_ALG_EDDSA:
+            #     cred.algorithm = alg
+            #     cred.curve = common.COSE_CURVE_ED25519
+            #     break
         else:
             return cbor_error(req.cid, _ERR_UNSUPPORTED_ALGORITHM)
 
