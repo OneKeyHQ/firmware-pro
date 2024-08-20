@@ -224,7 +224,7 @@ STATIC mp_obj_t mod_trezorio_USB_open(mp_obj_t self,
   }
 
   // Start the USB stack
-  usb_start();
+  // usb_start();
   o->state = USB_OPENED;
 
   // If we found any VCP interfaces, use the last one for stdio,
@@ -290,6 +290,22 @@ STATIC mp_obj_t mod_trezorio_USB_connected(mp_obj_t self) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorio_USB_connected_obj,
                                  mod_trezorio_USB_connected);
 
+/// def connect_ctrl(self, state :bool) -> None:
+///     """
+///     Control usb connect.
+///     """
+STATIC mp_obj_t mod_trezorio_USB_connect_ctrl(mp_obj_t self, mp_obj_t state) {
+  if (state == mp_const_true) {
+    usb_start();
+  } else {
+    usb_stop();
+  }
+  return mp_const_none;
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_trezorio_USB_connect_ctrl_obj,
+                                 mod_trezorio_USB_connect_ctrl);
+
 /// def state(self) -> int:
 ///   """
 ///   Get USB state.
@@ -311,6 +327,8 @@ STATIC const mp_rom_map_elem_t mod_trezorio_USB_locals_dict_table[] = {
     {MP_ROM_QSTR(MP_QSTR_connected),
      MP_ROM_PTR(&mod_trezorio_USB_connected_obj)},
     {MP_ROM_QSTR(MP_QSTR_state), MP_ROM_PTR(&mod_trezorio_USB_state_obj)},
+    {MP_ROM_QSTR(MP_QSTR_connect_ctrl),
+     MP_ROM_PTR(&mod_trezorio_USB_connect_ctrl_obj)},
 };
 STATIC MP_DEFINE_CONST_DICT(mod_trezorio_USB_locals_dict,
                             mod_trezorio_USB_locals_dict_table);

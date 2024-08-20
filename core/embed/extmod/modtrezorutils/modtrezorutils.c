@@ -561,19 +561,27 @@ STATIC mp_obj_t mod_trezorutils_bytewords_decode(mp_obj_t type,
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_trezorutils_bytewords_decode_obj,
                                  mod_trezorutils_bytewords_decode);
 
-/// def enter_lowpower(restart: bool, seconds: int) -> None:
+/// def enter_lowpower(
+/// restart: bool,
+/// seconds: int,
+/// wake_up: bool = False
+/// ) ->None:
 ///     """
 ///     Enter lowpower mode.
 ///     """
-STATIC mp_obj_t mod_trezorutils_enter_lowpower(mp_obj_t restart,
-                                               mp_obj_t seconds) {
-  int val_ms = mp_obj_get_int(seconds);
-  bool val_restart = mp_obj_is_true(restart);
-  enter_stop_mode(val_restart, val_ms / 1000);
+STATIC mp_obj_t mod_trezorutils_enter_lowpower(size_t n_args,
+                                               const mp_obj_t *args) {
+  bool val_restart = mp_obj_is_true(args[0]);
+  int val_ms = mp_obj_get_int(args[1]);
+
+  bool wake_up = n_args > 2 && args[2] == mp_const_true;
+
+  enter_stop_mode(val_restart, val_ms / 1000, wake_up);
   return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_trezorutils_enter_lowpower_obj,
-                                 mod_trezorutils_enter_lowpower);
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_trezorutils_enter_lowpower_obj,
+                                           2, 3,
+                                           mod_trezorutils_enter_lowpower);
 
 STATIC mp_obj_str_t mod_trezorutils_revision_obj = {
     {&mp_type_bytes}, 0, sizeof(SCM_REVISION) - 1, (const byte *)SCM_REVISION};

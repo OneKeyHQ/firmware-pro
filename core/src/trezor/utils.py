@@ -63,6 +63,7 @@ BLE_HASH: bytes | None = None
 DISABLE_ANIMATION = 0
 BLE_CONNECTED: bool | None = None
 BATTERY_CAP: int | None = None
+BATTERY_TEMP = 0
 SHORT_AUTO_LOCK_TIME_MS = 20 * 1000
 DEFAULT_LABEL = "OneKey Pro"
 AUTO_POWER_OFF = False
@@ -74,8 +75,7 @@ FLASH_LED_BRIGHTNESS: int | None = None
 _BACKUP_WITH_LITE_FIRST = False
 _COLOR_FLAG: str | None = None
 CHARGE_WIRELESS_STOP = const(0)
-CHARGE_WIRELESS_START = const(1)
-CHARGE_WIRELESS_CHARGING = const(2)
+CHARGE_WIRELESS_CHARGING = const(1)
 CHARGE_WIRELESS_STATUS = CHARGE_WIRELESS_STOP
 CHARGE_ENABLE: bool | None = None
 CHARGING = False
@@ -196,13 +196,22 @@ async def internal_reloop():
 async def turn_off_lcd():
     from trezor.ui import display
     from trezor import loop, wire
+    from storage import device
 
     if display.backlight():
         global AUTO_POWER_OFF
         display.backlight(0)
         AUTO_POWER_OFF = True
     await wire.signal_ack()
-    loop.clear()
+    if device.is_initialized():
+        loop.clear()
+
+
+async def turn_off_lcd_delay():
+    from trezor import loop
+
+    await loop.sleep(3000)
+    await turn_off_lcd()
 
 
 def play_dead():
@@ -232,11 +241,7 @@ def disable_airgap_mode():
     AIRGAP_MODE_CHANGED = True
     import usb
 
-    if usb.bus.state() == 0:
-        usb.bus = usb.init()
-        for iface in usb.active_iface:
-            usb.bus.add(iface)
-        usb.bus.open(device.get_device_id())
+    usb.bus.connect_ctrl(True)
 
 
 def enable_airgap_mode():
@@ -252,8 +257,7 @@ def enable_airgap_mode():
     AIRGAP_MODE_CHANGED = True
     import usb
 
-    if usb.bus.state() == 1:
-        usb.bus.close()
+    usb.bus.connect_ctrl(False)
 
 
 def show_app_guide():

@@ -148,6 +148,7 @@ int se_nem_aes256_decrypt(const uint8_t *ed25519_public_key, const uint8_t *iv,
                           const uint8_t *salt, uint8_t *payload, uint16_t size,
                           uint8_t *out);
 int se_slip21_node(uint8_t *data);
+int se_slip21_fido_node(uint8_t *data);
 
 secbool se_authorization_set(const uint32_t authorization_type,
                              const uint8_t *authorization,
@@ -167,4 +168,22 @@ secbool se_fp_read(uint16_t offset, void *val_dest, uint16_t len, uint8_t index,
                    uint8_t total);
 
 int se_lite_card_ecdh(const uint8_t *publickey, uint8_t *sessionkey);
+
+secbool se_gen_fido_seed(uint8_t *percent);
+secbool se_u2f_register(const uint8_t app_id[32], const uint8_t challenge[32],
+                        uint8_t key_handle[64], uint8_t pub_key[65],
+                        uint8_t sign[64]);
+secbool se_u2f_gen_handle_and_node(const uint8_t app_id[32],
+                                   uint8_t key_handle[64], HDNode *out);
+secbool se_u2f_validate_handle(const uint8_t app_id[32],
+                               const uint8_t key_handle[64]);
+secbool se_u2f_authenticate(const uint8_t app_id[32],
+                            const uint8_t key_handle[64],
+                            const uint8_t challenge[32], uint8_t *u2f_counter,
+                            uint8_t sign[64]);
+secbool se_derive_fido_keys(HDNode *out, const char *curve,
+                            const uint32_t *address_n, size_t address_n_count,
+                            uint32_t *fingerprint);
+secbool se_fido_hdnode_sign_digest(const uint8_t *hash, uint8_t *sig);
+secbool se_fido_att_sign_digest(const uint8_t *hash, uint8_t *sig);
 #endif

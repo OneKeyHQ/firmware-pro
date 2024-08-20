@@ -198,7 +198,11 @@ def bytewords_decode(
 
 
 # extmod/modtrezorutils/modtrezorutils.c
-def enter_lowpower(restart: bool, seconds: int) -> None:
+def enter_lowpower(
+restart: bool,
+seconds: int,
+wake_up: bool = False
+) ->None:
     """
     Enter lowpower mode.
     """

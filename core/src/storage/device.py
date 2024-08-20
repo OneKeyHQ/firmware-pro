@@ -84,6 +84,8 @@ _SERIAL_NUMBER_VALUE: str | None = None
 _DEVICE_ID_VALUE: str | None = None
 _TREZOR_COMPATIBLE_VALUE: bool | None = None
 _NEEDS_BACKUP_VALUE: bool | None = None
+_FIDO_SEED_GEN = False
+
 if utils.USE_THD89:
     import uctypes
 

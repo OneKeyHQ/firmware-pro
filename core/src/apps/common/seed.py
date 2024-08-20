@@ -19,9 +19,12 @@ class Slip21Node:
 
     def __init__(self, seed: bytes | None = None, data: bytes | None = None) -> None:
         if utils.USE_THD89:
-            from trezor.crypto import se_thd89
+            if data is not None:
+                self.data = data
+            else:
+                from trezor.crypto import se_thd89
 
-            self.data = se_thd89.slip21_node()
+                self.data = se_thd89.slip21_node()
         else:
             assert seed is None or data is None, "Specify exactly one of: seed, data"
             if data is not None:
@@ -125,10 +128,34 @@ def derive_node_without_passphrase(
     return node
 
 
+def derive_fido_node_with_se(
+    path: Bip32Path, curve_name: str = "nist256p1"
+) -> bip32.HDNode:
+    from trezor.crypto import se_thd89
+
+    se_thd89.fido_seed()
+    node = bip32.HDNode(
+        depth=0,
+        fingerprint=0,
+        child_num=0,
+        chain_code=bytearray(32),
+        public_key=bytearray(33),
+        curve_name=curve_name,
+    )
+    node.derive_fido_path(path)
+    return node
+
+
 def derive_slip21_node_without_passphrase(path: Slip21Path) -> Slip21Node:
-    seed = _get_seed_without_passphrase()
-    node = Slip21Node(seed)
+    if utils.USE_THD89:
+        from trezor.crypto import se_thd89
+
+        node = Slip21Node(data=se_thd89.slip21_fido_node())
+    else:
+        seed = _get_seed_without_passphrase()
+        node = Slip21Node(seed)
     node.derive_path(path)
+
     return node
 
 
