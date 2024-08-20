@@ -51,8 +51,12 @@ class WalletContract(Contract):
         payload_cell = Cell()
         if payload:
             if isinstance(payload, str):
-                payload_cell.bits.write_uint(0, 32)
-                payload_cell.bits.write_string(payload)
+                # check payload type
+                if payload.startswith("b5ee9c72"):
+                    payload_cell = Cell.one_from_boc(payload)
+                else:
+                    payload_cell.bits.write_uint(0, 32)
+                    payload_cell.bits.write_string(payload)
             elif isinstance(payload, Cell):
                 payload_cell = payload
             else:

@@ -135,10 +135,10 @@ class Address:
             address_with_checksum[:34] = addr
             address_with_checksum[34:] = crc16(addr)
 
-            address_base_64 = b2a_base64(address_with_checksum).decode("utf-8")
+            address_base_64 = b2a_base64(address_with_checksum)[:-1].decode("utf-8")
             if is_url_safe:
                 address_base_64 = address_base_64.replace("+", "-").replace("/", "_")
-
+                
             return str(address_base_64)
     
     def get_hash_part(self):
