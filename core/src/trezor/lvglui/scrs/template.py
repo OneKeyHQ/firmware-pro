@@ -59,7 +59,7 @@ class Address(FullSizeWindow):
         self.address_qr = address_qr
         self.icon = icon_path
         self.addr_type = addr_type
-        self.evm_chin_id = evm_chain_id
+        self.evm_chain_id = evm_chain_id
         if primary_color:
             self.title.add_style(StyleWrapper().text_color(primary_color), 0)
         self.qr_first = qr_first
@@ -167,7 +167,7 @@ class Address(FullSizeWindow):
                 if self.current == self.SHOW_TYPE.ADDRESS:
                     self.show_qr_code(self.qr_first)
                 else:
-                    self.show_address(self.evm_chin_id)
+                    self.show_address(self.evm_chain_id)
             elif target == self.btn_yes:
                 self.show_unload_anim()
                 self.channel.publish(1)

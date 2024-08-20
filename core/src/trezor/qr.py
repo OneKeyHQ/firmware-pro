@@ -142,8 +142,8 @@ class QRTask:
 
         if registry_type not in [
             "eth-sign-request",
-            "onekey-app-call-device",
-            "crypto-psbt",
+            # "onekey-app-call-device",
+            # "crypto-psbt",
         ]:
             if __debug__:
                 print(f"unsupported type {registry_type}")

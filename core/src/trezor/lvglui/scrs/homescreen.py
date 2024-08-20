@@ -1178,23 +1178,24 @@ class WalletList(Screen):
             self.content_area, self.subtitle, padding_row=2
         )
 
-        self.onekey = ListItemBtn(
-            self.container,
-            _(i18n_keys.ITEM__ONEKEY_WALLET),
-            _(i18n_keys.CONTENT__BTC_AND_EVM_COMPATIBLE_NETWORKS),
-            left_img_src="A:/res/ok-logo-48.png",
-        )
-        self.onekey.text_layout_vertical()
-        # self.onekey.disable()
-        # self.onekey.add_flag(lv.obj.FLAG.HIDDEN)
-
         self.mm = ListItemBtn(
             self.container,
             _(i18n_keys.ITEM__METAMASK_WALLET),
             _(i18n_keys.CONTENT__ETH_AND_EVM_POWERED_NETWORK),
             left_img_src="A:/res/mm-logo-48.png",
         )
-        self.mm.text_layout_vertical(pad_top=17, pad_ver=20)
+        self.mm.text_layout_vertical()
+
+        self.onekey = ListItemBtn(
+            self.container,
+            _(i18n_keys.ITEM__ONEKEY_WALLET),
+            # _(i18n_keys.CONTENT__BTC_AND_EVM_COMPATIBLE_NETWORKS),
+            _(i18n_keys.CONTENT__COMING_SOON),
+            left_img_src="A:/res/ok-logo-48.png",
+        )
+        self.onekey.text_layout_vertical(pad_top=17, pad_ver=20)
+        self.onekey.disable()
+        # self.onekey.add_flag(lv.obj.FLAG.HIDDEN)
 
         self.okx = ListItemBtn(
             self.container,
