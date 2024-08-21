@@ -16,6 +16,7 @@ LANGUAGE_MAXLENGTH = const(16)
 HOMESCREEN_PATH_MAXSIZE = const(128)
 BLE_NAME_MAXLENGTH = const(16)
 BLE_VERSION_MAXLENGTH = const(8)
+PREVIOUS_LABEL_MAXLENGTH = const(13)
 
 SE_1ST_ADDRESS = const(0x10 << 1)
 SE_2ND_ADDRESS = const(0x11 << 1)
@@ -726,7 +727,10 @@ def get_label() -> str:
         label = common.get(_NAMESPACE, _LABEL, True)  # public
         if label is None:
             previous_label_len = common.get_val_len(_NAMESPACE, _LABEL_DEPRECATED, True)
-            if previous_label_len is not None and 0 < previous_label_len < 16:
+            if (
+                previous_label_len is not None
+                and 0 < previous_label_len < PREVIOUS_LABEL_MAXLENGTH
+            ):
                 label = common.get(_NAMESPACE, _LABEL_DEPRECATED, True)
         _LABEL_VALUE = label.decode() if label else utils.DEFAULT_LABEL
     return _LABEL_VALUE
