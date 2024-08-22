@@ -387,16 +387,16 @@ class MessageType(IntEnum):
     NervosSignedTx = 11704
     NervosTxRequest = 11705
     NervosTxAck = 11706
-    AlephiumGetAddress = 11801
-    AlephiumAddress = 11802
-    AlephiumSignTx = 11803
-    AlephiumSignedTx = 11804
-    AlephiumTxRequest = 11805
-    AlephiumTxAck = 11806
-    AlephiumBytecodeRequest = 11807
-    AlephiumBytecodeAck = 11808
-    AlephiumSignMessage = 11809
-    AlephiumMessageSignature = 11810
+    AlephiumGetAddress = 12101
+    AlephiumAddress = 12102
+    AlephiumSignTx = 12103
+    AlephiumSignedTx = 12104
+    AlephiumTxRequest = 12105
+    AlephiumTxAck = 12106
+    AlephiumBytecodeRequest = 12107
+    AlephiumBytecodeAck = 12108
+    AlephiumSignMessage = 12109
+    AlephiumMessageSignature = 12110
     DeviceBackToBoot = 903
     RebootToBoardloader = 904
     DeviceInfoSettings = 10001
@@ -768,7 +768,7 @@ class TronResourceCode(IntEnum):
 
 
 class AlephiumGetAddress(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = 11801
+    MESSAGE_WIRE_TYPE = 12101
     FIELDS = {
         1: protobuf.Field("address_n", "uint32", repeated=True, required=False),
         2: protobuf.Field("show_display", "bool", repeated=False, required=False),
@@ -785,7 +785,7 @@ class AlephiumGetAddress(protobuf.MessageType):
 
 
 class AlephiumAddress(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = 11802
+    MESSAGE_WIRE_TYPE = 12102
     FIELDS = {
         1: protobuf.Field("address", "string", repeated=False, required=True),
     }
@@ -799,7 +799,7 @@ class AlephiumAddress(protobuf.MessageType):
 
 
 class AlephiumSignTx(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = 11803
+    MESSAGE_WIRE_TYPE = 12103
     FIELDS = {
         1: protobuf.Field("address_n", "uint32", repeated=True, required=False),
         2: protobuf.Field("data_initial_chunk", "bytes", repeated=False, required=True),
@@ -819,7 +819,7 @@ class AlephiumSignTx(protobuf.MessageType):
 
 
 class AlephiumSignedTx(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = 11804
+    MESSAGE_WIRE_TYPE = 12104
     FIELDS = {
         1: protobuf.Field("signature", "bytes", repeated=False, required=True),
         2: protobuf.Field("address", "string", repeated=False, required=True),
@@ -836,7 +836,7 @@ class AlephiumSignedTx(protobuf.MessageType):
 
 
 class AlephiumTxRequest(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = 11805
+    MESSAGE_WIRE_TYPE = 12105
     FIELDS = {
         1: protobuf.Field("data_length", "uint32", repeated=False, required=False),
         2: protobuf.Field("public_key", "bytes", repeated=False, required=False),
@@ -856,7 +856,7 @@ class AlephiumTxRequest(protobuf.MessageType):
 
 
 class AlephiumTxAck(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = 11806
+    MESSAGE_WIRE_TYPE = 12106
     FIELDS = {
         1: protobuf.Field("data_chunk", "bytes", repeated=False, required=True),
     }
@@ -870,7 +870,7 @@ class AlephiumTxAck(protobuf.MessageType):
 
 
 class AlephiumBytecodeRequest(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = 11807
+    MESSAGE_WIRE_TYPE = 12107
     FIELDS = {
         1: protobuf.Field("data_length", "uint32", repeated=False, required=False),
         2: protobuf.Field("public_key", "bytes", repeated=False, required=False),
@@ -890,7 +890,7 @@ class AlephiumBytecodeRequest(protobuf.MessageType):
 
 
 class AlephiumBytecodeAck(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = 11808
+    MESSAGE_WIRE_TYPE = 12108
     FIELDS = {
         1: protobuf.Field("bytecode_data", "bytes", repeated=False, required=True),
     }
@@ -904,7 +904,7 @@ class AlephiumBytecodeAck(protobuf.MessageType):
 
 
 class AlephiumSignMessage(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = 11809
+    MESSAGE_WIRE_TYPE = 12109
     FIELDS = {
         1: protobuf.Field("address_n", "uint32", repeated=True, required=False),
         2: protobuf.Field("message", "string", repeated=False, required=False),
@@ -924,7 +924,7 @@ class AlephiumSignMessage(protobuf.MessageType):
 
 
 class AlephiumMessageSignature(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = 11810
+    MESSAGE_WIRE_TYPE = 12110
     FIELDS = {
         1: protobuf.Field("signature", "bytes", repeated=False, required=False),
         2: protobuf.Field("address", "string", repeated=False, required=False),
