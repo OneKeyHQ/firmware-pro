@@ -387,13 +387,13 @@ class MessageType(IntEnum):
     NervosSignedTx = 11704
     NervosTxRequest = 11705
     NervosTxAck = 11706
-    ScdoGetAddress = 11901
-    ScdoAddress = 11902
-    ScdoSignTx = 11903
-    ScdoSignedTx = 11904
-    ScdoTxAck = 11905
-    ScdoSignMessage = 11906
-    ScdoSignedMessage = 11907
+    ScdoGetAddress = 12001
+    ScdoAddress = 12002
+    ScdoSignTx = 12003
+    ScdoSignedTx = 12004
+    ScdoTxAck = 12005
+    ScdoSignMessage = 12006
+    ScdoSignedMessage = 12007
     DeviceBackToBoot = 903
     RebootToBoardloader = 904
     DeviceInfoSettings = 10001
@@ -9197,7 +9197,7 @@ class RipplePayment(protobuf.MessageType):
 
 
 class ScdoGetAddress(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = 11901
+    MESSAGE_WIRE_TYPE = 12001
     FIELDS = {
         1: protobuf.Field("address_n", "uint32", repeated=True, required=False),
         2: protobuf.Field("show_display", "bool", repeated=False, required=False),
@@ -9214,7 +9214,7 @@ class ScdoGetAddress(protobuf.MessageType):
 
 
 class ScdoAddress(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = 11902
+    MESSAGE_WIRE_TYPE = 12002
     FIELDS = {
         1: protobuf.Field("address", "string", repeated=False, required=True),
     }
@@ -9228,7 +9228,7 @@ class ScdoAddress(protobuf.MessageType):
 
 
 class ScdoSignTx(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = 11903
+    MESSAGE_WIRE_TYPE = 12003
     FIELDS = {
         1: protobuf.Field("address_n", "uint32", repeated=True, required=False),
         2: protobuf.Field("nonce", "bytes", repeated=False, required=True),
@@ -9269,7 +9269,7 @@ class ScdoSignTx(protobuf.MessageType):
 
 
 class ScdoSignedTx(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = 11904
+    MESSAGE_WIRE_TYPE = 12004
     FIELDS = {
         1: protobuf.Field("data_length", "uint32", repeated=False, required=False),
         2: protobuf.Field("signature", "bytes", repeated=False, required=False),
@@ -9286,7 +9286,7 @@ class ScdoSignedTx(protobuf.MessageType):
 
 
 class ScdoTxAck(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = 11905
+    MESSAGE_WIRE_TYPE = 12005
     FIELDS = {
         1: protobuf.Field("data_chunk", "bytes", repeated=False, required=False),
     }
@@ -9300,7 +9300,7 @@ class ScdoTxAck(protobuf.MessageType):
 
 
 class ScdoSignMessage(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = 11906
+    MESSAGE_WIRE_TYPE = 12006
     FIELDS = {
         1: protobuf.Field("address_n", "uint32", repeated=True, required=False),
         2: protobuf.Field("message", "bytes", repeated=False, required=False),
@@ -9317,7 +9317,7 @@ class ScdoSignMessage(protobuf.MessageType):
 
 
 class ScdoSignedMessage(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = 11907
+    MESSAGE_WIRE_TYPE = 12007
     FIELDS = {
         1: protobuf.Field("signature", "bytes", repeated=False, required=False),
         2: protobuf.Field("address", "string", repeated=False, required=False),
