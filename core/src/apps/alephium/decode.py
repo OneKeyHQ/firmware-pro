@@ -64,8 +64,39 @@ def decode_compact_int(data):
         return int.from_bytes(data[1:9], "little"), 9
 
 
-def decode_i32(data):
-    return int.from_bytes(data[:4], "big"), 4
+def decode_i32(data: bytes) -> tuple[int, int]:
+    mask_rest = 0xC0
+    mask_mode = 0x3F
+    sign_flag = 0x20
+
+    def decode_int(body):
+        is_positive = (body[0] & sign_flag) == 0
+        mode = body[0] & mask_rest
+
+        if mode == 0x00:  # SingleByte
+            return body[0] & mask_mode, 1
+        elif mode == 0x40:  # TwoByte
+            value = ((body[0] & mask_mode) << 8) | body[1]
+            return value if is_positive else -(8192 - value), 2
+        elif mode == 0x80:  # FourByte
+            value = (
+                ((body[0] & mask_mode) << 24)
+                | (body[1] << 16)
+                | (body[2] << 8)
+                | body[3]
+            )
+            return value if is_positive else -(2**31 - value), 4
+        else:  # MultiByte
+            if body[0] == 0xC0:
+                return -64, 1
+            length = body[0] & mask_mode
+            if length == 0:
+                return 0, 1
+            value = int.from_bytes(body[1 : length + 1], "big")
+            return value if is_positive else -value, length + 1
+
+    value, bytes_read = decode_int(data)
+    return value, bytes_read
 
 
 def decode_u256(data):
@@ -102,10 +133,8 @@ def decode_tx(encoded_tx):
     index += 1
     script_opt = data[index]
     index += 1
-    gas_amount, bytes_read = decode_i32(data[index:])
-    if gas_amount & 0x80000000:
-        gas_amount &= 0x7FFFFFFF
 
+    gas_amount, bytes_read = decode_i32(data[index:])
     index += bytes_read
 
     gas_price, bytes_read = decode_u256(data[index:])
