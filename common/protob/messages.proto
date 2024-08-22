@@ -526,6 +526,17 @@ enum MessageType {
     MessageType_NervosTxRequest = 11705 [(wire_out) = true];
     MessageType_NervosTxAck = 11706 [(wire_in) = true];
 
+    // alephium
+    MessageType_AlephiumGetAddress = 11801 [(wire_in) = true];
+    MessageType_AlephiumAddress = 11802 [(wire_out) = true];
+    MessageType_AlephiumSignTx = 11803 [(wire_in) = true];
+    MessageType_AlephiumSignedTx = 11804 [(wire_out) = true];
+    MessageType_AlephiumTxRequest = 11805 [(wire_out) = true];
+    MessageType_AlephiumTxAck = 11806 [(wire_in) = true];
+    MessageType_AlephiumBytecodeRequest = 11807 [(wire_out) = true];
+    MessageType_AlephiumBytecodeAck = 11808 [(wire_in) = true];
+    MessageType_AlephiumSignMessage = 11809 [(wire_in) = true];
+    MessageType_AlephiumMessageSignature = 11810 [(wire_out) = true];
 
     
     //onekey

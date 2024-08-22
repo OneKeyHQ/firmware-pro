@@ -323,6 +323,14 @@ def find_message_handler_module(msg_type: int) -> str:
         if msg_type == MessageType.NervosSignTx:
             return "apps.nervos.sign_tx"
 
+        # alephium
+        if msg_type == MessageType.AlephiumGetAddress:
+            return "apps.alephium.get_address"
+        if msg_type == MessageType.AlephiumSignTx:
+            return "apps.alephium.sign_tx"
+        if msg_type == MessageType.AlephiumSignMessage:
+            return "apps.alephium.sign_message"
+
         if msg_type == MessageType.NostrGetPublicKey:
             return "apps.nostr.get_public_key"
         if msg_type == MessageType.NostrSignEvent:

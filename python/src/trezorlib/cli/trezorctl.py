@@ -64,6 +64,7 @@ from . import (
     kaspa,
     nexa,
     nervos,
+    alephium,
 )
 
 F = TypeVar("F", bound=Callable)
@@ -108,6 +109,7 @@ COMMAND_ALIASES = {
     "polkadot": polkadot.cli,
     "kaspa": kaspa.cli,
     "nervos": nervos.cli,
+    "alephium": alephium.cli,
     "nexa": nexa.cli,
     # firmware aliases:
     "fw": firmware.cli,
@@ -465,6 +467,7 @@ cli.add_command(polkadot.cli)
 cli.add_command(kaspa.cli)
 cli.add_command(nexa.cli)
 cli.add_command(nervos.cli)
+cli.add_command(alephium.cli)
 
 
 #

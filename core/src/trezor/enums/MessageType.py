@@ -361,6 +361,16 @@ if not utils.BITCOIN_ONLY:
     NervosSignedTx = 11704
     NervosTxRequest = 11705
     NervosTxAck = 11706
+    AlephiumGetAddress = 11801
+    AlephiumAddress = 11802
+    AlephiumSignTx = 11803
+    AlephiumSignedTx = 11804
+    AlephiumTxRequest = 11805
+    AlephiumTxAck = 11806
+    AlephiumBytecodeRequest = 11807
+    AlephiumBytecodeAck = 11808
+    AlephiumSignMessage = 11809
+    AlephiumMessageSignature = 11810
     DeviceBackToBoot = 903
     RebootToBoardloader = 904
     DeviceInfoSettings = 10001
