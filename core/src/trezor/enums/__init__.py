@@ -700,9 +700,6 @@ if TYPE_CHECKING:
         Pass = 2
 
     class TonWalletVersion(IntEnum):
-        V3R1 = 0
-        V3R2 = 1
-        V4R1 = 2
         V4R2 = 3
 
     class TonWorkChain(IntEnum):

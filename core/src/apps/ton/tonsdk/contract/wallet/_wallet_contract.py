@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Union
 from ...boc import Cell
 from ...utils import Address
 from .. import Contract
-
+from binascii import hexlify
 if TYPE_CHECKING:
     from enum import IntEnum
 else:
@@ -46,7 +46,10 @@ class WalletContract(Contract):
         expire_at: int,
         payload: Union[Cell, str, bytes, None] = None,
         send_mode=SendModeEnum.ignore_errors | SendModeEnum.pay_gas_separately,
-        state_init=None
+        state_init=None,
+        ext_to: str=None,
+        ext_amount: int=None,
+        ext_payload: Union[Cell, str, bytes, None]=None,
     ) -> bytes:
         payload_cell = Cell()
         if payload:
@@ -73,4 +76,29 @@ class WalletContract(Contract):
         signing_message.bits.write_uint8(send_mode)
         signing_message.refs.append(order)
         
-        return signing_message.bytes_hash()
+
+        # multi message
+        if ext_to:
+            ext_payload_cell = Cell()
+            if ext_payload:
+                # check payload type
+                if ext_payload.startswith("b5ee9c72"):
+                    ext_payload_cell = Cell.one_from_boc(ext_payload)
+                else:
+                    ext_payload_cell.bits.write_uint(0, 32)
+                    ext_payload_cell.bits.write_string(ext_payload)
+
+            ext_order_header = Contract.create_internal_message_header(
+                dest=Address(ext_to), 
+                grams=ext_amount
+            )
+            ext_order = Contract.create_common_msg_info(
+                ext_order_header, state_init, ext_payload_cell
+            )
+
+            signing_message.bits.write_uint8(send_mode)
+            signing_message.refs.append(ext_order)
+        print("# signing_message boc", hexlify(signing_message.to_boc()).decode())
+        print("# signing_message repr", hexlify(signing_message.bytes_repr()).decode())
+        print("# signing_message hash", hexlify(signing_message.bytes_hash()).decode())
+        return signing_message.bytes_hash(), signing_message.to_boc()

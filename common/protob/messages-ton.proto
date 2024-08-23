@@ -6,9 +6,9 @@ option java_package = "com.satoshilabs.trezor.lib.protobuf";
 option java_outer_classname = "TrezorMessageTon";
 
 enum TonWalletVersion {
-    V3R1 = 0;
-    V3R2 = 1;
-    V4R1 = 2;
+    // V3R1 = 0;
+    // V3R2 = 1;
+    // V4R1 = 2;
     V4R2 = 3;
 }
 
@@ -25,9 +25,9 @@ enum TonWorkChain {
 message TonGetAddress {
     repeated uint32 address_n = 1;                                  // BIP-32 path to derive the key from master node
     optional bool show_display = 2;                                 // optionally show on display before sending the result
-    optional TonWalletVersion wallet_version = 3 [default=V3R2];    // ton wallet version
+    optional TonWalletVersion wallet_version = 3 [default=V4R2];    // ton wallet version
     optional bool is_bounceable = 4 [default=false];                // bounceable flag
-    optional bool is_testnet_only = 5 [default=false];              // testnet only flag, test msg should not be accepted by software running on the production network
+    optional bool is_testnet_only = 5 [default=false];              // testnet only flag
     optional TonWorkChain workchain = 6 [default=BASECHAIN];        // 0 for the BaseChain, 1 for the MasterChain
     optional uint32 wallet_id = 7 [default=698983191];              // 698983191 is the default subwallet_id value
 }
@@ -51,7 +51,7 @@ message TonSignMessage {
     repeated uint32 address_n = 1;                                  // BIP-32 path to derive the key from master node
     required string destination = 2;                                // destination address of the message
     optional string jetton_master_address = 3;                      // Jetton master smart contract address
-    required uint64 ton_amount = 4;                                 // TON value for gas, average fee for sending any amount of a custom Jettons is 0.037 TON.
+    required uint64 ton_amount = 4;                                 // TON value for gas
     optional uint64 jetton_amount = 5;                              // jetton value (by nanojetton)
     optional uint64 fwd_fee = 6[default=0];                         // toncoin is needed to transfer notification message
     optional string comment = 7;                                    // message comment
@@ -63,6 +63,9 @@ message TonSignMessage {
     optional TonWorkChain workchain = 13 [default=BASECHAIN];       // 0: BaseChain, 1: MasterChain
     optional bool is_bounceable = 14 [default=false];               // bounceable flag
     optional bool is_testnet_only = 15 [default=false];             // testnet only flag
+    repeated string ext_destination = 16;
+    repeated uint64 ext_ton_amount = 17;
+    repeated string ext_payload = 18;
 }
 
 /**
@@ -71,6 +74,7 @@ message TonSignMessage {
  */
 message TonSignedMessage {
     optional bytes signature = 1;                   // signed transaction message
+    optional bytes signning_message = 2;            // message to sign
 }
 
 /**

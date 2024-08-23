@@ -31,9 +31,9 @@ WORKCHAIN = {
     "master": messages.TonWorkChain.MASTERCHAIN,
 }
 WALLET_VERSION = {
-    "v3r1": messages.TonWalletVersion.V3R1,
-    "v3r2": messages.TonWalletVersion.V3R2,
-    "v4r1": messages.TonWalletVersion.V4R1,
+    # "v3r1": messages.TonWalletVersion.V3R1,
+    # "v3r2": messages.TonWalletVersion.V3R2,
+    # "v4r1": messages.TonWalletVersion.V4R1,
     "v4r2": messages.TonWalletVersion.V4R2,
 }
 @click.group(name="ton")
@@ -76,12 +76,15 @@ def get_address(client: "TrezorClient",
 @click.option("-c", "--comment", type=str)
 @click.option("-m", "--mode", type=int)
 @click.option("-s", "--seqno", type=int, required=True)
-# @click.option("-e", "--expire_at", type=int, required=True)
+@click.option("-e", "--expire_at", type=int, required=True)
 @click.option("-v", "--version", type=ChoiceType(WALLET_VERSION), default="v4r2")
 @click.option("-i", "--wallet-id", type=int, default=698983191)
 @click.option("-w", "--workchain", type=ChoiceType(WORKCHAIN), default="base")
 @click.option("-b", "--bounceable", is_flag=True)
 @click.option("-t", "--test-only", is_flag=True)
+@click.option("-ed", "--ext_destination", type=str)
+@click.option("-ea", "--ext_ton_amount", type = int)
+@click.option("-ep", "--ext_payload", type=str)
 @with_client
 def sign_message(client: "TrezorClient",
                 address: str,
@@ -92,17 +95,20 @@ def sign_message(client: "TrezorClient",
                 fwd_fee: int,
                 mode: int,
                 seqno: int,
-                # expire_at: int,
+                expire_at: int,
                 comment: str,
                 version: messages.TonWalletVersion,
                 wallet_id: int,
                 workchain: messages.TonWorkChain,
                 bounceable: bool,
-                test_only: bool
+                test_only: bool,
+                ext_destination: str,
+                ext_ton_amount: int,
+                ext_payload: str
                 ) -> bytes:
     """Sign Ton Transaction."""
     address_n = tools.parse_path(address)
-    expire_at = int(time.time()) + 300
+    # expire_at = int(time.time()) + 300
     signature = ton.sign_message(
                 client,
                 address_n,
@@ -119,7 +125,10 @@ def sign_message(client: "TrezorClient",
                 wallet_id,
                 workchain,
                 bounceable,
-                test_only
+                test_only,
+                ext_destination,
+                ext_ton_amount,
+                ext_payload
     ).signature.hex()
 
     return {"signature": f"0x{signature}"}

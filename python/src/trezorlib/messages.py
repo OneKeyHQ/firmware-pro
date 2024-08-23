@@ -759,9 +759,6 @@ class TezosBallotType(IntEnum):
 
 
 class TonWalletVersion(IntEnum):
-    V3R1 = 0
-    V3R2 = 1
-    V4R1 = 2
     V4R2 = 3
 
 
@@ -10395,7 +10392,7 @@ class TonGetAddress(protobuf.MessageType):
         *,
         address_n: Optional[Sequence["int"]] = None,
         show_display: Optional["bool"] = None,
-        wallet_version: Optional["TonWalletVersion"] = TonWalletVersion.V3R2,
+        wallet_version: Optional["TonWalletVersion"] = TonWalletVersion.V4R2,
         is_bounceable: Optional["bool"] = False,
         is_testnet_only: Optional["bool"] = False,
         workchain: Optional["TonWorkChain"] = TonWorkChain.BASECHAIN,
@@ -10445,6 +10442,9 @@ class TonSignMessage(protobuf.MessageType):
         13: protobuf.Field("workchain", "TonWorkChain", repeated=False, required=False),
         14: protobuf.Field("is_bounceable", "bool", repeated=False, required=False),
         15: protobuf.Field("is_testnet_only", "bool", repeated=False, required=False),
+        16: protobuf.Field("ext_destination", "string", repeated=True, required=False),
+        17: protobuf.Field("ext_ton_amount", "uint64", repeated=True, required=False),
+        18: protobuf.Field("ext_payload", "string", repeated=True, required=False),
     }
 
     def __init__(
@@ -10455,6 +10455,9 @@ class TonSignMessage(protobuf.MessageType):
         seqno: "int",
         expire_at: "int",
         address_n: Optional[Sequence["int"]] = None,
+        ext_destination: Optional[Sequence["str"]] = None,
+        ext_ton_amount: Optional[Sequence["int"]] = None,
+        ext_payload: Optional[Sequence["str"]] = None,
         jetton_master_address: Optional["str"] = None,
         jetton_amount: Optional["int"] = None,
         fwd_fee: Optional["int"] = 0,
@@ -10467,6 +10470,9 @@ class TonSignMessage(protobuf.MessageType):
         is_testnet_only: Optional["bool"] = False,
     ) -> None:
         self.address_n: Sequence["int"] = address_n if address_n is not None else []
+        self.ext_destination: Sequence["str"] = ext_destination if ext_destination is not None else []
+        self.ext_ton_amount: Sequence["int"] = ext_ton_amount if ext_ton_amount is not None else []
+        self.ext_payload: Sequence["str"] = ext_payload if ext_payload is not None else []
         self.destination = destination
         self.ton_amount = ton_amount
         self.seqno = seqno
@@ -10487,14 +10493,17 @@ class TonSignedMessage(protobuf.MessageType):
     MESSAGE_WIRE_TYPE = 11904
     FIELDS = {
         1: protobuf.Field("signature", "bytes", repeated=False, required=False),
+        2: protobuf.Field("signning_message", "bytes", repeated=False, required=False),
     }
 
     def __init__(
         self,
         *,
         signature: Optional["bytes"] = None,
+        signning_message: Optional["bytes"] = None,
     ) -> None:
         self.signature = signature
+        self.signning_message = signning_message
 
 
 class TonSignProof(protobuf.MessageType):

@@ -23,11 +23,11 @@ def require_confirm_fee(
     token: tokens.TokenInfo | None = None,
     raw_data: bytes | None = None,
 ) -> Awaitable[None]:
-    from trezor.ui.layouts.lvgl.altcoin import confirm_total_ethereum
+    from trezor.ui.layouts.lvgl.altcoin import confirm_total_ton
 
     fee_limit = gas_price * gas_limit
 
-    return confirm_total_ethereum(
+    return confirm_total_ton(
         ctx,
         format_ton_amount(value, token),
         None,

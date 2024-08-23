@@ -29,13 +29,7 @@ async def sign_proof(
     public_key = seed.remove_ed25519_prefix(node.public_key())
     workchain = -1 if msg.workchain == TonWorkChain.MASTERCHAIN else TonWorkChain.BASECHAIN
 
-    if msg.wallet_version == TonWalletVersion.V3R1:
-        wallet_version = WalletVersionEnum.v3r1
-    elif msg.wallet_version == TonWalletVersion.V3R2:
-        wallet_version = WalletVersionEnum.v3r2
-    elif msg.wallet_version == TonWalletVersion.V4R1:
-        wallet_version = WalletVersionEnum.v4r1
-    elif msg.wallet_version == TonWalletVersion.V4R2:
+    if msg.wallet_version == TonWalletVersion.V4R2:
         wallet_version = WalletVersionEnum.v4r2
     else:
         raise wire.DataError("Invalid wallet version.")

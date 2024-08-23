@@ -8396,6 +8396,9 @@ if TYPE_CHECKING:
         workchain: "TonWorkChain"
         is_bounceable: "bool"
         is_testnet_only: "bool"
+        ext_destination: "list[str]"
+        ext_ton_amount: "list[int]"
+        ext_payload: "list[str]"
 
         def __init__(
             self,
@@ -8405,6 +8408,9 @@ if TYPE_CHECKING:
             seqno: "int",
             expire_at: "int",
             address_n: "list[int] | None" = None,
+            ext_destination: "list[str] | None" = None,
+            ext_ton_amount: "list[int] | None" = None,
+            ext_payload: "list[str] | None" = None,
             jetton_master_address: "str | None" = None,
             jetton_amount: "int | None" = None,
             fwd_fee: "int | None" = None,
@@ -8424,11 +8430,13 @@ if TYPE_CHECKING:
 
     class TonSignedMessage(protobuf.MessageType):
         signature: "bytes | None"
+        signning_message: "bytes | None"
 
         def __init__(
             self,
             *,
             signature: "bytes | None" = None,
+            signning_message: "bytes | None" = None,
         ) -> None:
             pass
 

@@ -45,7 +45,11 @@ def sign_message(client: "TrezorClient",
                 wallet_id: int = 698983191,
                 workchain: messages.TonWorkChain=messages.TonWorkChain.BASECHAIN,
                 bounceable: bool = False,
-                test_only: bool = False):
+                test_only: bool = False,
+                ext_destination: str = None,
+                ext_ton_amount: int = None,
+                ext_payload: str = None
+                ):
     return client.call(
         messages.TonSignMessage(
             address_n=n,
@@ -63,6 +67,9 @@ def sign_message(client: "TrezorClient",
             workchain=workchain,
             bounceable=bounceable,
             is_test_only=test_only,
+            ext_destination=ext_destination,
+            ext_ton_amount=ext_ton_amount,
+            ext_payload=ext_payload
         )
     )
 

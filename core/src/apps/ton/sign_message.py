@@ -1,4 +1,3 @@
-
 from typing import TYPE_CHECKING
 
 from trezor.crypto.curve import ed25519
@@ -17,6 +16,7 @@ from .tonsdk.utils._address import Address
 from .tonsdk.contract.token.ft import JettonWallet
 from .import ICON, PRIMARY_COLOR, tokens
 
+from binascii import unhexlify, hexlify
 if TYPE_CHECKING:
     from trezor.wire import Context
 
@@ -36,13 +36,7 @@ async def sign_message(
     public_key = seed.remove_ed25519_prefix(node.public_key())
     workchain = -1 if msg.workchain == TonWorkChain.MASTERCHAIN else TonWorkChain.BASECHAIN
 
-    if msg.wallet_version == TonWalletVersion.V3R1:
-        wallet_version = WalletVersionEnum.v3r1
-    elif msg.wallet_version == TonWalletVersion.V3R2:
-        wallet_version = WalletVersionEnum.v3r2
-    elif msg.wallet_version == TonWalletVersion.V4R1:
-        wallet_version = WalletVersionEnum.v4r1
-    elif msg.wallet_version == TonWalletVersion.V4R2:
+    if msg.wallet_version == TonWalletVersion.V4R2:
         wallet_version = WalletVersionEnum.v4r2
     else:
         raise wire.DataError("Invalid wallet version.")
@@ -70,9 +64,37 @@ async def sign_message(
             await confirm_unknown_token_transfer(
                 ctx, msg.jetton_master_address
             )
-        await confirm_output(ctx, recipient, format_value)
 
-        await confirm_ton_transfer(ctx, address, recipient, format_value, msg.comment)
+        # touch
+        # await confirm_output(ctx, recipient, format_value)
+
+        # await confirm_ton_transfer(ctx, address, recipient, format_value, msg.comment)
+
+        # await confirm_final(ctx, token.symbol)
+
+        show_details = await require_show_overview(
+            ctx,
+            recipient,
+            msg.ton_amount,
+            token,
+        )
+        if show_details:
+            # has_raw_data = True if token is None and msg.data_length > 0 else False
+
+            comment = unhexlify(hexlify(msg.comment).decode("UTF-8")) if msg.comment else None
+            print("comment:", comment)
+            await require_confirm_fee(
+                ctx,
+                from_address=address,
+                to_address=recipient,
+                value=msg.ton_amount,
+                # gas_price=None,
+                # gas_limit=None,
+                token=token,
+                raw_data=comment if comment else None,
+
+
+            )
 
         await confirm_final(ctx, token.symbol)
 
@@ -84,12 +106,13 @@ async def sign_message(
             wallet.address
         )
 
-        digest = wallet.create_transaction_digest(
+        digest, boc = wallet.create_transaction_digest(
             to_addr=msg.destination, 
             amount=msg.ton_amount, 
             seqno=msg.seqno,
             expire_at=msg.expire_at, 
             payload=body,
+            send_mode=msg.mode,
         )
 
     else:
@@ -112,31 +135,35 @@ async def sign_message(
         )
         if show_details:
             # has_raw_data = True if token is None and msg.data_length > 0 else False
-
+            comment = unhexlify(hexlify(msg.comment).decode("UTF-8")) if msg.comment else None
             await require_confirm_fee(
                 ctx,
                 from_address=address,
                 to_address=recipient,
                 value=msg.ton_amount,
-                gas_price=11,
-                gas_limit=22,
+                # gas_price=11,
+                # gas_limit=22,
                 token=None,
-                raw_data=None,
+                raw_data=comment,
             )
 
         await confirm_final(ctx, "TON")
 
-        digest = wallet.create_transaction_digest(
+        digest, boc = wallet.create_transaction_digest(
             to_addr=msg.destination, 
             amount=msg.ton_amount, 
             seqno=msg.seqno, 
             expire_at=msg.expire_at, 
             payload=msg.comment,
+            send_mode=msg.mode,
+            ext_to=msg.ext_destination,
+            ext_amount=msg.ext_ton_amount,
+            ext_payload=msg.ext_payload,
         )
 
     signature = ed25519.sign(node.private_key(), digest)
-
-    return TonSignedMessage(signature=signature)
+    
+    return TonSignedMessage(signature=signature, signning_message=boc)
 
 def check_jetton_transfer(msg: TonSignMessage):
     if msg.jetton_amount is None and msg.jetton_master_address is None:
