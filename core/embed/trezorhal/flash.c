@@ -63,10 +63,6 @@ const uint8_t FIRMWARE_SECTORS[FIRMWARE_SECTORS_COUNT] = {
     29,
     30,
     FLASH_SECTOR_FIRMWARE_EXTRA_END};
-const uint8_t STORAGE_SECTORS[STORAGE_SECTORS_COUNT] = {
-    FLASH_SECTOR_STORAGE_1,
-    FLASH_SECTOR_STORAGE_2,
-};
 
 #ifdef NOT_USED_pLDNf4fNyLwV1RqEGZub
 static const uint32_t FLASH_SECTOR_TABLE[FLASH_SECTOR_COUNT + 2] = {
@@ -148,15 +144,6 @@ const void *flash_get_address(uint8_t sector, uint32_t offset, uint32_t size) {
                           (sector - FLASH_SECTOR_FIRMWARE_EXTRA_START) *
                               FLASH_FIRMWARE_SECTOR_SIZE +
                           offset);
-  } else if (sector >= FLASH_SECTOR_STORAGE_1 &&
-             sector <= FLASH_SECTOR_STORAGE_2) {
-    if (offset + size > FLASH_STORAGE_SECTOR_SIZE) {
-      return NULL;
-    }
-    return (const void *)(QSPI_FLASH_BASE_ADDRESS + QSPI_FLASH_STORAG_OFFSET +
-                          (sector - FLASH_SECTOR_STORAGE_1) *
-                              FLASH_STORAGE_SECTOR_SIZE +
-                          offset);
   }
   return NULL;
 }
@@ -176,12 +163,7 @@ secbool flash_erase_sectors(const uint8_t *sectors, int len,
           (sectors[i] - FLASH_SECTOR_FIRMWARE_EXTRA_START) * 2 *
               QSPI_SECTOR_SIZE +
           QSPI_SECTOR_SIZE);
-    } else if (sectors[i] >= FLASH_SECTOR_STORAGE_1 &&
-               sectors[i] <= FLASH_SECTOR_STORAGE_2) {
-      qspi_flash_erase_block_64k((sectors[i] - FLASH_SECTOR_STORAGE_1) *
-                                     QSPI_SECTOR_SIZE +
-                                 QSPI_FLASH_STORAG_OFFSET);
-    } else {
+    } else if (sectors[i] >= 0 && sectors[i] <= FLASH_INNER_COUNT) {
       ensure(flash_unlock_write(), NULL);
       FLASH_EraseInitTypeDef EraseInitStruct;
       EraseInitStruct.TypeErase = FLASH_TYPEERASE_SECTORS;
@@ -207,11 +189,7 @@ secbool flash_erase_sectors(const uint8_t *sectors, int len,
     // check whether the sector was really deleted (contains only 0xFF)
     const uint32_t addr_start = (uint32_t)flash_get_address(sectors[i], 0, 0);
     uint32_t addr_end;
-    if (sectors[i] < FLASH_SECTOR_STORAGE_1) {
-      addr_end = addr_start + FLASH_FIRMWARE_SECTOR_SIZE;
-    } else {
-      addr_end = addr_start + FLASH_STORAGE_SECTOR_SIZE;
-    }
+    addr_end = addr_start + FLASH_FIRMWARE_SECTOR_SIZE;
     for (uint32_t addr = addr_start; addr < addr_end; addr += 4) {
       if (*((const uint32_t *)addr) != 0xFFFFFFFF) {
         return secfalse;
@@ -320,6 +298,7 @@ rewrite:
 }
 
 uint32_t flash_sector_size(uint8_t sector) {
+  // TODO: clean up / rewrite / really needed?
   if (sector >= FLASH_SECTOR_COUNT) {
     return 0;
   }
@@ -328,9 +307,6 @@ uint32_t flash_sector_size(uint8_t sector) {
   } else if (sector >= FLASH_SECTOR_FIRMWARE_EXTRA_START &&
              sector <= FLASH_SECTOR_FIRMWARE_EXTRA_END) {
     return FLASH_FIRMWARE_SECTOR_SIZE;
-  } else if (sector >= FLASH_SECTOR_STORAGE_1 &&
-             sector <= FLASH_SECTOR_STORAGE_2) {
-    return FLASH_STORAGE_SECTOR_SIZE;
   }
   return 0;
 }

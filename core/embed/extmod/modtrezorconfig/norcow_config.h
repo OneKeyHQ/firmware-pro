@@ -35,9 +35,6 @@
 #error Unknown Trezor model
 #endif
 
-#define NORCOW_SECTORS \
-  { FLASH_SECTOR_STORAGE_1, FLASH_SECTOR_STORAGE_2 }
-
 /*
  * Current storage version.
  */
