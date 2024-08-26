@@ -17,6 +17,8 @@ if TYPE_CHECKING:
 CODE_INDEX_SECP256K1_SINGLE = 0x00
 FORMAT_TYPE_SHORT = 0x01
 
+ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+
 
 def bytesToBinUnsafe(byte_string):
     def pad_binary(b, width):
@@ -28,9 +30,6 @@ def bytesToBinUnsafe(byte_string):
         padded_bin = pad_binary(bin_value, 8)
         result += padded_bin
     return result
-
-
-ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 
 
 def b58encode(b):

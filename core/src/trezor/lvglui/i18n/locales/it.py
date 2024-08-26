@@ -803,5 +803,10 @@ translations = [
     "Frase di recupero non supportata",
     "Il portafoglio hardware attuale supporta solo frasi di recupero da 12, 18 e 24 parole.\nQuesto backup Lite non può essere ripristinato.",
     "Apri OneKey e scansiona il codice QR, supportando le reti BTC ed EVM.",
+    "Incompatibilità del portafoglio",
+    "Il portafoglio selezionato nell'app non corrisponde al portafoglio hardware. Si prega di controllare e riprovare.",
+    "Firma del messaggio non standard.",
+    "Invia token",
+    "Il seguente output di transazione contiene i dati del contratto:",
 ]
 # fmt: on

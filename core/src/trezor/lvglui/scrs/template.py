@@ -534,123 +534,117 @@ class TransactionDetailsAlepHium(FullSizeWindow):
         title,
         address_from,
         address_to,
-        amount,
-        is_eip1559=False,
-        gas_price=None,
-        max_priority_fee_per_gas=None,
-        max_fee_per_gas=None,
-        total_amount=None,
+        subtitle=None,
+        amount=None,
+        gas_amount=None,
         primary_color=lv_colors.ONEKEY_GREEN,
-        contract_addr=None,
         token_id=None,
-        evm_chain_id=None,
         raw_data=None,
+        icon_path=None,
         sub_icon_path=None,
-        striped=False,
+        token_amount=None,
     ):
         super().__init__(
             title,
-            None,
+            subtitle,
             _(i18n_keys.BUTTON__CONTINUE),
             _(i18n_keys.BUTTON__REJECT),
             primary_color=primary_color,
-            icon_path="A:/res/icon-send.png",
+            icon_path=icon_path,
             sub_icon_path=sub_icon_path,
         )
         self.primary_color = primary_color
-        self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
-        if striped:
+        if raw_data:
+            self.container = ContainerFlexCol(
+                self.content_area, self.subtitle, pos=(0, 40)
+            )
+        else:
+            self.container = ContainerFlexCol(
+                self.content_area, self.title, pos=(0, 40)
+            )
+        if amount:
+            self.group_directions = ContainerFlexCol(
+                self.container, None, padding_row=0, no_align=True
+            )
+            self.item_group_header = CardHeader(
+                self.group_directions,
+                _(i18n_keys.FORM__DIRECTIONS),
+                "A:/res/group-icon-directions.png",
+            )
+            self.item_group_body_to_addr = DisplayItem(
+                self.group_directions,
+                _(i18n_keys.LIST_KEY__TO__COLON),
+                address_to,
+            )
+            self.item_group_body_from_addr = DisplayItem(
+                self.group_directions,
+                _(i18n_keys.LIST_KEY__FROM__COLON),
+                address_from,
+            )
+            self.group_directions.add_dummy()
+
+        if token_amount:
             self.group_amounts = ContainerFlexCol(
                 self.container, None, padding_row=0, no_align=True
             )
             self.item_group_header = CardHeader(
                 self.group_amounts,
-                _(i18n_keys.LIST_KEY__AMOUNT__COLON),
-                "A:/res/group-icon-amount.png",
-            )
-            self.group_body_amount = DisplayItem(
-                self.group_amounts,
-                None,
-                amount,
+                _(i18n_keys.SUBTITLE__ADA_TX_CONTAINS_TOKEN),
+                "A:/res/banner-icon-gray.png",
             )
             self.group_amounts.add_dummy()
-
-        self.group_directions = ContainerFlexCol(
-            self.container, None, padding_row=0, no_align=True
-        )
-        self.item_group_header = CardHeader(
-            self.group_directions,
-            _(i18n_keys.FORM__DIRECTIONS),
-            "A:/res/group-icon-directions.png",
-        )
-        self.item_group_body_to_addr = DisplayItem(
-            self.group_directions,
-            _(i18n_keys.LIST_KEY__TO__COLON),
-            address_to,
-        )
-        self.item_group_body_from_addr = DisplayItem(
-            self.group_directions,
-            _(i18n_keys.LIST_KEY__FROM__COLON),
-            address_from,
-        )
-        self.group_directions.add_dummy()
-
-        self.group_fees = ContainerFlexCol(
-            self.container, None, padding_row=0, no_align=True
-        )
-        self.item_group_header = CardHeader(
-            self.group_fees, _(i18n_keys.FORM__FEES), "A:/res/group-icon-fees.png"
-        )
-        if not is_eip1559:
-            if gas_price:
-                self.item_group_body_gas_price = DisplayItem(
-                    self.group_fees,
-                    _(i18n_keys.LIST_KEY__GAS_PRICE__COLON),
-                    gas_price,
-                )
-        else:
-            self.item_group_body_priority_fee_per_gas = DisplayItem(
-                self.group_fees,
-                _(i18n_keys.LIST_KEY__PRIORITY_FEE_PER_GAS__COLON),
-                max_priority_fee_per_gas,
-            )
-            self.item_group_body_max_fee_per_gas = DisplayItem(
-                self.group_fees,
-                _(i18n_keys.LIST_KEY__MAXIMUM_FEE_PER_GAS__COLON),
-                max_fee_per_gas,
-            )
-        self.item_group_body_total_amount = DisplayItem(
-            self.group_fees,
-            _(i18n_keys.LIST_KEY__FEE__COLON),
-            total_amount,
-        )
-        self.group_fees.add_dummy()
-
-        if contract_addr or evm_chain_id:
-            self.group_more = ContainerFlexCol(
+            self.group_directions = ContainerFlexCol(
                 self.container, None, padding_row=0, no_align=True
             )
             self.item_group_header = CardHeader(
-                self.group_more, _(i18n_keys.FORM__MORE), "A:/res/group-icon-more.png"
+                self.group_directions,
+                "Amount",
+                "A:/res/group-icon-directions.png",
             )
-            if evm_chain_id:
-                self.item_group_body_chain_id = DisplayItem(
-                    self.group_more,
-                    _(i18n_keys.LIST_KEY__CHAIN_ID__COLON),
-                    str(evm_chain_id),
-                )
-            if contract_addr:
-                self.item_group_body_contract_addr = DisplayItem(
-                    self.group_more,
-                    _(i18n_keys.LIST_KEY__CONTRACT_ADDRESS__COLON),
-                    contract_addr,
-                )
-                self.item_group_body_token_id = DisplayItem(
-                    self.group_more,
-                    _(i18n_keys.LIST_KEY__TOKEN_ID__COLON),
-                    token_id,
-                )
-            self.group_more.add_dummy()
+            self.item_group_body_to_addr = DisplayItem(
+                self.group_directions,
+                "Token id",
+                token_id,
+            )
+            self.item_group_body_from_addr = DisplayItem(
+                self.group_directions,
+                "Amount",
+                str(token_amount),
+            )
+            self.group_directions.add_dummy()
+
+            self.group_directions = ContainerFlexCol(
+                self.container, None, padding_row=0, no_align=True
+            )
+            self.item_group_header = CardHeader(
+                self.group_directions,
+                _(i18n_keys.FORM__DIRECTIONS),
+                "A:/res/group-icon-directions.png",
+            )
+            self.item_group_body_to_addr = DisplayItem(
+                self.group_directions,
+                _(i18n_keys.LIST_KEY__TO__COLON),
+                address_to,
+            )
+            self.item_group_body_from_addr = DisplayItem(
+                self.group_directions,
+                _(i18n_keys.LIST_KEY__FROM__COLON),
+                address_from,
+            )
+            self.group_directions.add_dummy()
+
+        if gas_amount:
+            self.group_fees = ContainerFlexCol(
+                self.container, None, padding_row=0, no_align=True
+            )
+            self.item_group_header = CardHeader(
+                self.group_fees, _(i18n_keys.FORM__FEES), "A:/res/group-icon-fees.png"
+            )
+            self.item_group_body_gas_price = DisplayItem(
+                self.group_fees,
+                _(i18n_keys.LIST_KEY__GAS_PRICE__COLON),
+                gas_amount,
+            )
 
         if raw_data:
             from trezor import strings
@@ -664,12 +658,14 @@ class TransactionDetailsAlepHium(FullSizeWindow):
                 self.data = self.data_str[:222] + "..."
             else:
                 self.data = self.data_str
+
             self.item_data = CardItem(
                 self.container,
                 _(i18n_keys.LIST_KEY__DATA__COLON),
                 self.data,
                 "A:/res/group-icon-data.png",
             )
+
             if self.long_data:
                 self.show_full_data = NormalButton(
                     self.item_data.content, _(i18n_keys.BUTTON__VIEW_DATA)

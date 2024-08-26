@@ -1756,4 +1756,15 @@ TITLE__UNSUPPORTED_RECOVERY_PHRASE = 800
 TITLE__UNSUPPORTED_RECOVERY_PHRASE_DESC = 801
 # Open OneKey and scan the QR code, supporting BTC and EVM networks.
 CONTENT__OPEN_ONEKEY_SCAN_THE_QRCODE = 802
+# Wallet Mismatch
+CONTENT__WALLET_MISMATCH = 803
+# Your selected wallet in the app does not match the hardware wallet. Please c
+# heck and try again.
+CONTENT__WALLET_MISMATCH_DESC = 804
+# Non-standard message signature.
+CONTENT__NON_STANDARD_MESSAGE_SIGNATURE = 805
+# Send Tokens
+TITLE__SEND_TOKENS = 806
+# The following transaction output contains contract data:
+CONTENT__FOLLOWING_TRANSACTION_CONTAINS_CONTRACT = 807
 # fmt: on

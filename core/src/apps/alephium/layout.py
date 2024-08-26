@@ -9,26 +9,35 @@ from trezor.ui.layouts import should_show_details
 if TYPE_CHECKING:
     from typing import Awaitable
     from trezor.wire import Context
+    from typing import Optional
 
 
 def require_confirm_fee(
     ctx: Context,
-    from_address: str | None = None,
-    to_address: str | None = None,
-    value: int = 0,
-    gas_price: int = 0,
-    raw_data: bytes | None = None,
+    from_address: Optional[str] = None,
+    to_address: Optional[str] = None,
+    amount: Optional[int] = None,
+    gas_amount: Optional[int] = None,
+    token_id: Optional[str] = None,
+    token_amount: Optional[str] = None,
+    raw_data: Optional[bytes] = None,
 ) -> Awaitable[None]:
     from trezor.ui.layouts.lvgl.altcoin import confirm_total_alephium
 
+    formatted_value = format_alephium_amount(amount) if amount is not None else None
+    formatted_gas_amount = (
+        format_alephium_amount(gas_amount) if gas_amount is not None else None
+    )
+
     return confirm_total_alephium(
         ctx,
-        format_alephium_amount(value),
-        None,
+        formatted_value,
+        formatted_gas_amount,
         from_address,
         to_address,
-        format_alephium_amount(gas_price),
+        token_id=token_id,
         raw_data=raw_data,
+        token_amount=token_amount,
     )
 
 

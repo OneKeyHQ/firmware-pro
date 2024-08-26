@@ -803,5 +803,10 @@ translations = [
     "Nicht unterstützte Wiederherstellungsphrase",
     "Die aktuelle Hardware-Wallet unterstützt nur Wiederherstellungsphrasen mit 12, 18 und 24 Wörtern.\nDiese Lite-Sicherung kann nicht wiederhergestellt werden.",
     "Öffnen Sie OneKey und scannen Sie den QR-Code. BTC- und EVM-Netzwerke werden unterstützt.",
+    "Unstimmigkeit der Geldbörse",
+    "Ihre in der App ausgewählte Wallet stimmt nicht mit der Hardware-Wallet überein. Bitte überprüfen Sie dies und versuchen Sie es erneut.",
+    "Nicht standardmäßige Nachrichtensignatur.",
+    "Token senden",
+    "Die folgende Transaktionsausgabe enthält Vertragsdaten:",
 ]
 # fmt: on

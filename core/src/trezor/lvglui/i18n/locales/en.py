@@ -803,5 +803,10 @@ translations = [
     "Unsupported Recovery Phrase",
     "The current hardware wallet only supports 12, 18, and 24-word recovery phrases.\nThis Lite backup cannot be restored.",
     "Open OneKey and scan the QR code, supporting BTC and EVM networks.",
+    "Wallet Mismatch",
+    "Your selected wallet in the app does not match the hardware wallet. Please check and try again.",
+    "Non-standard message signature.",
+    "Send Tokens",
+    "The following transaction output contains contract data:",
 ]
 # fmt: on

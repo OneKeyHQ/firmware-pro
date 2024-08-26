@@ -803,5 +803,10 @@ translations = [
     "Phrase de récupération non prise en charge",
     "Le portefeuille matériel actuel ne prend en charge que les phrases de récupération de 12, 18 et 24 mots.\nCette sauvegarde Lite ne peut pas être restaurée.",
     "Ouvrez OneKey et scannez le code QR, prenant en charge les réseaux BTC et EVM.",
+    "Incompatibilité de portefeuille",
+    "Votre portefeuille sélectionné dans l'application ne correspond pas au portefeuille matériel. Veuillez vérifier et réessayer.",
+    "Signature de message non standard.",
+    "Envoyer des jetons",
+    "La sortie de transaction suivante contient des données de contrat :",
 ]
 # fmt: on
