@@ -1065,18 +1065,6 @@ int process_msg_FirmwareUpdateEmmc(uint8_t iface_num, uint32_t msg_size, uint8_t
             if ( sectrue == wipe_required )
             {
                 se_reset_storage();
-
-                // erease with retry, max 10 retry allowed, 10ms delay in between
-                ExecuteCheck_MSGS_ADV_RETRY_DELAY(
-                    flash_erase_sectors(STORAGE_SECTORS, STORAGE_SECTORS_COUNT, NULL), sectrue,
-                    {
-                        send_failure(
-                            iface_num, FailureType_Failure_ProcessError, "Flash storage area erease failed!"
-                        );
-                        return -1;
-                    },
-                    10, 10
-                );
             }
 
             char err_msg[64];

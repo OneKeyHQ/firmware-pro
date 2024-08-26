@@ -601,74 +601,15 @@ secbool load_vendor_header_keys(const uint8_t *const data,
                                 vendor_header *const vhdr);
 
 int process_msg_WipeDevice(uint8_t iface_num, uint32_t msg_size, uint8_t *buf) {
-#if PRODUCTION_MODEL == 'H'
-  static const uint8_t sectors[] = {
-      FLASH_SECTOR_STORAGE_1,
-      FLASH_SECTOR_STORAGE_2,
-      FLASH_SECTOR_FIRMWARE_START,
-      4,
-      5,
-      6,
-      7,
-      8,
-      9,
-      10,
-      11,
-      12,
-      13,
-      FLASH_SECTOR_FIRMWARE_END,
-      FLASH_SECTOR_FIRMWARE_EXTRA_START,
-      17,
-      18,
-      19,
-      20,
-      21,
-      22,
-      23,
-      24,
-      25,
-      26,
-      27,
-      28,
-      29,
-      30,
-      FLASH_SECTOR_FIRMWARE_EXTRA_END,
-  };
-#else
-  static const uint8_t sectors[] = {
-      FLASH_SECTOR_STORAGE_1,
-      FLASH_SECTOR_STORAGE_2,
-      // 3,  // skip because of MPU protection
-      FLASH_SECTOR_FIRMWARE_START,
-      7,
-      8,
-      9,
-      10,
-      FLASH_SECTOR_FIRMWARE_END,
-      FLASH_SECTOR_UNUSED_START,
-      13,
-      14,
-      // FLASH_SECTOR_UNUSED_END,  // skip because of MPU protection
-      FLASH_SECTOR_FIRMWARE_EXTRA_START,
-      18,
-      19,
-      20,
-      21,
-      22,
-      FLASH_SECTOR_FIRMWARE_EXTRA_END,
-  };
-#endif
-#if PRODUCTION_MODEL == 'H'
-  se_reset_storage();
-#endif
-  if (sectrue !=
-      flash_erase_sectors(sectors, sizeof(sectors), ui_screen_wipe_progress)) {
+  ui_screen_wipe_progress(0, 1000);
+  if (sectrue != se_reset_storage()) {
     MSG_SEND_INIT(Failure);
     MSG_SEND_ASSIGN_VALUE(code, FailureType_Failure_ProcessError);
-    MSG_SEND_ASSIGN_STRING(message, "Could not erase flash");
+    MSG_SEND_ASSIGN_STRING(message, "Wipe device failed");
     MSG_SEND(Failure);
     return -1;
   } else {
+    ui_screen_wipe_progress(1000, 1000);
     MSG_SEND_INIT(Success);
     MSG_SEND(Success);
     return 0;
