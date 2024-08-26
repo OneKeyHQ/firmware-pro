@@ -55,6 +55,21 @@ bool emmc_fs_init()
     return true;
 }
 
+bool emmc_fs_uninit()
+{
+    // status update
+    OKEMMC_DBG_STATUS_SETUP();
+
+    if ( !emmc_wrapper_status.is_inited )
+        return false;
+
+    emmc_deinit();
+
+    emmc_wrapper_status.is_inited = false;
+
+    return true;
+}
+
 bool emmc_fs_recreate(bool partition_table, bool onekey_data, bool user_data)
 {
     // status update
@@ -407,16 +422,27 @@ bool emmc_fs_file_write(
 
     // open
     ExecuteCheck_OKEMMC_SIMPLE(f_open(&fhandle, path_buff, fopenmodes));
-    // seek
-    ExecuteCheck_OKEMMC_SIMPLE(f_lseek(&fhandle, offset));
-    // read
-    ExecuteCheck_OKEMMC_SIMPLE(f_write(&fhandle, buff, target_len, (UINT*)processed_len));
-    // flush (not needed as f_close should flush the buffer)
-    // ExecuteCheck_OKEMMC_SIMPLE(f_sync(&fhandle));
+
+    // for "touch" file, all three params must be set to NULL and zero
+    if ( !(offset == 0 && buff == NULL && target_len == 0 && processed_len == NULL) )
+    {
+        // seek
+        ExecuteCheck_OKEMMC_SIMPLE(f_lseek(&fhandle, offset));
+        // write
+        ExecuteCheck_OKEMMC_SIMPLE(f_write(&fhandle, buff, target_len, (UINT*)processed_len));
+        // flush (not needed as f_close should flush the buffer)
+        // ExecuteCheck_OKEMMC_SIMPLE(f_sync(&fhandle));
+    }
+
     // close
     ExecuteCheck_OKEMMC_SIMPLE(f_close(&fhandle));
 
     return true;
+}
+
+bool emmc_fs_file_touch(const char* path_buff)
+{
+    return emmc_fs_file_write(path_buff, 0, NULL, 0, NULL, false, true);
 }
 
 bool emmc_fs_file_delete(const char* path_buff)

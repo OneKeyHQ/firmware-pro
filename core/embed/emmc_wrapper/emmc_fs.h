@@ -109,6 +109,7 @@ void emmc_fs_dbgex_append(const char* msg);
 void emmc_fs_dbgex_clr();
 void emmc_fs_format_status(char* str, size_t str_len);
 bool emmc_fs_init();
+bool emmc_fs_uninit();
 bool emmc_fs_recreate(bool partition_table, bool onekey_data, bool user_data);
 bool emmc_fs_is_partitioned();
 bool emmc_fs_mount(bool onekey_data, bool user_data);
@@ -126,6 +127,7 @@ bool emmc_fs_file_write(
     const char* path_buff, uint32_t offset, void* buff, uint32_t target_len, uint32_t* processed_len,
     bool overwrite, bool append
 );
+bool emmc_fs_file_touch(const char* path_buff);
 bool emmc_fs_file_delete(const char* path_buff);
 
 // bool emmc_fs_dir_list_internal(

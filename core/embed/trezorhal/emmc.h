@@ -17,6 +17,7 @@
 #define BOOT_EMMC_BLOCKS (2 * 1024 * 1024)  // 1GB
 
 void emmc_init();
+void emmc_deinit();
 uint8_t emmc_get_card_state(void);
 void emmc_get_card_info(EMMC_CardInfoTypeDef *card_info);
 uint8_t emmc_read_blocks(uint8_t *data, uint32_t address, uint32_t nums,
