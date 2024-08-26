@@ -93,6 +93,7 @@ if PRODUCTION_MODEL == 'H':
     SOURCE_TREZORHAL = [
         'embed/trezorhal/system_stm32h7xx.c',
         'embed/trezorhal/common.c',
+        'embed/trezorhal/mpu.c',
         'embed/trezorhal/emmc.c',
         'embed/trezorhal/sdram.c',
         'embed/trezorhal/qspi_flash.c',
