@@ -32,6 +32,7 @@
 #include "lowlevel.h"
 #include "memzero.h"
 #include "mipi_lcd.h"
+#include "mpu.h"
 #include "rng.h"
 #include "sdcard.h"
 #include "sdram.h"
@@ -154,7 +155,7 @@ void UsageFault_Handler(void) {
   error_shutdown("Internal error", "(UF)", NULL, NULL);
 }
 
-const char *STAY_REASON_str[] = {
+const char *const STAY_REASON_str[] = {
     ENUM_NAME_ARRAY_ITEM(STAY_REASON_NONE),
     ENUM_NAME_ARRAY_ITEM(STAY_REASON_REQUIRED_BY_FLAG),
     ENUM_NAME_ARRAY_ITEM(STAY_REASON_MANUAL_OVERRIDE),
@@ -731,7 +732,7 @@ int main(void) {
 
   // enforce protection
   flash_option_bytes_init();
-  mpu_config();
+  mpu_config_boardloader();
 
   // user interface
   lcd_para_init(DISPLAY_RESX, DISPLAY_RESY, LCD_PIXEL_FORMAT_RGB565);
