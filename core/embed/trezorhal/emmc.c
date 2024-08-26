@@ -69,6 +69,24 @@ void emmc_init(void) {
   }
 }
 
+void emmc_deinit() {
+  // deinit
+  if (HAL_MMC_DeInit(&hmmc1) != HAL_OK) {
+    ensure(0, "mmc deinit fail");
+  }
+
+  // reset and close clock
+  __HAL_RCC_SDMMC1_FORCE_RESET();
+  __HAL_RCC_SDMMC1_RELEASE_RESET();
+  __HAL_RCC_SDMMC1_CLK_DISABLE();
+
+  // release gpios
+  HAL_GPIO_DeInit(GPIOC, GPIO_PIN_10 | GPIO_PIN_11 | GPIO_PIN_12 | GPIO_PIN_8 |
+                             GPIO_PIN_9 | GPIO_PIN_7 | GPIO_PIN_6);
+  HAL_GPIO_DeInit(GPIOB, GPIO_PIN_9 | GPIO_PIN_8);
+  HAL_GPIO_DeInit(GPIOD, GPIO_PIN_2);
+}
+
 uint8_t emmc_get_card_state(void) {
   return ((HAL_MMC_GetCardState(&hmmc1) == HAL_MMC_CARD_TRANSFER)
               ? MMC_TRANSFER_OK
