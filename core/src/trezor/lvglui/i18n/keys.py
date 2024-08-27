@@ -1763,38 +1763,8 @@ CONTENT__WALLET_MISMATCH = 803
 CONTENT__WALLET_MISMATCH_DESC = 804
 # Non-standard message signature.
 CONTENT__NON_STANDARD_MESSAGE_SIGNATURE = 805
-# ETH and EVM‒compatible networks
-CONTENT__ETH_AND_EVM_COMPATIBLE_NETWORKS = 788
-# Open OneKey and scan the QR code below
-CONTENT__OPEN_ONEKEY_AND_SCAN_THE_QR_CODE_BELOW = 788
-# Export Account
-CONTENT__EXPORT_ACCOUNT = 789
-# Connecting...
-TITLE__CONNECTING = 790
-# Set OneKey Lite PIN
-TITLE__SET_ONEKEY_LITE_PIN = 791
-# I understand that the backup will be overwritten
-FORM__I_UNDERSTAND_THAT_THE_BACKUP_WILL_BE_OVERWRITTEN = 792
-# Confirm OneKey Lite PIN
-TITLE__CONFIRM_ONEKEY_LITE_PIN = 793
-# PINs do not match, please reconfirm.
-CONTENT__PINS_DO_NOT_MATCH = 794
-# Connect again
-TITLE__CONNECT_AGAIN = 795
-# Eixt
-BUTTON__EXIT = 796
-# The two OneKey Lite used for connection are not the same.
-CONTENT__THE_TWO_ONEKEY_LITE_USED_FOR_CONNECTION_ARE_NOT_THE_SAME = 797
-# Exit Backup Process?
-TITLE__EXIT_BACKUP_PROCESS = 798
-# If you exit now, you will need to re-verify your recovery phrase when you re
-# -enter. Are you sure you want to exit?
-TITLE__EXIT_BACKUP_PROCESS_DESC = 799
-# Unsupported Recovery Phrase
-TITLE__UNSUPPORTED_RECOVERY_PHRASE = 800
-# The current hardware wallet only supports 12, 18, and 24-word recovery phras
-# es.\nThis Lite backup cannot be restored.
-TITLE__UNSUPPORTED_RECOVERY_PHRASE_DESC = 801
-# Open OneKey and scan the QR code, supporting BTC and EVM networks.
-CONTENT__OPEN_ONEKEY_SCAN_THE_QRCODE = 802
+# Send Tokens
+TITLE__SEND_TOKENS = 806
+# The following transaction output contains contract data:
+CONTENT__FOLLOWING_TRANSACTION_CONTAINS_CONTRACT = 807
 # fmt: on

@@ -806,6 +806,7 @@ translations = [
     "Incompatibilidad de billetera",
     "Tu billetera seleccionada en la aplicación no coincide con la billetera de hardware. Por favor, verifica y vuelve a intentarlo.",
     "Firma de mensaje no estándar.",
-    "La actual cartera de hardware solo admite frases de recuperación de 12, 18 y 24 palabras. Esta copia de seguridad Lite no se puede restaurar.",
+    "Enviar tokens",
+    "La siguiente salida de transacción contiene datos del contrato:",
 ]
 # fmt: on
