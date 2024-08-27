@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING
 
-from trezor import utils
 from trezor.ui.layouts import confirm_signverify
 
 from apps.common import cbor
