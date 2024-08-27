@@ -156,3 +156,39 @@ async def confirm_total_tron(
     await raise_if_cancelled(
         interact(ctx, screen, "confirm_total", ButtonRequestType.SignTx)
     )
+
+async def confirm_total_ton(
+    ctx: wire.GenericContext,
+    amount: str,
+    gas_price: str | None,
+    fee_max: str,
+    from_address: str | None,
+    to_address: str | None,
+    total_amount: str | None,
+    contract_addr: str | None = None,
+    token_id: int | None = None,
+    evm_chain_id: int | None = None,
+    raw_data: bytes | None = None,
+) -> None:
+    from trezor.lvglui.scrs.template import TransactionDetailsTON
+
+    short_amount, striped = strip_amount(amount)
+    screen = TransactionDetailsTON(
+        _(i18n_keys.TITLE__SEND_MULTILINE).format(short_amount),
+        from_address,
+        to_address,
+        amount,
+        fee_max,
+        gas_price=gas_price,
+        total_amount=total_amount,
+        primary_color=ctx.primary_color,
+        contract_addr=contract_addr,
+        token_id=str(token_id),
+        evm_chain_id=evm_chain_id,
+        raw_data=raw_data,
+        sub_icon_path=ctx.icon_path,
+        striped=striped,
+    )
+    await raise_if_cancelled(
+        interact(ctx, screen, "confirm_total", ButtonRequestType.SignTx)
+    )

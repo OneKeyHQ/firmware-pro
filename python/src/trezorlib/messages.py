@@ -389,6 +389,12 @@ class MessageType(IntEnum):
     NervosSignedTx = 11704
     NervosTxRequest = 11705
     NervosTxAck = 11706
+    TonGetAddress = 11901
+    TonAddress = 11902
+    TonSignMessage = 11903
+    TonSignedMessage = 11904
+    TonSignProof = 11905
+    TonSignedProof = 11906
     DeviceBackToBoot = 903
     RebootToBoardloader = 904
     DeviceInfoSettings = 10001
@@ -752,6 +758,15 @@ class TezosBallotType(IntEnum):
     Yay = 0
     Nay = 1
     Pass = 2
+
+
+class TonWalletVersion(IntEnum):
+    V4R2 = 3
+
+
+class TonWorkChain(IntEnum):
+    BASECHAIN = 0
+    MASTERCHAIN = 1
 
 
 class TronResourceCode(IntEnum):
@@ -10397,6 +10412,189 @@ class TezosManagerTransfer(protobuf.MessageType):
     ) -> None:
         self.destination = destination
         self.amount = amount
+
+
+class TonGetAddress(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 11901
+    FIELDS = {
+        1: protobuf.Field("address_n", "uint32", repeated=True, required=False),
+        2: protobuf.Field("show_display", "bool", repeated=False, required=False),
+        3: protobuf.Field("wallet_version", "TonWalletVersion", repeated=False, required=False),
+        4: protobuf.Field("is_bounceable", "bool", repeated=False, required=False),
+        5: protobuf.Field("is_testnet_only", "bool", repeated=False, required=False),
+        6: protobuf.Field("workchain", "TonWorkChain", repeated=False, required=False),
+        7: protobuf.Field("wallet_id", "uint32", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        address_n: Optional[Sequence["int"]] = None,
+        show_display: Optional["bool"] = None,
+        wallet_version: Optional["TonWalletVersion"] = TonWalletVersion.V4R2,
+        is_bounceable: Optional["bool"] = False,
+        is_testnet_only: Optional["bool"] = False,
+        workchain: Optional["TonWorkChain"] = TonWorkChain.BASECHAIN,
+        wallet_id: Optional["int"] = 698983191,
+    ) -> None:
+        self.address_n: Sequence["int"] = address_n if address_n is not None else []
+        self.show_display = show_display
+        self.wallet_version = wallet_version
+        self.is_bounceable = is_bounceable
+        self.is_testnet_only = is_testnet_only
+        self.workchain = workchain
+        self.wallet_id = wallet_id
+
+
+class TonAddress(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 11902
+    FIELDS = {
+        1: protobuf.Field("public_key", "bytes", repeated=False, required=True),
+        2: protobuf.Field("address", "string", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        public_key: "bytes",
+        address: "str",
+    ) -> None:
+        self.public_key = public_key
+        self.address = address
+
+
+class TonSignMessage(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 11903
+    FIELDS = {
+        1: protobuf.Field("address_n", "uint32", repeated=True, required=False),
+        2: protobuf.Field("destination", "string", repeated=False, required=True),
+        3: protobuf.Field("jetton_master_address", "string", repeated=False, required=False),
+        4: protobuf.Field("ton_amount", "uint64", repeated=False, required=True),
+        5: protobuf.Field("jetton_amount", "uint64", repeated=False, required=False),
+        6: protobuf.Field("fwd_fee", "uint64", repeated=False, required=False),
+        7: protobuf.Field("comment", "string", repeated=False, required=False),
+        8: protobuf.Field("mode", "uint32", repeated=False, required=False),
+        9: protobuf.Field("seqno", "uint32", repeated=False, required=True),
+        10: protobuf.Field("expire_at", "uint64", repeated=False, required=True),
+        11: protobuf.Field("wallet_version", "TonWalletVersion", repeated=False, required=False),
+        12: protobuf.Field("wallet_id", "uint32", repeated=False, required=False),
+        13: protobuf.Field("workchain", "TonWorkChain", repeated=False, required=False),
+        14: protobuf.Field("is_bounceable", "bool", repeated=False, required=False),
+        15: protobuf.Field("is_testnet_only", "bool", repeated=False, required=False),
+        16: protobuf.Field("ext_destination", "string", repeated=True, required=False),
+        17: protobuf.Field("ext_ton_amount", "uint64", repeated=True, required=False),
+        18: protobuf.Field("ext_payload", "string", repeated=True, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        destination: "str",
+        ton_amount: "int",
+        seqno: "int",
+        expire_at: "int",
+        address_n: Optional[Sequence["int"]] = None,
+        ext_destination: Optional[Sequence["str"]] = None,
+        ext_ton_amount: Optional[Sequence["int"]] = None,
+        ext_payload: Optional[Sequence["str"]] = None,
+        jetton_master_address: Optional["str"] = None,
+        jetton_amount: Optional["int"] = None,
+        fwd_fee: Optional["int"] = 0,
+        comment: Optional["str"] = None,
+        mode: Optional["int"] = 3,
+        wallet_version: Optional["TonWalletVersion"] = TonWalletVersion.V4R2,
+        wallet_id: Optional["int"] = 698983191,
+        workchain: Optional["TonWorkChain"] = TonWorkChain.BASECHAIN,
+        is_bounceable: Optional["bool"] = False,
+        is_testnet_only: Optional["bool"] = False,
+    ) -> None:
+        self.address_n: Sequence["int"] = address_n if address_n is not None else []
+        self.ext_destination: Sequence["str"] = ext_destination if ext_destination is not None else []
+        self.ext_ton_amount: Sequence["int"] = ext_ton_amount if ext_ton_amount is not None else []
+        self.ext_payload: Sequence["str"] = ext_payload if ext_payload is not None else []
+        self.destination = destination
+        self.ton_amount = ton_amount
+        self.seqno = seqno
+        self.expire_at = expire_at
+        self.jetton_master_address = jetton_master_address
+        self.jetton_amount = jetton_amount
+        self.fwd_fee = fwd_fee
+        self.comment = comment
+        self.mode = mode
+        self.wallet_version = wallet_version
+        self.wallet_id = wallet_id
+        self.workchain = workchain
+        self.is_bounceable = is_bounceable
+        self.is_testnet_only = is_testnet_only
+
+
+class TonSignedMessage(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 11904
+    FIELDS = {
+        1: protobuf.Field("signature", "bytes", repeated=False, required=False),
+        2: protobuf.Field("signning_message", "bytes", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        signature: Optional["bytes"] = None,
+        signning_message: Optional["bytes"] = None,
+    ) -> None:
+        self.signature = signature
+        self.signning_message = signning_message
+
+
+class TonSignProof(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 11905
+    FIELDS = {
+        1: protobuf.Field("address_n", "uint32", repeated=True, required=False),
+        2: protobuf.Field("appdomain", "bytes", repeated=False, required=True),
+        3: protobuf.Field("comment", "bytes", repeated=False, required=False),
+        4: protobuf.Field("expire_at", "uint64", repeated=False, required=True),
+        5: protobuf.Field("wallet_version", "TonWalletVersion", repeated=False, required=False),
+        6: protobuf.Field("wallet_id", "uint32", repeated=False, required=False),
+        7: protobuf.Field("workchain", "TonWorkChain", repeated=False, required=False),
+        8: protobuf.Field("is_bounceable", "bool", repeated=False, required=False),
+        9: protobuf.Field("is_testnet_only", "bool", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        appdomain: "bytes",
+        expire_at: "int",
+        address_n: Optional[Sequence["int"]] = None,
+        comment: Optional["bytes"] = None,
+        wallet_version: Optional["TonWalletVersion"] = TonWalletVersion.V4R2,
+        wallet_id: Optional["int"] = 698983191,
+        workchain: Optional["TonWorkChain"] = TonWorkChain.BASECHAIN,
+        is_bounceable: Optional["bool"] = False,
+        is_testnet_only: Optional["bool"] = False,
+    ) -> None:
+        self.address_n: Sequence["int"] = address_n if address_n is not None else []
+        self.appdomain = appdomain
+        self.expire_at = expire_at
+        self.comment = comment
+        self.wallet_version = wallet_version
+        self.wallet_id = wallet_id
+        self.workchain = workchain
+        self.is_bounceable = is_bounceable
+        self.is_testnet_only = is_testnet_only
+
+
+class TonSignedProof(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 11906
+    FIELDS = {
+        1: protobuf.Field("signature", "bytes", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        signature: Optional["bytes"] = None,
+    ) -> None:
+        self.signature = signature
 
 
 class TronGetAddress(protobuf.MessageType):

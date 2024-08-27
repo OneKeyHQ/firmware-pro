@@ -76,6 +76,10 @@ __all__ = (
     "confirm_nostrmessage",
     "confirm_lnurl_auth",
     "show_error_no_interact",
+    "confirm_ton_transfer",
+    "confirm_ton_connect",
+    "confirm_ton_signverify",
+    "confirm_unknown_token_transfer",
 )
 
 
@@ -965,7 +969,7 @@ async def confirm_sign_identity(
         primary_color=ctx.primary_color,
     )
     await raise_if_cancelled(
-        interact(ctx, screen, "sign_identity", ButtonRequestType.Other)
+        interact(ctx, screen, "sign_identity", ButtonRequestType.Other)  
     )
 
 
@@ -1947,6 +1951,82 @@ async def confirm_polkadot_balances(
             interact(ctx, screen, "polkadot_balance", ButtonRequestType.ProtectCall)
         )
 
+async def confirm_ton_transfer(
+    ctx: wire.GenericContext,
+    from_addr: str,
+    to_addr: str,
+    amount: str,
+    memo: str | None,
+):
+    from trezor.lvglui.scrs.template import TonTransfer
+
+    screen = TonTransfer(from_addr, to_addr, amount, memo, ctx.primary_color)
+
+    await raise_if_cancelled(
+        interact(ctx, screen, "confirm_ton_transfer", ButtonRequestType.ProtectCall)
+    )
+
+async def confirm_ton_connect(
+    ctx: wire.GenericContext,
+    domain: str,
+    addr: str,
+    payload: str | None,
+):
+    from trezor.lvglui.scrs.template import TonConnect
+
+    screen = TonConnect(domain, addr, payload, ctx.primary_color)
+
+    await raise_if_cancelled(
+        interact(ctx, screen, "confirm_ton_connect", ButtonRequestType.ProtectCall)
+    )
+
+async def confirm_ton_signverify(
+    ctx: wire.GenericContext,
+    coin: str,
+    message: str,
+    address: str,
+    domain: str,
+    verify: bool,
+) -> None:
+    if verify:
+        header = _(i18n_keys.TITLE__VERIFY_STR_MESSAGE).format(coin)
+        br_type = "verify_message"
+    else:
+        header = _(i18n_keys.TITLE__SIGN_STR_MESSAGE).format(coin)
+        br_type = "sign_message"
+    from trezor.lvglui.scrs.template import TonMessage
+
+    await raise_if_cancelled(
+        interact(
+            ctx,
+            TonMessage(
+                header,
+                address,
+                message,
+                domain,
+                ctx.primary_color,
+                ctx.icon_path,
+                verify,
+            ),
+            br_type,
+            ButtonRequestType.Other,
+        )
+    )
+
+def confirm_unknown_token_transfer(
+    ctx: wire.GenericContext,
+    address: str,
+):
+    return confirm_address(
+        ctx,
+        _(i18n_keys.TITLE__UNKNOWN_TOKEN),
+        address,
+        description=_(i18n_keys.LIST_KEY__CONTRACT_ADDRESS__COLON),
+        br_type="unknown_token",
+        icon="A:/res/warning.png",
+        icon_color=ui.ORANGE,
+        br_code=ButtonRequestType.SignTx,
+    )
 
 async def confirm_tron_freeze(
     ctx: wire.GenericContext,
