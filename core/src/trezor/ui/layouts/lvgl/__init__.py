@@ -2050,7 +2050,7 @@ async def confirm_tron_common(
 
 async def show_ur_response(
     ctx: wire.GenericContext,
-    title: str,
+    title: str | None,
     qr_code: str | None,
     encoder=None,
 ) -> None:

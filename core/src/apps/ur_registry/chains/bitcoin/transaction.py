@@ -392,16 +392,6 @@ class SignPsbt:
                 if our_keys > passes:
                     passes = our_keys
 
-                if (
-                    not found and not found_in_sigs
-                ):  # None of our keys were in hd_keypaths or in partial_sigs
-                    # This input is not one of ours
-                    raise Exception("Invalid input params")
-                # elif not found and found_in_sigs:
-                #     # All of our keys are in partial_sigs, pick the first key that is ours, sign with it,
-                #     # and ignore whatever signature is produced for this input
-                #     raise Exception("Invalid input params")
-
                 # append to inputs
                 inputs.append(txinputtype)
             self.inputs = inputs

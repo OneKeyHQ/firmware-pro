@@ -1350,7 +1350,15 @@ class BackupWallet(Screen):
 
 
 class ConnectWallet(FullSizeWindow):
-    def __init__(self, wallet_name, support_chains, qr_data, icon_path, encoder=None):
+    def __init__(
+        self,
+        wallet_name,
+        support_chains,
+        qr_data,
+        icon_path=None,
+        encoder=None,
+        subtitle=None,
+    ):
         super().__init__(
             _(i18n_keys.TITLE__CONNECT_STR_WALLET).format(wallet_name)
             if wallet_name
