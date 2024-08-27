@@ -10735,37 +10735,6 @@ class TronUnDelegateResourceContract(protobuf.MessageType):
         self.receiver_address = receiver_address
 
 
-class URCryptoHdkey(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = 21000
-    FIELDS = {
-        1: protobuf.Field("address_n", "uint32", repeated=True, required=False),
-        2: protobuf.Field("show_display", "bool", repeated=False, required=False),
-    }
-
-    def __init__(
-        self,
-        *,
-        address_n: Optional[Sequence["int"]] = None,
-        show_display: Optional["bool"] = None,
-    ) -> None:
-        self.address_n: Sequence["int"] = address_n if address_n is not None else []
-        self.show_display = show_display
-
-
-class URResponse(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = 21001
-    FIELDS = {
-        1: protobuf.Field("data", "string", repeated=False, required=False),
-    }
-
-    def __init__(
-        self,
-        *,
-        data: Optional["str"] = None,
-    ) -> None:
-        self.data = data
-
-
 class WebAuthnListResidentCredentials(protobuf.MessageType):
     MESSAGE_WIRE_TYPE = 800
 
