@@ -129,7 +129,7 @@ async def sign_tx(
 
     hash_bytes = hasher.digest()
 
-    await confirm_final(ctx, "ALEPHIUM")
+    await confirm_final(ctx, "Alephium")
     signature = secp256k1.sign(node.private_key(), hash_bytes, False)[1:]
 
     return AlephiumSignedTx(signature=signature, address=address)

@@ -54,5 +54,7 @@ def sign_tx(client: "TrezorClient", address_n: "Address", rawtx: str, data_lengt
 
 @expect(messages.AlephiumMessageSignature)
 def sign_message(client: "TrezorClient", address_n: "Address", message: str,message_type: str):
-   resp = client.call(messages.AlephiumSignMessage(address_n=address_n, message = message , message_type= message_type))
+   message_bytes = message.encode('utf-8')
+   message_type_bytes = message_type.encode('utf-8')
+   resp = client.call(messages.AlephiumSignMessage(address_n=address_n, message = message_bytes , message_type= message_type_bytes))
    return resp

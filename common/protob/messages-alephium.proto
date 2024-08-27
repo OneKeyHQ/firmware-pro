@@ -91,8 +91,8 @@ message AlephiumSignTx {
  */
 message AlephiumSignMessage {
     repeated uint32 address_n = 1; 
-    optional string message = 2;     
-    optional string message_type = 3;    
+    optional bytes message = 2;     
+    optional bytes message_type = 3;    
 }
 
 /**

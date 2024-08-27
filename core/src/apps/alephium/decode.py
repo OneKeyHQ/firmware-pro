@@ -1,32 +1,20 @@
 import binascii
 
-from apps.alephium.get_address import b58encode
+from trezor.crypto import base58
 
 
 def generate_address_from_output(lockup_script_type, lockup_script_hash):
     if lockup_script_type == 0:  # P2PKH
-        return generate_p2pkh_address(lockup_script_hash)
+        address_bytes = bytes([0x00]) + binascii.unhexlify(lockup_script_hash)
+        return base58.encode(address_bytes)
     elif lockup_script_type == 1:  # P2MPKH
-        return generate_p2mpkh_address(lockup_script_hash)
+        address_bytes = bytes([0x01]) + binascii.unhexlify(lockup_script_hash)
+        return base58.encode(address_bytes)
     elif lockup_script_type == 2:  # P2SH
-        return generate_p2sh_address(lockup_script_hash)
+        address_bytes = bytes([0x02]) + binascii.unhexlify(lockup_script_hash)
+        return base58.encode(address_bytes)
     else:
         raise ValueError(f"Unsupported lockup script type: {lockup_script_type}")
-
-
-def generate_p2pkh_address(lockup_script_hash: str) -> str:
-    address_bytes = bytes([0x00]) + binascii.unhexlify(lockup_script_hash)
-    return b58encode(address_bytes)
-
-
-def generate_p2mpkh_address(lockup_script_hash: str) -> str:
-    address_bytes = bytes([0x01]) + binascii.unhexlify(lockup_script_hash)
-    return b58encode(address_bytes)
-
-
-def generate_p2sh_address(lockup_script_hash: str) -> str:
-    address_bytes = bytes([0x02]) + binascii.unhexlify(lockup_script_hash)
-    return b58encode(address_bytes)
 
 
 def decode_unlock_script(data):

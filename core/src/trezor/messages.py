@@ -196,15 +196,15 @@ if TYPE_CHECKING:
 
     class AlephiumSignMessage(protobuf.MessageType):
         address_n: "list[int]"
-        message: "str | None"
-        message_type: "str | None"
+        message: "bytes | None"
+        message_type: "bytes | None"
 
         def __init__(
             self,
             *,
             address_n: "list[int] | None" = None,
-            message: "str | None" = None,
-            message_type: "str | None" = None,
+            message: "bytes | None" = None,
+            message_type: "bytes | None" = None,
         ) -> None:
             pass
 

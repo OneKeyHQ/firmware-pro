@@ -22,8 +22,8 @@ if TYPE_CHECKING:
 async def sign_message(
     ctx: Context, msg: AlephiumSignMessage, keychain: Keychain
 ) -> AlephiumMessageSignature:
+
     message = msg.message or b""
-    message = message.encode("utf-8") if isinstance(message, str) else message
     validate_message(message)
 
     await paths.validate_path(ctx, keychain, msg.address_n)
@@ -31,7 +31,7 @@ async def sign_message(
     public_key = node.public_key()
     address = generate_alephium_address(public_key)
 
-    if msg.message_type != "alephium":
+    if msg.message_type != b"alephium":
         raise ValueError("Unsupported Message Type")
 
     prefix = b"Alephium Signed Message: "
@@ -40,7 +40,7 @@ async def sign_message(
 
     ctx.primary_color, ctx.icon_path = lv.color_hex(PRIMARY_COLOR), ICON
     await confirm_signverify(
-        ctx, "ALEPHIUM", message.decode("utf-8"), address, verify=False
+        ctx, "Alephium", message.decode("utf-8"), address, verify=False
     )
 
     signature = secp256k1.sign(node.private_key(), hash_bytes, False)[1:]

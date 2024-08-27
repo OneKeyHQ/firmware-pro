@@ -907,16 +907,16 @@ class AlephiumSignMessage(protobuf.MessageType):
     MESSAGE_WIRE_TYPE = 12109
     FIELDS = {
         1: protobuf.Field("address_n", "uint32", repeated=True, required=False),
-        2: protobuf.Field("message", "string", repeated=False, required=False),
-        3: protobuf.Field("message_type", "string", repeated=False, required=False),
+        2: protobuf.Field("message", "bytes", repeated=False, required=False),
+        3: protobuf.Field("message_type", "bytes", repeated=False, required=False),
     }
 
     def __init__(
         self,
         *,
         address_n: Optional[Sequence["int"]] = None,
-        message: Optional["str"] = None,
-        message_type: Optional["str"] = None,
+        message: Optional["bytes"] = None,
+        message_type: Optional["bytes"] = None,
     ) -> None:
         self.address_n: Sequence["int"] = address_n if address_n is not None else []
         self.message = message
