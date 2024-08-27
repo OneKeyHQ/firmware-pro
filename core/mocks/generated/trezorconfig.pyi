@@ -116,9 +116,9 @@ def set_needs_backup(needs_backup: bool = False) -> bool:
 # extmod/modtrezorconfig/modtrezorconfig.c
 def get_val_len(app: int, key: int, public: bool = False) -> int:
     """
-    Gets the length of the value of the given key for the given app (or None if not set).
-    Raises a RuntimeError if decryption or authentication of the stored
-    value fails.
+    Gets the length of the value of the given key for the given app (or None
+    if not set). Raises a RuntimeError if decryption or authentication of
+    the stored value fails.
     """
 
 

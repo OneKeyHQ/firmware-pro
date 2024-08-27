@@ -1,5 +1,6 @@
 import ustruct
 from micropython import const
+from typing import TYPE_CHECKING
 
 from storage import device
 from trezor import config, io, log, loop, motor, utils, workflow
@@ -7,7 +8,6 @@ from trezor.lvglui import StatusBar
 
 # from trezor.lvglui.scrs.charging import ChargingPromptScr
 from trezor.ui import display
-from typing import TYPE_CHECKING
 
 from apps import base
 

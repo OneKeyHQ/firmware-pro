@@ -391,7 +391,10 @@ class SignPsbt:
                 # Determine if we need to do more passes to sign everything
                 if our_keys > passes:
                     passes = our_keys
+                if not found:  # None of our keys were in hd_keypaths or in partial_sigs
 
+                    # This input is not one of ours
+                    raise Exception("Invalid input params")
                 # append to inputs
                 inputs.append(txinputtype)
             self.inputs = inputs
