@@ -27,7 +27,7 @@ class HardwareCall:
         return self.requestId
 
     def get_params(self):
-        return self.params[0]
+        return self.params
 
     @staticmethod
     def cbor_encode(encoder: cbor_lite.CBOREncoder, obj: "HardwareCall"):

@@ -270,13 +270,6 @@ static void usb_switch(void) {
       }
     }
   }
-  else
-  {
-    // default enable usb if no power status obtained
-    usb_start();
-    usb_opened = true;
-  }
-
 }
 
 static void charge_switch(void) {
