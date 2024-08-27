@@ -395,6 +395,13 @@ class MessageType(IntEnum):
     TonSignedMessage = 11904
     TonSignProof = 11905
     TonSignedProof = 11906
+    ScdoGetAddress = 12001
+    ScdoAddress = 12002
+    ScdoSignTx = 12003
+    ScdoSignedTx = 12004
+    ScdoTxAck = 12005
+    ScdoSignMessage = 12006
+    ScdoSignedMessage = 12007
     DeviceBackToBoot = 903
     RebootToBoardloader = 904
     DeviceInfoSettings = 10001
@@ -9241,6 +9248,143 @@ class RipplePayment(protobuf.MessageType):
         self.amount = amount
         self.destination = destination
         self.destination_tag = destination_tag
+
+
+class ScdoGetAddress(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 12001
+    FIELDS = {
+        1: protobuf.Field("address_n", "uint32", repeated=True, required=False),
+        2: protobuf.Field("show_display", "bool", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        address_n: Optional[Sequence["int"]] = None,
+        show_display: Optional["bool"] = None,
+    ) -> None:
+        self.address_n: Sequence["int"] = address_n if address_n is not None else []
+        self.show_display = show_display
+
+
+class ScdoAddress(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 12002
+    FIELDS = {
+        1: protobuf.Field("address", "string", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        address: "str",
+    ) -> None:
+        self.address = address
+
+
+class ScdoSignTx(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 12003
+    FIELDS = {
+        1: protobuf.Field("address_n", "uint32", repeated=True, required=False),
+        2: protobuf.Field("nonce", "bytes", repeated=False, required=True),
+        3: protobuf.Field("gas_price", "bytes", repeated=False, required=True),
+        4: protobuf.Field("gas_limit", "bytes", repeated=False, required=True),
+        5: protobuf.Field("to", "string", repeated=False, required=True),
+        6: protobuf.Field("value", "bytes", repeated=False, required=True),
+        7: protobuf.Field("timestamp", "bytes", repeated=False, required=False),
+        8: protobuf.Field("data_initial_chunk", "bytes", repeated=False, required=False),
+        9: protobuf.Field("data_length", "uint32", repeated=False, required=False),
+        10: protobuf.Field("tx_type", "uint32", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        nonce: "bytes",
+        gas_price: "bytes",
+        gas_limit: "bytes",
+        to: "str",
+        value: "bytes",
+        address_n: Optional[Sequence["int"]] = None,
+        timestamp: Optional["bytes"] = None,
+        data_initial_chunk: Optional["bytes"] = b'',
+        data_length: Optional["int"] = 0,
+        tx_type: Optional["int"] = 0,
+    ) -> None:
+        self.address_n: Sequence["int"] = address_n if address_n is not None else []
+        self.nonce = nonce
+        self.gas_price = gas_price
+        self.gas_limit = gas_limit
+        self.to = to
+        self.value = value
+        self.timestamp = timestamp
+        self.data_initial_chunk = data_initial_chunk
+        self.data_length = data_length
+        self.tx_type = tx_type
+
+
+class ScdoSignedTx(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 12004
+    FIELDS = {
+        1: protobuf.Field("data_length", "uint32", repeated=False, required=False),
+        2: protobuf.Field("signature", "bytes", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        data_length: Optional["int"] = None,
+        signature: Optional["bytes"] = None,
+    ) -> None:
+        self.data_length = data_length
+        self.signature = signature
+
+
+class ScdoTxAck(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 12005
+    FIELDS = {
+        1: protobuf.Field("data_chunk", "bytes", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        data_chunk: Optional["bytes"] = None,
+    ) -> None:
+        self.data_chunk = data_chunk
+
+
+class ScdoSignMessage(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 12006
+    FIELDS = {
+        1: protobuf.Field("address_n", "uint32", repeated=True, required=False),
+        2: protobuf.Field("message", "bytes", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        address_n: Optional[Sequence["int"]] = None,
+        message: Optional["bytes"] = None,
+    ) -> None:
+        self.address_n: Sequence["int"] = address_n if address_n is not None else []
+        self.message = message
+
+
+class ScdoSignedMessage(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 12007
+    FIELDS = {
+        1: protobuf.Field("signature", "bytes", repeated=False, required=False),
+        2: protobuf.Field("address", "string", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        signature: Optional["bytes"] = None,
+        address: Optional["str"] = None,
+    ) -> None:
+        self.signature = signature
+        self.address = address
 
 
 class SolanaGetAddress(protobuf.MessageType):

@@ -387,6 +387,13 @@ if TYPE_CHECKING:
         TonSignedMessage = 11904
         TonSignProof = 11905
         TonSignedProof = 11906
+        ScdoGetAddress = 12001
+        ScdoAddress = 12002
+        ScdoSignTx = 12003
+        ScdoSignedTx = 12004
+        ScdoTxAck = 12005
+        ScdoSignMessage = 12006
+        ScdoSignedMessage = 12007
         DeviceBackToBoot = 903
         RebootToBoardloader = 904
         DeviceInfoSettings = 10001

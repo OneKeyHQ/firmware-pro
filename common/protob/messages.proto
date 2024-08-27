@@ -535,6 +535,14 @@ enum MessageType {
     MessageType_TonSignedMessage = 11904 [(wire_out) = true];
     MessageType_TonSignProof = 11905 [(wire_in) = true];
     MessageType_TonSignedProof = 11906 [(wire_out) = true];
+    // scdo
+    MessageType_ScdoGetAddress = 12001 [(wire_in) = true];
+    MessageType_ScdoAddress = 12002 [(wire_out) = true];
+    MessageType_ScdoSignTx = 12003 [(wire_in) = true];
+    MessageType_ScdoSignedTx = 12004 [(wire_out) = true];
+    MessageType_ScdoTxAck = 12005 [(wire_in) = true];
+    MessageType_ScdoSignMessage = 12006 [(wire_in) = true];
+    MessageType_ScdoSignedMessage = 12007 [(wire_out) = true];
     
     //onekey
     MessageType_DeviceBackToBoot = 903 [(wire_in) = true];

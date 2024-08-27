@@ -7336,6 +7336,130 @@ if TYPE_CHECKING:
         def is_type_of(cls, msg: Any) -> TypeGuard["RipplePayment"]:
             return isinstance(msg, cls)
 
+    class ScdoGetAddress(protobuf.MessageType):
+        address_n: "list[int]"
+        show_display: "bool | None"
+
+        def __init__(
+            self,
+            *,
+            address_n: "list[int] | None" = None,
+            show_display: "bool | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["ScdoGetAddress"]:
+            return isinstance(msg, cls)
+
+    class ScdoAddress(protobuf.MessageType):
+        address: "str"
+
+        def __init__(
+            self,
+            *,
+            address: "str",
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["ScdoAddress"]:
+            return isinstance(msg, cls)
+
+    class ScdoSignTx(protobuf.MessageType):
+        address_n: "list[int]"
+        nonce: "bytes"
+        gas_price: "bytes"
+        gas_limit: "bytes"
+        to: "str"
+        value: "bytes"
+        timestamp: "bytes | None"
+        data_initial_chunk: "bytes"
+        data_length: "int"
+        tx_type: "int"
+
+        def __init__(
+            self,
+            *,
+            nonce: "bytes",
+            gas_price: "bytes",
+            gas_limit: "bytes",
+            to: "str",
+            value: "bytes",
+            address_n: "list[int] | None" = None,
+            timestamp: "bytes | None" = None,
+            data_initial_chunk: "bytes | None" = None,
+            data_length: "int | None" = None,
+            tx_type: "int | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["ScdoSignTx"]:
+            return isinstance(msg, cls)
+
+    class ScdoSignedTx(protobuf.MessageType):
+        data_length: "int | None"
+        signature: "bytes | None"
+
+        def __init__(
+            self,
+            *,
+            data_length: "int | None" = None,
+            signature: "bytes | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["ScdoSignedTx"]:
+            return isinstance(msg, cls)
+
+    class ScdoTxAck(protobuf.MessageType):
+        data_chunk: "bytes | None"
+
+        def __init__(
+            self,
+            *,
+            data_chunk: "bytes | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["ScdoTxAck"]:
+            return isinstance(msg, cls)
+
+    class ScdoSignMessage(protobuf.MessageType):
+        address_n: "list[int]"
+        message: "bytes | None"
+
+        def __init__(
+            self,
+            *,
+            address_n: "list[int] | None" = None,
+            message: "bytes | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["ScdoSignMessage"]:
+            return isinstance(msg, cls)
+
+    class ScdoSignedMessage(protobuf.MessageType):
+        signature: "bytes | None"
+        address: "str | None"
+
+        def __init__(
+            self,
+            *,
+            signature: "bytes | None" = None,
+            address: "str | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["ScdoSignedMessage"]:
+            return isinstance(msg, cls)
+
     class SolanaGetAddress(protobuf.MessageType):
         address_n: "list[int]"
         show_display: "bool | None"
