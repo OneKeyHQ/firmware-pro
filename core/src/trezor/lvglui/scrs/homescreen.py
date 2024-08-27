@@ -1438,9 +1438,6 @@ class ConnectWallet(FullSizeWindow):
     def on_scroll_end(self, event_obj):
         self.scrolling = False
 
-        if encoder is not None:
-            workflow.spawn(self.update_qr())
-
     def on_nav_back(self, event_obj):
         code = event_obj.code
         target = event_obj.get_target()
