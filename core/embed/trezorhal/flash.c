@@ -371,7 +371,7 @@ bool flash_fix_ecc_fault_BOOTLOADER(uint32_t address) {
 
   // sanity check
   if (sector != FLASH_SECTOR_BOOTLOADER_1 &&
-      sector != FLASH_SECTOR_BOOTLOADER_1) {
+      sector != FLASH_SECTOR_BOOTLOADER_2) {
     return false;
   }
 

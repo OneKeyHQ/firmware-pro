@@ -33,7 +33,6 @@
 #include "mini_printf.h"
 #include "mipi_lcd.h"
 #include "mpu.h"
-#include "nand_flash.h"
 #include "qspi_flash.h"
 #include "random_delays.h"
 #include "se_thd89.h"
@@ -53,7 +52,6 @@
 #include "jpeg_dma.h"
 #include "messages.h"
 #include "motor.h"
-#include "mpu.h"
 #include "spi.h"
 #include "spi_legacy.h"
 #include "systick.h"
@@ -274,7 +272,6 @@ static void usb_switch(void) {
         usb_opened = true;
       }
     }
-
   } else {
     counter0 = 0;
     counter1++;
@@ -833,6 +830,7 @@ int main(void) {
       jump_to(FIRMWARE_START + vhdr.hdrlen + IMAGE_HEADER_SIZE);
     }
   }
+
   error_shutdown("Internal error", "Boot target invalid", "Tap to restart.",
                  "If the issue persists, contact support.");
   return -1;
