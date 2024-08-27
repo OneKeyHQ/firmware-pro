@@ -286,7 +286,9 @@ static secbool try_bootloader_update(bool do_update, bool auto_reboot) {
   image_header hdr;
 
 #if PRODUCTION
-  secbool bootloader_valid = validate_bootloader(&hdr);
+  secbool bootloader_valid = load_image_header(
+      (const uint8_t *)BOOTLOADER_START, BOOTLOADER_IMAGE_MAGIC,
+      BOOTLOADER_IMAGE_MAXSIZE, FW_KEY_M, FW_KEY_N, FW_KEYS, &hdr);
   // handle downgrade or invalid bootloader
   if (bootloader_valid == sectrue) {
     if (memcmp(&file_hdr.version, &hdr.version, 4) < 0) {
