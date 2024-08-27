@@ -590,7 +590,7 @@ class TransactionDetailsAlepHium(FullSizeWindow):
             self.item_group_header = CardHeader(
                 self.group_amounts,
                 _(i18n_keys.SUBTITLE__ADA_TX_CONTAINS_TOKEN),
-                "A:/res/banner-icon-gray.png",
+                "A:/res/notice.png",
             )
             self.group_amounts.add_dummy()
             self.group_directions = ContainerFlexCol(
@@ -598,17 +598,17 @@ class TransactionDetailsAlepHium(FullSizeWindow):
             )
             self.item_group_header = CardHeader(
                 self.group_directions,
-                "Amount",
+                _(i18n_keys.LIST_KEY__AMOUNT__COLON),
                 "A:/res/group-icon-directions.png",
             )
             self.item_group_body_to_addr = DisplayItem(
                 self.group_directions,
-                "Token id",
+                _(i18n_keys.LIST_KEY__TOKEN_ID__COLON),
                 token_id,
             )
             self.item_group_body_from_addr = DisplayItem(
                 self.group_directions,
-                "Amount",
+                _(i18n_keys.LIST_KEY__AMOUNT__COLON),
                 str(token_amount),
             )
             self.group_directions.add_dummy()
@@ -642,7 +642,7 @@ class TransactionDetailsAlepHium(FullSizeWindow):
             )
             self.item_group_body_gas_price = DisplayItem(
                 self.group_fees,
-                _(i18n_keys.LIST_KEY__GAS_PRICE__COLON),
+                _(i18n_keys.LIST_KEY__TRANSACTION_FEE__COLON),
                 gas_amount,
             )
 
