@@ -1,6 +1,5 @@
 import ustruct
 from micropython import const
-from typing import TYPE_CHECKING
 
 from storage import device
 from trezor import config, io, log, loop, motor, utils, workflow
@@ -8,6 +7,7 @@ from trezor.lvglui import StatusBar
 
 # from trezor.lvglui.scrs.charging import ChargingPromptScr
 from trezor.ui import display
+from typing import TYPE_CHECKING
 
 from apps import base
 
@@ -46,6 +46,7 @@ wireless_charge_screen_off_task = None
 
 async def handle_fingerprint():
     from trezorio import fingerprint
+
     from trezor.lvglui.scrs import fingerprints
 
     global BUTTON_PRESSING
@@ -334,9 +335,7 @@ async def _deal_button_press(value: bytes) -> None:
         global BUTTON_PRESSING
         BUTTON_PRESSING = True
         if utils.is_collecting_fingerprint():
-            from trezor.lvglui.scrs.fingerprints import (
-                CollectFingerprintProgress,
-            )
+            from trezor.lvglui.scrs.fingerprints import CollectFingerprintProgress
 
             if CollectFingerprintProgress.has_instance():
                 CollectFingerprintProgress.get_instance().prompt_tips()
