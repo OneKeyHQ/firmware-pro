@@ -8,18 +8,15 @@ SCRIPT_TYPE_P2SH = 2
 
 
 def generate_address_from_output(lockup_script_type, lockup_script_hash):
-
-    if lockup_script_type == SCRIPT_TYPE_P2PKH:  # P2PKH
-        address_bytes = bytes([0x00]) + binascii.unhexlify(lockup_script_hash)
-        return base58.encode(address_bytes)
-    elif lockup_script_type == SCRIPT_TYPE_P2MPKH:  # P2MPKH
-        address_bytes = bytes([0x01]) + binascii.unhexlify(lockup_script_hash)
-        return base58.encode(address_bytes)
-    elif lockup_script_type == SCRIPT_TYPE_P2SH:  # P2SH
-        address_bytes = bytes([0x02]) + binascii.unhexlify(lockup_script_hash)
-        return base58.encode(address_bytes)
-    else:
+    if lockup_script_type not in [
+        SCRIPT_TYPE_P2PKH,
+        SCRIPT_TYPE_P2MPKH,
+        SCRIPT_TYPE_P2SH,
+    ]:
         raise ValueError(f"Unsupported lockup script type: {lockup_script_type}")
+
+    address_bytes = bytes([lockup_script_type]) + binascii.unhexlify(lockup_script_hash)
+    return base58.encode(address_bytes)
 
 
 def decode_unlock_script(data):
