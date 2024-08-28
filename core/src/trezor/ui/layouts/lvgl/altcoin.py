@@ -193,3 +193,55 @@ async def confirm_total_ton(
     await raise_if_cancelled(
         interact(ctx, screen, "confirm_total", ButtonRequestType.SignTx)
     )
+    
+async def confirm_total_alephium(
+    ctx: wire.GenericContext,
+    amount: str | None = None,
+    gas_amount: str | None = None,
+    from_address: str | None = None,
+    to_address: str | None = None,
+    token_id: str | None = None,
+    raw_data: bytes | None = None,
+    token_amount: str | None = None,
+) -> None:
+    from trezor.lvglui.scrs.template import TransactionDetailsAlepHium
+
+    subtitle = None
+    icon_path = "A:/res/icon-send.png"
+    sub_icon_path = ctx.icon_path
+    if amount:
+        strip_result = strip_amount(amount)
+        short_amount = (
+            strip_result[0] if isinstance(strip_result, tuple) else strip_result
+        )
+        title = _(i18n_keys.TITLE__SEND_MULTILINE).format(short_amount)
+    elif token_amount:
+        short_amount = None
+        title = _(i18n_keys.TITLE__SEND_TOKENS)
+    elif raw_data:
+        title = _(i18n_keys.TITLE__VIEW_TRANSACTION)
+        subtitle = _(i18n_keys.CONTENT__FOLLOWING_TRANSACTION_CONTAINS_CONTRACT)
+        icon_path = ctx.icon_path
+        sub_icon_path = None
+    elif gas_amount:
+        title = _(i18n_keys.LIST_KEY__TRANSACTION_FEE_COLON)
+        icon_path = ctx.icon_path
+        sub_icon_path = None
+
+    screen = TransactionDetailsAlepHium(
+        title,
+        from_address,
+        to_address,
+        subtitle,
+        amount,
+        gas_amount=gas_amount,
+        primary_color=ctx.primary_color,
+        token_id=token_id,
+        raw_data=raw_data,
+        icon_path=icon_path,
+        sub_icon_path=sub_icon_path,
+        token_amount=token_amount,
+    )
+    await raise_if_cancelled(
+        interact(ctx, screen, "confirm_total", ButtonRequestType.SignTx)
+    )

@@ -401,6 +401,18 @@ trezor.workflow
 import trezor.workflow
 apps
 import apps
+apps.alephium
+import apps.alephium
+apps.alephium.decode
+import apps.alephium.decode
+apps.alephium.get_address
+import apps.alephium.get_address
+apps.alephium.layout
+import apps.alephium.layout
+apps.alephium.sign_message
+import apps.alephium.sign_message
+apps.alephium.sign_tx
+import apps.alephium.sign_tx
 apps.algorand
 import apps.algorand
 apps.algorand.encoding

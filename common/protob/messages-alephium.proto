@@ -1,0 +1,106 @@
+syntax = "proto2";
+package hw.trezor.messages.Alephium;
+
+// Sugar for easier handling in Java
+option java_package = "com.satoshilabs.trezor.lib.protobuf";
+option java_outer_classname = "TrezorMessageAlephium";
+
+
+/**
+ * Request: Ask device for address corresponding to address_n path
+ * @start
+ * @next Address
+ * @next Failure
+ */
+message AlephiumGetAddress {
+    repeated uint32 address_n = 1;                                      // BIP-32 path to derive the key from master node
+    optional bool show_display = 2;                                     // optionally show on display before sending the result
+}
+
+/**
+ * Response: Contains address derived from device private seed
+ * @end
+ */
+message AlephiumAddress {
+    required string address = 1;
+}
+
+/**
+ * Request: Ask device to sign transaction
+ * @start
+ * @next AlephiumSignedTx
+ * @next AlephiumTxInputRequest
+ * @next Failure
+ */
+message AlephiumSignTx {
+    repeated uint32 address_n = 1;                                      
+    required bytes  data_initial_chunk = 2;                             
+    optional uint32 data_length = 3;                                    
+   }
+
+/**
+ * Response: transaction signature
+ * @end
+ */
+ message AlephiumSignedTx {
+    required bytes signature = 1;   
+    required string address  = 2;
+}
+
+
+
+/**
+ * Response: Device asks for more data from transaction payload, or returns the signature.
+ * If data_length is set, device awaits that many more bytes of payload.
+ * Otherwise, the signature fields contain the computed transaction signature. All three fields will be present.
+ * @end
+ * @next AlephiumTxAck
+ */
+ message AlephiumTxRequest {
+    optional uint32 data_length = 1;    // Number of bytes being requested (<= 1024)
+    optional bytes public_key = 2;      // public key for the private key used to sign tx
+    optional bytes signature = 3;       // the signature of the raw transaction
+}
+
+/**
+ * Request: Transaction payload data.
+ * @next AlephiumTxRequest
+ */
+ message AlephiumTxAck {
+    required bytes data_chunk = 1;  // Bytes from transaction payload (<= 1024 bytes)
+}
+
+
+ message AlephiumBytecodeRequest {
+    optional uint32 data_length = 1;    
+    optional bytes public_key = 2;      
+    optional bytes signature = 3;      
+}
+
+
+ message AlephiumBytecodeAck {
+    required bytes bytecode_data = 1;  
+}
+
+
+/**
+ * Request: Ask device to sign message
+ * @start
+ * @next AlephiumMessageSignature
+ * @next Failure
+ */
+message AlephiumSignMessage {
+    repeated uint32 address_n = 1; 
+    optional bytes message = 2;     
+    optional bytes message_type = 3;    
+}
+
+/**
+ * Response: Signed message
+ * @end
+ */
+message AlephiumMessageSignature {
+    optional bytes  signature = 1;  
+    optional string address = 2;     
+}
+

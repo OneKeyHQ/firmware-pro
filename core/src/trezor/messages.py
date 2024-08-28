@@ -68,6 +68,168 @@ if TYPE_CHECKING:
     from trezor.enums import TronResourceCode  # noqa: F401
     from trezor.enums import WordRequestType  # noqa: F401
 
+    class AlephiumGetAddress(protobuf.MessageType):
+        address_n: "list[int]"
+        show_display: "bool | None"
+
+        def __init__(
+            self,
+            *,
+            address_n: "list[int] | None" = None,
+            show_display: "bool | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["AlephiumGetAddress"]:
+            return isinstance(msg, cls)
+
+    class AlephiumAddress(protobuf.MessageType):
+        address: "str"
+
+        def __init__(
+            self,
+            *,
+            address: "str",
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["AlephiumAddress"]:
+            return isinstance(msg, cls)
+
+    class AlephiumSignTx(protobuf.MessageType):
+        address_n: "list[int]"
+        data_initial_chunk: "bytes"
+        data_length: "int | None"
+
+        def __init__(
+            self,
+            *,
+            data_initial_chunk: "bytes",
+            address_n: "list[int] | None" = None,
+            data_length: "int | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["AlephiumSignTx"]:
+            return isinstance(msg, cls)
+
+    class AlephiumSignedTx(protobuf.MessageType):
+        signature: "bytes"
+        address: "str"
+
+        def __init__(
+            self,
+            *,
+            signature: "bytes",
+            address: "str",
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["AlephiumSignedTx"]:
+            return isinstance(msg, cls)
+
+    class AlephiumTxRequest(protobuf.MessageType):
+        data_length: "int | None"
+        public_key: "bytes | None"
+        signature: "bytes | None"
+
+        def __init__(
+            self,
+            *,
+            data_length: "int | None" = None,
+            public_key: "bytes | None" = None,
+            signature: "bytes | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["AlephiumTxRequest"]:
+            return isinstance(msg, cls)
+
+    class AlephiumTxAck(protobuf.MessageType):
+        data_chunk: "bytes"
+
+        def __init__(
+            self,
+            *,
+            data_chunk: "bytes",
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["AlephiumTxAck"]:
+            return isinstance(msg, cls)
+
+    class AlephiumBytecodeRequest(protobuf.MessageType):
+        data_length: "int | None"
+        public_key: "bytes | None"
+        signature: "bytes | None"
+
+        def __init__(
+            self,
+            *,
+            data_length: "int | None" = None,
+            public_key: "bytes | None" = None,
+            signature: "bytes | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["AlephiumBytecodeRequest"]:
+            return isinstance(msg, cls)
+
+    class AlephiumBytecodeAck(protobuf.MessageType):
+        bytecode_data: "bytes"
+
+        def __init__(
+            self,
+            *,
+            bytecode_data: "bytes",
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["AlephiumBytecodeAck"]:
+            return isinstance(msg, cls)
+
+    class AlephiumSignMessage(protobuf.MessageType):
+        address_n: "list[int]"
+        message: "bytes | None"
+        message_type: "bytes | None"
+
+        def __init__(
+            self,
+            *,
+            address_n: "list[int] | None" = None,
+            message: "bytes | None" = None,
+            message_type: "bytes | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["AlephiumSignMessage"]:
+            return isinstance(msg, cls)
+
+    class AlephiumMessageSignature(protobuf.MessageType):
+        signature: "bytes | None"
+        address: "str | None"
+
+        def __init__(
+            self,
+            *,
+            signature: "bytes | None" = None,
+            address: "str | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["AlephiumMessageSignature"]:
+            return isinstance(msg, cls)
+
     class AlgorandGetAddress(protobuf.MessageType):
         address_n: "list[int]"
         show_display: "bool | None"

@@ -376,6 +376,16 @@ if not utils.BITCOIN_ONLY:
     ScdoTxAck = 12005
     ScdoSignMessage = 12006
     ScdoSignedMessage = 12007
+    AlephiumGetAddress = 12101
+    AlephiumAddress = 12102
+    AlephiumSignTx = 12103
+    AlephiumSignedTx = 12104
+    AlephiumTxRequest = 12105
+    AlephiumTxAck = 12106
+    AlephiumBytecodeRequest = 12107
+    AlephiumBytecodeAck = 12108
+    AlephiumSignMessage = 12109
+    AlephiumMessageSignature = 12110
     DeviceBackToBoot = 903
     RebootToBoardloader = 904
     DeviceInfoSettings = 10001

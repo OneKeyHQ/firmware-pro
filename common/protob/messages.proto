@@ -544,6 +544,19 @@ enum MessageType {
     MessageType_ScdoTxAck = 12005 [(wire_in) = true];
     MessageType_ScdoSignMessage = 12006 [(wire_in) = true];
     MessageType_ScdoSignedMessage = 12007 [(wire_out) = true];
+
+    // alephium
+    MessageType_AlephiumGetAddress = 12101 [(wire_in) = true];
+    MessageType_AlephiumAddress = 12102 [(wire_out) = true];
+    MessageType_AlephiumSignTx = 12103 [(wire_in) = true];
+    MessageType_AlephiumSignedTx = 12104 [(wire_out) = true];
+    MessageType_AlephiumTxRequest = 12105 [(wire_out) = true];
+    MessageType_AlephiumTxAck = 12106 [(wire_in) = true];
+    MessageType_AlephiumBytecodeRequest = 12107 [(wire_out) = true];
+    MessageType_AlephiumBytecodeAck = 12108 [(wire_in) = true];
+    MessageType_AlephiumSignMessage = 12109 [(wire_in) = true];
+    MessageType_AlephiumMessageSignature = 12110 [(wire_out) = true];
+
     
     //onekey
     MessageType_DeviceBackToBoot = 903 [(wire_in) = true];

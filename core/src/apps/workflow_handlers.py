@@ -355,6 +355,14 @@ def find_message_handler_module(msg_type: int) -> str:
             return "apps.scdo.sign_tx"
         if msg_type == MessageType.ScdoSignMessage:
             return "apps.scdo.sign_message"
+        
+        # alephium
+        if msg_type == MessageType.AlephiumGetAddress:
+            return "apps.alephium.get_address"
+        if msg_type == MessageType.AlephiumSignTx:
+            return "apps.alephium.sign_tx"
+        if msg_type == MessageType.AlephiumSignMessage:
+            return "apps.alephium.sign_message"
 
         # UR
         if msg_type == MessageType.URCryptoHdkey:

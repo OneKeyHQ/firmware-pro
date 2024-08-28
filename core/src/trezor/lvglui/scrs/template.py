@@ -540,6 +540,171 @@ class TransactionDetailsETH(FullSizeWindow):
                     cancel_text=None,
                 )
 
+class TransactionDetailsAlepHium(FullSizeWindow):
+    def __init__(
+        self,
+        title,
+        address_from,
+        address_to,
+        subtitle=None,
+        amount=None,
+        gas_amount=None,
+        primary_color=lv_colors.ONEKEY_GREEN,
+        token_id=None,
+        raw_data=None,
+        icon_path=None,
+        sub_icon_path=None,
+        token_amount=None,
+    ):
+        super().__init__(
+            title,
+            subtitle,
+            _(i18n_keys.BUTTON__CONTINUE),
+            _(i18n_keys.BUTTON__REJECT),
+            primary_color=primary_color,
+            icon_path=icon_path,
+            sub_icon_path=sub_icon_path,
+        )
+        self.primary_color = primary_color
+        if raw_data:
+            self.container = ContainerFlexCol(
+                self.content_area, self.subtitle, pos=(0, 40)
+            )
+        else:
+            self.container = ContainerFlexCol(
+                self.content_area, self.title, pos=(0, 40)
+            )
+        if amount:
+            self.group_directions = ContainerFlexCol(
+                self.container, None, padding_row=0, no_align=True
+            )
+            self.item_group_header = CardHeader(
+                self.group_directions,
+                _(i18n_keys.FORM__DIRECTIONS),
+                "A:/res/group-icon-directions.png",
+            )
+            self.item_group_body_to_addr = DisplayItem(
+                self.group_directions,
+                _(i18n_keys.LIST_KEY__TO__COLON),
+                address_to,
+            )
+            self.item_group_body_from_addr = DisplayItem(
+                self.group_directions,
+                _(i18n_keys.LIST_KEY__FROM__COLON),
+                address_from,
+            )
+            self.group_directions.add_dummy()
+
+        if token_amount:
+            self.group_amounts = ContainerFlexCol(
+                self.container, None, padding_row=0, no_align=True
+            )
+            self.item_group_header = CardHeader(
+                self.group_amounts,
+                _(i18n_keys.SUBTITLE__ADA_TX_CONTAINS_TOKEN),
+                "A:/res/notice.png",
+            )
+            self.group_amounts.add_dummy()
+            self.group_directions = ContainerFlexCol(
+                self.container, None, padding_row=0, no_align=True
+            )
+            self.item_group_header = CardHeader(
+                self.group_directions,
+                _(i18n_keys.LIST_KEY__AMOUNT__COLON),
+                "A:/res/group-icon-directions.png",
+            )
+            self.item_group_body_to_addr = DisplayItem(
+                self.group_directions,
+                _(i18n_keys.LIST_KEY__TOKEN_ID__COLON),
+                token_id,
+            )
+            self.item_group_body_from_addr = DisplayItem(
+                self.group_directions,
+                _(i18n_keys.LIST_KEY__AMOUNT__COLON),
+                str(token_amount),
+            )
+            self.group_directions.add_dummy()
+
+            self.group_directions = ContainerFlexCol(
+                self.container, None, padding_row=0, no_align=True
+            )
+            self.item_group_header = CardHeader(
+                self.group_directions,
+                _(i18n_keys.FORM__DIRECTIONS),
+                "A:/res/group-icon-directions.png",
+            )
+            self.item_group_body_to_addr = DisplayItem(
+                self.group_directions,
+                _(i18n_keys.LIST_KEY__TO__COLON),
+                address_to,
+            )
+            self.item_group_body_from_addr = DisplayItem(
+                self.group_directions,
+                _(i18n_keys.LIST_KEY__FROM__COLON),
+                address_from,
+            )
+            self.group_directions.add_dummy()
+
+        if gas_amount:
+            self.group_fees = ContainerFlexCol(
+                self.container, None, padding_row=0, no_align=True
+            )
+            self.item_group_header = CardHeader(
+                self.group_fees, _(i18n_keys.FORM__FEES), "A:/res/group-icon-fees.png"
+            )
+            self.item_group_body_gas_price = DisplayItem(
+                self.group_fees,
+                _(i18n_keys.LIST_KEY__TRANSACTION_FEE__COLON),
+                gas_amount,
+            )
+
+        if raw_data:
+            from trezor import strings
+
+            self.data_str = strings.format_customer_data(raw_data)
+            if not self.data_str:
+                return
+            self.long_data = False
+            if len(self.data_str) > 225:
+                self.long_data = True
+                self.data = self.data_str[:222] + "..."
+            else:
+                self.data = self.data_str
+
+            self.item_data = CardItem(
+                self.container,
+                _(i18n_keys.LIST_KEY__DATA__COLON),
+                self.data,
+                "A:/res/group-icon-data.png",
+            )
+
+            if self.long_data:
+                self.show_full_data = NormalButton(
+                    self.item_data.content, _(i18n_keys.BUTTON__VIEW_DATA)
+                )
+                self.show_full_data.set_size(lv.SIZE.CONTENT, 77)
+                self.show_full_data.add_style(
+                    StyleWrapper().text_font(font_GeistSemiBold26).pad_hor(24), 0
+                )
+                self.show_full_data.align(lv.ALIGN.CENTER, 0, 0)
+                self.show_full_data.remove_style(None, lv.PART.MAIN | lv.STATE.PRESSED)
+                self.show_full_data.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
+
+    def on_click(self, event_obj):
+        code = event_obj.code
+        target = event_obj.get_target()
+        if code == lv.EVENT.CLICKED:
+            if target == self.show_full_data:
+                PageAbleMessage(
+                    _(i18n_keys.TITLE__VIEW_DATA),
+                    self.data_str,
+                    None,
+                    primary_color=self.primary_color,
+                    font=font_GeistMono28,
+                    confirm_text=None,
+                    cancel_text=None,
+                )
+
 
 class ContractDataOverview(FullSizeWindow):
     def __init__(self, title, description, data, primary_color):

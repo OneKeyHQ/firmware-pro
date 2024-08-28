@@ -13,3 +13,4 @@ proto.gv*
 crypto/tests/libtrezor-crypto.so.dSYM/
 core/lextab.py
 core/yacctab.py
+env/

@@ -66,6 +66,7 @@ from . import (
     nervos,
     ton,
     scdo,
+    alephium,
 )
 
 F = TypeVar("F", bound=Callable)
@@ -113,6 +114,7 @@ COMMAND_ALIASES = {
     "nexa": nexa.cli,
     "ton": ton.cli,
     "scdo": scdo.cli,
+    "alephium": alephium.cli,
     # firmware aliases:
     "fw": firmware.cli,
     "update-firmware": firmware.update,
@@ -471,6 +473,7 @@ cli.add_command(nexa.cli)
 cli.add_command(nervos.cli)
 cli.add_command(ton.cli)
 cli.add_command(scdo.cli)
+cli.add_command(alephium.cli)
 
 
 #
@@ -478,5 +481,3 @@ cli.add_command(scdo.cli)
 #
 
 
-if __name__ == "__main__":
-    cli()  # pylint: disable=E1120
