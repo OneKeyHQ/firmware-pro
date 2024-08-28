@@ -70,6 +70,7 @@ def get_address(client: "TrezorClient",
 @click.option("-n", "--address", required=True, help=PATH_HELP)
 @click.option("-d", "--destination", type=str, required=True)
 @click.option("-j", "--jetton_master_address", type=str)
+@click.option("-jw", "--jetton_wallet_address", type=str)
 @click.option("-ta", "--ton_amount", type=int, required=True)
 @click.option("-ja", "--jetton_amount", type=int)
 @click.option("-f", "--fwd_fee", type=int)
@@ -82,14 +83,15 @@ def get_address(client: "TrezorClient",
 @click.option("-w", "--workchain", type=ChoiceType(WORKCHAIN), default="base")
 @click.option("-b", "--bounceable", is_flag=True)
 @click.option("-t", "--test-only", is_flag=True)
-@click.option("-ed", "--ext_destination", type=str)
-@click.option("-ea", "--ext_ton_amount", type = int)
-@click.option("-ep", "--ext_payload", type=str)
+@click.option("-ed", "--ext-destination", multiple=True, type=str)
+@click.option("-ea", "--ext-ton-amount", multiple=True, type=int)
+@click.option("-ep", "--ext-payload", multiple=True, type=str)
 @with_client
 def sign_message(client: "TrezorClient",
                 address: str,
                 destination: str,
                 jetton_master_address: str,
+                jetton_wallet_address: str,
                 ton_amount: int,
                 jetton_amount: int,
                 fwd_fee: int,
@@ -102,18 +104,19 @@ def sign_message(client: "TrezorClient",
                 workchain: messages.TonWorkChain,
                 bounceable: bool,
                 test_only: bool,
-                ext_destination: str,
-                ext_ton_amount: int,
-                ext_payload: str
+                ext_destination: tuple[str, ...],
+                ext_ton_amount: tuple[int, ...],
+                ext_payload: tuple[str, ...]
                 ) -> bytes:
     """Sign Ton Transaction."""
     address_n = tools.parse_path(address)
     # expire_at = int(time.time()) + 300
-    signature = ton.sign_message(
+    resp = ton.sign_message(
                 client,
                 address_n,
                 destination,
                 jetton_master_address,
+                jetton_wallet_address,
                 ton_amount,
                 jetton_amount,
                 fwd_fee,
@@ -126,12 +129,12 @@ def sign_message(client: "TrezorClient",
                 workchain,
                 bounceable,
                 test_only,
-                ext_destination,
-                ext_ton_amount,
-                ext_payload
-    ).signature.hex()
+                list(ext_destination),
+                list(ext_ton_amount),
+                list(ext_payload)
+    )
 
-    return {"signature": f"0x{signature}"}
+    return resp.signature.hex(), resp.signning_message.hex()
 
 @cli.command()
 @click.option("-n", "--address", required=True, help=PATH_HELP)

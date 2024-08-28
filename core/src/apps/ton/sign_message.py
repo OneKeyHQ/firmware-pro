@@ -49,55 +49,43 @@ async def sign_message(
 
     # display
     ctx.primary_color, ctx.icon_path = lv.color_hex(PRIMARY_COLOR), ICON
-    from trezor.ui.layouts import confirm_final, confirm_ton_transfer, confirm_unknown_token_transfer, confirm_output
+    from trezor.ui.layouts import confirm_final, confirm_unknown_token_transfer
+
+    token = None
+    recipient = Address(msg.destination).to_string(True, True)
 
     if is_jetton_transfer:
         token = tokens.token_by_address(
             "TON_TOKEN", msg.jetton_master_address
         )
 
-        recipient = Address(msg.destination).to_string(True, True)
-        format_value = f"{format_amount(msg.jetton_amount, 9)} {token.symbol}"
-        
         if token is tokens.UNKNOWN_TOKEN:
             # unknown token, confirm contract address
             await confirm_unknown_token_transfer(
                 ctx, msg.jetton_master_address
             )
 
-        # touch
-        # await confirm_output(ctx, recipient, format_value)
-
-        # await confirm_ton_transfer(ctx, address, recipient, format_value, msg.comment)
-
-        # await confirm_final(ctx, token.symbol)
-
-        show_details = await require_show_overview(
+    show_details = await require_show_overview(
+        ctx,
+        recipient,
+        msg.ton_amount,
+        token,
+    )
+    
+    if show_details:
+        comment = msg.comment.encode('utf-8') if msg.comment else None
+        await require_confirm_fee(
             ctx,
-            recipient,
-            msg.ton_amount,
-            token,
+            from_address=address,
+            to_address=recipient,
+            value=msg.ton_amount,
+            token=token,
+            raw_data=comment if comment else None,
         )
-        if show_details:
-            # has_raw_data = True if token is None and msg.data_length > 0 else False
 
-            comment = unhexlify(hexlify(msg.comment).decode("UTF-8")) if msg.comment else None
-            print("comment:", comment)
-            await require_confirm_fee(
-                ctx,
-                from_address=address,
-                to_address=recipient,
-                value=msg.ton_amount,
-                # gas_price=None,
-                # gas_limit=None,
-                token=token,
-                raw_data=comment if comment else None,
+    await confirm_final(ctx, token.symbol if token else "TON")
 
-
-            )
-
-        await confirm_final(ctx, token.symbol)
-
+    if is_jetton_transfer:
         body = JettonWallet().create_transfer_body(
             Address(msg.destination),
             msg.jetton_amount,
@@ -105,61 +93,21 @@ async def sign_message(
             msg.comment,
             wallet.address
         )
-
-        digest, boc = wallet.create_transaction_digest(
-            to_addr=msg.destination, 
-            amount=msg.ton_amount, 
-            seqno=msg.seqno,
-            expire_at=msg.expire_at, 
-            payload=body,
-            send_mode=msg.mode,
-        )
-
+        payload = body
     else:
-        recipient = Address(msg.destination).to_string(True, True)
-        format_value = f"{format_amount(msg.ton_amount, 9)} TON"
+        payload = msg.comment
 
-        # touch
-        # from trezor.ui.layouts import confirm_output
-        # await confirm_output(ctx, recipient, format_value)
-
-        # await confirm_ton_transfer(ctx, address, recipient, format_value, msg.comment)
-        
-        # await confirm_final(ctx, "TON")
-
-        show_details = await require_show_overview(
-            ctx,
-            recipient,
-            msg.ton_amount,
-            None,
-        )
-        if show_details:
-            # has_raw_data = True if token is None and msg.data_length > 0 else False
-            comment = unhexlify(hexlify(msg.comment).decode("UTF-8")) if msg.comment else None
-            await require_confirm_fee(
-                ctx,
-                from_address=address,
-                to_address=recipient,
-                value=msg.ton_amount,
-                # gas_price=11,
-                # gas_limit=22,
-                token=None,
-                raw_data=comment,
-            )
-
-        await confirm_final(ctx, "TON")
-
-        digest, boc = wallet.create_transaction_digest(
-            to_addr=msg.destination, 
-            amount=msg.ton_amount, 
-            seqno=msg.seqno, 
-            expire_at=msg.expire_at, 
-            payload=msg.comment,
-            send_mode=msg.mode,
-            ext_to=msg.ext_destination,
-            ext_amount=msg.ext_ton_amount,
-            ext_payload=msg.ext_payload,
-        )
+    digest, boc = wallet.create_transaction_digest(
+        to_addr=msg.jetton_wallet_address if is_jetton_transfer else msg.destination, 
+        amount=msg.ton_amount, 
+        seqno=msg.seqno,
+        expire_at=msg.expire_at, 
+        payload=payload,
+        send_mode=msg.mode,
+        ext_to=None if is_jetton_transfer else msg.ext_destination,
+        ext_amount=None if is_jetton_transfer else msg.ext_ton_amount,
+        ext_payload=None if is_jetton_transfer else msg.ext_payload,
+    )
 
     signature = ed25519.sign(node.private_key(), digest)
     

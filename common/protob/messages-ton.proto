@@ -51,21 +51,22 @@ message TonSignMessage {
     repeated uint32 address_n = 1;                                  // BIP-32 path to derive the key from master node
     required string destination = 2;                                // destination address of the message
     optional string jetton_master_address = 3;                      // Jetton master smart contract address
-    required uint64 ton_amount = 4;                                 // TON value for gas
-    optional uint64 jetton_amount = 5;                              // jetton value (by nanojetton)
-    optional uint64 fwd_fee = 6[default=0];                         // toncoin is needed to transfer notification message
-    optional string comment = 7;                                    // message comment
-    optional uint32 mode = 8[default=3];                            // message modes
-    required uint32 seqno = 9;                                      // message sequence number
-    required uint64 expire_at = 10;                                 // message expiration time
-    optional TonWalletVersion wallet_version = 11 [default=V4R2];   // ton wallet version
-    optional uint32 wallet_id = 12 [default=698983191];             // 698983191 is the default subwallet_id value
-    optional TonWorkChain workchain = 13 [default=BASECHAIN];       // 0: BaseChain, 1: MasterChain
-    optional bool is_bounceable = 14 [default=false];               // bounceable flag
-    optional bool is_testnet_only = 15 [default=false];             // testnet only flag
-    repeated string ext_destination = 16;
-    repeated uint64 ext_ton_amount = 17;
-    repeated string ext_payload = 18;
+    optional string jetton_wallet_address = 4;                      // Jetton wallet smart contract address 
+    required uint64 ton_amount = 5;                                 // TON value for gas
+    optional uint64 jetton_amount = 6;                              // jetton value (by nanojetton)
+    optional uint64 fwd_fee = 7 [default=0];                        // toncoin is needed to transfer notification message
+    optional string comment = 8;                                    // message comment
+    optional uint32 mode = 9 [default=3];                           // message modes
+    required uint32 seqno = 10;                                     // message sequence number
+    required uint64 expire_at = 11;                                 // message expiration time
+    optional TonWalletVersion wallet_version = 12 [default=V4R2];   // ton wallet version
+    optional uint32 wallet_id = 13 [default=698983191];             // 698983191 is the default subwallet_id value
+    optional TonWorkChain workchain = 14 [default=BASECHAIN];       // 0: BaseChain, 1: MasterChain
+    optional bool is_bounceable = 15 [default=false];               // bounceable flag
+    optional bool is_testnet_only = 16 [default=false];             // testnet only flag
+    repeated string ext_destination = 17;
+    repeated uint64 ext_ton_amount = 18;
+    repeated string ext_payload = 19;
 }
 
 /**

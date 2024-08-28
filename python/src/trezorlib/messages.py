@@ -10613,21 +10613,22 @@ class TonSignMessage(protobuf.MessageType):
         1: protobuf.Field("address_n", "uint32", repeated=True, required=False),
         2: protobuf.Field("destination", "string", repeated=False, required=True),
         3: protobuf.Field("jetton_master_address", "string", repeated=False, required=False),
-        4: protobuf.Field("ton_amount", "uint64", repeated=False, required=True),
-        5: protobuf.Field("jetton_amount", "uint64", repeated=False, required=False),
-        6: protobuf.Field("fwd_fee", "uint64", repeated=False, required=False),
-        7: protobuf.Field("comment", "string", repeated=False, required=False),
-        8: protobuf.Field("mode", "uint32", repeated=False, required=False),
-        9: protobuf.Field("seqno", "uint32", repeated=False, required=True),
-        10: protobuf.Field("expire_at", "uint64", repeated=False, required=True),
-        11: protobuf.Field("wallet_version", "TonWalletVersion", repeated=False, required=False),
-        12: protobuf.Field("wallet_id", "uint32", repeated=False, required=False),
-        13: protobuf.Field("workchain", "TonWorkChain", repeated=False, required=False),
-        14: protobuf.Field("is_bounceable", "bool", repeated=False, required=False),
-        15: protobuf.Field("is_testnet_only", "bool", repeated=False, required=False),
-        16: protobuf.Field("ext_destination", "string", repeated=True, required=False),
-        17: protobuf.Field("ext_ton_amount", "uint64", repeated=True, required=False),
-        18: protobuf.Field("ext_payload", "string", repeated=True, required=False),
+        4: protobuf.Field("jetton_wallet_address", "string", repeated=False, required=False),
+        5: protobuf.Field("ton_amount", "uint64", repeated=False, required=True),
+        6: protobuf.Field("jetton_amount", "uint64", repeated=False, required=False),
+        7: protobuf.Field("fwd_fee", "uint64", repeated=False, required=False),
+        8: protobuf.Field("comment", "string", repeated=False, required=False),
+        9: protobuf.Field("mode", "uint32", repeated=False, required=False),
+        10: protobuf.Field("seqno", "uint32", repeated=False, required=True),
+        11: protobuf.Field("expire_at", "uint64", repeated=False, required=True),
+        12: protobuf.Field("wallet_version", "TonWalletVersion", repeated=False, required=False),
+        13: protobuf.Field("wallet_id", "uint32", repeated=False, required=False),
+        14: protobuf.Field("workchain", "TonWorkChain", repeated=False, required=False),
+        15: protobuf.Field("is_bounceable", "bool", repeated=False, required=False),
+        16: protobuf.Field("is_testnet_only", "bool", repeated=False, required=False),
+        17: protobuf.Field("ext_destination", "string", repeated=True, required=False),
+        18: protobuf.Field("ext_ton_amount", "uint64", repeated=True, required=False),
+        19: protobuf.Field("ext_payload", "string", repeated=True, required=False),
     }
 
     def __init__(
@@ -10642,6 +10643,7 @@ class TonSignMessage(protobuf.MessageType):
         ext_ton_amount: Optional[Sequence["int"]] = None,
         ext_payload: Optional[Sequence["str"]] = None,
         jetton_master_address: Optional["str"] = None,
+        jetton_wallet_address: Optional["str"] = None,
         jetton_amount: Optional["int"] = None,
         fwd_fee: Optional["int"] = 0,
         comment: Optional["str"] = None,
@@ -10661,6 +10663,7 @@ class TonSignMessage(protobuf.MessageType):
         self.seqno = seqno
         self.expire_at = expire_at
         self.jetton_master_address = jetton_master_address
+        self.jetton_wallet_address = jetton_wallet_address
         self.jetton_amount = jetton_amount
         self.fwd_fee = fwd_fee
         self.comment = comment

@@ -8542,6 +8542,7 @@ if TYPE_CHECKING:
         address_n: "list[int]"
         destination: "str"
         jetton_master_address: "str | None"
+        jetton_wallet_address: "str | None"
         ton_amount: "int"
         jetton_amount: "int | None"
         fwd_fee: "int"
@@ -8570,6 +8571,7 @@ if TYPE_CHECKING:
             ext_ton_amount: "list[int] | None" = None,
             ext_payload: "list[str] | None" = None,
             jetton_master_address: "str | None" = None,
+            jetton_wallet_address: "str | None" = None,
             jetton_amount: "int | None" = None,
             fwd_fee: "int | None" = None,
             comment: "str | None" = None,
