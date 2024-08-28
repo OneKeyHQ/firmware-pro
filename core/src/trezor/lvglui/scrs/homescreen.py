@@ -1189,23 +1189,21 @@ class WalletList(Screen):
             self.content_area, self.subtitle, padding_row=2
         )
 
+        self.onekey = ListItemBtn(
+            self.container,
+            _(i18n_keys.ITEM__ONEKEY_WALLET),
+            _(i18n_keys.CONTENT__BTC_AND_EVM_COMPATIBLE_NETWORKS),
+            left_img_src="A:/res/ok-logo-48.png",
+        )
+        self.onekey.text_layout_vertical()
+
         self.mm = ListItemBtn(
             self.container,
             _(i18n_keys.ITEM__METAMASK_WALLET),
             _(i18n_keys.CONTENT__ETH_AND_EVM_POWERED_NETWORK),
             left_img_src="A:/res/mm-logo-48.png",
         )
-        self.mm.text_layout_vertical()
-
-        self.onekey = ListItemBtn(
-            self.container,
-            _(i18n_keys.ITEM__ONEKEY_WALLET),
-            "BTC·EVM",
-            left_img_src="A:/res/ok-logo-48.png",
-        )
-        self.onekey.text_layout_vertical(pad_top=17, pad_ver=20)
-        # self.onekey.disable()
-        # self.onekey.add_flag(lv.obj.FLAG.HIDDEN)
+        self.mm.text_layout_vertical(pad_top=17, pad_ver=20)
 
         self.okx = ListItemBtn(
             self.container,
@@ -1250,12 +1248,13 @@ class WalletList(Screen):
                     )
                     return
                 ConnectWallet(
-                    _(i18n_keys.ITEM__ONEKEY_WALLET),
-                    "Ethereum, Polygon, Avalanche, Base and other EVM networks.",
                     None,
-                    "A:/res/ok-logo-96.png",
-                    encoder,
+                    None,
+                    None,
+                    encoder=encoder,
+                    subtitle=_(i18n_keys.CONTENT__OPEN_ONEKEY_SCAN_THE_QRCODE),
                 )
+
             elif target == self.mm:
                 qr_data = (
                     retrieval_hd_key()
@@ -1387,56 +1386,55 @@ class ConnectWallet(FullSizeWindow):
         )
         self.qr.align_to(self.subtitle, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 40)
 
-        self.panel = lv.obj(self.content_area)
-        self.panel.set_size(456, lv.SIZE.CONTENT)
-        self.panel.add_style(
-            StyleWrapper()
-            .bg_color(lv_colors.ONEKEY_GRAY_3)
-            .bg_opa()
-            .radius(40)
-            .border_width(0)
-            .pad_hor(24)
-            .pad_ver(12)
-            .text_color(lv_colors.WHITE),
-            0,
-        )
-        self.label_top = lv.label(self.panel)
-        self.label_top.set_text(_(i18n_keys.LIST_KEY__SUPPORTED_CHAINS))
-        self.label_top.add_style(
-            StyleWrapper().text_font(font_GeistSemiBold26).pad_ver(4).pad_hor(0), 0
-        )
-        self.label_top.align(lv.ALIGN.TOP_LEFT, 0, 0)
-        self.line = lv.line(self.panel)
-        self.line.set_size(408, 1)
-        self.line.add_style(
-            StyleWrapper().bg_color(lv_colors.ONEKEY_GRAY_2).bg_opa(), 0
-        )
-        self.line.align_to(self.label_top, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 9)
-        self.label_bottom = lv.label(self.panel)
-        self.label_bottom.set_width(408)
-        self.label_bottom.add_style(
-            StyleWrapper().text_font(font_GeistRegular26).pad_ver(12).pad_hor(0), 0
-        )
-        self.scrolling = False
-        self.content_area.clear_flag(lv.obj.FLAG.SCROLL_ELASTIC)
-        self.content_area.clear_flag(lv.obj.FLAG.SCROLL_MOMENTUM)
-        self.content_area.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
-        self.label_bottom.set_long_mode(lv.label.LONG.WRAP)
-        self.label_bottom.set_text(support_chains)
-        self.label_bottom.align_to(self.line, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 0)
-        self.panel.align_to(self.qr, lv.ALIGN.OUT_BOTTOM_MID, 0, 32)
+        if wallet_name and support_chains:
+            self.panel = lv.obj(self.content_area)
+            self.panel.set_size(456, lv.SIZE.CONTENT)
+            self.panel.add_style(
+                StyleWrapper()
+                .bg_color(lv_colors.ONEKEY_GRAY_3)
+                .bg_opa()
+                .radius(40)
+                .border_width(0)
+                .pad_hor(24)
+                .pad_ver(12)
+                .text_color(lv_colors.WHITE),
+                0,
+            )
+            self.label_top = lv.label(self.panel)
+            self.label_top.set_text(_(i18n_keys.LIST_KEY__SUPPORTED_CHAINS))
+            self.label_top.add_style(
+                StyleWrapper().text_font(font_GeistSemiBold26).pad_ver(4).pad_hor(0), 0
+            )
+            self.label_top.align(lv.ALIGN.TOP_LEFT, 0, 0)
+            self.line = lv.line(self.panel)
+            self.line.set_size(408, 1)
+            self.line.add_style(
+                StyleWrapper().bg_color(lv_colors.ONEKEY_GRAY_2).bg_opa(), 0
+            )
+            self.line.align_to(self.label_top, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 9)
+            self.label_bottom = lv.label(self.panel)
+            self.label_bottom.set_width(408)
+            self.label_bottom.add_style(
+                StyleWrapper().text_font(font_GeistRegular26).pad_ver(12).pad_hor(0), 0
+            )
+            # self.content_area.clear_flag(lv.obj.FLAG.SCROLL_ELASTIC)
+            # self.content_area.clear_flag(lv.obj.FLAG.SCROLL_MOMENTUM)
+            self.content_area.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
+            self.label_bottom.set_long_mode(lv.label.LONG.WRAP)
+            self.label_bottom.set_text(support_chains)
+            self.label_bottom.align_to(self.line, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 0)
+            self.panel.align_to(self.qr, lv.ALIGN.OUT_BOTTOM_MID, 0, 32)
         self.nav_back.add_event_cb(self.on_nav_back, lv.EVENT.CLICKED, None)
         self.add_event_cb(self.on_nav_back, lv.EVENT.GESTURE, None)
-        self.add_event_cb(self.on_scroll_begin, lv.EVENT.SCROLL_BEGIN, None)
-        self.add_event_cb(self.on_scroll_end, lv.EVENT.SCROLL_END, None)
+
         if encoder is not None:
             workflow.spawn(self.update_qr())
 
-    def on_scroll_begin(self, event_obj):
-        self.scrolling = True
+    # def on_scroll_begin(self, event_obj):
+    #     self.scrolling = True
 
-    def on_scroll_end(self, event_obj):
-        self.scrolling = False
+    # def on_scroll_end(self, event_obj):
+    #     self.scrolling = False
 
     def on_nav_back(self, event_obj):
         code = event_obj.code
@@ -1463,9 +1461,9 @@ class ConnectWallet(FullSizeWindow):
             if stop_single in racer.finished:
                 self.destroy()
                 return
-            if self.scrolling:
-                await loop.sleep(5000)
-                continue
+            # if self.scrolling:
+            #     await loop.sleep(5000)
+            #     continue
             assert self.encoder is not None
             qr_data = self.encoder.next_part()
             self.qr.update(qr_data, len(qr_data))

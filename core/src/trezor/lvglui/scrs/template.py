@@ -3611,7 +3611,6 @@ class UrResponse(FullSizeWindow):
         title,
         subtitle,
         qr_code,
-        primary_color,
         encoder=None,
     ):
         super().__init__(
