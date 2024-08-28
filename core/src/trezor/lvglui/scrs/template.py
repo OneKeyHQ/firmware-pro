@@ -540,6 +540,7 @@ class TransactionDetailsETH(FullSizeWindow):
                     cancel_text=None,
                 )
 
+
 class TransactionDetailsAlepHium(FullSizeWindow):
     def __init__(
         self,

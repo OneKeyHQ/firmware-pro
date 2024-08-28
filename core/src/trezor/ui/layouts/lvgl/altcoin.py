@@ -193,7 +193,8 @@ async def confirm_total_ton(
     await raise_if_cancelled(
         interact(ctx, screen, "confirm_total", ButtonRequestType.SignTx)
     )
-    
+
+
 async def confirm_total_alephium(
     ctx: wire.GenericContext,
     amount: str | None = None,
