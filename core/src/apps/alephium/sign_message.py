@@ -8,7 +8,7 @@ from trezor.ui.layouts import confirm_signverify
 
 from apps.alephium.get_address import generate_alephium_address
 from apps.common import paths
-from apps.common.helpers import validate_message
+from apps.common.helpers import validate_message_with_custom_limit
 from apps.common.keychain import Keychain, auto_keychain
 
 from . import ICON, PRIMARY_COLOR
@@ -24,7 +24,8 @@ async def sign_message(
 ) -> AlephiumMessageSignature:
 
     message = msg.message or b""
-    validate_message(message)
+    alephium_max_message_length = 1024 * 30
+    validate_message_with_custom_limit(message, alephium_max_message_length)
 
     await paths.validate_path(ctx, keychain, msg.address_n)
     node = keychain.derive(msg.address_n)

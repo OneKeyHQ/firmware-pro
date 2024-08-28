@@ -2,15 +2,20 @@ import binascii
 
 from trezor.crypto import base58
 
+SCRIPT_TYPE_P2PKH = 0
+SCRIPT_TYPE_P2MPKH = 1
+SCRIPT_TYPE_P2SH = 2
+
 
 def generate_address_from_output(lockup_script_type, lockup_script_hash):
-    if lockup_script_type == 0:  # P2PKH
+
+    if lockup_script_type == SCRIPT_TYPE_P2PKH:  # P2PKH
         address_bytes = bytes([0x00]) + binascii.unhexlify(lockup_script_hash)
         return base58.encode(address_bytes)
-    elif lockup_script_type == 1:  # P2MPKH
+    elif lockup_script_type == SCRIPT_TYPE_P2MPKH:  # P2MPKH
         address_bytes = bytes([0x01]) + binascii.unhexlify(lockup_script_hash)
         return base58.encode(address_bytes)
-    elif lockup_script_type == 2:  # P2SH
+    elif lockup_script_type == SCRIPT_TYPE_P2SH:  # P2SH
         address_bytes = bytes([0x02]) + binascii.unhexlify(lockup_script_hash)
         return base58.encode(address_bytes)
     else:
@@ -19,13 +24,13 @@ def generate_address_from_output(lockup_script_type, lockup_script_hash):
 
 def decode_unlock_script(data):
     script_type = data[0]
-    if script_type == 0x00:  # P2PKH
+    if script_type == SCRIPT_TYPE_P2PKH:  # P2PKH
         return binascii.hexlify(data[:34]).decode(), 34
-    elif script_type == 0x01:  # P2MPKH
+    elif script_type == SCRIPT_TYPE_P2MPKH:  # P2MPKH
         length, bytes_read = decode_compact_int(data[1:])
         total_length = 1 + bytes_read + length * 37
         return binascii.hexlify(data[:total_length]).decode(), total_length
-    elif script_type == 0x02:  # P2SH
+    elif script_type == SCRIPT_TYPE_P2SH:  # P2SH
         script_length, bytes_read = decode_compact_int(data[1:])
         params_length, params_bytes_read = decode_compact_int(
             data[1 + bytes_read + script_length :]
@@ -34,7 +39,7 @@ def decode_unlock_script(data):
             1 + bytes_read + script_length + params_bytes_read + params_length
         )
         return binascii.hexlify(data[:total_length]).decode(), total_length
-    elif script_type == 0x03:
+    elif script_type == 3:
         return "03", 1
     else:
         raise ValueError(f"Unknown unlock script type: {script_type}")
@@ -196,7 +201,8 @@ def decode_tx(encoded_tx):
                 "tokens": tokens,
             }
         )
-
+    if index + 1 < len(data):
+        raise ValueError("Extra unparsed data: Transaction decoding failed")
     return {
         "version": version,
         "networkId": network_id,
