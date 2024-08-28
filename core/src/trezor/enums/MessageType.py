@@ -355,8 +355,6 @@ if not utils.BITCOIN_ONLY:
     NostrSignedSchnorr = 11509
     LnurlAuth = 11600
     LnurlAuthResp = 11601
-    URCryptoHdkey = 21000
-    URResponse = 21001
     NervosGetAddress = 11701
     NervosAddress = 11702
     NervosSignTx = 11703
