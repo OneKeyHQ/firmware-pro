@@ -4,10 +4,10 @@ from ._utils import (
     concat_bytes,
     crc16,
     crc32c,
+    int_to_hex,
     move_to_end,
     read_n_bytes_uint_from_array,
     tree_walk,
-    int_to_hex,
 )
 
 __all__ = [

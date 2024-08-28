@@ -3,10 +3,11 @@ from ubinascii import hexlify, unhexlify
 
 from trezor import wire
 from trezor.crypto import rlp
-from trezor.utils import HashWriter
 from trezor.crypto.hashlib import sha3_256
+from trezor.utils import HashWriter
 
 DECIMALS = const(8)
+
 
 def bytes_from_address(address: str) -> bytes:
     if len(address) == 42:
@@ -19,8 +20,9 @@ def bytes_from_address(address: str) -> bytes:
 
     raise wire.ProcessError("Ethereum: Invalid address length")
 
-def address_from_public_key(pubkey: bytes, shard = 1) -> str:
-    
+
+def address_from_public_key(pubkey: bytes, shard=1) -> str:
+
     sha = HashWriter(sha3_256(keccak=True))
     rlp.write(sha, pubkey)
 

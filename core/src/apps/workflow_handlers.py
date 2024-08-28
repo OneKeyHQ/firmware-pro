@@ -245,7 +245,7 @@ def find_message_handler_module(msg_type: int) -> str:
             return "apps.ton.sign_message"
         if msg_type == MessageType.TonSignProof:
             return "apps.ton.sign_proof"
-        
+
         # tron
         if msg_type == MessageType.TronGetAddress:
             return "apps.tron.get_address"
@@ -355,7 +355,7 @@ def find_message_handler_module(msg_type: int) -> str:
             return "apps.scdo.sign_tx"
         if msg_type == MessageType.ScdoSignMessage:
             return "apps.scdo.sign_message"
-        
+
         # UR
         if msg_type == MessageType.URCryptoHdkey:
             return "apps.ur_registry.crypto_hd_key"

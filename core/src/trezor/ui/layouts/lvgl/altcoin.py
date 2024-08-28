@@ -157,6 +157,7 @@ async def confirm_total_tron(
         interact(ctx, screen, "confirm_total", ButtonRequestType.SignTx)
     )
 
+
 async def confirm_total_ton(
     ctx: wire.GenericContext,
     amount: str,

@@ -9,7 +9,7 @@ OFFCHAIN_CONTENT_PREFIX = 0x01
 
 
 def serialize_uri(uri):
-    return urllib.parse.quote(uri, safe='~@#$&()*!+=:;,?/\'').encode()
+    return urllib.parse.quote(uri, safe="~@#$&()*!+=:;,?/'").encode()
 
 
 def parse_uri(uri):
@@ -24,7 +24,7 @@ def create_offchain_uri_cell(uri):
 
 
 def parse_offchain_uri_cell(cell):
-    assert cell.bits[0] == OFFCHAIN_CONTENT_PREFIX, 'Invalid offchain uri cell'
+    assert cell.bits[0] == OFFCHAIN_CONTENT_PREFIX, "Invalid offchain uri cell"
     length = 0
     c = cell
     while c:

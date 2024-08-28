@@ -1,5 +1,5 @@
 import math
-from binascii import unhexlify, hexlify
+from binascii import unhexlify
 
 from trezor.crypto.hashlib import sha256
 
@@ -7,11 +7,12 @@ from ..utils import (
     compare_bytes,
     concat_bytes,
     crc32c,
+    int_to_hex,
     read_n_bytes_uint_from_array,
     tree_walk,
-    int_to_hex,
 )
 from ._bit_string import BitString
+
 
 class Cell:
     REACH_BOC_MAGIC_PREFIX = unhexlify("B5EE9C72")
@@ -120,18 +121,18 @@ class Cell:
             x = concat_bytes(x, data)
 
         return x
-    
+
     def to_boc(self, has_idx=True, hash_crc32=True, has_cache_bits=False, flags=0):
         root_cell = Cell()
         root_cell.write_cell(self)
-        
+
         all_cells = root_cell.tree_walk()
         topological_order = all_cells[0]
         cells_index = all_cells[1]
 
         cells_num = len(topological_order)
         # Minimal number of bits to represent reference (unused?)
-        s = len("{0:b}".format(cells_num))
+        s = len(f"{cells_num:b}")
         s_bytes = max(math.ceil(s / 8), 1)
         full_size = 0
         cell_sizes = {}
@@ -139,14 +140,15 @@ class Cell:
             cell_sizes[_hash] = subcell.boc_serialization_size(cells_index, s_bytes)
             full_size += cell_sizes[_hash]
 
-        offset_bits = len("{0:b}".format(full_size))
+        offset_bits = len(f"{full_size:b}")
         offset_bytes = max(math.ceil(offset_bits / 8), 1)
 
-        serialization = BitString(
-            (1023 + 32 * 4 + 32 * 3) * len(topological_order))
+        serialization = BitString((1023 + 32 * 4 + 32 * 3) * len(topological_order))
         serialization.write_bytes(Cell.REACH_BOC_MAGIC_PREFIX)
-        settings = bytes(''.join(['1' if i else '0' for i in [
-                         has_idx, hash_crc32, has_cache_bits]]), 'utf-8')
+        settings = bytes(
+            "".join(["1" if i else "0" for i in [has_idx, hash_crc32, has_cache_bits]]),
+            "utf-8",
+        )
         serialization.write_bit_array(settings)
         serialization.write_uint(flags, 2)
         serialization.write_uint(s_bytes, 3)
@@ -170,7 +172,7 @@ class Cell:
             ser_arr += crc32c(ser_arr)
 
         return ser_arr
-    
+
     def boc_serialization_size(self, cells_index, ref_size):
         return len(self.serialize_for_boc(cells_index, ref_size))
 

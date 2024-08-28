@@ -7373,7 +7373,7 @@ if TYPE_CHECKING:
         gas_limit: "bytes"
         to: "str"
         value: "bytes"
-        timestamp: "bytes | None"
+        timestamp: "bytes"
         data_initial_chunk: "bytes"
         data_length: "int"
         tx_type: "int"
@@ -7386,8 +7386,8 @@ if TYPE_CHECKING:
             gas_limit: "bytes",
             to: "str",
             value: "bytes",
+            timestamp: "bytes",
             address_n: "list[int] | None" = None,
-            timestamp: "bytes | None" = None,
             data_initial_chunk: "bytes | None" = None,
             data_length: "int | None" = None,
             tx_type: "int | None" = None,

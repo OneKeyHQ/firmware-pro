@@ -1060,6 +1060,7 @@ class EIP712DOMAIN(FullSizeWindow):
             )
         self.container.add_dummy()
 
+
 class TonTransfer(FullSizeWindow):
     def __init__(
         self,
@@ -1090,6 +1091,7 @@ class TonTransfer(FullSizeWindow):
             self.item4 = DisplayItem(
                 self.container, _(i18n_keys.LIST_KEY__MEMO__COLON), memo
             )
+
 
 class TonTransaction(FullSizeWindow):
     def __init__(
@@ -1271,6 +1273,7 @@ class TonTransaction(FullSizeWindow):
                     cancel_text=None,
                 )
 
+
 class TonConnect(FullSizeWindow):
     def __init__(
         self,
@@ -1300,6 +1303,7 @@ class TonConnect(FullSizeWindow):
             self.item3 = DisplayItem(
                 self.container, _(i18n_keys.LIST_KEY__MEMO__COLON), payload
             )
+
 
 class TonMessage(FullSizeWindow):
     def __init__(
@@ -1373,6 +1377,7 @@ class TonMessage(FullSizeWindow):
                     confirm_text=None,
                     cancel_text=None,
                 )
+
 
 class TransactionDetailsTON(FullSizeWindow):
     def __init__(
@@ -1497,6 +1502,7 @@ class TransactionDetailsTON(FullSizeWindow):
                 self.show_full_data.align(lv.ALIGN.CENTER, 0, 0)
                 self.show_full_data.remove_style(None, lv.PART.MAIN | lv.STATE.PRESSED)
                 self.show_full_data.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
+
 
 class TransactionDetailsTRON(FullSizeWindow):
     def __init__(

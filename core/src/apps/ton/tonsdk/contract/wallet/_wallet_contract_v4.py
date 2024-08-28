@@ -1,6 +1,7 @@
 from ...boc import Cell
 from ._wallet_contract import WalletContract
 
+
 class WalletV4ContractBase(WalletContract):
     def create_data_cell(self):
         cell = Cell()

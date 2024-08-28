@@ -969,7 +969,7 @@ async def confirm_sign_identity(
         primary_color=ctx.primary_color,
     )
     await raise_if_cancelled(
-        interact(ctx, screen, "sign_identity", ButtonRequestType.Other)  
+        interact(ctx, screen, "sign_identity", ButtonRequestType.Other)
     )
 
 
@@ -1951,6 +1951,7 @@ async def confirm_polkadot_balances(
             interact(ctx, screen, "polkadot_balance", ButtonRequestType.ProtectCall)
         )
 
+
 async def confirm_ton_transfer(
     ctx: wire.GenericContext,
     from_addr: str,
@@ -1966,6 +1967,7 @@ async def confirm_ton_transfer(
         interact(ctx, screen, "confirm_ton_transfer", ButtonRequestType.ProtectCall)
     )
 
+
 async def confirm_ton_connect(
     ctx: wire.GenericContext,
     domain: str,
@@ -1979,6 +1981,7 @@ async def confirm_ton_connect(
     await raise_if_cancelled(
         interact(ctx, screen, "confirm_ton_connect", ButtonRequestType.ProtectCall)
     )
+
 
 async def confirm_ton_signverify(
     ctx: wire.GenericContext,
@@ -2013,6 +2016,7 @@ async def confirm_ton_signverify(
         )
     )
 
+
 def confirm_unknown_token_transfer(
     ctx: wire.GenericContext,
     address: str,
@@ -2027,6 +2031,7 @@ def confirm_unknown_token_transfer(
         icon_color=ui.ORANGE,
         br_code=ButtonRequestType.SignTx,
     )
+
 
 async def confirm_tron_freeze(
     ctx: wire.GenericContext,

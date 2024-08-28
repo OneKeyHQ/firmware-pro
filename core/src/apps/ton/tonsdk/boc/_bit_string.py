@@ -79,7 +79,7 @@ class BitString:
         ret = BitString(self.length)
         ret.array = self.array[:]
         ret.cursor = self.cursor
-        
+
         tu = math.ceil(ret.cursor / 8) * 8 - ret.cursor
         if tu > 0:
             tu -= 1
@@ -97,7 +97,7 @@ class BitString:
     def get_used_bits(self):
         return self.cursor
 
-    def write_bit_array(self, ba: bytearray|bytes):
+    def write_bit_array(self, ba: bytearray | bytes):
         """Writes a bytearray as a bit array one bit by one."""
         for b in ba.decode("utf-8"):
             self.write_bit(b)

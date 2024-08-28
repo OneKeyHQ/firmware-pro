@@ -14,7 +14,7 @@ from apps.common.keychain import Keychain, auto_keychain
 from apps.common.signverify import decode_message
 
 from . import ICON, PRIMARY_COLOR
-from .helpers import bytes_from_address, address_from_public_key
+from .helpers import address_from_public_key
 
 if TYPE_CHECKING:
     from trezor.wire import Context
@@ -41,6 +41,7 @@ async def sign_message(
 
     if utils.USE_THD89:
         from trezor.crypto import se_thd89
+
         public_key = se_thd89.uncompress_pubkey("secp256k1", node.public_key())
     else:
         seckey = node.private_key()

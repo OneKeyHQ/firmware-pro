@@ -1,26 +1,25 @@
-from trezor import wire
+from binascii import hexlify
+
+from trezor import utils, wire
 from trezor.crypto import rlp
 from trezor.crypto.curve import secp256k1
 from trezor.crypto.hashlib import sha3_256
 from trezor.lvglui.scrs import lv
-from trezor.messages import ScdoSignTx, ScdoSignedTx, ScdoTxAck
+from trezor.messages import ScdoSignedTx, ScdoSignTx, ScdoTxAck
 from trezor.ui.layouts import confirm_final
-from trezor import utils
 from trezor.utils import HashWriter
 
 from apps.common import paths
 from apps.common.keychain import Keychain, auto_keychain
 
 from . import ICON, PRIMARY_COLOR, tokens
-from .helpers import bytes_from_address, address_from_public_key
+from .helpers import address_from_public_key, bytes_from_address
 from .layout import (
     require_confirm_fee,
     require_confirm_unknown_token,
     require_show_overview,
 )
 
-from .get_address import address_from_public_key
-from binascii import hexlify
 
 @auto_keychain(__name__)
 async def sign_tx(
@@ -28,11 +27,12 @@ async def sign_tx(
 ) -> ScdoSignedTx:
 
     data_total = msg.data_length if msg.data_length is not None else 0
-    
+
     await paths.validate_path(ctx, keychain, msg.address_n)
     node = keychain.derive(msg.address_n)
     if utils.USE_THD89:
         from trezor.crypto import se_thd89
+
         public_key = se_thd89.uncompress_pubkey("secp256k1", node.public_key())
     else:
         seckey = node.private_key()
@@ -56,7 +56,7 @@ async def sign_tx(
         token = tokens.token_by_address("SRC20", recipient)
         if token == tokens.UNKNOWN_TOKEN:
             await require_confirm_unknown_token(ctx, recipient)
-        recipient = '1S' + hexlify(msg.data_initial_chunk[16:36]).decode()
+        recipient = "1S" + hexlify(msg.data_initial_chunk[16:36]).decode()
 
     show_details = await require_show_overview(
         ctx,
@@ -64,7 +64,7 @@ async def sign_tx(
         amount,
         token,
     )
-    
+
     if show_details:
         has_raw_data = True if token is None and msg.data_length > 0 else False
 
@@ -91,7 +91,7 @@ async def sign_tx(
 
     sha = HashWriter(sha3_256(keccak=True))
     rlp.write_header(sha, total_length, rlp.LIST_HEADER_BYTE)
-    
+
     if msg.tx_type is not None:
         rlp.write(sha, msg.tx_type)
 
@@ -115,17 +115,17 @@ async def sign_tx(
         data_left -= len(data_chunk)
         sha.extend(data_chunk)
     digest = sha.get_digest()
-    
+
     signature = secp256k1.sign(
-        node.private_key(), 
-        digest, 
-        False, 
+        node.private_key(),
+        digest,
+        False,
         secp256k1.CANONICAL_SIG_ETHEREUM,
     )
 
     await confirm_final(ctx, "SCDO")
     req = ScdoSignedTx()
-    req.signature=signature[1:] + bytearray([signature[0] - 27])
+    req.signature = signature[1:] + bytearray([signature[0] - 27])
     return req
 
 
@@ -134,7 +134,7 @@ def get_total_length(
     from_addr: str,
     data_total: int,
 ) -> int:
-    
+
     length = 0
 
     fields: tuple[rlp.RLPItem, ...] = (

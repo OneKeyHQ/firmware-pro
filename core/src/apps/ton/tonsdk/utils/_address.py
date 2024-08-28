@@ -138,11 +138,11 @@ class Address:
             address_base_64 = b2a_base64(address_with_checksum)[:-1].decode("utf-8")
             if is_url_safe:
                 address_base_64 = address_base_64.replace("+", "-").replace("/", "_")
-                
+
             return str(address_base_64)
-    
+
     def get_hash_part(self):
         return self.hash_part
-    
+
     def to_buffer(self):
         return self.hash_part + bytearray([self.wc, self.wc, self.wc, self.wc])

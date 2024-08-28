@@ -39,6 +39,7 @@ def tree_walk(cell, topological_order_arr, index_hashmap, parent_hash=None):
         )
     return [topological_order_arr, index_hashmap]
 
+
 def _crc32c(crc, bytes_arr):
     POLY = 0x82F63B78
 
@@ -115,16 +116,17 @@ def string_to_bytes(string, size=1):  # ?
 
     return bytes(buf)
 
+
 def int_to_hex(n):
     if n == 0:
         return "0"
-    
+
     hex_digits = "0123456789abcdef"
     hex_string = ""
-    
+
     while n > 0:
         remainder = n % 16
         hex_string = hex_digits[remainder] + hex_string
         n = n // 16
-    
+
     return hex_string

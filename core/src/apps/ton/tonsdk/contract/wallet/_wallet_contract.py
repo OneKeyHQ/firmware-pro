@@ -1,13 +1,14 @@
-from typing import TYPE_CHECKING, Union, List
+from typing import TYPE_CHECKING, List, Union
 
 from ...boc import Cell
 from ...utils import Address
 from .. import Contract
-from binascii import hexlify
+
 if TYPE_CHECKING:
     from enum import IntEnum
 else:
     IntEnum = int
+
 
 class SendModeEnum(IntEnum):
     carry_all_remaining_balance = 128
@@ -38,7 +39,7 @@ class WalletContract(Contract):
         cell.bits.write_uint(seqno, 32)
         return cell
 
-    def create_transaction_digest(  
+    def create_transaction_digest(
         self,
         to_addr: str,
         amount: int,
@@ -47,10 +48,10 @@ class WalletContract(Contract):
         payload: Union[Cell, str, bytes, None] = None,
         send_mode=SendModeEnum.ignore_errors | SendModeEnum.pay_gas_separately,
         state_init=None,
-        ext_to: List[str]=None,
-        ext_amount: List[int]=None,
-        ext_payload: List[Union[Cell, str, bytes, None]]=None,
-    ) -> bytes:
+        ext_to: List[str] = None,
+        ext_amount: List[int] = None,
+        ext_payload: List[Union[Cell, str, bytes, None]] = None,
+    ):
         payload_cell = Cell()
         if payload:
             if isinstance(payload, str):
@@ -66,25 +67,28 @@ class WalletContract(Contract):
                 payload_cell.bits.write_bytes(payload)
 
         order_header = Contract.create_internal_message_header(
-            dest=Address(to_addr), 
-            grams=amount
+            dest=Address(to_addr), grams=amount
         )
-        order = Contract.create_common_msg_info(
-            order_header, state_init, payload_cell
-        )
+        order = Contract.create_common_msg_info(order_header, state_init, payload_cell)
         signing_message = self.create_signing_message(expire_at, seqno)
         signing_message.bits.write_uint8(send_mode)
         signing_message.refs.append(order)
-        
+
         if ext_to:
             if len(ext_to) > 3:
-                raise ValueError("Number of extra messages exceeds the maximum limit of 3")
-            
-            ext_payload_list = ext_payload if ext_payload is not None else [None] * len(ext_to)
-            ext_amount_list = ext_amount if ext_amount is not None else [0] * len(ext_to)
-            
+                raise ValueError(
+                    "Number of extra messages exceeds the maximum limit of 3"
+                )
+
+            ext_payload_list = (
+                ext_payload if ext_payload is not None else [None] * len(ext_to)
+            )
+            ext_amount_list = (
+                ext_amount if ext_amount is not None else [0] * len(ext_to)
+            )
+
             zipped_ext_data = zip(ext_to, ext_payload_list, ext_amount_list)
-            
+
             for ext_addr, current_payload, ext_amt in zipped_ext_data:
                 ext_payload_cell = Cell()
                 if current_payload:
@@ -101,8 +105,7 @@ class WalletContract(Contract):
                         ext_payload_cell.bits.write_bytes(current_payload)
 
                 ext_order_header = Contract.create_internal_message_header(
-                    dest=Address(ext_addr), 
-                    grams=ext_amt
+                    dest=Address(ext_addr), grams=ext_amt
                 )
                 ext_order = Contract.create_common_msg_info(
                     ext_order_header, state_init, ext_payload_cell
@@ -110,5 +113,7 @@ class WalletContract(Contract):
 
                 signing_message.bits.write_uint8(send_mode)
                 signing_message.refs.append(ext_order)
-                
-        return signing_message.bytes_hash(), signing_message.to_boc()
+
+        boc = bytes(signing_message.to_boc())
+
+        return signing_message.bytes_hash(), boc

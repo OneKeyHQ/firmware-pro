@@ -13,6 +13,7 @@ if TYPE_CHECKING:
 
     from trezor.wire import Context
 
+
 def require_confirm_fee(
     ctx: Context,
     from_address: str | None = None,

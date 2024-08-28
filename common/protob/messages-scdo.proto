@@ -36,7 +36,7 @@ message ScdoSignTx {
     required bytes gas_limit = 4;                       // <=256 bit unsigned big endian
     required string to = 5;                             // recipient address
     required bytes value = 6;                           // <=256 bit unsigned big endian (in wei)
-    optional bytes timestamp = 7;                       // The initial data chunk (<= 1024 bytes)
+    required bytes timestamp = 7;                       // timestamp
     optional bytes data_initial_chunk = 8 [default='']; // The initial data chunk (<= 1024 bytes)
     optional uint32 data_length = 9 [default=0];        // Length of transaction payload
     optional uint32 tx_type = 10[default=0];                       
