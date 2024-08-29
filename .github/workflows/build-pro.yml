@@ -59,12 +59,12 @@ jobs:
           nix-shell --run "poetry run make -C core build_boardloader_reflash_dev"
           nix-shell --run "poetry run make -C core build_bootloader"
           nix-shell --run "poetry run make -C core build_firmware"
-          nix-shell --run "poetry run core/tools/headertool.py -h core/build/boardloader_reflash_dev/pro.boardloader_reflash_dev*Stable*.bin -S 1:${{ secrets.SECRET_QA_KEY_1 }} -S 2:${{ secrets.SECRET_QA_KEY_2 }}"
+          nix-shell --run "poetry run core/tools/headertool.py -h core/build/boardloader_reflash_dev/boardloader_reflash_dev.bin -S 1:${{ secrets.SECRET_QA_KEY_1 }} -S 2:${{ secrets.SECRET_QA_KEY_2 }}"
           nix-shell --run "poetry run core/tools/headertool.py -h core/build/bootloader/pro.bootloader*Stable*.bin -S 1:${{ secrets.SECRET_QA_KEY_1 }} -S 2:${{ secrets.SECRET_QA_KEY_2 }}"
           nix-shell --run "poetry run core/tools/headertool.py -h core/build/firmware/pro*Stable*.bin -S 1:${{ secrets.SECRET_QA_KEY_1 }} -S 2:${{ secrets.SECRET_QA_KEY_2 }}"
           mkdir -p core/build/output/qa
           cp ./core/build/boardloader/boardloader.bin core/build/output/qa
-          cp ./core/build/boardloader_reflash_dev/pro.boardloader_reflash_dev*Stable*.bin core/build/output/qa
+          cp ./core/build/boardloader_reflash_dev/boardloader_reflash_dev.bin core/build/output/qa
           cp ./core/build/bootloader/pro.bootloader*Stable*.bin core/build/output/qa
           cp ./core/build/firmware/pro*Stable*.bin core/build/output/qa
           tools/hash.py -t bootloader -f core/build/bootloader/bootloader.bin > core/build/output/qa/bootloader_sha256.txt
