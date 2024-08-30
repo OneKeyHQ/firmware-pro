@@ -67,7 +67,7 @@ async def sign_message(
     show_details = await require_show_overview(
         ctx,
         recipient,
-        msg.ton_amount,
+        msg.jetton_amount if is_jetton_transfer else msg.ton_amount,
         token,
     )
 
@@ -77,7 +77,7 @@ async def sign_message(
             ctx,
             from_address=address,
             to_address=recipient,
-            value=msg.ton_amount,
+            value=msg.jetton_amount if is_jetton_transfer else msg.ton_amount,
             token=token,
             raw_data=comment if comment else None,
         )

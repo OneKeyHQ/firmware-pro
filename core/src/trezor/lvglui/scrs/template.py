@@ -1653,10 +1653,11 @@ class TransactionDetailsTON(FullSizeWindow):
                 self.data = self.data_str
             self.item_data = CardItem(
                 self.container,
-                _(i18n_keys.LIST_KEY__DATA__COLON),
+                _(i18n_keys.LIST_KEY__DATA__COLON) if self.data.startswith("0x") else _(i18n_keys.LIST_KEY__MEMO__COLON),
                 self.data,
-                "A:/res/group-icon-data.png",
+                "A:/res/group-icon-data.png" if self.data.startswith("0x") else "A:/res/group-icon-more.png",
             )
+            
             if self.long_data:
                 self.show_full_data = NormalButton(
                     self.item_data.content, _(i18n_keys.BUTTON__VIEW_DATA)
@@ -1669,6 +1670,20 @@ class TransactionDetailsTON(FullSizeWindow):
                 self.show_full_data.remove_style(None, lv.PART.MAIN | lv.STATE.PRESSED)
                 self.show_full_data.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
 
+    def on_click(self, event_obj):
+        code = event_obj.code
+        target = event_obj.get_target()
+        if code == lv.EVENT.CLICKED:
+            if target == self.show_full_data:
+                PageAbleMessage(
+                    _(i18n_keys.TITLE__VIEW_DATA),
+                    self.data_str,
+                    None,
+                    primary_color=self.primary_color,
+                    font=font_GeistMono28,
+                    confirm_text=None,
+                    cancel_text=None,
+                )
 
 class TransactionDetailsTRON(FullSizeWindow):
     def __init__(
