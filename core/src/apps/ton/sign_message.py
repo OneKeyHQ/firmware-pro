@@ -64,10 +64,14 @@ async def sign_message(
                 raise ValueError("Address cannot be None")
             await confirm_unknown_token_transfer(ctx, msg.jetton_master_address)
 
+    amount = msg.jetton_amount if is_jetton_transfer else msg.ton_amount
+    if amount is None:
+        raise ValueError("Amount cannot be None")
+
     show_details = await require_show_overview(
         ctx,
         recipient,
-        msg.jetton_amount if is_jetton_transfer else msg.ton_amount,
+        amount,
         token,
     )
 
@@ -77,9 +81,10 @@ async def sign_message(
             ctx,
             from_address=address,
             to_address=recipient,
-            value=msg.jetton_amount if is_jetton_transfer else msg.ton_amount,
+            value=amount,
             token=token,
             raw_data=comment if comment else None,
+            is_raw_data=msg.is_raw_data,
         )
 
     await confirm_final(ctx, token.symbol if token else "TON")
@@ -105,6 +110,7 @@ async def sign_message(
         seqno=msg.seqno,
         expire_at=msg.expire_at,
         payload=payload,
+        is_raw_data=msg.is_raw_data,
         send_mode=msg.mode,
         ext_to=None if is_jetton_transfer else msg.ext_destination,
         ext_amount=None if is_jetton_transfer else msg.ext_ton_amount,

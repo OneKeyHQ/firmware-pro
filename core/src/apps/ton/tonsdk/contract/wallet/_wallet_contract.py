@@ -46,6 +46,7 @@ class WalletContract(Contract):
         seqno: int,
         expire_at: int,
         payload: Union[Cell, str, bytes, None] = None,
+        is_raw_data: bool = False,
         send_mode=SendModeEnum.ignore_errors | SendModeEnum.pay_gas_separately,
         state_init=None,
         ext_to: List[str] = None,
@@ -56,6 +57,7 @@ class WalletContract(Contract):
         if payload:
             if isinstance(payload, str):
                 # check payload type
+                # if is_raw_data:
                 if payload.startswith("b5ee9c72"):
                     payload_cell = Cell.one_from_boc(payload)
                 else:

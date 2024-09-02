@@ -23,6 +23,7 @@ def require_confirm_fee(
     gas_limit: int = 0,
     token: tokens.TokenInfo | None = None,
     raw_data: bytes | None = None,
+    is_raw_data: bool = False,
 ) -> Awaitable[None]:
     from trezor.ui.layouts.lvgl.altcoin import confirm_total_ton
 
@@ -37,6 +38,7 @@ def require_confirm_fee(
         to_address,
         format_ton_amount(value + fee_limit, None) if token is None else None,
         raw_data=raw_data,
+        is_raw_data=is_raw_data,
     )
 
 

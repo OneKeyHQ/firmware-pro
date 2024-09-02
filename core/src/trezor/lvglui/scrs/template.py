@@ -1563,6 +1563,7 @@ class TransactionDetailsTON(FullSizeWindow):
         token_id=None,
         evm_chain_id=None,
         raw_data=None,
+        is_raw_data=False,
         sub_icon_path=None,
         striped=False,
     ):
@@ -1653,11 +1654,11 @@ class TransactionDetailsTON(FullSizeWindow):
                 self.data = self.data_str
             self.item_data = CardItem(
                 self.container,
-                _(i18n_keys.LIST_KEY__DATA__COLON) if self.data.startswith("0x") else _(i18n_keys.LIST_KEY__MEMO__COLON),
+                _(i18n_keys.LIST_KEY__DATA__COLON) if self.data.startswith("b5ee9c72") else _(i18n_keys.LIST_KEY__MEMO__COLON),
                 self.data,
-                "A:/res/group-icon-data.png" if self.data.startswith("0x") else "A:/res/group-icon-more.png",
+                "A:/res/group-icon-data.png" if self.data.startswith("b5ee9c72") else "A:/res/group-icon-more.png",
             )
-            
+
             if self.long_data:
                 self.show_full_data = NormalButton(
                     self.item_data.content, _(i18n_keys.BUTTON__VIEW_DATA)
@@ -1684,6 +1685,7 @@ class TransactionDetailsTON(FullSizeWindow):
                     confirm_text=None,
                     cancel_text=None,
                 )
+
 
 class TransactionDetailsTRON(FullSizeWindow):
     def __init__(

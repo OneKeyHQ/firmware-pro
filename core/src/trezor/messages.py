@@ -8709,6 +8709,7 @@ if TYPE_CHECKING:
         jetton_amount: "int | None"
         fwd_fee: "int"
         comment: "str | None"
+        is_raw_data: "bool"
         mode: "int"
         seqno: "int"
         expire_at: "int"
@@ -8737,6 +8738,7 @@ if TYPE_CHECKING:
             jetton_amount: "int | None" = None,
             fwd_fee: "int | None" = None,
             comment: "str | None" = None,
+            is_raw_data: "bool | None" = None,
             mode: "int | None" = None,
             wallet_version: "TonWalletVersion | None" = None,
             wallet_id: "int | None" = None,

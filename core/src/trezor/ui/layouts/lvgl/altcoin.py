@@ -170,6 +170,7 @@ async def confirm_total_ton(
     token_id: int | None = None,
     evm_chain_id: int | None = None,
     raw_data: bytes | None = None,
+    is_raw_data: bool = False,
 ) -> None:
     from trezor.lvglui.scrs.template import TransactionDetailsTON
 
@@ -187,6 +188,7 @@ async def confirm_total_ton(
         token_id=str(token_id),
         evm_chain_id=evm_chain_id,
         raw_data=raw_data,
+        is_raw_data=is_raw_data,
         sub_icon_path=ctx.icon_path,
         striped=striped,
     )

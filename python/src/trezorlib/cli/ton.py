@@ -75,6 +75,7 @@ def get_address(client: "TrezorClient",
 @click.option("-ja", "--jetton_amount", type=int)
 @click.option("-f", "--fwd_fee", type=int)
 @click.option("-c", "--comment", type=str)
+@click.option("-r", "--is_raw_data", is_flag=True)
 @click.option("-m", "--mode", type=int)
 @click.option("-s", "--seqno", type=int, required=True)
 @click.option("-e", "--expire_at", type=int, required=True)
@@ -99,6 +100,7 @@ def sign_message(client: "TrezorClient",
                 seqno: int,
                 expire_at: int,
                 comment: str,
+                is_raw_data: bool,
                 version: messages.TonWalletVersion,
                 wallet_id: int,
                 workchain: messages.TonWorkChain,
@@ -124,6 +126,7 @@ def sign_message(client: "TrezorClient",
                 seqno,
                 expire_at,
                 comment,
+                is_raw_data,
                 version,
                 wallet_id,
                 workchain,

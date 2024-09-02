@@ -56,17 +56,18 @@ message TonSignMessage {
     optional uint64 jetton_amount = 6;                              // jetton value (by nanojetton)
     optional uint64 fwd_fee = 7 [default=0];                        // toncoin is needed to transfer notification message
     optional string comment = 8;                                    // message comment
-    optional uint32 mode = 9 [default=3];                           // message modes
-    required uint32 seqno = 10;                                     // message sequence number
-    required uint64 expire_at = 11;                                 // message expiration time
-    optional TonWalletVersion wallet_version = 12 [default=V4R2];   // ton wallet version
-    optional uint32 wallet_id = 13 [default=698983191];             // 698983191 is the default subwallet_id value
-    optional TonWorkChain workchain = 14 [default=BASECHAIN];       // 0: BaseChain, 1: MasterChain
-    optional bool is_bounceable = 15 [default=false];               // bounceable flag
-    optional bool is_testnet_only = 16 [default=false];             // testnet only flag
-    repeated string ext_destination = 17;
-    repeated uint64 ext_ton_amount = 18;
-    repeated string ext_payload = 19;
+    optional bool is_raw_data = 9 [default=false];                  // raw data flag
+    optional uint32 mode = 10 [default=3];                          // message modes
+    required uint32 seqno = 11;                                     // message sequence number
+    required uint64 expire_at = 12;                                 // message expiration time
+    optional TonWalletVersion wallet_version = 13 [default=V4R2];   // ton wallet version
+    optional uint32 wallet_id = 14 [default=698983191];             // 698983191 is the default subwallet_id value
+    optional TonWorkChain workchain = 15 [default=BASECHAIN];       // 0: BaseChain, 1: MasterChain
+    optional bool is_bounceable = 16 [default=false];               // bounceable flag
+    optional bool is_testnet_only = 17 [default=false];             // testnet only flag
+    repeated string ext_destination = 18;
+    repeated uint64 ext_ton_amount = 19;
+    repeated string ext_payload = 20;
 }
 
 /**
