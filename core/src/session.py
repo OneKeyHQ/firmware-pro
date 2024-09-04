@@ -28,17 +28,15 @@ if __debug__:
 
 
 async def handle_stop_mode():
+    first_time = True
     while True:
         # leave enough time for usb to be detected
         await loop.sleep(200)
 
         if display.backlight() == 0:
-            stop_mode(False)
+            stop_mode(first_time)
+            first_time = False
 
-
-# if the screen is off, enter low power mode after reloop
-# if display.backlight() == 0:
-#     stop_mode(True)
 
 # run main event loop and specify which screen is the default
 apps.base.set_homescreen()
@@ -51,11 +49,9 @@ loop.schedule(handle_ble_info())
 
 loop.schedule(handle_usb_state())
 
-
 loop.schedule(lvgl_tick())
 loop.schedule(handle_qr_task())
 loop.schedule(handle_stop_mode())
-
 
 utils.set_up()
 if utils.show_app_guide():

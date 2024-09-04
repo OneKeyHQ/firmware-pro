@@ -157,22 +157,16 @@ async def handle_usb_state():
                 #     prompt.show()
                 StatusBar.get_instance().show_usb(True)
                 # deal with charging state
-                utils.CHARGING = True
                 StatusBar.get_instance().show_charging(True)
                 if utils.BATTERY_CAP:
-                    StatusBar.get_instance().set_battery_img(
-                        utils.BATTERY_CAP, utils.CHARGING
-                    )
+                    StatusBar.get_instance().set_battery_img(utils.BATTERY_CAP, True)
                 motor.vibrate()
             else:
                 StatusBar.get_instance().show_usb(False)
                 # deal with charging state
-                utils.CHARGING = False
                 StatusBar.get_instance().show_charging()
                 if utils.BATTERY_CAP:
-                    StatusBar.get_instance().set_battery_img(
-                        utils.BATTERY_CAP, utils.CHARGING
-                    )
+                    StatusBar.get_instance().set_battery_img(utils.BATTERY_CAP, False)
                     _request_charging_status()
             if not utils.AIRGAP_MODE_CHANGED:  # not enable or disable airgap mode
                 usb_auto_lock = device.is_usb_lock_enabled()
@@ -359,13 +353,21 @@ async def _deal_charging_state(value: bytes) -> None:
         if utils.BATTERY_CAP:
             StatusBar.get_instance().set_battery_img(utils.BATTERY_CAP, True)
         if CHARING_TYPE == CHARGE_BY_WIRELESS:
+            # global wireless_charge_screen_off_task
+
             if utils.CHARGE_WIRELESS_STATUS == utils.CHARGE_WIRELESS_STOP:
-                utils.CHARGE_WIRELESS_STATUS = utils.CHARGE_WIRELESS_CHARGING
-                global wireless_charge_screen_off_task
-
+                utils.CHARGE_WIRELESS_STATUS = utils.CHARGE_WIRELESS_CHARGE_STARTING
+                fetch_battery_temperature()
                 wireless_charge_screen_off_task = utils.turn_off_lcd_delay()
-
                 loop.schedule(wireless_charge_screen_off_task)
+            elif utils.CHARGE_WIRELESS_STATUS == utils.CHARGE_WIRELESS_CHARGE_STOPPING:
+                utils.CHARGE_WIRELESS_STATUS = utils.CHARGE_WIRELESS_CHARGE_STARTING
+                if display.backlight() > 0:
+                    wireless_charge_screen_off_task = utils.turn_off_lcd_delay()
+                    loop.schedule(wireless_charge_screen_off_task)
+                return
+            elif utils.CHARGE_WIRELESS_STATUS == utils.CHARGE_WIRELESS_CHARGE_STARTING:
+                return
             elif utils.CHARGE_WIRELESS_STATUS == utils.CHARGE_WIRELESS_CHARGING:
                 return
         else:
@@ -384,9 +386,13 @@ async def _deal_charging_state(value: bytes) -> None:
 
         if utils.CHARGE_WIRELESS_STATUS == utils.CHARGE_WIRELESS_CHARGING:
             utils.CHARGE_WIRELESS_STATUS = utils.CHARGE_WIRELESS_STOP
-            global wireless_charge_screen_off_task
-            if wireless_charge_screen_off_task:
-                loop.close(wireless_charge_screen_off_task)
+
+        elif utils.CHARGE_WIRELESS_STATUS == utils.CHARGE_WIRELESS_CHARGE_STARTING:
+            utils.CHARGE_WIRELESS_STATUS = utils.CHARGE_WIRELESS_CHARGE_STOPPING
+            return
+        elif utils.CHARGE_WIRELESS_STATUS == utils.CHARGE_WIRELESS_CHARGE_STOPPING:
+            return
+            # utils.CHARGE_WIRELESS_STATUS = utils.CHARGE_WIRELESS_STOP
 
     utils.turn_on_lcd_if_possible()
 
@@ -449,9 +455,14 @@ def _retrieve_flashled_brightness(value: bytes) -> None:
 def _deal_battery_info(value: bytes) -> None:
     res, val = ustruct.unpack(">BH", value)
     if res == 4:
+        if (
+            val <= 38
+            and display.backlight() == 0
+            and utils.CHARGE_WIRELESS_STATUS == utils.CHARGE_WIRELESS_CHARGE_STARTING
+        ):
+            utils.CHARGE_WIRELESS_STATUS = utils.CHARGE_WIRELESS_CHARGING
+            ctrl_charge_switch(True)
         utils.BATTERY_TEMP = val
-        if val <= 38 and display.backlight() == 0:
-            ctrl_wireless_charge(True)
 
 
 def _retrieve_ble_name(value: bytes) -> None:
@@ -643,14 +654,12 @@ def ctrl_wireless_charge(enable: bool) -> None:
     """Request to open or close charge.
     @param enable: True to open, False to close
     """
-    if utils.CHARGE_WIRELESS_STATUS == utils.CHARGE_WIRELESS_STOP:
-        return
-    ctrl_charge_switch(enable)
+    if utils.CHARGE_WIRELESS_STATUS == utils.CHARGE_WIRELESS_CHARGING:
+        utils.CHARGE_WIRELESS_STATUS = utils.CHARGE_WIRELESS_CHARGE_STARTING
+        ctrl_charge_switch(enable)
 
 
 def get_wireless_charge_status() -> bool:
-    if utils.CHARGE_WIRELESS_STATUS == utils.CHARGE_WIRELESS_STOP:
-        return True
     if utils.CHARGE_ENABLE:
         return True
     return False
@@ -660,13 +669,14 @@ def stop_mode(reset_timer: bool = False):
     disconnect_ble()
 
     lp_timer_enable = False
-    wireless_charge = get_wireless_charge_status()
+    wireless_charge = False
 
-    if not wireless_charge:
+    if utils.CHARGE_WIRELESS_STATUS == utils.CHARGE_WIRELESS_CHARGE_STARTING:
         lp_timer_enable = True
+        wireless_charge = True
 
     utils.enter_lowpower(
         reset_timer, device.get_autoshutdown_delay_ms(), lp_timer_enable
     )
-    if not wireless_charge:
+    if wireless_charge:
         fetch_battery_temperature()
