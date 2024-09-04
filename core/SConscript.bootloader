@@ -223,6 +223,7 @@ SOURCE_TREZORHAL = [
     'embed/trezorhal/vectortable.s',
     'embed/trezorhal/camera.c',
     'embed/trezorhal/gt911.c',
+    'embed/trezorhal/sdram.c',
 
 ]
 

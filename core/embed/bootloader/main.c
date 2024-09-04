@@ -679,6 +679,7 @@ static BOOT_TARGET decide_boot_target(vendor_header* const vhdr,
 
 int main(void) {
   SystemCoreClockUpdate();
+  sdram_reinit();
   dwt_init();
   mpu_config_bootloader();
 
