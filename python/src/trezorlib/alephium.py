@@ -26,14 +26,19 @@ if TYPE_CHECKING:
     from .protobuf import MessageType
 
 
-@expect(messages.AlephiumAddress, field="address", ret_type=str)
+@expect(messages.AlephiumAddress)
 def get_address(
     client: "TrezorClient",
     address_n: "Address",
     show_display: bool = False,
+    include_public_key: bool = False,
 ) -> "MessageType":
-    res =  client.call(
-        messages.AlephiumGetAddress(address_n=address_n, show_display=show_display)
+    res = client.call(
+        messages.AlephiumGetAddress(
+            address_n=address_n, 
+            show_display=show_display,
+            include_public_key=include_public_key
+        )
     )
     return res
 

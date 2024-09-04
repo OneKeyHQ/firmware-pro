@@ -54,4 +54,7 @@ async def get_address(
             network="Alephium",
         )
 
-    return AlephiumAddress(address=address)
+    if msg.include_public_key:
+        return AlephiumAddress(address=address, public_key=public_key)
+    else:
+        return AlephiumAddress(address=address)

@@ -37,12 +37,17 @@ def cli():
 @cli.command()
 @click.option("-n", "--address", required=True, help=PATH_HELP)
 @click.option("-d", "--show-display", is_flag=True)
+@click.option("-p", "--include-public-key", is_flag=True, help="Include public key in the output")
 @with_client
-def get_address(client: "TrezorClient", address: str,show_display: bool):
-    """Get Alephium address for specified path."""
+def get_address(client: "TrezorClient", address: str, show_display: bool, include_public_key: bool):
+    """Get Alephium address and optionally public key for specified path."""
     address_n = tools.parse_path(address)
-    res = alephium.get_address(client, address_n, show_display)
-    return res
+    result = alephium.get_address(client, address_n, show_display, include_public_key)
+    click.echo(f"Address: {result.address}")
+    if include_public_key and result.public_key:
+        click.echo(f"Public Key: {result.public_key.hex()}")
+
+    return result
 
 
 #

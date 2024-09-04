@@ -15,6 +15,7 @@ option java_outer_classname = "TrezorMessageAlephium";
 message AlephiumGetAddress {
     repeated uint32 address_n = 1;                                      // BIP-32 path to derive the key from master node
     optional bool show_display = 2;                                     // optionally show on display before sending the result
+    optional bool include_public_key = 3;  
 }
 
 /**
@@ -22,7 +23,8 @@ message AlephiumGetAddress {
  * @end
  */
 message AlephiumAddress {
-    required string address = 1;
+    required   string address = 1;
+    optional   bytes  public_key = 2;
 }
 
 /**
