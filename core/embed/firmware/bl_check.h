@@ -21,5 +21,6 @@
 #define __BL_CHECK_H__
 
 void check_and_replace_bootloader(void);
+uint32_t get_bootloader_version(void);
 
 #endif

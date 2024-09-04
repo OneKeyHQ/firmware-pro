@@ -76,6 +76,22 @@
 // from util.s
 extern void shutdown_privileged(void);
 
+static void copyflash2sdram(void) {
+  extern int _flash2_load_addr, _flash2_start, _flash2_end;
+  volatile uint32_t *dst = (volatile uint32_t *)&_flash2_start;
+  volatile uint32_t *end = (volatile uint32_t *)&_flash2_end;
+  volatile uint32_t *src = (volatile uint32_t *)&_flash2_load_addr;
+
+  while (dst < end) {
+    *dst = *src;
+    if (*dst != *src) {
+      error_shutdown("Internal error", "(CF2S)", NULL, NULL);
+    }
+    dst++;
+    src++;
+  }
+}
+
 int main(void) {
   extern uint32_t _vector_offset;
   SCB->VTOR = (uint32_t)&_vector_offset;
@@ -92,7 +108,7 @@ int main(void) {
 
   ensure_emmcfs(emmc_fs_init(), "emmc_fs_init");
   ensure_emmcfs(emmc_fs_mount(true, false), "emmc_fs_mount");
-    if (get_hw_ver() < HW_VER_3P0A) {
+  if (get_hw_ver() < HW_VER_3P0A) {
     qspi_flash_init();
     qspi_flash_config();
     qspi_flash_memory_mapped();
@@ -119,6 +135,16 @@ int main(void) {
 
   device_para_init();
   ensure(se_sync_session_key(), "se start up failed");
+
+  uint32_t bootloader_version = get_bootloader_version();
+
+  bootloader_version >>= 8;
+
+  if (bootloader_version >= 0x020503) {
+    // bootloader version is greater than 2.5.3, firmware copy is not needed
+  } else {
+    copyflash2sdram();
+  }
 
 #ifdef RDI
   rdi_start();

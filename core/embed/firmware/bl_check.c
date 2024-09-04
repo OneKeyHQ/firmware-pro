@@ -22,8 +22,16 @@
 #include "blake2s.h"
 #include "common.h"
 #include "flash.h"
+#include "image.h"
 
 #if PRODUCTION_MODEL == 'H'
+uint32_t get_bootloader_version(void) {
+  image_header *header = (image_header *)BOOTLOADER_START;
+  uint32_t version = header->version;
+  version = ((version & 0x000000FF) << 24) | ((version & 0x0000FF00) << 8) |
+            ((version & 0x00FF0000) >> 8) | ((version & 0xFF000000) >> 24);
+  return version;
+}
 #else
 // symbols from bootloader.bin => bootloader.o
 extern const uint32_t _binary_embed_firmware_bootloader_bin_start;
