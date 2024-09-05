@@ -5,6 +5,9 @@ from trezor.crypto import base58
 SCRIPT_TYPE_P2PKH = 0
 SCRIPT_TYPE_P2MPKH = 1
 SCRIPT_TYPE_P2SH = 2
+SINGLE_BYTE_LIMIT = 0x40
+TWO_BYTE_LIMIT = 0x80
+MULTI_BYTE_LIMIT = 0xC0
 
 
 def generate_address_from_output(lockup_script_type, lockup_script_hash):
@@ -94,17 +97,18 @@ def decode_i32(data: bytes) -> tuple[int, int]:
 
 
 def decode_u256(data):
+    if not data:
+        raise ValueError("data is empty")
     first_byte = data[0]
-    if first_byte < 0x40:
+    if first_byte < SINGLE_BYTE_LIMIT:
         return first_byte, 1
-    elif first_byte < 0x80:
-        length = (first_byte - 0x40) + 1
-        return int.from_bytes(data[1 : length + 1], "big"), length + 1
-    elif first_byte < 0xC0:
-        length = (first_byte - 0x80) + 3
+    elif first_byte < TWO_BYTE_LIMIT:
+        return ((first_byte & 0x3F) << 8) | data[1], 2
+    elif first_byte < MULTI_BYTE_LIMIT:
+        length = (first_byte - TWO_BYTE_LIMIT) + 3
         return int.from_bytes(data[1 : length + 1], "big"), length + 1
     else:
-        length = (first_byte - 0xC0) + 4
+        length = (first_byte - MULTI_BYTE_LIMIT) + 4
         return int.from_bytes(data[1 : length + 1], "big"), length + 1
 
 
