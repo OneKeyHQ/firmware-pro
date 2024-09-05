@@ -88,7 +88,9 @@ async def sign_message(
         )
 
     if msg.ext_destination:
-        for ext_addr, ext_payload, ext_amount in zip(msg.ext_destination, msg.ext_payload, msg.ext_ton_amount):
+        for ext_addr, ext_payload, ext_amount in zip(
+            msg.ext_destination, msg.ext_payload, msg.ext_ton_amount
+        ):
             show_details = False
             show_details = await require_show_overview(
                 ctx,

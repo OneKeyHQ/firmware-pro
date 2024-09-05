@@ -701,7 +701,7 @@ int main(void) {
   // storages
   ensure_emmcfs(emmc_fs_init(), "emmc_fs_init");
   ensure_emmcfs(emmc_fs_mount(true, false), "emmc_fs_mount");
-    if (get_hw_ver() < HW_VER_3P0A) {
+  if (get_hw_ver() < HW_VER_3P0A) {
     qspi_flash_init();
     qspi_flash_config();
     qspi_flash_memory_mapped();

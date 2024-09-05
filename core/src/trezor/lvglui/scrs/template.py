@@ -1654,9 +1654,13 @@ class TransactionDetailsTON(FullSizeWindow):
                 self.data = self.data_str
             self.item_data = CardItem(
                 self.container,
-                _(i18n_keys.LIST_KEY__DATA__COLON) if self.data.startswith("b5ee9c72") else _(i18n_keys.LIST_KEY__MEMO__COLON),
+                _(i18n_keys.LIST_KEY__DATA__COLON)
+                if self.data.startswith("b5ee9c72")
+                else _(i18n_keys.LIST_KEY__MEMO__COLON),
                 self.data,
-                "A:/res/group-icon-data.png" if self.data.startswith("b5ee9c72") else "A:/res/group-icon-more.png",
+                "A:/res/group-icon-data.png"
+                if self.data.startswith("b5ee9c72")
+                else "A:/res/group-icon-more.png",
             )
 
             if self.long_data:

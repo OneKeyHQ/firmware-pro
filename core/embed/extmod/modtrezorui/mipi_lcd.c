@@ -471,7 +471,6 @@ void st7701_init_sequence(void) {
 #define LED_PWM_TIM_PERIOD (100)
 
 int display_backlight(int val) {
-
   if (val == 0 && DISPLAY_BACKLIGHT != 0) {
     // clock down
     __HAL_DSI_DISABLE(&hlcd_dsi);
