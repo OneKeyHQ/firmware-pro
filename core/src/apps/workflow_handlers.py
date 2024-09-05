@@ -26,7 +26,6 @@ def find_message_handler_module(msg_type: int) -> str:
     - collecting everything as strings instead of importing directly means that we don't
       need to load any of the modules into memory until we actually need them
     """
-    print("# msg_type", msg_type)
     # debug
     if __debug__:
         if msg_type == MessageType.LoadDevice:

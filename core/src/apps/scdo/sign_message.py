@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 def message_digest(message: bytes) -> bytes:
     h = HashWriter(sha3_256(keccak=True))
-    signed_message_header = b"\x19Scdo Signed Message:\n"
+    signed_message_header = b"\x19SCDO Signed Message:\n"
     h.extend(signed_message_header)
     h.extend(str(len(message)).encode())
     h.extend(message)

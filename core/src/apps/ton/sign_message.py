@@ -87,6 +87,27 @@ async def sign_message(
             is_raw_data=msg.is_raw_data,
         )
 
+    if msg.ext_destination:
+        for ext_addr, ext_payload, ext_amount in zip(msg.ext_destination, msg.ext_payload, msg.ext_ton_amount):
+            show_details = False
+            show_details = await require_show_overview(
+                ctx,
+                ext_addr,
+                ext_amount,
+                None,
+            )
+            if show_details:
+                ext_comment = ext_payload.encode("utf-8") if ext_payload else None
+                await require_confirm_fee(
+                    ctx,
+                    from_address=address,
+                    to_address=ext_addr,
+                    value=ext_amount,
+                    token=None,
+                    raw_data=ext_comment if ext_comment else None,
+                    is_raw_data=msg.is_raw_data,
+                )
+
     await confirm_final(ctx, token.symbol if token else "TON")
 
     if is_jetton_transfer:
