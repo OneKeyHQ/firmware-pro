@@ -259,7 +259,7 @@ class Message(FullSizeWindow):
             self.show_full_message = NormalButton(
                 self.item_message.content, _(i18n_keys.BUTTON__VIEW_DATA)
             )
-            self.show_full_message.set_size(185, 77)
+            self.show_full_message.set_size(lv.SIZE.CONTENT, 77)
             self.show_full_message.add_style(
                 StyleWrapper().text_font(font_GeistSemiBold26), 0
             )

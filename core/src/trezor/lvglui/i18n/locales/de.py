@@ -200,7 +200,7 @@ translations = [
     "Falscher Paarungscode, versuchen Sie es erneut.",
     "{} Sekunden",
     "Benutzerdefiniert",
-    "Daten anzeigen",
+    "Datenansicht",
     "Größe",
     "Daten",
     "Möchten Sie Ihr Gerät wirklich nach {} automatisch sperren lassen?",

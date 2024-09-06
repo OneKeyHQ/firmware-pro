@@ -200,7 +200,7 @@ translations = [
     "Código de par incorreto, tente novamente.",
     "{} segundos",
     "Personalizado",
-    "Visualizar Dados",
+    "Ver Dados",
     "Tamanho",
     "Data",
     "Você realmente quer bloquear automaticamente seu dispositivo após {}?",

@@ -200,7 +200,7 @@ translations = [
     "Codice di accoppiamento errato, riprovare.",
     "{} secondi",
     "Costume",
-    "Visualizza i dati",
+    "Visualizza dati",
     "Dimensione",
     "Dati",
     "Si vuole davvero bloccare automaticamente il dispositivo dopo {}?",

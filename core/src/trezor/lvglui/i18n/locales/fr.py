@@ -200,7 +200,7 @@ translations = [
     "Code de paire incorrect, réessayez.",
     "{} secondes",
     "Personnalisé",
-    "Voir les données",
+    "Voir données",
     "Taille",
     "Données",
     "Voulez-vous vraiment verrouiller automatiquement votre appareil après {} ?",
