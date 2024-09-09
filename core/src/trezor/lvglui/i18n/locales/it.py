@@ -796,7 +796,7 @@ translations = [
     "Conferma il PIN di OneKey Lite",
     "I PIN non corrispondono, si prega di confermare nuovamente.",
     "Connetti di nuovo",
-    "Esci",
+    "Uscita",
     "I due OneKey Lite utilizzati per la connessione non sono uguali.",
     "Uscire dal processo di backup?",
     "Se esci adesso, dovrai verificare nuovamente la frase di recupero quando rientri. Sei sicuro di voler uscire?",

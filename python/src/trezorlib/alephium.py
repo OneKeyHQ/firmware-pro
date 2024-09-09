@@ -32,12 +32,14 @@ def get_address(
     address_n: "Address",
     show_display: bool = False,
     include_public_key: bool = False,
+    target_group: int | None = None,
 ) -> "MessageType":
     res = client.call(
         messages.AlephiumGetAddress(
             address_n=address_n, 
             show_display=show_display,
-            include_public_key=include_public_key
+            include_public_key=include_public_key,
+            target_group=target_group
         )
     )
     return res

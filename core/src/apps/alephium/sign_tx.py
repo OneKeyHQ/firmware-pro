@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List
 
 from trezor import wire
 from trezor.crypto import hashlib
@@ -68,19 +68,21 @@ async def sign_tx(
 
     decode_result = decode_tx(bytes(data))
 
-    alph_transfers = []
-    token_transfers = []
+    transfers: List[Dict[str, Any]] = []
     for output in decode_result["outputs"]:
         output_address = output["address"]
         output_amount = int(output["amount"])
 
         if output_address != address:
-            alph_transfers.append({"amount": output_amount, "address": output_address})
+            transfers.append(
+                {"type": "ALPH", "amount": output_amount, "address": output_address}
+            )
 
         if "tokens" in output and output["tokens"]:
             for token in output["tokens"]:
-                token_transfers.append(
+                transfers.append(
                     {
+                        "type": "TOKEN",
                         "token_id": token["id"],
                         "amount": int(token["amount"]),
                         "address": output_address,
@@ -91,30 +93,23 @@ async def sign_tx(
     gas_price_wei = int(decode_result["gasPrice"])
     gas_fee_alph = gas_amount * gas_price_wei
 
-    if alph_transfers:
-        for transfer in alph_transfers:
-            to_address = transfer["address"]
-            amount = transfer["amount"]
-
+    for transfer in transfers:
+        if transfer["type"] == "ALPH":
             await require_confirm_fee(
                 ctx,
                 from_address=str(address),
-                to_address=str(to_address),
-                amount=amount,
+                to_address=str(transfer["address"]),
+                amount=transfer["amount"],
             )
-
-    if token_transfers:
-        for transfer in token_transfers:
-            token_id = transfer["token_id"]
-            amount = transfer["amount"]
-            to_address = transfer["address"]
+        else:
             await require_confirm_fee(
                 ctx,
                 from_address=str(address),
-                to_address=str(to_address),
-                token_id=token_id,
-                token_amount=amount,
+                to_address=str(transfer["address"]),
+                token_id=transfer["token_id"],
+                token_amount=transfer["amount"],
             )
+
     if raw_data:
         await require_confirm_fee(
             ctx,
@@ -127,9 +122,8 @@ async def sign_tx(
             gas_amount=gas_fee_alph,
         )
 
-    hash_bytes = hasher.digest()
-
     await confirm_final(ctx, "Alephium")
+    hash_bytes = hasher.digest()
     signature = secp256k1.sign(node.private_key(), hash_bytes, False)[1:]
 
     return AlephiumSignedTx(signature=signature, address=address)

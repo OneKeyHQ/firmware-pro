@@ -796,7 +796,7 @@ translations = [
     "Bestätigen Sie die OneKey Lite PIN",
     "Die PINs stimmen nicht überein, bitte bestätigen Sie erneut.",
     "Verbinden Sie erneut",
-    "Beenden",
+    "Ausfahrt",
     "Die beiden für die Verbindung verwendeten OneKey Lite sind nicht gleich.",
     "Sicherungsvorgang beenden?",
     "Wenn Sie jetzt beenden, müssen Sie Ihre Wiederherstellungsphrase beim erneuten Aufrufen erneut bestätigen. Möchten Sie wirklich beenden?",

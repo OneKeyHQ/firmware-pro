@@ -72,6 +72,7 @@ if TYPE_CHECKING:
         address_n: "list[int]"
         show_display: "bool | None"
         include_public_key: "bool | None"
+        target_group: "int | None"
 
         def __init__(
             self,
@@ -79,6 +80,7 @@ if TYPE_CHECKING:
             address_n: "list[int] | None" = None,
             show_display: "bool | None" = None,
             include_public_key: "bool | None" = None,
+            target_group: "int | None" = None,
         ) -> None:
             pass
 
@@ -89,11 +91,13 @@ if TYPE_CHECKING:
     class AlephiumAddress(protobuf.MessageType):
         address: "str"
         public_key: "bytes | None"
+        derived_path: "list[int]"
 
         def __init__(
             self,
             *,
             address: "str",
+            derived_path: "list[int] | None" = None,
             public_key: "bytes | None" = None,
         ) -> None:
             pass

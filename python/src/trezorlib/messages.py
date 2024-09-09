@@ -795,6 +795,7 @@ class AlephiumGetAddress(protobuf.MessageType):
         1: protobuf.Field("address_n", "uint32", repeated=True, required=False),
         2: protobuf.Field("show_display", "bool", repeated=False, required=False),
         3: protobuf.Field("include_public_key", "bool", repeated=False, required=False),
+        4: protobuf.Field("target_group", "uint32", repeated=False, required=False),
     }
 
     def __init__(
@@ -803,10 +804,12 @@ class AlephiumGetAddress(protobuf.MessageType):
         address_n: Optional[Sequence["int"]] = None,
         show_display: Optional["bool"] = None,
         include_public_key: Optional["bool"] = None,
+        target_group: Optional["int"] = None,
     ) -> None:
         self.address_n: Sequence["int"] = address_n if address_n is not None else []
         self.show_display = show_display
         self.include_public_key = include_public_key
+        self.target_group = target_group
 
 
 class AlephiumAddress(protobuf.MessageType):
@@ -814,14 +817,17 @@ class AlephiumAddress(protobuf.MessageType):
     FIELDS = {
         1: protobuf.Field("address", "string", repeated=False, required=True),
         2: protobuf.Field("public_key", "bytes", repeated=False, required=False),
+        3: protobuf.Field("derived_path", "uint32", repeated=True, required=False),
     }
 
     def __init__(
         self,
         *,
         address: "str",
+        derived_path: Optional[Sequence["int"]] = None,
         public_key: Optional["bytes"] = None,
     ) -> None:
+        self.derived_path: Sequence["int"] = derived_path if derived_path is not None else []
         self.address = address
         self.public_key = public_key
 

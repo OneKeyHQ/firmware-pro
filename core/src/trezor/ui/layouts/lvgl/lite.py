@@ -301,8 +301,10 @@ async def backup_with_lite(
                 await ctx.wait(
                     show_lite_card_exit(
                         ctx,
+                        "exit_backup",
                         _(i18n_keys.TITLE__EXIT_BACKUP_PROCESS),
                         _(i18n_keys.TITLE__EXIT_BACKUP_PROCESS_DESC),
+                        None,
                         _(i18n_keys.BUTTON__EXIT),
                         _(i18n_keys.BUTTON__CANCEL),
                     )
