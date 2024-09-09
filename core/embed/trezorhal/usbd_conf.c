@@ -603,25 +603,7 @@ USBD_StatusTypeDef USBD_LL_Transmit(USBD_HandleTypeDef *pdev,
                                     uint8_t  *pbuf,
                                     uint16_t  size)
 {
-  if(ep_addr != 0 && pdev->pDesc != &MSC_Desc){
-    int32_t tickstart = HAL_GetTick();
-    data_in_done = false;
-    data_in_ep = ep_addr & EP_ADDR_MSK;
-    HAL_PCD_EP_Transmit(pdev->pData, ep_addr, pbuf, size);
-    while(!data_in_done){
-      if ((HAL_GetTick() - tickstart) > 500) {
-        __HAL_RCC_USB1_OTG_HS_FORCE_RESET();
-        __HAL_RCC_USB1_OTG_HS_RELEASE_RESET();  
-        USBD_LL_Init(pdev); 
-        USBD_LL_Start(pdev);      
-        return USBD_FAIL;
-      }
-    }
-    data_in_done = false;
-  }else{
-    HAL_PCD_EP_Transmit(pdev->pData, ep_addr, pbuf, size);
-  }
-  
+  HAL_PCD_EP_Transmit(pdev->pData, ep_addr, pbuf, size);  
   return USBD_OK;
 }
 

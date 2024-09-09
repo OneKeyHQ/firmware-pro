@@ -11,6 +11,7 @@ def get_product_id():
 
 active_iface = []
 
+usb21_enabled = False if __debug__ else True
 
 def init() -> io.USB:
     bus = io.USB(
@@ -21,6 +22,7 @@ def init() -> io.USB:
         product="OneKey Pro",
         interface="OneKey Interface",
         usb21_landing=False,
+        usb21_enabled=usb21_enabled,
     )
     return bus
 
@@ -41,8 +43,7 @@ _iface_iter = iter(range(5))
 
 ENABLE_IFACE_DEBUG = __debug__
 ENABLE_IFACE_WEBAUTHN = not utils.BITCOIN_ONLY
-# ENABLE_IFACE_VCP = __debug__
-ENABLE_IFACE_VCP = False
+ENABLE_IFACE_VCP = __debug__
 
 # interface used for trezor wire protocol
 id_wire = next(_iface_iter)

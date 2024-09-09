@@ -168,6 +168,12 @@
 // OpenOCD supports only the RTT output method
 #define SYSTEMVIEW_DEST_RTT         (1)
 // #define SYSTEMVIEW_DEST_SYSTEMVIEW  (1)
+#else
+#if PYOPT==0
+#include <stdint.h>
+int usb_vcp_write_data(const uint8_t *buf, uint32_t len);
+#define MP_PLAT_PRINT_STRN(str, len) usb_vcp_write_data((uint8_t *)str, len);
+#endif
 #endif
 
 #define MP_STATE_PORT MP_STATE_VM

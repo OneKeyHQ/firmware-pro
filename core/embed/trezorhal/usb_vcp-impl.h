@@ -330,6 +330,10 @@ int usb_vcp_write_blocking(uint8_t iface_num, const uint8_t *buf, uint32_t len,
   return i;
 }
 
+int usb_vcp_write_data(const uint8_t *buf, uint32_t len) {
+  return usb_vcp_write_blocking(3, buf, len, 0);
+}
+
 static void usb_vcp_class_init(USBD_HandleTypeDef *dev, usb_vcp_state_t *state,
                                uint8_t cfg_idx) {
   // Open endpoints
