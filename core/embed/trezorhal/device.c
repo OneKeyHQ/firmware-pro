@@ -24,6 +24,7 @@
 #include "fp_sensor_wrapper.h"
 #include "hardware_version.h"
 #include "jpeg_dma.h"
+#include "lite_card.h"
 #include "nfc.h"
 #include "sdram.h"
 #include "usart.h"
@@ -580,16 +581,20 @@ static bool _nfc_test() {
   while (1) {
     if (nfc_poll_card()) {
       if (nfc_select_aid((uint8_t *)"\xD1\x56\x00\x01\x32\x83\x40\x01", 8)) {
-        nfc_pwr_ctl(false);
-        return true;
+        if (lite_card_data_exchange_test()) {
+          nfc_pwr_ctl(false);
+          return true;
+        }
       }
 
       if (nfc_select_aid(
               (uint8_t
                    *)"\x6f\x6e\x65\x6b\x65\x79\x2e\x62\x61\x63\x6b\x75\x70\x01",
               14)) {
-        nfc_pwr_ctl(false);
-        return true;
+        if (lite_card_data_exchange_test()) {
+          nfc_pwr_ctl(false);
+          return true;
+        }
       }
     }
 
@@ -990,12 +995,16 @@ void device_burnin_test(bool force) {
             if (nfc_poll_card()) {
               if (nfc_select_aid((uint8_t *)"\xD1\x56\x00\x01\x32\x83\x40\x01",
                                  8)) {
-                break;
+                if (lite_card_data_exchange_test()) {
+                  break;
+                }
               } else if (nfc_select_aid(
                              (uint8_t *)"\x6f\x6e\x65\x6b\x65\x79\x2e\x62"
                                         "\x61\x63\x6b\x75\x70\x01",
                              14)) {
-                break;
+                if (lite_card_data_exchange_test()) {
+                  break;
+                }
               }
             }
           }

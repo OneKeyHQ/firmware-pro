@@ -177,6 +177,35 @@ bool lite_card_open_secure_channel(void) {
   return true;
 }
 
+bool lite_card_data_exchange_test(void) {
+  scp11_close_secure_channel(&scp11_ctx);
+
+  if (scp11_get_secure_channel_status(&scp11_ctx)) {
+    return true;
+  }
+  scp11_init(&scp11_ctx);
+
+  scp11_ctx.sd_cert.raw_len = sizeof(scp11_ctx.sd_cert.raw);
+  if (!lite_card_get_sd_certificate(scp11_ctx.sd_cert.raw,
+                                    &scp11_ctx.sd_cert.raw_len)) {
+    return false;
+  }
+  if (!scp11_certificate_parse_and_verify(scp11_ctx.sd_cert.raw,
+                                          scp11_ctx.sd_cert.raw_len,
+                                          &scp11_ctx.sd_cert)) {
+    return false;
+  }
+  if (!lite_card_send_device_certificate(scp11_ctx.oce_cert.raw,
+                                         scp11_ctx.oce_cert.raw_len)) {
+    return false;
+  }
+  if (!lite_card_mutual_authentication(&scp11_ctx)) {
+    return false;
+  }
+
+  return true;
+}
+
 bool lite_card_apdu(uint8_t* apdu, uint16_t apdu_len, uint8_t* response,
                     uint16_t* response_len, uint8_t* sw1sw2, bool safe) {
   if (memcmp(apdu, "\x00\xa4\x04\x00", 4) == 0) {
