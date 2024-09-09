@@ -110,7 +110,7 @@ async def sign_message(
                     is_raw_data=msg.is_raw_data,
                 )
 
-    await confirm_final(ctx, token.symbol if token else "TON")
+    await confirm_final(ctx, "TON")
 
     if is_jetton_transfer:
         if msg.jetton_amount is None:
