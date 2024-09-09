@@ -78,16 +78,16 @@ async def sign_tx(
                 {"type": "ALPH", "amount": output_amount, "address": output_address}
             )
 
-        if "tokens" in output and output["tokens"]:
-            for token in output["tokens"]:
-                transfers.append(
-                    {
-                        "type": "TOKEN",
-                        "token_id": token["id"],
-                        "amount": int(token["amount"]),
-                        "address": output_address,
-                    }
-                )
+            if "tokens" in output and output["tokens"]:
+                for token in output["tokens"]:
+                    transfers.append(
+                        {
+                            "type": "TOKEN",
+                            "token_id": token["id"],
+                            "amount": int(token["amount"]),
+                            "address": output_address,
+                        }
+                    )
 
     gas_amount = decode_result["gasAmount"]
     gas_price_wei = int(decode_result["gasPrice"])
