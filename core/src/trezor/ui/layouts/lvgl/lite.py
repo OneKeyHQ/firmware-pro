@@ -298,17 +298,15 @@ async def backup_with_lite(
             from trezor.ui.layouts import show_lite_card_exit
 
             try:
-                await ctx.wait(
-                    show_lite_card_exit(
-                        ctx,
-                        "exit_backup",
-                        _(i18n_keys.TITLE__EXIT_BACKUP_PROCESS),
-                        _(i18n_keys.TITLE__EXIT_BACKUP_PROCESS_DESC),
-                        None,
-                        _(i18n_keys.BUTTON__EXIT),
-                        _(i18n_keys.BUTTON__CANCEL),
-                    )
+                await show_lite_card_exit(
+                    ctx,
+                    content=_(i18n_keys.TITLE__EXIT_BACKUP_PROCESS_DESC),
+                    header=_(i18n_keys.TITLE__EXIT_BACKUP_PROCESS),
+                    subheader=None,
+                    button_confirm=_(i18n_keys.BUTTON__EXIT),
+                    button_cancel=_(i18n_keys.BUTTON__CANCEL),
                 )
+
                 return
             except wire.ActionCancelled:
                 continue

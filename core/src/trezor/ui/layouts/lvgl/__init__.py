@@ -482,27 +482,32 @@ def show_success(
     )
 
 
-def show_lite_card_exit(
+async def show_lite_card_exit(
     ctx: wire.GenericContext,
-    br_type: str,
     content: str,
     header: str = "Success",
     subheader: str | None = None,
-    button: str = "Exit",
-    cacelbutton: str = "Cancel",
-) -> Awaitable[None]:
+    button_confirm: str = "Exit",
+    button_cancel: str = "Cancel",
+) -> None:
+    from trezor.lvglui.scrs.template import Modal
 
-    return _show_modal(
-        ctx,
-        br_type=br_type,
-        br_code=ButtonRequestType.Success,
-        header=header,
-        subheader=subheader,
-        content=content,
-        button_confirm=button,
-        button_cancel=cacelbutton,
-        icon=None,
-        icon_color=ui.GREEN,
+    screen = Modal(
+        header,
+        content,
+        confirm_text=button_confirm,
+        cancel_text=button_cancel,
+        icon_path=None,
+    )
+    screen.btn_yes.enable(bg_color=lv_colors.ONEKEY_RED_1, text_color=lv_colors.BLACK)
+    await raise_if_cancelled(
+        interact(
+            ctx,
+            screen,
+            "show_lite_card_exit",
+            ButtonRequestType.Success,
+        ),
+        wire.ActionCancelled,
     )
 
 
