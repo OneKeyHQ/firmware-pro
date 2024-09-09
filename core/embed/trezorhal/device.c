@@ -24,7 +24,6 @@
 #include "fp_sensor_wrapper.h"
 #include "hardware_version.h"
 #include "jpeg_dma.h"
-#include "lite_card.h"
 #include "nfc.h"
 #include "sdram.h"
 #include "usart.h"
@@ -431,6 +430,8 @@ void device_generate_trng_data(void) {
 #endif
 
 #if DEVICE_TEST
+
+#include "lite_card.h"
 
 static FATFS fs_instance;
 
