@@ -61,6 +61,7 @@ void display_set_window(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1);
 int display_orientation(int degrees);
 int display_get_orientation(void);
 int display_backlight(int val);
+int display_backlight_with_lcd_reset(int val);
 
 void display_init(void);
 void display_refresh(void);

@@ -537,7 +537,7 @@ STATIC mp_obj_t mod_trezorui_Display_backlight(size_t n_args,
     if (val < 0 || val > 255) {
       mp_raise_ValueError("Value must be between 0 and 255");
     }
-    val = display_backlight(val);
+    val = display_backlight_with_lcd_reset(val);
   } else {
     val = display_backlight(-1);
   }

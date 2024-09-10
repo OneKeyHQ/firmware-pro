@@ -101,9 +101,7 @@ int main(void) {
   mpu_config_firmware();
   sdram_reinit();
 
-  lcd_init(DISPLAY_RESX, DISPLAY_RESY, LCD_PIXEL_FORMAT_RGB565);
-  display_backlight(0);
-  lcd_pwm_init();
+  lcd_para_init(DISPLAY_RESX, DISPLAY_RESY, LCD_PIXEL_FORMAT_RGB565);
   touch_init();
 
   ensure_emmcfs(emmc_fs_init(), "emmc_fs_init");

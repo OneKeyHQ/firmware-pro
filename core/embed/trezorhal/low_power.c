@@ -159,7 +159,6 @@ void enter_stop_mode(bool restart, uint32_t shutdown_seconds, bool wake_up) {
   fpsensor_irq_disable();
   touch_enable_irq();
   usart_enable_stop_wup();
-  lcd_refresh_suspend();
   sdram_set_self_refresh();
   if (seconds > 0) {
     while (seconds) {
@@ -196,7 +195,6 @@ void enter_stop_mode(bool restart, uint32_t shutdown_seconds, bool wake_up) {
     HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
   }
   sdram_set_normal_mode();
-  lcd_refresh_resume();
   touch_disable_irq();
   usart_disable_stop_wup();
 }

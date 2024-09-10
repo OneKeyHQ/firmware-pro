@@ -332,6 +332,9 @@ int sdram_reinit(void) {
 
   sdram_init_sequence();
 
+  __HAL_RCC_LTDC_CLK_ENABLE();
+  __HAL_RCC_DSI_CLK_ENABLE();
+
   return HAL_OK;
 }
 

@@ -17,7 +17,7 @@ DSI_HandleTypeDef hlcd_dsi;
 DMA2D_HandleTypeDef hlcd_dma2d;
 LTDC_HandleTypeDef hlcd_ltdc;
 
-static void ltcd_msp_init(LTDC_HandleTypeDef* hltdc) {
+static void ltdc_msp_init(LTDC_HandleTypeDef* hltdc) {
   if (hltdc->Instance == LTDC) {
     /** Enable the LTDC clock */
     __HAL_RCC_LTDC_CLK_ENABLE();
@@ -471,22 +471,23 @@ void st7701_init_sequence(void) {
 #define LED_PWM_TIM_PERIOD (100)
 
 int display_backlight(int val) {
-  if (val == 0 && DISPLAY_BACKLIGHT != 0) {
-    // clock down
-    __HAL_DSI_DISABLE(&hlcd_dsi);
-    __HAL_LTDC_DISABLE(&hlcd_ltdc);
-    // lcd reset
-    HAL_GPIO_WritePin(LCD_RESET_GPIO_PORT, LCD_RESET_PIN, GPIO_PIN_RESET);
-  } else if (val != 0 && DISPLAY_BACKLIGHT == 0) {
-    HAL_GPIO_WritePin(LCD_RESET_GPIO_PORT, LCD_RESET_PIN, GPIO_PIN_SET);
-    HAL_Delay(30);
-    __HAL_DSI_ENABLE(&hlcd_dsi);
-    __HAL_LTDC_ENABLE(&hlcd_ltdc);
-    st7701_init_sequence();
-  }
   if (DISPLAY_BACKLIGHT != val && val >= 0 && val <= 255) {
     DISPLAY_BACKLIGHT = val;
     TIM1->CCR1 = (LED_PWM_TIM_PERIOD - 1) * val / 255;
+  }
+  return DISPLAY_BACKLIGHT;
+}
+
+int display_backlight_with_lcd_reset(int val) {
+  if (DISPLAY_BACKLIGHT != val && val >= 0 && val <= 255) {
+    DISPLAY_BACKLIGHT = val;
+    TIM1->CCR1 = (LED_PWM_TIM_PERIOD - 1) * val / 255;
+  }
+
+  if (val == 0 && DISPLAY_BACKLIGHT != 0) {
+    lcd_refresh_suspend();
+  } else if (val > 0 && DISPLAY_BACKLIGHT == 0) {
+    lcd_refresh_resume();
   }
   return DISPLAY_BACKLIGHT;
 }
@@ -564,7 +565,7 @@ void lcd_init(uint32_t lcd_width, uint32_t lcd_height, uint32_t pixel_format) {
   lcd_params.yres = lcd_height;
   lcd_params.fb_base = DISPLAY_MEMORY_BASE;
 
-  ltcd_msp_init(&hlcd_ltdc);
+  ltdc_msp_init(&hlcd_ltdc);
 
   dma2d_msp_init(&hlcd_dma2d);
 
@@ -655,10 +656,9 @@ void lcd_para_init(uint32_t lcd_width, uint32_t lcd_height,
   lcd_params.yres = lcd_height;
   lcd_params.fb_base = DISPLAY_MEMORY_BASE;
 
-  // dma2d_copy_buffer((uint32_t *)_acgoogle1, (uint32_t *)DISPLAY_MEMORY_BASE,
-  // 50,
-  //                   400, 352, 110);
-  // HAL_Delay(1000);
+  hlcd_ltdc.Instance = LTDC;
+  hlcd_dma2d.Instance = DMA2D;
+  hlcd_dsi.Instance = DSI;
 }
 
 void display_set_window(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1) {}
