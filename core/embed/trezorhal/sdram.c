@@ -194,11 +194,6 @@ int sdram_init(void) {
 int sdram_reinit(void) {
   GPIO_InitTypeDef gpio_init_structure;
 
-  // stop dsi and ltdc to access sdram
-  // lcd needs to be initialized after this
-  __HAL_RCC_LTDC_CLK_DISABLE();
-  __HAL_RCC_DSI_CLK_DISABLE();
-
   /* Disable FMC clock */
   __HAL_RCC_FMC_CLK_DISABLE();
 
@@ -331,9 +326,6 @@ int sdram_reinit(void) {
   }
 
   sdram_init_sequence();
-
-  __HAL_RCC_LTDC_CLK_ENABLE();
-  __HAL_RCC_DSI_CLK_ENABLE();
 
   return HAL_OK;
 }

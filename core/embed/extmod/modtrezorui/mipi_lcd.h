@@ -77,6 +77,9 @@ void lcd_pwm_init(void);
 void display_fp(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
                 const uint8_t *data);
 
+void lcd_ltdc_dsi_disable(void);
+void lcd_ltdc_dsi_enable(void);
+
 void lcd_refresh_suspend(void);
 
 void lcd_refresh_resume(void);

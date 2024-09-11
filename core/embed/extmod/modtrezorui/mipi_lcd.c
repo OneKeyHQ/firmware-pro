@@ -479,17 +479,13 @@ int display_backlight(int val) {
 }
 
 int display_backlight_with_lcd_reset(int val) {
-  if (DISPLAY_BACKLIGHT != val && val >= 0 && val <= 255) {
-    DISPLAY_BACKLIGHT = val;
-    TIM1->CCR1 = (LED_PWM_TIM_PERIOD - 1) * val / 255;
-  }
-
   if (val == 0 && DISPLAY_BACKLIGHT != 0) {
+    display_backlight(0);
     lcd_refresh_suspend();
   } else if (val > 0 && DISPLAY_BACKLIGHT == 0) {
     lcd_refresh_resume();
   }
-  return DISPLAY_BACKLIGHT;
+  return display_backlight(val);
 }
 
 int display_orientation(int degrees) {
@@ -684,13 +680,24 @@ void display_fp(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
   }
 }
 
+void lcd_ltdc_dsi_disable(void) {
+  hlcd_ltdc.Instance = LTDC;
+  hlcd_dsi.Instance = DSI;
+  __HAL_LTDC_DISABLE(&hlcd_ltdc);
+  __HAL_DSI_DISABLE(&hlcd_dsi);
+}
+
+void lcd_ltdc_dsi_enable(void) {
+  hlcd_ltdc.Instance = LTDC;
+  hlcd_dsi.Instance = DSI;
+  __HAL_DSI_ENABLE(&hlcd_dsi);
+  __HAL_LTDC_ENABLE(&hlcd_ltdc);
+}
+
 void lcd_refresh_suspend(void) {
   // wait transfer
-  while (HAL_DMA2D_PollForTransfer(&hlcd_dma2d, 30) != HAL_OK)
-    ;
-  // clock down
-  __HAL_DSI_DISABLE(&hlcd_dsi);
-  __HAL_LTDC_DISABLE(&hlcd_ltdc);
+  lcd_ltdc_dsi_disable();
+
   // lcd reset
   HAL_GPIO_WritePin(LCD_RESET_GPIO_PORT, LCD_RESET_PIN, GPIO_PIN_RESET);
   // wait for full blanking done
@@ -704,9 +711,7 @@ void lcd_refresh_resume(void) {
   HAL_Delay(5);
   HAL_GPIO_WritePin(LCD_RESET_GPIO_PORT, LCD_RESET_PIN, GPIO_PIN_SET);
   HAL_Delay(50);
-  // clock up
-  __HAL_LTDC_ENABLE(&hlcd_ltdc);
-  __HAL_DSI_ENABLE(&hlcd_dsi);
+  lcd_ltdc_dsi_enable();
   // lcd wakeup / re-init
   st7701_init_sequence();
 }

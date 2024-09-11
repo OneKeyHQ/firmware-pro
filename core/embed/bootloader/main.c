@@ -679,10 +679,13 @@ static BOOT_TARGET decide_boot_target(vendor_header* const vhdr,
 
 int main(void) {
   SystemCoreClockUpdate();
-  sdram_reinit();
   dwt_init();
   mpu_config_bootloader();
 
+  lcd_ltdc_dsi_disable();
+  sdram_reinit();
+  HAL_Delay(50);
+  lcd_ltdc_dsi_enable();
   // user interface
   lcd_para_init(DISPLAY_RESX, DISPLAY_RESY, LCD_PIXEL_FORMAT_RGB565);
   touch_init();
