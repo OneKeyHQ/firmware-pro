@@ -821,15 +821,15 @@ int main(void) {
         while (touch_read() == 0)
           ;
       }
-
-      display_clear();
-
-      bus_fault_disable();
-
-      mpu_config_off();
-
-      jump_to(FIRMWARE_START + vhdr.hdrlen + IMAGE_HEADER_SIZE);
     }
+
+    display_clear();
+
+    bus_fault_disable();
+
+    mpu_config_off();
+
+    jump_to(FIRMWARE_START + vhdr.hdrlen + IMAGE_HEADER_SIZE);
   }
 
   error_shutdown("Internal error", "Boot target invalid", "Tap to restart.",
