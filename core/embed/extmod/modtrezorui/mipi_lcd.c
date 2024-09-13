@@ -683,15 +683,15 @@ void display_fp(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
 void lcd_ltdc_dsi_disable(void) {
   hlcd_ltdc.Instance = LTDC;
   hlcd_dsi.Instance = DSI;
-  __HAL_LTDC_DISABLE(&hlcd_ltdc);
-  __HAL_DSI_DISABLE(&hlcd_dsi);
+  HAL_DSI_Stop(&hlcd_dsi);
+  __HAL_LTDC_DISABLE(&hlcd_ltdc);  
 }
 
 void lcd_ltdc_dsi_enable(void) {
   hlcd_ltdc.Instance = LTDC;
   hlcd_dsi.Instance = DSI;
-  __HAL_DSI_ENABLE(&hlcd_dsi);
   __HAL_LTDC_ENABLE(&hlcd_ltdc);
+  HAL_DSI_Start(&hlcd_dsi);  
 }
 
 void lcd_refresh_suspend(void) {

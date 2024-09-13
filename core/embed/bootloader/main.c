@@ -684,10 +684,8 @@ int main(void) {
 
   lcd_ltdc_dsi_disable();
   sdram_reinit();
-  HAL_Delay(50);
-  lcd_ltdc_dsi_enable();
-  // user interface
-  lcd_para_init(DISPLAY_RESX, DISPLAY_RESY, LCD_PIXEL_FORMAT_RGB565);
+  lcd_init(DISPLAY_RESX, DISPLAY_RESY, LCD_PIXEL_FORMAT_RGB565);
+  lcd_pwm_init();
   touch_init();
 
   adc_init();

@@ -194,8 +194,8 @@ int sdram_init(void) {
 int sdram_reinit(void) {
   GPIO_InitTypeDef gpio_init_structure;
 
-  /* Disable FMC clock */
-  __HAL_RCC_FMC_CLK_DISABLE();
+  __HAL_RCC_FMC_FORCE_RESET();
+  __HAL_RCC_FMC_RELEASE_RESET();
 
   RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
 
