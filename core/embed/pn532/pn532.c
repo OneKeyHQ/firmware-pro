@@ -290,8 +290,7 @@ bool pn532_inListPassiveTarget(void)
     {
         return false;
     }
-    pn532_set_register(PN532_REG_CIU_RFCfg, 0x39);
-    return true;
+    return pn532_set_register(PN532_REG_CIU_RFCfg, 0x39);
 }
 
 bool pn532_inDataExchange(
