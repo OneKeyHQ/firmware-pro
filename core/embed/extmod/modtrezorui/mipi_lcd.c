@@ -484,6 +484,7 @@ int display_backlight_with_lcd_reset(int val) {
     lcd_refresh_suspend();
   } else if (val > 0 && DISPLAY_BACKLIGHT == 0) {
     lcd_refresh_resume();
+    HAL_Delay(5);
   }
   return display_backlight(val);
 }

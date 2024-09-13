@@ -39,7 +39,6 @@ NRF_VERSION: str | None = None
 BLE_CTRL = io.BLE()
 FLASH_LED_BRIGHTNESS: int | None = None
 BUTTON_PRESSING = False
-wireless_charge_screen_off_task = None
 
 
 async def handle_fingerprint():
@@ -305,6 +304,7 @@ async def _deal_button_press(value: bytes) -> None:
                             fingerprints.lock()
                     else:
                         config.lock()
+                base.set_homescreen()
                 await loop.race(safe_reloop(), loop.sleep(200))
                 workflow.spawn(utils.internal_reloop())
                 return
@@ -353,18 +353,15 @@ async def _deal_charging_state(value: bytes) -> None:
         if utils.BATTERY_CAP:
             StatusBar.get_instance().set_battery_img(utils.BATTERY_CAP, True)
         if CHARING_TYPE == CHARGE_BY_WIRELESS:
-            # global wireless_charge_screen_off_task
 
             if utils.CHARGE_WIRELESS_STATUS == utils.CHARGE_WIRELESS_STOP:
                 utils.CHARGE_WIRELESS_STATUS = utils.CHARGE_WIRELESS_CHARGE_STARTING
                 fetch_battery_temperature()
-                wireless_charge_screen_off_task = utils.turn_off_lcd_delay()
-                loop.schedule(wireless_charge_screen_off_task)
+                loop.schedule(base.screen_off_delay())
             elif utils.CHARGE_WIRELESS_STATUS == utils.CHARGE_WIRELESS_CHARGE_STOPPING:
                 utils.CHARGE_WIRELESS_STATUS = utils.CHARGE_WIRELESS_CHARGE_STARTING
                 if display.backlight() > 0:
-                    wireless_charge_screen_off_task = utils.turn_off_lcd_delay()
-                    loop.schedule(wireless_charge_screen_off_task)
+                    loop.schedule(base.screen_off_delay())
                 return
             elif utils.CHARGE_WIRELESS_STATUS == utils.CHARGE_WIRELESS_CHARGE_STARTING:
                 return

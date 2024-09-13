@@ -209,13 +209,6 @@ async def turn_off_lcd():
         loop.clear()
 
 
-async def turn_off_lcd_delay():
-    from trezor import loop
-
-    await loop.sleep(3000)
-    await turn_off_lcd()
-
-
 def play_dead():
     from trezor import loop
     import usb
