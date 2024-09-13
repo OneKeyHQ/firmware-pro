@@ -237,6 +237,43 @@ bool pn532_SAMConfiguration(void)
     );
 }
 
+bool pn532_get_register(uint16_t reg_addr, uint8_t* value)
+{
+    uint8_t command[3] = {
+        PN532_COMMAND_READREGISTER, (uint8_t)((reg_addr >> 8) & 0xFF), (uint8_t)(reg_addr & 0xFF)};
+    uint8_t response[1];
+    uint16_t response_length = sizeof(response);
+
+    if ( !pn532_transceive(
+             PN532_COMMAND_READREGISTER, command + 1, sizeof(command) - 1, response, &response_length,
+             PN532_TIMEOUT_MS_NORMAL
+         ) )
+    {
+        return false;
+    }
+    *value = response[0];
+    return true;
+}
+
+bool pn532_set_register(uint16_t reg_addr, uint8_t new_value)
+{
+    uint8_t command[4] = {
+        PN532_COMMAND_WRITEREGISTER, (uint8_t)((reg_addr >> 8) & 0xFF), (uint8_t)(reg_addr & 0xFF),
+        new_value};
+    uint8_t response[1];
+    uint16_t response_length = sizeof(response);
+
+    if ( !pn532_transceive(
+             PN532_COMMAND_WRITEREGISTER, command + 1, sizeof(command) - 1, response, &response_length,
+             PN532_TIMEOUT_MS_NORMAL
+         ) )
+    {
+        return false;
+    }
+    pn532_controller.delay_ms(20);
+    return true;
+}
+
 bool pn532_inListPassiveTarget(void)
 {
     uint8_t params[] = {0x01, PN532_InListPassiveTarget_BrTy_106k_typeA};
@@ -253,6 +290,7 @@ bool pn532_inListPassiveTarget(void)
     {
         return false;
     }
+    pn532_set_register(PN532_REG_CIU_RFCfg, 0x39);
     return true;
 }
 

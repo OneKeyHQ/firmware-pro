@@ -225,4 +225,7 @@ typedef struct
 #define PN532_GPIO_P34           (4)
 #define PN532_GPIO_P35           (5)
 
+// ---------------------- Registers ----------------------
+#define PN532_REG_CIU_RFCfg 0x6316
+
 #endif //_PN532_DEFINES_
