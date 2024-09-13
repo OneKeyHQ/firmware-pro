@@ -13,6 +13,7 @@ active_iface = []
 
 usb21_enabled = False if __debug__ else True
 
+
 def init() -> io.USB:
     bus = io.USB(
         vendor_id=0x1209,

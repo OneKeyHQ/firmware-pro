@@ -16,7 +16,7 @@ from trezor.ui.components.common.webauthn import ConfirmInfo
 from trezor.ui.layouts import show_popup
 from trezor.ui.layouts.lvgl.webauthn import confirm_webauthn, confirm_webauthn_reset
 
-from apps.base import set_homescreen
+from apps.base import device_is_unlocked, set_homescreen
 from apps.common import cbor
 
 from . import common
@@ -379,9 +379,7 @@ async def read_cmd(iface: io.HID) -> Cmd | None:
     read = loop.wait(iface.iface_num() | io.POLL_READ)
 
     buf = await read
-    from trezor.utils import lcd_resume
-
-    lcd_resume()
+    utils.turn_on_lcd_if_possible()
     while True:
         ifrm = overlay_struct(bytearray(buf), desc_init)
         bcnt = ifrm.bcnt
@@ -574,20 +572,18 @@ class KeepaliveCallback:
 
 
 async def verify_user(keepalive_callback: KeepaliveCallback) -> bool:
-    from trezor.wire import PinCancelled, PinInvalid
-    from apps.common.request_pin import verify_user_pin
+    from apps.base import unlock_device
     import trezor.pin
 
     try:
         trezor.pin.keepalive_callback = keepalive_callback
-        await verify_user_pin(cache_time_ms=_UV_CACHE_TIME_MS)
-        ret = True
-    except (PinCancelled, PinInvalid):
-        ret = False
+
+        await unlock_device()
+        return True
+    except Exception:
+        return False
     finally:
         trezor.pin.keepalive_callback = None
-
-    return ret
 
 
 async def se_gen_seed(keepalive_callback: KeepaliveCallback) -> bool:
@@ -719,15 +715,13 @@ class U2fUnlock(State):
         return _U2F_CONFIRM_TIMEOUT_MS
 
     async def confirm_dialog(self) -> bool:
-        from trezor.wire import PinCancelled, PinInvalid
-        from apps.common.request_pin import verify_user_pin
+        from apps.base import unlock_device
 
         try:
-            await verify_user_pin()
-            set_homescreen()
-        except (PinCancelled, PinInvalid):
+            await unlock_device()
+            return True
+        except Exception:
             return False
-        return True
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, U2fUnlock)
@@ -798,9 +792,9 @@ class Fido2Unlock(Fido2State):
         self.dialog_mgr = dialog_mgr
 
     async def confirm_dialog(self) -> bool | "State":
-        if not await verify_user(KeepaliveCallback(self.cid, self.iface)):
-            return False
-
+        if not device_is_unlocked():
+            if not await verify_user(KeepaliveCallback(self.cid, self.iface)):
+                return False
         if not await se_gen_seed(KeepaliveCallback(self.cid, self.iface)):
             return False
 
@@ -1236,7 +1230,7 @@ def cmd_wink(req: Cmd) -> Cmd:
 
 
 def msg_register(req: Msg, dialog_mgr: DialogManager) -> Cmd:
-    if not config.is_unlocked():
+    if not device_is_unlocked():
         new_state: State = U2fUnlock(req.cid, dialog_mgr.iface)
         dialog_mgr.set_state(new_state)
         return msg_error(req.cid, _SW_CONDITIONS_NOT_SATISFIED)
@@ -1328,7 +1322,7 @@ def msg_register_sign(challenge: bytes, cred: U2fCredential) -> bytes:
 
 
 def msg_authenticate(req: Msg, dialog_mgr: DialogManager) -> Cmd:
-    if not config.is_unlocked():
+    if not device_is_unlocked():
         new_state: State = U2fUnlock(req.cid, dialog_mgr.iface)
         dialog_mgr.set_state(new_state)
         return msg_error(req.cid, _SW_CONDITIONS_NOT_SATISFIED)
@@ -1500,10 +1494,7 @@ def algorithms_from_pub_key_cred_params(pub_key_cred_params: list[dict]) -> list
 
 
 def cbor_make_credential(req: Cmd, dialog_mgr: DialogManager) -> Cmd | None:
-    if config.is_unlocked():
-        resp = cbor_make_credential_process(req, dialog_mgr)
-    else:
-        resp = Fido2Unlock(cbor_make_credential_process, req, dialog_mgr)
+    resp = Fido2Unlock(cbor_make_credential_process, req, dialog_mgr)
 
     if isinstance(resp, State):
         if dialog_mgr.set_state(resp):
@@ -1680,10 +1671,8 @@ def cbor_make_credential_sign(
 
 
 def cbor_get_assertion(req: Cmd, dialog_mgr: DialogManager) -> Cmd | None:
-    if config.is_unlocked():
-        resp = cbor_get_assertion_process(req, dialog_mgr)
-    else:
-        resp = Fido2Unlock(cbor_get_assertion_process, req, dialog_mgr)
+
+    resp = Fido2Unlock(cbor_get_assertion_process, req, dialog_mgr)
 
     if isinstance(resp, State):
         if dialog_mgr.set_state(resp):

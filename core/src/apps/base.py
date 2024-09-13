@@ -474,6 +474,15 @@ def lock_device() -> None:
         workflow.close_others()
 
 
+def device_is_unlocked():
+    from trezor.lvglui.scrs import fingerprints
+
+    if fingerprints.is_available():
+        return config.is_unlocked() and fingerprints.is_unlocked()
+    else:
+        return config.is_unlocked()
+
+
 def lock_device_if_unlocked() -> None:
     if config.is_unlocked():
         lock_device()
