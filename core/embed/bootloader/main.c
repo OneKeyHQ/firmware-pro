@@ -778,6 +778,7 @@ int main(void) {
       decide_boot_target(&vhdr, &hdr, &headers_valid, &firmware_valid);
 
   if (boot_target == BOOT_TARGET_BOOTLOADER) {
+    headers_valid = validate_firmware_headers(&vhdr, &hdr);
     display_clear();
 
     if (sectrue == headers_valid) {
