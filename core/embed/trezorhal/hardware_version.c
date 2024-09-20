@@ -40,6 +40,8 @@ HW_VER_t get_hw_ver() {
     return HW_VER_1P3A;
   if (check_mv_in_range(adc_mv, HW_VER_3P0, HW_VER_PRECISION_PERCENT))
     return HW_VER_3P0;
+  if (check_mv_in_range(adc_mv, HW_VER_3P0A, HW_VER_PRECISION_PERCENT))
+    return HW_VER_3P0A;
 
   return HW_VER_UNKNOWN;
 }
