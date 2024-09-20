@@ -191,6 +191,11 @@ FRESULT emmc_fs_f_stat(const TCHAR* path_buff, FILINFO* fno)
         // wipe FILINFO to zero as f_stat won't work on root folder
         if ( fno != NULL )
             memset(fno, 0x00, sizeof(FILINFO));
+        // fill FILINFO by our own
+        // copy over path
+        memcpy(fno->fname, path_buff, 2);
+        // root must be a directory
+        fno->fattrib |= AM_DIR;
         // root must exist, return true
         fresult = FR_OK;
     }
