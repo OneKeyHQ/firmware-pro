@@ -84,6 +84,8 @@ void lcd_refresh_suspend(void);
 
 void lcd_refresh_resume(void);
 
+int lcd_ltdc_busy(void);
+
 #ifdef __cplusplus
 }
 #endif
