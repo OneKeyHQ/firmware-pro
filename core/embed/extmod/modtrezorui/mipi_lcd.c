@@ -301,6 +301,8 @@ void dma2d_copy_buffer(uint32_t* pSrc, uint32_t* pDst, uint16_t x, uint16_t y,
   /* DMA2D Initialization */
   if (HAL_DMA2D_Init(&hlcd_dma2d) == HAL_OK) {
     if (HAL_DMA2D_ConfigLayer(&hlcd_dma2d, 1) == HAL_OK) {
+      while (lcd_ltdc_busy()) {
+      }
       if (HAL_DMA2D_Start(&hlcd_dma2d, source, destination, xsize, ysize) ==
           HAL_OK) {
         /* Polling For DMA transfer */
@@ -681,18 +683,26 @@ void display_fp(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
   }
 }
 
+int lcd_ltdc_busy(void) {
+  hlcd_ltdc.Instance = LTDC;
+  // low is busy
+  return hlcd_ltdc.Instance->CDSR & 0x01 ? 0 : 1;
+}
+
 void lcd_ltdc_dsi_disable(void) {
   hlcd_ltdc.Instance = LTDC;
   hlcd_dsi.Instance = DSI;
+  while (lcd_ltdc_busy()) {
+  }
   HAL_DSI_Stop(&hlcd_dsi);
-  __HAL_LTDC_DISABLE(&hlcd_ltdc);  
+  __HAL_LTDC_DISABLE(&hlcd_ltdc);
 }
 
 void lcd_ltdc_dsi_enable(void) {
   hlcd_ltdc.Instance = LTDC;
   hlcd_dsi.Instance = DSI;
   __HAL_LTDC_ENABLE(&hlcd_ltdc);
-  HAL_DSI_Start(&hlcd_dsi);  
+  HAL_DSI_Start(&hlcd_dsi);
 }
 
 void lcd_refresh_suspend(void) {
