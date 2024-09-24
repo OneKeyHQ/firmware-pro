@@ -47,5 +47,7 @@ i2c_channel i2c_find_channel_by_device(i2c_device device);
 bool is_i2c_initialized_by_device(i2c_device device);
 bool i2c_init_by_device(i2c_device device);
 bool i2c_deinit_by_device(i2c_device device); // make sure you understand what you doing!
+HAL_StatusTypeDef
+i2c_send_data(I2C_HandleTypeDef* hi2c, uint16_t DevAddress, uint8_t* pData, uint16_t Size, uint32_t Timeout);
 
 #endif // __I2C_H__

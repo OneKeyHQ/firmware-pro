@@ -8,6 +8,7 @@
 #include "mipi_lcd.h"
 #include "irq.h"
 #include "systick.h"
+#include "irq.h"
 
 #define CAMERA_CAPTURE_MODE 0 // 0: snapshot mode, 1: continuous mode
 
@@ -185,9 +186,13 @@ unsigned char camera_sccb_read_reg(unsigned char reg_addr, unsigned char* data)
 unsigned char camera_sccb_write_reg(unsigned char reg_addr, unsigned char* data)
 {
     unsigned char ret = 0;
-    if ( HAL_I2C_Mem_Write(i2c_handle_camera, GC2145_ADDR, reg_addr, I2C_MEMADD_SIZE_8BIT, data, 1, 1000) !=
-         HAL_OK )
+    uint8_t buf[2] = {reg_addr, *data};
+    uint32_t irq = disable_irq();
+    if ( i2c_send_data(i2c_handle_camera, GC2145_ADDR, buf, 2, 1000) != HAL_OK )
+    {
         ret = 1;
+    }
+    enable_irq(irq);
     return ret;
 }
 
@@ -321,7 +326,7 @@ void camera_power_on(void)
         CAMERA_RST_LOW();
         camera_delay(10);
         CAMERA_RST_HIGH();
-        camera_delay(100);
+        camera_delay(20);
         camera_powered = true;
     }
 

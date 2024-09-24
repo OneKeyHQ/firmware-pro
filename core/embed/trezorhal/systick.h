@@ -30,6 +30,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 
 // Works for x between 0 and 16 inclusive
 #define POW2_CEIL(x) ((((x) - 1) | ((x) - 1) >> 1 | ((x) - 1) >> 2 | ((x) - 1) >> 3) + 1)
@@ -56,5 +57,9 @@ static inline void systick_disable_dispatch(size_t slot) {
 void dwt_init(void);
 void dwt_delay_us(uint32_t delay_us);
 void dwt_delay_ms(uint32_t delay_ms);
+void dwt_reset(void);
+uint32_t dwt_get_cycle(void);
+uint32_t dwt_get_ms(void);
+bool dwt_is_timeout(uint32_t timeout);
 
 #endif // MICROPY_INCLUDED_STM32_SYSTICK_H

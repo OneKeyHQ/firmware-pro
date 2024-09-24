@@ -124,3 +124,29 @@ void dwt_delay_ms(uint32_t delay_ms) {
     dwt_delay_1ms();
   }
 }
+
+static uint32_t accumulated_time_ms = 0;
+static uint32_t last_tick = 0;
+
+void dwt_reset(void) {
+  DWT_CYCCNT = 0;
+  accumulated_time_ms = 0;
+  last_tick = 0;
+}
+
+uint32_t dwt_get_cycle(void) { return DWT_CYCCNT; }
+
+uint32_t dwt_get_ms(void) { return accumulated_time_ms; }
+
+bool dwt_is_timeout(uint32_t timeout) {
+  uint32_t current = DWT_CYCCNT;
+  uint32_t elapsed = (current >= last_tick)
+                         ? (current - last_tick)
+                         : (0xFFFFFFFF - last_tick + current + 1);
+  uint32_t elapsed_time_ms = elapsed / (SystemCoreClock / 1000);
+  if(elapsed_time_ms > 0){
+    accumulated_time_ms += elapsed_time_ms;
+    last_tick = current;
+  }
+  return accumulated_time_ms >= timeout;
+}
