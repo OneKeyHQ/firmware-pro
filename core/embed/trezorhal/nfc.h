@@ -23,4 +23,6 @@ bool nfc_send_recv(
 );
 bool nfc_poll_card(void);
 bool nfc_select_aid(uint8_t* aid, uint8_t aid_len);
+bool nfc_read_card_certificate(void);
+bool nfc_send_device_certificate(void);
 #endif // __NFC_H__

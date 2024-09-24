@@ -59,6 +59,12 @@ SECTIONS {
   } >SRAM
 
 
+  .heap : ALIGN(4) {
+    PROVIDE ( end = . );
+    PROVIDE ( _end = . );
+    . = 4K; /* this acts as a build time assertion that at least this much memory is available for heap use */
+  } >SRAM
+
   .stack : ALIGN(8) {
     . = 4K; /* this acts as a build time assertion that at least this much memory is available for stack use */
   } >SRAM
