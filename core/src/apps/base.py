@@ -429,6 +429,7 @@ def set_homescreen() -> None:
         return
     if not screen.is_visible():
         lv.scr_load(screen)
+    lv.refr_now(None)
 
 
 def store_ble_name(ble_name):

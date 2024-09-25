@@ -296,6 +296,7 @@ async def _deal_button_press(value: bytes) -> None:
                 if utils.is_initialization_processing():
                     return
                 utils.AUTO_POWER_OFF = True
+                utils.RESTART_MAIN_LOOP = True
                 from trezor.lvglui.scrs import fingerprints
 
                 if config.has_pin() and config.is_unlocked():
@@ -304,9 +305,9 @@ async def _deal_button_press(value: bytes) -> None:
                             fingerprints.lock()
                     else:
                         config.lock()
-                base.set_homescreen()
                 await loop.race(safe_reloop(), loop.sleep(200))
                 workflow.spawn(utils.internal_reloop())
+                base.set_homescreen()
                 return
         else:
             utils.turn_on_lcd_if_possible()

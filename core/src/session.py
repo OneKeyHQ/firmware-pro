@@ -15,6 +15,8 @@ import apps.base
 import usb
 
 apps.base.boot()
+utils.RESTART_MAIN_LOOP = False
+
 
 if not utils.BITCOIN_ONLY and usb.ENABLE_IFACE_WEBAUTHN:
     import apps.webauthn
@@ -32,6 +34,8 @@ async def handle_stop_mode():
     while True:
         # leave enough time for usb to be detected
         await loop.sleep(200)
+        if utils.RESTART_MAIN_LOOP:
+            return
 
         if display.backlight() == 0:
             stop_mode(first_time)

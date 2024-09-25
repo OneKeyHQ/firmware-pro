@@ -82,6 +82,7 @@ CHARGE_WIRELESS_STATUS = CHARGE_WIRELESS_STOP
 CHARGE_ENABLE: bool | None = None
 CHARGING = False
 AIRGAP_MODE_CHANGED = False
+RESTART_MAIN_LOOP = False
 
 if __debug__:
     MAX_FP_ATTEMPTS = 50
@@ -206,6 +207,8 @@ async def turn_off_lcd():
         AUTO_POWER_OFF = True
     await wire.signal_ack()
     if device.is_initialized():
+        global RESTART_MAIN_LOOP
+        RESTART_MAIN_LOOP = True
         loop.clear()
 
 
