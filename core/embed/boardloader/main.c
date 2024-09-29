@@ -59,6 +59,7 @@
 #include "adc.h"
 #include "hardware_version.h"
 #include "spi_legacy.h"
+#include "rand.h"
 
 #include STM32_HAL_H
 
@@ -1230,7 +1231,7 @@ int spi_flash_test(void) {
   //   screen_bg[SPI_FLASH_TEST] = COLOR_GREEN;
   // }
   if (get_hw_ver() >= HW_VER_3P0A) {
-    screen_bg[SPI_FLASH_TEST] = COLOR_GREEN;
+    screen_bg[SPI_FLASH_TEST] = COLOR_BLACK;
     return 0;
   }
   char show_tip[64] = {0};
@@ -1305,9 +1306,38 @@ int spi_flash_test(void) {
 }
 
 void _emmc_test(void) {
+  char show_tip[64] = {0};
   if (emmc_get_capacity_in_bytes() == 0) {
     screen_bg[EMMC_TEST] = COLOR_RED;
   } else {
+    uint8_t buf[512], buf2[512];
+    
+    random_buffer(buf, sizeof(buf));
+    display_clear();
+    for(int m = 0; m < 1000; m++){
+      mini_snprintf(show_tip, sizeof(show_tip), "write %d blocks", m+1);
+      display_bar(0, 130, 480, 30, COLOR_BL_BG);
+      display_text_center(DISPLAY_RESX / 2, 160, show_tip, -1, FONT_NORMAL,
+                        COLOR_BL_FG, COLOR_BL_BG);
+      emmc_write_blocks(buf, m , 1, 500);
+    }
+    display_text_center(DISPLAY_RESX / 2, 190, "write done", -1, FONT_NORMAL,
+                        COLOR_BL_FG, COLOR_BL_BG);
+    for(int m = 0; m < 1000; m++){
+      memset(buf2, 0, sizeof(buf2));
+      mini_snprintf(show_tip, sizeof(show_tip), "read %d blocks", m+1);
+      display_bar(0, 220, 480, 30, COLOR_BL_BG);
+      display_text_center(DISPLAY_RESX / 2, 250, show_tip, -1, FONT_NORMAL,
+                        COLOR_BL_FG, COLOR_BL_BG);
+      emmc_read_blocks(buf2, m , 1, 500);
+      for(int i = 0; i < 512; i++){
+        if(buf[i] != buf2[i]){
+          display_printf("read error at %d\n", i);
+          screen_bg[EMMC_TEST] = COLOR_RED;
+          return;
+        }
+      }
+    }
     screen_bg[EMMC_TEST] = COLOR_GREEN;
   }
 }
