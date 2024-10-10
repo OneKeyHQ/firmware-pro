@@ -22,7 +22,9 @@
 
 #include "blake2s.h"
 #include "br_check.h"
+#include "emmc_fs.h"
 #include "flash.h"
+#include "hardware_version.h"
 #include "sha2.h"
 
 static char boardloader_version[32] = {0};
@@ -217,9 +219,28 @@ uint8_t *get_firmware_hash(void) {
     sha256_Update(&context,
                   (uint8_t *)FIRMWARE_START + vhdr->hdrlen + IMAGE_HEADER_SIZE,
                   innner_firmware_len);
-    sha256_Update(&context,
-                  flash_get_address(FLASH_SECTOR_FIRMWARE_EXTRA_START, 0, 0),
-                  outer_firmware_len);
+
+    if (get_hw_ver() >= HW_VER_3P0A) {
+#if BOOT_ONLY
+      EMMC_PATH_INFO path_info = {0};
+      uint32_t processed_len = 0;
+      if (!emmc_fs_path_info("0:data/fw_p2.bin", &path_info)) {
+        return onekey_firmware_hash;
+      }
+      if (path_info.size != outer_firmware_len) {
+        return onekey_firmware_hash;
+      }
+      if (!emmc_fs_file_read("0:data/fw_p2.bin", 0, (uint32_t *)0xD1C00000,
+                             outer_firmware_len, &processed_len)) {
+        return onekey_firmware_hash;
+      }
+#endif
+      sha256_Update(&context, (uint8_t *)0xD1C00000, outer_firmware_len);
+    } else {
+      sha256_Update(&context,
+                    flash_get_address(FLASH_SECTOR_FIRMWARE_EXTRA_START, 0, 0),
+                    outer_firmware_len);
+    }
     sha256_Final(&context, onekey_firmware_hash);
 
     onekey_firmware_hash_cached = true;

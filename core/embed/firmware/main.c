@@ -55,6 +55,7 @@
 #endif
 #include "rng.h"
 // #include "sdcard.h"
+#include "adc.h"
 #include "camera.h"
 #include "device.h"
 #include "fingerprint.h"
@@ -105,6 +106,7 @@ int main(void) {
   lcd_ltdc_dsi_enable();
   lcd_pwm_init();
   touch_init();
+  adc_init();
 
   ensure_emmcfs(emmc_fs_init(), "emmc_fs_init");
   ensure_emmcfs(emmc_fs_mount(true, false), "emmc_fs_mount");
