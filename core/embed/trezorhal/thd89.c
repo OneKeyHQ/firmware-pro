@@ -50,7 +50,7 @@ void thd89_io_init(void) {
   GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStructure);
 
-  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_4, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_4, GPIO_PIN_RESET);
 }
 
 void thd89_power_up(bool up) {
@@ -65,7 +65,7 @@ void thd89_reset(void) {
   HAL_GPIO_WritePin(GPIOD, GPIO_PIN_4, GPIO_PIN_RESET);
   hal_delay(5);
   HAL_GPIO_WritePin(GPIOD, GPIO_PIN_4, GPIO_PIN_SET);
-  hal_delay(500);
+  hal_delay(1000);
 }
 
 void thd89_init(void) { i2c_init_by_device(I2C_SE); }
