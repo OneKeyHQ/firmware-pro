@@ -30,6 +30,7 @@ class JettonWallet(Contract):
         cell.bits.write_grams(forward_amount)
         cell.bits.write_bit(0)  # forward_payload in this slice, not separate cell
         if forward_payload:
+            cell.bits.write_uint(0, 32)
             cell.bits.write_string(forward_payload)
 
         return cell
