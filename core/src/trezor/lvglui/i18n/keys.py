@@ -1497,8 +1497,8 @@ TITLE__LITE_PIN_ERROR = 684
 TITLE__LITE_PIN_ERROR_DESC = 685
 # Lite has been Reset
 TITLE__LITE_HAS_BEEN_RESET = 686
-# The PIN has been entered incorrectly more than 10 times. OneKey Lite has bee
-# n self-erased to prevent brute force cracking of the backup data.
+# After 10 consecutive incorrect PIN entries, OneKey Lite has been automatical
+# ly wiped to prevent brute force attacks on backup data.
 TITLE__LITE_HAS_BEEN_RESET_DESC = 687
 # I Got It
 BUTTON__I_GOT_IT = 688

@@ -687,7 +687,7 @@ translations = [
     "Lite-PIN-Fehler",
     "Daten auf dieser Karte werden nach {} Fehlversuchen gelöscht.",
     "Lite wurde zurückgesetzt",
-    "Die PIN wurde mehr als 10 Mal falsch eingegeben. OneKey Lite wurde selbst gelöscht, um ein brutales Knacken der Sicherungsdaten zu verhindern.",
+    "Nach 10 aufeinanderfolgenden falschen PIN-Eingaben wurde OneKey Lite automatisch gelöscht, um Brute-Force-Angriffe auf Sicherungsdaten zu verhindern.",
     "Ich habe es",
     "Verbindung fehlgeschlagen",
     "Stellen Sie sicher, dass die Karte fest an der Rückseite des Geräts anliegt, und versuchen Sie es dann erneut.",

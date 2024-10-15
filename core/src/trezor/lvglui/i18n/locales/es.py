@@ -687,7 +687,7 @@ translations = [
     "Error de PIN básico",
     "Los datos de esta tarjeta se borrarán después de {} intentos incorrectos.",
     "Lite ha sido reiniciado",
-    "El PIN se ha introducido incorrectamente más de 10 veces. OneKey Lite se ha autoborrado para evitar el descifrado por fuerza bruta de los datos de la copia de seguridad.",
+    "Después de 10 entradas de PIN incorrectas consecutivas, OneKey Lite se borró automáticamente para evitar ataques de fuerza bruta a los datos de respaldo.",
     "Lo tengo",
     "Conexión fallida",
     "Asegúrese de que la tarjeta esté colocada firmemente contra la parte posterior del dispositivo y vuelva a intentarlo.",

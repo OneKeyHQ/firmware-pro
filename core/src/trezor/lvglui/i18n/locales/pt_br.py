@@ -687,7 +687,7 @@ translations = [
     "Erro de PIN Lite",
     "Os dados neste cartão serão apagados após {} tentativas erradas.",
     "Lite foi Resetado",
-    "O PIN foi inserido incorretamente mais de 10 vezes. O OneKey Lite foi autoapagado para prevenir a quebra forçada dos dados de backup.",
+    "Após 10 digitações consecutivas de PIN incorretas, o OneKey Lite foi automaticamente apagado para evitar ataques de força bruta aos dados de backup.",
     "Entendi",
     "Falha na Conexão",
     "Certifique-se de que o cartão esteja firmemente colocado na parte traseira do dispositivo e tente novamente.",

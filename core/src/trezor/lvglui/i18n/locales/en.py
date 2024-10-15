@@ -687,7 +687,7 @@ translations = [
     "Lite PIN Error",
     "Data on this card will be erased after {} wrong tries.",
     "Lite has been Reset",
-    "The PIN has been entered incorrectly more than 10 times. OneKey Lite has been self-erased to prevent brute force cracking of the backup data.",
+    "After 10 consecutive incorrect PIN entries, OneKey Lite has been automatically wiped to prevent brute force attacks on backup data.",
     "I Got It",
     "Connect Failed",
     "Make sure the card is placed firmly against the back of the device, then try again.",

@@ -687,7 +687,7 @@ translations = [
     "Errore PIN Lite",
     "I dati su questa carta verranno cancellati dopo {} tentativi errati.",
     "Lite è stato ripristinato",
-    "Il PIN è stato inserito in modo errato più di 10 volte. OneKey Lite è stato autocancellato per impedire il cracking della forza bruta dei dati di backup.",
+    "Dopo 10 inserimenti consecutivi di PIN errati, OneKey Lite è stato automaticamente cancellato per impedire attacchi brute force sui dati di backup.",
     "capito",
     "Connessione fallita",
     "Assicurati che la scheda sia posizionata saldamente contro il retro del dispositivo, quindi riprova.",

@@ -687,7 +687,7 @@ translations = [
     "Erreur de code PIN simplifié",
     "Les données de cette carte seront effacées après {} mauvais essais.",
     "Lite a été réinitialisé",
-    "Le code PIN a été saisi incorrectement plus de 10 fois. OneKey Lite a été auto-effacé pour empêcher le craquage par force brute des données de sauvegarde.",
+    "Après 10 saisies consécutives de code PIN incorrectes, OneKey Lite a été automatiquement effacé pour empêcher les attaques par force brute sur les données de sauvegarde.",
     "J'ai compris",
     "Echec de connexion",
     "Assurez-vous que la carte est fermement placée contre l'arrière de l'appareil, puis réessayez.",
