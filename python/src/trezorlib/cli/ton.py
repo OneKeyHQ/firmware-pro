@@ -73,6 +73,7 @@ def get_address(client: "TrezorClient",
 @click.option("-jw", "--jetton_wallet_address", type=str)
 @click.option("-ta", "--ton_amount", type=int, required=True)
 @click.option("-ja", "--jetton_amount", type=int)
+@click.option("-jab", "--jetton_amount_bytes", type=str)
 @click.option("-f", "--fwd_fee", type=int)
 @click.option("-c", "--comment", type=str)
 @click.option("-r", "--is_raw_data", is_flag=True)
@@ -95,6 +96,7 @@ def sign_message(client: "TrezorClient",
                 jetton_wallet_address: str,
                 ton_amount: int,
                 jetton_amount: int,
+                jetton_amount_bytes: str,
                 fwd_fee: int,
                 mode: int,
                 seqno: int,
@@ -121,6 +123,7 @@ def sign_message(client: "TrezorClient",
                 jetton_wallet_address,
                 ton_amount,
                 jetton_amount,
+                jetton_amount_bytes,
                 fwd_fee,
                 mode,
                 seqno,

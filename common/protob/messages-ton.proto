@@ -53,7 +53,7 @@ message TonSignMessage {
     optional string jetton_master_address = 3;                      // Jetton master smart contract address
     optional string jetton_wallet_address = 4;                      // Jetton wallet smart contract address 
     required uint64 ton_amount = 5;                                 // TON value for gas
-    optional uint64 jetton_amount = 6;                              // jetton value (by nanojetton)
+    optional uint64 jetton_amount = 6;                              // jetton value
     optional uint64 fwd_fee = 7 [default=0];                        // toncoin is needed to transfer notification message
     optional string comment = 8;                                    // message comment
     optional bool is_raw_data = 9 [default=false];                  // raw data flag
@@ -68,6 +68,7 @@ message TonSignMessage {
     repeated string ext_destination = 18;
     repeated uint64 ext_ton_amount = 19;
     repeated string ext_payload = 20;
+    optional bytes jetton_amount_bytes = 21;                        // jetton value in bytes
 }
 
 /**

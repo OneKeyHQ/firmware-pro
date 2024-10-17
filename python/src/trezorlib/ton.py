@@ -37,6 +37,7 @@ def sign_message(client: "TrezorClient",
                 jetton_wallet_address: str,
                 ton_amount: int,
                 jetton_amount: int,
+                jetton_amount_bytes: str,
                 fwd_fee: int,
                 mode: int,
                 seqno: int,
@@ -52,6 +53,8 @@ def sign_message(client: "TrezorClient",
                 ext_ton_amount: list[int] = None,
                 ext_payload: list[str] = None
                 ):
+    if jetton_amount_bytes is not None:
+        jetton_amount_bytes = int(jetton_amount_bytes).to_bytes((int(jetton_amount_bytes).bit_length() + 7) // 8, byteorder='big')
     return client.call(
         messages.TonSignMessage(
             address_n=n,
@@ -60,6 +63,7 @@ def sign_message(client: "TrezorClient",
             jetton_wallet_address=jetton_wallet_address,
             ton_amount=ton_amount,
             jetton_amount=jetton_amount,
+            jetton_amount_bytes=jetton_amount_bytes,
             fwd_fee=fwd_fee,
             comment=comment,
             mode=mode,

@@ -36,7 +36,7 @@ async def sign_message(
     else:
         raise wire.DataError("Invalid wallet version.")
 
-    is_jetton_transfer = check_jetton_transfer(msg)
+    jetton_amount = check_jetton_transfer(msg)
 
     wallet = Wallets.ALL[wallet_version](
         public_key=public_key, wallet_id=msg.wallet_id, wc=workchain
@@ -55,7 +55,7 @@ async def sign_message(
     token = None
     recipient = Address(msg.destination).to_string(True, True)
 
-    if is_jetton_transfer:
+    if jetton_amount:
         token = tokens.token_by_address("TON_TOKEN", msg.jetton_master_address)
 
         if token is tokens.UNKNOWN_TOKEN:
@@ -64,7 +64,7 @@ async def sign_message(
                 raise ValueError("Address cannot be None")
             await confirm_unknown_token_transfer(ctx, msg.jetton_master_address)
 
-    amount = msg.jetton_amount if is_jetton_transfer else msg.ton_amount
+    amount = jetton_amount if jetton_amount else msg.ton_amount
     if amount is None:
         raise ValueError("Amount cannot be None")
 
@@ -112,13 +112,10 @@ async def sign_message(
 
     await confirm_final(ctx, "TON")
 
-    if is_jetton_transfer:
-        if msg.jetton_amount is None:
-            raise ValueError("Jetton amount cannot be None")
-
+    if jetton_amount:
         body = JettonWallet().create_transfer_body(
             Address(msg.destination),
-            msg.jetton_amount,
+            jetton_amount,
             msg.fwd_fee,
             msg.comment,
             wallet.address,
@@ -128,16 +125,16 @@ async def sign_message(
         payload = msg.comment
 
     digest, boc = wallet.create_transaction_digest(
-        to_addr=msg.jetton_wallet_address if is_jetton_transfer else msg.destination,
+        to_addr=msg.jetton_wallet_address if jetton_amount else msg.destination,
         amount=msg.ton_amount,
         seqno=msg.seqno,
         expire_at=msg.expire_at,
         payload=payload,
         is_raw_data=msg.is_raw_data,
         send_mode=msg.mode,
-        ext_to=None if is_jetton_transfer else msg.ext_destination,
-        ext_amount=None if is_jetton_transfer else msg.ext_ton_amount,
-        ext_payload=None if is_jetton_transfer else msg.ext_payload,
+        ext_to=None if jetton_amount else msg.ext_destination,
+        ext_amount=None if jetton_amount else msg.ext_ton_amount,
+        ext_payload=None if jetton_amount else msg.ext_payload,
     )
 
     signature = ed25519.sign(node.private_key(), digest)
@@ -146,9 +143,11 @@ async def sign_message(
 
 
 def check_jetton_transfer(msg: TonSignMessage):
-    if msg.jetton_amount is None and msg.jetton_master_address is None:
-        return False
+    if msg.jetton_amount is None and msg.jetton_amount_bytes is None:
+        return 0
+    elif msg.jetton_amount_bytes is not None and msg.jetton_master_address is not None:
+        return int.from_bytes(msg.jetton_amount_bytes, "big", signed=False)
     elif msg.jetton_amount is not None and msg.jetton_master_address is not None:
-        return True
+        return msg.jetton_amount
     else:
         raise wire.DataError("Invalid jetton transfer message.")
