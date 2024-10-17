@@ -147,21 +147,25 @@ class Keychain:
     def root_fingerprint(self) -> int:
         if self._root_fingerprint is None:
             # derive m/0' to obtain root_fingerprint
+            # pyright: off
             n = self._derive_with_cache(
                 prefix_len=0,
                 path=[0 | paths.HARDENED],
                 new_root=lambda: bip32.from_seed(self.seed, self.curve),
             )
             self._root_fingerprint = n.fingerprint()
+            # pyright: on
         return self._root_fingerprint
 
     def derive(self, path: paths.Bip32Path) -> bip32.HDNode:
         self.verify_path(path)
+        # pyright: off
         return self._derive_with_cache(
             prefix_len=3,
             path=path,
             new_root=lambda: bip32.from_seed(self.seed, self.curve),
         )
+        # pyright: on
 
     def derive_slip21(self, path: paths.Slip21Path) -> Slip21Node:
         if safety_checks.is_strict() and not any(
