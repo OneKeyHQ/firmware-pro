@@ -142,11 +142,11 @@ async def sign_message(
     return TonSignedMessage(signature=signature, signning_message=boc)
 
 
-def check_jetton_transfer(msg: TonSignMessage):
+def check_jetton_transfer(msg: TonSignMessage) -> int:
     if msg.jetton_amount is None and msg.jetton_amount_bytes is None:
         return 0
     elif msg.jetton_amount_bytes is not None and msg.jetton_master_address is not None:
-        return int.from_bytes(msg.jetton_amount_bytes, "big", signed=False)
+        return int.from_bytes(msg.jetton_amount_bytes, "big", False)
     elif msg.jetton_amount is not None and msg.jetton_master_address is not None:
         return msg.jetton_amount
     else:
