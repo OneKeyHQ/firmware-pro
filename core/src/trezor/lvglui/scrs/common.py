@@ -1,3 +1,4 @@
+import gc
 from typing import TYPE_CHECKING
 
 from storage import device
@@ -151,6 +152,8 @@ class Screen(lv.obj):
             self.del_delayed(1000)
             del self.__class__._instance
             del self
+            gc.collect()
+            gc.threshold(int(18248 * 3))  # type: ignore["threshold" is not a known member of module]
         else:
             self._load_scr(scr)
 
