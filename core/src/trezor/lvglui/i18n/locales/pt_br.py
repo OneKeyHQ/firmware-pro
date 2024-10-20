@@ -665,7 +665,7 @@ translations = [
     "Limite de erros atingido, por favor insira o código PIN.",
     "Deslize para cima para desbloquear",
     "Permita que até 3 impressões digitais sejam registradas simultaneamente.",
-    "Desbloquear Dispositivo",
+    "Desbloquear",
     "Remover esta impressão digital?",
     "Você tem certeza de que deseja remover esta impressão digital?",
     "Depois de configurar a impressão digital, você pode usá-la para desbloquear o dispositivo. Toque no botão de ligar com o dedo registrado no cenário correspondente. Você pode modificá-lo a qualquer momento nas configurações.",
@@ -808,5 +808,6 @@ translations = [
     "Assinatura de mensagem não padrão.",
     "Enviar Tokens",
     "A seguinte saída de transação contém dados do contrato:",
+    "Você está usando a autorização {type}, verifique a confiabilidade do dApp.",
 ]
 # fmt: on

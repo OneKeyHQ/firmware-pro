@@ -665,7 +665,7 @@ translations = [
     "Limite d'erreurs atteinte, veuillez entrer le code PIN.",
     "Glissez vers le haut pour déverrouiller",
     "Permet d'enregistrer jusqu'à 3 empreintes digitales simultanément.",
-    "Déverrouiller l'appareil",
+    "Déverrouiller",
     "Supprimer cette empreinte digitale ?",
     "Êtes-vous sûr de vouloir supprimer cette empreinte digitale ?",
     "Après avoir configuré l'empreinte digitale, vous pouvez l'utiliser pour déverrouiller l'appareil. Touchez le bouton d'alimentation avec votre doigt enregistré dans le scénario correspondant. Vous pouvez le modifier à tout moment dans les paramètres.",
@@ -808,5 +808,6 @@ translations = [
     "Signature de message non standard.",
     "Envoyer des jetons",
     "La sortie de transaction suivante contient des données de contrat :",
+    "Vous utilisez une autorisation {type}, assurez-vous que la dApp est fiable pour éviter toute perte d'actifs.",
 ]
 # fmt: on

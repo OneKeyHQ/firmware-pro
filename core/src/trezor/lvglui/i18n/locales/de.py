@@ -808,5 +808,6 @@ translations = [
     "Nicht standardmäßige Nachrichtensignatur.",
     "Token senden",
     "Die folgende Transaktionsausgabe enthält Vertragsdaten:",
+    "Sie nutzen die {type}-Autorisierung, prüfen Sie die Vertrauenswürdigkeit der dApp.",
 ]
 # fmt: on

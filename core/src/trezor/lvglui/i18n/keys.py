@@ -1767,4 +1767,7 @@ CONTENT__NON_STANDARD_MESSAGE_SIGNATURE = 805
 TITLE__SEND_TOKENS = 806
 # The following transaction output contains contract data:
 CONTENT__FOLLOWING_TRANSACTION_CONTAINS_CONTRACT = 807
+# You are using {type} authorization, ensure the dApp is trustworthy to avoid
+# asset loss.
+MSG___PERMIT_SIGN_ALERT = 808
 # fmt: on

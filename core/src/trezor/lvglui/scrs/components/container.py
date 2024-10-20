@@ -41,11 +41,11 @@ class ContainerFlexCol(lv.obj):
         )
         self.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
 
-    def add_dummy(self):
+    def add_dummy(self, bg_color=lv_colors.ONEKEY_GRAY_3):
         dummy = lv.obj(self)
         dummy.remove_style_all()
         dummy.set_size(lv.pct(100), 12)
-        dummy.add_style(StyleWrapper().bg_color(lv_colors.ONEKEY_GRAY_3).bg_opa(), 0)
+        dummy.add_style(StyleWrapper().bg_color(bg_color).bg_opa(), 0)
 
 
 class ContainerFlexRow(lv.obj):

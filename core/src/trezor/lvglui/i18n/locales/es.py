@@ -665,7 +665,7 @@ translations = [
     "Límite de errores alcanzado, ingrese PIN.",
     "Desliza hacia arriba para desbloquear",
     "Permite grabar hasta 3 huellas dactilares simultáneamente.",
-    "Desbloquear dispositivo",
+    "Desbloquear",
     "¿Eliminar esta huella digital?",
     "¿Estás seguro de que deseas eliminar esta huella digital?",
     "Después de configurar la huella digital, puede usarla para desbloquear el dispositivo. Toca el botón de encendido con tu dedo registrado en el escenario correspondiente. Puedes modificarlo en cualquier momento en la configuración.",
@@ -808,5 +808,6 @@ translations = [
     "Firma de mensaje no estándar.",
     "Enviar tokens",
     "La siguiente salida de transacción contiene datos del contrato:",
+    "Usas autorización {type}, verifica que la dApp sea segura.",
 ]
 # fmt: on

@@ -808,5 +808,6 @@ translations = [
     "Non-standard message signature.",
     "Send Tokens",
     "The following transaction output contains contract data:",
+    "You are using {type} authorization, ensure the dApp is trustworthy to avoid asset loss.",
 ]
 # fmt: on

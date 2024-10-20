@@ -1227,6 +1227,34 @@ class EIP712DOMAIN(FullSizeWindow):
         self.container.add_dummy()
 
 
+class EIP712Warning(FullSizeWindow):
+    def __init__(
+        self, title: str, warning_level, text, primary_type, primary_color, icon_path
+    ):
+        super().__init__(
+            title,
+            None,
+            _(i18n_keys.BUTTON__CONTINUE),
+            _(i18n_keys.BUTTON__REJECT),
+            anim_dir=2,
+            primary_color=primary_color,
+            icon_path=icon_path,
+        )
+        self.warning_banner = Banner(self.content_area, warning_level, text)
+        self.warning_banner.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, 40)
+        self.container = ContainerFlexCol(
+            self.content_area, self.warning_banner, pos=(0, 24), padding_row=0
+        )
+        self.container.add_dummy(bg_color=lv_colors.ONEKEY_BLACK_3)
+        self.primary_type = DisplayItem(
+            self.container,
+            "PrimaryType:",
+            primary_type,
+            bg_color=lv_colors.ONEKEY_BLACK_3,
+        )
+        self.container.add_dummy(bg_color=lv_colors.ONEKEY_BLACK_3)
+
+
 class TonTransfer(FullSizeWindow):
     def __init__(
         self,

@@ -808,5 +808,6 @@ translations = [
     "Firma del messaggio non standard.",
     "Invia token",
     "Il seguente output di transazione contiene i dati del contratto:",
+    "Stai utilizzando l'autorizzazione {type} , assicurati che la dApp sia affidabile per evitare la perdita di risorse.",
 ]
 # fmt: on
