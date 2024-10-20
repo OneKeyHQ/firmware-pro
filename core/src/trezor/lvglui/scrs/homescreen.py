@@ -1221,6 +1221,7 @@ class SettingsScreen(Screen):
             super().__init__(**kwargs)
         else:
             self.refresh_text()
+            self.relocation()
             return
         # if __debug__:
         #     self.add_style(StyleWrapper().bg_color(lv_colors.ONEKEY_GREEN_1), 0)
@@ -1296,8 +1297,8 @@ class SettingsScreen(Screen):
             has_next=False,
         )
         self.power.label_left.set_style_text_color(lv_colors.ONEKEY_RED_1, 0)
-        self.power.align_to(self.container, lv.ALIGN.OUT_BOTTOM_MID, 0, 12)
         self.power.set_style_radius(40, 0)
+        self.relocation()
         # if __debug__:
         #     self.test = ListItemBtn(self.container, "UI test")
         self.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
@@ -1317,6 +1318,9 @@ class SettingsScreen(Screen):
             self.develop.img_left, lv.ALIGN.OUT_RIGHT_MID, 16, 0
         )
         self.power.label_left.set_text(_(i18n_keys.ITEM__POWER_OFF))
+
+    def relocation(self):
+        self.power.align_to(self.container, lv.ALIGN.OUT_BOTTOM_MID, 0, 12)
 
     def on_click(self, event_obj):
         code = event_obj.code
