@@ -567,10 +567,11 @@ async def confirm_domain(ctx: Context, typed_data_envelope: TypedDataEnvelope) -
 
 async def show_eip712_warning(ctx: Context, primary_type: str) -> None:
     warning_level = 0
-    warning_text = _(i18n_keys.MSG___PERMIT_SIGN_ALERT).format(type="signTypedData")
+    permit_type = "signTypedData"
     if primary_type in HIGH_RISK_PRIMARY_TYPES:
         warning_level = 2
-        warning_text = _(i18n_keys.MSG___PERMIT_SIGN_ALERT).format(type=primary_type)
+        permit_type = "Permit"
+    warning_text = _(i18n_keys.MSG___PERMIT_SIGN_ALERT).format(type=permit_type)
     from trezor.ui.layouts.lvgl import confirm_eip712_warning
 
     await confirm_eip712_warning(ctx, primary_type, warning_level, warning_text)
