@@ -144,7 +144,7 @@ bool dwt_is_timeout(uint32_t timeout) {
                          ? (current - last_tick)
                          : (0xFFFFFFFF - last_tick + current + 1);
   uint32_t elapsed_time_ms = elapsed / (SystemCoreClock / 1000);
-  if(elapsed_time_ms > 0){
+  if (elapsed_time_ms > 0) {
     accumulated_time_ms += elapsed_time_ms;
     last_tick = current;
   }
