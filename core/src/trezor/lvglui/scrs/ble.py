@@ -41,3 +41,13 @@ class PairCodeDisplay(FullSizeWindow):
         from trezor.lvglui.scrs.homescreen import ScanScreen
 
         ScanScreen.notify_close()
+
+
+class PairForbiddenScreen(FullSizeWindow):
+    def __init__(self) -> None:
+        super().__init__(
+            _(i18n_keys.ONBOARDING_BLUETOOTH_PAIRING_BEFORE_SETUP_PIN_TITLE),
+            _(i18n_keys.ONBOARDING_BLUETOOTH_PAIRING_BEFORE_SETUP_PIN_DESC),
+            _(i18n_keys.BUTTON__CLOSE),
+        )
+        self.btn_yes.enable()

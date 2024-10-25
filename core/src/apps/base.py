@@ -397,15 +397,14 @@ ALLOW_WHILE_LOCKED = (
 
 def set_homescreen() -> None:
     import lvgl as lv  # type: ignore[Import "lvgl" could not be resolved]
+
     from trezor.lvglui.scrs import fingerprints
 
     ble_name = storage.device.get_ble_name()
     if storage.device.is_initialized():
         dev_state = get_state()
         device_name = storage.device.get_label()
-        if not config.is_unlocked() or (
-            fingerprints.is_available() and not fingerprints.is_unlocked()
-        ):
+        if not device_is_unlocked():
             if __debug__:
                 print(
                     f"Device is locked by pin {not config.is_unlocked()} === fingerprint {not fingerprints.is_unlocked()}"
@@ -479,7 +478,7 @@ def device_is_unlocked():
     from trezor.lvglui.scrs import fingerprints
 
     if fingerprints.is_available():
-        return config.is_unlocked() and fingerprints.is_unlocked()
+        return fingerprints.is_unlocked()
     else:
         return config.is_unlocked()
 

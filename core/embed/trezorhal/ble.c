@@ -2,6 +2,7 @@
 #include "common.h"
 #include "display.h"
 #include "spi_legacy.h"
+#include "touch.h"
 #include "usart.h"
 
 uint8_t battery_cap = 0xFF;
@@ -249,10 +250,31 @@ bool ble_get_switch(void) { return ble_switch; }
 
 extern trans_fifo uart_fifo_in;
 
+void ble_pair_warning(void) {
+  display_clear();
+  display_image(8, 48, 46, 40, toi_icon_warning + 12,
+                sizeof(toi_icon_warning) - 12);
+  display_text(8, 138, "Bluetooth  pairing  unavailable  while  in", -1,
+               FONT_NORMAL, COLOR_WHITE, COLOR_BLACK);
+  display_text(8, 167, "Boot  mode", -1, FONT_NORMAL, COLOR_WHITE, COLOR_BLACK);
+  display_text(8, 212, "To  update  your  device,  visit", -1, FONT_NORMAL,
+               COLOR_WHITE, COLOR_BLACK);
+  display_text(8, 241, "firmware.onekey.so  on  your  computer", -1,
+               FONT_NORMAL, COLOR_WHITE, COLOR_BLACK);
+  display_text(8, 270, "and  connect  via  USB  to  install  firmware.", -1,
+               FONT_NORMAL, COLOR_WHITE, COLOR_BLACK);
+
+  display_text(8, 781, "Tap  to  restart...", -1, FONT_NORMAL, COLOR_WHITE,
+               COLOR_BLACK);
+  while (!touch_click()) {
+    hal_delay(10);
+  }
+  reboot_to_boot();
+}
 void ble_uart_poll(void) {
   uint32_t total_len, len;
 
-  uint8_t passkey[7] = {0};
+  // uint8_t passkey[7] = {0};
   uint8_t buf[128] = {0};
 
   total_len = fifo_lockdata_len(&uart_fifo_in);
@@ -287,11 +309,12 @@ void ble_uart_poll(void) {
       }
       break;
     case BLE_CMD_PAIR_TX:
-      memcpy(passkey, ble_usart_msg.cmd_vale, 6);
-      display_text_center(DISPLAY_RESX / 2, 346, "Bluetooth passkey:", -1,
-                          FONT_NORMAL, COLOR_WHITE, COLOR_BLACK);
-      display_text_center(DISPLAY_RESX / 2, 370, (char *)passkey, -1,
-                          FONT_NORMAL, COLOR_WHITE, COLOR_BLACK);
+      // memcpy(passkey, ble_usart_msg.cmd_vale, 6);
+      // display_text_center(DISPLAY_RESX / 2, 346, "Bluetooth passkey:", -1,
+      //                     FONT_NORMAL, COLOR_WHITE, COLOR_BLACK);
+      // display_text_center(DISPLAY_RESX / 2, 370, (char *)passkey, -1,
+      //                     FONT_NORMAL, COLOR_WHITE, COLOR_BLACK);
+      ble_pair_warning();
       break;
     case BLE_CMD_PAIR_STA:
       if (ble_usart_msg.cmd_vale[0] == 0x01) {

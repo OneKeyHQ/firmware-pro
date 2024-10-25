@@ -225,7 +225,7 @@ def play_dead():
 
 
 def is_low_battery():
-    if BATTERY_CAP is not None and BATTERY_CAP < 10:
+    if BATTERY_CAP is not None and BATTERY_CAP < 20:
         return True
     return False
 

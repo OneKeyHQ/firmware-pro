@@ -1,5 +1,6 @@
 from .. import (
     font_GeistMono28,
+    font_GeistRegular20,
     font_GeistRegular26,
     font_GeistRegular30,
     font_GeistSemiBold26,
@@ -170,8 +171,22 @@ class DisplayItemWithFont_30(DisplayItem):
         bg_color=lv_colors.ONEKEY_GRAY_3,
         radius: int = 0,
         font=font_GeistRegular30,
-    ):
+        url: str | None = None,
+    ) -> None:
         super().__init__(parent, title, content, bg_color, radius, font)
+        if url:
+            self.url = lv.label(self)
+            self.url.set_size(lv.pct(100), lv.SIZE.CONTENT)
+            self.url.set_text(url)
+            self.url.add_style(
+                StyleWrapper()
+                .text_color(lv_colors.ONEKEY_GREEN_2)
+                .text_font(font_GeistRegular20)
+                .text_line_space(6)
+                .text_letter_space(-1),
+                0,
+            )
+            self.url.align_to(self.label, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 6)
 
 
 class CardHeader(lv.obj):

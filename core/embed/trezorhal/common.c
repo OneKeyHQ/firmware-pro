@@ -41,7 +41,7 @@
 #endif
 
 // clang-format off
-static const uint8_t toi_icon_warning[] = {
+const uint8_t toi_icon_warning[] = {
     // magic
     'T', 'O', 'I', 'f',
     // width (16-bit), height (16-bit)

@@ -68,6 +68,8 @@ typedef enum {
   })
 #endif
 
+extern const uint8_t toi_icon_warning[321];
+
 void shutdown(void);
 
 void restart(void);

@@ -1432,13 +1432,15 @@ class ConnectWallet(FullSizeWindow):
             self.line = lv.line(self.panel)
             self.line.set_size(408, 1)
             self.line.add_style(
-                StyleWrapper().bg_color(lv_colors.ONEKEY_GRAY_2).bg_opa(), 0
+                StyleWrapper().bg_color(lv_colors.ONEKEY_GRAY_2).bg_opa(),
+                0,
             )
             self.line.align_to(self.label_top, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 9)
             self.label_bottom = lv.label(self.panel)
             self.label_bottom.set_width(408)
             self.label_bottom.add_style(
-                StyleWrapper().text_font(font_GeistRegular26).pad_ver(12).pad_hor(0), 0
+                StyleWrapper().text_font(font_GeistRegular26).pad_ver(12).pad_hor(0),
+                0,
             )
             # self.content_area.clear_flag(lv.obj.FLAG.SCROLL_ELASTIC)
             # self.content_area.clear_flag(lv.obj.FLAG.SCROLL_MOMENTUM)
@@ -3384,16 +3386,34 @@ class SecurityScreen(Screen):
         super().__init__(prev_scr, title=_(i18n_keys.TITLE__SECURITY), nav_back=True)
         self.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
 
-        self.container = ContainerFlexCol(self.content_area, self.title, padding_row=2)
+        self.device_auth = ListItemBtn(
+            self.content_area,
+            _(i18n_keys.TITLE__SECURITY_CHECK),
+        )
+        self.device_auth.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, 40)
+        self.device_auth.set_style_radius(40, 0)
+
+        self.container = ContainerFlexCol(
+            self.content_area,
+            self.device_auth,
+            pos=(0, 12),
+            padding_row=2,
+        )
         self.pin_map_type = ListItemBtn(self.container, _(i18n_keys.ITEM__PIN_KEYPAD))
         self.fingerprint = ListItemBtn(self.container, _(i18n_keys.TITLE__FINGERPRINT))
         self.usb_lock = ListItemBtn(self.container, _(i18n_keys.ITEM__USB_LOCK))
         self.change_pin = ListItemBtn(self.container, _(i18n_keys.ITEM__CHANGE_PIN))
+
         self.rest_device = ListItemBtn(
-            self.container, _(i18n_keys.ITEM__RESET_DEVICE), has_next=False
+            self.content_area,
+            _(i18n_keys.ITEM__RESET_DEVICE),
+            has_next=False,
         )
         self.rest_device.label_left.set_style_text_color(lv_colors.ONEKEY_RED_1, 0)
-        self.container.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
+        self.rest_device.align_to(self.container, lv.ALIGN.OUT_BOTTOM_MID, 0, 12)
+        self.rest_device.set_style_radius(40, 0)
+
+        self.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
 
     def on_click(self, event_obj):
         code = event_obj.code
@@ -3443,10 +3463,162 @@ class SecurityScreen(Screen):
                 #             0, callback=lambda: FingerprintSetting(self)
                 #         )
                 #     )
+            elif target == self.device_auth:
+                DeviceAuthScreen()
             else:
                 if __debug__:
                     print("unknown")
         # pyright: on
+
+
+class DeviceAuthScreen(FullSizeWindow):
+    def __init__(self) -> None:
+        if not hasattr(self, "_init"):
+            self._init = True
+        else:
+            return
+        from binascii import hexlify
+
+        firmware_version = device.get_firmware_version()
+        firmware_build_id = utils.BUILD_ID[-7:].decode()
+        firmware_hash_str = hexlify(utils.onekey_firmware_hash()).decode()[:7]
+        version_str = f"{firmware_version} ({firmware_build_id}-{firmware_hash_str})"
+
+        ble_version = uart.get_ble_version()
+        ble_build_id = uart.get_ble_build_id()
+        ble_hash_str = hexlify(uart.get_ble_hash()).decode()[:7]
+        ble_version_str = f"{ble_version} ({ble_build_id}-{ble_hash_str})"
+
+        boot_version = utils.boot_version()
+        boot_build_id = utils.boot_build_id()
+        boot_hash_str = hexlify(utils.boot_hash()).decode()[:7]
+        boot_version_str = f"{boot_version} ({boot_build_id}-{boot_hash_str})"
+
+        super().__init__(
+            title=_(i18n_keys.TITLE__SECURITY_CHECK),
+            subtitle=None,
+            confirm_text=_(i18n_keys.ACTION_VERIFY_NOW),
+        )
+        self.add_nav_back()
+        self.content_area.set_style_max_height(574, 0)
+        self.container = ContainerFlexCol(self.content_area, self.title, padding_row=0)
+        self.container.add_dummy()
+
+        self.ser_num = DisplayItemWithFont_30(
+            self.container,
+            _(i18n_keys.ITEM__SERIAL_NUMBER),
+            device.get_serial(),
+        )
+        self.version = DisplayItemWithFont_30(
+            self.container,
+            _(i18n_keys.ITEM__SYSTEM_VERSION),
+            version_str,
+            url=f"https://github.com/OneKeyHQ/firmware-pro/releases/tag/v{firmware_version}",
+        )
+        self.ble_version = DisplayItemWithFont_30(
+            self.container,
+            _(i18n_keys.ITEM__BLUETOOTH_VERSION),
+            ble_version_str,
+            url=f"https://github.com/OneKeyHQ/bluetooth-firmware-pro/releases/tag/v{ble_version}",
+        )
+        self.boot_version = DisplayItemWithFont_30(
+            self.container,
+            _(i18n_keys.ITEM__BOOTLOADER_VERSION),
+            boot_version_str,
+            url=f"https://github.com/OneKeyHQ/firmware-pro/releases/tag/bootloader-v{boot_version}",
+        )
+        self.container.add_dummy()
+        self.add_event_cb(self.on_nav_back, lv.EVENT.GESTURE, None)
+
+    def on_nav_back(self, event_obj):
+        code = event_obj.code
+        if code == lv.EVENT.GESTURE:
+            _dir = lv.indev_get_act().get_gesture_dir()
+            if _dir == lv.DIR.RIGHT:
+                lv.event_send(self.nav_back.nav_btn, lv.EVENT.CLICKED, None)
+
+    def eventhandler(self, event_obj):
+        code = event_obj.code
+        target = event_obj.get_target()
+        if code == lv.EVENT.CLICKED:
+            if utils.lcd_resume():
+                return
+            if target == self.nav_back.nav_btn:
+                self.destroy(50)
+            elif target == self.btn_yes:
+                DeviceAuthTutorial()
+
+
+class DeviceAuthTutorial(FullSizeWindow):
+    def __init__(self) -> None:
+        super().__init__(
+            title=_(i18n_keys.TITLE__VEIRIFY_DEVICE),
+            subtitle=None,
+            anim_dir=0,
+        )
+        self.add_nav_back()
+        self.content_area.set_style_max_height(684, 0)
+        from trezor.lvglui.scrs.components.listitem import CardHeader, DisplayItem
+
+        self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
+        steps = [
+            (
+                _(i18n_keys.FORM__DOWNLOAD_ONEKEY_APP),
+                _(i18n_keys.FORM__DOWNLOAD_APP_FROM_DOWNLOAD_CENTER),
+            ),
+            (
+                _(i18n_keys.TITLE__VEIRIFY_DEVICE),
+                _(i18n_keys.VERIFY_DEVICE_CONNECT_DEVICE_DESC),
+            ),
+        ]
+        for i, step in enumerate(steps):
+            self.group = ContainerFlexCol(
+                self.container,
+                None,
+                padding_row=0,
+                no_align=True,
+            )
+            self.item_group_header = CardHeader(
+                self.group,
+                step[0],
+                f"A:/res/group-icon-num-{i+1}.png",
+            )
+            self.item_group_body = DisplayItem(
+                self.group,
+                None,
+                step[1],
+            )
+            self.item_group_body.label.add_style(
+                StyleWrapper().text_color(lv_colors.ONEKEY_GRAY_4),
+                0,
+            )
+            self.group.add_dummy()
+
+        self.warning_banner = Banner(
+            self.content_area,
+            LEVEL.HIGHLIGHT,
+            _(i18n_keys.VERIFY_DEVICE_HELP_CENTER_TEXT),
+            title=_(i18n_keys.ACTION__LEARN_MORE),
+        )
+        self.warning_banner.set_style_text_color(lv_colors.LIGHT_GRAY, 0)
+        self.warning_banner.align_to(self.container, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
+        self.add_event_cb(self.on_nav_back, lv.EVENT.GESTURE, None)
+
+    def on_nav_back(self, event_obj):
+        code = event_obj.code
+        if code == lv.EVENT.GESTURE:
+            _dir = lv.indev_get_act().get_gesture_dir()
+            if _dir == lv.DIR.RIGHT:
+                lv.event_send(self.nav_back.nav_btn, lv.EVENT.CLICKED, None)
+
+    def eventhandler(self, event_obj):
+        code = event_obj.code
+        target = event_obj.get_target()
+        if code == lv.EVENT.CLICKED:
+            if utils.lcd_resume():
+                return
+            if target == self.nav_back.nav_btn:
+                self.destroy(50)
 
 
 class UsbLockSetting(Screen):

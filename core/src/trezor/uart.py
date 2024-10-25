@@ -39,6 +39,7 @@ NRF_VERSION: str | None = None
 BLE_CTRL = io.BLE()
 FLASH_LED_BRIGHTNESS: int | None = None
 BUTTON_PRESSING = False
+BLE_PAIR_ABORT = False
 
 
 async def handle_fingerprint():
@@ -235,7 +236,7 @@ async def process_push() -> None:
         await _deal_ble_status(value)
     elif cmd == _CMD_BLE_PAIR_CODE:
         # show six bytes pair code as string
-        await _deal_ble_pair(value)
+        workflow.spawn(_deal_ble_pair(value))
     elif cmd == _CMD_BLE_PAIR_RES:
         # paring result 1 success 2 failed
         await _deal_pair_res(value)
@@ -271,15 +272,36 @@ async def process_push() -> None:
 
 
 async def _deal_ble_pair(value):
+    from trezor.qr import close_camera
+
+    close_camera()
+    flashled_close()
+
+    if not device.is_initialized():
+        from trezor.lvglui.scrs.ble import PairForbiddenScreen
+
+        PairForbiddenScreen()
+        return
+    global BLE_PAIR_ABORT
+    BLE_PAIR_ABORT = False
+
+    if not base.device_is_unlocked():
+        try:
+            await base.unlock_device()
+        except Exception:
+            await safe_reloop()
+            workflow.spawn(utils.internal_reloop())
+            return
+        else:
+            if BLE_PAIR_ABORT:
+                return
+
     global SCREEN
     pair_codes = value.decode("utf-8")
     # pair_codes = "".join(list(map(lambda c: chr(c), ustruct.unpack(">6B", value))))
     utils.turn_on_lcd_if_possible()
     from trezor.lvglui.scrs.ble import PairCodeDisplay
-    from trezor.qr import close_camera
 
-    close_camera()
-    flashled_close()
     SCREEN = PairCodeDisplay(pair_codes)
 
 
@@ -401,10 +423,13 @@ async def _deal_pair_res(value: bytes) -> None:
         if SCREEN is not None and not SCREEN.destroyed:
             SCREEN.destroy()
     if res == _BLE_PAIR_FAILED:
+        global BLE_PAIR_ABORT
+        BLE_PAIR_ABORT = True
         StatusBar.get_instance().show_ble(StatusBar.BLE_STATE_ENABLED)
-        from trezor.ui.layouts import show_pairing_error
+        if device.is_initialized():
+            from trezor.ui.layouts import show_pairing_error
 
-        await show_pairing_error()
+            await show_pairing_error()
 
 
 async def _deal_ble_status(value: bytes) -> None:

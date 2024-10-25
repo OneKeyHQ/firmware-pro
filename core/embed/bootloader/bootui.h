@@ -79,7 +79,7 @@ void ui_fadeout(void);
 
 // clang-format on
 
-void ui_title_update(void);
+void ui_statusbar_update(void);
 int ui_user_input(int zones);
 int ui_input_poll(int zones, bool poll);
 void ui_bootloader_simple(void);
@@ -93,5 +93,5 @@ void ui_install_thd89_confirm(const char* old_ver, const char* boot_ver);
 void ui_install_progress(image_header* current_hdr,
                          const image_header* const new_hdr);
 void ui_bootloader_page_switch(const image_header* const hdr);
-
+int get_ui_bootloader_page_current(void);
 #endif
