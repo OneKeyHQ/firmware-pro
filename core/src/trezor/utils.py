@@ -73,6 +73,10 @@ _COLLECTING_FINGERPRINT = False
 _PIN_VERIFIED_SINCE_BOOT = False
 FLASH_LED_BRIGHTNESS: int | None = None
 _BACKUP_WITH_LITE_FIRST = False
+BACKUP_METHOD_NONE = const(0)
+BACKUP_METHOD_LITE = const(1)
+BACKUP_METHOD_KEYTAG = const(2)
+_CURRENT_BACKUP_METHOD = BACKUP_METHOD_NONE
 _COLOR_FLAG: str | None = None
 CHARGE_WIRELESS_STOP = const(0)
 CHARGE_WIRELESS_CHARGING = const(1)
@@ -252,6 +256,9 @@ def enable_airgap_mode():
     device.enable_airgap_mode(True)
     StatusBar.get_instance().show_air_gap_mode_tips(True)
     uart.ctrl_ble(enable=False)
+    from trezorio import nfc
+
+    nfc.pwr_ctrl(False)
     AIRGAP_MODE_CHANGED = True
     import usb
 
@@ -299,18 +306,23 @@ def mark_collecting_fingerprint_done():
     _COLLECTING_FINGERPRINT = False
 
 
-def mark_backup_with_lite_1st():
-    global _BACKUP_WITH_LITE_FIRST
-    _BACKUP_WITH_LITE_FIRST = True
+def set_backup_none():
+    global _CURRENT_BACKUP_METHOD
+    _CURRENT_BACKUP_METHOD = BACKUP_METHOD_NONE
 
 
-def mark_backup_with_keytag_1st():
-    global _BACKUP_WITH_LITE_FIRST
-    _BACKUP_WITH_LITE_FIRST = False
+def set_backup_lite():
+    global _CURRENT_BACKUP_METHOD
+    _CURRENT_BACKUP_METHOD = BACKUP_METHOD_LITE
 
 
-def is_backup_with_lite_1st():
-    return _BACKUP_WITH_LITE_FIRST
+def set_backup_keytag():
+    global _CURRENT_BACKUP_METHOD
+    _CURRENT_BACKUP_METHOD = BACKUP_METHOD_KEYTAG
+
+
+def get_current_backup_type():
+    return _CURRENT_BACKUP_METHOD
 
 
 def get_default_wallpaper():

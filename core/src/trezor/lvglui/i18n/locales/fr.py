@@ -809,5 +809,8 @@ translations = [
     "Envoyer des jetons",
     "La sortie de transaction suivante contient des données de contrat :",
     "Vous utilisez une autorisation {type}, assurez-vous que la dApp est fiable pour éviter toute perte d'actifs.",
+    "Impossible de sauvegarder",
+    "Le mode Airgap est activé et le NFC est désactivé. Vous ne pouvez donc pas effectuer de sauvegarde sur OneKey Lite. Veuillez désactiver le mode Airgap et réessayer.",
+    "Accéder aux paramètres",
 ]
 # fmt: on

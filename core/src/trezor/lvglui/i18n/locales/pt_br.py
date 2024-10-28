@@ -809,5 +809,8 @@ translations = [
     "Enviar Tokens",
     "A seguinte saída de transação contém dados do contrato:",
     "Você está usando a autorização {type}, verifique a confiabilidade do dApp.",
+    "Não é possível fazer backup",
+    "O modo Airgap está habilitado e o NFC está desabilitado, então você não pode fazer backup para o OneKey Lite. Desabilite o modo Airgap e tente novamente.",
+    "Ir para Configurações",
 ]
 # fmt: on

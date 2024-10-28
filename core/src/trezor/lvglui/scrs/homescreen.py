@@ -1332,9 +1332,23 @@ class BackupWallet(Screen):
                 from trezor.messages import RecoveryDevice
 
                 if target == self.lite:
-                    utils.mark_backup_with_lite_1st()
+                    airgap_enabled = device.is_airgap_mode()
+                    if airgap_enabled:
+                        screen = FullSizeWindow(
+                            _(i18n_keys.TITLE__BACKUP_LIMITED),
+                            _(i18n_keys.TITLE__BACKUP_LIMITED_DESC),
+                            confirm_text=_(i18n_keys.BUTTON__GO_SETTINGS),
+                            cancel_text=_(i18n_keys.BUTTON__BACK),
+                            anim_dir=0,
+                        )
+                        screen.btn_layout_ver()
+                        if hasattr(screen, "subtitle"):
+                            screen.subtitle.set_recolor(True)
+                        workflow.spawn(self.handle_airgap_response(screen))
+                        return
+                    utils.set_backup_lite()
                 elif target == self.keytag:
-                    utils.mark_backup_with_keytag_1st()
+                    utils.set_backup_keytag()
                 # pyright: off
                 workflow.spawn(
                     recovery_device(
@@ -1346,6 +1360,15 @@ class BackupWallet(Screen):
 
     def _load_scr(self, scr: "Screen", back: bool = False) -> None:
         lv.scr_load(scr)
+
+    async def handle_airgap_response(self, screen):
+        from trezor.wire import DUMMY_CONTEXT
+
+        if await DUMMY_CONTEXT.wait(screen.request()):
+            screen.destroy()
+            AirGapSetting(self)
+        else:
+            screen.destroy()
 
 
 class ConnectWallet(FullSizeWindow):
@@ -3770,6 +3793,7 @@ class WalletScreen(Screen):
                 from apps.management.recovery_device import recovery_device
                 from trezor.messages import RecoveryDevice
 
+                utils.set_backup_none()
                 # pyright: off
                 workflow.spawn(
                     recovery_device(

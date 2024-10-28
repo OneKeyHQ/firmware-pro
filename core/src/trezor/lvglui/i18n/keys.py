@@ -1770,4 +1770,11 @@ CONTENT__FOLLOWING_TRANSACTION_CONTAINS_CONTRACT = 807
 # You are using {type} authorization, ensure the dApp is trustworthy to avoid
 # asset loss.
 MSG___PERMIT_SIGN_ALERT = 808
+# Backup Limited
+TITLE__BACKUP_LIMITED = 809
+# Airgap mode is enabled and NFC is disabled, so you cannot back up to OneKey
+# Lite. Please disable Airgap mode and try again.
+TITLE__BACKUP_LIMITED_DESC = 810
+# Go Settings
+BUTTON__GO_SETTINGS = 811
 # fmt: on

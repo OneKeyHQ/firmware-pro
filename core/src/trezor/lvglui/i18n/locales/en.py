@@ -809,5 +809,8 @@ translations = [
     "Send Tokens",
     "The following transaction output contains contract data:",
     "You are using {type} authorization, ensure the dApp is trustworthy to avoid asset loss.",
+    "Backup Limited",
+    "Airgap mode is enabled and NFC is disabled, so you cannot back up to OneKey Lite. Please disable Airgap mode and try again.",
+    "Go Settings",
 ]
 # fmt: on

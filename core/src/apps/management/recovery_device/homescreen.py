@@ -124,7 +124,6 @@ async def _continue_recovery_process(
             continue
 
         try:
-            await show_popup(_(i18n_keys.TITLE__PLEASE_WAIT))
             secret, backup_type = await _process_words(ctx, words)
             # If _process_words succeeded, we now have both backup_type (from
             # its result) and word_count (from _request_word_count earlier), which means

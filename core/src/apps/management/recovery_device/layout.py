@@ -121,9 +121,9 @@ async def show_dry_run_result(
         )
         # if not is_slip39 and not __debug__:
         if not is_slip39:
-            if utils.is_backup_with_lite_1st():
+            if utils.get_current_backup_type() == utils.BACKUP_METHOD_LITE:
                 await backup_with_lite(ctx, mnemonics, recovery_check=True)
-            else:
+            elif utils.get_current_backup_type() == utils.BACKUP_METHOD_KEYTAG:
                 await backup_with_keytag(ctx, mnemonics, recovery_check=True)
 
     else:
