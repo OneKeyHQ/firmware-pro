@@ -129,6 +129,10 @@ trezor.enums.SafetyCheckLevel
 import trezor.enums.SafetyCheckLevel
 trezor.enums.SdProtectOperationType
 import trezor.enums.SdProtectOperationType
+trezor.enums.SolanaMessageFormat
+import trezor.enums.SolanaMessageFormat
+trezor.enums.SolanaMessageVersion
+import trezor.enums.SolanaMessageVersion
 trezor.enums.TonWalletVersion
 import trezor.enums.TonWalletVersion
 trezor.enums.TonWorkChain
@@ -791,6 +795,8 @@ apps.solana.message
 import apps.solana.message
 apps.solana.publickey
 import apps.solana.publickey
+apps.solana.sign_message
+import apps.solana.sign_message
 apps.solana.sign_tx
 import apps.solana.sign_tx
 apps.solana.spl._layouts

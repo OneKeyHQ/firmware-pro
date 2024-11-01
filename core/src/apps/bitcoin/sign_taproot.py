@@ -52,6 +52,7 @@ async def sign_taproot(
     total_out = 0
     change_out = 0
     master_fp = keychain.root_fingerprint().to_bytes(4, "big")
+    found_ours = False
     for i, input in enumerate(psbt.inputs):
         assert input.prev_txid is not None
         assert input.prev_out is not None
@@ -62,6 +63,8 @@ async def sign_taproot(
             raise wire.DataError("Non-witness UTXO is not allowed")
         if input.witness_utxo is None:
             raise wire.DataError("Missing required witness UTXO")
+        if list(input.tap_bip32_paths.items()):
+            found_ours = True
 
         scriptPub = input.witness_utxo.scriptPubKey
         amount = input.witness_utxo.nValue
@@ -94,6 +97,8 @@ async def sign_taproot(
             ),
             script_pubkey=scriptPub,
         )
+    if not found_ours:
+        raise wire.DataError("Invalid PSBT, no tap_bip32_paths present")
     ctx.primary_color, ctx.icon_path = (
         lv.color_hex(coin.primary_color),
         f"A:/res/{coin.icon}",

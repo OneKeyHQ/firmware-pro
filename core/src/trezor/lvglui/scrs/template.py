@@ -536,9 +536,10 @@ class Message(FullSizeWindow):
         primary_color,
         icon_path,
         verify: bool = False,
-        evm_chain_id: int | None = None,
+        item_other: int | str | None = None,
         item_addr_title: str | None = None,
         is_standard: bool = True,
+        item_other_title: str | None = None,
     ):
         super().__init__(
             title,
@@ -591,11 +592,11 @@ class Message(FullSizeWindow):
             self.content_area, self.item_message, pos=(0, 8), padding_row=0
         )
         self.container.add_dummy()
-        if evm_chain_id:
-            self.item_chain_id = DisplayItem(
+        if item_other:
+            self.item_other = DisplayItem(
                 self.container,
-                _(i18n_keys.LIST_KEY__CHAIN_ID__COLON),
-                str(evm_chain_id),
+                item_other_title or _(i18n_keys.LIST_KEY__CHAIN_ID__COLON),
+                str(item_other),
             )
         self.item_addr = DisplayItem(
             self.container,
