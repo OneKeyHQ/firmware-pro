@@ -1,6 +1,9 @@
 #ifndef _UTIL_MACROS_H_
 #define _UTIL_MACROS_H_
 
+#define FORCE_IGNORE_RETURN(x) \
+  { __typeof__(x) __attribute__((unused)) d = (x); }
+
 #define FUN_NO_OPTMIZE __attribute__((optimize("O0")))
 
 #define UNUSED_OBJ(X) ((void)(X))

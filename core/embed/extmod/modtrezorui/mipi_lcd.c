@@ -712,7 +712,7 @@ void lcd_refresh_suspend(void) {
   // lcd reset
   HAL_GPIO_WritePin(LCD_RESET_GPIO_PORT, LCD_RESET_PIN, GPIO_PIN_RESET);
   // wait for full blanking done
-  // needs 120ms "When Reset applied during Sleep Out Mode. "
+  // needs 120ms "When Reset applied during Sleep Out Mode."
   HAL_Delay(125);
 }
 

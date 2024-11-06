@@ -187,7 +187,6 @@ SOURCE_TREZORHAL = [
     'embed/trezorhal/mpu.c',
     'embed/trezorhal/emmc.c',
     'embed/trezorhal/qspi_flash.c',
-    'embed/trezorhal/nand_flash.c',
     'embed/trezorhal/random_delays.c',
     'embed/trezorhal/rng.c',
     'embed/trezorhal/stm32.c',

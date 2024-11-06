@@ -47,8 +47,6 @@
 #include STM32_HAL_H
 
 // helper macros
-#define FORCE_IGNORE_RETURN(x) \
-  { __typeof__(x) __attribute__((unused)) d = (x); }
 #define _TO_STR(x) #x
 #define TO_STR(x) _TO_STR(x)
 
