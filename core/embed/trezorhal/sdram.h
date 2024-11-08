@@ -1,6 +1,8 @@
 #ifndef TREZORHAL_FMC_SDRAMH_
 #define TREZORHAL_FMC_SDRAMH_
 
+#include STM32_HAL_H
+
 /* Register Mode */
 #define FMC_SDRAM_DEVICE_BURST_LENGTH_1 0x00000000U
 #define FMC_SDRAM_DEVICE_BURST_LENGTH_2 0x00000001U
@@ -51,6 +53,10 @@
 
 #define FMC_SDRAM_ADDRESS_END ((uint32_t)0xD0000000 + (32 * 1024 * 1024))
 
+// HANDLE
+extern SDRAM_HandleTypeDef hsdram[1];
+
+// FUNCTIONS
 int sdram_init(void);
 int sdram_reinit(void);
 void sdram_set_self_refresh(void);

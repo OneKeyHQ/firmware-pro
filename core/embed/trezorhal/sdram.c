@@ -1,7 +1,7 @@
 #include STM32_HAL_H
 #include "sdram.h"
 
-static SDRAM_HandleTypeDef hsdram[1];
+SDRAM_HandleTypeDef hsdram[1];
 static FMC_SDRAM_CommandTypeDef Command;
 
 #define REFRESH_COUNT ((uint32_t)0x0603) /* (100Mhz clock) */
@@ -183,7 +183,7 @@ int sdram_init(void) {
     return HAL_ERROR;
   }
 
-  sdram_init_sequence();
+  if (!sdram_init_sequence()) return HAL_ERROR;
 
   return HAL_OK;
 }
