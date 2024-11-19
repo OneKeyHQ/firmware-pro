@@ -926,6 +926,20 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(
     mod_trezorcrypto_se_thd89_fido_att_sign_digest_obj,
     mod_trezorcrypto_se_thd89_fido_att_sign_digest);
 
+/// def fido_delete_all_credentials() -> None:
+///     """
+///     Delete all FIDO2 credentials.
+///     """
+STATIC mp_obj_t mod_trezorcrypto_se_thd89_fido_delete_all_credentials(void) {
+  se_delete_all_fido2_credentials();
+  return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(
+    mod_trezorcrypto_se_thd89_fido_delete_all_credentials_obj,
+    mod_trezorcrypto_se_thd89_fido_delete_all_credentials);
+
+/// FIDO2_CRED_COUNT_MAX: int
+
 STATIC const mp_rom_map_elem_t mod_trezorcrypto_se_thd89_globals_table[] = {
     {MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_se_thd89)},
     {MP_ROM_QSTR(MP_QSTR_check),
@@ -994,6 +1008,10 @@ STATIC const mp_rom_map_elem_t mod_trezorcrypto_se_thd89_globals_table[] = {
      MP_ROM_PTR(&mod_trezorcrypto_se_thd89_fido_sign_digest_obj)},
     {MP_ROM_QSTR(MP_QSTR_fido_att_sign_digest),
      MP_ROM_PTR(&mod_trezorcrypto_se_thd89_fido_att_sign_digest_obj)},
+    {MP_ROM_QSTR(MP_QSTR_fido_delete_all_credentials),
+     MP_ROM_PTR(&mod_trezorcrypto_se_thd89_fido_delete_all_credentials_obj)},
+    {MP_ROM_QSTR(MP_QSTR_FIDO2_CRED_COUNT_MAX),
+     MP_ROM_INT(FIDO2_RESIDENT_CREDENTIALS_COUNT)},
 };
 STATIC MP_DEFINE_CONST_DICT(mod_trezorcrypto_se_thd89_globals,
                             mod_trezorcrypto_se_thd89_globals_table);

@@ -5,6 +5,7 @@ import storage.resident_credentials
 from storage.resident_credentials import MAX_RESIDENT_CREDENTIALS
 
 from .credential import Fido2Credential
+from .fido_seed import ensure_fido_seed
 
 RP_ID_HASH_LENGTH = const(32)
 
@@ -17,6 +18,7 @@ def _credential_from_data(index: int, data: bytes) -> Fido2Credential:
     return cred
 
 
+@ensure_fido_seed
 def find_all() -> Iterator[Fido2Credential]:
     for index in range(MAX_RESIDENT_CREDENTIALS):
         data = storage.resident_credentials.get(index)
@@ -24,6 +26,7 @@ def find_all() -> Iterator[Fido2Credential]:
             yield _credential_from_data(index, data)
 
 
+@ensure_fido_seed
 def find_by_rp_id_hash(rp_id_hash: bytes) -> Iterator[Fido2Credential]:
     for index in range(MAX_RESIDENT_CREDENTIALS):
         data = storage.resident_credentials.get(index)
@@ -39,6 +42,7 @@ def find_by_rp_id_hash(rp_id_hash: bytes) -> Iterator[Fido2Credential]:
         yield _credential_from_data(index, data)
 
 
+@ensure_fido_seed
 def get_resident_credential(index: int) -> Fido2Credential | None:
     if not 0 <= index < MAX_RESIDENT_CREDENTIALS:
         return None
@@ -50,6 +54,7 @@ def get_resident_credential(index: int) -> Fido2Credential | None:
     return _credential_from_data(index, data)
 
 
+@ensure_fido_seed
 def store_resident_credential(cred: Fido2Credential) -> bool:
     slot = None
     for index in range(MAX_RESIDENT_CREDENTIALS):

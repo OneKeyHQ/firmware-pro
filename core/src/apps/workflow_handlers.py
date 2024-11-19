@@ -115,13 +115,13 @@ def find_message_handler_module(msg_type: int) -> str:
         if msg_type == MessageType.GetNextU2FCounter:
             return "apps.management.get_next_u2f_counter"
 
-        # # webauthn
-        # if msg_type == MessageType.WebAuthnListResidentCredentials:
-        #     return "apps.webauthn.list_resident_credentials"
-        # if msg_type == MessageType.WebAuthnAddResidentCredential:
-        #     return "apps.webauthn.add_resident_credential"
-        # if msg_type == MessageType.WebAuthnRemoveResidentCredential:
-        #     return "apps.webauthn.remove_resident_credential"
+        # webauthn
+        if msg_type == MessageType.WebAuthnListResidentCredentials:
+            return "apps.webauthn.list_resident_credentials"
+        if msg_type == MessageType.WebAuthnAddResidentCredential:
+            return "apps.webauthn.add_resident_credential"
+        if msg_type == MessageType.WebAuthnRemoveResidentCredential:
+            return "apps.webauthn.remove_resident_credential"
 
         # ethereum
         if msg_type == MessageType.EthereumGetAddress:

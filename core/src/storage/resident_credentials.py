@@ -1,10 +1,13 @@
-from micropython import const
-
 from storage import common
+from trezor import utils
+from trezor.crypto import se_thd89
 
-_RESIDENT_CREDENTIAL_START_KEY = const(1)
-
-MAX_RESIDENT_CREDENTIALS = const(100)
+if utils.USE_THD89:
+    MAX_RESIDENT_CREDENTIALS = se_thd89.FIDO2_CRED_COUNT_MAX
+    _RESIDENT_CREDENTIAL_START_KEY = 0
+else:
+    _RESIDENT_CREDENTIAL_START_KEY = 1
+    MAX_RESIDENT_CREDENTIALS = 100
 
 
 def get(index: int) -> bytes | None:
@@ -29,5 +32,8 @@ def delete(index: int) -> None:
 
 
 def delete_all() -> None:
-    for i in range(MAX_RESIDENT_CREDENTIALS):
-        common.delete(common.APP_WEBAUTHN, i + _RESIDENT_CREDENTIAL_START_KEY)
+    if utils.USE_THD89:
+        se_thd89.fido_delete_all_credentials()
+    else:
+        for i in range(MAX_RESIDENT_CREDENTIALS):
+            common.delete(common.APP_WEBAUTHN, i + _RESIDENT_CREDENTIAL_START_KEY)

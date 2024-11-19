@@ -41,7 +41,8 @@ def verify_recover(signature: bytes, digest: bytes) -> bytes:
 
 
 # extmod/modtrezorcrypto/modtrezorcrypto-nist256p1.h
-def multiply(secret_key: bytes, public_key: bytes) -> bytes:
+def multiply(secret_key: bytes, public_key: bytes, inner_secret_key: bool =
+False) -> bytes:
     """
     Multiplies point defined by public_key with scalar defined by
     secret_key. Useful for ECDH.

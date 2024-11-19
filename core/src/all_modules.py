@@ -1409,6 +1409,8 @@ if not utils.BITCOIN_ONLY:
     import apps.webauthn.credential
     apps.webauthn.fido2
     import apps.webauthn.fido2
+    apps.webauthn.fido_seed
+    import apps.webauthn.fido_seed
     apps.webauthn.knownapps
     import apps.webauthn.knownapps
     apps.webauthn.list_resident_credentials
