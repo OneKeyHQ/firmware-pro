@@ -281,3 +281,11 @@ def fido_att_sign_digest(
 ) -> bytes:
     """
     """
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
+def fido_delete_all_credentials() -> None:
+    """
+    Delete all FIDO2 credentials.
+    """
+FIDO2_CRED_COUNT_MAX: int

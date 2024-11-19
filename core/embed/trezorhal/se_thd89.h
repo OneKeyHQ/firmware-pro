@@ -12,6 +12,20 @@
 
 #define MAX_AUTHORIZATION_LEN 128
 
+#define FIDO2_RESIDENT_CREDENTIALS_SIZE (512)
+#define FIDO2_RESIDENT_CREDENTIALS_COUNT (60)
+#define FIDO2_RESIDENT_CREDENTIALS_FLAGS "\x66\x69\x64\x6F"  // "fido"
+#define FIDO2_RESIDENT_CREDENTIALS_HEADER_LEN (6)
+typedef struct {
+  uint8_t credential_id_flag[4];
+  uint16_t credential_length;
+  uint8_t rp_id_hash[32];
+  uint8_t credential_id[474];
+} __attribute__((packed)) CTAP_credential_id_storage;
+_Static_assert(sizeof(CTAP_credential_id_storage) ==
+                   FIDO2_RESIDENT_CREDENTIALS_SIZE,
+               "CTAP_credential_id_storage size must be flash page size");
+
 typedef secbool (*UI_WAIT_CALLBACK)(uint32_t wait, uint32_t progress,
                                     const char *message);
 void se_set_ui_callback(UI_WAIT_CALLBACK callback);
@@ -189,4 +203,10 @@ secbool se_derive_fido_keys(HDNode *out, const char *curve,
                             uint32_t *fingerprint);
 secbool se_fido_hdnode_sign_digest(const uint8_t *hash, uint8_t *sig);
 secbool se_fido_att_sign_digest(const uint8_t *hash, uint8_t *sig);
+secbool se_get_fido2_resident_credentials(uint32_t index, uint8_t *dest,
+                                          uint16_t *dst_len);
+secbool se_set_fido2_resident_credentials(uint32_t index, const uint8_t *src,
+                                          uint16_t len);
+secbool se_delete_fido2_resident_credentials(uint32_t index);
+secbool se_delete_all_fido2_credentials(void);
 #endif

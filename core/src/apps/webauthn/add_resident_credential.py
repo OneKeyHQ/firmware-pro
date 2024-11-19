@@ -34,6 +34,20 @@ async def add_resident_credential(
     if not msg.credential_id:
         raise wire.ProcessError("Missing credential ID parameter.")
 
+    from trezor.crypto import se_thd89
+    from utime import sleep_ms
+
+    while True:
+        try:
+            ret = se_thd89.fido_seed()
+            if ret:
+                break
+            else:
+                sleep_ms(100)
+                continue
+        except Exception:
+            raise wire.ProcessError("Failed to generate seed.")
+
     try:
         cred = Fido2Credential.from_cred_id(bytes(msg.credential_id), None)
     except Exception:
