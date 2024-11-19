@@ -95,6 +95,9 @@ secbool se_write_certificate(const uint8_t *cert, uint16_t cert_len);
 secbool se_read_certificate(uint8_t *cert, uint16_t *cert_len);
 secbool se_has_cerrificate(void);
 secbool se_sign_message(uint8_t *msg, uint32_t msg_len, uint8_t *signature);
+secbool se_sign_message_with_write_key(uint8_t *msg, uint32_t msg_len,
+                                       uint8_t *signature);
+secbool se_set_private_key_extern(uint8_t key[32]);
 secbool se_set_session_key_ex(uint8_t addr, const uint8_t *session_key);
 secbool se_set_session_key(const uint8_t *session_key);
 
