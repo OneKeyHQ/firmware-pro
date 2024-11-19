@@ -99,6 +99,9 @@ PB_BIND(GetDeviceInfo, GetDeviceInfo, AUTO)
 PB_BIND(DeviceInfo, DeviceInfo, AUTO)
 
 
+PB_BIND(WriteSEPrivateKey, WriteSEPrivateKey, AUTO)
+
+
 PB_BIND(ReadSEPublicKey, ReadSEPublicKey, AUTO)
 
 

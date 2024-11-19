@@ -644,6 +644,14 @@ message DeviceInfo {
 }
 
 /**
+ * Request: Read SE private key
+ * @end
+ */
+message WriteSEPrivateKey {
+    required bytes private_key = 1;
+}
+
+/**
  * Request: Read SE public key
  * @end
  */

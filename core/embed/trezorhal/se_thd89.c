@@ -1034,6 +1034,29 @@ secbool se_sign_message(uint8_t *msg, uint32_t msg_len, uint8_t *signature) {
   return thd89_transmit(sign, sizeof(sign), signature, &signature_len);
 }
 
+secbool se_sign_message_with_write_key(uint8_t *msg, uint32_t msg_len,
+                                       uint8_t *signature) {
+  uint8_t sign[37] = {0x00, 0xF5, 0x00, 0x04, 0x20};
+  uint16_t signature_len = 64;
+
+  SHA256_CTX ctx = {0};
+  uint8_t result[32] = {0};
+
+  sha256_Init(&ctx);
+  sha256_Update(&ctx, msg, msg_len);
+  sha256_Final(&ctx, result);
+
+  memcpy(sign + 5, result, 32);
+  return thd89_transmit(sign, sizeof(sign), signature, &signature_len);
+}
+
+secbool se_set_private_key_extern(uint8_t key[32]) {
+  uint8_t set_key[37] = {0x00, 0xF6, 0x00, 0x03, 0x20};
+  uint16_t resp_len = 0;
+  memcpy(set_key + 5, key, 32);
+  return thd89_transmit(set_key, sizeof(set_key), NULL, &resp_len);
+}
+
 secbool se_set_session_key_ex(uint8_t addr, const uint8_t *session_key) {
   uint8_t cmd[32] = {0x00, 0xF6, 0x00, 0x02, 0x10};
   uint16_t resp_len = 0;

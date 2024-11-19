@@ -439,6 +439,7 @@ class MessageType(IntEnum):
     FileInfoList = 10024
     OnekeyGetFeatures = 10025
     OnekeyFeatures = 10026
+    WriteSEPrivateKey = 10027
 
 
 class FailureType(IntEnum):
@@ -5150,6 +5151,20 @@ class DeviceInfo(protobuf.MessageType):
         self.NFT_voucher = NFT_voucher
         self.cpu_info = cpu_info
         self.pre_firmware = pre_firmware
+
+
+class WriteSEPrivateKey(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 10027
+    FIELDS = {
+        1: protobuf.Field("private_key", "bytes", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        private_key: "bytes",
+    ) -> None:
+        self.private_key = private_key
 
 
 class ReadSEPublicKey(protobuf.MessageType):

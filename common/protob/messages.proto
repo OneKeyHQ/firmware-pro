@@ -593,4 +593,5 @@ enum MessageType {
     MessageType_FileInfoList = 10024 [(wire_out) = true];
     MessageType_OnekeyGetFeatures = 10025 [(wire_in) = true];
     MessageType_OnekeyFeatures = 10026 [(wire_out) = true];
+    MessageType_WriteSEPrivateKey = 10027 [(wire_in) = true, (wire_bootloader) = true];
 }

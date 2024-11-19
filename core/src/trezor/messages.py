@@ -3638,6 +3638,20 @@ if TYPE_CHECKING:
         def is_type_of(cls, msg: Any) -> TypeGuard["DeviceInfo"]:
             return isinstance(msg, cls)
 
+    class WriteSEPrivateKey(protobuf.MessageType):
+        private_key: "bytes"
+
+        def __init__(
+            self,
+            *,
+            private_key: "bytes",
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["WriteSEPrivateKey"]:
+            return isinstance(msg, cls)
+
     class ReadSEPublicKey(protobuf.MessageType):
 
         @classmethod

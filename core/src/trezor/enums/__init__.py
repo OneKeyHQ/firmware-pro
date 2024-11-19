@@ -431,6 +431,7 @@ if TYPE_CHECKING:
         FileInfoList = 10024
         OnekeyGetFeatures = 10025
         OnekeyFeatures = 10026
+        WriteSEPrivateKey = 10027
 
     class FailureType(IntEnum):
         UnexpectedMessage = 1

@@ -413,3 +413,4 @@ if not utils.BITCOIN_ONLY:
     FileInfoList = 10024
     OnekeyGetFeatures = 10025
     OnekeyFeatures = 10026
+    WriteSEPrivateKey = 10027
