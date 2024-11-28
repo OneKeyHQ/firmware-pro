@@ -174,7 +174,6 @@ class MessageType(IntEnum):
     EthereumTypedDataValueAckOneKey = 20115
     EthereumTypedDataSignatureOneKey = 20116
     EthereumSignTypedHashOneKey = 20117
-    EthereumSignMessageEIP712 = 10200
     NEMGetAddress = 67
     NEMAddress = 68
     NEMSignTx = 69
@@ -7103,26 +7102,6 @@ class EthereumTypedDataSignatureOneKey(protobuf.MessageType):
     ) -> None:
         self.signature = signature
         self.address = address
-
-
-class EthereumSignMessageEIP712(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = 10200
-    FIELDS = {
-        1: protobuf.Field("address_n", "uint32", repeated=True, required=False),
-        2: protobuf.Field("domain_hash", "bytes", repeated=False, required=False),
-        3: protobuf.Field("message_hash", "bytes", repeated=False, required=False),
-    }
-
-    def __init__(
-        self,
-        *,
-        address_n: Optional[Sequence["int"]] = None,
-        domain_hash: Optional["bytes"] = None,
-        message_hash: Optional["bytes"] = None,
-    ) -> None:
-        self.address_n: Sequence["int"] = address_n if address_n is not None else []
-        self.domain_hash = domain_hash
-        self.message_hash = message_hash
 
 
 class EthereumAccessListOneKey(protobuf.MessageType):

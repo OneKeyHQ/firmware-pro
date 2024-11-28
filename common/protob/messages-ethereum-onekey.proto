@@ -11,7 +11,7 @@ import "messages-common.proto";
 /**
  * Request: Ask device for public key corresponding to address_n path
  * @start
- * @next EthereumGetPublicKeyOneKey
+ * @next EthereumPublicKeyOneKey
  * @next Failure
  */
 message EthereumGetPublicKeyOneKey {
@@ -177,15 +177,4 @@ message EthereumTypedDataSignatureOneKey {
 }
 
 
-/**
- * Request: Ask device to sign message EIP712
- * @start
- * @next EthereumMessageSignature
- * @next Failure
- */
-message EthereumSignMessageEIP712 {
-    repeated uint32 address_n = 1;      // BIP-32 path to derive the key from master node
-    optional bytes domain_hash = 2;     // domainSeparator hash
-    optional bytes message_hash = 3;    // message hash
-}
 
