@@ -247,7 +247,7 @@ async def request_lite_pin(ctx, prompt: str) -> str:
 
 async def request_lite_pin_confirm(ctx) -> str:
     while True:
-        pin1 = await request_lite_pin(ctx, _(i18n_keys.TITLE__ENTER_ONEKEY_LITE_PIN))
+        pin1 = await request_lite_pin(ctx, _(i18n_keys.TITLE__SET_ONEKEY_LITE_PIN))
         if pin1 == 0:
             return pin1
         pin2 = await request_lite_pin(ctx, _(i18n_keys.TITLE__CONFIRM_ONEKEY_LITE_PIN))
