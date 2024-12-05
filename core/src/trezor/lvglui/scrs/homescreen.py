@@ -8,6 +8,7 @@ from trezor.langs import langs, langs_keys
 from trezor.lvglui.i18n import gettext as _, i18n_refresh, keys as i18n_keys
 from trezor.lvglui.lv_colors import lv_colors
 from trezor.lvglui.scrs.components.pageable import Indicator
+
 from trezor.qr import (
     close_camera,
     get_hd_key,
@@ -20,8 +21,10 @@ from trezor.ui import display, style
 
 import ujson as json
 from apps.common import safety_checks
+from apps.base import get_features
 
 from ..lv_symbols import LV_SYMBOLS
+
 from . import font_GeistRegular26, font_GeistRegular30, font_GeistSemiBold26
 from .common import FullSizeWindow, Screen, lv  # noqa: F401, F403, F405
 from .components.anim import Anim
@@ -36,6 +39,8 @@ from .components.listitem import (
 from .deviceinfo import DeviceInfoManager
 from .widgets.style import StyleWrapper
 
+import storage.cache
+from .address import AddressManager, chain_list
 
 def brightness2_percent_str(brightness: int) -> str:
     return f"{int(brightness / style.BACKLIGHT_MAX * 100)}%"
@@ -270,10 +275,24 @@ class MainScreen(Screen):
             )
             self.scan_desc.align_to(self.scan, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
 
+            self.address = lv.imgbtn(self)
+            self.address.set_size(216, 216)
+            self.address.align_to(self.connect, lv.ALIGN.OUT_BOTTOM_MID, 0, 77)
+            self.address.set_style_bg_img_src("A:/res/app-address.jpg", 0)
+            self.address.add_style(click_style, lv.PART.MAIN | lv.STATE.PRESSED)
+            self.address.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
+            self.address_desc = lv.label(self)
+            self.address_desc.set_text(_(i18n_keys.APP__ADDRESS))
+            self.address_desc.add_style(default_desc_style, 0)
+            self.address_desc.add_style(
+                pressed_desc_style, lv.PART.MAIN | lv.STATE.PRESSED
+            )
+            self.address_desc.align_to(self.address, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
+
             self.settings = lv.imgbtn(self)
             self.settings.set_size(216, 216)
             # self.settings.set_pos(16, 148)
-            self.settings.align_to(self.connect, lv.ALIGN.OUT_BOTTOM_MID, 0, 77)
+            self.settings.align_to(self.address, lv.ALIGN.OUT_RIGHT_MID, 16, 0)
             self.settings.set_style_bg_img_src("A:/res/app-settings.jpg", 0)
             self.settings.add_style(click_style, lv.PART.MAIN | lv.STATE.PRESSED)
             self.settings.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
@@ -284,20 +303,6 @@ class MainScreen(Screen):
                 pressed_desc_style, lv.PART.MAIN | lv.STATE.PRESSED
             )
             self.settings_desc.align_to(self.settings, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
-
-            self.guide = lv.imgbtn(self)
-            self.guide.set_size(216, 216)
-            self.guide.align_to(self.settings, lv.ALIGN.OUT_RIGHT_MID, 16, 0)
-            self.guide.set_style_bg_img_src("A:/res/app-tips.jpg", 0)
-            self.guide.add_style(click_style, lv.PART.MAIN | lv.STATE.PRESSED)
-            self.guide.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
-            self.guide_desc = lv.label(self)
-            self.guide_desc.set_text(_(i18n_keys.APP__TIPS))
-            self.guide_desc.add_style(default_desc_style, 0)
-            self.guide_desc.add_style(
-                pressed_desc_style, lv.PART.MAIN | lv.STATE.PRESSED
-            )
-            self.guide_desc.align_to(self.guide, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
 
             self.nft = lv.imgbtn(self)
             self.nft.set_size(216, 216)
@@ -328,6 +333,21 @@ class MainScreen(Screen):
             self.backup_desc.align_to(self.backup, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
             self.backup.add_flag(lv.obj.FLAG.HIDDEN)
             self.backup_desc.add_flag(lv.obj.FLAG.HIDDEN)
+
+            self.guide = lv.imgbtn(self)
+            self.guide.set_size(216, 216)
+            self.guide.align_to(self.nft, lv.ALIGN.OUT_BOTTOM_MID, 0, 77)
+            self.guide.set_style_bg_img_src("A:/res/app-tips.jpg", 0)
+            self.guide.add_style(click_style, lv.PART.MAIN | lv.STATE.PRESSED)
+            self.guide.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
+            self.guide_desc = lv.label(self)
+            self.guide_desc.set_text(_(i18n_keys.APP__TIPS))
+            self.guide_desc.add_style(default_desc_style, 0)
+            self.guide_desc.add_style(
+                pressed_desc_style, lv.PART.MAIN | lv.STATE.PRESSED
+            )
+            self.guide_desc.align_to(self.guide, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
+
             self.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
             self.add_event_cb(self.on_pressed, lv.EVENT.PRESSED, None)
             self.add_event_cb(self.on_released, lv.EVENT.RELEASED, None)
@@ -375,8 +395,8 @@ class MainScreen(Screen):
                 self.scan_desc,
                 self.connect,
                 self.connect_desc,
-                self.guide,
-                self.guide_desc,
+                self.address,
+                self.address_desc,
                 self.img_down,
             ]
             self.group_2 = [
@@ -385,6 +405,8 @@ class MainScreen(Screen):
                 self.nft_desc,
                 self.backup,
                 self.backup_desc,
+                self.guide,
+                self.guide_desc,
                 self.img_down,
             ]
 
@@ -492,6 +514,8 @@ class MainScreen(Screen):
                     ScanScreen(self.parent)
                 elif target == self.connect:
                     ConnectWalletWays(self.parent)
+                elif target == self.address:
+                    ShowAddress(self.parent)
                 elif target == self.img_down:
                     self.dismiss()
 
@@ -505,6 +529,8 @@ class MainScreen(Screen):
                     self.settings_desc.add_state(lv.STATE.PRESSED)
                 elif target == self.guide:
                     self.guide_desc.add_state(lv.STATE.PRESSED)
+                elif target == self.address:
+                    self.address_desc.add_state(lv.STATE.PRESSED)
                 elif target == self.nft:
                     self.nft_desc.add_state(lv.STATE.PRESSED)
                 elif target == self.backup:
@@ -524,6 +550,8 @@ class MainScreen(Screen):
                     self.settings_desc.clear_state(lv.STATE.PRESSED)
                 elif target == self.guide:
                     self.guide_desc.clear_state(lv.STATE.PRESSED)
+                elif target == self.address:
+                    self.address_desc.clear_state(lv.STATE.PRESSED)
                 elif target == self.nft:
                     self.nft_desc.clear_state(lv.STATE.PRESSED)
                 elif target == self.backup:
@@ -537,11 +565,411 @@ class MainScreen(Screen):
             # self.tips.set_text(_(i18n_keys.CONTENT__SWIPE_DOWN_TO_CLOSE))
             self.settings_desc.set_text(_(i18n_keys.APP__SETTINGS))
             self.guide_desc.set_text(_(i18n_keys.APP__TIPS))
+            self.address_desc.set_text(_(i18n_keys.APP__ADDRESS))
             self.nft_desc.set_text(_(i18n_keys.APP__NFT_GALLERY))
             self.backup_desc.set_text(_(i18n_keys.APP__BACK_UP))
             self.scan_desc.set_text(_(i18n_keys.APP__SCAN))
             self.connect_desc.set_text(_(i18n_keys.APP__CONNECT_WALLET))
 
+
+class ShowAddress(Screen):
+    def __init__(self, prev_scr=None):
+        if not hasattr(self, "_init"):
+            self._init = True
+            self.current_index = 0
+            kwargs = {
+                "prev_scr": prev_scr,
+                "title": _(i18n_keys.TITLE__SELECT_NETWORK),
+                "nav_back": True,
+            }
+            super().__init__(**kwargs)
+
+            self.init_ui()
+
+            self.curr_session_id = storage.cache.start_session()
+        else:
+            self.container.delete()
+            self.init_ui()
+
+    def init_ui(self):
+        """Initialize UI components"""
+        self.container = ContainerFlexCol(self.content_area, self.title, padding_row=2, pos=(0, 157))
+
+        # Initialize variables
+        self.chains = chain_list
+        self.visible_chains_count = 8
+        self.is_expanded = False
+        self.chain_buttons = []
+        self.created_count = 0
+
+        # Account button
+        self.index_btn = ListItemBtn(
+            self.content_area,
+            f" Account #{self.current_index + 1}",
+            left_img_src="A:/res/wallet.png",
+            has_next=False,
+        )
+        self.index_btn.align_to(self.title, lv.ALIGN.BOTTOM_MID, 0, 145)
+        self.index_btn.set_style_radius(40, 0)
+        self.index_btn.add_event_cb(self.on_index_click, lv.EVENT.CLICKED, None)
+
+        self._create_visible_chain_buttons()
+        
+        self._create_expand_button()
+
+    def _create_visible_chain_buttons(self):
+        """Create visible chain buttons"""
+        for i in range(min(self.visible_chains_count, len(self.chains))):
+            msg_type, chain_info = self.chains[i]
+
+            btn = ListItemBtn(
+                self.container,
+                f" {chain_info['name']}",
+                left_img_src=chain_info['icon_48'],
+                has_next=False
+            )
+            
+            # add ecosystem icons for eth
+            if chain_info['name'] == "Ethereum":
+                btn.label_left.align_to(btn.img_left, lv.ALIGN.OUT_RIGHT_MID, 16, -9)
+                
+                btn.eco_icon_1 = lv.img(btn)
+                btn.eco_icon_1.set_src("A:/res/evm-bnb-24.png")
+                btn.eco_icon_1.align_to(btn.img_left, lv.ALIGN.OUT_RIGHT_MID, 22, 27)
+
+                btn.eco_icon_2 = lv.img(btn)
+                btn.eco_icon_2.set_src("A:/res/evm-matic-24.png")
+                btn.eco_icon_2.align_to(btn.eco_icon_1, lv.ALIGN.OUT_RIGHT_MID, 4, 0)
+
+                btn.eco_icon_3 = lv.img(btn)
+                btn.eco_icon_3.set_src("A:/res/evm-arb1-24.png")
+                btn.eco_icon_3.align_to(btn.eco_icon_2, lv.ALIGN.OUT_RIGHT_MID, 4, 0)
+
+                btn.eco_icon_4 = lv.img(btn)
+                btn.eco_icon_4.set_src("A:/res/evm-avax-24.png")
+                btn.eco_icon_4.align_to(btn.eco_icon_3, lv.ALIGN.OUT_RIGHT_MID, 4, 0)
+
+                btn.eco_icon_5 = lv.img(btn)
+                btn.eco_icon_5.set_src("A:/res/point.png")
+                btn.eco_icon_5.align_to(btn.eco_icon_4, lv.ALIGN.OUT_RIGHT_MID, 6, 8)
+                
+                btn.add_style(
+                    StyleWrapper()
+                    .pad_ver(20),
+                    0,
+                )
+
+            btn.add_event_cb(
+                lambda e, mt=msg_type: self.on_chain_click(e, mt),
+                lv.EVENT.CLICKED,
+                None
+            )
+            self.chain_buttons.append(btn)
+            self.created_count += 1
+
+    def _create_expand_button(self):
+        self.expand_btn = ListItemBtn(
+            self.container,
+            _(i18n_keys.BUTTON__MORE_NETWORKS),
+            left_img_src="A:/res/btn-doubledown.png",
+            has_next=False
+        )
+        
+        self.expand_btn.label_left.set_width(lv.SIZE.CONTENT)
+        self.expand_btn.label_left.align(lv.ALIGN.CENTER, 16, 0)
+        self.expand_btn.img_left.align_to(
+            self.expand_btn.label_left, 
+            lv.ALIGN.OUT_LEFT_MID, 
+            -16, 
+            0
+        )
+        
+        self.expand_btn.add_event_cb(self.on_expand_click, lv.EVENT.CLICKED, None)
+
+    def on_index_click(self, event):
+        """Handle account selection click"""
+        IndexSelectionScreen(self)
+
+    def on_chain_click(self, event, msg_type):
+        """Handle chain selection click"""
+        if utils.lcd_resume():
+            return
+            
+        addr_manager = AddressManager()
+        
+        workflow.spawn(addr_manager.generate_address(msg_type, self.current_index))
+
+    def update_index_btn_text(self):
+        """Update account button text"""
+        self.index_btn.label_left.set_text(f"Account #{self.current_index + 1}")
+
+    def on_expand_click(self, event):
+        """Handle expand/collapse button click"""
+        self.is_expanded = not self.is_expanded
+        
+        if self.is_expanded:
+            self._handle_expand()
+        else:
+            self._handle_collapse()
+
+    def _handle_expand(self):
+        """Handle expand operation"""
+        self.expand_btn.delete()
+        
+        if self.created_count < len(self.chains):
+            for i in range(self.created_count, len(self.chains)):
+                msg_type, chain_info = self.chains[i]
+                btn = ListItemBtn(
+                    self.container,
+                    f" {chain_info['name']}",
+                    left_img_src=chain_info['icon_48'],
+                    has_next=False
+                )
+                btn.add_event_cb(
+                    lambda e, mt=msg_type: self.on_chain_click(e, mt),
+                    lv.EVENT.CLICKED,
+                    None
+                )
+                self.chain_buttons.append(btn)
+            self.created_count = len(self.chains)
+        
+        self.expand_btn = ListItemBtn(
+            self.container,
+            _(i18n_keys.BUTTON__LESS_NETWORKS),
+            left_img_src="A:/res/btn-doubleup.png",
+            has_next=False
+        )
+
+        self.expand_btn.label_left.set_width(lv.SIZE.CONTENT)
+        self.expand_btn.label_left.align(lv.ALIGN.CENTER, 16, 0)
+        self.expand_btn.img_left.align_to(
+            self.expand_btn.label_left, 
+            lv.ALIGN.OUT_LEFT_MID, 
+            -16, 
+            0
+        )
+
+        self.expand_btn.add_event_cb(self.on_expand_click, lv.EVENT.CLICKED, None)
+        
+        for btn in self.chain_buttons[self.visible_chains_count:]:
+            btn.clear_flag(lv.obj.FLAG.HIDDEN)
+
+    def _handle_collapse(self):
+        """Handle collapse operation"""
+        self.content_area.scroll_to(0, 500, lv.ANIM.ON)
+        for btn in self.chain_buttons[self.visible_chains_count:]:
+            btn.add_flag(lv.obj.FLAG.HIDDEN)
+        
+        self.expand_btn.label_left.set_text(_(i18n_keys.BUTTON__MORE_NETWORKS))
+        self.expand_btn.img_left.set_src("A:/res/btn-doubledown.png")
+
+        self.expand_btn.label_left.set_width(lv.SIZE.CONTENT)
+        self.expand_btn.label_left.align(lv.ALIGN.CENTER, 16, 0)
+        self.expand_btn.img_left.align_to(
+            self.expand_btn.label_left, 
+            lv.ALIGN.OUT_LEFT_MID, 
+            -16, 
+            0
+        )
+    
+    def eventhandler(self, event_obj):
+        event = event_obj.code
+        target = event_obj.get_target()
+        if event == lv.EVENT.CLICKED:
+            if utils.lcd_resume():
+                return
+            if isinstance(target, lv.imgbtn):
+                if target == self.nav_back.nav_btn:
+                    storage.cache.end_current_session()
+                    if self.prev_scr is not None:
+                        self.load_screen(self.prev_scr, destroy_self=True)
+            else:
+                if hasattr(self, "btn") and target == self.btn:
+                    self.on_click(target)
+
+    def _load_scr(self, scr: "Screen", back: bool = False) -> None:
+        lv.scr_load(scr)
+
+class IndexSelectionScreen(Screen):
+    def __init__(self, prev_scr=None):
+        if not hasattr(self, "_init"):
+            self._init = True
+        super().__init__(prev_scr, title=_(i18n_keys.TITLE__SELECT_ACCOUNT), nav_back=True)
+
+        from .components.navigation import GeneralNavigation
+
+        # # navi
+        self.nav_opt = GeneralNavigation(self.content_area)
+
+        self.container = ContainerFlexCol(self.content_area, self.title, padding_row=2)
+        
+        self.current_account = self.prev_scr.current_index + 1
+        self.current_page = (self.current_account - 1) // 5
+        
+        # account select btn
+        self.account_btns = []
+        for i in range(5):
+            btn = ListItemBtn(
+                self.container,
+                "",
+            )
+            btn.add_check_img()
+            self.account_btns.append(btn)
+        self.update_account_buttons()
+
+        self.placeholder = ListItemBtn(
+            self.content_area,
+            "",
+            has_next=False,
+        )
+
+        self.placeholder.align_to(self.container, lv.ALIGN.OUT_BOTTOM_MID, 0, 12)
+        self.placeholder.add_style(
+            StyleWrapper()
+            .bg_opa(lv.OPA.TRANSP)
+            .text_opa(lv.OPA.TRANSP),
+            0
+        )
+
+        self.bottom_panel = lv.obj(self)
+        self.bottom_panel.set_size(lv.pct(100), 115)
+        self.bottom_panel.align(lv.ALIGN.BOTTOM_MID, 0, 0)
+        self.bottom_panel.set_style_bg_color(lv_colors.BLACK, 0)
+        self.bottom_panel.set_style_border_width(0, 0)
+        self.bottom_panel.set_style_pad_all(0, 0)
+        self.bottom_panel.clear_flag(lv.obj.FLAG.CLICKABLE)
+        
+        self.next_btn = NormalButton(self, "")
+        self.next_btn.set_size(231, 98)
+        self.next_btn.align(lv.ALIGN.BOTTOM_RIGHT, -8, -8)
+        self.next_btn.set_style_bg_img_src("A:/res/arrow-right-2.png", 0)
+
+        self.back_btn = NormalButton(self, "")
+        self.back_btn.set_size(231, 98)
+        self.back_btn.align(lv.ALIGN.BOTTOM_LEFT, 8, -8)
+        self.back_btn.set_style_bg_img_src("A:/res/arrow-left-2.png", 0)
+        
+        self.bottom_panel.move_foreground()
+        self.next_btn.move_foreground()
+        self.back_btn.move_foreground()
+
+        self.update_page_buttons()
+        
+    def get_page_start(self):
+        return (self.current_page * 5) + 1
+
+    def update_account_buttons(self):
+        page_start = self.get_page_start()
+        for i, btn in enumerate(self.account_btns):
+            account_num = page_start + i
+            btn.label_left.set_text(f"Account #{account_num}")
+            
+            # 更新选中状态（current_account 从1开始）
+            if account_num == self.current_account:
+                btn.set_checked()
+            else:
+                btn.set_uncheck()
+
+    def update_page_buttons(self):
+        if self.current_page == 0:
+            self.back_btn.disable(bg_color=lv_colors.ONEKEY_BLACK_5)
+            self.back_btn.add_style(
+                StyleWrapper()
+                .bg_img_recolor(lv_colors.ONEKEY_GRAY_1)
+                .bg_img_recolor_opa(lv.OPA.COVER),
+                0
+            )
+        else:
+            self.back_btn.enable()
+            self.back_btn.add_style(
+                StyleWrapper()
+                .bg_img_recolor_opa(lv.OPA.TRANSP),
+                0
+            )
+
+        if self.current_page == 199999999:
+            self.next_btn.disable(bg_color=lv_colors.ONEKEY_BLACK_5)
+            self.next_btn.add_style(
+                StyleWrapper()
+                .bg_img_recolor(lv_colors.ONEKEY_GRAY_1)
+                .bg_img_recolor_opa(lv.OPA.COVER),
+                0
+            )
+        else:
+            self.next_btn.enable()
+            self.next_btn.add_style(
+                StyleWrapper()
+                .bg_img_recolor_opa(lv.OPA.TRANSP),
+                0
+            )
+
+    def next_page(self):
+        self.current_page += 1
+        self.update_account_buttons()
+        self.update_page_buttons()
+
+    def prev_page(self):
+        if self.current_page > 0:
+            self.current_page -= 1
+            self.update_account_buttons()
+            self.update_page_buttons()
+
+    def eventhandler(self, event_obj):
+        event = event_obj.code
+        target = event_obj.get_target()
+        if event == lv.EVENT.CLICKED:
+            if utils.lcd_resume():
+                return
+            
+            if isinstance(target, lv.imgbtn):
+                if target == self.nav_back.nav_btn:
+                    if self.prev_scr is not None:
+                        self.load_screen(self.prev_scr, destroy_self=True)
+                elif target == self.nav_opt.select_btn:
+                    workflow.spawn(self.type_account_index())
+            else:
+                if target == self.back_btn:
+                    self.prev_page()
+                elif target == self.next_btn:
+                    self.next_page()
+                else:
+                    for i, btn in enumerate(self.account_btns):
+                        if target == btn:
+                            for other_btn in self.account_btns:
+                                other_btn.set_uncheck()
+                            
+                            btn.set_checked()
+                            
+                            self.current_account = self.get_page_start() + i
+                            self.prev_scr.current_index = self.current_account - 1
+                            self.prev_scr.update_index_btn_text()
+                            break
+
+    async def type_account_index(self):
+        from trezor.lvglui.scrs.pinscreen import InputNum
+        result = None
+        while True:
+            numscreen = InputNum(
+                title=_(i18n_keys.TITLE__SET_INITIAL_ACCOUNT),
+                subtitle=_(i18n_keys.TITLE__SET_INITIAL_ACCOUNT_ERROR) if result!=None else "",
+                is_pin=False
+            )
+            result = await numscreen.request()
+            
+            if not result: # user cancelled
+                return
+            
+            account_num = int(result)
+            if 1 <= account_num <= 1000000000:
+                break
+        
+        self.current_account = account_num
+        self.current_page = (account_num - 1) // 5
+        self.prev_scr.current_index = account_num - 1
+        self.prev_scr.update_index_btn_text()
+        
+        self.update_account_buttons()
+        self.update_page_buttons()
 
 class NftGallery(Screen):
     def __init__(self, prev_scr=None):
