@@ -586,6 +586,7 @@ class ShowAddress(Screen):
 
             self.init_ui()
 
+            self.prev_session_id = storage.cache.get_session_id()
             self.curr_session_id = storage.cache.start_session()
         else:
             self.container.delete()
@@ -781,6 +782,7 @@ class ShowAddress(Screen):
             if isinstance(target, lv.imgbtn):
                 if target == self.nav_back.nav_btn:
                     storage.cache.end_current_session()
+                    storage.cache.start_session(self.prev_session_id)
                     if self.prev_scr is not None:
                         self.load_screen(self.prev_scr, destroy_self=True)
             else:

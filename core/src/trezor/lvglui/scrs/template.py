@@ -474,7 +474,7 @@ class AddressOffline(FullSizeWindow):
             elif target == self.btn_yes:
                 self.destroy(50)
                 self.channel.publish(ADDRESS_OFFLINE_RETURN_TYPE.DONE)
-            elif target == self.derive_btn:
+            elif hasattr(self, "derive_btn") and target == self.derive_btn:
                 if self.network == "Bitcoin":
                     BTCDeriveSelectionScreen(self, self.addr_type, self.prev_scr)
                 elif self.network == "Ethereum":
