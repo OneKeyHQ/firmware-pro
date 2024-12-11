@@ -25,6 +25,7 @@ __all__ = (
     "confirm_sign_identity",
     "confirm_signverify",
     "show_address",
+    "show_address_offline",
     "show_error_and_raise",
     "show_pubkey",
     "show_success",
@@ -345,6 +346,66 @@ async def show_address(
 
     await loop.sleep(300)
 
+async def show_address_offline(
+    ctx: wire.GenericContext,
+    address: str,
+    *,
+    address_qr: str | None = None,
+    case_sensitive: bool = True,
+    network: str = "",
+    multisig_index: int | None = None,
+    xpubs: Sequence[str] = (),
+    address_extra: str | None = None,
+    title_qr: str | None = None,
+    evm_chain_id: int | None = None,
+    title: str = "",
+    addr_type: str | None = None,
+    prev_scr = None,
+    account_name: str = "",
+) -> None:
+    is_multisig = len(xpubs) > 0
+    from trezor.lvglui.scrs.template import AddressOffline
+
+    by_qr = isinstance(ctx, wire.QRContext)
+    if is_multisig:
+        return await interact(
+            ctx,
+            AddressOffline(
+                title,
+                address,
+                ctx.primary_color,
+                ctx.icon_path,
+                xpubs,
+                address_qr,
+                multisig_index,
+                qr_first=by_qr,
+                network=network,
+            ),
+            "show_address",
+            ButtonRequestType.Address,
+        )
+    res =await interact(
+        ctx,
+        AddressOffline(
+            title if title else _(i18n_keys.TITLE__STR_ADDRESS).format(network),
+            address,
+            ctx.primary_color,
+            ctx.icon_path,
+            address_qr=address_qr,
+            addr_type=addr_type,
+            evm_chain_id=evm_chain_id,
+            qr_first=by_qr,
+            network=network,
+            prev_scr=prev_scr,
+            account_name=account_name,
+        ),
+        "show_address",
+        ButtonRequestType.Address,
+    )
+    from trezor import loop
+
+    await loop.sleep(50)
+    return res
 
 async def show_pubkey(
     ctx: wire.Context,

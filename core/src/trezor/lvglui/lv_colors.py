@@ -42,6 +42,8 @@ class lv_colors:
     ONEKEY_BLACK_2 = LV_COLOR_MAKE(0x1A, 0x1A, 0x1A)
     ONEKEY_BLACK_3 = LV_COLOR_MAKE(0x1E, 0x1E, 0x1E)
     ONEKEY_BLACK_4 = LV_COLOR_MAKE(0x0F, 0x0F, 0x0F)  # slider main disable color
+    ONEKEY_BLACK_5 = LV_COLOR_MAKE(0x16, 0x16, 0x16)  # arrow btn disable color
+
     ONEKEY_GRAY = LV_COLOR_MAKE(
         0x96, 0x96, 0x96
     )  # cancel button disable text/ display item key switch enable border color
