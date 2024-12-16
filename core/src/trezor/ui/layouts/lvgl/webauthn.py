@@ -45,4 +45,4 @@ async def confirm_webauthn_reset() -> bool:
         _(i18n_keys.BUTTON__CANCEL),
         icon_path="A:/res/warning.png",
     )
-    return await screen.request()
+    return bool(await screen.request())

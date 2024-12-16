@@ -107,6 +107,7 @@ DeviceInfo.NFT_voucher                  max_size:32
 DeviceInfo.cpu_info                     max_size:16
 DeviceInfo.pre_firmware                 max_size:16
 
+WriteSEPrivateKey.private_key           max_size:32
 SEPublicKey.public_key                  max_size:64
 WriteSEPublicCert.public_cert           max_size:416
 SEPublicCert.public_cert                max_size:416

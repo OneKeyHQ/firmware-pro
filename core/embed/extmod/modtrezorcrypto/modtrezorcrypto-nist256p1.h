@@ -203,16 +203,18 @@ STATIC mp_obj_t mod_trezorcrypto_nist256p1_verify_recover(mp_obj_t signature,
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_trezorcrypto_nist256p1_verify_recover_obj,
                                  mod_trezorcrypto_nist256p1_verify_recover);
 
-/// def multiply(secret_key: bytes, public_key: bytes) -> bytes:
+/// def multiply(secret_key: bytes, public_key: bytes, inner_secret_key: bool =
+/// False) -> bytes:
 ///     """
 ///     Multiplies point defined by public_key with scalar defined by
 ///     secret_key. Useful for ECDH.
 ///     """
-STATIC mp_obj_t mod_trezorcrypto_nist256p1_multiply(mp_obj_t secret_key,
-                                                    mp_obj_t public_key) {
+STATIC mp_obj_t mod_trezorcrypto_nist256p1_multiply(size_t n_args,
+                                                    const mp_obj_t *args) {
   mp_buffer_info_t sk = {0}, pk = {0};
-  mp_get_buffer_raise(secret_key, &sk, MP_BUFFER_READ);
-  mp_get_buffer_raise(public_key, &pk, MP_BUFFER_READ);
+  mp_get_buffer_raise(args[0], &sk, MP_BUFFER_READ);
+  mp_get_buffer_raise(args[1], &pk, MP_BUFFER_READ);
+  bool inner_secret_key = (n_args == 3 && args[2] == mp_const_true);
   if (sk.len != 32) {
     mp_raise_ValueError("Invalid length of secret key");
   }
@@ -222,19 +224,28 @@ STATIC mp_obj_t mod_trezorcrypto_nist256p1_multiply(mp_obj_t secret_key,
   vstr_t out = {0};
   vstr_init_len(&out, 65);
 #if USE_THD89
-  uint8_t pubkey[65] = {0};
-  if (pk.len == 33) {
-    if (!ecdsa_uncompress_pubkey(&nist256p1, pk.buf, pubkey)) {
-      mp_raise_ValueError("Invalid public key");
+  if (inner_secret_key) {
+    if (0 != ecdh_multiply(&nist256p1, (const uint8_t *)sk.buf,
+                           (const uint8_t *)pk.buf, (uint8_t *)out.buf)) {
+      vstr_clear(&out);
+      mp_raise_ValueError("Multiply failed");
     }
   } else {
-    memcpy(pubkey, pk.buf, 65);
+    uint8_t pubkey[65] = {0};
+    if (pk.len == 33) {
+      if (!ecdsa_uncompress_pubkey(&nist256p1, pk.buf, pubkey)) {
+        mp_raise_ValueError("Invalid public key");
+      }
+    } else {
+      memcpy(pubkey, pk.buf, 65);
+    }
+    if (0 != se_get_shared_key(NIST256P1_NAME, (const uint8_t *)pubkey,
+                               (uint8_t *)out.buf)) {
+      vstr_clear(&out);
+      mp_raise_ValueError("Multiply failed");
+    }
   }
-  if (0 != se_get_shared_key(NIST256P1_NAME, (const uint8_t *)pubkey,
-                             (uint8_t *)out.buf)) {
-    vstr_clear(&out);
-    mp_raise_ValueError("Multiply failed");
-  }
+
 #else
   if (0 != ecdh_multiply(&nist256p1, (const uint8_t *)sk.buf,
                          (const uint8_t *)pk.buf, (uint8_t *)out.buf)) {
@@ -244,8 +255,9 @@ STATIC mp_obj_t mod_trezorcrypto_nist256p1_multiply(mp_obj_t secret_key,
 #endif
   return mp_obj_new_str_from_vstr(&mp_type_bytes, &out);
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_trezorcrypto_nist256p1_multiply_obj,
-                                 mod_trezorcrypto_nist256p1_multiply);
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(
+    mod_trezorcrypto_nist256p1_multiply_obj, 2, 3,
+    mod_trezorcrypto_nist256p1_multiply);
 
 STATIC const mp_rom_map_elem_t mod_trezorcrypto_nist256p1_globals_table[] = {
     {MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_nist256p1)},

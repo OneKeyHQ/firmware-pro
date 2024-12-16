@@ -339,6 +339,7 @@ static void send_msg_features(uint8_t iface_num,
     init_state |= device_serial_set() ? 1 : 0;
     init_state |= se_has_cerrificate() ? (1 << 2) : 0;
     MSG_SEND_ASSIGN_VALUE(initstates, init_state);
+    MSG_SEND_ASSIGN_VALUE(onekey_device_type, OneKeyDeviceType_PRO);
 
   } else {
     MSG_SEND_ASSIGN_STRING(vendor, "onekey.so");
@@ -671,6 +672,25 @@ void process_msg_GetDeviceInfo(uint8_t iface_num, uint32_t msg_size,
   MSG_SEND(DeviceInfo);
 }
 
+void process_msg_WriteSEPrivateKey(uint8_t iface_num, uint32_t msg_size,
+                                   uint8_t *buf) {
+  MSG_RECV_INIT(WriteSEPrivateKey);
+  MSG_RECV(WriteSEPrivateKey);
+
+  if (msg_recv.private_key.size != 32) {
+    send_failure(iface_num, FailureType_Failure_ProcessError,
+                 "Private key size invalid");
+    return;
+  }
+
+  if (se_set_private_key_extern(msg_recv.private_key.bytes)) {
+    send_success(iface_num, "Write private key success");
+  } else {
+    send_failure(iface_num, FailureType_Failure_ProcessError,
+                 "Write private key failed");
+  }
+}
+
 void process_msg_ReadSEPublicKey(uint8_t iface_num, uint32_t msg_size,
                                  uint8_t *buf) {
   uint8_t pubkey[64] = {0};
@@ -727,6 +747,13 @@ void process_msg_SESignMessage(uint8_t iface_num, uint32_t msg_size,
   uint8_t sign[64] = {0};
 
   MSG_SEND_INIT(SEMessageSignature);
+
+  if (se_sign_message_with_write_key((uint8_t *)msg_recv.message.bytes,
+                                     msg_recv.message.size, sign)) {
+    MSG_SEND_ASSIGN_REQUIRED_BYTES(signature, sign, 64);
+    MSG_SEND(SEMessageSignature);
+    return;
+  }
 
   if (se_sign_message((uint8_t *)msg_recv.message.bytes, msg_recv.message.size,
                       sign)) {

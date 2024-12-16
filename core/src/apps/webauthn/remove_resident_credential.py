@@ -34,6 +34,20 @@ async def remove_resident_credential(
     if msg.index is None:
         raise wire.ProcessError("Missing credential index parameter.")
 
+    from trezor.crypto import se_thd89
+    from utime import sleep_ms
+
+    while True:
+        try:
+            ret = se_thd89.fido_seed()
+            if ret:
+                break
+            else:
+                sleep_ms(100)
+                continue
+        except Exception:
+            raise wire.ProcessError("Failed to generate seed.")
+
     cred = get_resident_credential(msg.index)
     if cred is None:
         raise wire.ProcessError("Invalid credential index.")

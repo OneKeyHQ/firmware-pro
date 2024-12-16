@@ -31,6 +31,7 @@ enum MessageType {
     MessageType_SEMessageSignature = 10013;
     MessageType_OnekeyGetFeatures = 10025;
     MessageType_OnekeyFeatures = 10026;
+    MessageType_WriteSEPrivateKey = 10027;
 
     MessageType_Reboot = 30000;
     MessageType_FirmwareUpdateEmmc = 30001;
@@ -523,6 +524,14 @@ message DeviceInfo {
     optional bytes NFT_voucher = 4;
     optional string cpu_info = 5;
     optional string pre_firmware = 6;
+}
+
+/**
+ * Request: Read SE private key
+ * @end
+ */
+message WriteSEPrivateKey {
+    required bytes private_key = 1;
 }
 
 /**

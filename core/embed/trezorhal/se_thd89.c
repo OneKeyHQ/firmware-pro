@@ -1034,6 +1034,29 @@ secbool se_sign_message(uint8_t *msg, uint32_t msg_len, uint8_t *signature) {
   return thd89_transmit(sign, sizeof(sign), signature, &signature_len);
 }
 
+secbool se_sign_message_with_write_key(uint8_t *msg, uint32_t msg_len,
+                                       uint8_t *signature) {
+  uint8_t sign[37] = {0x00, 0xF5, 0x00, 0x04, 0x20};
+  uint16_t signature_len = 64;
+
+  SHA256_CTX ctx = {0};
+  uint8_t result[32] = {0};
+
+  sha256_Init(&ctx);
+  sha256_Update(&ctx, msg, msg_len);
+  sha256_Final(&ctx, result);
+
+  memcpy(sign + 5, result, 32);
+  return thd89_transmit(sign, sizeof(sign), signature, &signature_len);
+}
+
+secbool se_set_private_key_extern(uint8_t key[32]) {
+  uint8_t set_key[37] = {0x00, 0xF6, 0x00, 0x03, 0x20};
+  uint16_t resp_len = 0;
+  memcpy(set_key + 5, key, 32);
+  return thd89_transmit(set_key, sizeof(set_key), NULL, &resp_len);
+}
+
 secbool se_set_session_key_ex(uint8_t addr, const uint8_t *session_key) {
   uint8_t cmd[32] = {0x00, 0xF6, 0x00, 0x02, 0x10};
   uint16_t resp_len = 0;
@@ -2294,5 +2317,84 @@ secbool se_fido_att_sign_digest(const uint8_t *hash, uint8_t *sig) {
     return secfalse;
   }
   memcpy(sig, resp, resp_len);
+  return sectrue;
+}
+
+secbool se_get_fido2_data(uint16_t offset, uint8_t *dest, uint16_t len) {
+  uint8_t cmd[4] = {0};
+  uint16_t recv_len = len;
+  cmd[0] = (offset >> 8) & 0xFF;
+  cmd[1] = offset & 0xFF;
+  cmd[2] = (len >> 8) & 0xFF;
+  cmd[3] = len & 0xFF;
+  if (!se_transmit_mac(SE_INS_READ_DATA, 0x00, 0x03, cmd, sizeof(cmd), dest,
+                       &recv_len)) {
+    return secfalse;
+  }
+  return sectrue;
+}
+
+secbool se_set_fido2_data(uint16_t offset, const uint8_t *src, uint16_t len) {
+  uint8_t cmd[4] = {0};
+  cmd[0] = (offset >> 8) & 0xFF;
+  cmd[1] = offset & 0xFF;
+  cmd[2] = (len >> 8) & 0xFF;
+  cmd[3] = len & 0xFF;
+  memcpy(APDU_DATA, cmd, 4);
+  memcpy(APDU_DATA + 4, src, len);
+  if (!se_transmit_mac(SE_INS_WRITE_DATA, 0x00, 0x03, APDU_DATA, 4 + len, NULL,
+                       NULL)) {
+    return secfalse;
+  }
+  return sectrue;
+}
+
+secbool se_get_fido2_resident_credentials(uint32_t index, uint8_t *dest,
+                                          uint16_t *dst_len) {
+  if (index >= FIDO2_RESIDENT_CREDENTIALS_COUNT) return secfalse;
+  uint8_t buffer[FIDO2_RESIDENT_CREDENTIALS_SIZE];
+  CTAP_credential_id_storage *cred_id = (CTAP_credential_id_storage *)buffer;
+  if (!se_get_fido2_data(index * FIDO2_RESIDENT_CREDENTIALS_SIZE, buffer, 6)) {
+    return secfalse;
+  }
+  if (memcmp(cred_id->credential_id_flag, FIDO2_RESIDENT_CREDENTIALS_FLAGS,
+             4) != 0) {
+    return secfalse;
+  }
+  if (*dst_len < cred_id->credential_length) {
+    return secfalse;
+  }
+  if (!se_get_fido2_data(index * FIDO2_RESIDENT_CREDENTIALS_SIZE + 6,
+                         buffer + 6, cred_id->credential_length)) {
+    return secfalse;
+  }
+  *dst_len = cred_id->credential_length;
+  memcpy(dest, cred_id->rp_id_hash, *dst_len);
+  return sectrue;
+}
+
+secbool se_set_fido2_resident_credentials(uint32_t index, const uint8_t *src,
+                                          uint16_t len) {
+  if (index >= FIDO2_RESIDENT_CREDENTIALS_COUNT) return secfalse;
+  if (len > (FIDO2_RESIDENT_CREDENTIALS_SIZE - 6)) return secfalse;
+  CTAP_credential_id_storage cred_id = {0};
+  memcpy(cred_id.credential_id_flag, FIDO2_RESIDENT_CREDENTIALS_FLAGS, 4);
+  cred_id.credential_length = len;
+  memcpy(cred_id.rp_id_hash, src, len);
+  return se_set_fido2_data(index * FIDO2_RESIDENT_CREDENTIALS_SIZE,
+                           (uint8_t *)&cred_id, 6 + len);
+}
+
+secbool se_delete_fido2_resident_credentials(uint32_t index) {
+  uint8_t buffer[FIDO2_RESIDENT_CREDENTIALS_HEADER_LEN] = {0xff};
+  return se_set_fido2_data(index * FIDO2_RESIDENT_CREDENTIALS_SIZE, buffer,
+                           FIDO2_RESIDENT_CREDENTIALS_HEADER_LEN);
+}
+
+secbool se_delete_all_fido2_credentials(void){
+  if (!se_transmit_mac(SE_INS_WRITE_DATA, 0x00, 0x04, NULL, 0, NULL,
+                       NULL)) {
+    return secfalse;
+  }
   return sectrue;
 }

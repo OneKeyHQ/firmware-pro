@@ -527,6 +527,9 @@ secbool bootloader_usb_loop_factory(const vendor_header* const vhdr,
       case MSG_NAME_TO_ID(GetDeviceInfo):  // GetDeviceInfo
         process_msg_GetDeviceInfo(USB_IFACE_NUM, msg_size, buf);
         break;
+      case MSG_NAME_TO_ID(WriteSEPrivateKey):  // WriteSEPrivateKey
+        process_msg_WriteSEPrivateKey(USB_IFACE_NUM, msg_size, buf);
+        break;
       case MSG_NAME_TO_ID(ReadSEPublicKey):  // ReadSEPublicKey
         process_msg_ReadSEPublicKey(USB_IFACE_NUM, msg_size, buf);
         break;

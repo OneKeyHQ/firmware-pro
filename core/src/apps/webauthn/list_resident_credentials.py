@@ -13,6 +13,19 @@ from . import resident_credentials
 async def list_resident_credentials(
     ctx: wire.Context, msg: WebAuthnListResidentCredentials
 ) -> WebAuthnCredentials:
+    from trezor.crypto import se_thd89
+    from utime import sleep_ms
+
+    while True:
+        try:
+            ret = se_thd89.fido_seed()
+            if ret:
+                break
+            else:
+                sleep_ms(100)
+                continue
+        except Exception:
+            return WebAuthnCredentials(credentials=[])
     await confirm_action(
         ctx,
         "credentials_list",

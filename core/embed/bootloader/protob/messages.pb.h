@@ -36,6 +36,7 @@ typedef enum _MessageType {
     MessageType_MessageType_SEMessageSignature = 10013, 
     MessageType_MessageType_OnekeyGetFeatures = 10025, 
     MessageType_MessageType_OnekeyFeatures = 10026, 
+    MessageType_MessageType_WriteSEPrivateKey = 10027, 
     MessageType_MessageType_Reboot = 30000, 
     MessageType_MessageType_FirmwareUpdateEmmc = 30001, 
     MessageType_MessageType_EmmcFixPermission = 30100, 
@@ -487,6 +488,11 @@ typedef struct _Success {
     char message[256]; 
 } Success;
 
+typedef PB_BYTES_ARRAY_T(32) WriteSEPrivateKey_private_key_t;
+typedef struct _WriteSEPrivateKey { 
+    WriteSEPrivateKey_private_key_t private_key; 
+} WriteSEPrivateKey;
+
 typedef PB_BYTES_ARRAY_T(416) WriteSEPublicCert_public_cert_t;
 typedef struct _WriteSEPublicCert { 
     WriteSEPublicCert_public_cert_t public_cert; 
@@ -573,6 +579,7 @@ extern "C" {
 #define DeviceInfoSettings_init_default          {false, "", false, "", false, ""}
 #define GetDeviceInfo_init_default               {0}
 #define DeviceInfo_init_default                  {false, "", false, "", false, "", false, {0, {0}}, false, "", false, ""}
+#define WriteSEPrivateKey_init_default           {{0, {0}}}
 #define ReadSEPublicKey_init_default             {0}
 #define SEPublicKey_init_default                 {{0, {0}}}
 #define WriteSEPublicCert_init_default           {{0, {0}}}
@@ -611,6 +618,7 @@ extern "C" {
 #define DeviceInfoSettings_init_zero             {false, "", false, "", false, ""}
 #define GetDeviceInfo_init_zero                  {0}
 #define DeviceInfo_init_zero                     {false, "", false, "", false, "", false, {0, {0}}, false, "", false, ""}
+#define WriteSEPrivateKey_init_zero              {{0, {0}}}
 #define ReadSEPublicKey_init_zero                {0}
 #define SEPublicKey_init_zero                    {{0, {0}}}
 #define WriteSEPublicCert_init_zero              {{0, {0}}}
@@ -769,6 +777,7 @@ extern "C" {
 #define SEPublicKey_public_key_tag               1
 #define SESignMessage_message_tag                1
 #define Success_message_tag                      1
+#define WriteSEPrivateKey_private_key_tag        1
 #define WriteSEPublicCert_public_cert_tag        1
 #define EmmcFileRead_file_tag                    1
 #define EmmcFileRead_ui_percentage_tag           2
@@ -1062,6 +1071,11 @@ X(a, STATIC,   OPTIONAL, STRING,   pre_firmware,      6)
 #define DeviceInfo_CALLBACK NULL
 #define DeviceInfo_DEFAULT NULL
 
+#define WriteSEPrivateKey_FIELDLIST(X, a) \
+X(a, STATIC,   REQUIRED, BYTES,    private_key,       1)
+#define WriteSEPrivateKey_CALLBACK NULL
+#define WriteSEPrivateKey_DEFAULT NULL
+
 #define ReadSEPublicKey_FIELDLIST(X, a) \
 
 #define ReadSEPublicKey_CALLBACK NULL
@@ -1128,6 +1142,7 @@ extern const pb_msgdesc_t EmmcDirRemove_msg;
 extern const pb_msgdesc_t DeviceInfoSettings_msg;
 extern const pb_msgdesc_t GetDeviceInfo_msg;
 extern const pb_msgdesc_t DeviceInfo_msg;
+extern const pb_msgdesc_t WriteSEPrivateKey_msg;
 extern const pb_msgdesc_t ReadSEPublicKey_msg;
 extern const pb_msgdesc_t SEPublicKey_msg;
 extern const pb_msgdesc_t WriteSEPublicCert_msg;
@@ -1168,6 +1183,7 @@ extern const pb_msgdesc_t SEMessageSignature_msg;
 #define DeviceInfoSettings_fields &DeviceInfoSettings_msg
 #define GetDeviceInfo_fields &GetDeviceInfo_msg
 #define DeviceInfo_fields &DeviceInfo_msg
+#define WriteSEPrivateKey_fields &WriteSEPrivateKey_msg
 #define ReadSEPublicKey_fields &ReadSEPublicKey_msg
 #define SEPublicKey_fields &SEPublicKey_msg
 #define WriteSEPublicCert_fields &WriteSEPublicCert_msg
@@ -1214,6 +1230,7 @@ extern const pb_msgdesc_t SEMessageSignature_msg;
 #define SESignMessage_size                       1027
 #define Success_size                             258
 #define WipeDevice_size                          0
+#define WriteSEPrivateKey_size                   34
 #define WriteSEPublicCert_size                   419
 
 #ifdef __cplusplus
