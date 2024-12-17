@@ -580,27 +580,53 @@ secbool bootloader_usb_loop_factory(const vendor_header* const vhdr,
   return sectrue;
 }
 
-secbool load_vendor_header_keys(const uint8_t* const data,
-                                vendor_header* const vhdr) {
-  return load_vendor_header(data, FW_KEY_M, FW_KEY_N, FW_KEYS, vhdr);
-}
+// secbool load_vendor_header_keys(const uint8_t* const data,
+//                                 vendor_header* const vhdr) {
+//   return load_vendor_header(data, FW_KEY_M, FW_KEY_N, FW_KEYS, vhdr);
+// }
 
-static secbool check_vendor_header_lock(const vendor_header* const vhdr) {
-  uint8_t lock[FLASH_OTP_BLOCK_SIZE];
-  ensure(flash_otp_read(FLASH_OTP_BLOCK_VENDOR_HEADER_LOCK, 0, lock,
-                        FLASH_OTP_BLOCK_SIZE),
-         NULL);
-  if (0 ==
-      memcmp(lock,
-             "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
-             "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF",
-             FLASH_OTP_BLOCK_SIZE)) {
-    return sectrue;
-  }
-  uint8_t hash[32];
-  vendor_header_hash(vhdr, hash);
-  return sectrue * (0 == memcmp(lock, hash, 32));
-}
+// static secbool check_vendor_header_lock(const vendor_header* const vhdr) {
+//   uint8_t lock[FLASH_OTP_BLOCK_SIZE];
+//   ensure(flash_otp_read(FLASH_OTP_BLOCK_VENDOR_HEADER_LOCK, 0, lock,
+//                         FLASH_OTP_BLOCK_SIZE),
+//          NULL);
+//   if (0 ==
+//       memcmp(lock,
+//              "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
+//              "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF",
+//              FLASH_OTP_BLOCK_SIZE)) {
+//     return sectrue;
+//   }
+//   uint8_t hash[32];
+//   vendor_header_hash(vhdr, hash);
+//   return sectrue * (0 == memcmp(lock, hash, 32));
+// }
+
+// static secbool validate_firmware_headers(vendor_header* const vhdr,
+//                                          image_header* const hdr) {
+//   set_handle_flash_ecc_error(sectrue);
+//   secbool result = secfalse;
+//   while (true) {
+//     // check
+//     if (sectrue !=
+//         load_vendor_header_keys((const uint8_t*)FIRMWARE_START, vhdr))
+//       break;
+
+//     if (sectrue != check_vendor_header_lock(vhdr)) break;
+
+//     if (sectrue !=
+//         load_image_header((const uint8_t*)(FIRMWARE_START + vhdr->hdrlen),
+//                           FIRMWARE_IMAGE_MAGIC, FIRMWARE_IMAGE_MAXSIZE,
+//                           vhdr->vsig_m, vhdr->vsig_n, vhdr->vpub, hdr))
+//       break;
+
+//     // passed, return true
+//     result = sectrue;
+//     break;
+//   }
+//   set_handle_flash_ecc_error(secfalse);
+//   return result;
+// }
 
 #if PRODUCTION
 
@@ -629,36 +655,10 @@ static void check_bootloader_version(void) {
 
 #endif
 
-static secbool validate_firmware_headers(vendor_header* const vhdr,
-                                         image_header* const hdr) {
-  set_handle_flash_ecc_error(sectrue);
-  secbool result = secfalse;
-  while (true) {
-    // check
-    if (sectrue !=
-        load_vendor_header_keys((const uint8_t*)FIRMWARE_START, vhdr))
-      break;
-
-    if (sectrue != check_vendor_header_lock(vhdr)) break;
-
-    if (sectrue !=
-        load_image_header((const uint8_t*)(FIRMWARE_START + vhdr->hdrlen),
-                          FIRMWARE_IMAGE_MAGIC, FIRMWARE_IMAGE_MAXSIZE,
-                          vhdr->vsig_m, vhdr->vsig_n, vhdr->vpub, hdr))
-      break;
-
-    // passed, return true
-    result = sectrue;
-    break;
-  }
-  set_handle_flash_ecc_error(secfalse);
-  return result;
-}
-
 static BOOT_TARGET decide_boot_target(vendor_header* const vhdr,
                                       image_header* const hdr,
-                                      secbool* headers_valid,
-                                      secbool* firmware_valid) {
+                                      secbool* vhdr_valid, secbool* hdr_valid,
+                                      secbool* fw_valid) {
   // get boot target flag
   BOOT_TARGET boot_target = *BOOT_TARGET_FLAG_ADDR;  // cache flag
   *BOOT_TARGET_FLAG_ADDR = BOOT_TARGET_NORMAL;       // consume(reset) flag
@@ -680,12 +680,12 @@ static BOOT_TARGET decide_boot_target(vendor_header* const vhdr,
 
   // check firmware
   set_handle_flash_ecc_error(sectrue);
-  *headers_valid = validate_firmware_headers(vhdr, hdr);
   char err_msg[64];
-  *firmware_valid = verify_firmware(err_msg, sizeof(err_msg));
+  secbool all_good = verify_firmware(vhdr_valid, hdr_valid, fw_valid, err_msg,
+                                     sizeof(err_msg));
   set_handle_flash_ecc_error(secfalse);
 
-  if (*headers_valid != sectrue || *firmware_valid != sectrue) {
+  if (all_good != sectrue) {
     boot_target = BOOT_TARGET_BOOTLOADER;
     return boot_target;
   }
@@ -791,17 +791,18 @@ int main(void) {
 
   vendor_header vhdr;
   image_header hdr;
-  secbool headers_valid = secfalse;
-  secbool firmware_valid = secfalse;
+  secbool vhdr_valid = secfalse;
+  secbool hdr_valid = secfalse;
+  secbool fw_valid = secfalse;
 
   BOOT_TARGET boot_target =
-      decide_boot_target(&vhdr, &hdr, &headers_valid, &firmware_valid);
+      decide_boot_target(&vhdr, &hdr, &vhdr_valid, &hdr_valid, &fw_valid);
+  // boot_target = BOOT_TARGET_BOOTLOADER;
 
   if (boot_target == BOOT_TARGET_BOOTLOADER) {
-    headers_valid = validate_firmware_headers(&vhdr, &hdr);
     display_clear();
 
-    if (sectrue == headers_valid) {
+    if (sectrue == vhdr_valid && sectrue == hdr_valid) {
       ui_bootloader_first(&hdr);
       if (bootloader_usb_loop(&vhdr, &hdr) != sectrue) {
         return 1;
@@ -813,11 +814,6 @@ int main(void) {
       }
     }
   } else if (boot_target == BOOT_TARGET_NORMAL) {
-    // check and load firmware (redundant, no need, since decide_boot_target
-    // already done this)
-    // char err_msg[64];
-    // ensure(verify_firmware(err_msg, sizeof(err_msg)), err_msg);
-
     // check bluetooth key
     device_verify_ble();
 

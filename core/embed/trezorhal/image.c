@@ -575,7 +575,13 @@ secbool install_firmware(const uint8_t* const fw_buffer, const size_t fw_size,
   return sectrue;
 }
 
-secbool verify_firmware(char* error_msg, size_t error_msg_len) {
+secbool verify_firmware(secbool* const vhdr_valid, secbool* const hdr_valid,
+                        secbool* const code_valid, char* error_msg,
+                        size_t error_msg_len) {
+  if (code_valid != NULL) *vhdr_valid = secfalse;
+  if (code_valid != NULL) *hdr_valid = secfalse;
+  if (code_valid != NULL) *code_valid = secfalse;
+
   // sanity check
   if (error_msg == NULL  // must provide error reporting msg buffer
   )
@@ -600,6 +606,7 @@ secbool verify_firmware(char* error_msg, size_t error_msg_len) {
                              error_msg_len);
                      return secfalse;
                    });
+  if (code_valid != NULL) *vhdr_valid = sectrue;
 
   // verify hdr
   ExecuteCheck_ADV(
@@ -610,6 +617,7 @@ secbool verify_firmware(char* error_msg, size_t error_msg_len) {
         strncpy(error_msg, "Firmware image header invalid!", error_msg_len);
         return secfalse;
       });
+  if (code_valid != NULL) *hdr_valid = sectrue;
 
   // verify p1
   ExecuteCheck_ADV(
@@ -657,6 +665,8 @@ secbool verify_firmware(char* error_msg, size_t error_msg_len) {
         strncpy(error_msg, "Firmware code invalid! (P2)", error_msg_len);
         return secfalse;
       });
+
+  if (code_valid != NULL) *code_valid = sectrue;
 
   return sectrue;
 }
