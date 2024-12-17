@@ -21,14 +21,13 @@ typedef enum {
   HW_VER_3P0A = 1964,
 } HW_VER_t;
 
-extern const char* const HW_VER_str[];
-
 // max adc voltage 3.3v = 3300mv
 #define HW_VER_ADC_VOLTAGE_MAX 3300
 #define HW_VER_ADC_RANGE_MAX 0xffff
 // +/- 5% of mv value
 #define HW_VER_PRECISION_PERCENT 15
 
+char const* hw_ver_to_str(HW_VER_t hw_ver);
 uint16_t get_hw_ver_adc_raw();
 uint16_t get_hw_ver_adc_mv();
 HW_VER_t get_hw_ver();
