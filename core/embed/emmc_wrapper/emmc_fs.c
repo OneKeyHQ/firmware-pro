@@ -541,7 +541,10 @@ bool emmc_fs_dir_list_internal(
         {
             // check length
             if ( (strlen(list_subdirs_buff) + strlen(path_buff_internal) + 1) >= list_subdirs_len )
+            {
+                emmc_fs_dbgex_set("list_subdirs_len overflow");
                 return false;
+            }
 
             // append to the list
             strcat(list_subdirs_buff, path_buff_internal);
@@ -557,7 +560,10 @@ bool emmc_fs_dir_list_internal(
         {
             // check length
             if ( (strlen(list_files_buff) + strlen(path_buff_internal) + 1) >= list_files_len )
+            {
+                emmc_fs_dbgex_set("list_files_len overflow");
                 return false;
+            }
 
             // append to the list
             strcat(list_files_buff, path_buff_internal);
