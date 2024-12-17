@@ -1080,7 +1080,7 @@ void device_burnin_test(bool force) {
       }
 
       if (!ble_name_state()) {
-        ble_cmd_req(BLE_VER, BLE_VER_ADV);
+        ble_cmd_req(BLE_INFO, BLE_INFO_ADV_NAME);
         hal_delay(5);
       }
       if (!ble_battery_state()) {

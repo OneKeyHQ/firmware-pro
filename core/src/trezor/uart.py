@@ -32,6 +32,7 @@ _CMD_LED_BRIGHTNESS = const(12)
 _CMD_BATTERY_INFO = const(13)
 _CMD_BLE_BUILD_ID = const(16)
 _CMD_BLE_HASH = const(17)
+_CMD_BLE_MAC = const(18)
 CHARING_TYPE = 0  # 1 VIA USB / 2 VIA WIRELESS
 SCREEN: PairCodeDisplay | None = None
 BLE_ENABLED: bool | None = None
@@ -266,6 +267,8 @@ async def process_push() -> None:
         _retrieve_ble_build_id(value)
     elif cmd == _CMD_BLE_HASH:
         _retrieve_ble_hash(value)
+    elif cmd == _CMD_BLE_MAC:
+        _retrieve_ble_mac(value)
     else:
         if __debug__:
             print("unknown or not care command:", cmd)
@@ -513,6 +516,11 @@ def _retrieve_ble_hash(value: bytes) -> None:
         utils.BLE_HASH = value
 
 
+def _retrieve_ble_mac(value: bytes) -> None:
+    if value != b"":
+        utils.BLE_MAC = value
+
+
 def _request_ble_name():
     """Request ble name."""
     BLE_CTRL.ctrl(0x83, b"\x01")
@@ -575,6 +583,9 @@ def fetch_ble_info():
 
     if utils.BLE_HASH is None:
         BLE_CTRL.ctrl(0x83, b"\x06")
+
+    if utils.BLE_MAC is None:
+        BLE_CTRL.ctrl(0x83, b"\x07")
 
 
 def fetch_battery_temperature():
@@ -653,6 +664,11 @@ def get_ble_build_id() -> str:
 
 def get_ble_hash() -> bytes:
     return utils.BLE_HASH if utils.BLE_HASH else b""
+
+
+def get_ble_mac() -> bytes:
+    """Get ble MAC address."""
+    return utils.BLE_MAC if utils.BLE_MAC else b""
 
 
 def is_ble_opened() -> bool:

@@ -27,6 +27,9 @@ extern uint8_t dev_pwr_sta;
 #define BLE_CMD_FLASHLED_STATE 0x0C
 #define BLE_CMD_BATTERY_INFO 0x0D
 #define BLE_CMD_DEV_KEY 0x0E
+#define BLE_CMD_BT_BUILD_ID 0x10
+#define BLE_CMD_BT_HASH 0x11
+#define BLE_CMD_BT_MAC 0x12
 
 #define BLE_KEY_RESP_SUCCESS 0x00
 #define BLE_KEY_RESP_FAILED 0x01
@@ -39,19 +42,25 @@ extern uint8_t dev_pwr_sta;
 #define BLE_BT_OFF 0x02
 #define BLE_BT_DISCON 0x03
 #define BLE_BT_STA 0x04
+
 #define BLE_PWR 0x82
 #define BLE_PWR_SYS_OFF 0x01
-#define BLE_PWR_EMMC_OFF 0x02
-#define BLE_PWR_EMMC_ON 0x03
+// #define BLE_PWR_EMMC_OFF 0x02
+// #define BLE_PWR_EMMC_ON 0x03
 #define BLE_PWR_EQ 0x04
 #define BLE_PWR_CHARGING 0x05
 #define BLE_PWR_CHARGE_ENABLE 0x06
 #define BLE_PWR_CHARGE_DISABLE 0x07
-#define BLE_VER 0x83
-#define BLE_VER_ADV 0x01
-#define BLE_VER_FW 0x02
-#define BLE_VER_PROTO 0x03
-#define BLE_VER_BOOT 0x04
+
+#define BLE_INFO 0x83
+#define BLE_INFO_ADV_NAME 0x01
+#define BLE_INFO_VER_FW 0x02
+#define BLE_INFO_VER_SD 0x03
+#define BLE_INFO_VER_BOOT 0x04
+#define BLE_INFO_BUILD_ID 0x05
+#define BLE_INFO_HASH 0x06
+#define BLE_INFO_MAC_ADDR 0x07
+
 #define BLE_REBOOT 0x84
 #define BLE_REBOOT_SYS 0x01
 
@@ -80,12 +89,18 @@ void ble_uart_poll(void);
 bool ble_is_enable(void);
 bool ble_name_state(void);
 bool ble_ver_state(void);
+bool ble_mac_state(void);
+bool ble_build_state(void);
+bool ble_hash_state(void);
 bool ble_battery_state(void);
 bool ble_charging_state(void);
 uint32_t ble_power_button_state(void);
 void ble_power_button_state_clear(void);
 char *ble_get_name(void);
 char *ble_get_ver(void);
+uint8_t *ble_get_build(void);
+uint8_t *ble_get_hash(void);
+uint8_t *ble_get_mac(void);
 bool ble_switch_state(void);
 void ble_set_switch(bool flag);
 bool ble_get_switch(void);

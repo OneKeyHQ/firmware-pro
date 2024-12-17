@@ -60,6 +60,7 @@ else:
 BLE_NAME: str | None = None
 BLE_BUILD_ID: str | None = None
 BLE_HASH: bytes | None = None
+BLE_MAC: bytes | None = None
 DISABLE_ANIMATION = 0
 BLE_CONNECTED: bool | None = None
 BATTERY_CAP: int | None = None

@@ -11,6 +11,9 @@ uint8_t dev_pwr_sta = 0;
 static usart_msg ble_usart_msg;
 static bool get_ble_name = false;
 static bool get_ble_ver = false;
+static bool get_ble_build = false;
+static bool get_ble_hash = false;
+static bool get_ble_mac = false;
 static bool get_ble_proto_ver = false;
 static bool get_ble_boot_ver = false;
 static bool get_ble_battery = false;
@@ -23,6 +26,9 @@ static char ble_name[BLE_NAME_LEN + 1] = {0};
 static char ble_ver[16] = {0};
 static char ble_proto_ver[16 + 1] = {0};
 static char ble_boot_ver[6] = {0};
+static uint8_t ble_build[8] = {0};
+static uint8_t ble_hash[32] = {0};
+static uint8_t ble_mac_addr[6] = {0};
 static uint8_t dev_press_sta = 0;
 static uint8_t dev_pwr = 0;
 static int ble_request_state = -1;
@@ -69,7 +75,7 @@ bool ble_get_version(char **ver) {
   //   *ver = ble_ver;
   //   return true;
   // }
-  // ble_cmd_req(BLE_VER, BLE_VER_FW);
+  // ble_cmd_req(BLE_INFO, BLE_INFO_VER_FW);
   // uint8_t counter = 0;
   // while (1) {
   //   ble_uart_poll();
@@ -81,7 +87,7 @@ bool ble_get_version(char **ver) {
   //   if (counter > 20) {
   //     return false;
   //   }
-  //   ble_cmd_req(BLE_VER, BLE_VER_FW);
+  //   ble_cmd_req(BLE_INFO, BLE_INFO_VER_FW);
   // }
   ble_refresh_dev_info();
   *ver = ble_ver;
@@ -223,8 +229,10 @@ bool ble_get_battery_inner_temp(uint16_t *temp) {
 bool ble_connect_state(void) { return ble_connect; }
 
 bool ble_name_state(void) { return get_ble_name; }
-
 bool ble_ver_state(void) { return get_ble_ver; }
+bool ble_mac_state(void) { return get_ble_mac; }
+bool ble_build_state(void) { return get_ble_build; }
+bool ble_hash_state(void) { return get_ble_hash; }
 
 bool ble_battery_state(void) { return get_ble_battery; }
 
@@ -239,8 +247,10 @@ uint8_t ble_get_charge_type(void) { return ble_charging_type; }
 // Since RELEASED event won't be reported
 // we have to clear this locally cached status
 void ble_power_button_state_clear(void) { dev_press_sta = 0; }
-
 char *ble_get_name(void) { return ble_name; }
+uint8_t *ble_get_build(void) { return ble_build; }
+uint8_t *ble_get_hash(void) { return ble_hash; }
+uint8_t *ble_get_mac(void) { return ble_mac_addr; }
 
 char *ble_get_ver(void) { return ble_ver; }
 
@@ -390,6 +400,22 @@ void ble_uart_poll(void) {
         ble_request_state = 0;
       }
       break;
+    case BLE_CMD_BT_BUILD_ID:
+      memcpy(ble_build, (uint8_t *)ble_usart_msg.cmd_vale, sizeof(ble_build));
+      ble_build[sizeof(ble_build) - 1] = (uint8_t)'\0';
+      // as it's stroed as a string on nrf, raw data is also string
+      // using byte here is for easy processing
+      get_ble_build = true;
+      break;
+    case BLE_CMD_BT_HASH:
+      memcpy(ble_hash, (uint8_t *)ble_usart_msg.cmd_vale, sizeof(ble_hash));
+      get_ble_hash = true;
+      break;
+    case BLE_CMD_BT_MAC:
+      memcpy(ble_mac_addr, (uint8_t *)ble_usart_msg.cmd_vale,
+             sizeof(ble_mac_addr));
+      get_ble_mac = true;
+      break;
     default:
       break;
   }
@@ -397,12 +423,27 @@ void ble_uart_poll(void) {
 
 void ble_get_dev_info(void) {
   if (!ble_name_state()) {
-    ble_cmd_req(BLE_VER, BLE_VER_ADV);
+    ble_cmd_req(BLE_INFO, BLE_INFO_ADV_NAME);
     hal_delay(5);
   }
 
   if (!ble_ver_state()) {
-    ble_cmd_req(BLE_VER, BLE_VER_FW);
+    ble_cmd_req(BLE_INFO, BLE_INFO_VER_FW);
+    hal_delay(5);
+  }
+
+  if (!ble_mac_state()) {
+    ble_cmd_req(BLE_INFO, BLE_INFO_MAC_ADDR);
+    hal_delay(5);
+  }
+
+  if (!ble_build_state()) {
+    ble_cmd_req(BLE_INFO, BLE_INFO_BUILD_ID);
+    hal_delay(5);
+  }
+
+  if (!ble_hash_state()) {
+    ble_cmd_req(BLE_INFO, BLE_INFO_HASH);
     hal_delay(5);
   }
 
@@ -435,14 +476,14 @@ void ble_refresh_dev_info(void) {
   // get_ble_name = false;
   // while(false == get_ble_name)
   // {
-  //   ble_cmd_req(BLE_VER, BLE_VER_ADV);
+  //   ble_cmd_req(BLE_INFO, BLE_INFO_ADV_NAME);
   //   hal_delay(5);
   //   ble_uart_poll();
   // }
 
   get_ble_ver = false;
   while (!get_ble_ver) {
-    ble_cmd_req(BLE_VER, BLE_VER_FW);
+    ble_cmd_req(BLE_INFO, BLE_INFO_VER_FW);
     hal_delay(5);
     ble_uart_poll();
   }
