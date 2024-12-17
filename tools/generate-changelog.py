@@ -81,7 +81,6 @@ def current_date(project):
 
     if (
         parts[-3:] == ("core", "embed", "bootloader")
-        or parts[-3:] == ("core", "embed", "bootloader_ci")
         or parts[-2:] == ("legacy", "bootloader")
         or parts[-2:] == ("legacy", "intermediate_fw")
     ):

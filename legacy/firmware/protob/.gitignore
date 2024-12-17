@@ -1,8 +1,0 @@
-*.pb
-*_pb2.py
-*.pb.c
-*.pb.h
-*.pyc
-messages_map.h
-messages_map_limits.h
-__pycache__/

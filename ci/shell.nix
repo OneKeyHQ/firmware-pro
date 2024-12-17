@@ -13,11 +13,6 @@ let
     url = "https://github.com/NixOS/nixpkgs/archive/c58e6fbf258df1572b535ac1868ec42faf7675dd.tar.gz";
     sha256 = "18pna0yinvdprhhcmhyanlgrmgf81nwpc0j2z9fy9mc8cqkx3937";
   }) { overlays = [ rustOverlay ]; };
-  # commit before python36 was removed
-  oldPythonNixpkgs = import (builtins.fetchTarball {
-    url = "https://github.com/NixOS/nixpkgs/archive/b9126f77f553974c90ab65520eff6655415fc5f4.tar.gz";
-    sha256 = "02s3qkb6kz3ndyx7rfndjbvp4vlwiqc42fxypn3g6jnc0v5jyz95";
-  }) { };
   # commit emulator works fine
   sdlnixpkgs = import (builtins.fetchTarball {
     url = "https://github.com/NixOS/nixpkgs/archive/1882c6b7368fd284ad01b0a5b5601ef136321292.tar.gz";
@@ -48,8 +43,7 @@ let
   rustProfiles = nixpkgs.rust-bin.nightly."2023-04-14";
   rustNightly = rustProfiles.minimal.override {
     targets = [
-      "thumbv7em-none-eabihf" # TT
-      "thumbv7m-none-eabi"    # T1
+      "thumbv7em-none-eabihf"
     ];
     # we use rustfmt from nixpkgs because it's built with the nighly flag needed for wrap_comments
     # to use official binary, remove rustfmt from buildInputs and add it to extensions:
@@ -68,10 +62,6 @@ stdenvNoCC.mkDerivation ({
     # NOTE: running e.g. "python3" in the shell runs the first version in the following list,
     #       and poetry uses the default version (currently 3.10)
     python310
-    python39
-    python38
-    oldPythonNixpkgs.python37
-    oldPythonNixpkgs.python36
   ] ++ [
     sdlnixpkgs.SDL2
     sdlnixpkgs.SDL2_image

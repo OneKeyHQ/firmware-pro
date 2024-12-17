@@ -1,1 +1,0 @@
-../firmware/bl_data.py

@@ -8,9 +8,6 @@ BUILD_DIR             = build
 BOARDLOADER_BUILD_DIR = $(BUILD_DIR)/boardloader
 BOAR_DEV_REFLASH_BUILD_DIR  = $(BUILD_DIR)/boardloader_reflash_dev
 BOOTLOADER_BUILD_DIR  = $(BUILD_DIR)/bootloader
-BOOTLOADER_CI_BUILD_DIR  = $(BUILD_DIR)/bootloader_ci
-PRODTEST_BUILD_DIR    = $(BUILD_DIR)/prodtest
-REFLASH_BUILD_DIR     = $(BUILD_DIR)/reflash
 FIRMWARE_BUILD_DIR    = $(BUILD_DIR)/firmware
 UNIX_BUILD_DIR        = $(BUILD_DIR)/unix
 RUST_BUILD_DIR        = $(BUILD_DIR)/rust
@@ -160,7 +157,7 @@ templates_check: ## check that Mako-rendered files match their templates
 
 ## build commands:
 
-build: build_boardloader build_bootloader build_firmware build_prodtest build_unix ## build all
+build: build_boardloader build_bootloader build_firmware build_unix ## build all
 
 build_embed: build_boardloader build_bootloader build_firmware # build boardloader, bootloader, firmware
 
@@ -178,17 +175,6 @@ build_bootloader: CFLAGS += -DSCM_REVISION='\"$(SCM_REVISION)\"'
 build_bootloader: ## build bootloader
 	$(SCONS) CFLAGS="$(CFLAGS)" PRODUCTION="$(PRODUCTION)" TREZOR_MODEL="$(TREZOR_MODEL)" PRODUCTION_MODEL="$(PRODUCTION_MODEL)" $(BOOTLOADER_BUILD_DIR)/bootloader.bin
 	cp $(BOOTLOADER_BUILD_DIR)/bootloader.bin $(BOOTLOADER_BUILD_DIR)/$(BOOT_BUILD_NAME).bin
-
-build_bootloader_ci: ## build CI device testing bootloader
-	$(SCONS) CFLAGS="$(CFLAGS)" PRODUCTION="$(PRODUCTION)" TREZOR_MODEL="$(TREZOR_MODEL)" $(BOOTLOADER_CI_BUILD_DIR)/bootloader.bin
-
-build_prodtest: ## build production test firmware
-	$(SCONS) CFLAGS="$(CFLAGS)" PRODUCTION="$(PRODUCTION)" TREZOR_MODEL="$(TREZOR_MODEL)" $(PRODTEST_BUILD_DIR)/prodtest.bin
-
-build_reflash: ## build reflash firmware + reflash image
-	$(SCONS) CFLAGS="$(CFLAGS)" PRODUCTION="$(PRODUCTION)" TREZOR_MODEL="$(TREZOR_MODEL)" $(REFLASH_BUILD_DIR)/reflash.bin
-	dd if=build/boardloader/boardloader.bin of=$(REFLASH_BUILD_DIR)/sdimage.bin bs=1 seek=0
-	dd if=build/bootloader/bootloader.bin of=$(REFLASH_BUILD_DIR)/sdimage.bin bs=1 seek=49152
 
 build_firmware: CFLAGS += -DBUILD_ID='\"$(FIRMWARE_BUILD_NAME)\"'
 build_firmware: CFLAGS += -DSCM_REVISION='\"$(SCM_REVISION)\"'
@@ -210,7 +196,7 @@ build_cross: ## build mpy-cross port
 
 ## clean commands:
 
-clean: clean_boardloader clean_bootloader clean_bootloader_ci clean_prodtest clean_reflash clean_firmware clean_unix clean_cross ## clean all
+clean: clean_boardloader clean_bootloader clean_firmware clean_unix clean_cross ## clean all
 	rm -f ".sconsign.dblite"
 
 clean_boardloader: ## clean boardloader build
@@ -221,15 +207,6 @@ clean_boardloader_reflash_dev: ## clean boardloader_reflash_dev build
 
 clean_bootloader: ## clean bootloader build
 	rm -rf $(BOOTLOADER_BUILD_DIR)
-
-clean_bootloader_ci: ## clean bootloader_ci build
-	rm -rf $(BOOTLOADER_CI_BUILD_DIR)
-
-clean_prodtest: ## clean prodtest build
-	rm -rf $(PRODTEST_BUILD_DIR)
-
-clean_reflash: ## clean reflash build
-	rm -rf $(REFLASH_BUILD_DIR)
 
 clean_firmware: ## clean firmware build
 	rm -rf $(FIRMWARE_BUILD_DIR) $(RUST_BUILD_DIR)
@@ -282,9 +259,6 @@ gdb_boardloader: $(BOARDLOADER_BUILD_DIR)/boardloader.elf ## start remote gdb se
 gdb_bootloader: $(BOOTLOADER_BUILD_DIR)/bootloader.elf ## start remote gdb session to openocd with bootloader symbols
 	$(GDB) $<
 
-gdb_prodtest: $(PRODTEST_BUILD_DIR)/prodtest.elf ## start remote gdb session to openocd with prodtest symbols
-	$(GDB) $<
-
 gdb_firmware: $(FIRMWARE_BUILD_DIR)/firmware.elf ## start remote gdb session to openocd with firmware symbols
 	$(GDB) $<
 
@@ -309,7 +283,6 @@ combine: ## combine boardloader + bootloader + prodtest into one combined image
 	./tools/combine_firmware \
 		$(BOARDLOADER_START) $(BOARDLOADER_BUILD_DIR)/boardloader.bin \
 		$(BOOTLOADER_START) $(BOOTLOADER_BUILD_DIR)/bootloader.bin \
-		$(PRODTEST_START) $(PRODTEST_BUILD_DIR)/prodtest.bin \
 		> $(PRODTEST_BUILD_DIR)/combined.bin
 
 coverage:  # generate coverage report

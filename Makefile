@@ -56,10 +56,6 @@ changelog_check: ## check changelog format
 	./tools/generate-changelog.py --check core
 	./tools/generate-changelog.py --check core/embed/boardloader
 	./tools/generate-changelog.py --check core/embed/bootloader
-	./tools/generate-changelog.py --check core/embed/bootloader_ci
-	./tools/generate-changelog.py --check legacy/bootloader
-	./tools/generate-changelog.py --check legacy/firmware
-	./tools/generate-changelog.py --check legacy/intermediate_fw
 	./tools/generate-changelog.py --check python
 
 yaml_check: ## check yaml formatting
@@ -135,6 +131,6 @@ ci_docs: ## generate CI documentation
 ci_docs_check: ## check that generated CI documentation is up to date
 	./tools/generate_ci_docs.py --check
 
-gen:  mocks icons templates protobuf ci_docs ## regenerate auto-generated files from sources
+gen:  mocks icons templates protobuf ## regenerate auto-generated files from sources
 
-gen_check: mocks_check icons_check templates_check protobuf_check ci_docs_check ## check validity of auto-generated files
+gen_check: mocks_check icons_check templates_check protobuf_check ## check validity of auto-generated files
