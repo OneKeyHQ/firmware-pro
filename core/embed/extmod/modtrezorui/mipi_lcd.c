@@ -470,7 +470,7 @@ void st7701_init_sequence(void) {
   st7701_dsi(0xe5, 0x00, 0x00);  // ?
 }
 
-#define LED_PWM_TIM_PERIOD (100)
+#define LED_PWM_TIM_PERIOD (50)
 
 int display_backlight(int val) {
   if (DISPLAY_BACKLIGHT != val && val >= 0 && val <= 255) {
@@ -616,16 +616,18 @@ void lcd_pwm_init(void) {
   TIM_HandleTypeDef TIM1_Handle;
   TIM1_Handle.Instance = TIM1;
   TIM1_Handle.Init.Period = LED_PWM_TIM_PERIOD - 1;
-  // TIM1/APB2 source frequency equals to SystemCoreClock in our configuration,
+  // TIM1/APB2 source frequency equals to fCPU in our configuration,
   // we want 1 MHz
-  TIM1_Handle.Init.Prescaler = SystemCoreClock / 2 / 1000000 - 1;
+  TIM1_Handle.Init.Prescaler =
+      SystemCoreClock / 1000000 / 4 - 1;  // APB is fCPU/2(AHB)/2(APB)
   TIM1_Handle.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   TIM1_Handle.Init.CounterMode = TIM_COUNTERMODE_UP;
   TIM1_Handle.Init.RepetitionCounter = 0;
   HAL_TIM_PWM_Init(&TIM1_Handle);
 
   TIM_OC_InitTypeDef TIM_OC_InitStructure;
-  TIM_OC_InitStructure.Pulse = LED_PWM_TIM_PERIOD - 1;
+  TIM_OC_InitStructure.Pulse =
+      (LED_PWM_TIM_PERIOD / 2 - 1);  // default 50% dutycycle
   TIM_OC_InitStructure.OCMode = TIM_OCMODE_PWM2;
   TIM_OC_InitStructure.OCPolarity = TIM_OCPOLARITY_HIGH;
   TIM_OC_InitStructure.OCFastMode = TIM_OCFAST_DISABLE;
