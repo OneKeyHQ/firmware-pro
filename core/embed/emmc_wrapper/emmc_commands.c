@@ -1579,7 +1579,7 @@ int process_msg_EmmcDirList(uint8_t iface_num, uint32_t msg_size, uint8_t* buf)
     MSG_INIT(msg_recv, EmmcDirList);
     MSG_RECV_RET_ON_ERR(msg_recv, EmmcDirList);
 
-    const size_t max_list_len = 8192;
+    const size_t max_list_len = 32 * 1024;
 
     typedef struct
     {
