@@ -453,6 +453,20 @@ apps.aptos.sign_tx
 import apps.aptos.sign_tx
 apps.base
 import apps.base
+apps.benfen
+import apps.benfen
+apps.benfen.get_address
+import apps.benfen.get_address
+apps.benfen.helper
+import apps.benfen.helper
+apps.benfen.layout
+import apps.benfen.layout
+apps.benfen.sign_message
+import apps.benfen.sign_message
+apps.benfen.sign_tx
+import apps.benfen.sign_tx
+apps.benfen.tx_parser
+import apps.benfen.tx_parser
 apps.bitcoin
 import apps.bitcoin
 apps.bitcoin.addresses

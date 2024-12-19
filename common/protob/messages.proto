@@ -554,6 +554,16 @@ enum MessageType {
     MessageType_AlephiumSignMessage = 12109 [(wire_in) = true];
     MessageType_AlephiumMessageSignature = 12110 [(wire_out) = true];
 
+    // benfen
+    MessageType_BenfenGetAddress = 12201 [(wire_in) = true];
+    MessageType_BenfenAddress = 12202 [(wire_out) = true];
+    MessageType_BenfenSignTx = 12203 [(wire_in) = true];
+    MessageType_BenfenSignedTx = 12204 [(wire_out) = true];
+    MessageType_BenfenSignMessage = 12205 [(wire_in) = true];
+    MessageType_BenfenMessageSignature = 12206 [(wire_out) = true];
+    MessageType_BenfenTxRequest = 12207 [(wire_out) = true];
+    MessageType_BenfenTxAck = 12208 [(wire_in) = true];
+
     
     //onekey
     MessageType_DeviceBackToBoot = 903 [(wire_in) = true];

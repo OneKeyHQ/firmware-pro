@@ -410,6 +410,14 @@ class MessageType(IntEnum):
     AlephiumBytecodeAck = 12108
     AlephiumSignMessage = 12109
     AlephiumMessageSignature = 12110
+    BenfenGetAddress = 12201
+    BenfenAddress = 12202
+    BenfenSignTx = 12203
+    BenfenSignedTx = 12204
+    BenfenSignMessage = 12205
+    BenfenMessageSignature = 12206
+    BenfenTxRequest = 12207
+    BenfenTxAck = 12208
     DeviceBackToBoot = 903
     RebootToBoardloader = 904
     DeviceInfoSettings = 10001
@@ -1159,6 +1167,148 @@ class AptosMessagePayload(protobuf.MessageType):
         self.address = address
         self.chain_id = chain_id
         self.application = application
+
+
+class BenfenGetAddress(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 12201
+    FIELDS = {
+        1: protobuf.Field("address_n", "uint32", repeated=True, required=False),
+        2: protobuf.Field("show_display", "bool", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        address_n: Optional[Sequence["int"]] = None,
+        show_display: Optional["bool"] = None,
+    ) -> None:
+        self.address_n: Sequence["int"] = address_n if address_n is not None else []
+        self.show_display = show_display
+
+
+class BenfenAddress(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 12202
+    FIELDS = {
+        1: protobuf.Field("address", "string", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        address: Optional["str"] = None,
+    ) -> None:
+        self.address = address
+
+
+class BenfenSignTx(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 12203
+    FIELDS = {
+        1: protobuf.Field("address_n", "uint32", repeated=True, required=False),
+        2: protobuf.Field("raw_tx", "bytes", repeated=False, required=True),
+        3: protobuf.Field("data_initial_chunk", "bytes", repeated=False, required=False),
+        4: protobuf.Field("coin_type", "bytes", repeated=False, required=False),
+        5: protobuf.Field("data_length", "uint32", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        raw_tx: "bytes",
+        address_n: Optional[Sequence["int"]] = None,
+        data_initial_chunk: Optional["bytes"] = b'',
+        coin_type: Optional["bytes"] = None,
+        data_length: Optional["int"] = None,
+    ) -> None:
+        self.address_n: Sequence["int"] = address_n if address_n is not None else []
+        self.raw_tx = raw_tx
+        self.data_initial_chunk = data_initial_chunk
+        self.coin_type = coin_type
+        self.data_length = data_length
+
+
+class BenfenSignedTx(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 12204
+    FIELDS = {
+        1: protobuf.Field("public_key", "bytes", repeated=False, required=True),
+        2: protobuf.Field("signature", "bytes", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        public_key: "bytes",
+        signature: "bytes",
+    ) -> None:
+        self.public_key = public_key
+        self.signature = signature
+
+
+class BenfenTxRequest(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 12207
+    FIELDS = {
+        1: protobuf.Field("data_length", "uint32", repeated=False, required=False),
+        2: protobuf.Field("public_key", "bytes", repeated=False, required=False),
+        3: protobuf.Field("signature", "bytes", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        data_length: Optional["int"] = None,
+        public_key: Optional["bytes"] = None,
+        signature: Optional["bytes"] = None,
+    ) -> None:
+        self.data_length = data_length
+        self.public_key = public_key
+        self.signature = signature
+
+
+class BenfenTxAck(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 12208
+    FIELDS = {
+        1: protobuf.Field("data_chunk", "bytes", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        data_chunk: "bytes",
+    ) -> None:
+        self.data_chunk = data_chunk
+
+
+class BenfenSignMessage(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 12205
+    FIELDS = {
+        1: protobuf.Field("address_n", "uint32", repeated=True, required=False),
+        2: protobuf.Field("message", "bytes", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        message: "bytes",
+        address_n: Optional[Sequence["int"]] = None,
+    ) -> None:
+        self.address_n: Sequence["int"] = address_n if address_n is not None else []
+        self.message = message
+
+
+class BenfenMessageSignature(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 12206
+    FIELDS = {
+        1: protobuf.Field("signature", "bytes", repeated=False, required=True),
+        2: protobuf.Field("address", "string", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        signature: "bytes",
+        address: "str",
+    ) -> None:
+        self.signature = signature
+        self.address = address
 
 
 class BinanceGetAddress(protobuf.MessageType):

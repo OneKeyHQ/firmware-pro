@@ -414,6 +414,138 @@ if TYPE_CHECKING:
         def is_type_of(cls, msg: Any) -> TypeGuard["AptosMessagePayload"]:
             return isinstance(msg, cls)
 
+    class BenfenGetAddress(protobuf.MessageType):
+        address_n: "list[int]"
+        show_display: "bool | None"
+
+        def __init__(
+            self,
+            *,
+            address_n: "list[int] | None" = None,
+            show_display: "bool | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["BenfenGetAddress"]:
+            return isinstance(msg, cls)
+
+    class BenfenAddress(protobuf.MessageType):
+        address: "str | None"
+
+        def __init__(
+            self,
+            *,
+            address: "str | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["BenfenAddress"]:
+            return isinstance(msg, cls)
+
+    class BenfenSignTx(protobuf.MessageType):
+        address_n: "list[int]"
+        raw_tx: "bytes"
+        data_initial_chunk: "bytes"
+        coin_type: "bytes | None"
+        data_length: "int | None"
+
+        def __init__(
+            self,
+            *,
+            raw_tx: "bytes",
+            address_n: "list[int] | None" = None,
+            data_initial_chunk: "bytes | None" = None,
+            coin_type: "bytes | None" = None,
+            data_length: "int | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["BenfenSignTx"]:
+            return isinstance(msg, cls)
+
+    class BenfenSignedTx(protobuf.MessageType):
+        public_key: "bytes"
+        signature: "bytes"
+
+        def __init__(
+            self,
+            *,
+            public_key: "bytes",
+            signature: "bytes",
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["BenfenSignedTx"]:
+            return isinstance(msg, cls)
+
+    class BenfenTxRequest(protobuf.MessageType):
+        data_length: "int | None"
+        public_key: "bytes | None"
+        signature: "bytes | None"
+
+        def __init__(
+            self,
+            *,
+            data_length: "int | None" = None,
+            public_key: "bytes | None" = None,
+            signature: "bytes | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["BenfenTxRequest"]:
+            return isinstance(msg, cls)
+
+    class BenfenTxAck(protobuf.MessageType):
+        data_chunk: "bytes"
+
+        def __init__(
+            self,
+            *,
+            data_chunk: "bytes",
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["BenfenTxAck"]:
+            return isinstance(msg, cls)
+
+    class BenfenSignMessage(protobuf.MessageType):
+        address_n: "list[int]"
+        message: "bytes"
+
+        def __init__(
+            self,
+            *,
+            message: "bytes",
+            address_n: "list[int] | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["BenfenSignMessage"]:
+            return isinstance(msg, cls)
+
+    class BenfenMessageSignature(protobuf.MessageType):
+        signature: "bytes"
+        address: "str"
+
+        def __init__(
+            self,
+            *,
+            signature: "bytes",
+            address: "str",
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["BenfenMessageSignature"]:
+            return isinstance(msg, cls)
+
     class BinanceGetAddress(protobuf.MessageType):
         address_n: "list[int]"
         show_display: "bool | None"

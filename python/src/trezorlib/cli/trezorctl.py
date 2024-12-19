@@ -67,6 +67,7 @@ from . import (
     ton,
     scdo,
     alephium,
+    benfen,
 )
 
 F = TypeVar("F", bound=Callable)
@@ -115,6 +116,7 @@ COMMAND_ALIASES = {
     "ton": ton.cli,
     "scdo": scdo.cli,
     "alephium": alephium.cli,
+    "benfen": benfen.cli,
     # firmware aliases:
     "fw": firmware.cli,
     "update-firmware": firmware.update,
@@ -474,6 +476,7 @@ cli.add_command(nervos.cli)
 cli.add_command(ton.cli)
 cli.add_command(scdo.cli)
 cli.add_command(alephium.cli)
+cli.add_command(benfen.cli)
 
 
 #

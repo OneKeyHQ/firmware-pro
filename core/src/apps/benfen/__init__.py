@@ -1,0 +1,8 @@
+from apps.common.paths import PATTERN_BIP44_ED25519
+
+CURVE = "ed25519"
+SLIP44_ID = 728
+
+PATTERN = PATTERN_BIP44_ED25519
+PRIMARY_COLOR = 0xCD4937
+ICON = "A:/res/chain-benfen.png"

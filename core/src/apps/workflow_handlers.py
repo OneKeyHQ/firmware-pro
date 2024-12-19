@@ -363,6 +363,14 @@ def find_message_handler_module(msg_type: int) -> str:
         if msg_type == MessageType.AlephiumSignMessage:
             return "apps.alephium.sign_message"
 
+        # benfen
+        if msg_type == MessageType.BenfenGetAddress:
+            return "apps.benfen.get_address"
+        if msg_type == MessageType.BenfenSignTx:
+            return "apps.benfen.sign_tx"
+        if msg_type == MessageType.BenfenSignMessage:
+            return "apps.benfen.sign_message"
+
     raise ValueError
 
 
