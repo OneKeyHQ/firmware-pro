@@ -21,8 +21,6 @@ from trezor.qr import (
 from trezor.ui import display, style
 
 import ujson as json
-
-# from apps.base import get_features
 from apps.common import safety_checks
 
 from ..lv_symbols import LV_SYMBOLS
@@ -870,7 +868,6 @@ class IndexSelectionScreen(Screen):
             account_num = page_start + i
             btn.label_left.set_text(f"Account #{account_num}")
 
-            # 更新选中状态（current_account 从1开始）
             if account_num == self.current_account:
                 btn.set_checked()
             else:
