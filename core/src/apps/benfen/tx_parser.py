@@ -413,7 +413,7 @@ class TransactionParser:
                 except Exception:
                     return None
 
-            final_result = {
+            return {
                 "V1": {
                     "TransactionKind": {
                         "ProgrammableTransaction": {
@@ -426,7 +426,6 @@ class TransactionParser:
                     "Expiration": result["expiration"],
                 }
             }
-            return final_result
 
         except Exception:
             return None
