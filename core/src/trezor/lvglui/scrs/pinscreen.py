@@ -5,7 +5,7 @@ from . import font_GeistRegular26, font_GeistSemiBold48
 from .common import FullSizeWindow, lv, lv_colors  # noqa: F401,F403
 from .components.button import NormalButton
 from .components.container import ContainerFlexCol
-from .components.keyboard import NumberKeyboard
+from .components.keyboard import IndexKeyboard, NumberKeyboard
 from .components.listitem import ListItemWithLeadingCheckbox
 from .widgets.style import StyleWrapper
 
@@ -71,6 +71,98 @@ class PinTip(FullSizeWindow):
                 self.btn.disable()
 
 
+class InputNum(FullSizeWindow):
+    _instance = None
+
+    @classmethod
+    def get_window_if_visible(cls) -> "InputNum" | None:
+        return (
+            cls._instance
+            if (cls._instance is not None and cls._instance.is_visible())
+            else None
+        )
+
+    def __init__(self, **kwargs):
+        super().__init__(
+            title=kwargs.get("title") or _(i18n_keys.TITLE__ENTER_PIN),
+            subtitle=kwargs.get("subtitle", ""),
+            anim_dir=0,
+        )
+        self.__class__._instance = self
+
+        self.title.add_style(
+            StyleWrapper()
+            .text_font(font_GeistSemiBold48)
+            .text_align_center()
+            .text_letter_space(0),
+            0,
+        )
+        self.title.align(lv.ALIGN.TOP_MID, 0, 24)
+
+        if self.subtitle.get_text() != "":
+            self.subtitle.add_style(
+                StyleWrapper().text_font(font_GeistRegular26)
+                # .max_width(310)
+                .max_width(368)
+                .text_color(lv_colors.WHITE)
+                .bg_color(lv_colors.ONEKEY_RED_2)
+                .bg_opa(lv.OPA.COVER)
+                .pad_hor(8)
+                .pad_ver(16)
+                .radius(40)
+                .text_align_center(),
+                0,
+            )
+            # self.subtitle.add_style(
+            #     StyleWrapper()
+            #     .text_font(font_GeistRegular26)
+            #     .max_width(368)
+            #     .text_color(lv_colors.ONEKEY_RED_1)
+            #     .text_align_center(),
+            #     0,
+            # )
+
+            title_height = self.title.get_height()
+            subtitle_y = 40 if title_height > 60 else 70
+            self.subtitle.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, subtitle_y)
+            self.subtitle.move_foreground()
+
+        self.clear_flag(lv.obj.FLAG.SCROLLABLE)
+        self.keyboard = IndexKeyboard(
+            self, min_len=1, max_len=11, is_pin=kwargs.get("is_pin", True)
+        )
+        self.keyboard.add_event_cb(self.on_event, lv.EVENT.READY, None)
+        self.keyboard.add_event_cb(self.on_event, lv.EVENT.CANCEL, None)
+        self.keyboard.add_event_cb(self.on_event, lv.EVENT.VALUE_CHANGED, None)
+
+        self.keyboard.ta.add_style(
+            StyleWrapper().bg_opa(lv.OPA.TRANSP),
+            0,
+        )
+
+    def on_event(self, event_obj):
+        code = event_obj.code
+        if code == lv.EVENT.VALUE_CHANGED:
+            utils.lcd_resume()
+            if self.keyboard.ta.get_text() != "":
+                self.subtitle.set_text("")
+                self.subtitle.remove_style_all()
+
+            return
+        elif code == lv.EVENT.READY:
+            input = self.keyboard.ta.get_text()
+            if input.startswith("#"):
+                input = input[1:]
+            if len(input) < 1:
+                return
+            self.channel.publish(input)
+        elif code == lv.EVENT.CANCEL:
+            self.channel.publish(0)
+
+        self.clean()
+        self.destroy(500)
+
+
 class InputPin(FullSizeWindow):
 
     _instance = None
@@ -107,13 +199,46 @@ class InputPin(FullSizeWindow):
             .text_align_center(),
             0,
         )
-        self.subtitle.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
+
+        if self.subtitle.get_text() != "":
+            self.subtitle.add_style(
+                StyleWrapper().text_font(font_GeistRegular26)
+                # .max_width(310)
+                .text_color(lv_colors.WHITE)
+                .bg_color(lv_colors.ONEKEY_RED_2)
+                .bg_opa(lv.OPA.COVER)
+                .pad_hor(8)
+                .pad_ver(16)
+                .radius(40)
+                .text_align_center(),
+                0,
+            )
+            # self.subtitle.add_style(
+            #     StyleWrapper()
+            #     .text_font(font_GeistRegular26)
+            #     .max_width(368)
+            #     .text_color(lv_colors.ONEKEY_RED_1)
+            #     .text_align_center(),
+            #     0,
+            # )
+
+            title_height = self.title.get_height()
+            subtitle_y = 40 if title_height > 60 else 70
+            self.subtitle.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, subtitle_y)
+            self.subtitle.move_foreground()
+
+        # self.subtitle.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
         self._show_fingerprint_prompt_if_necessary()
         self.clear_flag(lv.obj.FLAG.SCROLLABLE)
         self.keyboard = NumberKeyboard(self)
         self.keyboard.add_event_cb(self.on_event, lv.EVENT.READY, None)
         self.keyboard.add_event_cb(self.on_event, lv.EVENT.CANCEL, None)
         self.keyboard.add_event_cb(self.on_event, lv.EVENT.VALUE_CHANGED, None)
+
+        self.keyboard.ta.add_style(
+            StyleWrapper().bg_opa(lv.OPA.TRANSP),
+            0,
+        )
 
     def _show_fingerprint_prompt_if_necessary(self):
         from . import fingerprints
@@ -133,6 +258,7 @@ class InputPin(FullSizeWindow):
             utils.lcd_resume()
             if self.keyboard.ta.get_text() != "":
                 self.subtitle.set_text("")
+                self.subtitle.remove_style_all()
             return
         elif code == lv.EVENT.READY:
             input = self.keyboard.ta.get_text()

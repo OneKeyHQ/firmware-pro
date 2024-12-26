@@ -164,6 +164,8 @@ for session in _SESSIONS:
     session.clear()
 _SESSIONLESS_CACHE.clear()
 
+_SESSION_ID = bytearray(_SESSION_ID_LENGTH)
+
 gc.collect()
 
 
@@ -212,6 +214,8 @@ def start_session(received_session_id: bytes | None = None) -> bytes | None:
         return selected_session.export_session_id()
     else:
         received_session_id = se_thd89.start_session(received_session_id)
+        if received_session_id is not None:
+            _SESSION_ID[:] = received_session_id
         return received_session_id
 
 
@@ -225,7 +229,12 @@ def end_current_session() -> None:
         _SESSIONS[_active_session_idx].clear()
         _active_session_idx = None
     else:
+        _SESSION_ID[:] = b""
         se_thd89.end_session()
+
+
+def get_session_id() -> bytes:
+    return bytes(_SESSION_ID)
 
 
 def is_session_started() -> bool:

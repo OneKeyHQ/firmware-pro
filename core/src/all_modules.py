@@ -183,6 +183,8 @@ trezor.lvglui.lv_symbols
 import trezor.lvglui.lv_symbols
 trezor.lvglui.scrs
 import trezor.lvglui.scrs
+trezor.lvglui.scrs.address
+import trezor.lvglui.scrs.address
 trezor.lvglui.scrs.app_guide
 import trezor.lvglui.scrs.app_guide
 trezor.lvglui.scrs.bip39_dotmap

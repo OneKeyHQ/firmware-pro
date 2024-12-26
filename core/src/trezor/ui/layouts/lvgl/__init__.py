@@ -25,6 +25,7 @@ __all__ = (
     "confirm_sign_identity",
     "confirm_signverify",
     "show_address",
+    "show_address_offline",
     "show_error_and_raise",
     "show_pubkey",
     "show_success",
@@ -57,6 +58,7 @@ __all__ = (
     "confirm_sol_memo",
     "confirm_data",
     "confirm_final",
+    "confirm_password_input",
     "confirm_blind_sign_common",
     "show_onekey_app_guide",
     "confirm_set_homescreen",
@@ -344,6 +346,68 @@ async def show_address(
     from trezor import loop
 
     await loop.sleep(300)
+
+
+async def show_address_offline(
+    ctx: wire.GenericContext,
+    address: str,
+    *,
+    address_qr: str | None = None,
+    case_sensitive: bool = True,
+    network: str = "",
+    multisig_index: int | None = None,
+    xpubs: Sequence[str] = (),
+    address_extra: str | None = None,
+    title_qr: str | None = None,
+    evm_chain_id: int | None = None,
+    title: str = "",
+    addr_type: str | None = None,
+    prev_scr=None,
+    account_name: str = "",
+) -> None:
+    is_multisig = len(xpubs) > 0
+    from trezor.lvglui.scrs.template import AddressOffline
+
+    by_qr = isinstance(ctx, wire.QRContext)
+    if is_multisig:
+        return await interact(
+            ctx,
+            AddressOffline(
+                title,
+                address,
+                ctx.primary_color,
+                ctx.icon_path,
+                xpubs,
+                address_qr,
+                multisig_index,
+                qr_first=by_qr,
+                network=network,
+            ),
+            "show_address",
+            ButtonRequestType.Address,
+        )
+    res = await interact(
+        ctx,
+        AddressOffline(
+            title if title else _(i18n_keys.TITLE__STR_ADDRESS).format(network),
+            address,
+            ctx.primary_color,
+            ctx.icon_path,
+            address_qr=address_qr,
+            addr_type=addr_type,
+            evm_chain_id=evm_chain_id,
+            qr_first=by_qr,
+            network=network,
+            prev_scr=prev_scr,
+            account_name=account_name,
+        ),
+        "show_address",
+        ButtonRequestType.Address,
+    )
+    from trezor import loop
+
+    await loop.sleep(50)
+    return res
 
 
 async def show_pubkey(
@@ -1088,6 +1152,9 @@ async def request_pin_on_device(
 
     if attempts_remaining is None or attempts_remaining == device.PIN_MAX_ATTEMPTS:
         subprompt = ""
+    elif attempts_remaining == 5:
+        await confirm_password_input(ctx)
+        subprompt = f"{_(i18n_keys.MSG__INCORRECT_PIN_STR_ATTEMPTS_LEFT).format(attempts_remaining)}"
     elif attempts_remaining == 1:
         subprompt = f"{_(i18n_keys.MSG__INCORRECT_PIN_THIS_IS_YOUR_LAST_ATTEMPT)}"
     else:
@@ -1290,6 +1357,22 @@ async def confirm_final(ctx: wire.Context, chain_name: str) -> None:
         _(i18n_keys.TITLE__TRANSACTION_SIGNED),
         icon="A:/res/success.png",
         timeout_ms=2000,
+    )
+
+
+async def confirm_password_input(ctx: wire.Context) -> None:
+    from trezor.ui.layouts.lvgl import confirm_action
+
+    await confirm_action(
+        ctx,
+        "confirm_password_input",
+        title=_(i18n_keys.MISTOUCH_PROTECTION_TITLE),
+        action=_(i18n_keys.MISTOUCH_PROTECTION_DESC),
+        verb=_(i18n_keys.MISTOUCH_PROTECTION_SLIDE_TEXT),
+        verb_cancel=_(i18n_keys.BUTTON__BACK_TO_HOME),
+        hold=True,
+        anim_dir=0,
+        icon="A:/assets/prompt/protection.png",
     )
 
 

@@ -1,6 +1,7 @@
 import utime
 
 from trezor import utils
+from trezor.enums import InputScriptType
 from trezor.lvglui.scrs.components.button import NormalButton
 from trezor.lvglui.scrs.components.pageable import PageAbleMessage
 
@@ -16,7 +17,8 @@ from . import (
     font_GeistSemiBold48,
 )
 from .common import FullSizeWindow, lv
-from .components.banner import Banner
+from .components.banner import LEVEL, Banner
+from .components.button import ListItemBtn
 from .components.container import ContainerFlexCol
 from .components.listitem import CardHeader, CardItem, DisplayItem
 from .components.qrcode import QRCode
@@ -87,6 +89,7 @@ class Address(FullSizeWindow):
             .text_color(lv_colors.LIGHT_GRAY),
             0,
         )
+
         self.item_addr.align_to(self.title, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 40)
 
         self.container = ContainerFlexCol(
@@ -171,6 +174,312 @@ class Address(FullSizeWindow):
             elif target == self.btn_yes:
                 self.show_unload_anim()
                 self.channel.publish(1)
+
+
+class BTCDeriveSelectionScreen(FullSizeWindow):
+    def __init__(self, prev_scr=None, addr_type=None, net_scr=None):
+        super().__init__(
+            _(i18n_keys.TITLE__SELECT_DERIVATION_PATH),
+            None,
+            confirm_text="",
+            cancel_text="",
+            anim_dir=2,
+        )
+        self.prev_scr = prev_scr
+        self.net_scr = net_scr
+
+        self.add_nav_back()
+
+        # Create derivation option buttons
+        self.derive_options = [
+            ("Nested Segwit", InputScriptType.SPENDP2SHWITNESS),
+            ("Taproot", InputScriptType.SPENDTAPROOT),
+            ("Native Segwit", InputScriptType.SPENDWITNESS),
+            ("Legacy", InputScriptType.SPENDADDRESS),
+        ]
+
+        self.container = ContainerFlexCol(self.content_area, self.title, padding_row=2)
+
+        # Create buttons and set checked state
+        self.option_btns = []
+        for text, type_value in self.derive_options:
+            btn = ListItemBtn(
+                self.container,
+                text,
+                has_next=False,
+            )
+            btn.add_check_img()
+            if text == addr_type:
+                btn.set_checked()
+                self.selected_type = type_value
+                self.origin_type = type_value
+            self.option_btns.append(btn)
+
+    def eventhandler(self, event_obj):
+        code = event_obj.code
+        target = event_obj.get_target()
+
+        if code == lv.EVENT.CLICKED:
+            if utils.lcd_resume():
+                return
+
+            if isinstance(target, lv.imgbtn):
+                if target == self.nav_back.nav_btn:
+                    if self.prev_scr is not None:
+                        self.prev_scr.btc_derive_changed(self.selected_type)
+                        self.destroy(50)
+
+            else:
+                for i, btn in enumerate(self.option_btns):
+                    if target == btn:
+                        for other_btn in self.option_btns:
+                            other_btn.set_uncheck()
+
+                        btn.set_checked()
+                        self.selected_type = self.derive_options[i][1]
+
+
+class ETHDeriveSelectionScreen(FullSizeWindow):
+    def __init__(self, prev_scr=None, addr_type=None):
+        super().__init__(
+            _(i18n_keys.TITLE__SELECT_DERIVATION_PATH),
+            None,
+            confirm_text="",
+            cancel_text="",
+            anim_dir=2,
+        )
+        self.prev_scr = prev_scr
+
+        self.add_nav_back()
+
+        # Create derivation option buttons
+        self.derive_options = [
+            ("BIP44 Standard", False),
+            ("Ledger Live", True),
+        ]
+
+        self.container = ContainerFlexCol(self.content_area, self.title, padding_row=2)
+
+        # Create buttons and set checked state
+        self.option_btns = []
+        for text, type_value in self.derive_options:
+            btn = ListItemBtn(
+                self.container,
+                text,
+                has_next=False,
+            )
+            btn.add_check_img()
+            if text == addr_type:
+                btn.set_checked()
+                self.selected_type = type_value
+            self.option_btns.append(btn)
+
+    def eventhandler(self, event_obj):
+        code = event_obj.code
+        target = event_obj.get_target()
+
+        if code == lv.EVENT.CLICKED:
+            if utils.lcd_resume():
+                return
+
+            if isinstance(target, lv.imgbtn):
+                if target == self.nav_back.nav_btn:
+                    if self.prev_scr is not None:
+                        self.prev_scr.eth_derive_changed(self.selected_type)
+                        self.destroy(50)
+
+            else:
+                for i, btn in enumerate(self.option_btns):
+                    if target == btn:
+                        for other_btn in self.option_btns:
+                            other_btn.set_uncheck()
+
+                        btn.set_checked()
+                        self.selected_type = self.derive_options[i][1]
+
+
+class ADDRESS_OFFLINE_RETURN_TYPE:
+    DONE = 0
+    ETH_LEDGER_PATH = 1
+    BTC_DERIVE_SCRIPTS = 2
+
+
+class AddressOffline(FullSizeWindow):
+    class SHOW_TYPE:
+        ADDRESS = 0
+        QRCODE = 1
+
+    def __init__(
+        self,
+        title,
+        address,
+        primary_color,
+        icon_path: str,
+        xpubs=None,
+        address_qr=None,
+        multisig_index: int | None = 0,
+        addr_type=None,
+        evm_chain_id: int | None = None,
+        qr_first: bool = False,
+        network: str = "",
+        prev_scr=None,
+        account_name: str = "",
+    ):
+        super().__init__(
+            title,
+            None,
+            confirm_text=_(i18n_keys.BUTTON__DONE),
+            cancel_text=_(i18n_keys.BUTTON__QRCODE)
+            if not qr_first
+            else _(i18n_keys.BUTTON__ADDRESS),
+            anim_dir=0,
+            primary_color=primary_color,
+        )
+        self.xpubs = xpubs
+        self.multisig_index = multisig_index
+        self.address = address
+        self.address_qr = address_qr
+        self.icon = icon_path
+        self.addr_type = addr_type
+        self.evm_chain_id = evm_chain_id
+        self.network = title.split(" ")[0]
+        self.prev_scr = prev_scr
+        self.account_name = account_name
+        if primary_color:
+            self.title.add_style(StyleWrapper().text_color(primary_color), 0)
+        self.qr_first = qr_first
+        if qr_first:
+            self.show_qr_code(self.qr_first)
+        else:
+            self.show_address(evm_chain_id=evm_chain_id)
+
+    def show_address(self, evm_chain_id: int | None = None):
+        self.current = self.SHOW_TYPE.ADDRESS
+        if hasattr(self, "qr"):
+            self.qr.delete()
+            del self.qr
+        if hasattr(self, "subtitle"):
+            self.subtitle.delete()
+            del self.subtitle
+        self.btn_no.label.set_text(_(i18n_keys.BUTTON__QRCODE))
+
+        # derive btn
+        if self.network in ("Bitcoin", "Ethereum"):
+            self.derive_btn = ListItemBtn(
+                self.content_area,
+                self.addr_type,
+                left_img_src="A:/res/branches.png",
+                has_next=True,
+            )
+
+        else:
+            self.derive_btn = ListItemBtn(
+                self.content_area,
+                self.addr_type,
+                left_img_src="A:/res/branches.png",
+                has_next=False,
+            )
+            self.derive_btn.remove_style(None, lv.PART.MAIN | lv.STATE.PRESSED)
+
+        self.derive_btn.align_to(self.title, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 40)
+        self.derive_btn.set_style_radius(40, 0)
+        self.derive_btn.add_style(
+            StyleWrapper().bg_color(lv_colors.ONEKEY_GRAY_3),
+            0,
+        )
+
+        # address
+        self.group_address = ContainerFlexCol(
+            self.content_area, self.derive_btn, pos=(0, 8), padding_row=0
+        )
+        self.item_group_header = CardHeader(
+            self.group_address,
+            self.account_name,
+            "A:/res/group-icon-wallet.png",
+        )
+        self.item_group_body = DisplayItem(
+            self.group_address,
+            None,
+            content=self.address,
+            font=font_GeistSemiBold48,
+        )
+        self.group_address.add_dummy()
+
+        if self.network == "Ethereum":
+            self.erc20_tips = Banner(
+                self.content_area,
+                LEVEL.DEFAULT,
+                _(i18n_keys.CONTENT__NETWORK_ADDRESS_ETHEREUM),
+            )
+            self.erc20_tips.align_to(self.group_address, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
+            self.erc20_tips.add_style(
+                StyleWrapper().bg_color(lv_colors.ONEKEY_GRAY_3),
+                0,
+            )
+
+    def show_qr_code(self, has_tips: bool = False):
+        self.current = self.SHOW_TYPE.QRCODE
+        if hasattr(self, "group_address"):
+            self.group_address.delete()
+            del self.group_address
+        if hasattr(self, "derive_btn"):
+            self.derive_btn.delete()
+            del self.derive_btn
+        if hasattr(self, "erc20_tips"):
+            self.erc20_tips.delete()
+            del self.erc20_tips
+        self.btn_no.label.set_text(_(i18n_keys.BUTTON__ADDRESS))
+        if has_tips:
+            from .components.label import SubTitle
+
+            self.subtitle = SubTitle(
+                self.content_area,
+                self.title,
+                (0, 16),
+                _(
+                    i18n_keys.CONTENT__RETUNRN_TO_THE_APP_AND_SCAN_THE_SIGNED_TX_QR_CODE_BELOW
+                ),
+            )
+        self.qr = QRCode(
+            self.content_area,
+            self.address if self.address_qr is None else self.address_qr,
+            self.icon,
+        )
+        self.qr.align_to(
+            self.title if not has_tips else self.subtitle,
+            lv.ALIGN.OUT_BOTTOM_LEFT,
+            0,
+            30,
+        )
+
+    def btc_derive_changed(self, new_type):
+        self.channel.publish((ADDRESS_OFFLINE_RETURN_TYPE.BTC_DERIVE_SCRIPTS, new_type))
+        self.destroy(50)
+
+    def eth_derive_changed(self, new_type):
+        self.channel.publish((ADDRESS_OFFLINE_RETURN_TYPE.ETH_LEDGER_PATH, new_type))
+        self.destroy(50)
+
+    def eventhandler(self, event_obj):
+        code = event_obj.code
+        target = event_obj.get_target()
+        if code == lv.EVENT.CLICKED:
+            utils.lcd_resume()
+            if target == self.btn_no:
+                if self.current == self.SHOW_TYPE.ADDRESS:
+                    self.show_qr_code(self.qr_first)
+                else:
+                    self.show_address(self.evm_chain_id)
+            elif target == self.btn_yes:
+                self.destroy(50)
+                self.channel.publish(ADDRESS_OFFLINE_RETURN_TYPE.DONE)
+            elif hasattr(self, "derive_btn") and target == self.derive_btn:
+                if self.network == "Bitcoin":
+                    BTCDeriveSelectionScreen(self, self.addr_type, self.prev_scr)
+                elif self.network == "Ethereum":
+                    ETHDeriveSelectionScreen(self, self.addr_type)
+                else:
+                    pass
 
 
 class XpubOrPub(FullSizeWindow):

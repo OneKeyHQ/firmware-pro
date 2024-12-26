@@ -1828,4 +1828,48 @@ BUTTON__LESS_NETWORKS = 832
 VERIFY_DEVICE_BOOTLOADER_DESC = 833
 # Download OneKey App at: onekey.so/download
 FORM__DOWNLOAD_APP_FROM_DOWNLOAD_CENTER = 834
+# FIDO Keys
+FIDO_FIDO_KEYS_LABEL = 835
+# Secure accounts with FIDO security keys
+FIDO_FIDO_KEYS_DESC = 836
+# Remove FIDO Key?
+FIDO_REMOVE_KEY_TITLE = 837
+# This FIDO key will be removed permanently
+FIDO_REMOVE_KEY_DESC = 838
+# FIDO Key Removed
+FIDO_REMOVE_KEY_SUCCESS_TITLE = 839
+# Key Limit Reached
+FIDO_ADD_KEY_LIMIT_REACHED_TITLE = 840
+# 60 FIDO keys limit reached. Remove unused to add new
+FIDO_ADD_KEY_LIMIT_REACHED_DESC = 841
+# Manage FIDO Keys
+FIDO_MANAGE_KEY_CTA_LABEL = 842
+# No FIDO keys yet
+FIDO_LIST_EMPTY_TEXT = 843
+# Using OneKey Devices as Security Keys
+TIPS_SECURITY_KEYS_TEXT = 844
+# Register
+TIPS_SECURITY_KEYS_REGISTER_TITLE = 845
+# Plug in your OneKey to your computer
+TIPS_SECURITY_KEYS_REGISTER_PLUG_IN = 846
+# Go to security settings of the website (e.g. Google, Facebook)
+TIPS_SECURITY_KEYS_REGISTER_GO_TO_WEBSITE = 847
+# Select "Add Security Key" option
+TIPS_SECURITY_KEYS_REGISTER_SELECT_OPTION = 848
+# Confirm with OneKey (unlock required)
+TIPS_SECURITY_KEYS_REGISTER_CONFIRM = 849
+# Choose "Security Key" at login
+TIPS_SECURITY_KEYS_AUTHENTICATE_CHOOSE_OPTION = 850
+# Approve with OneKey
+TIPS_SECURITY_KEYS_AUTHENTICATE_APPROVE = 851
+# Authenticate
+TIPS_SECURITY_KEYS_AUTHENTICATE_TITLE = 852
+# Slide to unlock
+MISTOUCH_PROTECTION_TITLE = 853
+# 5 failed tries. Slide to continue
+MISTOUCH_PROTECTION_DESC = 854
+# Slide to continue
+MISTOUCH_PROTECTION_SLIDE_TEXT = 855
+# Back to home
+BUTTON__BACK_TO_HOME = 856
 # fmt: on

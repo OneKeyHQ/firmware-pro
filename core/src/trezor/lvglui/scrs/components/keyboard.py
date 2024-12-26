@@ -573,6 +573,245 @@ class NumberKeyboard(lv.keyboard):
             motor.vibrate()
 
 
+class IndexKeyboard(lv.keyboard):
+    """number keyboard with textarea for account index."""
+
+    def __init__(
+        self, parent, max_len: int = 50, min_len: int = 4, is_pin: bool = True
+    ) -> None:
+        super().__init__(parent)
+        self.is_pin = is_pin
+        self.ta = lv.textarea(parent)
+        self.ta.align(lv.ALIGN.TOP_MID, 0, 188)
+
+        self.ta.add_style(
+            StyleWrapper()
+            .bg_color(lv_colors.BLACK)
+            .border_width(0)
+            .width(lv.SIZE.CONTENT)
+            .max_width(432)
+            .text_font(font_GeistSemiBold48)
+            .text_color(lv_colors.WHITE)
+            .text_letter_space(6)
+            .text_align_center(),
+            0,
+        )
+        self.ta.set_one_line(True)
+        if self.is_pin:
+            self.ta.set_accepted_chars("0123456789")
+        else:
+            self.ta.set_accepted_chars("#0123456789")
+        self.ta.set_max_length(max_len)
+        self.max_len = max_len
+        self.min_len = min_len
+        self.ta.set_password_mode(is_pin)
+        self.ta.clear_flag(lv.obj.FLAG.CLICKABLE)
+        self.ta.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
+        self.nums = [i for i in range(10)]
+        if device.is_random_pin_map_enabled():
+            random.shuffle(self.nums)
+        self.btnm_map = [
+            str(self.nums[1]),
+            str(self.nums[2]),
+            str(self.nums[3]),
+            "\n",
+            str(self.nums[4]),
+            str(self.nums[5]),
+            str(self.nums[6]),
+            "\n",
+            str(self.nums[7]),
+            str(self.nums[8]),
+            str(self.nums[9]),
+            "\n",
+            lv.SYMBOL.BACKSPACE,
+            str(self.nums[0]),
+            lv.SYMBOL.OK,
+            "",
+        ]
+        self.dummy_btnm_map = [
+            str(self.nums[1]),
+            str(self.nums[2]),
+            str(self.nums[3]),
+            "\n",
+            str(self.nums[4]),
+            str(self.nums[5]),
+            str(self.nums[6]),
+            "\n",
+            str(self.nums[7]),
+            str(self.nums[8]),
+            str(self.nums[9]),
+            "\n",
+            lv.SYMBOL.CLOSE,
+            str(self.nums[0]),
+            lv.SYMBOL.OK,
+            "",
+        ]
+        self.ctrl_map = [
+            lv.btnmatrix.CTRL.NO_REPEAT
+            | lv.btnmatrix.CTRL.CLICK_TRIG
+            | lv.btnmatrix.CTRL.POPOVER
+        ] * 12
+        self.ctrl_map[-1] = (
+            lv.btnmatrix.CTRL.NO_REPEAT
+            | lv.btnmatrix.CTRL.DISABLED
+            | lv.btnmatrix.CTRL.CLICK_TRIG
+            | lv.btnmatrix.CTRL.POPOVER
+        )
+        self.set_map(lv.keyboard.MODE.NUMBER, self.dummy_btnm_map, self.ctrl_map)
+        self.set_mode(lv.keyboard.MODE.NUMBER)
+        self.set_size(lv.pct(100), 472)
+
+        self.add_style(
+            StyleWrapper().bg_color(lv_colors.BLACK).pad_hor(4).pad_gap(4), 0
+        )
+        self.add_style(
+            StyleWrapper()
+            .bg_color(lv_colors.ONEKEY_BLACK)
+            .radius(40)
+            .text_font(font_GeistSemiBold48),
+            lv.PART.ITEMS | lv.STATE.DEFAULT,
+        )
+        self.add_style(StyleWrapper(), 0)
+        self.add_style(
+            StyleWrapper().bg_color(lv_colors.ONEKEY_GRAY_3)
+            # .transform_height(-2)
+            # .transform_width(-2)
+            # .transition(DefaultTransition())
+            ,
+            lv.PART.ITEMS | lv.STATE.PRESSED,
+        )
+        self.add_style(
+            StyleWrapper()
+            .bg_color(lv_colors.ONEKEY_BLACK_1)
+            .text_color(lv_colors.ONEKEY_GRAY),
+            lv.PART.ITEMS | lv.STATE.DISABLED,
+        )
+
+        self.set_popovers(True)
+        self.align(lv.ALIGN.BOTTOM_MID, 0, -4)
+        self.set_textarea(self.ta)
+
+        # self.input_count_tips = lv.label(parent)
+        # self.input_count_tips.align(lv.ALIGN.BOTTOM_MID, 0, -512)
+        # self.input_count_tips.add_style(
+        #     StyleWrapper()
+        #     .text_font(font_GeistRegular20)
+        #     .text_letter_space(1)
+        #     .text_color(lv_colors.LIGHT_GRAY),
+        #     0,
+        # )
+        # self.input_count_tips.add_flag(lv.obj.FLAG.HIDDEN)
+
+        self.add_event_cb(self.event_cb, lv.EVENT.DRAW_PART_BEGIN, None)
+        self.add_event_cb(self.event_cb, lv.EVENT.VALUE_CHANGED, None)
+        self.add_event_cb(self.event_cb, lv.EVENT.READY, None)
+        self.add_event_cb(self.event_cb, lv.EVENT.CANCEL, None)
+        self.previous_input_len = 0
+
+    # def update_count_tips(self):
+    #     """Update/show tips only when input length larger than 10"""
+    #     input_len = len(self.ta.get_text())
+    #     if input_len >= (self.max_len // 5 if self.max_len != 6 else 0):
+    #         self.input_count_tips.set_text(f"{len(self.ta.get_text())}/{self.max_len}")
+    #         if self.input_count_tips.has_flag(lv.obj.FLAG.HIDDEN):
+    #             self.input_count_tips.clear_flag(lv.obj.FLAG.HIDDEN)
+    #     else:
+    #         if not self.input_count_tips.has_flag(lv.obj.FLAG.HIDDEN):
+    #             self.input_count_tips.add_flag(lv.obj.FLAG.HIDDEN)
+
+    def toggle_number_input_keys(self, enable: bool):
+        if enable:
+            self.dummy_ctl_map = []
+            self.dummy_ctl_map.extend(self.ctrl_map)
+
+            if self.is_pin:
+                if self.input_len >= self.min_len:
+                    self.dummy_ctl_map[-1] &= (
+                        self.dummy_ctl_map[-1] ^ lv.btnmatrix.CTRL.DISABLED
+                    )
+            else:
+                if self.input_len > 0:
+                    self.dummy_ctl_map[-1] &= (
+                        self.dummy_ctl_map[-1] ^ lv.btnmatrix.CTRL.DISABLED
+                    )
+
+            if self.input_len > 0 or (
+                not self.is_pin and self.ta.get_text().startswith("#")
+            ):
+                self.dummy_ctl_map[-3] = (
+                    lv.btnmatrix.CTRL.CLICK_TRIG | lv.btnmatrix.CTRL.POPOVER
+                )
+            else:
+                self.set_map(
+                    lv.keyboard.MODE.NUMBER, self.dummy_btnm_map, self.ctrl_map
+                )
+                return
+
+            self.set_map(lv.keyboard.MODE.NUMBER, self.btnm_map, self.dummy_ctl_map)
+        else:
+            self.dummy_ctl_map = []
+            self.dummy_ctl_map.extend(self.ctrl_map)
+            for i in range(12):
+                if i not in (9, 11):
+                    self.dummy_ctl_map[i] |= lv.btnmatrix.CTRL.DISABLED
+                elif i == 11:
+                    self.dummy_ctl_map[-1] &= (
+                        self.dummy_ctl_map[-1] ^ lv.btnmatrix.CTRL.DISABLED
+                    )
+            self.set_map(lv.keyboard.MODE.NUMBER, self.btnm_map, self.dummy_ctl_map)
+
+    def event_cb(self, event):
+        code = event.code
+        text = self.ta.get_text()
+        if not self.is_pin and text.startswith("#"):
+            input_len = len(text) - 1
+        else:
+            input_len = len(text)
+        self.input_len = input_len
+        self.ta.clear_flag(lv.obj.FLAG.HIDDEN)
+
+        if code == lv.EVENT.DRAW_PART_BEGIN:
+            dsc = lv.obj_draw_part_dsc_t.__cast__(event.get_param())
+            if self.is_pin:
+                if input_len >= self.min_len:
+                    change_key_bg(dsc, 9, 11, True)
+                elif input_len > 0:
+                    change_key_bg(dsc, 9, 11, True, False)
+                else:
+                    change_key_bg(dsc, 9, 11, False)
+                    if dsc.id == 9:
+                        dsc.rect_dsc.bg_color = lv_colors.ONEKEY_RED_1
+            else:
+                if input_len > 0:
+                    change_key_bg(dsc, 9, 11, True)
+                else:
+                    change_key_bg(dsc, 9, 11, False)
+                    if dsc.id == 9:
+                        dsc.rect_dsc.bg_color = lv_colors.ONEKEY_RED_1
+
+        elif code == lv.EVENT.VALUE_CHANGED:
+            utils.lcd_resume()
+            motor.vibrate()
+
+            if not self.is_pin:
+                if text and not text.startswith("#"):
+                    self.ta.set_text("#" + text)
+                elif text == "":
+                    self.ta.set_text("")
+
+            if input_len + 1 >= self.max_len:
+                self.toggle_number_input_keys(False)
+            elif input_len > 0:
+                self.toggle_number_input_keys(True)
+            else:
+                self.set_map(
+                    lv.keyboard.MODE.NUMBER, self.dummy_btnm_map, self.ctrl_map
+                )
+
+            # self.update_count_tips()
+            self.previous_input_len = input_len
+
+
 class PassphraseKeyboard(lv.btnmatrix):
     def __init__(self, parent, max_len) -> None:
         super().__init__(parent)
