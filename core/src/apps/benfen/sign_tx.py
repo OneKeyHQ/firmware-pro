@@ -18,7 +18,10 @@ from .tx_parser import TransactionParser
 
 
 async def process_transaction(
-    ctx, address: str, tx_bytes: bytes, coin_type: bytes
+    ctx,
+    address: str,
+    tx_bytes: bytes,
+    coin_type: bytes,
 ) -> bytes:
     parser = TransactionParser()
 

@@ -14,7 +14,7 @@ async def require_show_overview(
 ) -> bool:
     from trezor.strings import strip_amount
 
-    result = await should_show_details(
+    return await should_show_details(
         ctx,
         title=_(i18n_keys.TITLE__SEND_MULTILINE).format(
             strip_amount(format_benfen_amount(value, currency_symbol))[0]
@@ -22,7 +22,6 @@ async def require_show_overview(
         address=to_addr,
         br_code=ButtonRequestType.SignTx,
     )
-    return result
 
 
 async def require_confirm_fee(
