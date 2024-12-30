@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 async def get_address(
     ctx: Context, msg: KaspaGetAddress, keychain: Keychain
 ) -> KaspaAddress:
-    await paths.validate_path(ctx, keychain, msg.address_n)
+    await paths.validate_path(ctx, keychain, msg.address_n, force_strict=True)
 
     if not Prefix.is_valid(msg.prefix):
         raise wire.DataError("Invalid prefix provided.")

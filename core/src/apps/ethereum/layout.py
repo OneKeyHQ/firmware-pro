@@ -314,7 +314,7 @@ async def should_show_array(
     )
     return await should_show_more(
         ctx,
-        title=limit_str(".".join(parent_objects)),
+        title=".".join(parent_objects),
         para=para,
         button_text=_(i18n_keys.BUTTON__VIEW_FULL_ARRAY),
         br_type="should_show_array",
@@ -332,10 +332,10 @@ async def confirm_typed_value(
     type_name = get_type_name(field)
 
     if array_index is not None:
-        title = limit_str(".".join(parent_objects + [name]))
+        title = ".".join(parent_objects + [name])
         description = f"[{array_index}] ({type_name}):"
     else:
-        title = limit_str(".".join(parent_objects))
+        title = ".".join(parent_objects)
         description = f"{name} ({type_name}):"
 
     data = decode_typed_data(value, type_name)
@@ -372,10 +372,10 @@ async def confirm_typed_value_onekey(
     type_name = get_type_name_onekey(field)
 
     if array_index is not None:
-        title = limit_str(".".join(parent_objects + [name]))
+        title = ".".join(parent_objects + [name])
         description = f"[{array_index}] ({type_name}):"
     else:
-        title = limit_str(".".join(parent_objects))
+        title = ".".join(parent_objects)
         description = f"{name} ({type_name}):"
 
     data = decode_typed_data(value, type_name)

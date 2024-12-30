@@ -101,11 +101,11 @@ class Keychain:
         del self._cache
         del self.seed
 
-    def verify_path(self, path: paths.Bip32Path) -> None:
+    def verify_path(self, path: paths.Bip32Path, force_strict: bool = False) -> None:
         if "ed25519" in self.curve and not paths.path_is_hardened(path):
             raise wire.DataError("Non-hardened paths unsupported on Ed25519")
 
-        if not safety_checks.is_strict():
+        if not safety_checks.is_strict() and not force_strict:
             return
 
         if self.is_in_keychain(path):

@@ -51,7 +51,7 @@ def convertbits(data, frombits, tobits, pad=True):
     return ret
 
 
-def generate_ckb_short_address(node: bip32.HDNode, network="mainnet") -> str:
+def generate_ckb_short_address(node: bip32.HDNode, network: str) -> str:
     hrp = {"ckb": Prefix.Mainnet, "ckt": Prefix.Testnet}[network]
     public_key = node.public_key()
     args = ckb_blake160(public_key)[2:]
@@ -100,7 +100,7 @@ async def get_address(
 
     if msg.network not in ["ckb", "ckt"]:
         raise ValueError(f"Invalid network: {msg.network}")
-    await paths.validate_path(ctx, keychain, msg.address_n)
+    await paths.validate_path(ctx, keychain, msg.address_n, force_strict=True)
     node = keychain.derive(msg.address_n)
     address = generate_ckb_short_address(node, network=msg.network)
     if msg.show_display:

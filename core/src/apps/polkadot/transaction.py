@@ -227,7 +227,7 @@ class Transaction:
         elif network == "manta":
             tx = Transaction.deserialize_manta(rawtx, callPrivIdx)
         else:
-            tx = TransactionUnknown(raw_tx)
+            tx = TransactionUnknown(rawtx)
 
         if type(tx) == TransactionUnknown:
             return tx
@@ -254,7 +254,7 @@ class Transaction:
 class TransactionUnknown(Transaction):
     def __init__(
         self,
-        data,
+        data: codec.base.ScaleBytes,
     ):
         Transaction.__init__(self)
         self.data = data

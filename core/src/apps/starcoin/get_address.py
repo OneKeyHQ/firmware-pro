@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 async def get_address(
     ctx: Context, msg: StarcoinGetAddress, keychain: Keychain
 ) -> StarcoinAddress:
-    await paths.validate_path(ctx, keychain, msg.address_n)
+    await paths.validate_path(ctx, keychain, msg.address_n, force_strict=True)
 
     node = keychain.derive(msg.address_n)
     public_key = node.public_key()[1:]

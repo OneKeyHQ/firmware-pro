@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 async def get_address(
     ctx: Context, msg: AptosGetAddress, keychain: Keychain
 ) -> AptosAddress:
-    await paths.validate_path(ctx, keychain, msg.address_n)
+    await paths.validate_path(ctx, keychain, msg.address_n, force_strict=True)
 
     node = keychain.derive(msg.address_n)
     pub_key_bytes = seed.remove_ed25519_prefix(node.public_key())

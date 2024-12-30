@@ -17,7 +17,7 @@ from . import ICON, PRIMARY_COLOR
 async def schnorr(
     ctx: wire.Context, msg: NostrSignSchnorr, keychain: Keychain
 ) -> NostrSignedSchnorr:
-    await paths.validate_path(ctx, keychain, msg.address_n)
+    await paths.validate_path(ctx, keychain, msg.address_n, force_strict=True)
 
     node = keychain.derive(msg.address_n)
     convertedbits = bech32.convertbits(node.public_key()[1:33], 8, 5)
