@@ -342,6 +342,7 @@ class RequestRemoveFingerprint(FullSizeWindow):
         target = event_obj.get_target()
         if code == lv.EVENT.CLICKED:
             if target == self.nav_back.nav_btn:
+                self.channel.publish(0)
                 self.destroy(50)
         elif code == lv.EVENT.GESTURE:
             _dir = lv.indev_get_act().get_gesture_dir()
@@ -375,6 +376,7 @@ class ConfirmRemoveFingerprint(FullSizeWindow):
         target = event_obj.get_target()
         if code == lv.EVENT.CLICKED:
             if target == self.nav_back.nav_btn:
+                self.channel.publish(0)
                 self.destroy(50)
         elif code == lv.EVENT.GESTURE:
             _dir = lv.indev_get_act().get_gesture_dir()

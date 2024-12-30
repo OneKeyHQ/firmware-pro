@@ -820,7 +820,7 @@ translations = [
     "Sélectionner un compte",
     "Aller au compte",
     "Erreur de formatage d'entrée",
-    "Les jetons ERC-20 sont émis sur le réseau Ethereum. Cela signifie que vous pouvez utiliser l'adresse de votre portefeuille ETH pour recevoir n'importe quel jeton ERC-20.",
+    "Votre adresse est une adresse de réseau EVM. Vous pouvez l'utiliser pour gérer vos actifs sur d'autres réseaux compatibles EVM (tels que Ethereum, BNB Chain, Polygon, Arbitrum One, Avalanche, etc.).",
     "Clés de sécurité",
     "Configuration du portefeuille requise",
     "Pour jumeler votre appareil via Bluetooth, veuillez d'abord créer un portefeuille sur votre appareil matériel. Cela est nécessaire pour une connexion sécurisée.",
@@ -857,5 +857,9 @@ translations = [
     "5 tentatives échouées. Glissez pour continuer",
     "Faites glisser pour continuer",
     "Retour à l'accueil",
+    "Enregistrement de la clé FIDO...",
+    "Clé FIDO enregistrée",
+    "",
+    "",
 ]
 # fmt: on

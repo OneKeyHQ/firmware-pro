@@ -820,7 +820,7 @@ translations = [
     "Konto auswählen",
     "Zum Konto gehen",
     "Fehler bei der Eingabeformatierung",
-    "ERC-20-Token werden im Ethereum-Netzwerk ausgegeben. Das bedeutet, dass Sie Ihre ETH-Wallet-Adresse verwenden können, um beliebige ERC-20-Token zu erhalten.",
+    "Ihre Adresse ist eine EVM-Netzwerkadresse. Sie können sie verwenden, um Ihre Vermögenswerte über andere EVM-kompatible Netzwerke (wie Ethereum, BNB Chain, Polygon, Arbitrum One, Avalanche usw.) zu verwalten.",
     "Sicherheitsschlüssel",
     "Einrichtung des Wallets erforderlich",
     "Um Ihr Gerät über Bluetooth zu koppeln, erstellen Sie bitte zuerst eine Wallet auf Ihrem Hardware-Gerät. Dies ist notwendig für eine sichere Verbindung.",
@@ -857,5 +857,9 @@ translations = [
     "5 fehlgeschlagene Versuche. Wischen, um fortzufahren",
     "Zum Fortfahren wischen",
     "Zurück zur Startseite",
+    "Registrierung des FIDO-Schlüssels...",
+    "FIDO-Schlüssel registriert",
+    "",
+    "",
 ]
 # fmt: on

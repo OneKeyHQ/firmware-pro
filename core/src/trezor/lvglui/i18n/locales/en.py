@@ -820,7 +820,7 @@ translations = [
     "Select Account",
     "Go To Account",
     "Input formatting error",
-    "ERC-20 tokens are issued on the Ethereum network. That means you can use your ETH wallet address to receive any ERC-20 token.",
+    "Your address is an EVM network address. You can use it to manage your assets across other EVM-compatible networks (such as Ethereum, BNB Chain, Polygon, Arbitrum One, Avalanche, etc.).",
     "Security Keys",
     "Wallet Setup Required",
     "To pair your device via Bluetooth, please create a wallet on your hardware device first. This is necessary for secure connection",
@@ -857,5 +857,9 @@ translations = [
     "5 failed tries. Slide to continue",
     "Slide to continue",
     "Back to home",
+    "Registering fido key...",
+    "FIDO Key Registered",
+    "Low Battery",
+    "Saving data before power off",
 ]
 # fmt: on

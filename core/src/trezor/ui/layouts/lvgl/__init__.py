@@ -517,7 +517,7 @@ def show_warning(
         header=header,
         subheader=subheader,
         content=content,
-        button_confirm=_(i18n_keys.BUTTON__TRY_AGAIN),
+        button_confirm=button if button else _(i18n_keys.BUTTON__TRY_AGAIN),
         button_cancel=None,
         icon=icon,
         icon_color=icon_color,

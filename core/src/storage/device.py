@@ -85,6 +85,7 @@ _DEVICE_ID_VALUE: str | None = None
 _TREZOR_COMPATIBLE_VALUE: bool | None = None
 _NEEDS_BACKUP_VALUE: bool | None = None
 _FIDO_SEED_GEN = False
+_FIDO2_COUNTER_VALUE: int | None = None
 
 if utils.USE_THD89:
     import uctypes
@@ -236,6 +237,8 @@ if utils.USE_THD89:
     offset += uctypes.sizeof(struct_uint32, uctypes.LITTLE_ENDIAN)
     struct_public["label"] = (offset, struct_label)
     offset += uctypes.sizeof(struct_label, uctypes.LITTLE_ENDIAN)
+    struct_public["fido2_counter"] = (offset, struct_bool)
+    offset += uctypes.sizeof(struct_bool, uctypes.LITTLE_ENDIAN)
 
     # public_field = uctypes.struct(0, struct_public, uctypes.LITTLE_ENDIAN)
     assert (
@@ -294,6 +297,7 @@ if utils.USE_THD89:
     _AIRGAP_MODE = struct_public["airgap_mode"][0]
     _HAS_PROMPTED_FINGERPRINT = struct_public["has_prompted_fingerprint"][0]
     _FINGER_FAILED_COUNT = struct_public["finger_failed_count"][0]
+    _FIDO2_COUNTER = struct_public["fido2_counter"][0]
     U2F_COUNTER = 0x00  # u2f counter
 
     # recovery key
@@ -358,6 +362,7 @@ else:
     _AIRGAP_MODE = (0x8D)  # bool
     _HAS_PROMPTED_FINGERPRINT = (0x8E)  # bool
     _FINGER_FAILED_COUNT = (0x8F)  # int
+    _FIDO2_COUNTER = const(0x90)  # int
     # fmt: on
 SAFETY_CHECK_LEVEL_STRICT: Literal[0] = const(0)
 SAFETY_CHECK_LEVEL_PROMPT: Literal[1] = const(1)
@@ -668,11 +673,30 @@ def get_wp_cnts() -> int:
     global _WALLPAPER_COUNTS_VALUE
     if _WALLPAPER_COUNTS_VALUE is None:
         cnts = common.get(_NAMESPACE, _WALLPAPER_COUNTS, public=True)
-        if cnts is None:
-            _WALLPAPER_COUNTS_VALUE = 0
-        else:
-            _WALLPAPER_COUNTS_VALUE = int.from_bytes(cnts, "big")
+        _WALLPAPER_COUNTS_VALUE = int.from_bytes(cnts, "big") if cnts is not None else 0
     return _WALLPAPER_COUNTS_VALUE
+
+
+def get_fido2_counter() -> int:
+    global _FIDO2_COUNTER_VALUE
+    if _FIDO2_COUNTER_VALUE is None:
+        counter = common.get(_NAMESPACE, _FIDO2_COUNTER, public=True)
+        _FIDO2_COUNTER_VALUE = (
+            int.from_bytes(counter, "big") if counter is not None else 0
+        )
+
+    return _FIDO2_COUNTER_VALUE
+
+
+def set_fido2_counter(value: int) -> None:
+    global _FIDO2_COUNTER_VALUE
+    from .resident_credentials import MAX_RESIDENT_CREDENTIALS
+
+    assert (
+        0 <= value <= MAX_RESIDENT_CREDENTIALS
+    ), f"FIDO2 counter cannot be greater than {MAX_RESIDENT_CREDENTIALS}"
+    common.set(_NAMESPACE, _FIDO2_COUNTER, value.to_bytes(1, "big"), public=True)
+    _FIDO2_COUNTER_VALUE = value
 
 
 def is_initialized() -> bool:

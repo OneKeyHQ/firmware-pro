@@ -820,7 +820,7 @@ translations = [
     "Seleccionar cuenta",
     "Ir a la cuenta",
     "Error de formato de entrada",
-    "Los tokens ERC-20 se emiten en la red Ethereum. Eso significa que puedes usar la dirección de tu billetera ETH para recibir cualquier token ERC-20.",
+    "Tu dirección es una dirección de red EVM. Puedes usarla para gestionar tus activos a través de otras redes compatibles con EVM (como Ethereum, BNB Chain, Polygon, Arbitrum One, Avalanche, etc.).",
     "Llaves de seguridad",
     "Configuración de la billetera requerida",
     "Para emparejar tu dispositivo a través de Bluetooth, primero crea una billetera en tu dispositivo de hardware. Esto es necesario para una conexión segura.",
@@ -857,5 +857,9 @@ translations = [
     "5 intentos fallidos. Desliza para continuar",
     "Desliza para continuar",
     "Volver a inicio",
+    "Registrando la clave FIDO...",
+    "Llave FIDO Registrada",
+    "",
+    "",
 ]
 # fmt: on

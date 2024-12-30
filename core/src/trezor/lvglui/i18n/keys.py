@@ -1794,8 +1794,9 @@ TITLE__SELECT_ACCOUNT = 817
 TITLE__SET_INITIAL_ACCOUNT = 818
 # Input formatting error
 TITLE__SET_INITIAL_ACCOUNT_ERROR = 819
-# ERC-20 tokens are issued on the Ethereum network. That means you can use you
-# r ETH wallet address to receive any ERC-20 token.
+# Your address is an EVM network address. You can use it to manage your assets
+# across other EVM-compatible networks (such as Ethereum, BNB Chain, Polygon,
+# Arbitrum One, Avalanche, etc.).
 CONTENT__NETWORK_ADDRESS_ETHEREUM = 820
 # Security Keys
 APP__SECURITY = 821
@@ -1872,4 +1873,12 @@ MISTOUCH_PROTECTION_DESC = 854
 MISTOUCH_PROTECTION_SLIDE_TEXT = 855
 # Back to home
 BUTTON__BACK_TO_HOME = 856
+# Registering fido key...
+FIDO_KEY_REGISTERING_DESC = 857
+# FIDO Key Registered
+FIDO_KEY_REGISTERED_TITLE = 858
+# Low Battery
+POWER_ON_LOW_BATTERY_TITLE = 859
+# Saving data before power off
+POWER_ON_LOW_BATTERY_DESC = 860
 # fmt: on

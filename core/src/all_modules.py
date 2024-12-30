@@ -191,6 +191,8 @@ trezor.lvglui.scrs.address
 import trezor.lvglui.scrs.address
 trezor.lvglui.scrs.app_guide
 import trezor.lvglui.scrs.app_guide
+trezor.lvglui.scrs.app_passkeys
+import trezor.lvglui.scrs.app_passkeys
 trezor.lvglui.scrs.bip39_dotmap
 import trezor.lvglui.scrs.bip39_dotmap
 trezor.lvglui.scrs.ble
@@ -219,6 +221,8 @@ trezor.lvglui.scrs.components.listitem
 import trezor.lvglui.scrs.components.listitem
 trezor.lvglui.scrs.components.navigation
 import trezor.lvglui.scrs.components.navigation
+trezor.lvglui.scrs.components.overlay
+import trezor.lvglui.scrs.components.overlay
 trezor.lvglui.scrs.components.pageable
 import trezor.lvglui.scrs.components.pageable
 trezor.lvglui.scrs.components.popup

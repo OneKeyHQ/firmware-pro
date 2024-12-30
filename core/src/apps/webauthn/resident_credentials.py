@@ -20,10 +20,17 @@ def _credential_from_data(index: int, data: bytes) -> Fido2Credential:
 
 @ensure_fido_seed
 def find_all() -> Iterator[Fido2Credential]:
+    registered_count = storage.resident_credentials.get_fido2_counter()
+    if registered_count == 0:
+        return
+    find = 0
     for index in range(MAX_RESIDENT_CREDENTIALS):
+        if find >= registered_count:
+            return
         data = storage.resident_credentials.get(index)
         if data is not None:
             yield _credential_from_data(index, data)
+            find += 1
 
 
 @ensure_fido_seed
@@ -56,7 +63,11 @@ def get_resident_credential(index: int) -> Fido2Credential | None:
 
 @ensure_fido_seed
 def store_resident_credential(cred: Fido2Credential) -> bool:
+    if storage.resident_credentials.get_fido2_counter() >= MAX_RESIDENT_CREDENTIALS:
+        return False
+
     slot = None
+    is_overwritten = False
     for index in range(MAX_RESIDENT_CREDENTIALS):
         stored_data = storage.resident_credentials.get(index)
         if stored_data is None:
@@ -73,11 +84,15 @@ def store_resident_credential(cred: Fido2Credential) -> bool:
         # If a credential for the same RP ID and user ID already exists, then overwrite it.
         if stored_cred.user_id == cred.user_id:
             slot = index
+            is_overwritten = True
             break
 
     if slot is None:
         return False
 
     cred_data = cred.rp_id_hash + cred.id
-    storage.resident_credentials.set(slot, cred_data)
+    try:
+        storage.resident_credentials.set(slot, cred_data, is_overwritten)
+    except ValueError:
+        return False
     return True

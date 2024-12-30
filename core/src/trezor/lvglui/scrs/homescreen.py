@@ -246,7 +246,6 @@ class MainScreen(Screen):
 
             self.connect = lv.imgbtn(self)
             self.connect.set_size(216, 216)
-            # self.connect.align_to(self.settings, lv.ALIGN.OUT_BOTTOM_MID, 0, 77)
             self.connect.set_pos(16, 148)
             self.connect.set_style_bg_img_src("A:/res/app-connect.jpg", 0)
             self.connect.add_style(click_style, lv.PART.MAIN | lv.STATE.PRESSED)
@@ -273,24 +272,25 @@ class MainScreen(Screen):
             )
             self.scan_desc.align_to(self.scan, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
 
-            self.address = lv.imgbtn(self)
-            self.address.set_size(216, 216)
-            self.address.align_to(self.connect, lv.ALIGN.OUT_BOTTOM_MID, 0, 77)
-            self.address.set_style_bg_img_src("A:/res/app-address.jpg", 0)
-            self.address.add_style(click_style, lv.PART.MAIN | lv.STATE.PRESSED)
-            self.address.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
-            self.address_desc = lv.label(self)
-            self.address_desc.set_text(_(i18n_keys.APP__ADDRESS))
-            self.address_desc.add_style(default_desc_style, 0)
-            self.address_desc.add_style(
+            self.my_address = lv.imgbtn(self)
+            self.my_address.set_size(216, 216)
+            self.my_address.align_to(self.connect, lv.ALIGN.OUT_BOTTOM_MID, 0, 77)
+            self.my_address.set_style_bg_img_src("A:/res/app-address.jpg", 0)
+            self.my_address.add_style(click_style, lv.PART.MAIN | lv.STATE.PRESSED)
+            self.my_address.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
+            self.my_address_desc = lv.label(self)
+            self.my_address_desc.set_text(_(i18n_keys.APP__ADDRESS))
+            self.my_address_desc.add_style(default_desc_style, 0)
+            self.my_address_desc.add_style(
                 pressed_desc_style, lv.PART.MAIN | lv.STATE.PRESSED
             )
-            self.address_desc.align_to(self.address, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
+            self.my_address_desc.align_to(
+                self.my_address, lv.ALIGN.OUT_BOTTOM_MID, 0, 8
+            )
 
             self.settings = lv.imgbtn(self)
             self.settings.set_size(216, 216)
-            # self.settings.set_pos(16, 148)
-            self.settings.align_to(self.address, lv.ALIGN.OUT_RIGHT_MID, 16, 0)
+            self.settings.align_to(self.scan, lv.ALIGN.OUT_BOTTOM_MID, 0, 77)
             self.settings.set_style_bg_img_src("A:/res/app-settings.jpg", 0)
             self.settings.add_style(click_style, lv.PART.MAIN | lv.STATE.PRESSED)
             self.settings.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
@@ -302,9 +302,41 @@ class MainScreen(Screen):
             )
             self.settings_desc.align_to(self.settings, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
 
+            self.passkey = lv.imgbtn(self)
+            self.passkey.set_size(216, 216)
+            self.passkey.set_pos(16, 148)
+            self.passkey.set_style_bg_img_src("A:/res/app-keys.jpg", 0)
+            self.passkey.add_style(click_style, lv.PART.MAIN | lv.STATE.PRESSED)
+            self.passkey.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
+            self.passkey_desc = lv.label(self)
+            self.passkey_desc.set_text(_(i18n_keys.FIDO_FIDO_KEYS_LABEL))
+            self.passkey_desc.add_style(default_desc_style, 0)
+            self.passkey_desc.add_style(
+                pressed_desc_style, lv.PART.MAIN | lv.STATE.PRESSED
+            )
+            self.passkey_desc.align_to(self.passkey, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
+            self.passkey.add_flag(lv.obj.FLAG.HIDDEN)
+            self.passkey_desc.add_flag(lv.obj.FLAG.HIDDEN)
+
+            self.backup = lv.imgbtn(self)
+            self.backup.set_size(216, 216)
+            self.backup.set_style_bg_img_src("A:/res/app-backup.jpg", 0)
+            self.backup.add_style(click_style, lv.PART.MAIN | lv.STATE.PRESSED)
+            self.backup.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
+            self.backup.align_to(self.passkey, lv.ALIGN.OUT_RIGHT_MID, 16, 0)
+            self.backup_desc = lv.label(self)
+            self.backup_desc.set_text(_(i18n_keys.APP__BACK_UP))
+            self.backup_desc.add_style(default_desc_style, 0)
+            self.backup_desc.add_style(
+                pressed_desc_style, lv.PART.MAIN | lv.STATE.PRESSED
+            )
+            self.backup_desc.align_to(self.backup, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
+            self.backup.add_flag(lv.obj.FLAG.HIDDEN)
+            self.backup_desc.add_flag(lv.obj.FLAG.HIDDEN)
+
             self.nft = lv.imgbtn(self)
             self.nft.set_size(216, 216)
-            self.nft.set_pos(16, 148)
+            self.nft.align_to(self.passkey, lv.ALIGN.OUT_BOTTOM_MID, 0, 77)
             self.nft.set_style_bg_img_src("A:/res/app-nft.jpg", 0)
             self.nft.add_style(click_style, lv.PART.MAIN | lv.STATE.PRESSED)
             self.nft.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
@@ -316,25 +348,9 @@ class MainScreen(Screen):
             self.nft.add_flag(lv.obj.FLAG.HIDDEN)
             self.nft_desc.add_flag(lv.obj.FLAG.HIDDEN)
 
-            self.backup = lv.imgbtn(self)
-            self.backup.set_size(216, 216)
-            self.backup.set_style_bg_img_src("A:/res/app-backup.jpg", 0)
-            self.backup.add_style(click_style, lv.PART.MAIN | lv.STATE.PRESSED)
-            self.backup.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
-            self.backup.align_to(self.nft, lv.ALIGN.OUT_RIGHT_MID, 16, 0)
-            self.backup_desc = lv.label(self)
-            self.backup_desc.set_text(_(i18n_keys.APP__BACK_UP))
-            self.backup_desc.add_style(default_desc_style, 0)
-            self.backup_desc.add_style(
-                pressed_desc_style, lv.PART.MAIN | lv.STATE.PRESSED
-            )
-            self.backup_desc.align_to(self.backup, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
-            self.backup.add_flag(lv.obj.FLAG.HIDDEN)
-            self.backup_desc.add_flag(lv.obj.FLAG.HIDDEN)
-
             self.guide = lv.imgbtn(self)
             self.guide.set_size(216, 216)
-            self.guide.align_to(self.nft, lv.ALIGN.OUT_BOTTOM_MID, 0, 77)
+            self.guide.align_to(self.backup, lv.ALIGN.OUT_BOTTOM_MID, 0, 77)
             self.guide.set_style_bg_img_src("A:/res/app-tips.jpg", 0)
             self.guide.add_style(click_style, lv.PART.MAIN | lv.STATE.PRESSED)
             self.guide.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
@@ -345,6 +361,8 @@ class MainScreen(Screen):
                 pressed_desc_style, lv.PART.MAIN | lv.STATE.PRESSED
             )
             self.guide_desc.align_to(self.guide, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
+            self.guide.add_flag(lv.obj.FLAG.HIDDEN)
+            self.guide_desc.add_flag(lv.obj.FLAG.HIDDEN)
 
             self.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
             self.add_event_cb(self.on_pressed, lv.EVENT.PRESSED, None)
@@ -389,16 +407,20 @@ class MainScreen(Screen):
                 self.container,
                 self.settings,
                 self.settings_desc,
+                self.my_address,
+                self.my_address_desc,
                 self.scan,
                 self.scan_desc,
                 self.connect,
                 self.connect_desc,
-                self.address,
-                self.address_desc,
                 self.img_down,
             ]
             self.group_2 = [
                 self.container,
+                self.passkey,
+                self.passkey_desc,
+                self.guide,
+                self.guide_desc,
                 self.nft,
                 self.nft_desc,
                 self.backup,
@@ -512,8 +534,10 @@ class MainScreen(Screen):
                     ScanScreen(self.parent)
                 elif target == self.connect:
                     ConnectWalletWays(self.parent)
-                elif target == self.address:
+                elif target == self.my_address:
                     ShowAddress(self.parent)
+                elif target == self.passkey:
+                    PasskeysManager(self.parent)
                 elif target == self.img_down:
                     self.dismiss()
 
@@ -527,8 +551,6 @@ class MainScreen(Screen):
                     self.settings_desc.add_state(lv.STATE.PRESSED)
                 elif target == self.guide:
                     self.guide_desc.add_state(lv.STATE.PRESSED)
-                elif target == self.address:
-                    self.address_desc.add_state(lv.STATE.PRESSED)
                 elif target == self.nft:
                     self.nft_desc.add_state(lv.STATE.PRESSED)
                 elif target == self.backup:
@@ -537,6 +559,10 @@ class MainScreen(Screen):
                     self.scan_desc.add_state(lv.STATE.PRESSED)
                 elif target == self.connect:
                     self.connect_desc.add_state(lv.STATE.PRESSED)
+                elif target == self.my_address:
+                    self.my_address_desc.add_state(lv.STATE.PRESSED)
+                elif target == self.passkey:
+                    self.passkey_desc.add_state(lv.STATE.PRESSED)
 
         def on_released(self, event_obj):
             code = event_obj.code
@@ -548,8 +574,6 @@ class MainScreen(Screen):
                     self.settings_desc.clear_state(lv.STATE.PRESSED)
                 elif target == self.guide:
                     self.guide_desc.clear_state(lv.STATE.PRESSED)
-                elif target == self.address:
-                    self.address_desc.clear_state(lv.STATE.PRESSED)
                 elif target == self.nft:
                     self.nft_desc.clear_state(lv.STATE.PRESSED)
                 elif target == self.backup:
@@ -558,16 +582,156 @@ class MainScreen(Screen):
                     self.scan_desc.clear_state(lv.STATE.PRESSED)
                 elif target == self.connect:
                     self.connect_desc.clear_state(lv.STATE.PRESSED)
+                elif target == self.my_address:
+                    self.my_address_desc.clear_state(lv.STATE.PRESSED)
+                elif target == self.passkey:
+                    self.passkey_desc.clear_state(lv.STATE.PRESSED)
 
         def refresh_text(self):
-            # self.tips.set_text(_(i18n_keys.CONTENT__SWIPE_DOWN_TO_CLOSE))
             self.settings_desc.set_text(_(i18n_keys.APP__SETTINGS))
             self.guide_desc.set_text(_(i18n_keys.APP__TIPS))
-            self.address_desc.set_text(_(i18n_keys.APP__ADDRESS))
             self.nft_desc.set_text(_(i18n_keys.APP__NFT_GALLERY))
             self.backup_desc.set_text(_(i18n_keys.APP__BACK_UP))
             self.scan_desc.set_text(_(i18n_keys.APP__SCAN))
             self.connect_desc.set_text(_(i18n_keys.APP__CONNECT_WALLET))
+            self.my_address_desc.set_text(_(i18n_keys.APP__ADDRESS))
+            self.passkey_desc.set_text(_(i18n_keys.FIDO_FIDO_KEYS_LABEL))
+
+
+class PasskeysManager(Screen):
+    def __init__(self, prev_scr=None):
+        if not hasattr(self, "_init"):
+            self._init = True
+        else:
+            if not self.is_visible():
+                self.container.delete()
+                del self.container
+                self.fresh_show()
+                lv.scr_load(self)
+            return
+        super().__init__(
+            prev_scr=prev_scr, title=_(i18n_keys.FIDO_FIDO_KEYS_LABEL), nav_back=True
+        )
+
+        self.fresh_show()
+        self.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
+        # self.add_event_cb(self.on_scroll, lv.EVENT.SCROLL_BEGIN, None)
+
+    async def list_credential(self):
+        from .app_passkeys import PasskeysListItemBtn
+
+        BATCH_SIZE = 5
+        stored_credentials = []
+        for i, credential in enumerate(self.credentials):
+            stored_credentials.append(
+                (
+                    credential.app_name(),
+                    credential.account_name(),
+                    credential.index,
+                    credential.creation_time,
+                )
+            )
+            self.overlay.set_value(i + 1)
+            if (i < BATCH_SIZE) or ((i + 1) % BATCH_SIZE == 0):
+                await loop.sleep(10)
+        stored_credentials.sort(key=lambda x: x[3])
+        for i, credential in enumerate(stored_credentials):
+            self.listed_credentials.append(
+                PasskeysListItemBtn(
+                    self.container,
+                    credential[0],
+                    credential[1] or "",
+                    credential[2],
+                )
+            )
+        self.container.refresh_self_size()
+        del stored_credentials
+        self.overlay.del_delayed(10)
+
+    def fresh_show(self):
+        from .app_passkeys import (
+            get_registered_credentials,
+            get_registered_credentials_count,
+        )
+
+        if hasattr(self, "container"):
+            self.container.refresh_self_size()
+            self.count = len(self.listed_credentials)
+        else:
+            self.count = get_registered_credentials_count()
+            self.credentials = get_registered_credentials()
+            self.listed_credentials = []
+
+        if self.count == 0:
+            self.empty_tips = lv.label(self.content_area)
+            self.empty_tips.set_text(_(i18n_keys.FIDO_LIST_EMPTY_TEXT))
+            self.empty_tips.add_style(
+                StyleWrapper()
+                .text_font(font_GeistRegular30)
+                .text_color(lv_colors.WHITE_2)
+                .text_letter_space(-1),
+                0,
+            )
+            self.empty_tips.align(lv.ALIGN.TOP_MID, 0, 432)
+            self.learn_more = NormalButton(self, text=_(i18n_keys.ACTION__LEARN_MORE))
+        else:
+            if not hasattr(self, "container"):
+                self.container = ContainerFlexCol(
+                    self.content_area, self.title, padding_row=2
+                )
+                workflow.spawn(self.list_credential())
+
+                from .components.overlay import OverlayWithProcessBar
+
+                self.overlay = OverlayWithProcessBar(self, self.count)
+
+    def auto_adjust_scroll(self, item_height):
+        scroll_value = self.content_area.get_scroll_y()
+        if scroll_value > 0:
+            auto_adjust = scroll_value - item_height
+            self.content_area.scroll_to(
+                0, auto_adjust if auto_adjust > 0 else 0, lv.ANIM.OFF
+            )
+
+    async def on_remove(self, i):
+        credential = self.listed_credentials.pop(i)
+        from .app_passkeys import delete_credential
+
+        delete_credential(credential.credential_index)
+        item_height = credential.get_height()
+        credential.delete()
+        self.fresh_show()
+        self.auto_adjust_scroll(item_height)
+
+    def on_click(self, event_obj):
+        code = event_obj.code
+        target = event_obj.get_target()
+        if code == lv.EVENT.CLICKED:
+            from trezor.lvglui.scrs import app_passkeys
+
+            if hasattr(self, "learn_more") and target == self.learn_more:
+                from .app_passkeys import PasskeysRegister
+
+                PasskeysRegister()
+            elif target in self.listed_credentials:
+                for i, credential in enumerate(self.listed_credentials):
+                    if target == credential:
+                        workflow.spawn(
+                            app_passkeys.request_credential_details(
+                                credential.app_name,
+                                credential.account_name,
+                                on_remove=lambda index=i: self.on_remove(index),
+                            )
+                        )
+
+    # def on_scroll(self, event_obj):
+    #     code = event_obj.code
+    #     if code == lv.EVENT.SCROLL_BEGIN:
+    #         if self.count < 5:
+    #             self.content_area.clear_flag(lv.obj.FLAG.SCROLL_ELASTIC)
+
+    def _load_scr(self, scr: "Screen", back: bool = False) -> None:
+        lv.scr_load(scr)
 
 
 class ShowAddress(Screen):
@@ -1222,6 +1386,8 @@ class SettingsScreen(Screen):
         else:
             self.refresh_text()
             self.relocation()
+            if not self.is_visible():
+                lv.scr_load(self)
             return
         # if __debug__:
         #     self.add_style(StyleWrapper().bg_color(lv_colors.ONEKEY_GREEN_1), 0)
@@ -4639,13 +4805,25 @@ class UserGuide(Screen):
         self.app_tutorial = ListItemBtn(
             self.container, _(i18n_keys.ITEM__ONEKEY_APP_TUTORIAL)
         )
-        self.power_off = ListItemBtn(
+        self.hardware_wallet = ListItemBtn(
             self.container,
-            _(i18n_keys.TITLE__POWER_ON_OFF__GUIDE),
+            _(i18n_keys.ITEM__HOW_HARDWARE_WALLET_WORKS),
         )
         self.recovery_phrase = ListItemBtn(
             self.container,
             _(i18n_keys.ITEM__WHAT_IS_RECOVERY_PHRASE),
+        )
+        self.passphrase = ListItemBtn(
+            self.container,
+            _(i18n_keys.ITEM__PASSPHRASE_ACCESS_HIDDEN_WALLETS),
+        )
+        self.passkeys = ListItemBtn(
+            self.container,
+            _(i18n_keys.FIDO_FIDO_KEYS_LABEL),
+        )
+        self.power_off = ListItemBtn(
+            self.container,
+            _(i18n_keys.TITLE__POWER_ON_OFF__GUIDE),
         )
         self.pin_protection = ListItemBtn(
             self.container,
@@ -4654,14 +4832,6 @@ class UserGuide(Screen):
         self.fingerprint = ListItemBtn(
             self.container,
             _(i18n_keys.TITLE__FINGERPRINT),
-        )
-        self.hardware_wallet = ListItemBtn(
-            self.container,
-            _(i18n_keys.ITEM__HOW_HARDWARE_WALLET_WORKS),
-        )
-        self.passphrase = ListItemBtn(
-            self.container,
-            _(i18n_keys.ITEM__PASSPHRASE_ACCESS_HIDDEN_WALLETS),
         )
         self.need_help = ListItemBtn(self.container, _(i18n_keys.ITEM__NEED_HELP))
         self.container.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
@@ -4690,6 +4860,10 @@ class UserGuide(Screen):
                 HelpDetails()
             elif target == self.fingerprint:
                 FingerprintDetails()
+            elif target == self.passkeys:
+                from .app_passkeys import PasskeysRegister
+
+                PasskeysRegister()
             else:
                 if __debug__:
                     print("Unknown")

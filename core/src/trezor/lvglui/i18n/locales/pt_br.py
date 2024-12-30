@@ -820,7 +820,7 @@ translations = [
     "Selecione a conta",
     "Ir para a Conta",
     "Erro de formatação de entrada",
-    "Os tokens ERC-20 são emitidos na rede Ethereum. Isso significa que você pode usar seu endereço de carteira ETH para receber qualquer token ERC-20.",
+    "Seu endereço é um endereço de rede EVM. Você pode usá-lo para gerenciar seus ativos em outras redes compatíveis com EVM (como Ethereum, BNB Chain, Polygon, Arbitrum One, Avalanche, etc.).",
     "Chaves de segurança",
     "Configuração da Carteira Necessária",
     "Para emparelhar seu dispositivo via Bluetooth, por favor, crie uma carteira no seu dispositivo de hardware primeiro. Isso é necessário para uma conexão segura.",
@@ -857,5 +857,9 @@ translations = [
     "5 tentativas falhas. Deslize para continuar",
     "Deslize para continuar",
     "Voltar para casa",
+    "Registrando chave FIDO...",
+    "Chave FIDO Registrada",
+    "",
+    "",
 ]
 # fmt: on

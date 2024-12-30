@@ -13,7 +13,6 @@ from trezor.crypto.curve import nist256p1
 from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
 from trezor.ui.components.common.confirm import Pageable
 from trezor.ui.components.common.webauthn import ConfirmInfo
-from trezor.ui.layouts import show_popup
 from trezor.ui.layouts.lvgl.webauthn import confirm_webauthn, confirm_webauthn_reset
 
 from apps.base import device_is_unlocked, set_homescreen
@@ -663,6 +662,8 @@ class U2fConfirmRegister(U2fState):
 
     async def confirm_dialog(self) -> bool:
         if self._cred.rp_id_hash in _BOGUS_APPIDS:
+            from trezor.ui.layouts import show_popup
+
             if self.cid == _last_good_auth_check_cid:
                 await show_popup(
                     title=_(i18n_keys.TITLE__U2F_ALREADY_REGISTERED),
@@ -852,14 +853,33 @@ class Fido2ConfirmMakeCredential(Fido2State, ConfirmInfo):
             self._client_data_hash, self._cred, self._user_verification
         )
         cmd = Cmd(self.cid, _CMD_CBOR, bytes([_ERR_NONE]) + response_data)
+        success = True
         if self._resident:
             send_cmd_sync(
                 cmd_keepalive(self.cid, _KEEPALIVE_STATUS_PROCESSING), self.iface
             )
+            from trezor.ui.layouts.lvgl import show_popup
+
+            await show_popup(
+                _(i18n_keys.TITLE__PLEASE_WAIT),
+                subtitle=_(i18n_keys.FIDO_KEY_REGISTERING_DESC),
+                timeout_ms=2000,
+            )
             if not store_resident_credential(self._cred):
                 cmd = cbor_error(self.cid, _ERR_KEY_STORE_FULL)
+                success = False
+            else:
+                await show_popup(
+                    _(i18n_keys.FIDO_KEY_REGISTERED_TITLE),
+                    icon="A:/res/success.png",
+                    timeout_ms=2000,
+                )
         await send_cmd(cmd, self.iface)
         self.finished = True
+        if not success:
+            from trezor.lvglui.scrs.app_passkeys import passkey_register_limit_reached
+
+            await passkey_register_limit_reached()
 
 
 class Fido2ConfirmExcluded(Fido2ConfirmMakeCredential):
@@ -870,6 +890,7 @@ class Fido2ConfirmExcluded(Fido2ConfirmMakeCredential):
         cmd = cbor_error(self.cid, _ERR_CREDENTIAL_EXCLUDED)
         await send_cmd(cmd, self.iface)
         self.finished = True
+        from trezor.ui.layouts import show_popup
 
         await show_popup(
             title=_(i18n_keys.TITLE__FIDO2_ALREADY_REGISTERED),
@@ -959,6 +980,7 @@ class Fido2ConfirmNoPin(State):
         cmd = cbor_error(self.cid, _ERR_UNSUPPORTED_OPTION)
         await send_cmd(cmd, self.iface)
         self.finished = True
+        from trezor.ui.layouts import show_popup
 
         await show_popup(
             title=_(i18n_keys.TITLE__FIDO2_VERIFY_USER),
@@ -980,6 +1002,7 @@ class Fido2ConfirmNoCredentials(Fido2ConfirmGetAssertion):
         cmd = cbor_error(self.cid, _ERR_NO_CREDENTIALS)
         await send_cmd(cmd, self.iface)
         self.finished = True
+        from trezor.ui.layouts import show_popup
 
         await show_popup(
             title=_(i18n_keys.TITLE__FIDO2_AUTHENTICATE_NOT_REGISTERED),

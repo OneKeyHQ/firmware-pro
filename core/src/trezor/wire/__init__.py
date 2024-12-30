@@ -428,12 +428,6 @@ async def _handle_single_message(
         from trezor.enums import MessageType
 
         if msg.type in [
-            MessageType.WebAuthnListResidentCredentials,
-            MessageType.WebAuthnAddResidentCredential,
-            MessageType.WebAuthnRemoveResidentCredential,
-        ]:
-            await ctx.write(unsupported_yet("WebAuthn"))
-        elif msg.type in [
             MessageType.ResetDevice,
             MessageType.RecoveryDevice,
             MessageType.BackupDevice,

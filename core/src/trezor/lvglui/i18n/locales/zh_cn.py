@@ -820,7 +820,7 @@ translations = [
     "选择帐户",
     "前往账户",
     "输入格式错误",
-    "ERC-20 代币在 Ethereum 网络上发行。这意味着可以使用 ETH 钱包地址接收任何 ERC-20 代币。",
+    "当前地址是一个 EVM 网络地址。您可同步管理其他 EVM 兼容网络（如 Ethereum、BNB Chain、Polygon、Arbitrum One、Avalanche等）上的资产。",
     "安全密钥",
     "需要设置钱包",
     "要通过 Bluetooth 配对您的设备，请先在您的硬件设备上创建一个 wallet 。这是确保安全连接所必需的。",
@@ -857,5 +857,9 @@ translations = [
     "5 次尝试失败。滑动继续",
     "滑动继续",
     "返回首页",
+    "注册 FIDO 密钥...",
+    "FIDO 密钥已注册",
+    "",
+    "",
 ]
 # fmt: on
