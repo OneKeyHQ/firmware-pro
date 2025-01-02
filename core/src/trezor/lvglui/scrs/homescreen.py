@@ -624,8 +624,8 @@ class ShowAddress(Screen):
     def _create_visible_chain_buttons(self):
         """Create visible chain buttons"""
         for i in range(min(self.visible_chains_count, len(self.chains))):
-            msg_type, chain_info = self.chains[i]
-
+            chain_info = self.chains[i]
+            
             btn = ListItemBtn(
                 self.container,
                 f" {chain_info['name']}",
@@ -663,7 +663,7 @@ class ShowAddress(Screen):
                 )
 
             btn.add_event_cb(
-                lambda e, mt=msg_type: self.on_chain_click(e, mt),
+                lambda e, n=chain_info["name"]: self.on_chain_click(e, n),
                 lv.EVENT.CLICKED,
                 None,
             )
@@ -690,14 +690,14 @@ class ShowAddress(Screen):
         """Handle account selection click"""
         IndexSelectionScreen(self)
 
-    def on_chain_click(self, event, msg_type):
+    def on_chain_click(self, event, name):
         """Handle chain selection click"""
         if utils.lcd_resume():
             return
 
         addr_manager = AddressManager()
 
-        workflow.spawn(addr_manager.generate_address(msg_type, self.current_index))
+        workflow.spawn(addr_manager.generate_address(name, self.current_index))
 
     def update_index_btn_text(self):
         """Update account button text"""
@@ -718,7 +718,7 @@ class ShowAddress(Screen):
 
         if self.created_count < len(self.chains):
             for i in range(self.created_count, len(self.chains)):
-                msg_type, chain_info = self.chains[i]
+                chain_info = self.chains[i]
                 btn = ListItemBtn(
                     self.container,
                     f" {chain_info['name']}",
@@ -726,7 +726,7 @@ class ShowAddress(Screen):
                     has_next=False,
                 )
                 btn.add_event_cb(
-                    lambda e, mt=msg_type: self.on_chain_click(e, mt),
+                    lambda e, n=chain_info["name"]: self.on_chain_click(e, n),
                     lv.EVENT.CLICKED,
                     None,
                 )

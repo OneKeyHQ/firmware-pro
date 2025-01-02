@@ -1369,7 +1369,7 @@ async def confirm_password_input(ctx: wire.Context) -> None:
         title=_(i18n_keys.MISTOUCH_PROTECTION_TITLE),
         action=_(i18n_keys.MISTOUCH_PROTECTION_DESC),
         verb=_(i18n_keys.MISTOUCH_PROTECTION_SLIDE_TEXT),
-        verb_cancel=_(i18n_keys.BUTTON__BACK_TO_HOME),
+        verb_cancel=_(i18n_keys.BUTTON__BACK),
         hold=True,
         anim_dir=0,
         icon="A:/assets/prompt/protection.png",

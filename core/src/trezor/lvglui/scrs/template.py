@@ -177,7 +177,7 @@ class Address(FullSizeWindow):
 
 
 class BTCDeriveSelectionScreen(FullSizeWindow):
-    def __init__(self, prev_scr=None, addr_type=None, net_scr=None):
+    def __init__(self, prev_scr=None, addr_type=None, net_scr=None, has_taproot=True):
         super().__init__(
             _(i18n_keys.TITLE__SELECT_DERIVATION_PATH),
             None,
@@ -191,12 +191,19 @@ class BTCDeriveSelectionScreen(FullSizeWindow):
         self.add_nav_back()
 
         # Create derivation option buttons
-        self.derive_options = [
-            ("Nested Segwit", InputScriptType.SPENDP2SHWITNESS),
-            ("Taproot", InputScriptType.SPENDTAPROOT),
-            ("Native Segwit", InputScriptType.SPENDWITNESS),
-            ("Legacy", InputScriptType.SPENDADDRESS),
-        ]
+        if has_taproot:
+            self.derive_options = [
+                ("Nested Segwit", InputScriptType.SPENDP2SHWITNESS),
+                ("Taproot", InputScriptType.SPENDTAPROOT),
+                ("Native Segwit", InputScriptType.SPENDWITNESS),
+                ("Legacy", InputScriptType.SPENDADDRESS),
+            ]
+        else:
+            self.derive_options = [
+                ("Nested Segwit", InputScriptType.SPENDP2SHWITNESS),
+                ("Native Segwit", InputScriptType.SPENDWITNESS),
+                ("Legacy", InputScriptType.SPENDADDRESS),
+            ]
 
         self.container = ContainerFlexCol(self.content_area, self.title, padding_row=2)
 
@@ -342,7 +349,7 @@ class AddressOffline(FullSizeWindow):
         self.icon = icon_path
         self.addr_type = addr_type
         self.evm_chain_id = evm_chain_id
-        self.network = title.split(" ")[0]
+        self.network = network
         self.prev_scr = prev_scr
         self.account_name = account_name
         if primary_color:
@@ -364,7 +371,9 @@ class AddressOffline(FullSizeWindow):
         self.btn_no.label.set_text(_(i18n_keys.BUTTON__QRCODE))
 
         # derive btn
-        if self.network in ("Bitcoin", "Ethereum"):
+        print("network", self.network)
+        if self.network in ("Bitcoin", "Ethereum", "Solana", "Litecoin"):
+            print("add derive btn")
             self.derive_btn = ListItemBtn(
                 self.content_area,
                 self.addr_type,
@@ -372,26 +381,30 @@ class AddressOffline(FullSizeWindow):
                 has_next=True,
             )
 
-        else:
-            self.derive_btn = ListItemBtn(
-                self.content_area,
-                self.addr_type,
-                left_img_src="A:/res/branches.png",
-                has_next=False,
+        # else:
+        #     self.derive_btn = ListItemBtn(
+        #         self.content_area,
+        #         self.addr_type,
+        #         left_img_src="A:/res/branches.png",
+        #         has_next=False,
+        #     )
+        #     self.derive_btn.remove_style(None, lv.PART.MAIN | lv.STATE.PRESSED)
+
+            self.derive_btn.align_to(self.title, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 40)
+            self.derive_btn.set_style_radius(40, 0)
+            self.derive_btn.add_style(
+                StyleWrapper().bg_color(lv_colors.ONEKEY_GRAY_3),
+                0,
             )
-            self.derive_btn.remove_style(None, lv.PART.MAIN | lv.STATE.PRESSED)
 
-        self.derive_btn.align_to(self.title, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 40)
-        self.derive_btn.set_style_radius(40, 0)
-        self.derive_btn.add_style(
-            StyleWrapper().bg_color(lv_colors.ONEKEY_GRAY_3),
-            0,
-        )
-
-        # address
-        self.group_address = ContainerFlexCol(
-            self.content_area, self.derive_btn, pos=(0, 8), padding_row=0
-        )
+            # address
+            self.group_address = ContainerFlexCol(
+                self.content_area, self.derive_btn, pos=(0, 8), padding_row=0
+            )
+        else:
+            self.group_address = ContainerFlexCol(
+                self.content_area, self.title, lv.ALIGN.OUT_BOTTOM_LEFT, pos=(0, 40), padding_row=0
+            )
         self.item_group_header = CardHeader(
             self.group_address,
             self.account_name,
@@ -475,8 +488,10 @@ class AddressOffline(FullSizeWindow):
                 self.channel.publish(ADDRESS_OFFLINE_RETURN_TYPE.DONE)
             elif hasattr(self, "derive_btn") and target == self.derive_btn:
                 if self.network == "Bitcoin":
-                    BTCDeriveSelectionScreen(self, self.addr_type, self.prev_scr)
-                elif self.network == "Ethereum":
+                    BTCDeriveSelectionScreen(self, self.addr_type, self.prev_scr, has_taproot=True)
+                elif self.network == "Litecoin":
+                    BTCDeriveSelectionScreen(self, self.addr_type, self.prev_scr, has_taproot=False)
+                elif self.network == "Ethereum" or self.network == "Solana":
                     ETHDeriveSelectionScreen(self, self.addr_type)
                 else:
                     pass
