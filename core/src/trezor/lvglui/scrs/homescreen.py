@@ -625,7 +625,7 @@ class ShowAddress(Screen):
         """Create visible chain buttons"""
         for i in range(min(self.visible_chains_count, len(self.chains))):
             chain_info = self.chains[i]
-            
+
             btn = ListItemBtn(
                 self.container,
                 f" {chain_info['name']}",

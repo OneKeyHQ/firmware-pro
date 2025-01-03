@@ -371,24 +371,13 @@ class AddressOffline(FullSizeWindow):
         self.btn_no.label.set_text(_(i18n_keys.BUTTON__QRCODE))
 
         # derive btn
-        print("network", self.network)
         if self.network in ("Bitcoin", "Ethereum", "Solana", "Litecoin"):
-            print("add derive btn")
             self.derive_btn = ListItemBtn(
                 self.content_area,
                 self.addr_type,
                 left_img_src="A:/res/branches.png",
                 has_next=True,
             )
-
-        # else:
-        #     self.derive_btn = ListItemBtn(
-        #         self.content_area,
-        #         self.addr_type,
-        #         left_img_src="A:/res/branches.png",
-        #         has_next=False,
-        #     )
-        #     self.derive_btn.remove_style(None, lv.PART.MAIN | lv.STATE.PRESSED)
 
             self.derive_btn.align_to(self.title, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 40)
             self.derive_btn.set_style_radius(40, 0)
@@ -403,7 +392,11 @@ class AddressOffline(FullSizeWindow):
             )
         else:
             self.group_address = ContainerFlexCol(
-                self.content_area, self.title, lv.ALIGN.OUT_BOTTOM_LEFT, pos=(0, 40), padding_row=0
+                self.content_area,
+                self.title,
+                lv.ALIGN.OUT_BOTTOM_LEFT,
+                pos=(0, 40),
+                padding_row=0,
             )
         self.item_group_header = CardHeader(
             self.group_address,
@@ -488,10 +481,14 @@ class AddressOffline(FullSizeWindow):
                 self.channel.publish(ADDRESS_OFFLINE_RETURN_TYPE.DONE)
             elif hasattr(self, "derive_btn") and target == self.derive_btn:
                 if self.network == "Bitcoin":
-                    BTCDeriveSelectionScreen(self, self.addr_type, self.prev_scr, has_taproot=True)
+                    BTCDeriveSelectionScreen(
+                        self, self.addr_type, self.prev_scr, has_taproot=True
+                    )
                 elif self.network == "Litecoin":
-                    BTCDeriveSelectionScreen(self, self.addr_type, self.prev_scr, has_taproot=False)
-                elif self.network == "Ethereum" or self.network == "Solana":
+                    BTCDeriveSelectionScreen(
+                        self, self.addr_type, self.prev_scr, has_taproot=False
+                    )
+                elif self.network in ("Ethereum", "Solana"):
                     ETHDeriveSelectionScreen(self, self.addr_type)
                 else:
                     pass

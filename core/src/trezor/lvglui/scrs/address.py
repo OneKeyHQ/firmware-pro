@@ -224,10 +224,27 @@ chain_list = [
         "name": "Benfen",
         "msg_class": "BenfenGetAddress",
         "index_pos": -3,
-        "base_path": [0x80000000 + 44, 0x80000000 + 728, 0x80000000 + 0, 0x80000000 + 0, 0x80000000 + 0],
+        "base_path": [
+            0x80000000 + 44,
+            0x80000000 + 728,
+            0x80000000 + 0,
+            0x80000000 + 0,
+            0x80000000 + 0,
+        ],
         "icon_96": "A:/res/chain-benfen.png",
         "icon_48": "A:/assets/addr/chain-benfen-48.png",
         "primary_color": 0xCD4937,
+    },
+    {
+        "msg_type": MessageType.GetAddress,
+        "symbol": " BCH",
+        "name": "Bitcoin Cash",
+        "msg_class": "GetAddress",
+        "index_pos": -3,
+        "legacy_path": [0x80000000 + 44, 0x80000000 + 145, 0x80000000 + 0, 0, 0],
+        "icon_96": "A:/res/btc-bch.png",
+        "icon_48": "A:/assets/addr/btc-bch-48.png",
+        "primary_color": 0x0AC18E,
     },
     {
         "msg_type": MessageType.ConfluxGetAddress,
@@ -288,15 +305,15 @@ chain_list = [
         "primary_color": 0x3683F7,
     },
     {
-        "msg_type": MessageType.GetAddress,
-        "symbol": " BCH",
-        "name": "Bitcoin Cash",
-        "msg_class": "GetAddress",
-        "index_pos": -3,
-        "legacy_path": [0x80000000 + 44, 0x80000000 + 145, 0x80000000 + 0, 0, 0],
-        "icon_96": "A:/res/btc-bch.png",
-        "icon_48": "A:/assets/addr/btc-bch-48.png",
-        "primary_color": 0x0AC18E,
+        "msg_type": MessageType.NervosGetAddress,
+        "symbol": " CKB",
+        "name": "Nervos",
+        "msg_class": "NervosGetAddress",
+        "index_pos": -1,
+        "base_path": [0x80000000 + 44, 0x80000000 + 309, 0x80000000 + 0, 0, 0],
+        "icon_96": "A:/res/chain-nervos.png",
+        "icon_48": "A:/assets/addr/chain-nervos-48.png",
+        "primary_color": 0xFFFFFF,
     },
     {
         "msg_type": MessageType.GetAddress,
@@ -308,17 +325,6 @@ chain_list = [
         "icon_96": "A:/res/btc-xna.png",
         "icon_48": "A:/assets/addr/btc-xna-48.png",
         "primary_color": 0x793EAA,
-    },
-    {
-        "msg_type": MessageType.NervosGetAddress,
-        "symbol": " CKB",
-        "name": "Nervos",
-        "msg_class": "NervosGetAddress",
-        "index_pos": -1,
-        "base_path": [0x80000000 + 44, 0x80000000 + 309, 0x80000000 + 0, 0, 0],
-        "icon_96": "A:/res/chain-nervos.png",
-        "icon_48": "A:/assets/addr/chain-nervos-48.png",
-        "primary_color": 0xFFFFFF,
     },
     {
         "msg_type": MessageType.NexaGetAddress,
@@ -439,7 +445,7 @@ class AddressManager:
         path[pos] += self.current_index
         msg_class = getattr(messages, self.current_chain_info["msg_class"])
         return msg_class(address_n=path, show_display=False)
-    
+
     def _prepare_sol_message(self):
         """Prepare Solana message"""
         if self.current_chain_info is None:
@@ -545,7 +551,7 @@ class AddressManager:
 
         msg_class = getattr(messages, self.current_chain_info["msg_class"])
         return msg_class(address_n=path, show_display=False, prefix="nexa")
-    
+
     def _prepare_doge_message(self):
         """Prepare Dogecoin message"""
         if self.current_chain_info is None:
@@ -558,7 +564,7 @@ class AddressManager:
 
         msg_class = getattr(messages, self.current_chain_info["msg_class"])
         return msg_class(address_n=path, show_display=False, coin_name="Dogecoin")
-    
+
     def _prepare_bch_message(self):
         """Prepare Bitcoin Cash message"""
         if self.current_chain_info is None:
@@ -571,7 +577,7 @@ class AddressManager:
 
         msg_class = getattr(messages, self.current_chain_info["msg_class"])
         return msg_class(address_n=path, show_display=False, coin_name="Bcash")
-    
+
     def _prepare_xna_message(self):
         """Prepare Neurai message"""
         if self.current_chain_info is None:
@@ -584,7 +590,7 @@ class AddressManager:
 
         msg_class = getattr(messages, self.current_chain_info["msg_class"])
         return msg_class(address_n=path, show_display=False, coin_name="Neurai")
-    
+
     def _prepare_ltc_message(self):
         """Prepare Litecoin message"""
         if self.current_chain_info is None:
@@ -608,9 +614,12 @@ class AddressManager:
 
         msg_class = getattr(messages, self.current_chain_info["msg_class"])
         return msg_class(
-            address_n=path, show_display=False, coin_name="Litecoin", script_type=self.btc_script_type
+            address_n=path,
+            show_display=False,
+            coin_name="Litecoin",
+            script_type=self.btc_script_type,
         )
-    
+
     def _prepare_default_message(self):
         """Prepare default chain message"""
         if self.current_chain_info is None:
