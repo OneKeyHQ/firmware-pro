@@ -1923,6 +1923,7 @@ class ScanScreen(Screen):
         else:
             return
 
+        self.nav_back.align(lv.ALIGN.TOP_RIGHT, 0, 44)
         self.nav_back.nav_btn.add_style(
             StyleWrapper().bg_img_src("A:/res/nav-close.png"), 0
         )
