@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 async def get_address(
     ctx: Context, msg: SuiGetAddress, keychain: Keychain
 ) -> SuiAddress:
-    await paths.validate_path(ctx, keychain, msg.address_n, force_strict=True)
+    await paths.validate_path(ctx, keychain, msg.address_n)
     ctx.primary_color, ctx.icon_path = lv.color_hex(PRIMARY_COLOR), ICON
     node = keychain.derive(msg.address_n)
     pub_key_bytes = seed.remove_ed25519_prefix(node.public_key())

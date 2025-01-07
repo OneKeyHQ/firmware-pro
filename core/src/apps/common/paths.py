@@ -29,7 +29,7 @@ if TYPE_CHECKING:
         def is_in_keychain(self, path: Bip32Path) -> bool:
             ...
 
-        def verify_path(self, path: Bip32Path, force_strict: bool = False) -> None:
+        def verify_path(self, path: Bip32Path, force_strict: bool = True) -> None:
             ...
 
 
@@ -353,7 +353,7 @@ async def validate_path(
     ctx: wire.Context,
     keychain: KeychainValidatorType,
     path: Bip32Path,
-    force_strict: bool = False,
+    force_strict: bool = True,
     *additional_checks: bool,
 ) -> None:
     keychain.verify_path(path, force_strict)

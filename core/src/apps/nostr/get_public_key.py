@@ -24,7 +24,7 @@ async def get_public_key(
     ctx: Context, msg: NostrGetPublicKey, keychain: Keychain
 ) -> NostrPublicKey:
 
-    await paths.validate_path(ctx, keychain, msg.address_n, force_strict=True)
+    await paths.validate_path(ctx, keychain, msg.address_n)
 
     node = keychain.derive(msg.address_n)
     pubkey = hexlify(node.public_key()[1:33]).decode()

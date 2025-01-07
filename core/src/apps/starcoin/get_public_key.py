@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 async def get_public_key(
     ctx: Context, msg: StarcoinGetPublicKey, keychain: Keychain
 ) -> StarcoinPublicKey:
-    await paths.validate_path(ctx, keychain, msg.address_n, force_strict=True)
+    await paths.validate_path(ctx, keychain, msg.address_n)
     node = keychain.derive(msg.address_n)
     pubkey = node.public_key()[1:]
 

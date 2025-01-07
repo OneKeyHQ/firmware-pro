@@ -12,7 +12,7 @@ from . import helper, seed, transaction
 async def sign_tx(
     ctx: wire.Context, msg: PolkadotSignTx, keychain: seed.Keychain
 ) -> PolkadotSignedTx:
-    await paths.validate_path(ctx, keychain, msg.address_n, force_strict=True)
+    await paths.validate_path(ctx, keychain, msg.address_n)
 
     node = keychain.derive(msg.address_n)
     if utils.USE_THD89:

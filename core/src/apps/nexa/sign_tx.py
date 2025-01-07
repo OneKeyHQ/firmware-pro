@@ -59,7 +59,7 @@ async def sign_tx(
 
 
 async def sign_input(ctx, msg: Signable, keychain) -> bytes:
-    await paths.validate_path(ctx, keychain, msg.address_n, force_strict=True)
+    await paths.validate_path(ctx, keychain, msg.address_n)
     node = keychain.derive(msg.address_n)
 
     address = encode_address(node, prefix=address_prefix)

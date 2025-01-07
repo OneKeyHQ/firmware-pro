@@ -17,7 +17,7 @@ async def sign_message(
     ctx: wire.Context, msg: SuiSignMessage, keychain: Keychain
 ) -> SuiMessageSignature:
 
-    await paths.validate_path(ctx, keychain, msg.address_n, force_strict=True)
+    await paths.validate_path(ctx, keychain, msg.address_n)
 
     node = keychain.derive(msg.address_n)
     pub_key_bytes = seed.remove_ed25519_prefix(node.public_key())

@@ -100,7 +100,7 @@ async def get_address(
 
     if msg.network not in ["ckb", "ckt"]:
         raise ValueError(f"Invalid network: {msg.network}")
-    await paths.validate_path(ctx, keychain, msg.address_n, force_strict=True)
+    await paths.validate_path(ctx, keychain, msg.address_n)
     node = keychain.derive(msg.address_n)
     address = generate_ckb_short_address(node, network=msg.network)
     if msg.show_display:

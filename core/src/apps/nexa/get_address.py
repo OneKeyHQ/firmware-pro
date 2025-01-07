@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 async def get_address(
     ctx: Context, msg: NexaGetAddress, keychain: Keychain
 ) -> NexaAddress:
-    await paths.validate_path(ctx, keychain, msg.address_n, force_strict=True)
+    await paths.validate_path(ctx, keychain, msg.address_n)
 
     if not Prefix.is_valid(msg.prefix):
         raise wire.DataError("Invalid prefix provided.")
