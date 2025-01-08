@@ -32,15 +32,31 @@ async def process_transaction(
     if coin_type:
         try:
             if not all(c < 128 for c in coin_type):
-                raise wire.DataError("Invalid coin_type encoding")
+                await confirm_blind_sign_common(ctx, address, tx_bytes)
+                return blake2b(data=tx_bytes, outlen=32).digest()
             currency_symbol = coin_type.decode("ascii")
             if currency_symbol and "::" in currency_symbol:
                 currency_symbol = currency_symbol.split("::")[-1]
-            ALLOWED_TOKENS = {"BJPY", "BUSD", "LONG", "BF_USDC", "BF_USDT", "BFC"}
+            ALLOWED_TOKENS = {
+                "BJPY",
+                "BUSD",
+                "LONG",
+                "BF_USDC",
+                "BF_USDT",
+                "BFC",
+                "BAUD",
+                "BCAD",
+                "BEUR",
+                "BIDR",
+                "BINR",
+                "BKRW",
+                "BMXN",
+            }
             if currency_symbol not in ALLOWED_TOKENS:
-                raise wire.DataError("Unsupported token type")
+                currency_symbol = "UNKNOWN"
         except UnicodeDecodeError:
-            raise wire.DataError("coin_type must be ASCII encoded")
+            await confirm_blind_sign_common(ctx, address, tx_bytes)
+            return blake2b(data=tx_bytes, outlen=32).digest()
     else:
         await confirm_blind_sign_common(ctx, address, tx_bytes)
         return blake2b(data=tx_bytes, outlen=32).digest()
