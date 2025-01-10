@@ -580,54 +580,6 @@ secbool bootloader_usb_loop_factory(const vendor_header* const vhdr,
   return sectrue;
 }
 
-// secbool load_vendor_header_keys(const uint8_t* const data,
-//                                 vendor_header* const vhdr) {
-//   return load_vendor_header(data, FW_KEY_M, FW_KEY_N, FW_KEYS, vhdr);
-// }
-
-// static secbool check_vendor_header_lock(const vendor_header* const vhdr) {
-//   uint8_t lock[FLASH_OTP_BLOCK_SIZE];
-//   ensure(flash_otp_read(FLASH_OTP_BLOCK_VENDOR_HEADER_LOCK, 0, lock,
-//                         FLASH_OTP_BLOCK_SIZE),
-//          NULL);
-//   if (0 ==
-//       memcmp(lock,
-//              "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
-//              "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF",
-//              FLASH_OTP_BLOCK_SIZE)) {
-//     return sectrue;
-//   }
-//   uint8_t hash[32];
-//   vendor_header_hash(vhdr, hash);
-//   return sectrue * (0 == memcmp(lock, hash, 32));
-// }
-
-// static secbool validate_firmware_headers(vendor_header* const vhdr,
-//                                          image_header* const hdr) {
-//   set_handle_flash_ecc_error(sectrue);
-//   secbool result = secfalse;
-//   while (true) {
-//     // check
-//     if (sectrue !=
-//         load_vendor_header_keys((const uint8_t*)FIRMWARE_START, vhdr))
-//       break;
-
-//     if (sectrue != check_vendor_header_lock(vhdr)) break;
-
-//     if (sectrue !=
-//         load_image_header((const uint8_t*)(FIRMWARE_START + vhdr->hdrlen),
-//                           FIRMWARE_IMAGE_MAGIC, FIRMWARE_IMAGE_MAXSIZE,
-//                           vhdr->vsig_m, vhdr->vsig_n, vhdr->vpub, hdr))
-//       break;
-
-//     // passed, return true
-//     result = sectrue;
-//     break;
-//   }
-//   set_handle_flash_ecc_error(secfalse);
-//   return result;
-// }
-
 #if PRODUCTION
 
 // protection against bootloader downgrade
@@ -681,8 +633,9 @@ static BOOT_TARGET decide_boot_target(vendor_header* const vhdr,
   // check firmware
   set_handle_flash_ecc_error(sectrue);
   char err_msg[64];
-  secbool all_good = verify_firmware(vhdr_valid, hdr_valid, fw_valid, err_msg,
-                                     sizeof(err_msg));
+  secbool all_good = verify_firmware(vhdr, hdr, vhdr_valid, hdr_valid, fw_valid,
+                                     err_msg, sizeof(err_msg));
+
   set_handle_flash_ecc_error(secfalse);
 
   if (all_good != sectrue) {
@@ -847,7 +800,7 @@ int main(void) {
 
     mpu_config_off();
 
-    jump_to(FIRMWARE_START + vhdr.hdrlen + IMAGE_HEADER_SIZE);
+    jump_to(FIRMWARE_START + vhdr.hdrlen + hdr.hdrlen);
   }
 
   error_shutdown("Internal error", "Boot target invalid", "Tap to restart.",

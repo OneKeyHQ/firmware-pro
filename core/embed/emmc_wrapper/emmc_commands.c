@@ -1086,14 +1086,17 @@ int process_msg_FirmwareUpdateEmmc(uint8_t iface_num, uint32_t msg_size, uint8_t
                 }
             );
 
-            ExecuteCheck_MSGS_ADV(verify_firmware(NULL, NULL, NULL, err_msg, sizeof(err_msg)), sectrue, {
-                send_failure(iface_num, FailureType_Failure_ProcessError, "New firmware hash invalid!");
-                // wipe invalid firmware, don't care the result as we cannot control, but we have to try
-                EMMC_WRAPPER_FORCE_IGNORE(
-                    flash_erase_sectors(FIRMWARE_SECTORS, FIRMWARE_INNER_SECTORS_COUNT, NULL)
-                );
-                return -1;
-            });
+            ExecuteCheck_MSGS_ADV(
+                verify_firmware(NULL, NULL, NULL, NULL, NULL, err_msg, sizeof(err_msg)), sectrue,
+                {
+                    send_failure(iface_num, FailureType_Failure_ProcessError, "New firmware hash invalid!");
+                    // wipe invalid firmware, don't care the result as we cannot control, but we have to try
+                    EMMC_WRAPPER_FORCE_IGNORE(
+                        flash_erase_sectors(FIRMWARE_SECTORS, FIRMWARE_INNER_SECTORS_COUNT, NULL)
+                    );
+                    return -1;
+                }
+            );
 
             // backup new firmware header (not used since no where to stroe it)
             // As the firmware in flash has is the the same as the one from file, and it has been verified, we

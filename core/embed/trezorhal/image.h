@@ -152,7 +152,9 @@ secbool __wur install_firmware(const uint8_t* const fw_buffer,
                                const size_t fw_size, char* error_msg,
                                size_t error_msg_len, size_t* const processed,
                                void (*const progress_callback)(int));
-secbool __wur verify_firmware(secbool* const vhdr_valid,
+secbool __wur verify_firmware(vendor_header* const vhdr,
+                              image_header* const hdr,
+                              secbool* const vhdr_valid,
                               secbool* const hdr_valid,
                               secbool* const code_valid, char* error_msg,
                               size_t error_msg_len);

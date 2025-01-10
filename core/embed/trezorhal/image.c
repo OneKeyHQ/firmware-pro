@@ -575,16 +575,41 @@ secbool install_firmware(const uint8_t* const fw_buffer, const size_t fw_size,
   return sectrue;
 }
 
-secbool verify_firmware(secbool* const vhdr_valid, secbool* const hdr_valid,
+/*
+  Note:
+  why load and output headers and firmware from here instead of individual
+  functions, is to ensure what we output is what we checked
+
+  All arguments are OPTIONAL, put NULL if not used
+
+  vhdr -> pointer to vender header buffer, output vhdr data
+  hdr -> pointer to image header buffer, output hdr data
+  xxx_valid -> output validate results
+  error_msg, error_msg_len -> output error message
+
+  return value -> total check result
+ */
+secbool verify_firmware(vendor_header* const vhdr, image_header* const hdr,
+                        secbool* const vhdr_valid, secbool* const hdr_valid,
                         secbool* const code_valid, char* error_msg,
                         size_t error_msg_len) {
-  if (code_valid != NULL) *vhdr_valid = secfalse;
-  if (code_valid != NULL) *hdr_valid = secfalse;
+  // internal vars
+  vendor_header _vhdr = {0};
+  image_header _hdr = {0};
+  secbool _vhdr_valid = secfalse;
+  secbool _hdr_valid = secfalse;
+  secbool _code_valid = secfalse;
+
+  // optional arguments wipe default
+  if (vhdr != NULL) memset(vhdr, 0xff, sizeof(vendor_header));
+  if (hdr != NULL) memset(hdr, 0xff, sizeof(image_header));
+  if (vhdr_valid != NULL) *vhdr_valid = secfalse;
+  if (hdr_valid != NULL) *hdr_valid = secfalse;
   if (code_valid != NULL) *code_valid = secfalse;
+  if (error_msg != NULL) memset(error_msg, '\0', error_msg_len);
 
   // sanity check
-  if (error_msg == NULL  // must provide error reporting msg buffer
-  )
+  if (error_msg == NULL)  // must provide error reporting msg buffer
     return secfalse;
 
   // const vars
@@ -594,50 +619,53 @@ secbool verify_firmware(secbool* const vhdr_valid, secbool* const hdr_valid,
       FLASH_FIRMWARE_SECTOR_SIZE *
       (FIRMWARE_SECTORS_COUNT - FIRMWARE_INNER_SECTORS_COUNT);
 
-  // vars
-  vendor_header vhdr;
-  image_header hdr;
-
-  // verify vhdr
+  // verify _vhdr
   ExecuteCheck_ADV(load_vendor_header((const uint8_t*)FIRMWARE_START, FW_KEY_M,
-                                      FW_KEY_N, FW_KEYS, &vhdr),
+                                      FW_KEY_N, FW_KEYS, &_vhdr),
                    sectrue, {
-                     strncpy(error_msg, "Firmware vender header invalid!",
-                             error_msg_len);
+                     if (error_msg != NULL)
+                       strncpy(error_msg, "Firmware vender header invalid!",
+                               error_msg_len);
                      return secfalse;
                    });
-  if (code_valid != NULL) *vhdr_valid = sectrue;
+  _vhdr_valid = sectrue;
+  if (vhdr != NULL) memcpy(vhdr, &_vhdr, sizeof(vendor_header));
+  if (vhdr_valid != NULL) *vhdr_valid = _vhdr_valid;
 
-  // verify hdr
+  // verify _hdr
   ExecuteCheck_ADV(
-      load_image_header((const uint8_t*)(FIRMWARE_START + vhdr.hdrlen),
+      load_image_header((const uint8_t*)(FIRMWARE_START + _vhdr.hdrlen),
                         FIRMWARE_IMAGE_MAGIC, FIRMWARE_IMAGE_MAXSIZE,
-                        vhdr.vsig_m, vhdr.vsig_n, vhdr.vpub, &hdr),
+                        _vhdr.vsig_m, _vhdr.vsig_n, _vhdr.vpub, &_hdr),
       sectrue, {
-        strncpy(error_msg, "Firmware image header invalid!", error_msg_len);
+        if (error_msg != NULL)
+          strncpy(error_msg, "Firmware image header invalid!", error_msg_len);
         return secfalse;
       });
-  if (code_valid != NULL) *hdr_valid = sectrue;
+  _hdr_valid = sectrue;
+  if (hdr != NULL) memcpy(hdr, &_hdr, sizeof(image_header));
+  if (hdr_valid != NULL) *hdr_valid = _hdr_valid;
 
   // verify p1
   ExecuteCheck_ADV(
       check_image_contents_ADV(
-          &vhdr, &hdr,
-          (const uint8_t*)FIRMWARE_START + vhdr.hdrlen + hdr.hdrlen, 0,
-          fw_internal_size - (vhdr.hdrlen + hdr.hdrlen)),
+          &_vhdr, &_hdr,
+          (const uint8_t*)FIRMWARE_START + _vhdr.hdrlen + _hdr.hdrlen, 0,
+          fw_internal_size - (_vhdr.hdrlen + _hdr.hdrlen)),
       sectrue, {
-        strncpy(error_msg, "Firmware code invalid! (P1)", error_msg_len);
+        if (error_msg != NULL)
+          strncpy(error_msg, "Firmware code invalid! (P1)", error_msg_len);
         return secfalse;
       });
 
   // verify p2
-
   if (get_hw_ver() >= HW_VER_3P0A) {
     EMMC_PATH_INFO path_info = {0};
     uint32_t processed_len = 0;
 
     ExecuteCheck_ADV(emmc_fs_path_info("0:data/fw_p2.bin", &path_info), true, {
-      strncpy(error_msg, "Firmware code invalid! (P2_EMMC_1)", error_msg_len);
+      if (error_msg != NULL)
+        strncpy(error_msg, "Firmware code invalid! (P2_EMMC_1)", error_msg_len);
       return secfalse;
     });
 
@@ -645,28 +673,34 @@ secbool verify_firmware(secbool* const vhdr_valid, secbool* const hdr_valid,
                          "0:data/fw_p2.bin", 0, (uint32_t*)0xD1C00000,
                          MAX(path_info.size, fw_external_size), &processed_len),
                      true, {
-                       strncpy(error_msg, "Firmware code invalid! (P2_EMMC_2)",
-                               error_msg_len);
+                       if (error_msg != NULL)
+                         strncpy(error_msg,
+                                 "Firmware code invalid! (P2_EMMC_2)",
+                                 error_msg_len);
                        return secfalse;
                      });
   } else {
     memcpy((uint8_t*)0xD1C00000, (const uint8_t*)0x90000000,
-           hdr.codelen - (fw_internal_size - (vhdr.hdrlen + hdr.hdrlen)));
+           _hdr.codelen - (fw_internal_size - (_vhdr.hdrlen + _hdr.hdrlen)));
   }
 
   ExecuteCheck_ADV(
       check_image_contents_ADV(
-          &vhdr, &hdr, (const uint8_t*)0xD1C00000,
-          (fw_internal_size - (vhdr.hdrlen + hdr.hdrlen)),
-          hdr.codelen - (fw_internal_size - (vhdr.hdrlen + hdr.hdrlen))),
+          &_vhdr, &_hdr, (const uint8_t*)0xD1C00000,
+          (fw_internal_size - (_vhdr.hdrlen + _hdr.hdrlen)),
+          _hdr.codelen - (fw_internal_size - (_vhdr.hdrlen + _hdr.hdrlen))),
       sectrue, {
         memset((uint8_t*)0xD1C00000, 0x00,
                (2 * 1024 * 1024));  // wipe the buffer if fail
-        strncpy(error_msg, "Firmware code invalid! (P2)", error_msg_len);
+        if (error_msg != NULL)
+          strncpy(error_msg, "Firmware code invalid! (P2)", error_msg_len);
         return secfalse;
       });
+  _code_valid = sectrue;
+  if (code_valid != NULL) *code_valid = _code_valid;
 
-  if (code_valid != NULL) *code_valid = sectrue;
-
-  return sectrue;
+  return (((_vhdr_valid == sectrue) && (_hdr_valid == sectrue) &&
+           (_code_valid == sectrue)))
+             ? sectrue
+             : secfalse;
 }
