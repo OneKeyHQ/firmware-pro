@@ -316,8 +316,10 @@ int jpeg_decode_start(const char *path) {
                       Jpeg_IN_BufferTab[0].DataBufferSize,
                       (uint8_t *)FrameBufferAddress, CHUNK_SIZE_OUT);
 
-  while ((jpeg_get_decode_state() == 0) && (jpeg_get_decode_error() == 0))
-    ;
+  uint32_t time_started = HAL_GetTick();
+  while ((jpeg_get_decode_state() == 0) && (jpeg_get_decode_error() == 0)) {
+    if (HAL_GetTick() - time_started > 500) Jpeg_HWDecodingError = 1;
+  }
 
   if (Jpeg_HWDecodingError) {
     return -2;
