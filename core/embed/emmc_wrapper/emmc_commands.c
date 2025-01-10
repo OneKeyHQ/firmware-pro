@@ -622,13 +622,6 @@ static int check_file_contents(uint8_t iface_num, const uint8_t* buffer, uint32_
     return 0;
 }
 
-static uint32_t parse_version(const char* version_str)
-{
-    int major = 0, minor = 0, patch = 0;
-    sscanf(version_str, "%d.%d.%d", &major, &minor, &patch);
-    return ((major & 0xFF)) | ((minor & 0xFF) << 8) | ((patch & 0xFF) << 16);
-}
-
 int process_msg_FirmwareUpdateEmmc(uint8_t iface_num, uint32_t msg_size, uint8_t* buf)
 {
     MSG_INIT(msg_recv, FirmwareUpdateEmmc);
@@ -735,15 +728,6 @@ int process_msg_FirmwareUpdateEmmc(uint8_t iface_num, uint32_t msg_size, uint8_t
 
             // make sure we have latest bluetooth status
             ble_refresh_dev_info();
-            // check ble firmware version
-            char* ble_version_current = ble_get_ver();
-            uint32_t ble_version_current_int = parse_version(ble_version_current);
-            if ( version_compare(file_hdr.version, ble_version_current_int) < 0 )
-            {
-                emmc_fs_file_delete(msg_recv.path);
-                send_failure(iface_num, FailureType_Failure_ProcessError, "Firmware downgrade not allowed!");
-                return -3;
-            }
 
             // ui confirm
             ui_fadeout();
