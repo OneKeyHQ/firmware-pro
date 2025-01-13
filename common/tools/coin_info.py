@@ -378,6 +378,7 @@ ETH_PRIMARY_COLOR_MAPPING = {
     61: "0x328332",
     128: "0x01943F",
     137: "0x8247E5",
+    177: "0xFFFFFF",
     250: "0x1969FF",
     288: "0xCCFF00",
     314: "0x0090FF",
