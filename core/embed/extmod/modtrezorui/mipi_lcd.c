@@ -2,152 +2,214 @@
 
 #include "mipi_lcd.h"
 
+static int dummy_dbg_printf(const char* fmt, ...) { return 0; }
+
+static DbgPrintf_t dbg_printf = dummy_dbg_printf;
+
+inline void disp_set_dbg_printf(DbgPrintf_t func) { dbg_printf = func; }
+
+// Fps = LCD_PCLK / ((LCD_WIDTH + LCD_HBP + LCD_HFP + LCD_HSW) * (LCD_HEIGHT +
+// LCD_VBP + LCD_VFP + LCD_VSW)) mipi_mbps = ((LCD_WIDTH + LCD_HBP + LCD_HFP +
+// LCD_HSW) * (LCD_HEIGHT + LCD_VBP + LCD_VFP + LCD_VSW) * fps * 24) /
+
+#define LCD_TXW350135B0
+
+#if 0 
+// this is for let every configuration use elif
+#elif defined(LCD_TXW350135B0)
+#include "TXW350135B0.c"
+#define LCD_init_sequence TXW350135B0_init_sequence
+const DisplayParam_t lcd_params = {
+
+    .hres = TXW350135B0_HRES,
+    .vres = TXW350135B0_VRES,
+    .hsync = TXW350135B0_HSYNC,
+    .hfp = TXW350135B0_HFP,
+    .hbp = TXW350135B0_HBP,
+    .vsync = TXW350135B0_VSYNC,
+    .vfp = TXW350135B0_VFP,
+    .vbp = TXW350135B0_VBP,
+    .pixel_format_ltdc = LTDC_PIXEL_FORMAT_RGB565,
+    .pixel_format_dsi = DSI_RGB565,
+    .bbp = 2,
+    .fb_base = DISPLAY_MEMORY_BASE,
+
+    .ltdc_pll = {
+        .PLL3N = 132U,
+        .PLL3R = 20U,
+        .PLL3FRACN = 0U,
+    }};
+#elif defined(LCD_TXW700140K0)
+#include "TXW700140K0.c"
+#define LCD_init_sequence TXW700140K0_init_sequence
+const DisplayParam_t lcd_params = {
+
+    .hres = TXW700140K0_HRES,
+    .vres = TXW700140K0_VRES,
+    .hsync = TXW700140K0_HSYNC,
+    .hfp = TXW700140K0_HFP,
+    .hbp = TXW700140K0_HBP,
+    .vsync = TXW700140K0_VSYNC,
+    .vfp = TXW700140K0_VFP,
+    .vbp = TXW700140K0_VBP,
+    .pixel_format_ltdc = LTDC_PIXEL_FORMAT_RGB565,
+    .pixel_format_dsi = DSI_RGB565,
+    .bbp = 2,
+    .fb_base = DISPLAY_MEMORY_BASE,
+
+    .ltdc_pll = {
+        .PLL3N = 43U,
+        .PLL3R = 5U,
+        .PLL3FRACN = 2048U,
+    }};
+#else
+#error "display selection not defined!"
+#endif
+
+#define LED_PWM_TIM_PERIOD (50)
+
+// HSE/DIVM3*(DIVN3+(FRACN3/8192))/DIVR3/to_Khz
+#define LTDC_FREQ                                          \
+  (uint32_t)(HSE_VALUE / 5 *                               \
+             (lcd_params.ltdc_pll.PLL3N +                  \
+              (lcd_params.ltdc_pll.PLL3FRACN / 8192.0F)) / \
+             lcd_params.ltdc_pll.PLL3R / 1000)
+
+// HSE/IDF*2*NDIV/2/ODF/8/to_Khz = 62.5 Mhz or 625000 Khz
+#define DSI_FREQ (uint32_t)(HSE_VALUE / 1 * 2 * 40 / 2 / 2 / 8 / 1000)
+
+// LCD_PCLK / ((LCD_WIDTH + LCD_HBP + LCD_HFP + LCD_HSW) * (LCD_HEIGHT + LCD_VBP
+// + LCD_VFP + LCD_VSW))
+#define FPS_TARGET                                                     \
+  (uint32_t)((float)LTDC_FREQ / ((lcd_params.hres + lcd_params.hbp +   \
+                                  lcd_params.hfp + lcd_params.hsync) * \
+                                 (lcd_params.vres + lcd_params.vbp +   \
+                                  lcd_params.vfp + lcd_params.vsync)))
+
 static int DISPLAY_BACKLIGHT = -1;
 static int DISPLAY_ORIENTATION = -1;
 
-LCD_PARAMS lcd_params;
-LCD_TIME_SEQUENCE lcd_time_seq = {.hsync = ST7701S_480X800_HSYNC,
-                                  .hfp = ST7701S_480X800_HFP,
-                                  .hbp = ST7701S_480X800_HBP,
-                                  .vsync = ST7701S_480X800_VSYNC,
-                                  .vfp = ST7701S_480X800_VFP,
-                                  .vbp = ST7701S_480X800_VBP};
+static DSI_HandleTypeDef hlcd_dsi = {0};
+static DMA2D_HandleTypeDef hlcd_dma2d = {0};
+static LTDC_HandleTypeDef hlcd_ltdc = {0};
 
-DSI_HandleTypeDef hlcd_dsi;
-DMA2D_HandleTypeDef hlcd_dma2d;
-LTDC_HandleTypeDef hlcd_ltdc;
-
-static void ltdc_msp_init(LTDC_HandleTypeDef* hltdc) {
-  if (hltdc->Instance == LTDC) {
-    /** Enable the LTDC clock */
-    __HAL_RCC_LTDC_CLK_ENABLE();
-
-    /** Toggle Sw reset of LTDC IP */
-    __HAL_RCC_LTDC_FORCE_RESET();
-    __HAL_RCC_LTDC_RELEASE_RESET();
-  }
+void DSI_IRQHandler(void) {
+  HAL_DSI_IRQHandler(&hlcd_dsi);
+  dbg_printf("DSI_IRQHandler called!");
 }
 
-static void dma2d_msp_init(DMA2D_HandleTypeDef* hdma2d) {
-  if (hdma2d->Instance == DMA2D) {
-    /** Enable the DMA2D clock */
-    __HAL_RCC_DMA2D_CLK_ENABLE();
+float lcd_fps = 0.0;
+// static void frame_callback(DSI_HandleTypeDef* hdsi)
+// {
+//     static uint32_t lcd_fps_tick = 0;
+//     static uint32_t lcd_fps_tock = 0;
+//     lcd_fps_tick = lcd_fps_tock;
+//     lcd_fps_tock = HAL_GetTick();
+//     lcd_fps = 1000 / (lcd_fps_tock - lcd_fps_tick);
+// }
 
-    /** Toggle Sw reset of DMA2D IP */
+void lcd_pwm_init(void) {
+  GPIO_InitTypeDef gpio_init_structure = {0};
+  /* LCD_BL_CTRL GPIO configuration */
+  __HAL_RCC_GPIOK_CLK_ENABLE();
+  __HAL_RCC_TIM1_CLK_ENABLE();
+  // LCD_PWM/PA7 (backlight control)
+  gpio_init_structure.Mode = GPIO_MODE_AF_PP;
+  gpio_init_structure.Pull = GPIO_NOPULL;
+  gpio_init_structure.Speed = GPIO_SPEED_FREQ_LOW;
+  gpio_init_structure.Alternate = GPIO_AF1_TIM1;
+  gpio_init_structure.Pin = LCD_BL_CTRL_PIN;
+  HAL_GPIO_Init(LCD_BL_CTRL_GPIO_PORT, &gpio_init_structure);
+
+  // enable PWM timer
+  TIM_HandleTypeDef TIM1_Handle;
+  TIM1_Handle.Instance = TIM1;
+  TIM1_Handle.Init.Period = LED_PWM_TIM_PERIOD - 1;
+  // TIM1/APB2 source frequency equals to fCPU in our configuration,
+  // we want 1 MHz
+  TIM1_Handle.Init.Prescaler =
+      SystemCoreClock / 1000000 / 4 - 1;  // APB is fCPU/2(AHB)/2(APB)
+  TIM1_Handle.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  TIM1_Handle.Init.CounterMode = TIM_COUNTERMODE_UP;
+  TIM1_Handle.Init.RepetitionCounter = 0;
+  HAL_TIM_PWM_Init(&TIM1_Handle);
+
+  TIM_OC_InitTypeDef TIM_OC_InitStructure;
+  TIM_OC_InitStructure.Pulse =
+      (LED_PWM_TIM_PERIOD / 2 - 1);  // default 50% dutycycle
+  TIM_OC_InitStructure.OCMode = TIM_OCMODE_PWM2;
+  TIM_OC_InitStructure.OCPolarity = TIM_OCPOLARITY_HIGH;
+  TIM_OC_InitStructure.OCFastMode = TIM_OCFAST_DISABLE;
+  TIM_OC_InitStructure.OCNPolarity = TIM_OCNPOLARITY_HIGH;
+  TIM_OC_InitStructure.OCIdleState = TIM_OCIDLESTATE_SET;
+  TIM_OC_InitStructure.OCNIdleState = TIM_OCNIDLESTATE_SET;
+  HAL_TIM_PWM_ConfigChannel(&TIM1_Handle, &TIM_OC_InitStructure, TIM_CHANNEL_1);
+
+  HAL_TIM_PWM_Start(&TIM1_Handle, TIM_CHANNEL_1);
+  HAL_TIMEx_PWMN_Start(&TIM1_Handle, TIM_CHANNEL_1);
+}
+
+static HAL_StatusTypeDef dma2d_init(DMA2D_HandleTypeDef* hdma2d) {
+  if (hdma2d->Instance != DMA2D) return HAL_ERROR;
+
+  // clock source
+  {
+    __HAL_RCC_DMA2D_CLK_ENABLE();
     __HAL_RCC_DMA2D_FORCE_RESET();
     __HAL_RCC_DMA2D_RELEASE_RESET();
-  }
-}
-
-static void dsi_msp_init(DSI_HandleTypeDef* hdsi) {
-  if (hdsi->Instance == DSI) {
-    /** Enable DSI Host and wrapper clocks */
-    __HAL_RCC_DSI_CLK_ENABLE();
-
-    /** Soft Reset the DSI Host and wrapper */
-    __HAL_RCC_DSI_FORCE_RESET();
-    __HAL_RCC_DSI_RELEASE_RESET();
-  }
-}
-
-#define DSI_FREQ 34375U
-#define LTDC_FREQ 33000U
-
-HAL_StatusTypeDef dsi_host_init(DSI_HandleTypeDef* hdsi, uint32_t Width,
-                                uint32_t Height, uint32_t PixelFormat) {
-  DSI_PLLInitTypeDef PLLInit;
-  DSI_VidCfgTypeDef VidCfg;
-
-  hdsi->Instance = DSI;
-  hdsi->Init.AutomaticClockLaneControl = DSI_AUTO_CLK_LANE_CTRL_DISABLE;
-  hdsi->Init.TXEscapeCkdiv = 4;
-  hdsi->Init.NumberOfLanes = DSI_TWO_DATA_LANES;
-  PLLInit.PLLNDIV = 22;
-  PLLInit.PLLIDF = DSI_PLL_IN_DIV1;
-  PLLInit.PLLODF = DSI_PLL_OUT_DIV2;
-  if (HAL_DSI_Init(hdsi, &PLLInit) != HAL_OK) {
-    return HAL_ERROR;
-  }
-
-  /* Timing parameters for all Video modes */
-  /*
-  The lane byte clock is set 62500 Khz
-  The pixel clock is set to 27429 Khz
-  */
-  VidCfg.VirtualChannelID = 0;
-  VidCfg.ColorCoding = PixelFormat;
-  VidCfg.LooselyPacked = DSI_LOOSELY_PACKED_DISABLE;
-  VidCfg.Mode = DSI_VID_MODE_BURST;
-  VidCfg.PacketSize = Width;
-  VidCfg.NumberOfChunks = 0;
-  VidCfg.NullPacketSize = 0xFFFU;
-  VidCfg.HSPolarity = DSI_HSYNC_ACTIVE_HIGH;
-  VidCfg.VSPolarity = DSI_VSYNC_ACTIVE_HIGH;
-  VidCfg.DEPolarity = DSI_DATA_ENABLE_ACTIVE_HIGH;
-  VidCfg.HorizontalSyncActive = (lcd_time_seq.hsync * DSI_FREQ) / LTDC_FREQ;
-  VidCfg.HorizontalBackPorch = (lcd_time_seq.hbp * DSI_FREQ) / LTDC_FREQ;
-  VidCfg.HorizontalLine =
-      ((Width + lcd_time_seq.hsync + lcd_time_seq.hbp + lcd_time_seq.hfp) *
-       DSI_FREQ) /
-      LTDC_FREQ;
-  VidCfg.VerticalSyncActive = lcd_time_seq.vsync;
-  VidCfg.VerticalBackPorch = lcd_time_seq.vbp;
-  VidCfg.VerticalFrontPorch = lcd_time_seq.vfp;
-  VidCfg.VerticalActive = Height;
-  VidCfg.LPCommandEnable = DSI_LP_COMMAND_DISABLE;
-  VidCfg.LPLargestPacketSize = 0;
-  VidCfg.LPVACTLargestPacketSize = 0;
-
-  VidCfg.LPHorizontalFrontPorchEnable = DSI_LP_HFP_ENABLE;
-  VidCfg.LPHorizontalBackPorchEnable = DSI_LP_HBP_ENABLE;
-  VidCfg.LPVerticalActiveEnable = DSI_LP_VACT_ENABLE;
-  VidCfg.LPVerticalFrontPorchEnable = DSI_LP_VFP_ENABLE;
-  VidCfg.LPVerticalBackPorchEnable = DSI_LP_VBP_ENABLE;
-  VidCfg.LPVerticalSyncActiveEnable = DSI_LP_VSYNC_ENABLE;
-  VidCfg.FrameBTAAcknowledgeEnable = DSI_FBTAA_DISABLE;
-
-  if (HAL_DSI_ConfigVideoMode(hdsi, &VidCfg) != HAL_OK) {
-    return HAL_ERROR;
   }
 
   return HAL_OK;
 }
 
-HAL_StatusTypeDef ltdc_clock_config(LTDC_HandleTypeDef* hltdc) {
-  RCC_PeriphCLKInitTypeDef PeriphClkInitStruct;
+static HAL_StatusTypeDef ltdc_init(LTDC_HandleTypeDef* hltdc) {
+  if (hltdc->Instance != LTDC) return HAL_ERROR;
 
-  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_LTDC;
-  PeriphClkInitStruct.PLL3.PLL3M = 5U;
-  PeriphClkInitStruct.PLL3.PLL3N = 132U;
-  PeriphClkInitStruct.PLL3.PLL3P = 2U;
-  PeriphClkInitStruct.PLL3.PLL3Q = 2U;
-  PeriphClkInitStruct.PLL3.PLL3R = 20U;
-  PeriphClkInitStruct.PLL3.PLL3RGE = RCC_PLLCFGR_PLL3RGE_2;
-  PeriphClkInitStruct.PLL3.PLL3VCOSEL = RCC_PLL3VCOWIDE;
-  PeriphClkInitStruct.PLL3.PLL3FRACN = 0U;
-  return HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct);
-}
+  // clock source
+  {
+    __HAL_RCC_LTDC_CLK_ENABLE();
+    __HAL_RCC_LTDC_FORCE_RESET();
+    __HAL_RCC_LTDC_RELEASE_RESET();
 
-HAL_StatusTypeDef ltdc_init(LTDC_HandleTypeDef* hltdc, uint32_t Width,
-                            uint32_t Height) {
-  hltdc->Instance = LTDC;
-  hltdc->Init.HSPolarity = LTDC_HSPOLARITY_AL;
-  hltdc->Init.VSPolarity = LTDC_VSPOLARITY_AL;
+    RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
+    PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_LTDC;
+    PeriphClkInitStruct.PLL3.PLL3M = 5U;
+    PeriphClkInitStruct.PLL3.PLL3N = lcd_params.ltdc_pll.PLL3N;
+    PeriphClkInitStruct.PLL3.PLL3P = 2U;
+    PeriphClkInitStruct.PLL3.PLL3Q = 2U;
+    PeriphClkInitStruct.PLL3.PLL3R = lcd_params.ltdc_pll.PLL3R;
+    PeriphClkInitStruct.PLL3.PLL3RGE = RCC_PLLCFGR_PLL3RGE_2;
+    PeriphClkInitStruct.PLL3.PLL3VCOSEL = RCC_PLL3VCOWIDE;
+    PeriphClkInitStruct.PLL3.PLL3FRACN = lcd_params.ltdc_pll.PLL3FRACN;
+    HAL_StatusTypeDef result = HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct);
+    if (result != HAL_OK) {
+      return result;
+    }
+  }
+
+  hltdc->Init.HSPolarity = LTDC_HSPOLARITY_AH;
+  // hltdc->Init.HSPolarity = LTDC_HSPOLARITY_AL;
+
+  hltdc->Init.VSPolarity = LTDC_VSPOLARITY_AH;
+  // hltdc->Init.VSPolarity = LTDC_VSPOLARITY_AL;
+
+  // hltdc->Init.DEPolarity = LTDC_DEPOLARITY_AH;
   hltdc->Init.DEPolarity = LTDC_DEPOLARITY_AL;
+
   hltdc->Init.PCPolarity = LTDC_PCPOLARITY_IPC;
 
-  hltdc->Init.HorizontalSync = lcd_time_seq.hsync - 1;
-  hltdc->Init.AccumulatedHBP = lcd_time_seq.hsync + lcd_time_seq.hbp - 1;
+  hltdc->Init.HorizontalSync = lcd_params.hsync - 1;
+  hltdc->Init.AccumulatedHBP = lcd_params.hsync + lcd_params.hbp - 1;
   hltdc->Init.AccumulatedActiveW =
-      lcd_time_seq.hsync + Width + lcd_time_seq.hbp - 1;
+      lcd_params.hsync + lcd_params.hres + lcd_params.hbp - 1;
   hltdc->Init.TotalWidth =
-      lcd_time_seq.hsync + Width + lcd_time_seq.hbp + lcd_time_seq.hfp - 1;
-  hltdc->Init.VerticalSync = lcd_time_seq.vsync - 1;
-  hltdc->Init.AccumulatedVBP = lcd_time_seq.vsync + lcd_time_seq.vbp - 1;
+      lcd_params.hsync + lcd_params.hres + lcd_params.hbp + lcd_params.hfp - 1;
+  hltdc->Init.VerticalSync = lcd_params.vsync - 1;
+  hltdc->Init.AccumulatedVBP = lcd_params.vsync + lcd_params.vbp - 1;
   hltdc->Init.AccumulatedActiveH =
-      lcd_time_seq.vsync + Height + lcd_time_seq.vbp - 1;
+      lcd_params.vsync + lcd_params.vres + lcd_params.vbp - 1;
   hltdc->Init.TotalHeigh =
-      lcd_time_seq.vsync + Height + lcd_time_seq.vbp + lcd_time_seq.vfp - 1;
+      lcd_params.vsync + lcd_params.vres + lcd_params.vbp + lcd_params.vfp - 1;
 
   hltdc->Init.Backcolor.Blue = 0x00;
   hltdc->Init.Backcolor.Green = 0x00;
@@ -156,9 +218,9 @@ HAL_StatusTypeDef ltdc_init(LTDC_HandleTypeDef* hltdc, uint32_t Width,
   return HAL_LTDC_Init(hltdc);
 }
 
-HAL_StatusTypeDef ltdc_layer_config(LTDC_HandleTypeDef* hltdc,
-                                    uint32_t layer_index,
-                                    LTDC_LAYERCONFIG* config) {
+static HAL_StatusTypeDef ltdc_layer_config(LTDC_HandleTypeDef* hltdc,
+                                           uint32_t layer_index,
+                                           LTDC_LAYERCONFIG* config) {
   LTDC_LayerCfgTypeDef pLayerCfg;
 
   pLayerCfg.WindowX0 = config->x0;
@@ -179,7 +241,132 @@ HAL_StatusTypeDef ltdc_layer_config(LTDC_HandleTypeDef* hltdc,
   return HAL_LTDC_ConfigLayer(hltdc, &pLayerCfg, layer_index);
 }
 
-int32_t bsp_get_tick(void) { return (int32_t)HAL_GetTick(); }
+static HAL_StatusTypeDef dsi_host_init(DSI_HandleTypeDef* hdsi) {
+  if (hdsi->Instance != DSI) return HAL_ERROR;
+
+  // clock source
+  {
+    /** Enable DSI Host and wrapper clocks */
+    __HAL_RCC_DSI_CLK_ENABLE();
+    __HAL_RCC_DSI_FORCE_RESET();
+    __HAL_RCC_DSI_RELEASE_RESET();
+
+    RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
+    PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_DSI;
+    PeriphClkInitStruct.DsiClockSelection = RCC_DSICLKSOURCE_PHY;
+    // PeriphClkInitStruct.DsiClockSelection = RCC_DSICLKSOURCE_PLL2; // PLL2Q =
+    // 9 in sdram.c
+    HAL_StatusTypeDef result = HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct);
+    if (result != HAL_OK) {
+      return result;
+    }
+  }
+
+  // interrupt
+  {
+      // HAL_NVIC_SetPriority(DSI_IRQn, 0, 0);
+      // HAL_NVIC_EnableIRQ(DSI_IRQn);
+  }
+
+  // clock div
+  {
+    hdsi->Init.AutomaticClockLaneControl = DSI_AUTO_CLK_LANE_CTRL_DISABLE;
+    hdsi->Init.TXEscapeCkdiv = 4;  // lp txclkesc 15.625 Mhz
+    hdsi->Init.NumberOfLanes = DSI_TWO_DATA_LANES;
+
+    // dsi speed (lane byte) 62.5 Mhz, which is the maximum can support
+    DSI_PLLInitTypeDef PLLInit = {0};
+    PLLInit.PLLNDIV = 40;
+    PLLInit.PLLIDF = DSI_PLL_IN_DIV1;
+    PLLInit.PLLODF = DSI_PLL_OUT_DIV2;
+    if (HAL_DSI_Init(hdsi, &PLLInit) != HAL_OK) {
+      return HAL_ERROR;
+    }
+  }
+
+  // timeout
+  {
+    DSI_HOST_TimeoutTypeDef HostTimeouts = {0};
+    HostTimeouts.TimeoutCkdiv = 1;
+    HostTimeouts.HighSpeedTransmissionTimeout = 0;
+    HostTimeouts.LowPowerReceptionTimeout = 0;
+    HostTimeouts.HighSpeedReadTimeout = 0;
+    HostTimeouts.LowPowerReadTimeout = 0;
+    HostTimeouts.HighSpeedWriteTimeout = 0;
+    HostTimeouts.HighSpeedWritePrespMode = DSI_HS_PM_DISABLE;
+    HostTimeouts.LowPowerWriteTimeout = 0;
+    HostTimeouts.BTATimeout = 0;
+    if (HAL_DSI_ConfigHostTimeouts(hdsi, &HostTimeouts) != HAL_OK) {
+      return HAL_ERROR;
+    }
+  }
+
+  // phy timing
+  {
+    DSI_PHY_TimerTypeDef PhyTimings = {0};
+    PhyTimings.ClockLaneHS2LPTime = 27;
+    PhyTimings.ClockLaneLP2HSTime = 32;
+    PhyTimings.DataLaneHS2LPTime = 15;
+    PhyTimings.DataLaneLP2HSTime = 24;
+    PhyTimings.DataLaneMaxReadTime = 0;
+    PhyTimings.StopWaitTime = 0;
+    if (HAL_DSI_ConfigPhyTimer(hdsi, &PhyTimings) != HAL_OK) {
+      return HAL_ERROR;
+    }
+  }
+
+  if (HAL_DSI_ConfigFlowControl(hdsi, DSI_FLOW_CONTROL_BTA) != HAL_OK) {
+    return HAL_ERROR;
+  }
+  if (HAL_DSI_SetLowPowerRXFilter(hdsi, 10000) != HAL_OK) {
+    return HAL_ERROR;
+  }
+  if (HAL_DSI_ConfigErrorMonitor(hdsi, HAL_DSI_ERROR_GEN) != HAL_OK) {
+    return HAL_ERROR;
+  }
+
+  // video mode
+  {
+    DSI_VidCfgTypeDef VidCfg = {0};
+    VidCfg.VirtualChannelID = 0;
+    VidCfg.ColorCoding = lcd_params.pixel_format_dsi;
+    VidCfg.LooselyPacked = DSI_LOOSELY_PACKED_DISABLE;
+    VidCfg.Mode = DSI_VID_MODE_BURST;
+    VidCfg.PacketSize = lcd_params.hres;
+    VidCfg.NumberOfChunks = 0;  // no need in video burst mode
+    VidCfg.NullPacketSize = 0;  // no need in video burst mode
+    VidCfg.HSPolarity = DSI_HSYNC_ACTIVE_HIGH;
+    VidCfg.VSPolarity = DSI_VSYNC_ACTIVE_HIGH;
+    VidCfg.DEPolarity = DSI_DATA_ENABLE_ACTIVE_HIGH;
+    VidCfg.HorizontalSyncActive = (lcd_params.hsync * DSI_FREQ) / LTDC_FREQ;
+    VidCfg.HorizontalBackPorch = (lcd_params.hbp * DSI_FREQ) / LTDC_FREQ;
+    VidCfg.HorizontalLine = ((lcd_params.hres + lcd_params.hsync +
+                              lcd_params.hbp + lcd_params.hfp) *
+                             DSI_FREQ) /
+                            LTDC_FREQ;
+    VidCfg.VerticalSyncActive = lcd_params.vsync;
+    VidCfg.VerticalBackPorch = lcd_params.vbp;
+    VidCfg.VerticalFrontPorch = lcd_params.vfp;
+    VidCfg.VerticalActive = lcd_params.vres;
+
+    VidCfg.LPCommandEnable = DSI_LP_COMMAND_ENABLE;
+    VidCfg.LPLargestPacketSize = 128;
+    VidCfg.LPVACTLargestPacketSize = 0;
+    VidCfg.LPHorizontalFrontPorchEnable = DSI_LP_HFP_ENABLE;
+    VidCfg.LPHorizontalBackPorchEnable = DSI_LP_HBP_ENABLE;
+    VidCfg.LPVerticalActiveEnable = DSI_LP_VACT_ENABLE;
+    VidCfg.LPVerticalFrontPorchEnable = DSI_LP_VFP_ENABLE;
+    VidCfg.LPVerticalBackPorchEnable = DSI_LP_VBP_ENABLE;
+    VidCfg.LPVerticalSyncActiveEnable = DSI_LP_VSYNC_ENABLE;
+    VidCfg.FrameBTAAcknowledgeEnable = DSI_FBTAA_DISABLE;
+
+    if (HAL_DSI_ConfigVideoMode(hdsi, &VidCfg) != HAL_OK) {
+      return HAL_ERROR;
+    }
+  }
+
+  return HAL_OK;
+}
 
 #define CONVERTRGB5652ARGB8888(Color)                                   \
   ((((((((Color) >> (11U)) & 0x1FU) * 527U) + 23U) >> (6U)) << (16U)) | \
@@ -187,25 +374,25 @@ int32_t bsp_get_tick(void) { return (int32_t)HAL_GetTick(); }
    (((((Color)&0x1FU) * 527U) + 23U) >> (6U)) | (0xFF000000U))
 
 void fb_read_pixel(uint32_t x_pos, uint32_t y_pos, uint32_t* color) {
-  if (lcd_params.pixel_format == LTDC_PIXEL_FORMAT_ARGB8888) {
+  if (lcd_params.pixel_format_ltdc == LTDC_PIXEL_FORMAT_ARGB8888) {
     /* Read data value from SDRAM memory */
     *color = *(uint32_t*)(lcd_params.fb_base +
-                          (lcd_params.bbp * (lcd_params.xres * y_pos + x_pos)));
+                          (lcd_params.bbp * (lcd_params.hres * y_pos + x_pos)));
   } else {
     /*LTDC_PIXEL_FORMAT_RGB565 */
     *color = *(uint16_t*)(lcd_params.fb_base +
-                          (lcd_params.bbp * (lcd_params.xres * y_pos + x_pos)));
+                          (lcd_params.bbp * (lcd_params.hres * y_pos + x_pos)));
   }
 }
 
 void fb_write_pixel(uint32_t x_pos, uint32_t y_pos, uint32_t color) {
-  if (lcd_params.pixel_format == LTDC_PIXEL_FORMAT_ARGB8888) {
+  if (lcd_params.pixel_format_ltdc == LTDC_PIXEL_FORMAT_ARGB8888) {
     *(uint32_t*)(lcd_params.fb_base +
-                 (lcd_params.bbp * (lcd_params.xres * y_pos + x_pos))) = color;
+                 (lcd_params.bbp * (lcd_params.hres * y_pos + x_pos))) = color;
   } else {
     /*LTDC_PIXEL_FORMAT_RGB565 */
     *(uint16_t*)(lcd_params.fb_base +
-                 (lcd_params.bbp * (lcd_params.xres * y_pos + x_pos))) = color;
+                 (lcd_params.bbp * (lcd_params.hres * y_pos + x_pos))) = color;
   }
 }
 
@@ -213,7 +400,7 @@ static void fb_fill_buffer(uint32_t* dest, uint32_t x_size, uint32_t y_size,
                            uint32_t offset, uint32_t color) {
   uint32_t output_color_mode, input_color = color;
 
-  switch (lcd_params.pixel_format) {
+  switch (lcd_params.pixel_format_ltdc) {
     case LTDC_PIXEL_FORMAT_RGB565:
       output_color_mode = DMA2D_OUTPUT_RGB565; /* RGB565 */
       input_color = CONVERTRGB5652ARGB8888(color);
@@ -247,37 +434,37 @@ void fb_fill_rect(uint32_t x_pos, uint32_t y_pos, uint32_t width,
                   uint32_t height, uint32_t color) {
   /* Get the rectangle start address */
   uint32_t address = lcd_params.fb_base +
-                     ((lcd_params.bbp) * (lcd_params.xres * y_pos + x_pos));
+                     ((lcd_params.bbp) * (lcd_params.hres * y_pos + x_pos));
 
   /* Fill the rectangle */
-  fb_fill_buffer((uint32_t*)address, width, height, (lcd_params.xres - width),
+  fb_fill_buffer((uint32_t*)address, width, height, (lcd_params.hres - width),
                  color);
 }
 
 void fb_draw_hline(uint32_t x_pos, uint32_t y_pos, uint32_t len,
                    uint32_t color) {
   uint32_t address = lcd_params.fb_base +
-                     ((lcd_params.bbp) * (lcd_params.xres * y_pos + x_pos));
+                     ((lcd_params.bbp) * (lcd_params.hres * y_pos + x_pos));
   fb_fill_buffer((uint32_t*)address, len, 1, 0, color);
 }
 
 void fb_draw_vline(uint32_t x_pos, uint32_t y_pos, uint32_t len,
                    uint32_t color) {
   uint32_t address = lcd_params.fb_base +
-                     ((lcd_params.bbp) * (lcd_params.xres * y_pos + x_pos));
-  fb_fill_buffer((uint32_t*)address, 1, len, lcd_params.xres - 1, color);
+                     ((lcd_params.bbp) * (lcd_params.hres * y_pos + x_pos));
+  fb_fill_buffer((uint32_t*)address, 1, len, lcd_params.hres - 1, color);
 }
 
 void dma2d_copy_buffer(uint32_t* pSrc, uint32_t* pDst, uint16_t x, uint16_t y,
                        uint16_t xsize, uint16_t ysize) {
   uint32_t destination =
-      (uint32_t)pDst + (y * lcd_params.xres + x) * (lcd_params.bbp);
+      (uint32_t)pDst + (y * lcd_params.hres + x) * (lcd_params.bbp);
   uint32_t source = (uint32_t)pSrc;
 
   /*##-1- Configure the DMA2D Mode, Color Mode and output offset #############*/
   hlcd_dma2d.Init.Mode = DMA2D_M2M;
   hlcd_dma2d.Init.ColorMode = DMA2D_OUTPUT_RGB565;
-  hlcd_dma2d.Init.OutputOffset = lcd_params.xres - xsize;
+  hlcd_dma2d.Init.OutputOffset = lcd_params.hres - xsize;
   hlcd_dma2d.Init.AlphaInverted =
       DMA2D_REGULAR_ALPHA; /* No Output Alpha Inversion*/
   hlcd_dma2d.Init.RedBlueSwap =
@@ -301,8 +488,7 @@ void dma2d_copy_buffer(uint32_t* pSrc, uint32_t* pDst, uint16_t x, uint16_t y,
   /* DMA2D Initialization */
   if (HAL_DMA2D_Init(&hlcd_dma2d) == HAL_OK) {
     if (HAL_DMA2D_ConfigLayer(&hlcd_dma2d, 1) == HAL_OK) {
-      while (lcd_ltdc_busy()) {
-      }
+      // while ( lcd_ltdc_busy() ) {}
       if (HAL_DMA2D_Start(&hlcd_dma2d, source, destination, xsize, ysize) ==
           HAL_OK) {
         /* Polling For DMA transfer */
@@ -373,104 +559,20 @@ void dma2d_copy_ycbcr_to_rgb(uint32_t* pSrc, uint32_t* pDst, uint16_t xsize,
       &hlcd_dma2d, 25); /* wait for the previous DMA2D transfer to ends */
 }
 
-void st7701_dsi_write(uint16_t reg, uint8_t* seq, uint16_t len) {
-  if (len <= 1) {
-    HAL_DSI_ShortWrite(&hlcd_dsi, 0, DSI_DCS_SHORT_PKT_WRITE_P1, reg,
-                       (uint32_t)seq[0]);
+int DSI_DCS_read(uint16_t cmd, uint8_t* data, uint16_t data_len) {
+  return HAL_DSI_Read(&hlcd_dsi, 0, data, data_len, DSI_DCS_SHORT_PKT_READ, cmd,
+                      (uint8_t[]){0, 0});
+}
+
+int DSI_DCS_write(uint16_t cmd, uint8_t* data, uint16_t data_len) {
+  if (data_len <= 1) {
+    return HAL_DSI_ShortWrite(&hlcd_dsi, 0, DSI_DCS_SHORT_PKT_WRITE_P1, cmd,
+                              (uint32_t)data[0]);
   } else {
-    HAL_DSI_LongWrite(&hlcd_dsi, 0, DSI_DCS_LONG_PKT_WRITE, len, reg, seq);
+    return HAL_DSI_LongWrite(&hlcd_dsi, 0, DSI_DCS_LONG_PKT_WRITE, data_len,
+                             cmd, data);
   }
 }
-
-#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
-
-#define st7701_dsi(reg, seq...)              \
-  {                                          \
-    uint8_t d[] = {seq};                     \
-    st7701_dsi_write(reg, d, ARRAY_SIZE(d)); \
-  }
-
-void st7701_init_sequence(void) {
-  st7701_dsi(0xff, 0x77, 0x01, 0x00, 0x00,
-             0x13);        // CND2BKxSEL select bank3 with cmd2
-  st7701_dsi(0xef, 0x08);  //?
-  st7701_dsi(0xff, 0x77, 0x01, 0x00, 0x00,
-             0x10);  // CND2BKxSEL select bank0 with cmd2
-  st7701_dsi(0xc0, 0x63,
-             0x00);  // LNESET LDE_EN=0, Line=99, NL= (Line+1)*8, Line_delta=0
-  st7701_dsi(0xc1, 0x14, 0x0C);  // PORCTRL VBP=20, VFP=12
-  st7701_dsi(0xc2, 0x37, 0x02);  // INVSET invert column, RTNI=12
-  st7701_dsi(0xcc, 0x10);        // ?
-  st7701_dsi(0xB0, 0x06, 0x10, 0x16, 0x0D, 0x11, 0x06, 0x08, 0x07, 0x08, 0x22,
-             0x04, 0x14, 0x0F, 0x29, 0x2F,
-             0x1F  // PVGAMCTRL
-  );
-  st7701_dsi(0xB1, 0x0F, 0x18, 0x1E, 0x0C, 0x0F, 0x06, 0x08, 0x0A, 0x09, 0x24,
-             0x05, 0x10, 0x11, 0x2A, 0x34,
-             0x1F  // NVGAMCTRL
-  );
-  st7701_dsi(0xff, 0x77, 0x01, 0x00, 0x00,
-             0x11);        // CND2BKxSEL select bank1 with cmd2
-  st7701_dsi(0xb0, 0x4D);  // VRHS VRHA=77
-  st7701_dsi(0xb1, 0x4D);  // VCOMS VCOM=77
-  st7701_dsi(0xb2, 0x81);  // VGHSS VGHSS=12.0v
-  // st7701_dsi(0xb3, 0x80);                         // TESTCMD nothing
-  st7701_dsi(0xb5, 0x4E);  // VGLS VGLS=-12.2v
-  st7701_dsi(0xb7, 0x85);  // PWCTRL1 APOS=Min, APIS=Min, AP=Middle
-  st7701_dsi(0xb8, 0x32);  // PWCTRL2 AVCL=-4.8v, AVDD=6.8v
-  st7701_dsi(0xBB, 0x03);  // PCLKS2 SBSTCKS=10MHz
-  st7701_dsi(0xc1, 0x08);  // SPD1 T2D=1.6uS
-  st7701_dsi(0xc2, 0x08);  // SPD2 TD3=3.2uS
-  st7701_dsi(0xd0, 0x88);  // MIPISET1 EOT_EN=1, ERR_SEL=Disable
-
-  st7701_dsi(0xe0, 0x00, 0x00, 0x02);  // ?
-  st7701_dsi(0xE1, 0x06, 0x28, 0x08, 0x28, 0x05, 0x28, 0x07, 0x28, 0x0E, 0x33,
-             0x33);  // ?
-  st7701_dsi(0xE2, 0x30, 0x30, 0x33, 0x33, 0x34, 0x00, 0x00, 0x00, 0x34, 0x00,
-             0x00, 0x00);                    // ?
-  st7701_dsi(0xe3, 0x00, 0x00, 0x33, 0x33);  // ?
-  st7701_dsi(0xe4, 0x44, 0x44);              // ?
-  st7701_dsi(                                // ?
-      0xE5, 0x09, 0x2F, 0x2C, 0x8C, 0x0B, 0x31, 0x2C, 0x8C, 0x0D, 0x33, 0x2C,
-      0x8C, 0x0F, 0x35, 0x2C, 0x8C);
-  st7701_dsi(0xE6, 0x00, 0x00, 0x33, 0x33);  // ?
-  st7701_dsi(0xE7, 0x44, 0x44);              // ?
-  st7701_dsi(                                // ?
-      0xE8, 0x08, 0x2E, 0x2C, 0x8C, 0x0A, 0x30, 0x2C, 0x8C, 0x0C, 0x32, 0x2C,
-      0x8C, 0x0E, 0x34, 0x2C, 0x8C);
-  st7701_dsi(0xE9, 0x36, 0x00);                                // ?
-  st7701_dsi(0xEB, 0x00, 0x01, 0xE4, 0xE4, 0x44, 0x88, 0x40);  // ?
-  st7701_dsi(0xED, 0xFF, 0xFC, 0xB2, 0x45, 0x67, 0xFA, 0x01, 0xFF, 0xFF, 0x10,
-             0xAF, 0x76, 0x54, 0x2B, 0xCF, 0xFF);        // ?
-  st7701_dsi(0xef, 0x08, 0x08, 0x08, 0x45, 0x3f, 0x54);  // ?
-
-  st7701_dsi(0xff, 0x77, 0x01, 0x00, 0x00,
-             0x13);              // CND2BKxSEL select bank3 with cmd2
-  st7701_dsi(0xe8, 0x00, 0x0e);  // ?
-  st7701_dsi(0xff, 0x77, 0x01, 0x00, 0x00,
-             0x00);                      // CND2BKxSEL select bank0 without cmd2
-  st7701_dsi(MIPI_DCS_EXIT_SLEEP_MODE);  // SLPOUT
-  HAL_Delay(120);                        // delay
-  st7701_dsi(0xff, 0x77, 0x01, 0x00, 0x00,
-             0x13);              // CND2BKxSEL select bank3 with cmd2
-  st7701_dsi(0xe8, 0x00, 0x0c);  // ?
-  HAL_Delay(10);                 // delay
-  st7701_dsi(0xe8, 0x00, 0x00);  // ?
-  st7701_dsi(0xff, 0x77, 0x01, 0x00, 0x00,
-             0x00);        // CND2BKxSEL select bank0 without cmd2
-  st7701_dsi(0x36, 0x00);  // MADCTL normal scan, bgr->bgr
-                           //   st7701_dsi(0x3a, 0x50);  // COLMOD 16bit color
-  st7701_dsi(MIPI_DCS_SET_TEAR_ON, 0x00);
-  st7701_dsi(MIPI_DCS_WRITE_CONTROL_DISPLAY, 0x2C);
-  st7701_dsi(MIPI_DCS_SET_PIXEL_FORMAT, 0x50);
-  st7701_dsi(MIPI_DCS_SET_DISPLAY_ON);  // DISPON
-  HAL_Delay(20);                        // delay
-  st7701_dsi(0xff, 0x77, 0x01, 0x00, 0x00,
-             0x10);              // CND2BKxSEL select bank1 with cmd2
-  st7701_dsi(0xe5, 0x00, 0x00);  // ?
-}
-
-#define LED_PWM_TIM_PERIOD (50)
 
 int display_backlight(int val) {
   if (DISPLAY_BACKLIGHT != val && val >= 0 && val <= 255) {
@@ -501,165 +603,82 @@ int display_orientation(int degrees) {
   return DISPLAY_ORIENTATION;
 }
 
-void lcd_init(uint32_t lcd_width, uint32_t lcd_height, uint32_t pixel_format) {
-  __HAL_RCC_LTDC_FORCE_RESET();
-  __HAL_RCC_LTDC_RELEASE_RESET();
+void lcd_init(void) {
+  // gpio
+  {
+    GPIO_InitTypeDef gpio_init_structure = {0};
 
-  __HAL_RCC_DMA2D_FORCE_RESET();
-  __HAL_RCC_DMA2D_RELEASE_RESET();
+    // RESET PIN
+    __HAL_RCC_GPIOG_CLK_ENABLE();
+    gpio_init_structure.Pin = LCD_RESET_PIN;
+    gpio_init_structure.Mode = GPIO_MODE_OUTPUT_PP;
+    gpio_init_structure.Pull = GPIO_PULLUP;
+    gpio_init_structure.Speed = GPIO_SPEED_FREQ_LOW;
+    HAL_GPIO_Init(LCD_RESET_GPIO_PORT, &gpio_init_structure);
 
-  // RESET PIN
-  GPIO_InitTypeDef gpio_init_structure;
-
-  __HAL_RCC_GPIOG_CLK_ENABLE();
-
-  /* Configure the GPIO Reset pin */
-  gpio_init_structure.Pin = LCD_RESET_PIN;
-  gpio_init_structure.Mode = GPIO_MODE_OUTPUT_PP;
-  gpio_init_structure.Pull = GPIO_PULLUP;
-  gpio_init_structure.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(LCD_RESET_GPIO_PORT, &gpio_init_structure);
-
-  /* Activate XRES active low */
-  HAL_GPIO_WritePin(LCD_RESET_GPIO_PORT, LCD_RESET_PIN, GPIO_PIN_SET);
-  HAL_Delay(20);
-  HAL_GPIO_WritePin(LCD_RESET_GPIO_PORT, LCD_RESET_PIN, GPIO_PIN_RESET);
-  HAL_Delay(50);
-  HAL_GPIO_WritePin(LCD_RESET_GPIO_PORT, LCD_RESET_PIN,
-                    GPIO_PIN_SET); /* Deactivate XRES */
-  HAL_Delay(120);
-
-  /* LCD_TE_CTRL GPIO configuration */
-  __HAL_RCC_GPIOJ_CLK_ENABLE();
-
-  gpio_init_structure.Pin = LCD_TE_PIN;
-  gpio_init_structure.Mode = GPIO_MODE_INPUT;
-  gpio_init_structure.Speed = GPIO_SPEED_FREQ_HIGH;
-
-  HAL_GPIO_Init(LCD_TE_GPIO_PORT, &gpio_init_structure);
-  /* Assert back-light LCD_BL_CTRL pin */
-  HAL_GPIO_WritePin(LCD_TE_GPIO_PORT, LCD_TE_PIN, GPIO_PIN_SET);
-
-  /* Initializes peripherals instance value */
-  hlcd_ltdc.Instance = LTDC;
-  hlcd_dma2d.Instance = DMA2D;
-  hlcd_dsi.Instance = DSI;
-
-  uint32_t ctrl_pixel_format, ltdc_pixel_format, dsi_pixel_format;
-
-  if (pixel_format == LCD_PIXEL_FORMAT_RGB565) {
-    ltdc_pixel_format = LTDC_PIXEL_FORMAT_RGB565;
-    dsi_pixel_format = DSI_RGB565;
-    ctrl_pixel_format = ST7701S_FORMAT_RBG565;
-    lcd_params.bbp = 2;
-  } else {
-    ltdc_pixel_format = LCD_PIXEL_FORMAT_ARGB8888;
-    dsi_pixel_format = DSI_RGB888;
-    ctrl_pixel_format = ST7701S_FORMAT_RGB888;
-    lcd_params.bbp = 4;
+    // TE PIN
+    __HAL_RCC_GPIOJ_CLK_ENABLE();
+    gpio_init_structure.Pin = LCD_TE_PIN;
+    gpio_init_structure.Mode = GPIO_MODE_INPUT;
+    gpio_init_structure.Pull = GPIO_NOPULL;
+    gpio_init_structure.Speed = GPIO_SPEED_FREQ_HIGH;
+    HAL_GPIO_Init(LCD_TE_GPIO_PORT, &gpio_init_structure);
+    // HAL_GPIO_WritePin(LCD_TE_GPIO_PORT, LCD_TE_PIN, GPIO_PIN_SET); // TODO:
+    // Needed?
   }
 
-  lcd_params.pixel_format = ltdc_pixel_format;
-  lcd_params.xres = lcd_width;
-  lcd_params.yres = lcd_height;
-  lcd_params.fb_base = DISPLAY_MEMORY_BASE;
-
-  ltdc_msp_init(&hlcd_ltdc);
-
-  dma2d_msp_init(&hlcd_dma2d);
-
-  dsi_msp_init(&hlcd_dsi);
-
-  dsi_host_init(&hlcd_dsi, lcd_width, lcd_height, dsi_pixel_format);
-
-  ltdc_clock_config(&hlcd_ltdc);
-
-  ltdc_init(&hlcd_ltdc, lcd_width, lcd_height);
-
-  LTDC_LAYERCONFIG config;
-
-  config.x0 = 0;
-  config.x1 = lcd_width;
-  config.y0 = 0;
-  config.y1 = lcd_height;
-  config.pixel_format = ltdc_pixel_format;
-  config.address = DISPLAY_MEMORY_BASE;
-
-  ltdc_layer_config(&hlcd_ltdc, 0, &config);
-
-  /* Enable the DSI host and wrapper after the LTDC initialization
-        To avoid any synchronization issue, the DSI shall be started after
-     enabling the LTDC */
-  (void)HAL_DSI_Start(&hlcd_dsi);
-
-  /* Enable the DSI BTW for read operations */
-  (void)HAL_DSI_ConfigFlowControl(&hlcd_dsi, DSI_FLOW_CONTROL_BTA);
-
-  (void)ctrl_pixel_format;
-  st7701_init_sequence();
-}
-
-void lcd_pwm_init(void) {
-  GPIO_InitTypeDef gpio_init_structure = {0};
-  /* LCD_BL_CTRL GPIO configuration */
-  __HAL_RCC_GPIOK_CLK_ENABLE();
-  __HAL_RCC_TIM1_CLK_ENABLE();
-  // LCD_PWM/PA7 (backlight control)
-  gpio_init_structure.Mode = GPIO_MODE_AF_PP;
-  gpio_init_structure.Pull = GPIO_NOPULL;
-  gpio_init_structure.Speed = GPIO_SPEED_FREQ_LOW;
-  gpio_init_structure.Alternate = GPIO_AF1_TIM1;
-  gpio_init_structure.Pin = LCD_BL_CTRL_PIN;
-  HAL_GPIO_Init(LCD_BL_CTRL_GPIO_PORT, &gpio_init_structure);
-
-  // enable PWM timer
-  TIM_HandleTypeDef TIM1_Handle;
-  TIM1_Handle.Instance = TIM1;
-  TIM1_Handle.Init.Period = LED_PWM_TIM_PERIOD - 1;
-  // TIM1/APB2 source frequency equals to fCPU in our configuration,
-  // we want 1 MHz
-  TIM1_Handle.Init.Prescaler =
-      SystemCoreClock / 1000000 / 4 - 1;  // APB is fCPU/2(AHB)/2(APB)
-  TIM1_Handle.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  TIM1_Handle.Init.CounterMode = TIM_COUNTERMODE_UP;
-  TIM1_Handle.Init.RepetitionCounter = 0;
-  HAL_TIM_PWM_Init(&TIM1_Handle);
-
-  TIM_OC_InitTypeDef TIM_OC_InitStructure;
-  TIM_OC_InitStructure.Pulse =
-      (LED_PWM_TIM_PERIOD / 2 - 1);  // default 50% dutycycle
-  TIM_OC_InitStructure.OCMode = TIM_OCMODE_PWM2;
-  TIM_OC_InitStructure.OCPolarity = TIM_OCPOLARITY_HIGH;
-  TIM_OC_InitStructure.OCFastMode = TIM_OCFAST_DISABLE;
-  TIM_OC_InitStructure.OCNPolarity = TIM_OCNPOLARITY_HIGH;
-  TIM_OC_InitStructure.OCIdleState = TIM_OCIDLESTATE_SET;
-  TIM_OC_InitStructure.OCNIdleState = TIM_OCNIDLESTATE_SET;
-  HAL_TIM_PWM_ConfigChannel(&TIM1_Handle, &TIM_OC_InitStructure, TIM_CHANNEL_1);
-
-  HAL_TIM_PWM_Start(&TIM1_Handle, TIM_CHANNEL_1);
-  HAL_TIMEx_PWMN_Start(&TIM1_Handle, TIM_CHANNEL_1);
-}
-
-void lcd_para_init(uint32_t lcd_width, uint32_t lcd_height,
-                   uint32_t pixel_format) {
-  uint32_t ltdc_pixel_format;
-
-  if (pixel_format == LCD_PIXEL_FORMAT_RGB565) {
-    ltdc_pixel_format = LTDC_PIXEL_FORMAT_RGB565;
-    lcd_params.bbp = 2;
-  } else {
-    ltdc_pixel_format = LCD_PIXEL_FORMAT_ARGB8888;
-    lcd_params.bbp = 4;
+  // dma2d
+  {
+    hlcd_dma2d.Instance = DMA2D;
+    dma2d_init(&hlcd_dma2d);
   }
 
-  lcd_params.pixel_format = ltdc_pixel_format;
-  lcd_params.xres = lcd_width;
-  lcd_params.yres = lcd_height;
-  lcd_params.fb_base = DISPLAY_MEMORY_BASE;
+  // ltdc
+  {
+    hlcd_ltdc.Instance = LTDC;
+    if (ltdc_init(&hlcd_ltdc) != HAL_OK) dbg_printf("ltdc_init failed !\r\n");
 
-  hlcd_ltdc.Instance = LTDC;
-  hlcd_dma2d.Instance = DMA2D;
-  hlcd_dsi.Instance = DSI;
+    LTDC_LAYERCONFIG config;
+    config.x0 = 0;
+    config.x1 = lcd_params.hres;
+    config.y0 = 0;
+    config.y1 = lcd_params.vres;
+    config.pixel_format = lcd_params.pixel_format_ltdc;
+    config.address = DISPLAY_MEMORY_BASE;
+    if (ltdc_layer_config(&hlcd_ltdc, 0, &config) != HAL_OK)
+      dbg_printf("ltdc_layer_config failed !\r\n");
+  }
+
+  // dsi host
+  {
+    hlcd_dsi.Instance = DSI;
+    if (dsi_host_init(&hlcd_dsi) != HAL_OK)
+      dbg_printf("dsi_host_init failed !\r\n");
+  }
+
+  // lcd init
+  {
+    HAL_GPIO_WritePin(LCD_RESET_GPIO_PORT, LCD_RESET_PIN, GPIO_PIN_SET);
+    HAL_Delay(20);
+    HAL_GPIO_WritePin(LCD_RESET_GPIO_PORT, LCD_RESET_PIN, GPIO_PIN_RESET);
+    HAL_Delay(50);
+    HAL_GPIO_WritePin(LCD_RESET_GPIO_PORT, LCD_RESET_PIN, GPIO_PIN_SET);
+    HAL_Delay(120);
+
+    HAL_DSI_Start(&hlcd_dsi);  // make sure ltdc inited before this call
+
+    // Send Init Seq.
+    int result = LCD_init_sequence(DSI_DCS_write, HAL_Delay);
+    if (result != 0) {
+      dbg_printf("LCD_init_sequence failed with 0x%02x!\r\n", result);
+      while (1)
+        ;
+    }
+  }
+
+  dbg_printf("LTDC_FREQ=%d\r\n", LTDC_FREQ);
+  dbg_printf("DSI_FREQ=%d\r\n", DSI_FREQ);
+  dbg_printf("FPS_TARGET=%d\r\n", FPS_TARGET);
 }
 
 void display_set_window(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1) {}
@@ -726,5 +745,10 @@ void lcd_refresh_resume(void) {
   HAL_Delay(50);
   lcd_ltdc_dsi_enable();
   // lcd wakeup / re-init
-  st7701_init_sequence();
+  int result = LCD_init_sequence(DSI_DCS_write, HAL_Delay);
+  if (result != 0) {
+    dbg_printf("LCD_init_sequence failed with 0x%02x!\r\n", result);
+    while (1)
+      ;
+  }
 }

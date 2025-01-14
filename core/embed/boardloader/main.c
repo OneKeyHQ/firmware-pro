@@ -738,7 +738,7 @@ int main(void) {
   mpu_config_boardloader();
 
   // user interface
-  lcd_init(DISPLAY_RESX, DISPLAY_RESY, LCD_PIXEL_FORMAT_RGB565);
+  lcd_init();
   display_clear();
   lcd_pwm_init();
   display_backlight(128);

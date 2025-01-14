@@ -1,6 +1,8 @@
 #ifndef _UTIL_MACROS_H_
 #define _UTIL_MACROS_H_
 
+#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
+
 #define FORCE_IGNORE_RETURN(x) \
   { __typeof__(x) __attribute__((unused)) d = (x); }
 
@@ -15,7 +17,7 @@
 // from exisiting enum use following (change "xx")
 // #define xx_ENUM_ITEM(CLASS, TYPE) JOIN_EXPR(xx, CLASS, TYPE)
 // regex -> ^(\s*)(\S*)(.*),
-// replace -> $1xx_ENUM_ITEM(xxCLASS, $2)$3,
+// replace -> $1xx_ENUM_ITEM(CLASS, $2)$3,
 
 #define ENUM_NAME_ARRAY_ITEM(x) [x] = #x
 

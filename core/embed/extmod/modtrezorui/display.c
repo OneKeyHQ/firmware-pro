@@ -571,21 +571,12 @@ void display_loader_ex(uint16_t progress, bool indeterminate, int yoffset,
 
 #ifndef TREZOR_PRINT_DISABLE
 
-#if PRODUCTION_MODEL == 'H'
 #define DISPLAY_FONT_SIZE 16
 #define DISPLAY_CHAR_X_RES 8
 #define DISPLAY_CHAR_WIDTH 8
 #define DISPLAY_CHAR_HIGHT 26
 #define DISPLAY_PRINT_COLS (DISPLAY_RESX / DISPLAY_CHAR_WIDTH)
 #define DISPLAY_PRINT_ROWS (DISPLAY_RESY / DISPLAY_CHAR_HIGHT)
-#else
-#define DISPLAY_FONT_SIZE 5
-#define DISPLAY_CHAR_X_RES 5
-#define DISPLAY_CHAR_WIDTH 6
-#define DISPLAY_CHAR_HIGHT 8
-#define DISPLAY_PRINT_COLS (DISPLAY_RESX / DISPLAY_CHAR_WIDTH)
-#define DISPLAY_PRINT_ROWS (DISPLAY_RESY / DISPLAY_CHAR_HIGHT)
-#endif
 
 static char display_print_buf[DISPLAY_PRINT_ROWS][DISPLAY_PRINT_COLS];
 static uint16_t display_print_fgcolor = COLOR_WHITE,

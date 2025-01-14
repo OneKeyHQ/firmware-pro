@@ -20,41 +20,10 @@
 #ifndef _DISPLAY_DEFS_H
 #define _DISPLAY_DEFS_H
 
-#if PRODUCTION_MODEL == 'H'
-
 #define MAX_DISPLAY_RESX 480
 #define MAX_DISPLAY_RESY 800
-#define DISPLAY_RESX 480
-#define DISPLAY_RESY (800)
+#define DISPLAY_RESX MAX_DISPLAY_RESX
+#define DISPLAY_RESY MAX_DISPLAY_RESY
 #define TREZOR_FONT_BPP 4
-
-#elif defined TREZOR_MODEL_T
-
-// ILI9341V, GC9307 and ST7789V drivers support 240px x 320px display resolution
-#define MAX_DISPLAY_RESX 480
-#define MAX_DISPLAY_RESY 800
-#define DISPLAY_RESX 480
-#define DISPLAY_RESY 800
-#define TREZOR_FONT_BPP 4
-
-#elif defined TREZOR_MODEL_1
-
-#define MAX_DISPLAY_RESX 128
-#define MAX_DISPLAY_RESY 64
-#define DISPLAY_RESX 128
-#define DISPLAY_RESY 64
-#define TREZOR_FONT_BPP 1
-
-#elif defined TREZOR_MODEL_R
-
-#define MAX_DISPLAY_RESX 128
-#define MAX_DISPLAY_RESY 128
-#define DISPLAY_RESX 128
-#define DISPLAY_RESY 128
-#define TREZOR_FONT_BPP 1
-
-#else
-#error Unknown Trezor model
-#endif
 
 #endif  //_DISPLAY_DEFS_H
