@@ -13,12 +13,12 @@ def benfen_address_from_pubkey(pub_key_bytes: bytes) -> str:
     return f"0x{hexlify(h).decode()}"
 
 
-def try_convert_to_bfc_address(sui_addr: str) -> str | None:
+def try_convert_to_bfc_address(benfen_addr: str) -> str | None:
 
-    if len(sui_addr) < 3 or not (sui_addr[0] == "0" and (sui_addr[1] in "xX")):
+    if len(benfen_addr) < 3 or not (benfen_addr[0] == "0" and (benfen_addr[1] in "xX")):
         return None
 
-    hex_part = sui_addr[2:]
+    hex_part = benfen_addr[2:]
     if len(hex_part) == 0 or len(hex_part) > 64:
         return None
 
