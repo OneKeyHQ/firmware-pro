@@ -621,6 +621,14 @@ def _networks_iterator() -> Iterator[NetworkInfoTuple]:
         0xD2D2D2,  # primary_color
     )
     yield (
+        146,  # chain_id
+        60,  # slip44
+        "S",  # symbol
+        "Sonic",  # name
+        "evm-s.png",  # name
+        0xFFFFFF,  # primary_color
+    )
+    yield (
         162,  # chain_id
         1,  # slip44
         "tPHT",  # symbol

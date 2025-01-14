@@ -1302,7 +1302,7 @@
       "verified": true,
       "security": false,
       "addToIndex": false,
-      "chainId": "177",
+      "chainId": "1",
       "source": [
         "sushi",
         "Coingecko"
