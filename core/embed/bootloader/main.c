@@ -380,24 +380,12 @@ static secbool bootloader_usb_loop(const vendor_header* const vhdr,
         break;
       case MSG_NAME_TO_ID(WipeDevice):  // WipeDevice
         ui_fadeout();
-#if PRODUCTION_MODEL == 'H'
         ui_wipe_confirm(hdr);
-#else
-        ui_screen_wipe_confirm();
-#endif
         ui_fadein();
-#if PRODUCTION_MODEL == 'H'
         int response = ui_input_poll(INPUT_CONFIRM | INPUT_CANCEL, true);
-#else
-        int response = ui_user_input(INPUT_CONFIRM | INPUT_CANCEL);
-#endif
         if (INPUT_CANCEL == response) {
           ui_fadeout();
-#if PRODUCTION_MODEL == 'H'
           ui_bootloader_first(hdr);
-#else
-          ui_screen_firmware_info(vhdr, hdr);
-#endif
           ui_fadein();
           send_user_abort(USB_IFACE_NUM, "Wipe cancelled");
           break;

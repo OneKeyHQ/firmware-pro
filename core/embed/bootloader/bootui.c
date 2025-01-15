@@ -38,22 +38,15 @@
 #include "mini_printf.h"
 #include "version.h"
 
-#if defined TREZOR_MODEL_T
-#include "touch.h"
-#elif defined TREZOR_MODEL_R
-#include "button.h"
-#else
-#error Unknown Trezor model
-#endif
-
-#if PRODUCTION_MODEL == 'H'
 #include "ble.h"
 #include "common.h"
 #include "flash.h"
+#include "fw_keys.h"
 #include "icon_onekey.h"
 #include "image.h"
 #include "se_thd89.h"
 #include "thd89_boot.h"
+#include "touch.h"
 #include "usb.h"
 
 #define BACKLIGHT_NORMAL 150
@@ -155,19 +148,11 @@ void ui_screen_boot(const vendor_header* const vhdr,
   boot_background = COLOR_BLACK;
 
   // const uint8_t *vimg = vhdr->vimg;
-#if PRODUCTION_MODEL == 'H'
   const uint32_t fw_version = hdr->onekey_version;
-#else
-  const uint32_t fw_version = hdr->version;
-#endif
 
   display_bar(0, 0, DISPLAY_RESX, DISPLAY_RESY, boot_background);
 
-#if PRODUCTION_MODEL == 'H'
   // int image_top = show_string ? 128 : (DISPLAY_RESY - 120) / 2;
-#else
-  int image_top = show_string ? 30 : (DISPLAY_RESY - 120) / 2;
-#endif
 
   // check whether vendor image
   // if (memcmp(vimg, "TOIf", 4) == 0) {
@@ -179,20 +164,11 @@ void ui_screen_boot(const vendor_header* const vhdr,
   // }
 
   if (show_string) {
-#if PRODUCTION_MODEL == 'H'
     display_text(8, 96, vhdr->vstr, vhdr->vstr_len, FONT_NORMAL, COLOR_BL_FG,
                  boot_background);
     const char* ver_str = format_ver("v%d.%d.%d", fw_version);
     display_text(8, 140, ver_str, -1, FONT_NORMAL, COLOR_BL_FG,
                  boot_background);
-#else
-    display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY - 5 - 50, vhdr->vstr,
-                        vhdr->vstr_len, FONT_NORMAL, COLOR_BL_BG,
-                        boot_background);
-    const char* ver_str = format_ver("%d.%d.%d", fw_version);
-    display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY - 5 - 25, ver_str, -1,
-                        FONT_NORMAL, COLOR_BL_BG, boot_background);
-#endif
   }
 }
 
@@ -200,28 +176,17 @@ void ui_screen_boot_wait(int wait_seconds) {
   char wait_str[32];
   mini_snprintf(wait_str, sizeof(wait_str), "Starting in %d s", wait_seconds);
   display_bar(0, DISPLAY_RESY - 5 - 20, DISPLAY_RESX, 5 + 20, boot_background);
-#if PRODUCTION_MODEL == 'H'
   ui_statusbar_update();
   display_bar(0, 600, DISPLAY_RESX, 100, boot_background);
   display_text_center(DISPLAY_RESX / 2, 655, wait_str, -1, FONT_NORMAL,
                       COLOR_BL_FG, boot_background);
-#else
-  display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY - 5, wait_str, -1,
-                      FONT_NORMAL, COLOR_BL_BG, boot_background);
-#endif
 }
 
 void ui_screen_boot_click(void) {
   display_bar(0, DISPLAY_RESY - 5 - 20, DISPLAY_RESX, 5 + 20, boot_background);
-#if PRODUCTION_MODEL == 'H'
   display_bar(0, 784, DISPLAY_RESX, 40, boot_background);
   display_text(8, 784, "Tap to continue ...", -1, FONT_NORMAL, COLOR_BL_FG,
                boot_background);
-#else
-  display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY - 5,
-                      "click to continue ...", -1, FONT_NORMAL, COLOR_BL_BG,
-                      boot_background);
-#endif
 }
 
 // info UI
@@ -251,11 +216,7 @@ void ui_screen_firmware_info(const vendor_header* const vhdr,
   display_icon(16, 54, 32, 32, toi_icon_info + 12, sizeof(toi_icon_info) - 12,
                COLOR_BL_GRAY, COLOR_BL_BG);
   if (vhdr && hdr) {
-#if PRODUCTION_MODEL == 'H'
     ver_str = format_ver("Firmware %d.%d.%d by", (hdr->onekey_version));
-#else
-    ver_str = format_ver("Firmware %d.%d.%d by", (hdr->version));
-#endif
     display_text(55, 70, ver_str, -1, FONT_NORMAL, COLOR_BL_GRAY, COLOR_BL_BG);
     display_vendor_string(vhdr->vstr, vhdr->vstr_len, COLOR_BL_GRAY);
   } else {
@@ -493,42 +454,22 @@ void ui_screen_done(int restart_seconds, secbool full_redraw) {
     ui_logo_done();
   }
   if (secfalse == full_redraw) {
-#if PRODUCTION_MODEL == 'H'
     display_bar(0, DISPLAY_RESY - 24 - 18, 240, 23, COLOR_BL_BG);
-#else
-    display_bar(0, DISPLAY_RESY - 24 - 18, 240, 23, COLOR_BL_BG);
-#endif
   }
-#if PRODUCTION_MODEL == 'H'
   display_bar(0, DISPLAY_RESY - 78 - 30, DISPLAY_RESX, 30, COLOR_BL_BG);
   display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY - 78, str, -1, FONT_NORMAL,
                       COLOR_BL_FG, COLOR_BL_BG);
-#else
-  display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY - 24, str, -1, FONT_NORMAL,
-                      COLOR_BL_FG, COLOR_BL_BG);
-#endif
 }
 
 // error UI
 
 void ui_screen_fail(void) {
-#if PRODUCTION_MODEL == 'H'
   display_bar(0, DISPLAY_RESY / 2, DISPLAY_RESX, DISPLAY_RESY, COLOR_BL_BG);
   ui_statusbar_update();
   ui_logo_onekey();
-#else
-  display_clear();
-#endif
-
-#if PRODUCTION_MODEL == 'H'
   display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY - 78,
                       "Failed! Tap to restart and try again.", -1, FONT_NORMAL,
                       COLOR_BL_FAIL, COLOR_BL_BG);
-#else
-  display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY - 24,
-                      "Failed! Please, reconnect.", -1, FONT_NORMAL,
-                      COLOR_BL_FG, COLOR_BL_BG);
-#endif
 }
 
 // general functions
