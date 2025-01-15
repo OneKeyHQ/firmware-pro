@@ -468,7 +468,7 @@ static void lock_burnin_test_otp(void) {
 }
 
 #define TIMER_1S 10000
-#define TEST_DURATION (3 * 60 * 60 * TIMER_1S)  // 3 hours
+#define TEST_DURATION (2 * 60 * 60 * TIMER_1S)  // 2 hours
 
 static void ui_generic_confirm_simple(const char *msg) {
   if (msg == NULL) return;
@@ -550,6 +550,9 @@ static bool _motor_test(void) {
 
 static bool _camera_test(void) {
   int ui_res = 0;
+  if (!camera_is_online()) {
+    return false;
+  }
   while (1) {
     camera_capture_start();
     if (camera_capture_done()) {
@@ -633,6 +636,9 @@ static bool _flashled_test(void) {
 static bool _fp_test(void) {
   int ui_res = 0;
   uint8_t image_data[88 * 112 + 2];
+  if (!fingerprint_module_status_get()) {
+    return false;
+  }
   ui_generic_confirm_simple("FINGERPRINT test");
   while (1) {
     if (FpsDetectFinger() == 1) {
@@ -797,6 +803,7 @@ void device_burnin_test(bool force) {
   static uint16_t voltage_last = 0, current_last = 0,
                   discahrging_current_last = 0;
   volatile uint32_t battery_pre = 0, battery_now = 0;
+  uint32_t loop_counter = 0;
   uint8_t image_data[88 * 112 + 2];
   int flashled_value = 1;
 
@@ -850,6 +857,14 @@ void device_burnin_test(bool force) {
       restart();
     }
     return;
+  }
+
+  if (!fingerprint_module_status_get()) {
+    ensure(secfalse, "Fingerprint init failed");
+  }
+
+  if (!camera_is_online()) {
+    ensure(secfalse, "Camera init failed");
   }
 
   test_timer_init();
@@ -989,29 +1004,40 @@ void device_burnin_test(bool force) {
             fingerprint_detect = false;
           }
 
-          display_printf("Poll card...\n");
-          nfc_pwr_ctl(true);
-          HAL_TIM_Base_Stop(&TimHandle);
-          while (1) {
-            if (nfc_poll_card()) {
-              if (nfc_select_aid((uint8_t *)"\xD1\x56\x00\x01\x32\x83\x40\x01",
-                                 8)) {
-                if (lite_card_data_exchange_test()) {
-                  break;
-                }
-              } else if (nfc_select_aid(
-                             (uint8_t *)"\x6f\x6e\x65\x6b\x65\x79\x2e\x62"
-                                        "\x61\x63\x6b\x75\x70\x01",
-                             14)) {
-                if (lite_card_data_exchange_test()) {
-                  break;
+          loop_counter++;
+
+          if (loop_counter % 2) {
+            if (flashled_value) {
+              ble_set_flashled(0);
+            }
+
+            display_printf("Poll card...\n");
+            nfc_pwr_ctl(true);
+            HAL_TIM_Base_Stop(&TimHandle);
+            while (1) {
+              if (nfc_poll_card()) {
+                if (nfc_select_aid(
+                        (uint8_t *)"\xD1\x56\x00\x01\x32\x83\x40\x01", 8)) {
+                  if (lite_card_data_exchange_test()) {
+                    break;
+                  }
+                } else if (nfc_select_aid(
+                               (uint8_t *)"\x6f\x6e\x65\x6b\x65\x79\x2e\x62"
+                                          "\x61\x63\x6b\x75\x70\x01",
+                               14)) {
+                  if (lite_card_data_exchange_test()) {
+                    break;
+                  }
                 }
               }
             }
+            nfc_pwr_ctl(false);
+            display_printf("Card test passed\n");
+            HAL_TIM_Base_Start(&TimHandle);
+            if (flashled_value) {
+              ble_set_flashled(1);
+            }
           }
-          nfc_pwr_ctl(false);
-          display_printf("Card test passed\n");
-          HAL_TIM_Base_Start(&TimHandle);
 
           if (!_sdram_test()) {
             display_printf("SDRAM test failed\n");
@@ -1076,13 +1102,13 @@ void device_burnin_test(bool force) {
 
     flashled_now = HAL_GetTick();
     if (flashled_value) {
-      if (flashled_now - flashled_pre > 1000) {
+      if (flashled_now - flashled_pre > 500) {
         flashled_pre = flashled_now;
         flashled_value = 0;
         ble_set_flashled(flashled_value);
       }
     } else {
-      if (flashled_now - flashled_pre > 10000) {
+      if (flashled_now - flashled_pre > 20000) {
         flashled_pre = flashled_now;
         flashled_value = 1;
         ble_set_flashled(flashled_value);
