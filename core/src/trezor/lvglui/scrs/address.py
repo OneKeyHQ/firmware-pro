@@ -31,7 +31,7 @@ chain_list = [
         ],
         "taproot_path": [0x80000000 + 86, 0x80000000 + 0, 0x80000000 + 0, 0, 0],
         "icon_96": "A:/res/btc-btc.png",
-        "icon_48": "A:/assets/addr/btc-btc-48.png",
+        "icon_48": "A:/res/btc-btc-48.png",
         "primary_color": 0xFF9C00,
     },
     {
@@ -43,7 +43,7 @@ chain_list = [
         "ledger_pos": -3,
         "base_path": [0x80000000 + 44, 0x80000000 + 60, 0x80000000 + 0, 0, 0],
         "icon_96": "A:/res/evm-eth.png",
-        "icon_48": "A:/assets/addr/evm-eth-48.png",
+        "icon_48": "A:/res/evm-eth-48.png",
         "primary_color": 0x637FFF,
     },
     {
@@ -61,8 +61,30 @@ chain_list = [
         ],
         "ledger_path": [0x80000000 + 44, 0x80000000 + 501, 0x80000000 + 0],
         "icon_96": "A:/res/chain-sol.png",
-        "icon_48": "A:/assets/addr/chain-sol-48.png",
+        "icon_48": "A:/res/chain-sol-48.png",
         "primary_color": 0xC74AE3,
+    },
+    {
+        "msg_type": MessageType.TronGetAddress,
+        "symbol": " TRX",
+        "name": "Tron",
+        "msg_class": "TronGetAddress",
+        "index_pos": -1,
+        "base_path": [0x80000000 + 44, 0x80000000 + 195, 0x80000000 + 0, 0, 0],
+        "icon_96": "A:/res/chain-tron.png",
+        "icon_48": "A:/res/chain-tron-48.png",
+        "primary_color": 0xFF0013,
+    },
+    {
+        "msg_type": MessageType.TonGetAddress,
+        "symbol": " TON",
+        "name": "TON",
+        "msg_class": "TonGetAddress",
+        "index_pos": -1,
+        "base_path": [0x80000000 + 44, 0x80000000 + 607, 0x80000000 + 0],
+        "icon_96": "A:/res/chain-ton.png",
+        "icon_48": "A:/res/chain-ton-48.png",
+        "primary_color": 0x0098EA,
     },
     {
         "msg_type": MessageType.CardanoGetAddress,
@@ -81,30 +103,8 @@ chain_list = [
         "protocol_magic": 764824073,
         "network_id": 1,
         "icon_96": "A:/res/chain-ada.png",
-        "icon_48": "A:/assets/addr/chain-ada-48.png",
+        "icon_48": "A:/res/chain-ada-48.png",
         "primary_color": 0x2970FF,
-    },
-    {
-        "msg_type": MessageType.TronGetAddress,
-        "symbol": " TRX",
-        "name": "Tron",
-        "msg_class": "TronGetAddress",
-        "index_pos": -1,
-        "base_path": [0x80000000 + 44, 0x80000000 + 195, 0x80000000 + 0, 0, 0],
-        "icon_96": "A:/res/chain-tron.png",
-        "icon_48": "A:/assets/addr/chain-tron-48.png",
-        "primary_color": 0xFF0013,
-    },
-    {
-        "msg_type": MessageType.TonGetAddress,
-        "symbol": " TON",
-        "name": "TON",
-        "msg_class": "TonGetAddress",
-        "index_pos": -1,
-        "base_path": [0x80000000 + 44, 0x80000000 + 607, 0x80000000 + 0],
-        "icon_96": "A:/res/chain-ton.png",
-        "icon_48": "A:/assets/addr/chain-ton-48.png",
-        "primary_color": 0x0098EA,
     },
     {
         "msg_type": MessageType.SuiGetAddress,
@@ -120,7 +120,7 @@ chain_list = [
             0x80000000 + 0,
         ],
         "icon_96": "A:/res/chain-sui.png",
-        "icon_48": "A:/assets/addr/chain-sui-48.png",
+        "icon_48": "A:/res/chain-sui-48.png",
         "primary_color": 0x6FBCF0,
     },
     {
@@ -137,7 +137,7 @@ chain_list = [
             0x80000000 + 0,
         ],
         "icon_96": "A:/res/chain-dot.png",
-        "icon_48": "A:/assets/addr/chain-dot-48.png",
+        "icon_48": "A:/res/chain-dot-48.png",
         "primary_color": 0xE6007A,
     },
     {
@@ -148,7 +148,7 @@ chain_list = [
         "index_pos": -1,
         "base_path": [0x80000000 + 44, 0x80000000 + 397, 0x80000000 + 0],
         "icon_96": "A:/res/chain-near.png",
-        "icon_48": "A:/assets/addr/chain-near-48.png",
+        "icon_48": "A:/res/chain-near-48.png",
         "primary_color": 0xFFFFFF,
     },
     {
@@ -165,7 +165,7 @@ chain_list = [
             0x80000000 + 0,
         ],
         "icon_96": "A:/res/chain-apt.png",
-        "icon_48": "A:/assets/addr/chain-apt-48.png",
+        "icon_48": "A:/res/chain-apt-48.png",
         "primary_color": 0xFFFFFF,
     },
     {
@@ -176,7 +176,7 @@ chain_list = [
         "index_pos": -1,
         "base_path": [0x80000000 + 44, 0x80000000 + 111111, 0x80000000 + 0, 0, 0],
         "icon_96": "A:/res/chain-kaspa.png",
-        "icon_48": "A:/assets/addr/chain-kaspa-48.png",
+        "icon_48": "A:/res/chain-kaspa-48.png",
         "primary_color": 0x55ECC7,
     },
     {
@@ -187,7 +187,7 @@ chain_list = [
         "index_pos": -1,
         "base_path": [0x80000000 + 44, 0x80000000 + 461, 0x80000000 + 0, 0, 0],
         "icon_96": "A:/res/chain-fil.png",
-        "icon_48": "A:/assets/addr/chain-fil-48.png",
+        "icon_48": "A:/res/chain-fil-48.png",
         "primary_color": 0x0090FF,
     },
     {
@@ -198,7 +198,7 @@ chain_list = [
         "index_pos": -3,
         "base_path": [0x80000000 + 44, 0x80000000 + 1234, 0x80000000 + 0, 0, 0],
         "icon_96": "A:/res/chain-alephium.png",
-        "icon_48": "A:/assets/addr/chain-alephium-48.png",
+        "icon_48": "A:/res/chain-alephium-48.png",
         "primary_color": 0xFFFFFF,
     },
     {
@@ -215,7 +215,7 @@ chain_list = [
             0x80000000 + 0,
         ],
         "icon_96": "A:/res/chain-algo.png",
-        "icon_48": "A:/assets/addr/chain-algo-48.png",
+        "icon_48": "A:/res/chain-algo-48.png",
         "primary_color": 0xFFFFFF,
     },
     {
@@ -232,7 +232,7 @@ chain_list = [
             0x80000000 + 0,
         ],
         "icon_96": "A:/res/chain-benfen.png",
-        "icon_48": "A:/assets/addr/chain-benfen-48.png",
+        "icon_48": "A:/res/chain-benfen-48.png",
         "primary_color": 0xCD4937,
     },
     {
@@ -243,7 +243,7 @@ chain_list = [
         "index_pos": -3,
         "legacy_path": [0x80000000 + 44, 0x80000000 + 145, 0x80000000 + 0, 0, 0],
         "icon_96": "A:/res/btc-bch.png",
-        "icon_48": "A:/assets/addr/btc-bch-48.png",
+        "icon_48": "A:/res/btc-bch-48.png",
         "primary_color": 0x0AC18E,
     },
     {
@@ -254,7 +254,7 @@ chain_list = [
         "index_pos": -1,
         "base_path": [0x80000000 + 44, 0x80000000 + 503, 0x80000000 + 0, 0, 0],
         "icon_96": "A:/res/chain-cfx.png",
-        "icon_48": "A:/assets/addr/chain-cfx-48.png",
+        "icon_48": "A:/res/chain-cfx-48.png",
         "primary_color": 0xFFFFFF,
     },
     {
@@ -265,7 +265,7 @@ chain_list = [
         "index_pos": -1,
         "base_path": [0x80000000 + 44, 0x80000000 + 118, 0x80000000 + 0, 0, 0],
         "icon_96": "A:/res/chain-atom.png",
-        "icon_48": "A:/assets/addr/chain-atom-48.png",
+        "icon_48": "A:/res/chain-atom-48.png",
         "primary_color": 0xE0E0E0,
     },
     {
@@ -276,7 +276,7 @@ chain_list = [
         "index_pos": -3,
         "legacy_path": [0x80000000 + 44, 0x80000000 + 3, 0x80000000 + 0, 0, 0],
         "icon_96": "A:/res/btc-doge.png",
-        "icon_48": "A:/assets/addr/btc-doge-48.png",
+        "icon_48": "A:/res/btc-doge-48.png",
         "primary_color": 0xFF9C00,
     },
     {
@@ -301,7 +301,7 @@ chain_list = [
             0,
         ],
         "icon_96": "A:/res/btc-ltc.png",
-        "icon_48": "A:/assets/addr/btc-ltc-48.png",
+        "icon_48": "A:/res/btc-ltc-48.png",
         "primary_color": 0x3683F7,
     },
     {
@@ -312,7 +312,7 @@ chain_list = [
         "index_pos": -1,
         "base_path": [0x80000000 + 44, 0x80000000 + 309, 0x80000000 + 0, 0, 0],
         "icon_96": "A:/res/chain-nervos.png",
-        "icon_48": "A:/assets/addr/chain-nervos-48.png",
+        "icon_48": "A:/res/chain-nervos-48.png",
         "primary_color": 0xFFFFFF,
     },
     {
@@ -323,7 +323,7 @@ chain_list = [
         "index_pos": -3,
         "legacy_path": [0x80000000 + 44, 0x80000000 + 1900, 0x80000000 + 0, 0, 0],
         "icon_96": "A:/res/btc-xna.png",
-        "icon_48": "A:/assets/addr/btc-xna-48.png",
+        "icon_48": "A:/res/btc-xna-48.png",
         "primary_color": 0x793EAA,
     },
     {
@@ -334,7 +334,7 @@ chain_list = [
         "index_pos": -3,
         "base_path": [0x80000000 + 44, 0x80000000 + 29223, 0x80000000 + 0, 0, 0],
         "icon_96": "A:/res/chain-nexa.png",
-        "icon_48": "A:/assets/addr/chain-nexa-48.png",
+        "icon_48": "A:/res/chain-nexa-48.png",
         "primary_color": 0xFFE144,
     },
     {
@@ -345,7 +345,7 @@ chain_list = [
         "index_pos": -3,
         "base_path": [0x80000000 + 44, 0x80000000 + 1237, 0x80000000 + 0, 0, 0],
         "icon_96": "A:/res/chain-nostr.png",
-        "icon_48": "A:/assets/addr/chain-nostr-48.png",
+        "icon_48": "A:/res/chain-nostr-48.png",
         "primary_color": 0x8D45DD,
     },
     {
@@ -356,7 +356,7 @@ chain_list = [
         "index_pos": -3,
         "base_path": [0x80000000 + 44, 0x80000000 + 144, 0x80000000 + 0, 0, 0],
         "icon_96": "A:/res/chain-xrp.png",
-        "icon_48": "A:/assets/addr/chain-xrp-48.png",
+        "icon_48": "A:/res/chain-xrp-48.png",
         "primary_color": 0xFFFFFF,
     },
     {
@@ -367,7 +367,7 @@ chain_list = [
         "index_pos": -3,
         "base_path": [0x80000000 + 44, 0x80000000 + 541, 0x80000000 + 0, 0, 0],
         "icon_96": "A:/res/chain-scdo.png",
-        "icon_48": "A:/assets/addr/chain-scdo-48.png",
+        "icon_48": "A:/res/chain-scdo-48.png",
         "primary_color": 0xFFFFFF,
     },
 ]
@@ -661,7 +661,7 @@ class AddressManager:
         else:
             return self._prepare_default_message()
 
-    async def generate_address(self, name, index=0, ctx=None):
+    async def generate_address(self, name, index=0, ctx=None, display=True):
         """Main logic for generating addresses"""
 
         ctx = wire.DummyContext()
@@ -684,8 +684,12 @@ class AddressManager:
             elif state == self.STATE.SHOW_ADDRESS:
                 # Generate message
                 msg = self._prepare_chain_message(chain_info["name"])
-
-                address_resp = await self.current_handler(ctx, msg)
+                try:
+                    address_resp = await self.current_handler(ctx, msg)
+                except Exception as e:
+                    print("generate_address error", e)
+                    state = self.STATE.ERROR
+                    continue
 
                 ctx.primary_color = lv.color_hex(
                     self.current_chain_info["primary_color"]
@@ -728,3 +732,4 @@ class AddressManager:
         self.current_chain_info = None
         self.user_interaction = None
         self.addr_type = None
+        storage.cache.SESSION_DIRIVE_CARDANO = False

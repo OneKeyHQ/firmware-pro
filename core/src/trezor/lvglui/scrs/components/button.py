@@ -81,6 +81,8 @@ class ListItemBtn(lv.btn):
         has_next: bool = False,
         has_bgcolor=True,
         use_transition=True,
+        min_height=94,
+        pad_ver=28,
     ) -> None:
         super().__init__(parent)
         self.remove_style_all()
@@ -90,12 +92,12 @@ class ListItemBtn(lv.btn):
             StyleWrapper()
             .bg_color(lv_colors.ONEKEY_BLACK_3 if has_bgcolor else lv_colors.BLACK)
             .bg_opa(lv.OPA.COVER)
-            .min_height(94)
+            .min_height(min_height)
             .text_font(font_GeistSemiBold30)
             .text_color(lv_colors.WHITE)
             .text_letter_space(-1)
             .pad_hor(24)
-            .pad_ver(28),
+            .pad_ver(pad_ver),
             0,
         )
         if use_transition:

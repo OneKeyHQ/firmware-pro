@@ -222,6 +222,15 @@ class BTCDeriveSelectionScreen(FullSizeWindow):
                 self.origin_type = type_value
             self.option_btns.append(btn)
 
+        self.add_event_cb(self.on_nav_back, lv.EVENT.GESTURE, None)
+
+    def on_nav_back(self, event_obj):
+        code = event_obj.code
+        if code == lv.EVENT.GESTURE:
+            _dir = lv.indev_get_act().get_gesture_dir()
+            if _dir == lv.DIR.RIGHT:
+                lv.event_send(self.nav_back.nav_btn, lv.EVENT.CLICKED, None)
+
     def eventhandler(self, event_obj):
         code = event_obj.code
         target = event_obj.get_target()
@@ -280,6 +289,15 @@ class ETHDeriveSelectionScreen(FullSizeWindow):
                 btn.set_checked()
                 self.selected_type = type_value
             self.option_btns.append(btn)
+
+        self.add_event_cb(self.on_nav_back, lv.EVENT.GESTURE, None)
+
+    def on_nav_back(self, event_obj):
+        code = event_obj.code
+        if code == lv.EVENT.GESTURE:
+            _dir = lv.indev_get_act().get_gesture_dir()
+            if _dir == lv.DIR.RIGHT:
+                lv.event_send(self.nav_back.nav_btn, lv.EVENT.CLICKED, None)
 
     def eventhandler(self, event_obj):
         code = event_obj.code
