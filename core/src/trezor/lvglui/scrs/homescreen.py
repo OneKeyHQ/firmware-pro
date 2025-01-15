@@ -1165,7 +1165,7 @@ class IndexSelectionScreen(AnimScreen):
             -50,
             0,
             create_move_cb_container(self.container, 0),
-            time=70,
+            time=150,
             delay=0,
             path_cb=lv.anim_t.path_ease_out,
         )
