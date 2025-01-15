@@ -2594,7 +2594,6 @@ class GeneralScreen(AnimScreen):
 
     def collect_animation_targets(self) -> list:
         targets = []
-
         if hasattr(self, "container") and self.container:
             targets.append(self.container)
         list_btns = ["power"]
@@ -3015,7 +3014,6 @@ class BacklightSetting(AnimScreen):
 
         self.current_brightness = device.get_brightness()
         self.temp_brightness = self.current_brightness
-
         self.container = ContainerFlexCol(self.content_area, self.title)
         self.slider = lv.slider(self.container)
         self.slider.set_size(456, 94)
@@ -3038,7 +3036,6 @@ class BacklightSetting(AnimScreen):
         self.percent.set_text(brightness2_percent_str(self.current_brightness))
         self.slider.add_event_cb(self.on_value_changed, lv.EVENT.VALUE_CHANGED, None)
         self.slider.clear_flag(lv.obj.FLAG.GESTURE_BUBBLE)
-
         self.load_screen(self)
         gc.collect()
 
@@ -3167,8 +3164,8 @@ class AnimationSetting(AnimScreen):
             self.tips.set_text(_(i18n_keys.CONTENT__ANIMATIONS__DISABLED_HINT))
 
         self.container.add_event_cb(self.on_value_changed, lv.EVENT.VALUE_CHANGED, None)
-        gc.collect()
         self.load_screen(self)
+        gc.collect()
 
     def on_value_changed(self, event_obj):
         code = event_obj.code
@@ -3220,7 +3217,6 @@ class TapAwakeSetting(AnimScreen):
             self.tap_awake.clear_state()
             self.description.set_text(_(i18n_keys.CONTENT__TAP_TO_WAKE_DISABLED__HINT))
         self.container.add_event_cb(self.on_value_changed, lv.EVENT.VALUE_CHANGED, None)
-
         self.load_screen(self)
         gc.collect()
 
@@ -3549,7 +3545,6 @@ class AirGapSetting(AnimScreen):
         self.description.set_style_text_font(font_GeistRegular26, lv.STATE.DEFAULT)
         self.description.set_style_text_line_space(3, 0)
         self.description.align_to(self.container, lv.ALIGN.OUT_BOTTOM_LEFT, 8, 16)
-
         air_gap_enabled = device.is_airgap_mode()
         if air_gap_enabled:
             self.air_gap.add_state()
@@ -3569,7 +3564,6 @@ class AirGapSetting(AnimScreen):
         self.add_event_cb(self.on_event, lv.EVENT.VALUE_CHANGED, None)
         self.add_event_cb(self.on_event, lv.EVENT.READY, None)
         self.add_event_cb(self.on_event, lv.EVENT.CANCEL, None)
-
         self.load_screen(self)
         gc.collect()
 
