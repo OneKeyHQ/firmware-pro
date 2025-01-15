@@ -28,11 +28,16 @@ uint8_t fpsensor_get_HWID(uint8_t hwid[2])
     buffer[0] = FPSENSOR_REG_HWID;
     buffer[1] = 0x00;
     buffer[2] = 0x00;
-    status = fpsensor_spi_transceive(buffer, 3);
-    memcpy(hwid, buffer + 1, 2);
-    memcpy(hw_id, hwid, 2);
-    hw_id_cached = true;
-    return status;
+    fpsensor_spi_transceive(buffer, 3);
+    status = buffer[0];
+    if ( status == FPSENSOR_OK )
+    {
+        memcpy(hwid, buffer + 1, 2);
+        memcpy(hw_id, hwid, 2);
+        hw_id_cached = true;
+        return FPSENSOR_OK;
+    }
+    return FPSENSOR_SPI_ERROR;
 }
 
 uint8_t fpsensor_print_VID(void)

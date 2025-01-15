@@ -12,6 +12,7 @@ typedef enum _FP_RESULT
     FP_NOT_MATCH = 6,
 } FP_RESULT;
 
+bool fingerprint_module_status_get(void);
 void fingerprint_get_version(char* version);
 void fingerprint_init(void);
 int fingerprint_detect(void);

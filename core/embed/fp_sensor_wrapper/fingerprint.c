@@ -10,6 +10,13 @@
 #endif
 extern uint8_t MAX_USER_COUNT;
 
+static bool fingerprint_module_status = false;
+
+bool fingerprint_module_status_get(void)
+{
+    return fingerprint_module_status;
+}
+
 #ifdef EMULATOR
 void fingerprint_get_version(char* version)
 {
@@ -67,13 +74,24 @@ void fingerprint_init(void)
     ensure_ex(fpsensor_init(), FPSENSOR_OK, "fpsensor_init failed");
     ensure_ex(fpsensor_adc_init(18, 13, 4, 3), FPSENSOR_OK, "fpsensor_adc_init failed");
     ensure_ex(fpsensor_set_config_param(0xC0, 10), FPSENSOR_OK, "fpsensor_set_config_param failed");
-    ensure_ex(FpAlgorithmInit(TEMPLATE_ADDR_START), FPSENSOR_OK, "FpAlgorithmInit failed");
+    if ( FpAlgorithmInit(TEMPLATE_ADDR_START) == FPSENSOR_OK )
+    {
+        fingerprint_module_status = true;
+    }
+    else
+    {
+        return;
+    }
     MAX_USER_COUNT = MAX_FINGERPRINT_COUNT;
     fingerprint_enter_sleep();
 }
 
 int fingerprint_enter_sleep(void)
 {
+    if ( !fingerprint_module_status )
+    {
+        return -1;
+    }
     if ( FpsSleep(256) != 0 )
     {
         return -1;
@@ -84,6 +102,10 @@ int fingerprint_enter_sleep(void)
 
 int fingerprint_detect(void)
 {
+    if ( !fingerprint_module_status )
+    {
+        return 0;
+    }
     return FpsDetectFinger();
 }
 
