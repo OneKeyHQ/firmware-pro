@@ -2662,7 +2662,6 @@ class GeneralScreen(AnimScreen):
         code = event_obj.code
         target = event_obj.get_target()
         if code == lv.EVENT.CLICKED:
-            print("dianji" + str(code))
             if utils.lcd_resume():
                 return
             if target == self.language:
@@ -2676,7 +2675,6 @@ class GeneralScreen(AnimScreen):
             elif target == self.autolock_and_shutdown:
                 Autolock_and_ShutingDown(self)
             elif target == self.power:
-                print("dianji  power")
                 PowerOff()
             else:
                 pass
