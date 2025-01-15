@@ -109,20 +109,34 @@ secbool usb_webusb_can_read(uint8_t iface_num) {
   return sectrue;
 }
 
-secbool usb_webusb_can_write(uint8_t iface_num) {
+int usb_webusb_can_write(uint8_t iface_num) {
+  static uint32_t start = 0;
   usb_iface_t *iface = usb_get_iface(iface_num);
   if (iface == NULL) {
     return secfalse;  // Invalid interface number
   }
-  if (iface->type != USB_IFACE_TYPE_WEBUSB) {
-    return secfalse;  // Invalid interface type
-  }
-  if (iface->webusb.ep_in_is_idle == 0) {
-    return secfalse;  // Last transmission is not over yet
-  }
+
   if (usb_dev_handle.dev_state != USBD_STATE_CONFIGURED) {
     return secfalse;  // Device is not configured
   }
+
+  if (iface->type != USB_IFACE_TYPE_WEBUSB) {
+    return secfalse;  // Invalid interface type
+  }
+
+  if (iface->webusb.ep_in_is_idle == 0) {
+    if (start == 0) {
+      start = HAL_GetTick();
+    }
+    if (HAL_GetTick() - start > 500) {
+      start = 0;
+      iface->webusb.ep_in_is_idle = 1;
+      return -1;  // reset ep_in_is_idle
+    }
+    return secfalse;  // Last transmission is not over yet
+  }
+
+  start = 0;
   return sectrue;
 }
 
@@ -276,6 +290,8 @@ static void usb_webusb_class_data_out(USBD_HandleTypeDef *dev,
   if (ep_num == state->ep_out) {
     // Save the report length to indicate we have read something, but don't
     // schedule next reading until user reads this one
+    // Clear the IN EP buffer
+    USBD_LL_FlushEP(dev, state->ep_in);
     state->last_read_len = USBD_LL_GetRxDataSize(dev, ep_num);
   }
 }

@@ -62,7 +62,7 @@ typedef struct {
 
 secbool __wur usb_webusb_add(const usb_webusb_info_t *webusb_info);
 secbool __wur usb_webusb_can_read(uint8_t iface_num);
-secbool __wur usb_webusb_can_write(uint8_t iface_num);
+int __wur usb_webusb_can_write(uint8_t iface_num);
 int __wur usb_webusb_read(uint8_t iface_num, uint8_t *buf, uint32_t len);
 int __wur usb_webusb_write(uint8_t iface_num, const uint8_t *buf, uint32_t len);
 

@@ -103,7 +103,9 @@ async def write_message(iface: WireInterface, mtype: int, mdata: bytes) -> None:
 
         # write the report
         while True:
-            await write
+            ret = await write
+            if not ret:
+                raise WriteError("Write error timeout")
             n = iface.write(report)
             if n == 0:
                 raise WriteError("Write error")

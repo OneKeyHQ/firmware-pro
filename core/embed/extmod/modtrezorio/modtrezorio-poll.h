@@ -248,18 +248,23 @@ STATIC mp_obj_t mod_trezorio_poll(mp_obj_t ifaces, mp_obj_t list_ref,
           }
         }
       } else if (mode == POLL_WRITE) {
+        int res = usb_webusb_can_write(iface);
         if (sectrue == usb_hid_can_write(iface)) {
           ret->items[0] = MP_OBJ_NEW_SMALL_INT(i);
           ret->items[1] = mp_const_none;
           return mp_const_true;
-        } else if (sectrue == usb_webusb_can_write(iface)) {
+        } else if (sectrue == res) {
           ret->items[0] = MP_OBJ_NEW_SMALL_INT(i);
-          ret->items[1] = mp_const_none;
+          ret->items[1] = mp_const_true;
+          return mp_const_true;
+        } else if (res == -1) {
+          ret->items[0] = MP_OBJ_NEW_SMALL_INT(i);
+          ret->items[1] = mp_const_false;
           return mp_const_true;
         } else if (iface == SPI_IFACE) {
           if (sectrue == spi_can_write()) {
             ret->items[0] = MP_OBJ_NEW_SMALL_INT(i);
-            ret->items[1] = mp_const_none;
+            ret->items[1] = mp_const_true;
             return mp_const_true;
           }
         }
