@@ -2,6 +2,7 @@
 #define __CAMERA_H__
 
 #include STM32_HAL_H
+#include "stdbool.h"
 
 extern unsigned short CameraFrameCnt;
 
@@ -30,8 +31,8 @@ void camera_suspend(void);
 void camera_resume(void);
 unsigned char camera_sccb_read_reg(unsigned char reg_addr, unsigned char* data);
 unsigned char camera_sccb_write_reg(unsigned char reg_addr, unsigned char* data);
-unsigned short camera_get_id(void);
-unsigned char camera_is_online(void);
+bool camera_get_id(uint16_t* id);
+bool camera_is_online(void);
 void camera_capture_start(void);
 int camera_capture_done(void);
 void camera_power_off(void);

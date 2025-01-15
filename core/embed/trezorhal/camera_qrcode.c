@@ -132,6 +132,10 @@ int camera_qr_decode(uint32_t x, uint32_t y, uint8_t* data, uint32_t data_len)
 {
 
     int len = 0;
+    if ( !camera_is_online() )
+    {
+        return 0;
+    }
     camera_capture_start();
     if ( camera_capture_done() )
     {

@@ -179,7 +179,9 @@ unsigned char camera_sccb_read_reg(unsigned char reg_addr, unsigned char* data)
     unsigned char ret = 0;
     if ( HAL_I2C_Mem_Read(i2c_handle_camera, GC2145_ADDR, reg_addr, I2C_MEMADD_SIZE_8BIT, data, 1, 1000) !=
          HAL_OK )
+    {
         ret = 1;
+    }
     return ret;
 }
 
@@ -196,7 +198,7 @@ unsigned char camera_sccb_write_reg(unsigned char reg_addr, unsigned char* data)
     return ret;
 }
 
-unsigned short camera_get_id(void)
+bool camera_get_id(uint16_t* id)
 {
     union ID
     {
@@ -206,22 +208,29 @@ unsigned short camera_get_id(void)
     myid.u16 = 0;
 
     if ( camera_sccb_read_reg(0xF0, &myid.u8[1]) )
-        return myid.u16;
+    {
+        return false;
+    }
     if ( camera_sccb_read_reg(0xF1, &myid.u8[0]) )
-        return myid.u16;
+    {
+        return false;
+    }
 
-    return myid.u16;
+    *id = myid.u16;
+    return true;
 }
 
-unsigned char camera_is_online(void)
+bool camera_is_online(void)
 {
     unsigned char ret = 0;
     unsigned char read = 0;
 
     if ( camera_sccb_read_reg(0xFB, &read) )
-        return ret;
+    {
+        return false;
+    }
 
-    ret = (read == GC2145_ADDR) ? 1 : 0;
+    ret = (read == GC2145_ADDR) ? true : false;
 
     return ret;
 }
@@ -298,11 +307,13 @@ void camera_config_init(void)
 
 int camera_init(void)
 {
+
     i2c_handle_camera = &i2c_handles[i2c_find_channel_by_device(I2C_CAMERA)];
     i2c_init_by_device(I2C_CAMERA);
-
-    camera_get_id();
-
+    if ( !camera_is_online() )
+    {
+        return -1;
+    }
     dcmi_init();
 
     return 0;
