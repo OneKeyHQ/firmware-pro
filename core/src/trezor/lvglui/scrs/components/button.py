@@ -210,8 +210,8 @@ class ListItemBtnWithSwitch(lv.btn):
         )
         self.add_style(
             StyleWrapper()
-            # .bg_color(lv_colors.ONEKEY_BLACK_2)
-            .transform_height(-2).transition(DefaultTransition()),
+            # # .bg_color(lv_colors.ONEKEY_BLACK_2)
+            .transition(DefaultTransition()),
             lv.PART.MAIN | lv.STATE.PRESSED,
         )
 

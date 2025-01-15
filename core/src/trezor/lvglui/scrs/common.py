@@ -10,7 +10,7 @@ import lvgl as lv  # type: ignore[Import "lvgl" could not be resolved]
 from ..lv_colors import lv_colors
 from .components import slider
 from .components.button import NormalButton
-from .components.label import SubTitle, Title
+from .components.label import ScreenTitle, SubTitle, Title
 from .components.navigation import Navigation
 from .components.radio import Radio
 from .widgets.style import StyleWrapper
@@ -23,6 +23,176 @@ if TYPE_CHECKING:
 if __debug__:
     SETTINGS_MOVE_TIME = 120
     SETTINGS_MOVE_DELAY = 80
+
+GO_PAGE_ANMI_TIME = 150
+GO_PAGE_ANMI_DISTANCE = 60
+BACK_PAGE_ANMI_TIME = 70
+BACK_PAGE_ANMI_DISTANCE = 60
+
+
+def apply_animations(targets, back=False, exclude_types=()):
+    valid_targets = [t for t in targets if not isinstance(t, exclude_types)]
+
+    def create_move_cb(targets_list):
+        def cb(value):
+            for target in targets_list:
+                target.set_style_translate_x(value, 0)
+                target.invalidate()
+
+        return cb
+
+    if valid_targets:
+        move_anim = Anim(
+            GO_PAGE_ANMI_DISTANCE if not back else (0 - BACK_PAGE_ANMI_DISTANCE),
+            0,
+            create_move_cb(valid_targets),
+            time=GO_PAGE_ANMI_TIME if not back else BACK_PAGE_ANMI_TIME,
+            delay=0,
+            path_cb=lv.anim_t.path_ease_out,
+        )
+        move_anim.start()
+
+
+class AnimScreen(lv.obj):
+    """Singleton screen object."""
+
+    def __init__(self, prev_scr=None, **kwargs):
+        super().__init__()
+        self.prev_scr = prev_scr or lv.scr_act()
+        self.channel = loop.chan()
+        self.add_style(StyleWrapper().bg_color(lv_colors.BLACK).bg_opa(lv.OPA.COVER), 0)
+        self.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
+        # panel to pin the screen size not scrolled
+        self.content_area = lv.obj(self)
+        self.content_area.set_size(lv.pct(100), 800)
+        self.content_area.align(lv.ALIGN.TOP_MID, 0, 0)
+        self.content_area.set_scrollbar_mode(lv.SCROLLBAR_MODE.ACTIVE)
+        self.content_area.add_style(
+            StyleWrapper()
+            .bg_opa(lv.OPA.TRANSP)
+            .pad_all(0)
+            .border_width(0)
+            .radius(0)
+            .pad_bottom(24),
+            0,
+        )
+        self.content_area.add_style(
+            StyleWrapper().bg_color(lv_colors.WHITE_3),
+            lv.PART.SCROLLBAR | lv.STATE.DEFAULT,
+        )
+        self.content_area.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
+
+        if kwargs.get("nav_back", False):
+            self.nav_back = Navigation(self.content_area)
+            self.nav_back.align(lv.ALIGN.TOP_LEFT, 12, 37)
+            self.add_event_cb(self.on_nav_back, lv.EVENT.GESTURE, None)
+        if "title" in kwargs:
+            self.title = ScreenTitle(self.content_area, None, (), kwargs["title"])
+            self.title.set_width(lv.pct(85))
+            self.title.set_long_mode(lv.label.LONG.DOT)
+            self.title.set_style_text_align(lv.TEXT_ALIGN.CENTER, 0)
+            self.title.set_style_text_font(lv.font_geist_semibold_38, 0)
+            if hasattr(self, "nav_back"):
+                self.title.align(lv.ALIGN.TOP_MID, 0, 49)
+            else:
+                self.title.align(lv.ALIGN.TOP_MID, 0, 49)
+        if "icon_path" in kwargs:
+            self.icon = lv.img(self.content_area)
+            self.icon.set_src(kwargs["icon_path"])
+            if hasattr(self, "nav_back"):
+                self.icon.align_to(self.nav_back, lv.ALIGN.OUT_BOTTOM_LEFT, 12, 8)
+            else:
+                self.icon.align(lv.ALIGN.TOP_LEFT, 12, 56)
+        if "subtitle" in kwargs:
+            self.subtitle = SubTitle(
+                self.content_area, self.title, (0, 16), kwargs["subtitle"]
+            )
+        if "btn_text" in kwargs:
+            self.btn = NormalButton(self, kwargs["btn_text"])
+            self.btn.enable(lv_colors.ONEKEY_GREEN)
+        self.add_event_cb(self.eventhandler, lv.EVENT.CLICKED, None)
+        self.load_screen(self)
+
+    def on_nav_back(self, event_obj):
+        code = event_obj.code
+        if code == lv.EVENT.GESTURE:
+            _dir = lv.indev_get_act().get_gesture_dir()
+            if _dir == lv.DIR.RIGHT:
+                lv.event_send(self.nav_back.nav_btn, lv.EVENT.CLICKED, None)
+
+    # event callback
+    def eventhandler(self, event_obj):
+        event = event_obj.code
+        target = event_obj.get_target()
+        if event == lv.EVENT.CLICKED:
+            if utils.lcd_resume():
+                return
+            if isinstance(target, lv.imgbtn):
+                if target == self.nav_back.nav_btn:
+                    if self.prev_scr is not None:  #
+                        self.load_screen(self.prev_scr, destroy_self=True)
+            else:
+                if hasattr(self, "btn") and target == self.btn:
+                    self.on_click(target)
+
+    def on_click(self, event_obj):
+        pass
+
+    async def request(self) -> Any:
+        return await self.channel.take()
+
+    def refresh(self):
+        area = lv.area_t()
+        area.x1 = 0
+        area.y1 = 0
+        area.x2 = 480
+        area.y2 = 800
+        self.invalidate_area(area)
+
+    def collect_animation_targets(self) -> list:
+        return []
+
+    def _load_scr(self, scr: "Screen", back: bool = False) -> None:
+        """Load a screen with container animation."""
+        if device.is_animation_enabled() and isinstance(scr, AnimScreen):
+            targets = scr.collect_animation_targets()
+            exclude_types = (
+                Title,
+                SubTitle,
+                Navigation,
+            )
+            apply_animations(targets, back=back, exclude_types=exclude_types)
+            lv.scr_load(scr)
+        else:
+            scr.set_pos(0, 0)
+            lv.scr_load(scr)
+
+    # NOTE:====================Functional Code Don't Edit========================
+
+    def __new__(cls, pre_scr=None, *args, **kwargs):
+        if not hasattr(cls, "_instance"):
+            cls._instance = super(lv.obj, cls).__new__(cls)
+            utils.SCREENS.append(cls._instance)
+        return cls._instance
+
+    def load_screen(self, scr, destroy_self: bool = False):
+        if destroy_self:
+            self._load_scr(scr.__class__(), back=True)
+            utils.try_remove_scr(self)
+            self.del_delayed(1000)
+            del self.__class__._instance
+            del self
+        else:
+            self._load_scr(scr)
+
+    def __del__(self):
+        """Micropython doesn't support user defined __del__ now, so this not work at all."""
+        try:
+            self.delete()
+        except BaseException:
+            pass
+
+    # NOTE:====================Functional Code Don't Edit========================
 
 
 class Screen(lv.obj):
@@ -125,17 +295,8 @@ class Screen(lv.obj):
 
     def _load_scr(self, scr: "Screen", back: bool = False) -> None:
         # """Load a screen with animation."""
-        if device.is_animation_enabled():
-            lv.scr_load_anim(
-                scr,
-                lv.SCR_LOAD_ANIM.MOVE_RIGHT if back else lv.SCR_LOAD_ANIM.MOVE_LEFT,
-                120 if not __debug__ else SETTINGS_MOVE_TIME,
-                80 if not __debug__ else SETTINGS_MOVE_DELAY,
-                False,
-            )
-        else:
-            scr.set_pos(0, 0)
-            lv.scr_load(scr)
+        scr.set_pos(0, 0)
+        lv.scr_load(scr)
 
     # NOTE:====================Functional Code Don't Edit========================
 
@@ -427,28 +588,12 @@ class FullSizeWindow(lv.obj):
         ).start_anim()
 
     def show_load_anim(self):
-        if not device.is_animation_enabled():
-            self.set_pos(0, 0)
-            return
-        if self.anim_dir == ANIM_DIRS.NONE:
-            self.set_pos(0, 0)
-        elif self.anim_dir == ANIM_DIRS.HOR:
-            self.set_pos(480, 0)
-            self._load_anim_hor()
-        else:
-            self.set_pos(0, 800)
-            self._load_anim_ver()
+        self.set_pos(0, 0)
+        return
 
     def show_dismiss_anim(self):
-        if not device.is_animation_enabled():
-            self.destroy()
-            return
-        if self.anim_dir == ANIM_DIRS.HOR:
-            self._dismiss_anim_hor()
-        elif self.anim_dir == ANIM_DIRS.VER:
-            self._dismiss_anim_ver()
-        else:
-            self.destroy()
+        self.destroy()
+        return
 
     def show_unload_anim(self):
         # if self.anim_dir == ANIM_DIRS.HOR:
