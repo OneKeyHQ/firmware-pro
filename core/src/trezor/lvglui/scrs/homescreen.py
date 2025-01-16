@@ -843,7 +843,7 @@ class ShowAddress(AnimScreen):
         # self.animations_next.append(container_fade_anim)
         # container_fade_anim.start()
         self.animations_next.append(container_move_anim)
-        container_move_anim.start()
+        # container_move_anim.start()
 
         # self.animations_prev.append(container_fade_anim)
         self.animations_prev.append(container_move_back_anim)
@@ -893,7 +893,7 @@ class ShowAddress(AnimScreen):
             btn = ListItemBtn(
                 self.container,
                 "",
-                left_img_src="A:/assets/addr/btc-btc-48.png",
+                left_img_src="A:/res/btc-btc-48.png",
                 min_height=84,
                 pad_ver=5,
             )
@@ -938,7 +938,6 @@ class ShowAddress(AnimScreen):
             self.animate_list_items()
 
     def _create_visible_chain_buttons(self):
-        print("update_chain_buttons")
         start_idx = self.current_page * self.items_per_page
         end_idx = min(start_idx + self.items_per_page, len(self.chains))
 
@@ -1082,6 +1081,9 @@ class IndexSelectionScreen(AnimScreen):
             self.content_area, self.title, padding_row=2, pos=(0, 70)
         )
 
+        self.max_account = 1000000000
+        self.max_page = (self.max_account - 1) // 5
+
         self.current_account = self.prev_scr.current_index + 1
         self.current_page = (self.current_account - 1) // 5
 
@@ -1208,7 +1210,7 @@ class IndexSelectionScreen(AnimScreen):
             if not self.next_btn.has_flag(lv.btn.FLAG.CLICKABLE):
                 self.enable_page_buttons(self.next_btn)
 
-        elif self.current_page == 199999999:
+        elif self.current_page == self.max_page:
             self.disable_page_buttons(self.next_btn)
             if not self.back_btn.has_flag(lv.btn.FLAG.CLICKABLE):
                 self.enable_page_buttons(self.back_btn)
@@ -1284,7 +1286,7 @@ class IndexSelectionScreen(AnimScreen):
                 return
 
             account_num = int(result)
-            if 1 <= account_num <= 1000000000:
+            if 1 <= account_num <= self.max_account:
                 break
 
         self.current_account = account_num

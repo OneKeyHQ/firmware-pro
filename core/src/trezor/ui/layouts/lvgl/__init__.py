@@ -1393,7 +1393,7 @@ async def confirm_password_input(ctx: wire.Context) -> None:
         verb_cancel=_(i18n_keys.BUTTON__BACK),
         hold=True,
         anim_dir=0,
-        icon="A:/assets/prompt/protection.png",
+        icon="A:/res/protection.png",
     )
 
 

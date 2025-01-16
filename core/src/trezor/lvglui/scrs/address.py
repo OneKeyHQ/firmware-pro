@@ -661,7 +661,7 @@ class AddressManager:
         else:
             return self._prepare_default_message()
 
-    async def generate_address(self, name, index=0, ctx=None, display=True):
+    async def generate_address(self, name, index=0, ctx=None):
         """Main logic for generating addresses"""
 
         ctx = wire.DummyContext()
@@ -731,5 +731,9 @@ class AddressManager:
         self.current_handler = None
         self.current_chain_info = None
         self.user_interaction = None
+        self.addr_type = None
+        self.current_index = 0
+        self.btc_script_type = None
+        self.use_ledger_path = None
         self.addr_type = None
         storage.cache.SESSION_DIRIVE_CARDANO = False
