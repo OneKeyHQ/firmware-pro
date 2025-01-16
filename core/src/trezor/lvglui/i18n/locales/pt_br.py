@@ -859,7 +859,8 @@ translations = [
     "Voltar para casa",
     "Registrando chave FIDO...",
     "Chave FIDO Registrada",
-    "",
-    "",
+    "Bateria fraca",
+    "Desligando",
+    "Bloqueio/Desligamento Automático",
 ]
 # fmt: on

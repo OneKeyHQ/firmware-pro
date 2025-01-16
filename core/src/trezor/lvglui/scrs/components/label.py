@@ -1,4 +1,10 @@
-from .. import font_GeistRegular30, font_GeistSemiBold64, lv, lv_colors
+from .. import (
+    font_GeistRegular30,
+    font_GeistSemiBold30,
+    font_GeistSemiBold64,
+    lv,
+    lv_colors,
+)
 from ..widgets.style import StyleWrapper
 
 
@@ -18,12 +24,12 @@ class ScreenTitle(lv.label):
             self.align(lv.ALIGN.TOP_LEFT, 12, pos_y)
         self.add_style(
             StyleWrapper()
-            .text_font(font_GeistSemiBold64)
+            .text_font(font_GeistSemiBold30)
             .text_color(lv_colors.WHITE)
-            .text_align_left()
+            .text_align_center()
             .pad_all(0)
-            .text_letter_space(-3)
-            .text_line_space(-8),
+            .text_letter_space(-1),
+            # .text_line_space(-8),
             0,
         )
 

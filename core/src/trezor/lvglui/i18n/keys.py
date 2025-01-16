@@ -1879,6 +1879,8 @@ FIDO_KEY_REGISTERING_DESC = 857
 FIDO_KEY_REGISTERED_TITLE = 858
 # Low Battery
 POWER_ON_LOW_BATTERY_TITLE = 859
-# Saving data before power off
+# Powering off
 POWER_ON_LOW_BATTERY_DESC = 860
+# Auto Lock/Shutdown
+ITEM__AUTO_LOCK_AND_SHUTDOWN = 861
 # fmt: on

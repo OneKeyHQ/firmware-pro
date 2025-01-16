@@ -860,6 +860,7 @@ translations = [
     "Registering fido key...",
     "FIDO Key Registered",
     "Low Battery",
-    "Saving data before power off",
+    "Powering off",
+    "Auto Lock/Shutdown",
 ]
 # fmt: on

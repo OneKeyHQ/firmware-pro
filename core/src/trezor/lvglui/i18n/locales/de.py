@@ -859,7 +859,8 @@ translations = [
     "Zurück zur Startseite",
     "Registrierung des FIDO-Schlüssels...",
     "FIDO-Schlüssel registriert",
-    "",
-    "",
+    "Schwache Batterie",
+    "Ausschalten",
+    "Automatische Sperre/Abschaltung",
 ]
 # fmt: on

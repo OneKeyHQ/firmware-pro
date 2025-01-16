@@ -859,7 +859,8 @@ translations = [
     "Torna alla home",
     "Registrazione della chiave FIDO in corso...",
     "Chiave FIDO registrata",
-    "",
-    "",
+    "Batteria scarica",
+    "Spegnimento",
+    "Blocco automatico/spegnimento",
 ]
 # fmt: on

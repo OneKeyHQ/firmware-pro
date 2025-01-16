@@ -859,7 +859,8 @@ translations = [
     "Retour à l'accueil",
     "Enregistrement de la clé FIDO...",
     "Clé FIDO enregistrée",
-    "",
-    "",
+    "Batterie faible",
+    "Mise hors tension",
+    "Verrouillage/Arrêt automatique",
 ]
 # fmt: on

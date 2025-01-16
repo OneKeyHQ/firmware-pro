@@ -1556,6 +1556,7 @@ class SettingsScreen(AnimScreen):
     def __init__(self, prev_scr=None):
         if not hasattr(self, "_init"):
             self._init = True
+            self.from_appdrawer = True
             kwargs = {
                 "prev_scr": prev_scr,
                 "title": _(i18n_keys.TITLE__SETTINGS),
@@ -1563,6 +1564,7 @@ class SettingsScreen(AnimScreen):
             }
             super().__init__(**kwargs)
         else:
+            self.from_appdrawer = False
             self.refresh_text()
             return
         # if __debug__:
@@ -1636,6 +1638,13 @@ class SettingsScreen(AnimScreen):
             #     Go2UpdateMode(self)
             elif target == self.air_gap:
                 AirGapSetting(self)
+
+    def _load_scr(self, scr: "Screen", back: bool = False) -> None:
+        if self.from_appdrawer:
+            scr.set_pos(0, 0)
+            lv.scr_load(scr)
+        else:
+            super()._load_scr(scr, back)
 
 
 class ConnectWalletWays(Screen):
@@ -2803,7 +2812,7 @@ class GeneralScreen(AnimScreen):
         self.tap_awake = ListItemBtn(self.container, _(i18n_keys.ITEM__LOCK_SCREEN))
         self.autolock_and_shutdown = ListItemBtn(
             self.container,
-            _(i18n_keys.ITEM__AUTO_LOCK) + " & " + _(i18n_keys.ITEM__SHUTDOWN),
+            _(i18n_keys.ITEM__AUTO_LOCK_AND_SHUTDOWN),
         )
         self.power = ListItemBtn(
             self.content_area,
@@ -2826,7 +2835,7 @@ class GeneralScreen(AnimScreen):
         self.animation.label_left.set_text(_(i18n_keys.ITEM__ANIMATIONS))
         self.tap_awake.label_left.set_text(_(i18n_keys.ITEM__LOCK_SCREEN))
         self.autolock_and_shutdown.label_left.set_text(
-            _(i18n_keys.ITEM__AUTO_LOCK) + " & " + _(i18n_keys.ITEM__SHUTDOWN)
+            _(i18n_keys.ITEM__AUTO_LOCK_AND_SHUTDOWN)
         )
         self.power.label_left.set_text(_(i18n_keys.ITEM__POWER_OFF))
 
@@ -2942,7 +2951,7 @@ class Autolock_and_ShutingDown(AnimScreen):
 
         super().__init__(
             prev_scr=prev_scr,
-            title=_(i18n_keys.ITEM__AUTO_LOCK) + " & " + _(i18n_keys.ITEM__SHUTDOWN),
+            title=_(i18n_keys.ITEM__AUTO_LOCK_AND_SHUTDOWN),
             nav_back=True,
         )
         self.container = ContainerFlexCol(self.content_area, self.title, padding_row=2)

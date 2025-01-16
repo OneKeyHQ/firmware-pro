@@ -84,18 +84,14 @@ class AnimScreen(lv.obj):
 
         if kwargs.get("nav_back", False):
             self.nav_back = Navigation(self.content_area)
-            self.nav_back.align(lv.ALIGN.TOP_LEFT, 12, 37)
+            self.nav_back.align(lv.ALIGN.TOP_LEFT, 12, 44)
             self.add_event_cb(self.on_nav_back, lv.EVENT.GESTURE, None)
         if "title" in kwargs:
             self.title = ScreenTitle(self.content_area, None, (), kwargs["title"])
-            self.title.set_width(lv.pct(85))
+            self.title.set_width(lv.pct(78))
             self.title.set_long_mode(lv.label.LONG.DOT)
             self.title.set_style_text_align(lv.TEXT_ALIGN.CENTER, 0)
-            self.title.set_style_text_font(lv.font_geist_semibold_38, 0)
-            if hasattr(self, "nav_back"):
-                self.title.align(lv.ALIGN.TOP_MID, 0, 49)
-            else:
-                self.title.align(lv.ALIGN.TOP_MID, 0, 49)
+            self.title.align(lv.ALIGN.TOP_MID, 0, 63)
         if "icon_path" in kwargs:
             self.icon = lv.img(self.content_area)
             self.icon.set_src(kwargs["icon_path"])
