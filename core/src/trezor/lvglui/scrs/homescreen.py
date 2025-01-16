@@ -2966,9 +2966,7 @@ class Autolock_and_ShutingDown(AnimScreen):
         gc.collect()
 
     def refresh_text(self):
-        self.title.set_text(
-            _(i18n_keys.ITEM__AUTO_LOCK) + " & " + _(i18n_keys.ITEM__SHUTDOWN)
-        )
+        self.title.set_text(_(i18n_keys.ITEM__AUTO_LOCK_AND_SHUTDOWN))
         self.auto_lock.label_left.set_text(_(i18n_keys.ITEM__AUTO_LOCK))
         self.auto_shutdown.label_left.set_text(_(i18n_keys.ITEM__SHUTDOWN))
 
