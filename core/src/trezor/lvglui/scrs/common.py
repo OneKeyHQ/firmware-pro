@@ -84,7 +84,7 @@ class AnimScreen(lv.obj):
 
         if kwargs.get("nav_back", False):
             self.nav_back = Navigation(self.content_area)
-            self.nav_back.align(lv.ALIGN.TOP_LEFT, 12, 44)
+            self.nav_back.align(lv.ALIGN.TOP_LEFT, 0, 44)
             self.add_event_cb(self.on_nav_back, lv.EVENT.GESTURE, None)
         if "title" in kwargs:
             self.title = ScreenTitle(self.content_area, None, (), kwargs["title"])
