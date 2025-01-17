@@ -26,6 +26,7 @@ class GeneralNavigation(lv.obj):
         self.set_size(lv.pct(50), 72)
         self.align(lv.ALIGN.TOP_RIGHT, 0, 44)
 
+        self.add_style(StyleWrapper().pad_all(12), 0)
         self.select_btn = lv.imgbtn(self)
         self.select_btn.set_size(48, 48)
         self.select_btn.set_align(lv.ALIGN.RIGHT_MID)

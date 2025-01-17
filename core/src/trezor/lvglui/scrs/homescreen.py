@@ -857,11 +857,27 @@ class ShowAddress(AnimScreen):
             self.nav_passphrase = GeneralNavigation(
                 self.content_area, img="A:/res/repeat.png"
             )
-            self.nav_passphrase.align_to(self.nav_back, lv.ALIGN.RIGHT_MID, 222, 0)
+            self.nav_passphrase.align(lv.ALIGN.TOP_RIGHT, 0, 44)
+
+            # self.nav_passphrase.align_to(self.nav_back, lv.ALIGN.RIGHT_MID, 222, 0)
+
+        # Account button
+        self.index_btn = ListItemBtn(
+            self.content_area,
+            f" Account #{self.current_index + 1}",
+            left_img_src="A:/res/wallet.png",
+            has_next=False,
+            min_height=87,
+            pad_ver=5,
+        )
+        self.index_btn.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, 40)
+        self.index_btn.set_style_radius(40, 0)
+        self.index_btn.add_event_cb(self.on_index_click, lv.EVENT.CLICKED, None)
 
         self.container = ContainerFlexCol(
             self.content_area, self.title, padding_row=2, pos=(0, 157)
         )
+        self.container.align_to(self.index_btn, lv.ALIGN.OUT_BOTTOM_MID, 0, 12)
         self.container.set_style_bg_color(lv_colors.BLACK, 0)
         self.container.set_style_bg_opa(255, 0)
 
@@ -875,26 +891,13 @@ class ShowAddress(AnimScreen):
         self.current_page = 0
         self.items_per_page = 5
 
-        # Account button
-        self.index_btn = ListItemBtn(
-            self.content_area,
-            f" Account #{self.current_index + 1}",
-            left_img_src="A:/res/wallet.png",
-            has_next=False,
-            min_height=84,
-            pad_ver=5,
-        )
-        self.index_btn.align_to(self.title, lv.ALIGN.BOTTOM_MID, 0, 145)
-        self.index_btn.set_style_radius(40, 0)
-        self.index_btn.add_event_cb(self.on_index_click, lv.EVENT.CLICKED, None)
-
         self.chain_buttons = []
         for _i in range(self.items_per_page):
             btn = ListItemBtn(
                 self.container,
                 "",
                 left_img_src="A:/res/btc-btc-48.png",
-                min_height=84,
+                min_height=87,
                 pad_ver=5,
             )
             self.chain_buttons.append(btn)
@@ -1075,11 +1078,10 @@ class IndexSelectionScreen(AnimScreen):
 
         # # navi
         self.nav_opt = GeneralNavigation(self.content_area)
-        self.nav_opt.align_to(self.nav_back, lv.ALIGN.RIGHT_MID, 222, 0)
+        # self.nav_opt.align_to(self.nav_back, lv.ALIGN.RIGHT_MID, 222, 0)
+        self.nav_opt.align(lv.ALIGN.TOP_RIGHT, 0, 44)
 
-        self.container = ContainerFlexCol(
-            self.content_area, self.title, padding_row=2, pos=(0, 70)
-        )
+        self.container = ContainerFlexCol(self.content_area, self.title, padding_row=2)
 
         self.max_account = 1000000000
         self.max_page = (self.max_account - 1) // 5
