@@ -16,7 +16,7 @@ from . import common
 # Credential ID values
 _CRED_ID_VERSION = b"\xf1\xd0\x02\x00"
 CRED_ID_MIN_LENGTH = const(33)
-CRED_ID_MAX_LENGTH = const(1024)
+CRED_ID_MAX_LENGTH = const(512)
 _KEY_HANDLE_LENGTH = const(64)
 
 # Maximum user handle length in bytes.

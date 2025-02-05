@@ -129,8 +129,6 @@ void gt911_enable_irq(void) {
 
 void gt911_disable_irq(void) { HAL_NVIC_DisableIRQ(EXTI2_IRQn); }
 
-void EXTI2_IRQHandler(void) { HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_2); }
-
 void gt911_test(void) {
   while (1) {
     gt911_read_location();

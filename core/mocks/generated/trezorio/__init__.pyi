@@ -304,6 +304,8 @@ BUTTON_PRESSED: int  # button down event
 BUTTON_RELEASED: int  # button up event
 BUTTON_LEFT: int  # button number of left button
 BUTTON_RIGHT: int  # button number of right button
+SPI_FACE: int  # interface id of the spi events
+SPI_FIDO_FACE: int  # interface id of the spi fido events
 WireInterface = Union[HID, WebUSB, SPI]
 USB_CHECK: int # interface id for check of USB data connection
 FINGERPRINT_STATE: int # interface id of the fingerprint state events

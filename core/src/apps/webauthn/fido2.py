@@ -22,6 +22,9 @@ from . import common
 from .credential import CRED_ID_MAX_LENGTH, Credential, Fido2Credential, U2fCredential
 from .resident_credentials import find_by_rp_id_hash, store_resident_credential
 
+_IFACE_HID = const(0)
+_IFACE_SPI = const(1)
+
 _CID_BROADCAST = const(0xFFFF_FFFF)  # broadcast channel id
 
 # types of frame
@@ -44,8 +47,10 @@ _CMD_INIT = const(0x86)  # channel initialization
 _CMD_WINK = const(0x88)  # send device identification wink
 _CMD_CBOR = const(0x90)  # send encapsulated CTAP CBOR encoded message
 _CMD_CANCEL = const(0x91)  # cancel any outstanding requests on this CID
-_CMD_KEEPALIVE = const(0xBB)  # processing a message
+_CMD_KEEPALIVE = _CMD_KEEPALIVE_HID = const(0xBB)  # processing a message
 _CMD_ERROR = const(0xBF)  # error response
+
+_CMD_KEEPALIVE_BLE = const(0x82)
 
 # types for the msg cmd
 _MSG_REGISTER = const(0x01)  # registration command
@@ -372,7 +377,7 @@ class Cmd:
         return Msg(self.cid, cla, ins, p1, p2, lc, data)
 
 
-async def read_cmd(iface: io.HID) -> Cmd | None:
+async def read_cmd(iface: io.HID) -> tuple[int, Cmd] | None:
     desc_init = frame_init()
     desc_cont = frame_cont()
     read = loop.wait(iface.iface_num() | io.POLL_READ)
@@ -474,10 +479,10 @@ async def read_cmd(iface: io.HID) -> Cmd | None:
             datalen += utils.memcpy(data, datalen, cfrm.data, 0, bcnt - datalen)
             seq += 1
         else:
-            return Cmd(ifrm.cid, ifrm.cmd, bytes(data))
+            return _IFACE_HID, Cmd(ifrm.cid, ifrm.cmd, bytes(data))
 
 
-async def send_cmd(cmd: Cmd, iface: io.HID) -> None:
+async def send_cmd_hid(cmd: Cmd, iface: io.HID) -> None:
     init_desc = frame_init()
     cont_desc = frame_cont()
     offset = 0
@@ -512,7 +517,7 @@ async def send_cmd(cmd: Cmd, iface: io.HID) -> None:
         seq += 1
 
 
-def send_cmd_sync(cmd: Cmd, iface: io.HID) -> None:
+def send_cmd_sync_hid(cmd: Cmd, iface: io.HID) -> None:
     init_desc = frame_init()
     cont_desc = frame_cont()
     offset = 0
@@ -540,34 +545,106 @@ def send_cmd_sync(cmd: Cmd, iface: io.HID) -> None:
         seq += 1
 
 
-async def handle_reports(iface: io.HID) -> None:
-    dialog_mgr = DialogManager(iface)
+async def send_cmd_ble(cmd: Cmd, iface: io.SPI) -> None:
+    buf = bytearray(8 + len(cmd.data))
+    # SPI EXTRA HEADER
+    buf[0:3] = b"fid"
+    buf[3] = (len(cmd.data) + 3) >> 8
+    buf[4] = (len(cmd.data) + 3) & 0xFF
+    # BLE CMD
+    buf[5] = cmd.cmd
+    buf[6] = len(cmd.data) >> 8
+    buf[7] = len(cmd.data) & 0xFF
+    buf[8:] = cmd.data
+    write = loop.wait(iface.iface_num() | io.POLL_WRITE)
+
+    await write
+    iface.write(buf)
+
+
+def send_cmd_sync_ble(cmd: Cmd, iface: io.SPI) -> None:
+    buf = bytearray(8 + len(cmd.data))
+    buf[0:3] = b"fid"
+    buf[3] = (len(cmd.data) + 3) >> 8
+    buf[4] = (len(cmd.data) + 3) & 0xFF
+    buf[5] = cmd.cmd
+    buf[6] = len(cmd.data) >> 8
+    buf[7] = len(cmd.data) & 0xFF
+    buf[8:] = cmd.data
+    iface.write(buf)
+
+
+async def read_spi_cmd(iface: io.SPI) -> tuple[int, Cmd] | None:
+    read = loop.wait(iface.iface_num() | io.POLL_READ)
+    buf = await read
+    cmd = buf[0]
+    data_len = (buf[1] << 8) | buf[2]
+    data = buf[3:]
+    if len(data) != data_len:
+        await send_cmd_ble(cmd_error(0, _ERR_INVALID_LEN), iface)
+        return None
+    return _IFACE_SPI, Cmd(0, cmd, data)
+
+
+async def send_cmd(cmd: Cmd, iface: io.HID | io.SPI) -> None:
+    if isinstance(iface, io.HID):
+        await send_cmd_hid(cmd, iface)
+    elif isinstance(iface, io.SPI):
+        if cmd.cmd == _CMD_CBOR:
+            cmd.cmd = _CMD_MSG
+        await send_cmd_ble(cmd, iface)
+
+
+def send_cmd_sync(cmd: Cmd, iface: io.HID | io.SPI) -> None:
+    if isinstance(iface, io.HID):
+        send_cmd_sync_hid(cmd, iface)
+    elif isinstance(iface, io.SPI):
+        send_cmd_sync_ble(cmd, iface)
+
+
+async def handle_reports(usb_face: io.HID, spi_iface: io.SPI) -> None:
+    dialog_mgr = DialogManager(usb_face)
 
     while True:
         try:
-            req = await read_cmd(iface)
+            result = await loop.race(read_cmd(usb_face), read_spi_cmd(spi_iface))
+            if result is None:
+                continue
+            face, req = result
+            if face == _IFACE_HID:
+                dialog_mgr.set_iface(usb_face)
+            elif face == _IFACE_SPI:
+                dialog_mgr.set_iface(spi_iface)
+
             if req is None:
                 continue
-            if dialog_mgr.is_busy() and req.cid not in (
-                dialog_mgr.get_cid(),
-                _CID_BROADCAST,
+            if dialog_mgr.is_busy() and (
+                req.cid
+                not in (
+                    dialog_mgr.get_cid(),
+                    _CID_BROADCAST,
+                )
+                and dialog_mgr.iface == usb_face
             ):
                 resp: Cmd | None = cmd_error(req.cid, _ERR_CHANNEL_BUSY)
             else:
                 resp = dispatch_cmd(req, dialog_mgr)
             if resp is not None:
-                await send_cmd(resp, iface)
+                await send_cmd(resp, dialog_mgr.iface)
         except Exception as e:
             log.exception(__name__, e)
 
 
 class KeepaliveCallback:
-    def __init__(self, cid: int, iface: io.HID) -> None:
+    def __init__(self, cid: int, iface: io.HID | io.SPI) -> None:
         self.cid = cid
         self.iface = iface
 
     def __call__(self) -> None:
-        send_cmd_sync(cmd_keepalive(self.cid, _KEEPALIVE_STATUS_PROCESSING), self.iface)
+        send_cmd_sync(
+            cmd_keepalive(self.cid, _KEEPALIVE_STATUS_PROCESSING, self.iface),
+            self.iface,
+        )
 
 
 async def verify_user(keepalive_callback: KeepaliveCallback) -> bool:
@@ -606,7 +683,7 @@ async def se_gen_seed(keepalive_callback: KeepaliveCallback) -> bool:
 
 
 class State:
-    def __init__(self, cid: int, iface: io.HID) -> None:
+    def __init__(self, cid: int, iface: io.HID | io.SPI) -> None:
         self.cid = cid
         self.iface = iface
         self.finished = False
@@ -636,7 +713,7 @@ class State:
 
 class U2fState(State, ConfirmInfo):
     def __init__(
-        self, cid: int, iface: io.HID, req_data: bytes, cred: Credential
+        self, cid: int, iface: io.HID | io.SPI, req_data: bytes, cred: Credential
     ) -> None:
         State.__init__(self, cid, iface)
         ConfirmInfo.__init__(self)
@@ -656,7 +733,7 @@ class U2fState(State, ConfirmInfo):
 
 class U2fConfirmRegister(U2fState):
     def __init__(
-        self, cid: int, iface: io.HID, req_data: bytes, cred: U2fCredential
+        self, cid: int, iface: io.HID | io.SPI, req_data: bytes, cred: U2fCredential
     ) -> None:
         super().__init__(cid, iface, req_data, cred)
 
@@ -693,7 +770,7 @@ class U2fConfirmRegister(U2fState):
 
 class U2fConfirmAuthenticate(U2fState):
     def __init__(
-        self, cid: int, iface: io.HID, req_data: bytes, cred: Credential
+        self, cid: int, iface: io.HID | io.SPI, req_data: bytes, cred: Credential
     ) -> None:
         super().__init__(cid, iface, req_data, cred)
 
@@ -751,7 +828,7 @@ class U2fSeed(State):
 
 
 class Fido2State(State):
-    def __init__(self, cid: int, iface: io.HID) -> None:
+    def __init__(self, cid: int, iface: io.HID | io.SPI) -> None:
         super().__init__(cid, iface)
 
     def keepalive_status(self) -> int:
@@ -816,7 +893,7 @@ class Fido2ConfirmMakeCredential(Fido2State, ConfirmInfo):
     def __init__(
         self,
         cid: int,
-        iface: io.HID,
+        iface: io.HID | io.SPI,
         client_data_hash: bytes,
         cred: Fido2Credential,
         resident: bool,
@@ -848,7 +925,10 @@ class Fido2ConfirmMakeCredential(Fido2State, ConfirmInfo):
 
     async def on_confirm(self) -> None:
         self._cred.generate_id()
-        send_cmd_sync(cmd_keepalive(self.cid, _KEEPALIVE_STATUS_PROCESSING), self.iface)
+        send_cmd_sync(
+            cmd_keepalive(self.cid, _KEEPALIVE_STATUS_PROCESSING, self.iface),
+            self.iface,
+        )
         response_data = cbor_make_credential_sign(
             self._client_data_hash, self._cred, self._user_verification
         )
@@ -856,7 +936,8 @@ class Fido2ConfirmMakeCredential(Fido2State, ConfirmInfo):
         success = True
         if self._resident:
             send_cmd_sync(
-                cmd_keepalive(self.cid, _KEEPALIVE_STATUS_PROCESSING), self.iface
+                cmd_keepalive(self.cid, _KEEPALIVE_STATUS_PROCESSING, self.iface),
+                self.iface,
             )
             from trezor.ui.layouts.lvgl import show_popup
 
@@ -883,7 +964,7 @@ class Fido2ConfirmMakeCredential(Fido2State, ConfirmInfo):
 
 
 class Fido2ConfirmExcluded(Fido2ConfirmMakeCredential):
-    def __init__(self, cid: int, iface: io.HID, cred: Fido2Credential) -> None:
+    def __init__(self, cid: int, iface: io.HID | io.SPI, cred: Fido2Credential) -> None:
         super().__init__(cid, iface, b"", cred, resident=False, user_verification=False)
 
     async def on_confirm(self) -> None:
@@ -906,7 +987,7 @@ class Fido2ConfirmGetAssertion(Fido2State, ConfirmInfo, Pageable):
     def __init__(
         self,
         cid: int,
-        iface: io.HID,
+        iface: io.HID | io.SPI,
         client_data_hash: bytes,
         creds: list[Credential],
         hmac_secret: dict | None,
@@ -946,7 +1027,8 @@ class Fido2ConfirmGetAssertion(Fido2State, ConfirmInfo, Pageable):
         cred = self._creds[self.page()]
         try:
             send_cmd_sync(
-                cmd_keepalive(self.cid, _KEEPALIVE_STATUS_PROCESSING), self.iface
+                cmd_keepalive(self.cid, _KEEPALIVE_STATUS_PROCESSING, self.iface),
+                self.iface,
             )
             response_data = cbor_get_assertion_sign(
                 self._client_data_hash,
@@ -991,7 +1073,7 @@ class Fido2ConfirmNoPin(State):
 
 
 class Fido2ConfirmNoCredentials(Fido2ConfirmGetAssertion):
-    def __init__(self, cid: int, iface: io.HID, rp_id: str) -> None:
+    def __init__(self, cid: int, iface: io.HID | io.SPI, rp_id: str) -> None:
         cred = Fido2Credential()
         cred.rp_id = rp_id
         super().__init__(
@@ -1015,7 +1097,7 @@ class Fido2ConfirmNoCredentials(Fido2ConfirmGetAssertion):
 
 
 class Fido2ConfirmReset(Fido2State):
-    def __init__(self, cid: int, iface: io.HID) -> None:
+    def __init__(self, cid: int, iface: io.HID | io.SPI) -> None:
         super().__init__(cid, iface)
 
     async def confirm_dialog(self) -> bool:
@@ -1030,7 +1112,7 @@ class Fido2ConfirmReset(Fido2State):
 
 
 class DialogManager:
-    def __init__(self, iface: io.HID) -> None:
+    def __init__(self, iface) -> None:
         self.iface = iface
         self._clear()
 
@@ -1040,6 +1122,9 @@ class DialogManager:
         self.result = _RESULT_NONE
         self.workflow: loop.spawn | None = None
         self.keepalive: Coroutine | None = None
+
+    def set_iface(self, iface) -> None:
+        self.iface = iface
 
     def _workflow_is_running(self) -> bool:
         return self.workflow is not None and not self.workflow.finished
@@ -1095,7 +1180,9 @@ class DialogManager:
                 return
             while utime.ticks_ms() < self.deadline:
                 if self.state.keepalive_status() != _KEEPALIVE_STATUS_NONE:
-                    cmd = cmd_keepalive(self.state.cid, self.state.keepalive_status())
+                    cmd = cmd_keepalive(
+                        self.state.cid, self.state.keepalive_status(), self.iface
+                    )
                     await send_cmd(cmd, self.iface)
                 await loop.sleep(_KEEPALIVE_INTERVAL_MS)
         finally:
@@ -1132,7 +1219,7 @@ class DialogManager:
                 await self.state.on_decline()
 
 
-def dispatch_cmd(req: Cmd, dialog_mgr: DialogManager) -> Cmd | None:
+def dispatch_cmd_hid(req: Cmd, dialog_mgr: DialogManager) -> Cmd | None:
     if req.cmd == _CMD_MSG:
         try:
             m = req.to_msg()
@@ -1220,6 +1307,105 @@ def dispatch_cmd(req: Cmd, dialog_mgr: DialogManager) -> Cmd | None:
         if __debug__:
             log.warning(__name__, "_ERR_INVALID_CMD: %d", req.cmd)
         return cmd_error(req.cid, _ERR_INVALID_CMD)
+
+
+def dispatch_cmd_ble(req: Cmd, dialog_mgr: DialogManager) -> Cmd | None:
+    if req.cmd == _CMD_MSG:
+        if req.data[0] == 0 or req.data[0] == 0x80:
+            try:
+                m = req.to_msg()
+            except IndexError:
+                return cmd_error(req.cid, _ERR_INVALID_LEN)
+
+            if m.cla != 0:
+                if __debug__:
+                    log.warning(__name__, "_SW_CLA_NOT_SUPPORTED")
+                return msg_error(req.cid, _SW_CLA_NOT_SUPPORTED)
+
+            if m.lc + _APDU_DATA > len(req.data):
+                if __debug__:
+                    log.warning(__name__, "_SW_WRONG_LENGTH")
+                return msg_error(req.cid, _SW_WRONG_LENGTH)
+
+            if m.ins == _MSG_REGISTER:
+                if __debug__:
+                    log.debug(__name__, "_MSG_REGISTER")
+                return msg_register(m, dialog_mgr)
+            elif m.ins == _MSG_AUTHENTICATE:
+                if __debug__:
+                    log.debug(__name__, "_MSG_AUTHENTICATE")
+                return msg_authenticate(m, dialog_mgr)
+            elif m.ins == _MSG_VERSION:
+                if __debug__:
+                    log.debug(__name__, "_MSG_VERSION")
+                return msg_version(m)
+            else:
+                if __debug__:
+                    log.warning(__name__, "_SW_INS_NOT_SUPPORTED: %d", m.ins)
+                return msg_error(req.cid, _SW_INS_NOT_SUPPORTED)
+        elif _ALLOW_FIDO2:
+            if not req.data:
+                return cmd_error(req.cid, _ERR_INVALID_LEN)
+            if req.data[0] == _CBOR_MAKE_CREDENTIAL:
+                if __debug__:
+                    log.debug(__name__, "_CBOR_MAKE_CREDENTIAL")
+                return cbor_make_credential(req, dialog_mgr)
+            elif req.data[0] == _CBOR_GET_ASSERTION:
+                if __debug__:
+                    log.debug(__name__, "_CBOR_GET_ASSERTION")
+                return cbor_get_assertion(req, dialog_mgr)
+            elif req.data[0] == _CBOR_GET_INFO:
+                if __debug__:
+                    log.debug(__name__, "_CBOR_GET_INFO")
+                return cbor_get_info(req)
+            elif req.data[0] == _CBOR_CLIENT_PIN:
+                if __debug__:
+                    log.debug(__name__, "_CBOR_CLIENT_PIN")
+                return cbor_client_pin(req)
+            elif req.data[0] == _CBOR_RESET:
+                if __debug__:
+                    log.debug(__name__, "_CBOR_RESET")
+                return cbor_reset(req, dialog_mgr)
+            elif req.data[0] == _CBOR_GET_NEXT_ASSERTION:
+                if __debug__:
+                    log.debug(__name__, "_CBOR_GET_NEXT_ASSERTION")
+                return cbor_error(req.cid, _ERR_NOT_ALLOWED)
+            else:
+                if __debug__:
+                    log.warning(__name__, "_ERR_INVALID_CMD _CMD_CBOR %d", req.data[0])
+                return cbor_error(req.cid, _ERR_INVALID_CMD)
+        else:
+            if __debug__:
+                log.warning(__name__, "_ERR_INVALID_CMD _CMD_CBOR %d", req.data[0])
+            return cbor_error(req.cid, _ERR_INVALID_CMD)
+
+    elif req.cmd == _CMD_PING:
+        if __debug__:
+            log.debug(__name__, "_CMD_PING")
+        return req
+    elif req.cmd == _CMD_WINK and _ALLOW_WINK:
+        if __debug__:
+            log.debug(__name__, "_CMD_WINK")
+        return cmd_wink(req)
+    elif req.cmd == _CMD_CANCEL:
+        if __debug__:
+            log.debug(__name__, "_CMD_CANCEL")
+        dialog_mgr.result = _RESULT_CANCEL
+        dialog_mgr.reset()
+        return None
+    else:
+        if __debug__:
+            log.warning(__name__, "_ERR_INVALID_CMD: %d", req.cmd)
+        return cmd_error(req.cid, _ERR_INVALID_CMD)
+
+
+def dispatch_cmd(req: Cmd, dialog_mgr: DialogManager) -> Cmd | None:
+    if isinstance(dialog_mgr.iface, io.HID):
+        return dispatch_cmd_hid(req, dialog_mgr)
+    elif isinstance(dialog_mgr.iface, io.SPI):
+        return dispatch_cmd_ble(req, dialog_mgr)
+    else:
+        return None
 
 
 def cmd_init(req: Cmd) -> Cmd:
@@ -1978,5 +2164,10 @@ def cbor_reset(req: Cmd, dialog_mgr: DialogManager) -> Cmd | None:
     return None
 
 
-def cmd_keepalive(cid: int, status: int) -> Cmd:
-    return Cmd(cid, _CMD_KEEPALIVE, bytes([status]))
+def cmd_keepalive(cid: int, status: int, iface: io.HID | io.SPI) -> Cmd:
+    if isinstance(iface, io.HID):
+        return Cmd(cid, _CMD_KEEPALIVE_HID, bytes([status]))
+    elif isinstance(iface, io.SPI):
+        return Cmd(cid, _CMD_KEEPALIVE_BLE, bytes([status]))
+    else:
+        raise ValueError("Invalid interface type")

@@ -38,7 +38,7 @@ reads the message's header. When the message type is known the first handler is 
 from typing import TYPE_CHECKING
 
 from storage.cache import InvalidSessionError
-from trezor import log, loop, protobuf, utils, workflow
+from trezor import io, log, loop, protobuf, utils, workflow
 from trezor.enums import FailureType
 from trezor.messages import ButtonRequest, Failure
 from trezor.wire import codec_v1
@@ -377,7 +377,7 @@ class Context:
 
     async def signal(self):
         await SIGNAL_CHANNEL.take()
-        if self.iface.iface_num() == utils.SPI_IFACE_NUM:
+        if self.iface.iface_num() == io.SPI_FACE:
             await self.write(failure(loop.TASK_CLOSED))
         SIGNAL_CHANNEL.publish("done")
 

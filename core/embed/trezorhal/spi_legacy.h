@@ -5,18 +5,18 @@
 #include <stdint.h>
 #include "trans_fifo.h"
 
-#define SPI_PKG_SIZE        64
-#define SPI_BUF_MAX_IN_LEN  (16 * 1024)
-#define SPI_BUF_MAX_OUT_LEN (3 * 1024)
+#define SPI_PKG_SIZE            64
+#define SPI_BUF_MAX_IN_LEN      (16 * 1024)
+#define SPI_BUF_MAX_OUT_LEN     (3 * 1024)
 
-#define SET_COMBUS_HIGH()   HAL_GPIO_WritePin(GPIOK, GPIO_PIN_6, GPIO_PIN_SET)
-#define SET_COMBUS_LOW()    HAL_GPIO_WritePin(GPIOK, GPIO_PIN_6, GPIO_PIN_RESET)
+#define SET_COMBUS_HIGH()       HAL_GPIO_WritePin(GPIOK, GPIO_PIN_6, GPIO_PIN_SET)
+#define SET_COMBUS_LOW()        HAL_GPIO_WritePin(GPIOK, GPIO_PIN_6, GPIO_PIN_RESET)
 
-#define SET_RX_BUS_IDEL()   HAL_GPIO_WritePin(GPIOK, GPIO_PIN_6, GPIO_PIN_SET)
-#define SET_RX_BUS_BUSY()   HAL_GPIO_WritePin(GPIOK, GPIO_PIN_6, GPIO_PIN_RESET)
+#define ST_BLE_STATUS_IO_IDLE() HAL_GPIO_WritePin(GPIOK, GPIO_PIN_6, GPIO_PIN_SET)
+#define ST_BLE_STATUS_IO_BUSY() HAL_GPIO_WritePin(GPIOK, GPIO_PIN_6, GPIO_PIN_RESET)
 
-#define BLE_RST_PIN_HIGH()  HAL_GPIO_WritePin(GPIOK, GPIO_PIN_5, GPIO_PIN_SET)
-#define BLE_RST_PIN_LOW()   HAL_GPIO_WritePin(GPIOK, GPIO_PIN_5, GPIO_PIN_RESET)
+#define BLE_RST_PIN_HIGH()      HAL_GPIO_WritePin(GPIOK, GPIO_PIN_5, GPIO_PIN_SET)
+#define BLE_RST_PIN_LOW()       HAL_GPIO_WritePin(GPIOK, GPIO_PIN_5, GPIO_PIN_RESET)
 
 /* Definition for SPIx's DMA */
 #define SPIx_TX_DMA_STREAM  DMA1_Stream3
@@ -51,6 +51,9 @@ uint32_t spi_slave_poll(uint8_t* buf);
 secbool spi_can_write(void);
 uint32_t spi_read_retry(uint8_t* buf);
 uint32_t spi_read_blocking(uint8_t* buf, int timeout);
+void spi_cs_irq_handler(void);
+uint32_t spi_slave_poll_fido(uint8_t* buf);
+
 #endif
 
 #endif

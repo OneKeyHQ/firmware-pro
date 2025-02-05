@@ -109,8 +109,6 @@ if TYPE_CHECKING:
 
 SCREENS = []
 
-SPI_IFACE_NUM = 6
-
 
 def set_up() -> None:
     from trezor import wire, io
@@ -124,7 +122,7 @@ def set_up() -> None:
 
     wire.setup(
         io.SPI(
-            SPI_IFACE_NUM,
+            io.SPI_FACE,
         )
     )
 
@@ -218,11 +216,11 @@ async def turn_off_lcd():
 
 
 def play_dead():
-    from trezor import loop
+    from trezor import io, loop
     import usb
 
     loop.pop_tasks_on_iface(usb.iface_wire.iface_num())
-    loop.pop_tasks_on_iface(SPI_IFACE_NUM)
+    loop.pop_tasks_on_iface(io.SPI_FACE)
 
 
 def is_low_battery():

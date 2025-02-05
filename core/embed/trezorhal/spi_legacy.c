@@ -12,15 +12,31 @@ SPI_HandleTypeDef spi;
 static DMA_HandleTypeDef hdma_tx;
 static DMA_HandleTypeDef hdma_rx;
 
+// SRAM3 32K
 static uint8_t* recv_buf = (uint8_t*)0x30040000;
 static uint8_t* send_buf = (uint8_t*)0x30040040;
 static volatile int32_t spi_rx_event = 0;
 static volatile int32_t spi_tx_event = 0;
 static volatile int32_t spi_abort_event = 0;
+static volatile bool spi_data_dir_in = true;
+static volatile bool spi_data_received = false;
 ChannelType host_channel = CHANNEL_NULL;
 
 uint8_t spi_data_in[SPI_BUF_MAX_IN_LEN];
 uint8_t spi_data_out[SPI_BUF_MAX_OUT_LEN];
+
+#define DATA_HEADER_SIZE      3
+#define DATA_FIDO_HEADER_SIZE 3
+
+typedef enum
+{
+    SPI_STATE_IDLE,
+    SPI_STATE_FIDO_HEADER,
+    SPI_STATE_FIDO_DATA,
+    SPI_STATE_ABORTED,
+} SPI_State;
+
+SPI_State spi_state = SPI_STATE_IDLE;
 
 trans_fifo spi_fifo_in = {
     .p_buf = spi_data_in,
@@ -60,6 +76,7 @@ int32_t wait_spi_tx_event(int32_t timeout)
     {
         if ( (HAL_GetTick() - tickstart) > timeout )
         {
+            spi_tx_event = 0;
             return -1;
         }
     }
@@ -68,7 +85,7 @@ int32_t wait_spi_tx_event(int32_t timeout)
 
 void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef* hspi)
 {
-    SET_RX_BUS_BUSY();
+    ST_BLE_STATUS_IO_BUSY();
     if ( spi_rx_event )
     {
         spi_rx_event = 0;
@@ -79,7 +96,7 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef* hspi)
     }
 
     HAL_SPI_Receive_DMA(&spi, recv_buf, SPI_PKG_SIZE);
-    SET_RX_BUS_IDEL();
+    ST_BLE_STATUS_IO_IDLE();
 }
 
 void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef* hspi)
@@ -89,7 +106,7 @@ void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef* hspi)
         spi_tx_event = 0;
     }
 
-    HAL_SPI_Receive_DMA(&spi, recv_buf, SPI_PKG_SIZE);
+    HAL_SPI_Receive_DMA(&spi, recv_buf, SPI_BUF_MAX_IN_LEN);
 }
 
 void HAL_SPI_ErrorCallback(SPI_HandleTypeDef* hspi)
@@ -172,7 +189,7 @@ int32_t spi_slave_init()
     /* Configure the DMA handler for Transmission process */
     hdma_tx.Instance = SPIx_TX_DMA_STREAM;
     hdma_tx.Init.FIFOMode = DMA_FIFOMODE_ENABLE;
-    hdma_tx.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
+    hdma_tx.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_1QUARTERFULL;
     hdma_tx.Init.MemBurst = DMA_MBURST_SINGLE;
     hdma_tx.Init.PeriphBurst = DMA_PBURST_SINGLE;
     hdma_tx.Init.Request = SPIx_TX_DMA_REQUEST;
@@ -193,7 +210,7 @@ int32_t spi_slave_init()
     hdma_rx.Instance = SPIx_RX_DMA_STREAM;
 
     hdma_rx.Init.FIFOMode = DMA_FIFOMODE_ENABLE;
-    hdma_rx.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
+    hdma_rx.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_1QUARTERFULL;
     hdma_rx.Init.MemBurst = DMA_MBURST_SINGLE;
     hdma_rx.Init.PeriphBurst = DMA_PBURST_SINGLE;
     hdma_rx.Init.Request = SPIx_RX_DMA_REQUEST;
@@ -222,11 +239,24 @@ int32_t spi_slave_init()
     NVIC_SetPriority(SPI2_IRQn, IRQ_PRI_SPI);
     HAL_NVIC_EnableIRQ(SPI2_IRQn);
 
+    EXTI_HandleTypeDef hexti = {0};
+
+    EXTI_ConfigTypeDef pExtiConfig;
+    pExtiConfig.Line = EXTI_LINE_11;
+    pExtiConfig.Mode = EXTI_MODE_INTERRUPT;
+    pExtiConfig.Trigger = EXTI_TRIGGER_RISING;
+    pExtiConfig.GPIOSel = EXTI_GPIOA;
+
+    HAL_EXTI_SetConfigLine(&hexti, &pExtiConfig);
+
+    NVIC_SetPriority(EXTI15_10_IRQn, IRQ_PRI_GPIO);
+    HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+
     memset(recv_buf, 0, SPI_PKG_SIZE);
     spi_rx_event = 1;
-    SET_RX_BUS_IDEL();
+    ST_BLE_STATUS_IO_IDLE();
     /* start SPI receive */
-    if ( HAL_SPI_Receive_DMA(&spi, recv_buf, SPI_PKG_SIZE) != HAL_OK )
+    if ( HAL_SPI_Receive_DMA(&spi, recv_buf, SPI_BUF_MAX_IN_LEN) != HAL_OK )
     {
         return -1;
     }
@@ -238,10 +268,11 @@ int32_t spi_slave_send(uint8_t* buf, uint32_t size, int32_t timeout)
 {
     uint32_t msg_size;
     int32_t ret = 0;
-    msg_size = size < SPI_PKG_SIZE ? SPI_PKG_SIZE : size;
+    msg_size = size; //< SPI_PKG_SIZE ? SPI_PKG_SIZE : size
     memcpy(send_buf, buf, msg_size);
 
     spi_abort_event = 1;
+    spi_data_dir_in = false;
     if ( HAL_SPI_Abort_IT(&spi) != HAL_OK )
     {
         return 0;
@@ -249,12 +280,12 @@ int32_t spi_slave_send(uint8_t* buf, uint32_t size, int32_t timeout)
     while ( spi_abort_event )
         ;
 
-    if ( HAL_SPI_Transmit_DMA(&spi, send_buf, SPI_PKG_SIZE) != HAL_OK )
+    if ( HAL_SPI_Transmit_DMA(&spi, send_buf, msg_size) != HAL_OK )
     {
         goto END;
     }
 
-    SET_COMBUS_LOW();
+    ST_BLE_STATUS_IO_BUSY();
 
     spi_tx_event = 1;
 
@@ -267,16 +298,18 @@ END:
     if ( ret == 0 )
     {
         HAL_SPI_Abort(&spi);
-        HAL_SPI_Receive_DMA(&spi, recv_buf, SPI_PKG_SIZE);
+        HAL_SPI_Receive_DMA(&spi, recv_buf, SPI_BUF_MAX_IN_LEN);
     }
-    SET_COMBUS_HIGH();
+    ST_BLE_STATUS_IO_IDLE();
+    spi_data_dir_in = true;
 
     return ret;
 }
 
-uint32_t spi_slave_poll(uint8_t* buf)
+uint32_t _spi_slave_poll_ex(uint8_t* buf, bool fido)
 {
-    volatile uint32_t total_len, len, ret;
+    volatile uint32_t total_len, len;
+    uint8_t header[3];
 
     if ( buf == NULL )
         return 0;
@@ -287,9 +320,43 @@ uint32_t spi_slave_poll(uint8_t* buf)
         return 0;
     }
 
-    len = total_len > SPI_PKG_SIZE ? SPI_PKG_SIZE : total_len;
-    ret = fifo_read_lock(&spi_fifo_in, buf, len);
-    return ret;
+    fifo_read_peek(&spi_fifo_in, header, sizeof(header));
+
+    if ( fido )
+    {
+        if ( memcmp(header, "fid", 3) == 0 )
+        {
+            fifo_read_lock(&spi_fifo_in, header, sizeof(header));
+            // read len
+            fifo_read_lock(&spi_fifo_in, header, 2);
+            len = header[0] << 8 | header[1];
+            fifo_read_lock(&spi_fifo_in, buf, total_len - 5);
+            if ( total_len - 5 < len )
+            {
+                return 0;
+            }
+            return len;
+        }
+    }
+    else
+    {
+        if ( header[0] == '?' )
+        {
+            len = total_len > SPI_PKG_SIZE ? SPI_PKG_SIZE : total_len;
+            return fifo_read_lock(&spi_fifo_in, buf, len);
+        }
+    }
+    return 0;
+}
+
+uint32_t spi_slave_poll(uint8_t* buf)
+{
+    return _spi_slave_poll_ex(buf, false);
+}
+
+uint32_t spi_slave_poll_fido(uint8_t* buf)
+{
+    return _spi_slave_poll_ex(buf, true);
 }
 
 uint32_t spi_read_retry(uint8_t* buf)
@@ -353,4 +420,26 @@ void SPIx_DMA_RX_IRQHandler(void)
 void SPIx_DMA_TX_IRQHandler(void)
 {
     HAL_DMA_IRQHandler(spi.hdmatx);
+}
+
+void spi_cs_irq_handler(void)
+{
+    if ( HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_11) == GPIO_PIN_RESET )
+    {
+        return;
+    }
+
+    if ( spi_data_dir_in )
+    {
+        HAL_SPI_Abort(&spi);
+        uint16_t recv_len = SPI_BUF_MAX_IN_LEN - __HAL_DMA_GET_COUNTER(spi.hdmarx);
+        if ( recv_len > 0 )
+        {
+            ST_BLE_STATUS_IO_BUSY();
+            fifo_write_no_overflow(&spi_fifo_in, recv_buf, recv_len);
+            ST_BLE_STATUS_IO_IDLE();
+        }
+
+        HAL_SPI_Receive_DMA(&spi, recv_buf, SPI_BUF_MAX_IN_LEN);
+    }
 }

@@ -27,7 +27,6 @@
 #include "spi_legacy.h"
 #include "usart.h"
 
-#define SPI_IFACE (6)
 #define FINGERPRINT_IFACE (7)
 #define USB_DATA_IFACE (253)
 #define BUTTON_IFACE (254)
@@ -37,8 +36,9 @@
 #define UART_IFACE (127)
 #define USB_STATE_IFACE (128)
 #define LOCAL_IFACE (99)
+#define SPI_IFACE (100)
+#define SPI_FIDO_IFACE (101)
 
-extern bool usb_connected_previously;
 extern bool local_interface_ready;
 
 /// package: trezorio.__init__
@@ -90,72 +90,7 @@ STATIC mp_obj_t mod_trezorio_poll(mp_obj_t ifaces, mp_obj_t list_ref,
 #endif
 
       if (false) {
-      }
-#if defined TREZOR_MODEL_T
-      else if (iface == TOUCH_IFACE) {
-        const uint32_t evt = touch_read();
-        if (evt) {
-          mp_obj_tuple_t *tuple = MP_OBJ_TO_PTR(mp_obj_new_tuple(3, NULL));
-          const uint32_t etype = (evt >> 24) & 0xFFU;  // event type
-          const uint32_t ex = (evt >> 12) & 0xFFFU;    // x position
-          const uint32_t ey = evt & 0xFFFU;            // y position
-          uint32_t exr;                                // rotated x position
-          uint32_t eyr;                                // rotated y position
-          switch (display_orientation(-1)) {
-            case 90:
-              exr = ey;
-              eyr = DISPLAY_RESX - ex;
-              break;
-            case 180:
-              exr = DISPLAY_RESX - ex;
-              eyr = DISPLAY_RESY - ey;
-              break;
-            case 270:
-              exr = DISPLAY_RESY - ey;
-              eyr = ex;
-              break;
-            default:
-              exr = ex;
-              eyr = ey;
-              break;
-          }
-          tuple->items[0] = MP_OBJ_NEW_SMALL_INT(etype);
-          tuple->items[1] = MP_OBJ_NEW_SMALL_INT(exr);
-          tuple->items[2] = MP_OBJ_NEW_SMALL_INT(eyr);
-          ret->items[0] = MP_OBJ_NEW_SMALL_INT(i);
-          ret->items[1] = MP_OBJ_FROM_PTR(tuple);
-          return mp_const_true;
-        }
-      } else if (iface == USB_DATA_IFACE) {
-        bool usb_connected = usb_configured() == sectrue ? true : false;
-        if (usb_connected != usb_connected_previously) {
-          usb_connected_previously = usb_connected;
-          ret->items[0] = MP_OBJ_NEW_SMALL_INT(i);
-          ret->items[1] = usb_connected ? mp_const_true : mp_const_false;
-          return mp_const_true;
-        }
-      }
-#elif defined TREZOR_MODEL_1 || defined TREZOR_MODEL_R
-      else if (iface == BUTTON_IFACE) {
-        const uint32_t evt = button_read();
-        if (evt & (BTN_EVT_DOWN | BTN_EVT_UP)) {
-          mp_obj_tuple_t *tuple = MP_OBJ_TO_PTR(mp_obj_new_tuple(2, NULL));
-          uint32_t etype = (evt >> 24) & 0x3U;  // button down/up
-          uint32_t en = evt & 0xFFFF;           // button number
-          if (display_orientation(-1) == 180) {
-            en = (en == BTN_LEFT) ? BTN_RIGHT : BTN_LEFT;
-          }
-          tuple->items[0] = MP_OBJ_NEW_SMALL_INT(etype);
-          tuple->items[1] = MP_OBJ_NEW_SMALL_INT(en);
-          ret->items[0] = MP_OBJ_NEW_SMALL_INT(i);
-          ret->items[1] = MP_OBJ_FROM_PTR(tuple);
-          return mp_const_true;
-        }
-      }
-#else
-#error Unknown Trezor model
-#endif
-      else if (iface == USB_STATE_IFACE) {
+      } else if (iface == USB_STATE_IFACE) {
         static bool usb_connect = false, usb_connect_bak = false;
         static bool usb_open = false, usb_open_bak = false;
         static int counter0 = 0, counter1 = 0;
@@ -237,10 +172,17 @@ STATIC mp_obj_t mod_trezorio_poll(mp_obj_t ifaces, mp_obj_t list_ref,
             local_interface_ready = false;
             return mp_const_true;
           }
-        }  // TODO:FIX IT
-        else if (iface == SPI_IFACE) {
+        } else if (iface == SPI_IFACE) {
           uint8_t buf[64] = {0};
           int len = spi_slave_poll(buf);
+          if (len > 0) {
+            ret->items[0] = MP_OBJ_NEW_SMALL_INT(i);
+            ret->items[1] = mp_obj_new_bytes(buf, len);
+            return mp_const_true;
+          }
+        } else if (iface == SPI_FIDO_IFACE) {
+          uint8_t buf[1024] = {0};
+          int len = spi_slave_poll_fido(buf);
           if (len > 0) {
             ret->items[0] = MP_OBJ_NEW_SMALL_INT(i);
             ret->items[1] = mp_obj_new_bytes(buf, len);
@@ -261,7 +203,7 @@ STATIC mp_obj_t mod_trezorio_poll(mp_obj_t ifaces, mp_obj_t list_ref,
           ret->items[0] = MP_OBJ_NEW_SMALL_INT(i);
           ret->items[1] = mp_const_false;
           return mp_const_true;
-        } else if (iface == SPI_IFACE) {
+        } else if (iface == SPI_IFACE || iface == SPI_FIDO_IFACE) {
           if (sectrue == spi_can_write()) {
             ret->items[0] = MP_OBJ_NEW_SMALL_INT(i);
             ret->items[1] = mp_const_true;

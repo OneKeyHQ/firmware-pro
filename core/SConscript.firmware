@@ -409,6 +409,7 @@ if PRODUCTION_MODEL == 'H':
         'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dcmi.c',
         'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dma.c',
         'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dma_ex.c',
+        'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_exti.c',
         'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_flash.c',
         'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_flash_ex.c',
         'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_gpio.c',
