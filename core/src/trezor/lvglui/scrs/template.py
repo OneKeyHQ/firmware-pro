@@ -881,6 +881,189 @@ class TransactionDetailsETH(FullSizeWindow):
                 )
 
 
+class TransactionDetailsBenFen(FullSizeWindow):
+    def __init__(
+        self,
+        title,
+        address_from,
+        address_to,
+        amount,
+        fee_max,
+        is_eip1559=False,
+        gas_price=None,
+        max_priority_fee_per_gas=None,
+        max_fee_per_gas=None,
+        total_amount=None,
+        primary_color=lv_colors.ONEKEY_GREEN,
+        contract_addr=None,
+        token_id=None,
+        evm_chain_id=None,
+        raw_data=None,
+        sub_icon_path=None,
+        striped=False,
+    ):
+        super().__init__(
+            title,
+            None,
+            _(i18n_keys.BUTTON__CONTINUE),
+            _(i18n_keys.BUTTON__REJECT),
+            primary_color=primary_color,
+            icon_path="A:/res/icon-send.png",
+            sub_icon_path=sub_icon_path,
+        )
+        self.primary_color = primary_color
+        self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
+        if striped:
+            self.group_amounts = ContainerFlexCol(
+                self.container, None, padding_row=0, no_align=True
+            )
+            self.item_group_header = CardHeader(
+                self.group_amounts,
+                _(i18n_keys.LIST_KEY__AMOUNT__COLON),
+                "A:/res/group-icon-amount.png",
+            )
+            self.group_body_amount = DisplayItem(
+                self.group_amounts,
+                None,
+                amount,
+            )
+            self.group_amounts.add_dummy()
+
+        self.group_directions = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_directions,
+            _(i18n_keys.FORM__DIRECTIONS),
+            "A:/res/group-icon-directions.png",
+        )
+        self.item_group_body_to_addr = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__TO__COLON),
+            address_to,
+        )
+        self.item_group_body_from_addr = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__FROM__COLON),
+            address_from,
+        )
+        self.group_directions.add_dummy()
+
+        self.group_fees = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_fees, _(i18n_keys.FORM__FEES), "A:/res/group-icon-fees.png"
+        )
+        self.item_group_body_fee_max = DisplayItem(
+            self.group_fees,
+            _(i18n_keys.LIST_KEY__MAXIMUM_FEE__COLON),
+            fee_max,
+        )
+        if not is_eip1559:
+            if gas_price:
+                self.item_group_body_gas_price = DisplayItem(
+                    self.group_fees,
+                    _(i18n_keys.LIST_KEY__GAS_PRICE__COLON),
+                    gas_price,
+                )
+        else:
+            self.item_group_body_priority_fee_per_gas = DisplayItem(
+                self.group_fees,
+                _(i18n_keys.LIST_KEY__PRIORITY_FEE_PER_GAS__COLON),
+                max_priority_fee_per_gas,
+            )
+            self.item_group_body_max_fee_per_gas = DisplayItem(
+                self.group_fees,
+                _(i18n_keys.LIST_KEY__MAXIMUM_FEE_PER_GAS__COLON),
+                max_fee_per_gas,
+            )
+        if amount != "All":
+            if total_amount is None:
+                if not contract_addr:
+                    total_amount = f"{amount}\n{fee_max}"
+                else:
+                    total_amount = f"{fee_max}"
+            self.item_group_body_total_amount = DisplayItem(
+                self.group_fees,
+                _(i18n_keys.LIST_KEY__TOTAL_AMOUNT__COLON),
+                total_amount,
+            )
+
+        self.group_fees.add_dummy()
+
+        if contract_addr or evm_chain_id:
+            self.group_more = ContainerFlexCol(
+                self.container, None, padding_row=0, no_align=True
+            )
+            self.item_group_header = CardHeader(
+                self.group_more, _(i18n_keys.FORM__MORE), "A:/res/group-icon-more.png"
+            )
+            if evm_chain_id:
+                self.item_group_body_chain_id = DisplayItem(
+                    self.group_more,
+                    _(i18n_keys.LIST_KEY__CHAIN_ID__COLON),
+                    str(evm_chain_id),
+                )
+            if contract_addr:
+                self.item_group_body_contract_addr = DisplayItem(
+                    self.group_more,
+                    _(i18n_keys.LIST_KEY__CONTRACT_ADDRESS__COLON),
+                    contract_addr,
+                )
+                self.item_group_body_token_id = DisplayItem(
+                    self.group_more,
+                    _(i18n_keys.LIST_KEY__TOKEN_ID__COLON),
+                    token_id,
+                )
+            self.group_more.add_dummy()
+
+        if raw_data:
+            from trezor import strings
+
+            self.data_str = strings.format_customer_data(raw_data)
+            if not self.data_str:
+                return
+            self.long_data = False
+            if len(self.data_str) > 225:
+                self.long_data = True
+                self.data = self.data_str[:222] + "..."
+            else:
+                self.data = self.data_str
+            self.item_data = CardItem(
+                self.container,
+                _(i18n_keys.LIST_KEY__DATA__COLON),
+                self.data,
+                "A:/res/group-icon-data.png",
+            )
+            if self.long_data:
+                self.show_full_data = NormalButton(
+                    self.item_data.content, _(i18n_keys.BUTTON__VIEW_DATA)
+                )
+                self.show_full_data.set_size(lv.SIZE.CONTENT, 77)
+                self.show_full_data.add_style(
+                    StyleWrapper().text_font(font_GeistSemiBold26).pad_hor(24), 0
+                )
+                self.show_full_data.align(lv.ALIGN.CENTER, 0, 0)
+                self.show_full_data.remove_style(None, lv.PART.MAIN | lv.STATE.PRESSED)
+                self.show_full_data.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
+
+    def on_click(self, event_obj):
+        code = event_obj.code
+        target = event_obj.get_target()
+        if code == lv.EVENT.CLICKED:
+            if target == self.show_full_data:
+                PageAbleMessage(
+                    _(i18n_keys.TITLE__VIEW_DATA),
+                    self.data_str,
+                    None,
+                    primary_color=self.primary_color,
+                    font=font_GeistMono28,
+                    confirm_text=None,
+                    cancel_text=None,
+                )
+
+
 class TransactionDetailsAlepHium(FullSizeWindow):
     def __init__(
         self,

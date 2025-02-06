@@ -146,20 +146,21 @@ async def send_request_chunk(ctx: wire.Context, data_left: int) -> BenfenTxAck:
     return await ctx.call(req, BenfenTxAck)
 
 
-def parse_transaction(parsed_tx: dict) -> Tuple[int, str, str, int]:
+def parse_transaction(parsed_tx: dict) -> Tuple[int | str, str, str, int]:
     tx_kind = parsed_tx["V1"]["TransactionKind"]["ProgrammableTransaction"]
     inputs = tx_kind["Inputs"]
     commands = tx_kind["Commands"]
     amount_input_index = None
     recipient_input_index = None
-
     for cmd in commands:
         if cmd["type"] == "TransferObjects":
             address_data = cmd["data"]["address"]
             if address_data["type"] == "Input":
                 recipient_input_index = address_data["index"]
-
             object_data = cmd["data"]["objects"][0]
+            if object_data["type"] == "GasCoin":
+                amount_input_index = None
+                break
             if object_data["type"] == "NestedResult":
                 command_index = object_data["index"][0]
                 referenced_command = commands[command_index]
@@ -177,12 +178,15 @@ def parse_transaction(parsed_tx: dict) -> Tuple[int, str, str, int]:
                         "index"
                     ]
 
-    if amount_input_index is None or recipient_input_index is None:
+    if recipient_input_index is None:
         raise wire.DataError("Required commands not found")
 
     try:
-        amount_hex = inputs[amount_input_index]["Pure"]
-        amount_raw = int.from_bytes(binascii.unhexlify(amount_hex), "little")
+        if amount_input_index is None:
+            amount_raw = "All"
+        else:
+            amount_hex = inputs[amount_input_index]["Pure"]
+            amount_raw = int.from_bytes(binascii.unhexlify(amount_hex), "little")
     except Exception:
         raise wire.DataError("Invalid amount format")
 
@@ -192,22 +196,16 @@ def parse_transaction(parsed_tx: dict) -> Tuple[int, str, str, int]:
         recipient_bfc = try_convert_to_bfc_address(recipient)
     except Exception:
         raise wire.DataError("Invalid recipient address")
-
     sender = tx_kind["Sender"]["Address"]
     sender_bfc = try_convert_to_bfc_address(sender)
-
     gas_data = parsed_tx["V1"]["GasData"]
     gas_budget = gas_data["budget"]
-
-    if not isinstance(amount_raw, int):
-        raise wire.DataError("Invalid amount type")
     if not isinstance(recipient_bfc, str):
         raise wire.DataError("Invalid recipient address type")
     if not isinstance(sender_bfc, str):
         raise wire.DataError("Invalid sender address type")
     if not isinstance(gas_budget, int):
         raise wire.DataError("Invalid gas budget type")
-
     return amount_raw, recipient_bfc, sender_bfc, gas_budget
 
 
@@ -238,7 +236,7 @@ def validate_transaction(parsed_tx: dict) -> bool:
     if transfer_objects_count != 1:
         return False
 
-    required_commands = {"SplitCoin", "TransferObjects"}
+    required_commands = {"TransferObjects"}
     found_commands = {cmd["type"] for cmd in commands if "type" in cmd}
 
     if not required_commands.issubset(found_commands):
