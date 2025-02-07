@@ -2840,6 +2840,8 @@ class GeneralScreen(AnimScreen):
             _(i18n_keys.ITEM__AUTO_LOCK_AND_SHUTDOWN)
         )
         self.power.label_left.set_text(_(i18n_keys.ITEM__POWER_OFF))
+        self.container.update_layout()
+        self.power.align_to(self.container, lv.ALIGN.OUT_BOTTOM_MID, 0, 12)
 
     def on_click(self, event_obj):
         code = event_obj.code
