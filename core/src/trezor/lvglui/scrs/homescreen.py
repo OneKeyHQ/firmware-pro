@@ -1095,6 +1095,8 @@ class IndexSelectionScreen(AnimScreen):
             btn = ListItemBtn(
                 self.container,
                 "",
+                has_next=False,
+                use_transition=False,
             )
             btn.add_check_img()
             self.account_btns.append(btn)
