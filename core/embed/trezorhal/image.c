@@ -29,6 +29,7 @@
 #include "hardware_version.h"
 #include "image.h"
 #include "qspi_flash.h"
+#include "sdram.h"
 #include "util_macros.h"
 
 static secbool compute_pubkey(uint8_t sig_m, uint8_t sig_n,
@@ -669,28 +670,28 @@ secbool verify_firmware(vendor_header* const vhdr, image_header* const hdr,
       return secfalse;
     });
 
-    ExecuteCheck_ADV(emmc_fs_file_read(
-                         "0:data/fw_p2.bin", 0, (uint32_t*)0xD1C00000,
-                         MAX(path_info.size, fw_external_size), &processed_len),
-                     true, {
-                       if (error_msg != NULL)
-                         strncpy(error_msg,
-                                 "Firmware code invalid! (P2_EMMC_2)",
-                                 error_msg_len);
-                       return secfalse;
-                     });
+    ExecuteCheck_ADV(
+        emmc_fs_file_read(
+            "0:data/fw_p2.bin", 0, (uint32_t*)FMC_SDRAM_FIRMWARE_P2_ADDRESS,
+            MAX(path_info.size, fw_external_size), &processed_len),
+        true, {
+          if (error_msg != NULL)
+            strncpy(error_msg, "Firmware code invalid! (P2_EMMC_2)",
+                    error_msg_len);
+          return secfalse;
+        });
   } else {
-    memcpy((uint8_t*)0xD1C00000, (const uint8_t*)0x90000000,
+    memcpy((uint8_t*)FMC_SDRAM_FIRMWARE_P2_ADDRESS, (const uint8_t*)0x90000000,
            _hdr.codelen - (fw_internal_size - (_vhdr.hdrlen + _hdr.hdrlen)));
   }
 
   ExecuteCheck_ADV(
       check_image_contents_ADV(
-          &_vhdr, &_hdr, (const uint8_t*)0xD1C00000,
+          &_vhdr, &_hdr, (const uint8_t*)FMC_SDRAM_FIRMWARE_P2_ADDRESS,
           (fw_internal_size - (_vhdr.hdrlen + _hdr.hdrlen)),
           _hdr.codelen - (fw_internal_size - (_vhdr.hdrlen + _hdr.hdrlen))),
       sectrue, {
-        memset((uint8_t*)0xD1C00000, 0x00,
+        memset((uint8_t*)FMC_SDRAM_FIRMWARE_P2_ADDRESS, 0x00,
                (2 * 1024 * 1024));  // wipe the buffer if fail
         if (error_msg != NULL)
           strncpy(error_msg, "Firmware code invalid! (P2)", error_msg_len);

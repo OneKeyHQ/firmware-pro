@@ -25,6 +25,7 @@
 #include "emmc_fs.h"
 #include "flash.h"
 #include "hardware_version.h"
+#include "sdram.h"
 #include "sha2.h"
 
 static char boardloader_version[32] = {0};
@@ -230,12 +231,14 @@ uint8_t *get_firmware_hash(void) {
       if (path_info.size != outer_firmware_len) {
         return onekey_firmware_hash;
       }
-      if (!emmc_fs_file_read("0:data/fw_p2.bin", 0, (uint32_t *)0xD1C00000,
+      if (!emmc_fs_file_read("0:data/fw_p2.bin", 0,
+                             (uint32_t *)FMC_SDRAM_FIRMWARE_P2_ADDRESS,
                              outer_firmware_len, &processed_len)) {
         return onekey_firmware_hash;
       }
 #endif
-      sha256_Update(&context, (uint8_t *)0xD1C00000, outer_firmware_len);
+      sha256_Update(&context, (uint8_t *)FMC_SDRAM_FIRMWARE_P2_ADDRESS,
+                    outer_firmware_len);
     } else {
       sha256_Update(&context,
                     flash_get_address(FLASH_SECTOR_FIRMWARE_EXTRA_START, 0, 0),

@@ -1,6 +1,9 @@
 #ifndef _UTIL_MACROS_H_
 #define _UTIL_MACROS_H_
 
+#define KB(x) ((x)*1024U)
+#define MB(x) ((x)*1024U * 1024U)
+
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 #define FORCE_IGNORE_RETURN(x) \
