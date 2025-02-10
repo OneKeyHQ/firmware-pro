@@ -6,6 +6,8 @@ MEMORY {
   FLASH  (rx)  : ORIGIN = 0x08020000, LENGTH = 256K
   AXIRAM (wal) : ORIGIN = 0x24000000, LENGTH = 512K
   SRAM   (wal) : ORIGIN = 0x20000000, LENGTH = 128K
+  /* SRAM3 is used for DMA */
+  SRAM3  (wal) : ORIGIN = 0x30040000, LENGTH = 32K
 }
 
 main_stack_base = ORIGIN(SRAM) + LENGTH(SRAM); /* 8-byte aligned full descending stack */
@@ -54,6 +56,11 @@ SECTIONS {
   .stack : ALIGN(8) {
     . = 4K; /* this acts as a build time assertion that at least this much memory is available for stack use */
   } >SRAM
+
+  .sram3 : ALIGN(4) {
+    *(.sram3*);
+    . = ALIGN(4);
+  } >SRAM3
 
   /* this is needed, otherwise will have "undefined reference to `end'" error */
   .heap : ALIGN(4) {

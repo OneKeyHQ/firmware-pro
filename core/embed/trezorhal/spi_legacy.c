@@ -13,8 +13,9 @@ static DMA_HandleTypeDef hdma_tx;
 static DMA_HandleTypeDef hdma_rx;
 
 // SRAM3 32K
-static uint8_t* recv_buf = (uint8_t*)0x30040000;
-static uint8_t* send_buf = (uint8_t*)0x30040040;
+static uint8_t dma_recv_buf[SPI_BUF_MAX_IN_LEN] __attribute__((section(".sram3")));
+static uint8_t dma_send_buf[SPI_BUF_MAX_OUT_LEN] __attribute__((section(".sram3")));
+
 static volatile int32_t spi_rx_event = 0;
 static volatile int32_t spi_tx_event = 0;
 static volatile int32_t spi_abort_event = 0;
@@ -90,12 +91,12 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef* hspi)
     {
         spi_rx_event = 0;
     }
-    if ( !fifo_write_no_overflow(&spi_fifo_in, recv_buf, hspi->RxXferSize) )
+    if ( !fifo_write_no_overflow(&spi_fifo_in, dma_recv_buf, hspi->RxXferSize) )
     {
-        memset(recv_buf, 0, SPI_PKG_SIZE);
+        memset(dma_recv_buf, 0, hspi->RxXferSize);
     }
 
-    HAL_SPI_Receive_DMA(&spi, recv_buf, SPI_PKG_SIZE);
+    HAL_SPI_Receive_DMA(&spi, dma_recv_buf, sizeof(dma_recv_buf));
     ST_BLE_STATUS_IO_IDLE();
 }
 
@@ -106,7 +107,7 @@ void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef* hspi)
         spi_tx_event = 0;
     }
 
-    HAL_SPI_Receive_DMA(&spi, recv_buf, SPI_BUF_MAX_IN_LEN);
+    HAL_SPI_Receive_DMA(&spi, dma_recv_buf, sizeof(dma_recv_buf));
 }
 
 void HAL_SPI_ErrorCallback(SPI_HandleTypeDef* hspi)
@@ -128,8 +129,6 @@ int32_t spi_slave_init()
 {
     GPIO_InitTypeDef gpio;
 
-    __HAL_RCC_DMA1_FORCE_RESET();
-    __HAL_RCC_DMA1_RELEASE_RESET();
     __HAL_RCC_DMA1_CLK_ENABLE();
 
     __HAL_RCC_SPI2_FORCE_RESET();
@@ -252,11 +251,11 @@ int32_t spi_slave_init()
     NVIC_SetPriority(EXTI15_10_IRQn, IRQ_PRI_GPIO);
     HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
-    memset(recv_buf, 0, SPI_PKG_SIZE);
+    memset(dma_recv_buf, 0, sizeof(dma_recv_buf));
     spi_rx_event = 1;
     ST_BLE_STATUS_IO_IDLE();
     /* start SPI receive */
-    if ( HAL_SPI_Receive_DMA(&spi, recv_buf, SPI_BUF_MAX_IN_LEN) != HAL_OK )
+    if ( HAL_SPI_Receive_DMA(&spi, dma_recv_buf, sizeof(dma_recv_buf)) != HAL_OK )
     {
         return -1;
     }
@@ -269,7 +268,7 @@ int32_t spi_slave_send(uint8_t* buf, uint32_t size, int32_t timeout)
     uint32_t msg_size;
     int32_t ret = 0;
     msg_size = size; //< SPI_PKG_SIZE ? SPI_PKG_SIZE : size
-    memcpy(send_buf, buf, msg_size);
+    memcpy(dma_send_buf, buf, msg_size);
 
     spi_abort_event = 1;
     spi_data_dir_in = false;
@@ -280,7 +279,7 @@ int32_t spi_slave_send(uint8_t* buf, uint32_t size, int32_t timeout)
     while ( spi_abort_event )
         ;
 
-    if ( HAL_SPI_Transmit_DMA(&spi, send_buf, msg_size) != HAL_OK )
+    if ( HAL_SPI_Transmit_DMA(&spi, dma_send_buf, msg_size) != HAL_OK )
     {
         goto END;
     }
@@ -298,7 +297,7 @@ END:
     if ( ret == 0 )
     {
         HAL_SPI_Abort(&spi);
-        HAL_SPI_Receive_DMA(&spi, recv_buf, SPI_BUF_MAX_IN_LEN);
+        HAL_SPI_Receive_DMA(&spi, dma_recv_buf, sizeof(dma_recv_buf));
     }
     ST_BLE_STATUS_IO_IDLE();
     spi_data_dir_in = true;
@@ -432,14 +431,14 @@ void spi_cs_irq_handler(void)
     if ( spi_data_dir_in )
     {
         HAL_SPI_Abort(&spi);
-        uint16_t recv_len = SPI_BUF_MAX_IN_LEN - __HAL_DMA_GET_COUNTER(spi.hdmarx);
+        uint16_t recv_len = sizeof(dma_recv_buf) - __HAL_DMA_GET_COUNTER(spi.hdmarx);
         if ( recv_len > 0 )
         {
             ST_BLE_STATUS_IO_BUSY();
-            fifo_write_no_overflow(&spi_fifo_in, recv_buf, recv_len);
+            fifo_write_no_overflow(&spi_fifo_in, dma_recv_buf, recv_len);
             ST_BLE_STATUS_IO_IDLE();
         }
 
-        HAL_SPI_Receive_DMA(&spi, recv_buf, SPI_BUF_MAX_IN_LEN);
+        HAL_SPI_Receive_DMA(&spi, dma_recv_buf, sizeof(dma_recv_buf));
     }
 }

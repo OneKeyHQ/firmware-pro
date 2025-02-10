@@ -9,6 +9,8 @@ MEMORY {
   SRAM   (wal) : ORIGIN = 0x20000000, LENGTH = 128K
   SRAM1   (wal) : ORIGIN = 0x30000000, LENGTH = 128K
   SRAM2   (wal) : ORIGIN = 0x30020000, LENGTH = 128K
+  /* SRAM3 is used for DMA */
+  SRAM3   (wal) : ORIGIN = 0x30040000, LENGTH = 32K
   EXRAM   (wal) : ORIGIN = 0xD1C00000, LENGTH = 2048K
 }
 
@@ -79,6 +81,11 @@ SECTIONS {
   .sram1 : {
 		*(sram1)
 	} >SRAM1
+
+  .sram3 : ALIGN(4) {
+    *(.sram3*);
+    . = ALIGN(4);
+  } >SRAM3
 
   .bss2 : ALIGN(4) {
     *(.bss.global_image);

@@ -5,6 +5,7 @@
 
 #include "ble.h"
 #include "common.h"
+#include "dma_channel.h"
 #include "irq.h"
 #include "usart.h"
 
@@ -13,9 +14,17 @@
 UART_HandleTypeDef uart;
 UART_HandleTypeDef *huart = &uart;
 
+static DMA_HandleTypeDef hdma_tx;
+static DMA_HandleTypeDef hdma_rx;
+
+static bool uart_tx_done = false;
+
 #define UART_PACKET_MAX_LEN 128
-uint8_t usart_fifo[UART_PACKET_MAX_LEN] = {0};
-uint8_t usart_fifo_len = 0;
+static uint8_t dma_uart_rev_buf[UART_PACKET_MAX_LEN]
+    __attribute__((section(".sram3")));
+static uint8_t dma_uart_send_buf[UART_PACKET_MAX_LEN]
+    __attribute__((section(".sram3")));
+uint32_t usart_fifo_len = 0;
 
 uint8_t uart_data_in[UART_BUF_MAX_LEN];
 
@@ -37,6 +46,10 @@ void ble_usart_init(void) {
 
   __HAL_RCC_UART4_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+
+  __HAL_RCC_DMA1_FORCE_RESET();
+  __HAL_RCC_DMA1_RELEASE_RESET();
+  __HAL_RCC_DMA1_CLK_ENABLE();
 
   // UART4: PA0_C(TX), PA1_C(RX)
   GPIO_InitStruct.Pin = GPIO_PIN_0 | GPIO_PIN_1;
@@ -62,11 +75,51 @@ void ble_usart_init(void) {
     ensure(secfalse, "uart init failed");
   }
 
+  // Configure DMA
+  hdma_tx.Instance = UARTx_TX_DMA_STREAM;
+
+  hdma_tx.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+  hdma_tx.Init.Request = UARTx_TX_DMA_REQUEST;
+  hdma_tx.Init.Direction = DMA_MEMORY_TO_PERIPH;
+  hdma_tx.Init.PeriphInc = DMA_PINC_DISABLE;
+  hdma_tx.Init.MemInc = DMA_MINC_ENABLE;
+  hdma_tx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+  hdma_tx.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+  hdma_tx.Init.Mode = DMA_NORMAL;
+  hdma_tx.Init.Priority = DMA_PRIORITY_MEDIUM;
+
+  HAL_DMA_Init(&hdma_tx);
+
+  __HAL_LINKDMA(huart, hdmatx, hdma_tx);
+
+  hdma_rx.Instance = UARTx_RX_DMA_STREAM;
+
+  hdma_rx.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+  hdma_rx.Init.Request = UARTx_RX_DMA_REQUEST;
+  hdma_rx.Init.Direction = DMA_PERIPH_TO_MEMORY;
+  hdma_rx.Init.PeriphInc = DMA_PINC_DISABLE;
+  hdma_rx.Init.MemInc = DMA_MINC_ENABLE;
+  hdma_rx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+  hdma_rx.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+  hdma_rx.Init.Mode = DMA_NORMAL;
+  hdma_rx.Init.Priority = DMA_PRIORITY_MEDIUM;
+
+  HAL_DMA_Init(&hdma_rx);
+
+  __HAL_LINKDMA(huart, hdmarx, hdma_rx);
+
+  /*##-4- Configure the NVIC for DMA #########################################*/
+  NVIC_SetPriority(UARTx_DMA_RX_IRQn, IRQ_PRI_DMA);
+  HAL_NVIC_EnableIRQ(UARTx_DMA_RX_IRQn);
+
+  NVIC_SetPriority(UARTx_DMA_TX_IRQn, IRQ_PRI_DMA);
+  HAL_NVIC_EnableIRQ(UARTx_DMA_TX_IRQn);
+
   NVIC_SetPriority(UART4_IRQn, IRQ_PRI_UART);
   HAL_NVIC_EnableIRQ(UART4_IRQn);
 
-  __HAL_UART_ENABLE_IT(huart, UART_IT_RXFNE);
-  __HAL_UART_ENABLE_IT(huart, UART_IT_ERR);
+  __HAL_UART_ENABLE_IT(huart, UART_IT_IDLE);
+  HAL_UART_Receive_DMA(huart, dma_uart_rev_buf, sizeof(dma_uart_rev_buf));
 }
 
 void usart_enable_stop_wup(void) {
@@ -88,7 +141,21 @@ void ble_usart_send_byte(uint8_t data) {
 }
 
 void ble_usart_send(uint8_t *buf, uint32_t len) {
-  HAL_UART_Transmit(huart, buf, len, 0xFFFF);
+  while (len > 0) {
+    uart_tx_done = false;
+    uint32_t send_len = len > UART_PACKET_MAX_LEN ? UART_PACKET_MAX_LEN : len;
+    memcpy(dma_uart_send_buf, buf, send_len);
+    HAL_UART_Transmit_DMA(huart, dma_uart_send_buf, send_len);
+    uint32_t start = HAL_GetTick();
+    while (!uart_tx_done) {
+      if (HAL_GetTick() - start > 500) {
+        return;
+      }
+      __WFI();
+    }
+    len -= send_len;
+    buf += send_len;
+  }
 }
 
 bool ble_read_byte(uint8_t *buf) {
@@ -109,21 +176,11 @@ secbool ble_usart_can_read(void) {
 void ble_usart_irq_ctrl(bool enable) {
   if (enable) {
     HAL_NVIC_EnableIRQ(UART4_IRQn);
-    __HAL_UART_ENABLE_IT(huart, UART_IT_RXFNE);
-    __HAL_UART_ENABLE_IT(huart, UART_IT_ERR);
+    HAL_UART_Abort(huart);
+    HAL_UART_Receive_DMA(huart, dma_uart_rev_buf, sizeof(dma_uart_rev_buf));
   } else {
+    HAL_UART_Abort(huart);
     HAL_NVIC_DisableIRQ(UART4_IRQn);
-    if (__HAL_UART_GET_FLAG(huart, UART_FLAG_WUF)) {
-      __HAL_UART_CLEAR_FLAG(huart, UART_CLEAR_WUF);
-    }
-    if (__HAL_UART_GET_FLAG(huart, UART_FLAG_RXFNE) != 0) {
-      volatile uint8_t data = 0;
-      data = (uint8_t)(huart->Instance->RDR);
-      (void)data;
-    }
-    if (__HAL_UART_GET_FLAG(huart, UART_FLAG_ORE) != 0) {
-      __HAL_UART_CLEAR_FLAG(huart, UART_CLEAR_OREF);
-    }
   }
 }
 
@@ -146,66 +203,84 @@ static uint8_t calXor(uint8_t *buf, uint32_t len) {
   return tmp;
 }
 
-static HAL_StatusTypeDef usart_rev_bytes(uint8_t *buf, uint32_t len,
-                                         uint32_t timeout) {
-  for (int i = 0; i < len; i++) {
-    while (__HAL_UART_GET_FLAG(huart, UART_FLAG_RXFNE) == 0) {
-      timeout--;
-      if (timeout == 0) {
-        return HAL_TIMEOUT;
-      }
-    }
-    buf[i] = (uint8_t)(huart->Instance->RDR);
-    timeout = USART_TIMEOUT;
+static void usart_rev_package_dma(uint8_t *buf, uint32_t len) {
+  if (len < 5) {
+    return;
   }
-  return HAL_OK;
+  uint32_t index = 0;
+  uint8_t *p_header;
+  while (len > 0) {
+    if (buf[index] != 0xA5 || buf[index + 1] != 0x5A) {
+      index++;
+      len--;
+      continue;
+    }
+    p_header = buf + index;
+    index += 2;
+    len -= 2;
+    if (len < 2) {
+      return;
+    }
+    // length include xor byte
+    uint16_t data_len = (buf[index] << 8) + buf[index + 1];
+    index += 2;
+    len -= 2;
+    if (len < data_len) {
+      return;
+    }
+    index += data_len;
+    len -= data_len;
+
+    uint8_t xor = calXor(p_header, data_len + 3);
+    if (buf[index - 1] != xor) {
+      return;
+    }
+    fifo_write_no_overflow(&uart_fifo_in, p_header, data_len + 3);
+  }
 }
 
-static void usart_rev_package(uint8_t *buf) {
-  uint8_t len = 0;
-  uint8_t *p_buf = buf;
-  if (usart_rev_bytes(p_buf, 2, USART_TIMEOUT) != HAL_OK) {
-    return;
-  }
-  if (p_buf[0] != 0xA5 || p_buf[1] != 0x5A) {
-    return;
-  }
-  p_buf += 2;
-  if (usart_rev_bytes(p_buf, 2, USART_TIMEOUT) != HAL_OK) {
-    return;
-  }
-  len = (p_buf[0] << 8) + p_buf[1];
-  if (len > UART_PACKET_MAX_LEN - 4) {
-    return;
-  }
-  p_buf += 2;
-  if (usart_rev_bytes(p_buf, len - 1, USART_TIMEOUT) != HAL_OK) {
-    return;
-  }
-  p_buf += len - 1;
-  if (usart_rev_bytes(p_buf, 1, USART_TIMEOUT) != HAL_OK) {
-    return;
-  }
-  uint8_t xor = calXor(buf, len + 3);
-  if (xor != *p_buf) {
-    return;
-  }
-  fifo_write_no_overflow(&uart_fifo_in, buf, len + 3);
+// void UART4_IRQHandler(void) {
+//   volatile uint8_t data = 0;
+//   (void)data;
+//   if (__HAL_UART_GET_FLAG(huart, UART_FLAG_WUF)) {
+//     __HAL_UART_CLEAR_FLAG(huart, UART_CLEAR_WUF);
+//   }
+//   if (__HAL_UART_GET_FLAG(huart, UART_FLAG_ORE) != 0) {
+//     data = (uint8_t)(huart->Instance->RDR);
+//     __HAL_UART_CLEAR_FLAG(huart, UART_CLEAR_OREF);
+//   }
+//   if (__HAL_UART_GET_FLAG(huart, UART_FLAG_RXFNE) != 0) {
+//     memset(dma_uart_rev_buf, 0x00, sizeof(dma_uart_rev_buf));
+//     usart_rev_package(dma_uart_rev_buf);
+//   }
+// }
+
+void UARTx_DMA_TX_IRQHandler(void) { HAL_DMA_IRQHandler(huart->hdmatx); }
+
+void UARTx_DMA_RX_IRQHandler(void) { HAL_DMA_IRQHandler(huart->hdmarx); }
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
+  usart_rev_package_dma(dma_uart_rev_buf, sizeof(dma_uart_rev_buf));
+  HAL_UART_Receive_DMA(huart, dma_uart_rev_buf, sizeof(dma_uart_rev_buf));
 }
+
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) { uart_tx_done = true; }
 
 void UART4_IRQHandler(void) {
-  volatile uint8_t data = 0;
-  (void)data;
   if (__HAL_UART_GET_FLAG(huart, UART_FLAG_WUF)) {
     __HAL_UART_CLEAR_FLAG(huart, UART_CLEAR_WUF);
   }
-  if (__HAL_UART_GET_FLAG(huart, UART_FLAG_ORE) != 0) {
-    data = (uint8_t)(huart->Instance->RDR);
-    __HAL_UART_CLEAR_FLAG(huart, UART_CLEAR_OREF);
-  }
-  if (__HAL_UART_GET_FLAG(huart, UART_FLAG_RXFNE) != 0) {
-    memset(usart_fifo, 0x00, sizeof(usart_fifo));
-    usart_rev_package(usart_fifo);
+  if (__HAL_UART_GET_FLAG(huart, UART_FLAG_IDLE)) {
+    __HAL_UART_CLEAR_FLAG(huart, UART_FLAG_IDLE);
+    HAL_UART_Abort(huart);
+    usart_fifo_len =
+        sizeof(dma_uart_rev_buf) - __HAL_DMA_GET_COUNTER(huart->hdmarx);
+    if (usart_fifo_len > 0) {
+      usart_rev_package_dma(dma_uart_rev_buf, usart_fifo_len);
+    }
+    HAL_UART_Receive_DMA(huart, dma_uart_rev_buf, sizeof(dma_uart_rev_buf));
+  } else {
+    HAL_UART_IRQHandler(huart);
   }
 }
 
