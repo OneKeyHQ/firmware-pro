@@ -603,6 +603,8 @@ def send_cmd_sync(cmd: Cmd, iface: io.HID | io.SPI) -> None:
 
 
 async def handle_reports(usb_face: io.HID, spi_iface: io.SPI) -> None:
+    import gc
+
     dialog_mgr = DialogManager(usb_face)
 
     while True:
@@ -631,6 +633,12 @@ async def handle_reports(usb_face: io.HID, spi_iface: io.SPI) -> None:
                 resp = dispatch_cmd(req, dialog_mgr)
             if resp is not None:
                 await send_cmd(resp, dialog_mgr.iface)
+
+            if __debug__:
+                log.debug(__name__, f"mem_info before gc.collect(): {gc.mem_free()}")  # type: ignore["mem_free" is not a known member of module]
+            gc.collect()
+            if __debug__:
+                log.debug(__name__, f"mem_info after gc.collect(): {gc.mem_free()} ")  # type: ignore["mem_free" is not a known member of module]
         except Exception as e:
             log.exception(__name__, e)
 
@@ -874,9 +882,8 @@ class Fido2Unlock(Fido2State):
             if not await verify_user(KeepaliveCallback(self.cid, self.iface)):
                 return False
         if not await se_gen_seed(KeepaliveCallback(self.cid, self.iface)):
+            set_homescreen()
             return False
-
-        set_homescreen()
         resp = self.process_func(self.req, self.dialog_mgr)
         if isinstance(resp, State):
             return resp
