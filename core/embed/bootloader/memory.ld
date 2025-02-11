@@ -25,7 +25,7 @@ axiram_end = ORIGIN(AXIRAM) + LENGTH(AXIRAM);
 sram_start = ORIGIN(SRAM);
 sram_end = ORIGIN(SRAM) + LENGTH(SRAM);
 
-_codelen = SIZEOF(.flash) + SIZEOF(.data);
+_codelen = SIZEOF(.flash) + SIZEOF(.data) + SIZEOF(.padding);
 
 SECTIONS {
   .header : ALIGN(4) {
@@ -47,6 +47,13 @@ SECTIONS {
     *(.data*);
     . = ALIGN(512);
   } >SRAM AT>FLASH
+
+  .padding : {
+    KEEP(*(.padding));
+    FILL(0xDEADBEEF); /* fill pattern */
+    . = LENGTH(FLASH) - SIZEOF(.header) - SIZEOF(.flash) - SIZEOF(.data) - 1 - 8;
+    BYTE(0x00); /* needed to keep this section without references in .s or .c */
+  } >FLASH AT>FLASH
 
   .bss : ALIGN(4) {
     *(.bss*);
