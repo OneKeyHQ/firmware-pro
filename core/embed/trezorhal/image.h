@@ -46,6 +46,8 @@
 #define FIRMWARE_IMAGE_MAGIC_THD89 0x39384654
 #define FIRMWARE_IMAGE_MAXSIZE_THD89 (370 * 1024)
 
+#define IMAGE_UTIL_ERROR_MSG_BUFFER_SIZE_MIN 64
+
 typedef struct {
   uint32_t magic;
   uint32_t hdrlen;
@@ -147,10 +149,19 @@ secbool __wur check_image_contents_ADV(const vendor_header* const vhdr,
                                        const size_t code_len_skipped,
                                        const size_t code_len_check);
 
-// secbool __wur install_bootloader();
-secbool __wur install_firmware(const uint8_t* const fw_buffer,
-                               const size_t fw_size, char* error_msg,
-                               size_t error_msg_len, size_t* const processed,
+secbool __wur install_bootloader(const uint8_t* const buffer, const size_t size,
+                                 char* error_msg, size_t error_msg_len,
+                                 size_t* const processed,
+                                 void (*const progress_callback)(int));
+
+secbool __wur verify_bootloader(image_header* const hdr,
+                                secbool* const hdr_valid,
+                                secbool* const code_valid, char* error_msg,
+                                size_t error_msg_len);
+
+secbool __wur install_firmware(const uint8_t* const buffer, const size_t size,
+                               char* error_msg, size_t error_msg_len,
+                               size_t* const processed,
                                void (*const progress_callback)(int));
 secbool __wur verify_firmware(vendor_header* const vhdr,
                               image_header* const hdr,

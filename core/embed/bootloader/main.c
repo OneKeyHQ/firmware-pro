@@ -598,7 +598,7 @@ static void check_bootloader_version(void) {
 static BOOT_TARGET decide_boot_target(vendor_header* const vhdr,
                                       image_header* const hdr,
                                       secbool* vhdr_valid, secbool* hdr_valid,
-                                      secbool* fw_valid) {
+                                      secbool* code_valid) {
   // get boot target flag
   BOOT_TARGET boot_target = *BOOT_TARGET_FLAG_ADDR;  // cache flag
   *BOOT_TARGET_FLAG_ADDR = BOOT_TARGET_NORMAL;       // consume(reset) flag
@@ -619,11 +619,11 @@ static BOOT_TARGET decide_boot_target(vendor_header* const vhdr,
   }
 
   // check firmware
-  set_handle_flash_ecc_error(sectrue);
   char err_msg[64];
-  secbool all_good = verify_firmware(vhdr, hdr, vhdr_valid, hdr_valid, fw_valid,
-                                     err_msg, sizeof(err_msg));
 
+  set_handle_flash_ecc_error(sectrue);
+  secbool all_good = verify_firmware(vhdr, hdr, vhdr_valid, hdr_valid,
+                                     code_valid, err_msg, sizeof(err_msg));
   set_handle_flash_ecc_error(secfalse);
 
   if (all_good != sectrue) {
@@ -740,10 +740,10 @@ int main(void) {
   image_header hdr;
   secbool vhdr_valid = secfalse;
   secbool hdr_valid = secfalse;
-  secbool fw_valid = secfalse;
+  secbool code_valid = secfalse;
 
   BOOT_TARGET boot_target =
-      decide_boot_target(&vhdr, &hdr, &vhdr_valid, &hdr_valid, &fw_valid);
+      decide_boot_target(&vhdr, &hdr, &vhdr_valid, &hdr_valid, &code_valid);
   // boot_target = BOOT_TARGET_BOOTLOADER;
 
   if (boot_target == BOOT_TARGET_BOOTLOADER) {

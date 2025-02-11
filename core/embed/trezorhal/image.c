@@ -335,7 +335,7 @@ secbool check_image_contents_ADV(const vendor_header* const vhdr,
       hdr == NULL ||       // hdr pointer must valid (loose check)
       code_buffer == NULL  // buffer pointer must valid (loose check)
   ) {
-    return false;
+    return secfalse;
   }
 
   // const vars
@@ -381,14 +381,164 @@ secbool check_image_contents_ADV(const vendor_header* const vhdr,
   return result;
 }
 
-secbool install_firmware(const uint8_t* const fw_buffer, const size_t fw_size,
+secbool install_bootloader(const uint8_t* const buffer, const size_t size,
+                           char* error_msg, size_t error_msg_len,
+                           size_t* const processed,
+                           void (*const progress_callback)(int)) {
+  // sanity check
+  if (buffer == NULL ||          // pointer invalid
+      size <= 0 ||               // cannot be zero size
+      size % 4 != 0 ||           // not 32 bit aligned
+      error_msg == NULL ||       // must provide error reporting msg buffer
+      progress_callback == NULL  // must provide progress reporting function
+  )
+    return secfalse;
+
+  // vars
+  size_t processed_size = 0;
+
+  // if error reporting needed, must provide a large enough buffer
+  if (error_msg != NULL && error_msg_len < IMAGE_UTIL_ERROR_MSG_BUFFER_SIZE_MIN)
+    return secfalse;
+
+  // prepare
+  progress_callback(0);
+
+  // install
+  while (processed_size < size) {
+    // erase
+    EXEC_RETRY(
+        10, sectrue, {},
+        {
+          return flash_erase(BOOTLOADER_SECTORS[processed_size /
+                                                FLASH_BOOTLOADER_SECTOR_SIZE]);
+        },
+        {},
+        {
+          strncpy(error_msg, "Flash bootloader area erase failed!",
+                  error_msg_len);
+          return secfalse;
+        });
+
+    // unlock
+    EXEC_RETRY(
+        10, sectrue, {}, { return flash_unlock_write(); }, {},
+        {
+          strncpy(error_msg, "Flash unlock failed!", error_msg_len);
+          return secfalse;
+        });
+
+    // write
+    for (size_t sector_offset = 0; sector_offset < FLASH_BOOTLOADER_SECTOR_SIZE;
+         sector_offset += 32) {
+      // write with retry, max 10 retry allowed
+      EXEC_RETRY(
+          10, sectrue, {},
+          {
+            return flash_write_words(
+                BOOTLOADER_SECTORS[processed_size /
+                                   FLASH_BOOTLOADER_SECTOR_SIZE],
+                sector_offset, (uint32_t*)(buffer + processed_size));
+          },
+          {},
+          {
+            strncpy(error_msg, "Flash write failed!", error_msg_len);
+            return secfalse;
+          });
+
+      processed_size += ((size - processed_size) > 32)
+                            ? 32  // since we could only write 32 byte a time
+                            : (size - processed_size);
+
+      // update progress
+      progress_callback((100 * processed_size / size));
+      if (processed != NULL) *processed = processed_size;
+    }
+
+    // lock
+    EXEC_RETRY(
+        10, sectrue, {}, { return flash_lock_write(); }, {},
+        {
+          strncpy(error_msg, "Flash unlock failed!", error_msg_len);
+          return secfalse;
+        });
+  }
+
+  return sectrue;
+}
+
+/*
+  Note:
+  why load and output headers and code from here instead of individual
+  functions, is to ensure what we output is what we checked
+
+  All arguments are OPTIONAL, put NULL if not used
+
+  vhdr -> pointer to vendor header buffer, output vhdr data
+  hdr -> pointer to image header buffer, output hdr data
+  xxx_valid -> output validate results
+  error_msg, error_msg_len -> output error message, error_msg_len should be at
+  least 64 bytes
+
+  return value -> total check result
+ */
+secbool verify_bootloader(image_header* const hdr, secbool* const hdr_valid,
+                          secbool* const code_valid, char* error_msg,
+                          size_t error_msg_len) {
+  // internal vars
+  image_header _hdr = {0};
+  secbool _hdr_valid = secfalse;
+  secbool _code_valid = secfalse;
+
+  // optional arguments wipe default
+  if (hdr != NULL) memset(hdr, 0xff, sizeof(image_header));
+  if (hdr_valid != NULL) *hdr_valid = secfalse;
+  if (code_valid != NULL) *code_valid = secfalse;
+  if (error_msg != NULL) memset(error_msg, '\0', error_msg_len);
+
+  // if error reporting needed, must provide a large enough buffer
+  if (error_msg != NULL && error_msg_len < IMAGE_UTIL_ERROR_MSG_BUFFER_SIZE_MIN)
+    return secfalse;
+
+  // verify hdr
+  ExecuteCheck_ADV(
+      load_image_header((const uint8_t*)BOOTLOADER_START,
+                        BOOTLOADER_IMAGE_MAGIC, BOOTLOADER_IMAGE_MAXSIZE,
+                        FW_KEY_M, FW_KEY_N, FW_KEYS, &_hdr),
+      sectrue, {
+        if (error_msg != NULL)
+          strncpy(error_msg, "Bootloader image header invalid!", error_msg_len);
+        return secfalse;
+      });
+  _hdr_valid = sectrue;
+  if (hdr != NULL) memcpy(hdr, &_hdr, sizeof(image_header));
+  if (hdr_valid != NULL) *hdr_valid = _hdr_valid;
+
+  // verify code
+  ExecuteCheck_ADV(
+      check_image_contents_ADV(NULL, &_hdr,
+                               (const uint8_t*)BOOTLOADER_START + _hdr.hdrlen,
+                               0, _hdr.codelen),
+      sectrue, {
+        if (error_msg != NULL)
+          strncpy(error_msg, "Bootloader code invalid!", error_msg_len);
+        return secfalse;
+      });
+  _code_valid = sectrue;
+  if (code_valid != NULL) *code_valid = _code_valid;
+
+  return (((_hdr_valid == sectrue) && (_code_valid == sectrue))) ? sectrue
+                                                                 : secfalse;
+}
+
+secbool install_firmware(const uint8_t* const buffer, const size_t size,
                          char* error_msg, size_t error_msg_len,
                          size_t* const processed,
                          void (*const progress_callback)(int)) {
   // sanity check
-  if (fw_buffer == NULL ||       // pointer invalid
-      fw_size <= 0 ||            // cannot be zero size
-      fw_size % 4 != 0 ||        // not 32 bit allined
+  if (buffer == NULL ||          // pointer invalid
+      size <= 0 ||               // cannot be zero size
+      size % 4 != 0 ||           // not 32 bit aligned
       error_msg == NULL ||       // must provide error reporting msg buffer
       progress_callback == NULL  // must provide progress reporting function
   )
@@ -400,6 +550,10 @@ secbool install_firmware(const uint8_t* const fw_buffer, const size_t fw_size,
 
   // vars
   size_t processed_size = 0;
+
+  // if error reporting needed, must provide a large enough buffer
+  if (error_msg != NULL && error_msg_len < IMAGE_UTIL_ERROR_MSG_BUFFER_SIZE_MIN)
+    return secfalse;
 
   // prepare
   if (get_hw_ver() >= HW_VER_3P0A) {
@@ -420,7 +574,7 @@ secbool install_firmware(const uint8_t* const fw_buffer, const size_t fw_size,
   }
 
   // install
-  while (processed_size < fw_size) {
+  while (processed_size < size) {
     if (processed_size < fw_internal_size) {
       // install p1
 
@@ -433,7 +587,7 @@ secbool install_firmware(const uint8_t* const fw_buffer, const size_t fw_size,
           },
           {},
           {
-            strncpy(error_msg, "Flash firmware area erease failed!",
+            strncpy(error_msg, "Flash firmware area erase failed!",
                     error_msg_len);
             return secfalse;
           });
@@ -455,7 +609,7 @@ secbool install_firmware(const uint8_t* const fw_buffer, const size_t fw_size,
             {
               return flash_write_words(
                   FIRMWARE_SECTORS[processed_size / FLASH_FIRMWARE_SECTOR_SIZE],
-                  sector_offset, (uint32_t*)(fw_buffer + processed_size));
+                  sector_offset, (uint32_t*)(buffer + processed_size));
             },
             {},
             {
@@ -463,9 +617,9 @@ secbool install_firmware(const uint8_t* const fw_buffer, const size_t fw_size,
               return secfalse;
             });
 
-        processed_size += ((fw_size - processed_size) > 32)
+        processed_size += ((size - processed_size) > 32)
                               ? 32  // since we could only write 32 byte a time
-                              : (fw_size - processed_size);
+                              : (size - processed_size);
       }
 
       // lock
@@ -486,8 +640,8 @@ secbool install_firmware(const uint8_t* const fw_buffer, const size_t fw_size,
             {
               return emmc_fs_file_write(
                   "0:/data/fw_p2.bin", (processed_size - fw_internal_size),
-                  (uint8_t*)(fw_buffer + processed_size),
-                  MIN((fw_size - processed_size), FLASH_FIRMWARE_SECTOR_SIZE),
+                  (uint8_t*)(buffer + processed_size),
+                  MIN((size - processed_size), FLASH_FIRMWARE_SECTOR_SIZE),
                   &emmc_fs_processed, false, true);
             },
             {
@@ -510,7 +664,7 @@ secbool install_firmware(const uint8_t* const fw_buffer, const size_t fw_size,
             },
             {},
             {
-              strncpy(error_msg, "Flash firmware area erease failed! (QSPI)",
+              strncpy(error_msg, "Flash firmware area erase failed! (QSPI)",
                       error_msg_len);
               return secfalse;
             });
@@ -533,7 +687,7 @@ secbool install_firmware(const uint8_t* const fw_buffer, const size_t fw_size,
                 return flash_write_words(
                     FIRMWARE_SECTORS[processed_size /
                                      FLASH_FIRMWARE_SECTOR_SIZE],
-                    sector_offset, (uint32_t*)(fw_buffer + processed_size));
+                    sector_offset, (uint32_t*)(buffer + processed_size));
               },
               {},
               {
@@ -542,9 +696,9 @@ secbool install_firmware(const uint8_t* const fw_buffer, const size_t fw_size,
               });
 
           processed_size +=
-              ((fw_size - processed_size) > 32)
+              ((size - processed_size) > 32)
                   ? 32  // since we could only write 32 byte a time
-                  : (fw_size - processed_size);
+                  : (size - processed_size);
         }
 
         // lock
@@ -558,7 +712,7 @@ secbool install_firmware(const uint8_t* const fw_buffer, const size_t fw_size,
     }
 
     // update progress
-    progress_callback((1000 * processed_size / fw_size));
+    progress_callback((1000 * processed_size / size));
     if (processed != NULL) *processed = processed_size;
   }
 
@@ -578,15 +732,16 @@ secbool install_firmware(const uint8_t* const fw_buffer, const size_t fw_size,
 
 /*
   Note:
-  why load and output headers and firmware from here instead of individual
+  why load and output headers and code from here instead of individual
   functions, is to ensure what we output is what we checked
 
   All arguments are OPTIONAL, put NULL if not used
 
-  vhdr -> pointer to vender header buffer, output vhdr data
+  vhdr -> pointer to vendor header buffer, output vhdr data
   hdr -> pointer to image header buffer, output hdr data
   xxx_valid -> output validate results
-  error_msg, error_msg_len -> output error message
+  error_msg, error_msg_len -> output error message, error_msg_len should be at
+  least 64 bytes
 
   return value -> total check result
  */
@@ -609,8 +764,8 @@ secbool verify_firmware(vendor_header* const vhdr, image_header* const hdr,
   if (code_valid != NULL) *code_valid = secfalse;
   if (error_msg != NULL) memset(error_msg, '\0', error_msg_len);
 
-  // sanity check
-  if (error_msg == NULL)  // must provide error reporting msg buffer
+  // if error reporting needed, must provide a large enough buffer
+  if (error_msg != NULL && error_msg_len < IMAGE_UTIL_ERROR_MSG_BUFFER_SIZE_MIN)
     return secfalse;
 
   // const vars
@@ -620,12 +775,12 @@ secbool verify_firmware(vendor_header* const vhdr, image_header* const hdr,
       FLASH_FIRMWARE_SECTOR_SIZE *
       (FIRMWARE_SECTORS_COUNT - FIRMWARE_INNER_SECTORS_COUNT);
 
-  // verify _vhdr
+  // verify vhdr
   ExecuteCheck_ADV(load_vendor_header((const uint8_t*)FIRMWARE_START, FW_KEY_M,
                                       FW_KEY_N, FW_KEYS, &_vhdr),
                    sectrue, {
                      if (error_msg != NULL)
-                       strncpy(error_msg, "Firmware vender header invalid!",
+                       strncpy(error_msg, "Firmware vendor header invalid!",
                                error_msg_len);
                      return secfalse;
                    });
@@ -633,7 +788,7 @@ secbool verify_firmware(vendor_header* const vhdr, image_header* const hdr,
   if (vhdr != NULL) memcpy(vhdr, &_vhdr, sizeof(vendor_header));
   if (vhdr_valid != NULL) *vhdr_valid = _vhdr_valid;
 
-  // verify _hdr
+  // verify hdr
   ExecuteCheck_ADV(
       load_image_header((const uint8_t*)(FIRMWARE_START + _vhdr.hdrlen),
                         FIRMWARE_IMAGE_MAGIC, FIRMWARE_IMAGE_MAXSIZE,

@@ -99,7 +99,7 @@ uint8_t *boardloader_buf = (uint8_t *)0x24000000;
 // could ignore it. if bus fault disabled, it will elevate to hard fault, this
 // is not what we want
 static secbool handle_flash_ecc_error = secfalse;
-static void set_handle_flash_ecc_error(secbool val) {
+static inline void set_handle_flash_ecc_error(secbool val) {
   handle_flash_ecc_error = val;
 }
 
@@ -210,27 +210,17 @@ void show_poweron_bar(void) {
                      COLOR_BLACK, 2);
 }
 
-static secbool validate_bootloader(image_header *const hdr) {
-  secbool result = secfalse;
-  set_handle_flash_ecc_error(sectrue);
+static void bootloader_update_cb(int pos) {
+  // pass pos=-1 to reset last_pos is acceptable
+  // since only 0-100 will be printed
+  static int last_pos = -1;
 
-  secbool boot_hdr_valid = load_image_header(
-      (const uint8_t *)BOOTLOADER_START, BOOTLOADER_IMAGE_MAGIC,
-      BOOTLOADER_IMAGE_MAXSIZE, FW_KEY_M, FW_KEY_N, FW_KEYS, hdr);
-
-  secbool boot_code_valid = check_image_contents(
-      hdr, IMAGE_HEADER_SIZE, BOOTLOADER_SECTORS, BOOTLOADER_SECTORS_COUNT);
-
-  result = ((sectrue == boot_hdr_valid) && (sectrue == boot_code_valid))
-               ? sectrue
-               : secfalse;
-
-  set_handle_flash_ecc_error(secfalse);
-  return result;
-}
-
-static void bootloader_update_erase_cb(int pos, int len) {
-  display_printf(".");
+  if (pos != last_pos) {
+    if (pos >= 0 && pos <= 100) {
+      display_printf("\rProgress: %u%%", pos);
+    }
+    last_pos = pos;
+  }
 }
 
 static secbool try_bootloader_update(bool do_update, bool auto_reboot) {
@@ -284,115 +274,59 @@ static secbool try_bootloader_update(bool do_update, bool auto_reboot) {
   if (!do_update) return sectrue;
 
   // validate current bootloader
-  image_header hdr;
+  image_header flash_hdr;
+  secbool flash_hdr_valid = secfalse;
+  // secbool code_valid = secfalse;
+  FORCE_IGNORE_RETURN(
+      verify_bootloader(&flash_hdr, &flash_hdr_valid, NULL, NULL, 0));
 
 #if PRODUCTION
-  secbool bootloader_valid = load_image_header(
-      (const uint8_t *)BOOTLOADER_START, BOOTLOADER_IMAGE_MAGIC,
-      BOOTLOADER_IMAGE_MAXSIZE, FW_KEY_M, FW_KEY_N, FW_KEYS, &hdr);
   // handle downgrade or invalid bootloader
-  if (bootloader_valid == sectrue) {
-    if (memcmp(&file_hdr.version, &hdr.version, 4) < 0) {
+  if (flash_hdr_valid == sectrue) {
+    if (memcmp(&file_hdr.version, &flash_hdr.version, 4) < 0) {
       return secfalse;
     }
   }
 #endif
 
   // update process
-  secbool temp_state;
-
   dispaly_boardloader_title("Bootloader Update\n",
                             STAY_REASON_UPDATE_NEXT_TARGET);
   display_printf("!!! DO NOT POWER OFF !!!\n");
   display_printf("\r\n");
 
-  // erase
-  display_printf("\rErasing: ");
-  temp_state = flash_erase_sectors(BOOTLOADER_SECTORS, BOOTLOADER_SECTORS_COUNT,
-                                   bootloader_update_erase_cb);
-  if (temp_state != sectrue) {
-    display_printf(" fail\n");
-    while (true) {
-      hal_delay(100);
-    }  // die here
-  } else
-    display_printf(" done\n");
+  char err_msg[64];
 
-  // unlock
-  display_printf("\rPreparing Write: ");
-  temp_state = flash_unlock_write();
-  if (temp_state != sectrue) {
-    display_printf(" fail\n");
-    while (true) {
-      hal_delay(100);
-    }  // die here
-  } else
-    display_printf(" done\n");
-
-  // write
-  size_t processed_bytes = 0;
-  size_t flash_sectors_index = 0;
-  uint16_t last_progress = 0;
-  uint16_t current_progress = 0;
-  while (processed_bytes < file_info.size) {
-    for (size_t sector_offset = 0;
-         sector_offset <
-         flash_sector_size(BOOTLOADER_SECTORS[flash_sectors_index]);
-         sector_offset += 32) {
-      temp_state = flash_write_words(
-          BOOTLOADER_SECTORS[flash_sectors_index], sector_offset,
-          (uint32_t *)(boardloader_buf + processed_bytes));
-      if (temp_state != sectrue) break;
-      processed_bytes += ((file_info.size - processed_bytes) > 32)
-                             ? 32  // since we could only write 32 byte a time
-                             : (file_info.size - processed_bytes);
-
-      current_progress = (uint16_t)(processed_bytes * 100 / file_info.size);
-      if ((last_progress != current_progress)) {
-        display_printf("\rWriting: %u%%", current_progress);
-        last_progress = current_progress;
-        hal_delay(100);  // slow down a little to reduce lcd refresh flickering
-      }
-    }
-    if (temp_state != sectrue) break;
-
-    flash_sectors_index++;
-  }
-  if (temp_state != sectrue) {
-    display_printf(" fail\n");
-    while (true) {
-      hal_delay(100);
-    }  // die here
-  } else
-    display_printf(" done\n");
-
-  // lock
-  display_printf("\rFinishing Write: ");
-  temp_state = flash_lock_write();
-  if (temp_state != sectrue) {
-    display_printf(" fail\n");
-    while (true) {
-      hal_delay(100);
-    }  // die here
-  } else
-    display_printf(" done\n");
-
-  // verify again to make sure
-  if (sectrue != validate_bootloader(&hdr)) {
-    // if not valid, erase anyways
-    display_printf("Verifiy error! Bootloader will be erased!\n");
+  // install bootloader
+  if (sectrue != install_bootloader(boardloader_buf, file_info.size, err_msg,
+                                    sizeof(err_msg), NULL,
+                                    bootloader_update_cb)) {
+    display_printf("Install error! Bootloader will be erased!\n");
+    display_printf("Detail: %s", err_msg);
     FORCE_IGNORE_RETURN(flash_erase_sectors(BOOTLOADER_SECTORS,
                                             BOOTLOADER_SECTORS_COUNT, NULL));
+    return secfalse;
   }
+  display_printf("\n");
+
+  // verify new bootloader
+  if (sectrue !=
+      verify_bootloader(NULL, NULL, NULL, err_msg, sizeof(err_msg))) {
+    // if not valid, erase anyways
+    display_printf("\n");
+    display_printf("Verifiy error! Bootloader will be erased!\n");
+    display_printf("Detail: %s\n", err_msg);
+    FORCE_IGNORE_RETURN(flash_erase_sectors(BOOTLOADER_SECTORS,
+                                            BOOTLOADER_SECTORS_COUNT, NULL));
+    return secfalse;
+  }
+  display_printf("\n");
 
   // remove file
   display_printf("\rRemoving Payload: ");
-  if (!emmc_fs_file_delete(new_bootloader_path_p)) {
+  if (!emmc_fs_file_delete(new_bootloader_path_p))
     display_printf(" fail\n");
-    while (true) {
-      hal_delay(100);
-    }  // die here
-  } else
+  else
     display_printf(" done\n");
 
   // reboot
@@ -543,10 +477,13 @@ static void touch_area_test()
 }
 #endif
 
-static BOOT_TARGET decide_boot_target(STAY_REASON *stay_reason) {
+static BOOT_TARGET decide_boot_target(STAY_REASON* stay_reason,
+                                      image_header* const hdr,
+                                      secbool* hdr_valid, secbool* code_valid) {
   // get boot target flag
   BOOT_TARGET boot_target = *BOOT_TARGET_FLAG_ADDR;  // cache flag
   *BOOT_TARGET_FLAG_ADDR = BOOT_TARGET_NORMAL;       // consume(reset) flag
+
   // handle stay reason
   STAY_REASON dummy_stay_reason;
   if (stay_reason == NULL) {
@@ -648,8 +585,7 @@ static BOOT_TARGET decide_boot_target(STAY_REASON *stay_reason) {
   }
 
   // check bootloader
-  image_header hdr;
-  if (sectrue != validate_bootloader(&hdr)) {
+  if (sectrue != verify_bootloader(hdr, hdr_valid, code_valid, NULL, 0)) {
     boot_target = BOOT_TARGET_BOARDLOADER;
     *stay_reason = STAY_REASON_INVALID_NEXT_TARGET;
     return boot_target;
@@ -750,6 +686,7 @@ int main(void) {
 
   // fault handler
   bus_fault_enable();  // it's here since requires user interface
+  set_handle_flash_ecc_error(sectrue);
 
   // periph initialize
   flash_otp_init();
@@ -776,7 +713,11 @@ int main(void) {
 #endif
 
   STAY_REASON stay_reason;
-  BOOT_TARGET boot_target = decide_boot_target(&stay_reason);
+  image_header hdr;
+  secbool hdr_valid = secfalse;
+  secbool code_valid = secfalse;
+  BOOT_TARGET boot_target =
+      decide_boot_target(&stay_reason, &hdr, &hdr_valid, &code_valid);
 
   if (boot_target == BOOT_TARGET_BOARDLOADER) {
     if (stay_reason == STAY_REASON_UPDATE_NEXT_TARGET) {
@@ -800,6 +741,7 @@ int main(void) {
 
   *BOOT_TARGET_FLAG_ADDR = boot_target;  // set flag for bootloader to comsume
 
+  set_handle_flash_ecc_error(secfalse);
   bus_fault_disable();
 
   SCB_CleanDCache();  // TODO: needed?
