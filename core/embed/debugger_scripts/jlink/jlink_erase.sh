@@ -1,6 +1,6 @@
 #!/bin/bash
-# $1 -> address
-# $2 -> size in byte
+# $1 -> begin address
+# $2 -> end address
 
 tee TempFlashScript.jlink > /dev/null << EOT
 usb $JLINK_SN
@@ -8,8 +8,7 @@ device OneKeyH7
 SelectInterface swd
 speed 20000
 RSetType 0
-halt
-Erase $1 $2
+Erase $1 $2 noreset
 rx 100
 g
 exit

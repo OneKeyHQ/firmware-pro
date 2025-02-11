@@ -228,6 +228,12 @@ flash_boardloader_reflash_dev_jlink: $(BOAR_DEV_REFLASH_BUILD_DIR)/boardloader_r
 flash_bootloader_jlink: $(BOOTLOADER_BUILD_DIR)/bootloader.bin ## flash bootloader using JLink
 	embed/debugger_scripts/jlink/jlink_write.sh $(BOOTLOADER_BUILD_DIR)/bootloader.bin $(BOOTLOADER_START)
 
+erase_board_jlink:
+	embed/debugger_scripts/jlink/jlink_erase.sh $(BOARDLOADER_START) $$(($(BOARDLOADER_START)+0x1F000))
+
+erase_boot_jlink:
+	embed/debugger_scripts/jlink/jlink_erase.sh $(BOOTLOADER_START) $$(($(BOOTLOADER_START)+0x3E000))
+
 erase_firmware_jlink:
 	embed/debugger_scripts/jlink/jlink_erase.sh $(FIRMWARE_P1_START) 0x180000
 	embed/debugger_scripts/jlink/jlink_erase.sh $(FIRMWARE_P2_START) 0x200000

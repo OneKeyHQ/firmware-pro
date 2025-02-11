@@ -8,8 +8,7 @@ device OneKeyH7
 SelectInterface swd
 speed 20000
 RSetType 0
-halt
-loadbin $1 $2
+LoadFile $1 $2 noreset
 rx 100
 g
 exit
