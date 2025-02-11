@@ -640,7 +640,13 @@ static BOOT_TARGET decide_boot_target(vendor_header* const vhdr,
 int main(void) {
   SystemCoreClockUpdate();
   dwt_init();
-  mpu_config_bootloader();
+
+  mpu_config_boardloader(sectrue, secfalse);
+  mpu_config_bootloader(sectrue, sectrue);
+  mpu_config_firmware(sectrue, secfalse);
+  mpu_config_base();  // base config last as it contains deny access layers and
+                      // mpu may already running
+  mpu_ctrl(sectrue);  // ensure enabled
 
   lcd_ltdc_dsi_disable();
   sdram_reinit();
@@ -786,7 +792,8 @@ int main(void) {
 
     bus_fault_disable();
 
-    mpu_config_off();
+    // enable firmware region
+    mpu_config_firmware(sectrue, sectrue);
 
     jump_to(FIRMWARE_START + vhdr.hdrlen + hdr.hdrlen);
   }

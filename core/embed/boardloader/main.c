@@ -709,7 +709,6 @@ static void usb_connect_switch(void) {
         usb_opened = true;
       }
     }
-
   } else {
     counter0 = 0;
     counter1++;
@@ -735,7 +734,12 @@ int main(void) {
 
   // enforce protection
   flash_option_bytes_init();
-  mpu_config_boardloader();
+
+  mpu_config_boardloader(sectrue, sectrue);
+  mpu_config_bootloader(sectrue, secfalse);
+  mpu_config_base();  // base config last as it contains deny access layers and
+                      // mpu may already running
+  mpu_ctrl(sectrue);  // ensure enabled
 
   // user interface
   lcd_init();
@@ -798,10 +802,11 @@ int main(void) {
 
   bus_fault_disable();
 
-  // mpu_config_off();
+  SCB_CleanDCache();  // TODO: needed?
 
-  SCB_CleanDCache();
-  jump_to(BOOTLOADER_START + IMAGE_HEADER_SIZE);
+  mpu_config_bootloader(sectrue, sectrue);
+
+  jump_to(BOOTLOADER_START + hdr.hdrlen);
 
   return 0;
 }

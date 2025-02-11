@@ -97,9 +97,15 @@ int main(void) {
   extern uint32_t _vector_offset;
   SCB->VTOR = (uint32_t)&_vector_offset;
 
+  mpu_config_boardloader(sectrue, secfalse);
+  mpu_config_bootloader(sectrue, secfalse);
+  mpu_config_firmware(sectrue, sectrue);
+  mpu_config_base();  // base config last as it contains deny access layers and
+                      // mpu may already running
+  mpu_ctrl(sectrue);  // ensure enabled
+
   SystemCoreClockUpdate();
   dwt_init();
-  mpu_config_firmware();
   lcd_ltdc_dsi_disable();
   sdram_reinit();
   // lcd_para_init(DISPLAY_RESX, DISPLAY_RESY, LCD_PIXEL_FORMAT_RGB565);
