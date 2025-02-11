@@ -862,5 +862,10 @@ translations = [
     "Batería baja",
     "Apagando",
     "Bloqueo/Apagado Automático",
+    "Firma en bruto de Solana",
+    "Permite firmar mensajes sin procesar de Solana sin procesamiento ni validación. Esto puede exponerte a phishing, firmas ciegas y aprobaciones no autorizadas. Úsalo con precaución.",
+    "¿Habilitar la firma sin procesar de Solana?",
+    "Esto puede exponerte a phishing, firmas ciegas y transacciones no autorizadas. Activa solo si comprendes completamente los riesgos.",
+    "Riesgo de phishing y firma a ciegas. Proceda solo si confía en la fuente.",
 ]
 # fmt: on

@@ -862,5 +862,10 @@ translations = [
     "Batteria scarica",
     "Spegnimento",
     "Blocco automatico/spegnimento",
+    "Firma Raw di Solana",
+    "Permette di firmare messaggi Solana grezzi senza elaborazione o validazione. Questo potrebbe esporvi a phishing, firme alla cieca e approvazioni non autorizzate. Usare con cautela.",
+    "Abilitare Solana Raw Signing?",
+    "Questo potrebbe esporvi a phishing, firme alla cieca e transazioni non autorizzate. Abilitate solo se comprendete pienamente i rischi.",
+    "Rischio di phishing e firma alla cieca. Procedi solo se ti fidi della fonte.",
 ]
 # fmt: on

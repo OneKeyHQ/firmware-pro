@@ -862,5 +862,10 @@ translations = [
     "Batterie faible",
     "Mise hors tension",
     "Verrouillage/Arrêt automatique",
+    "Signature brute Solana",
+    "Permet de signer des messages Solana bruts sans traitement ni validation. Cela peut vous exposer à des tentatives de phishing, à des signatures aveugles et à des approbations non autorisées. Utilisez avec prudence.",
+    "Activer la signature brute Solana ?",
+    "Cela peut vous exposer à des tentatives de phishing, à des signatures à l'aveugle et à des transactions non autorisées. Activez uniquement si vous comprenez pleinement les risques.",
+    "Risque de phishing et de signature à l'aveugle. Ne continuez que si vous faites confiance à la source.",
 ]
 # fmt: on

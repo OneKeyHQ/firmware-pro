@@ -862,5 +862,10 @@ translations = [
     "Low Battery",
     "Powering off",
     "Auto Lock/Shutdown",
+    "Solana Raw Signing",
+    "Allows signing raw Solana messages without processing or validation. This may expose you to phishing, blind signing, and unauthorized approvals. Use with caution.",
+    "Enable Solana Raw Signing?",
+    "This may expose you to phishing, blind signing, and unauthorized transactions. Enable only if you fully understand the risks.",
+    "Risk of phishing & blind signing. Proceed only if you trust the source.",
 ]
 # fmt: on

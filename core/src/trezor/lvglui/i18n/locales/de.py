@@ -862,5 +862,10 @@ translations = [
     "Schwache Batterie",
     "Ausschalten",
     "Automatische Sperre/Abschaltung",
+    "Solana Raw Signing",
+    "Ermöglicht das Signieren von rohen Solana-Nachrichten ohne Verarbeitung oder Validierung. Dies kann Sie Phishing, blindem Signieren und unbefugten Genehmigungen aussetzen. Verwenden Sie es mit Vorsicht.",
+    "Solana Raw Signing aktivieren?",
+    "Dies kann Sie Phishing, blindem Signieren und unautorisierten Transaktionen aussetzen. Aktivieren Sie dies nur, wenn Sie die Risiken vollständig verstehen.",
+    "Risiko von Phishing & blindem Signieren. Fahren Sie nur fort, wenn Sie der Quelle vertrauen.",
 ]
 # fmt: on

@@ -1883,4 +1883,17 @@ POWER_ON_LOW_BATTERY_TITLE = 859
 POWER_ON_LOW_BATTERY_DESC = 860
 # Auto Lock/Shutdown
 ITEM__AUTO_LOCK_AND_SHUTDOWN = 861
+# Solana Raw Signing
+SECURITY__SOLANA_RAW_SIGNING_TITLE = 862
+# Allows signing raw Solana messages without processing or validation. This ma
+# y expose you to phishing, blind signing, and unauthorized approvals. Use wit
+# h caution.
+SECURITY__SOLANA_RAW_SIGNING_DESC = 863
+# Enable Solana Raw Signing?
+SECURITY__SOLANA_RAW_SIGNING_ENABLE_TITLE = 864
+# This may expose you to phishing, blind signing, and unauthorized transaction
+# s. Enable only if you fully understand the risks.
+SECURITY__SOLANA_RAW_SIGNING_ENABLE_DESC = 865
+# Risk of phishing & blind signing. Proceed only if you trust the source.
+SECURITY__SOLANA_RAW_SIGNING_TX_WARNING = 866
 # fmt: on

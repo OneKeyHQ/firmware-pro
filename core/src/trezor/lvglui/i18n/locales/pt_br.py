@@ -862,5 +862,10 @@ translations = [
     "Bateria fraca",
     "Desligando",
     "Bloqueio/Desligamento Automático",
+    "Assinatura Bruta Solana",
+    "Permite assinar mensagens brutas do Solana sem processamento ou validação. Isso pode expô-lo a phishing, assinaturas cegas e aprovações não autorizadas. Use com cautela.",
+    "Ativar Assinatura Bruta Solana?",
+    "Isso pode expor você a phishing, assinaturas cegas e transações não autorizadas. Ative apenas se você compreender totalmente os riscos.",
+    "Risco de phishing e assinatura cega. Prossiga apenas se confiar na fonte.",
 ]
 # fmt: on
