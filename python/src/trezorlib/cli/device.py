@@ -482,7 +482,7 @@ def reboot(client: "TrezorClient", reboot_type: int) -> None:
 @cli.command()
 # fmt: off
 @click.option("-p", "--path", required=True, help="Remote firmware file path (e.g. 0:fw.bin)")
-@click.option("-f", "--force_erease", required=False, is_flag=True, help="Force erease and factory reset the device")
+@click.option("-f", "--force_erease", required=False, is_flag=True, help="Force erase and factory reset the device")
 # fmt: on
 @with_client
 def firmware_update_emmc(client: "TrezorClient",path:str, force_erease:bool) -> None:

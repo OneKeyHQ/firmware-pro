@@ -539,7 +539,7 @@ static int check_file_contents(uint8_t iface_num, const uint8_t* buffer, uint32_
                 load_vendor_header(p_data, FW_KEY_M, FW_KEY_N, FW_KEYS, &file_vhdr), sectrue,
                 {
                     send_failure(
-                        iface_num, FailureType_Failure_ProcessError, "Update file vender header invalid!"
+                        iface_num, FailureType_Failure_ProcessError, "Update file vendor header invalid!"
                     );
                     return -1;
                 }
@@ -898,7 +898,7 @@ int process_msg_FirmwareUpdateEmmc(uint8_t iface_num, uint32_t msg_size, uint8_t
                 load_vendor_header(p_data, FW_KEY_M, FW_KEY_N, FW_KEYS, &file_vhdr), sectrue,
                 {
                     send_failure(
-                        iface_num, FailureType_Failure_ProcessError, "Update file vender header invalid!"
+                        iface_num, FailureType_Failure_ProcessError, "Update file vendor header invalid!"
                     );
                     return -1;
                 }

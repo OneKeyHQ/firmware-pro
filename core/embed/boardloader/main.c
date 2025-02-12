@@ -162,7 +162,7 @@ const char *const STAY_REASON_str[] = {
     ENUM_NAME_ARRAY_ITEM(STAY_REASON_UPDATE_NEXT_TARGET),
     ENUM_NAME_ARRAY_ITEM(STAY_REASON_UNKNOWN),
 };
-static inline void dispaly_boardloader_title(char *message,
+static inline void display_boardloader_title(char *message,
                                              STAY_REASON stay_reason) {
   if ((stay_reason < STAY_REASON_NONE) || (stay_reason > STAY_REASON_UNKNOWN))
     stay_reason = STAY_REASON_UNKNOWN;
@@ -290,7 +290,7 @@ static secbool try_bootloader_update(bool do_update, bool auto_reboot) {
 #endif
 
   // update process
-  dispaly_boardloader_title("Bootloader Update\n",
+  display_boardloader_title("Bootloader Update\n",
                             STAY_REASON_UPDATE_NEXT_TARGET);
   display_printf("!!! DO NOT POWER OFF !!!\n");
   display_printf("\r\n");
@@ -314,7 +314,7 @@ static secbool try_bootloader_update(bool do_update, bool auto_reboot) {
       verify_bootloader(NULL, NULL, NULL, err_msg, sizeof(err_msg))) {
     // if not valid, erase anyways
     display_printf("\n");
-    display_printf("Verifiy error! Bootloader will be erased!\n");
+    display_printf("Verify error! Bootloader will be erased!\n");
     display_printf("Detail: %s\n", err_msg);
     FORCE_IGNORE_RETURN(flash_erase_sectors(BOOTLOADER_SECTORS,
                                             BOOTLOADER_SECTORS_COUNT, NULL));
@@ -477,9 +477,9 @@ static void touch_area_test()
 }
 #endif
 
-static BOOT_TARGET decide_boot_target(STAY_REASON* stay_reason,
-                                      image_header* const hdr,
-                                      secbool* hdr_valid, secbool* code_valid) {
+static BOOT_TARGET decide_boot_target(STAY_REASON *stay_reason,
+                                      image_header *const hdr,
+                                      secbool *hdr_valid, secbool *code_valid) {
   // get boot target flag
   BOOT_TARGET boot_target = *BOOT_TARGET_FLAG_ADDR;  // cache flag
   *BOOT_TARGET_FLAG_ADDR = BOOT_TARGET_NORMAL;       // consume(reset) flag
@@ -723,7 +723,7 @@ int main(void) {
     if (stay_reason == STAY_REASON_UPDATE_NEXT_TARGET) {
       try_bootloader_update(true, true);
     } else {
-      dispaly_boardloader_title("USB Mass Storage Mode\n", stay_reason);
+      display_boardloader_title("USB Mass Storage Mode\n", stay_reason);
 
       char serial[USB_SIZ_STRING_SERIAL];
       get_device_serial(serial, sizeof(serial));
