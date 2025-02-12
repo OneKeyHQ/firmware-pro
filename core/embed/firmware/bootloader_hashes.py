@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 import glob
-try:
-    from hashlib import blake2s
-except ImportError:
-    from pyblake2 import blake2s
+from hashlib import blake2s
 
 ALIGNED_SIZE = 128 * 1024
 
