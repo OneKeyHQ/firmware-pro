@@ -43,27 +43,27 @@ V1_BOOTLOADER_KEYS = [
 V2_BOARDLOADER_KEYS = [
     bytes.fromhex(key)
     for key in (
-        "0eb9856be9ba7e972c7f34eac1ed9b6fd0efd172ec00faf0c589759da4ddfba0",
-        "ac8ab40b32c98655798fd5da5e192be27a22306ea05c6d277cdff4a3f4125cd8",
-        "ce0fcd12543ef5936cf2804982136707863d17295faced72af171d6e6513ff06",
+        "57114f0aa669d2f837e040ab9bb51c00991209f84bfd7bf0f893676246fba24a",
+        "dcae8e37df5c246027c03aa951bd6ec6caa7ad32c166b1f548a4efcd88ca3ca5",
+        "772912ab61d1dc4f9133325e57e146ab9fac17a4572c6fcdf355f80036100004",
     )
 ]
 
 V2_BOARDLOADER_DEV_KEYS = [
     bytes.fromhex(key)
     for key in (
-        "db995fe25169d141cab9bbba92baa01f9f2e1ece7df4cb2ac05190f37fcc1f9d",
-        "2152f8d19b791d24453242e15f2eab6cb7cffa7b6a5ed30097960e069881db12",
-        "22fc297792f0b6ffc0bfcfdb7edb0c0aa14e025a365ec0e342e86e3829cb74b6",
+        "57114f0aa669d2f837e040ab9bb51c00991209f84bfd7bf0f893676246fba24a",
+        "dcae8e37df5c246027c03aa951bd6ec6caa7ad32c166b1f548a4efcd88ca3ca5",
+        "772912ab61d1dc4f9133325e57e146ab9fac17a4572c6fcdf355f80036100004",
     )
 ]
 
 V2_BOOTLOADER_KEYS = [
     bytes.fromhex(key)
     for key in (
-        "c2c87a49c5a3460977fbb2ec9dfe60f06bd694db8244bd4981fe3b7a26307f3f",
-        "80d036b08739b846f4cb77593078deb25dc9487aedcf52e30b4fb7cd7024178a",
-        "b8307a71f552c60a4cbb317ff48b82cdbf6b6bb5f04c920fec7badf017883751",
+        "57114f0aa669d2f837e040ab9bb51c00991209f84bfd7bf0f893676246fba24a",
+        "dcae8e37df5c246027c03aa951bd6ec6caa7ad32c166b1f548a4efcd88ca3ca5",
+        "772912ab61d1dc4f9133325e57e146ab9fac17a4572c6fcdf355f80036100004",
     )
 ]
 
