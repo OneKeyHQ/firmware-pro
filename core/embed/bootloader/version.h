@@ -1,5 +1,5 @@
 #define VERSION_MAJOR 2
-#define VERSION_MINOR 6
+#define VERSION_MINOR 7
 #define VERSION_PATCH 0
 #define VERSION_BUILD 0
 #define VERSION_UINT32                                            \
@@ -7,7 +7,7 @@
    (VERSION_BUILD << 24))
 
 #define FIX_VERSION_MAJOR 2
-#define FIX_VERSION_MINOR 6
+#define FIX_VERSION_MINOR 7
 #define FIX_VERSION_PATCH 0
 #define FIX_VERSION_BUILD 0
 
