@@ -13,8 +13,6 @@ from apps.common.keychain import Keychain, auto_keychain
 
 from . import ICON, PRIMARY_COLOR
 from .helper import INTENT_BYTES, benfen_address_from_pubkey, try_convert_to_bfc_address
-from .layout import require_confirm_fee, require_show_overview
-from .tx_parser import TransactionParser
 
 
 async def process_transaction(
@@ -23,76 +21,10 @@ async def process_transaction(
     tx_bytes: bytes,
     coin_type: bytes,
 ) -> bytes:
-    parser = TransactionParser()
-
     intent = tx_bytes[:3]
     if INTENT_BYTES != intent:
         raise wire.DataError("Invalid raw tx")
-
-    if coin_type:
-        try:
-            if not all(c < 128 for c in coin_type):
-                await confirm_blind_sign_common(ctx, address, tx_bytes)
-                return blake2b(data=tx_bytes, outlen=32).digest()
-            currency_symbol = coin_type.decode("ascii")
-            if currency_symbol and "::" in currency_symbol:
-                currency_symbol = currency_symbol.split("::")[-1]
-            ALLOWED_TOKENS = {
-                "BJPY",
-                "BUSD",
-                "LONG",
-                "BF_USDC",
-                "BF_USDT",
-                "BFC",
-                "BAUD",
-                "BCAD",
-                "BEUR",
-                "BIDR",
-                "BINR",
-                "BKRW",
-                "BMXN",
-            }
-            if currency_symbol not in ALLOWED_TOKENS:
-                currency_symbol = "UNKNOWN"
-        except UnicodeDecodeError:
-            await confirm_blind_sign_common(ctx, address, tx_bytes)
-            return blake2b(data=tx_bytes, outlen=32).digest()
-    else:
-        await confirm_blind_sign_common(ctx, address, tx_bytes)
-        return blake2b(data=tx_bytes, outlen=32).digest()
-
-    parsed_tx = parser.parse_tx(tx_bytes)
-    if parsed_tx is None:
-        await confirm_blind_sign_common(ctx, address, tx_bytes)
-        return blake2b(data=tx_bytes, outlen=32).digest()
-
-    is_valid = validate_transaction(parsed_tx)
-
-    if is_valid:
-        (
-            amount_raw,
-            recipient_bfc,
-            sender_bfc,
-            max_gas_fee,
-        ) = parse_transaction(parsed_tx)
-        show_details = await require_show_overview(
-            ctx,
-            recipient_bfc,
-            amount_raw,
-            currency_symbol,
-        )
-        if show_details:
-            await require_confirm_fee(
-                ctx,
-                from_address=sender_bfc,
-                to_address=recipient_bfc,
-                value=amount_raw,
-                gas_price=max_gas_fee,
-                gas_budget=max_gas_fee,
-                currency_symbol=currency_symbol,
-            )
-    else:
-        await confirm_blind_sign_common(ctx, address, tx_bytes)
+    await confirm_blind_sign_common(ctx, address, tx_bytes)
     return blake2b(data=tx_bytes, outlen=32).digest()
 
 
