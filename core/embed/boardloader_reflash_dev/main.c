@@ -282,7 +282,7 @@ static secbool boardloader_update(bool auto_reboot) {
 
 int main(void) {
   SystemCoreClockUpdate();
-  mpu_config_off();
+  mpu_ctrl(secfalse);
   dwt_init();
 
   // user interface
