@@ -603,6 +603,13 @@ static BOOT_TARGET decide_boot_target(vendor_header* const vhdr,
   BOOT_TARGET boot_target = *BOOT_TARGET_FLAG_ADDR;  // cache flag
   *BOOT_TARGET_FLAG_ADDR = BOOT_TARGET_NORMAL;       // consume(reset) flag
 
+  // verify at the beginning to ensure results are populated
+  char err_msg[64];
+  set_handle_flash_ecc_error(sectrue);
+  secbool all_good = verify_firmware(vhdr, hdr, vhdr_valid, hdr_valid,
+                                     code_valid, err_msg, sizeof(err_msg));
+  set_handle_flash_ecc_error(secfalse);
+
   // if boot target already set to this level, no more checks
   if (boot_target == BOOT_TARGET_BOOTLOADER) return boot_target;
 
@@ -619,13 +626,6 @@ static BOOT_TARGET decide_boot_target(vendor_header* const vhdr,
   }
 
   // check firmware
-  char err_msg[64];
-
-  set_handle_flash_ecc_error(sectrue);
-  secbool all_good = verify_firmware(vhdr, hdr, vhdr_valid, hdr_valid,
-                                     code_valid, err_msg, sizeof(err_msg));
-  set_handle_flash_ecc_error(secfalse);
-
   if (all_good != sectrue) {
     boot_target = BOOT_TARGET_BOOTLOADER;
     return boot_target;
