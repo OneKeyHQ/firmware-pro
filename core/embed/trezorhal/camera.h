@@ -33,7 +33,7 @@ unsigned char camera_sccb_read_reg(unsigned char reg_addr, unsigned char* data);
 unsigned char camera_sccb_write_reg(unsigned char reg_addr, unsigned char* data);
 bool camera_get_id(uint16_t* id);
 bool camera_is_online(void);
-void camera_capture_start(void);
+bool camera_capture_start(void);
 int camera_capture_done(void);
 void camera_power_off(void);
 void camera_power_on(void);

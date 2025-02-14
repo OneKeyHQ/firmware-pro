@@ -266,14 +266,19 @@ void camera_resume(void)
     HAL_DCMI_Resume(&DCMI_Handle);
 }
 
-void camera_capture_start(void)
+bool camera_capture_start(void)
 {
     camera_power_on();
+    if ( !camera_configured )
+    {
+        return false;
+    }
 #if CAMERA_CAPTURE_MODE == 0
     camera_start((uint8_t*)CAM_BUF_ADDRESS, DCMI_MODE_SNAPSHOT);
 #else
     camera_start((uint8_t*)CAM_BUF_ADDRESS, DCMI_MODE_CONTINUOUS);
 #endif
+    return true;
 }
 
 int camera_capture_done(void)
@@ -338,6 +343,10 @@ void camera_power_on(void)
         camera_delay(10);
         CAMERA_RST_HIGH();
         camera_delay(20);
+        if ( !camera_is_online() )
+        {
+            return;
+        }
         camera_powered = true;
     }
 
