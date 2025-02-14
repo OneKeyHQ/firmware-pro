@@ -504,7 +504,7 @@ def show_warning(
     content: str,
     header: str = "Warning",
     subheader: str | None = None,
-    button: str = "Try again",
+    button: str | None = None,
     br_code: ButtonRequestType = ButtonRequestType.Warning,
     icon: str = "A:/res/warning.png",
     icon_color: int = ui.RED,
