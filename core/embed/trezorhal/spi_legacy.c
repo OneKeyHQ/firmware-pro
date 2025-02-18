@@ -91,6 +91,7 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef* hspi)
     {
         spi_rx_event = 0;
     }
+    SCB_CleanInvalidateDCache();
     if ( !fifo_write_no_overflow(&spi_fifo_in, dma_recv_buf, hspi->RxXferSize) )
     {
         memset(dma_recv_buf, 0, hspi->RxXferSize);
@@ -288,7 +289,7 @@ int32_t spi_slave_send(uint8_t* buf, uint32_t size, int32_t timeout)
     }
     while ( spi_abort_event )
         ;
-
+    SCB_CleanInvalidateDCache();
     if ( HAL_SPI_Transmit_DMA(&spi, dma_send_buf, msg_size) != HAL_OK )
     {
         goto END;
@@ -445,6 +446,7 @@ void spi_cs_irq_handler(void)
         if ( recv_len > 0 )
         {
             ST_BLE_STATUS_IO_BUSY();
+            SCB_CleanInvalidateDCache();
             fifo_write_no_overflow(&spi_fifo_in, dma_recv_buf, recv_len);
             ST_BLE_STATUS_IO_IDLE();
         }

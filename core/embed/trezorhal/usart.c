@@ -145,6 +145,7 @@ void ble_usart_send(uint8_t *buf, uint32_t len) {
     uart_tx_done = false;
     uint32_t send_len = len > UART_PACKET_MAX_LEN ? UART_PACKET_MAX_LEN : len;
     memcpy(dma_uart_send_buf, buf, send_len);
+    SCB_CleanInvalidateDCache();
     HAL_UART_Transmit_DMA(huart, dma_uart_send_buf, send_len);
     uint32_t start = HAL_GetTick();
     while (!uart_tx_done) {
@@ -260,6 +261,7 @@ void UARTx_DMA_TX_IRQHandler(void) { HAL_DMA_IRQHandler(huart->hdmatx); }
 void UARTx_DMA_RX_IRQHandler(void) { HAL_DMA_IRQHandler(huart->hdmarx); }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
+  SCB_CleanInvalidateDCache();
   usart_rev_package_dma(dma_uart_rev_buf, sizeof(dma_uart_rev_buf));
   HAL_UART_Receive_DMA(huart, dma_uart_rev_buf, sizeof(dma_uart_rev_buf));
 }
@@ -276,6 +278,7 @@ void UART4_IRQHandler(void) {
     usart_fifo_len =
         sizeof(dma_uart_rev_buf) - __HAL_DMA_GET_COUNTER(huart->hdmarx);
     if (usart_fifo_len > 0) {
+      SCB_CleanInvalidateDCache();
       usart_rev_package_dma(dma_uart_rev_buf, usart_fifo_len);
     }
     HAL_UART_Receive_DMA(huart, dma_uart_rev_buf, sizeof(dma_uart_rev_buf));
