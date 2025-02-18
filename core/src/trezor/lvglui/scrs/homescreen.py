@@ -3233,6 +3233,8 @@ class BacklightSetting(AnimScreen):
         if target == self.slider:
             value = target.get_value()
             self.temp_brightness = value
+            if value < style.BACKLIGHT_MIN:
+                value = style.BACKLIGHT_MIN
             display.backlight(value)
             self.percent.set_text(brightness2_percent_str(value))
 

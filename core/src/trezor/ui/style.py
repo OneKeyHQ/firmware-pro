@@ -11,6 +11,8 @@ BACKLIGHT_LOW = const(45)
 BACKLIGHT_DIM = const(5)
 BACKLIGHT_NONE = const(2)
 BACKLIGHT_MAX = const(255)
+# 4% of the period is the minimum value
+BACKLIGHT_MIN = const(BACKLIGHT_MAX * 4 // 100)
 
 # color palette
 RED = rgb(0xFF, 0x00, 0x00)
