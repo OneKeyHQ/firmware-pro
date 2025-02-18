@@ -37,16 +37,14 @@
 #define MPU_REGION_SDRAM MPU_REGION_NUMBER2
 #define MPU_REGION_FLASH MPU_REGION_NUMBER3
 #define MPU_REGION_FLASH_OTP MPU_REGION_NUMBER4
-#define MPU_REGION_SDRAM_LCD_FRAMEBUFFER MPU_REGION_NUMBER5
 
 // stages
-#define MPU_REGION_FLASH_BOARD MPU_REGION_NUMBER6
-#define MPU_REGION_FLASH_BOOT MPU_REGION_NUMBER7
-#define MPU_REGION_FLASH_FWBK1 MPU_REGION_NUMBER8
-#define MPU_REGION_FLASH_FWBK2 MPU_REGION_NUMBER9
+#define MPU_REGION_FLASH_BOARD MPU_REGION_NUMBER5
+#define MPU_REGION_FLASH_BOOT MPU_REGION_NUMBER6
+#define MPU_REGION_FLASH_FWBK1 MPU_REGION_NUMBER7
+#define MPU_REGION_FLASH_FWBK2 MPU_REGION_NUMBER8
 // --- misc
-#define MPU_REGION_QSPI_FLASH MPU_REGION_NUMBER10
-#define MPU_REGION_SDRAM_DISPLAY_BUFFER MPU_REGION_NUMBER11
+#define MPU_REGION_QSPI_FLASH MPU_REGION_NUMBER9
 
 // --- flash subregion for stages
 #define MPU_SUBREGION_MASK_BK1_BOARD (uint8_t)(~0b00000001U)
@@ -107,12 +105,12 @@ void mpu_config_base() {
     mpu_init_struct.BaseAddress = 0xD0000000;
     mpu_init_struct.Size = MPU_REGION_SIZE_32MB;
     mpu_init_struct.SubRegionDisable = 0x00;
-    mpu_init_struct.TypeExtField = MPU_TEX_LEVEL1;
+    mpu_init_struct.TypeExtField = MPU_TEX_LEVEL0;
     mpu_init_struct.AccessPermission = MPU_REGION_FULL_ACCESS;
     mpu_init_struct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
     mpu_init_struct.IsShareable = MPU_ACCESS_NOT_SHAREABLE;
     mpu_init_struct.IsCacheable = MPU_ACCESS_CACHEABLE;
-    mpu_init_struct.IsBufferable = MPU_ACCESS_BUFFERABLE;
+    mpu_init_struct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
     HAL_MPU_ConfigRegion(&mpu_init_struct);
   }
 
@@ -142,21 +140,6 @@ void mpu_config_base() {
     mpu_init_struct.TypeExtField = MPU_TEX_LEVEL0;
     mpu_init_struct.AccessPermission = MPU_REGION_PRIV_RW_URO;
     // mpu_init_struct.AccessPermission = MPU_REGION_FULL_ACCESS;
-    mpu_init_struct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
-    mpu_init_struct.IsShareable = MPU_ACCESS_NOT_SHAREABLE;
-    mpu_init_struct.IsCacheable = MPU_ACCESS_CACHEABLE;
-    mpu_init_struct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
-    HAL_MPU_ConfigRegion(&mpu_init_struct);
-  }
-  // SDRAM LCD framebuffer, write through cache
-  {
-    mpu_init_struct.Enable = MPU_REGION_ENABLE;
-    mpu_init_struct.Number = MPU_REGION_SDRAM_LCD_FRAMEBUFFER;
-    mpu_init_struct.BaseAddress = FMC_SDRAM_LTDC_BUFFER_ADDRESS;
-    mpu_init_struct.Size = MPU_REGION_SIZE_2MB;
-    mpu_init_struct.SubRegionDisable = 0x00;
-    mpu_init_struct.TypeExtField = MPU_TEX_LEVEL0;
-    mpu_init_struct.AccessPermission = MPU_REGION_FULL_ACCESS;
     mpu_init_struct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
     mpu_init_struct.IsShareable = MPU_ACCESS_NOT_SHAREABLE;
     mpu_init_struct.IsCacheable = MPU_ACCESS_CACHEABLE;
@@ -262,21 +245,6 @@ secbool mpu_config_firmware(secbool access, secbool exec) {
     mpu_init_struct.DisableExec =
         ((exec == sectrue) ? MPU_INSTRUCTION_ACCESS_ENABLE
                            : MPU_INSTRUCTION_ACCESS_DISABLE);
-    mpu_init_struct.IsShareable = MPU_ACCESS_NOT_SHAREABLE;
-    mpu_init_struct.IsCacheable = MPU_ACCESS_CACHEABLE;
-    mpu_init_struct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
-    HAL_MPU_ConfigRegion(&mpu_init_struct);
-  }
-  // SDRAM LCD/LVGL/JPEGDecoder buffer, write through cache
-  {
-    mpu_init_struct.Enable = MPU_REGION_ENABLE;
-    mpu_init_struct.Number = MPU_REGION_SDRAM_DISPLAY_BUFFER;
-    mpu_init_struct.BaseAddress = FMC_SDRAM_LTDC_BUFFER_ADDRESS;
-    mpu_init_struct.Size = MPU_REGION_SIZE_8MB;
-    mpu_init_struct.SubRegionDisable = 0x00;
-    mpu_init_struct.TypeExtField = MPU_TEX_LEVEL0;
-    mpu_init_struct.AccessPermission = MPU_REGION_FULL_ACCESS;
-    mpu_init_struct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
     mpu_init_struct.IsShareable = MPU_ACCESS_NOT_SHAREABLE;
     mpu_init_struct.IsCacheable = MPU_ACCESS_CACHEABLE;
     mpu_init_struct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
