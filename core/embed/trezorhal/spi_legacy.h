@@ -40,7 +40,7 @@ uint32_t spi_read_retry(uint8_t* buf);
 uint32_t spi_read_blocking(uint8_t* buf, int timeout);
 void spi_cs_irq_handler(void);
 uint32_t spi_slave_poll_fido(uint8_t* buf);
-
+void spi_disable_cs_irq(void);
 #endif
 
 #endif

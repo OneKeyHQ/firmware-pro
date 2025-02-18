@@ -792,6 +792,10 @@ int main(void) {
 
     bus_fault_disable();
 
+    // Disable SPI Chip Select interrupt for compatibility with older firmware
+    // versions
+    spi_disable_cs_irq();
+
     // enable firmware region
     mpu_config_firmware(sectrue, sectrue);
 

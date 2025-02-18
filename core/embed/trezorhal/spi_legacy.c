@@ -263,6 +263,16 @@ int32_t spi_slave_init()
     return 0;
 }
 
+void spi_disable_cs_irq(void)
+{
+    EXTI_HandleTypeDef hexti = {0};
+    EXTI_ConfigTypeDef pExtiConfig;
+    pExtiConfig.Line = EXTI_LINE_11;
+    pExtiConfig.Mode = EXTI_MODE_NONE;
+    pExtiConfig.GPIOSel = EXTI_GPIOA;
+    HAL_EXTI_SetConfigLine(&hexti, &pExtiConfig);
+}
+
 int32_t spi_slave_send(uint8_t* buf, uint32_t size, int32_t timeout)
 {
     uint32_t msg_size;
