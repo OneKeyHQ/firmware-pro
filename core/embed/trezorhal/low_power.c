@@ -128,7 +128,11 @@ void rtc_init(void) {
   rtc_inited = true;
 }
 
-void rtc_disable(void) { HAL_RTCEx_DeactivateWakeUpTimer(&RTCHandle); }
+void rtc_disable(void) {
+  rtc_init();
+  HAL_RTCEx_DeactivateWakeUpTimer(&RTCHandle);
+  wakeup_by_rtc = false;
+}
 
 // period in seconds
 void rtc_set_period(uint32_t period) {
@@ -154,6 +158,7 @@ void enter_stop_mode(bool restart, uint32_t shutdown_seconds, bool wake_up) {
   }
   if (restart && shutdown_seconds) {
     seconds = shutdown_seconds;
+    rtc_disable();
   }
   camera_power_off();
   fpsensor_irq_disable();
