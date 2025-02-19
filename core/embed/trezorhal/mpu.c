@@ -44,7 +44,8 @@
 #define MPU_REGION_FLASH_FWBK1 MPU_REGION_NUMBER7
 #define MPU_REGION_FLASH_FWBK2 MPU_REGION_NUMBER8
 // --- misc
-#define MPU_REGION_QSPI_FLASH MPU_REGION_NUMBER9
+#define MPU_REGION_SRAM3_DMA MPU_REGION_NUMBER9
+#define MPU_REGION_QSPI_FLASH MPU_REGION_NUMBER10
 
 // --- flash subregion for stages
 #define MPU_SUBREGION_MASK_BK1_BOARD (uint8_t)(~0b00000001U)
@@ -189,6 +190,22 @@ void mpu_config_bootloader(secbool access, secbool exec) {
                            : MPU_INSTRUCTION_ACCESS_DISABLE);
     mpu_init_struct.IsShareable = MPU_ACCESS_NOT_SHAREABLE;
     mpu_init_struct.IsCacheable = MPU_ACCESS_CACHEABLE;
+    mpu_init_struct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
+    HAL_MPU_ConfigRegion(&mpu_init_struct);
+  }
+
+  // SRAM3 SPI/UART DMA
+  {
+    mpu_init_struct.Enable = MPU_REGION_ENABLE;
+    mpu_init_struct.Number = MPU_REGION_SRAM3_DMA;
+    mpu_init_struct.BaseAddress = 0x30040000;
+    mpu_init_struct.Size = MPU_REGION_SIZE_32KB;
+    mpu_init_struct.SubRegionDisable = 0x00;
+    mpu_init_struct.TypeExtField = MPU_TEX_LEVEL1;
+    mpu_init_struct.AccessPermission = MPU_REGION_FULL_ACCESS;
+    mpu_init_struct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
+    mpu_init_struct.IsShareable = MPU_ACCESS_NOT_SHAREABLE;
+    mpu_init_struct.IsCacheable = MPU_ACCESS_NOT_CACHEABLE;
     mpu_init_struct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
     HAL_MPU_ConfigRegion(&mpu_init_struct);
   }
