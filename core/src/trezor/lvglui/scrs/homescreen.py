@@ -604,8 +604,9 @@ class PasskeysManager(Screen):
             self._init = True
         else:
             if not self.is_visible():
-                self.container.delete()
-                del self.container
+                if hasattr(self, "container") and self.container:
+                    self.container.delete()
+                    del self.container
                 self.fresh_show()
                 lv.scr_load(self)
             return
