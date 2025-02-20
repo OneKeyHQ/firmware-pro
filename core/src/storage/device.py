@@ -5,7 +5,6 @@ from ubinascii import hexlify
 import storage.cache
 from storage import common
 from trezor import config, utils
-from trezor.ui import style
 
 if TYPE_CHECKING:
     from trezor.enums import BackupType
@@ -489,6 +488,8 @@ def get_serial() -> str:
 
 
 def set_brightness(brightness: int) -> None:
+    from trezor.ui import style
+
     # valid value range  0-255
     global _BRIGHTNESS_VALUE
     if brightness < style.BACKLIGHT_MIN:
@@ -498,6 +499,8 @@ def set_brightness(brightness: int) -> None:
 
 
 def get_brightness() -> int:
+    from trezor.ui import style
+
     global _BRIGHTNESS_VALUE
     if _BRIGHTNESS_VALUE is None:
         brightness = common.get(_NAMESPACE, _BRIGHTNESS, public=True)

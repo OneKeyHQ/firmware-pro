@@ -3202,7 +3202,7 @@ class BacklightSetting(AnimScreen):
         self.slider = lv.slider(self.container)
         self.slider.set_size(456, 94)
         self.slider.set_ext_click_area(100)
-        self.slider.set_range(5, style.BACKLIGHT_MAX)
+        self.slider.set_range(style.BACKLIGHT_MIN, style.BACKLIGHT_MAX)
         self.slider.set_value(self.current_brightness, lv.ANIM.OFF)
         self.slider.add_style(
             StyleWrapper().border_width(0).radius(40).bg_color(lv_colors.GRAY_1), 0
@@ -3234,8 +3234,6 @@ class BacklightSetting(AnimScreen):
         if target == self.slider:
             value = target.get_value()
             self.temp_brightness = value
-            if value < style.BACKLIGHT_MIN:
-                value = style.BACKLIGHT_MIN
             display.backlight(value)
             self.percent.set_text(brightness2_percent_str(value))
 
