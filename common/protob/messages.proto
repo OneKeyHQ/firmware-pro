@@ -566,6 +566,12 @@ enum MessageType {
     MessageType_BenfenTxRequest = 12207 [(wire_out) = true];
     MessageType_BenfenTxAck = 12208 [(wire_in) = true];
 
+    // neo
+    MessageType_NeoGetAddress = 12301 [(wire_in) = true];
+    MessageType_NeoAddress = 12302 [(wire_out) = true];
+    MessageType_NeoSignTx = 12303 [(wire_in) = true];
+    MessageType_NeoSignedTx = 12304 [(wire_out) = true];
+
 
     //onekey
     MessageType_DeviceBackToBoot = 903 [(wire_in) = true];

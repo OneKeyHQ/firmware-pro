@@ -46,11 +46,48 @@ def read_uint64_be(r: BufferReader) -> int:
     return n
 
 
+def _from_bytes_to_signed(bs: bytes, byteorder) -> int:
+    if len(bs) == 0:
+        raise ValueError("Empty bytes")
+    if byteorder not in ["big", "little"]:
+        raise ValueError("Invalid byteorder")
+    negative = bs[0] if byteorder == "big" else bs[-1] & 0x80
+    if not negative:
+        return int.from_bytes(bs, byteorder)
+    neg_b = bytes(~b & 0xFF for b in bs)
+    return -1 - int.from_bytes(neg_b, byteorder)
+
+
 def read_uint16_le(r: BufferReader) -> int:
     data = r.read_memoryview(2)
-    return int.from_bytes(data, "little")
+    return _from_bytes_to_signed(data, "little")
 
 
 def read_uint32_le(r: BufferReader) -> int:
     data = r.read_memoryview(4)
-    return int.from_bytes(data, "little")
+    return _from_bytes_to_signed(data, "little")
+
+
+def read_uint64_le(r: BufferReader) -> int:
+    data = r.read_memoryview(8)
+    return _from_bytes_to_signed(data, "little")
+
+
+def read_int8_le(r: BufferReader) -> int:
+    data = r.read_memoryview(1)
+    return _from_bytes_to_signed(data, "little")
+
+
+def read_int16_le(r: BufferReader) -> int:
+    data = r.read_memoryview(2)
+    return _from_bytes_to_signed(data, "little")
+
+
+def read_int32_le(r: BufferReader) -> int:
+    data = r.read_memoryview(4)
+    return _from_bytes_to_signed(data, "little")
+
+
+def read_int64_le(r: BufferReader) -> int:
+    data = r.read_memoryview(8)
+    return _from_bytes_to_signed(data, "little")

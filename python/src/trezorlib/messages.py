@@ -420,6 +420,10 @@ class MessageType(IntEnum):
     BenfenMessageSignature = 12206
     BenfenTxRequest = 12207
     BenfenTxAck = 12208
+    NeoGetAddress = 12301
+    NeoAddress = 12302
+    NeoSignTx = 12303
+    NeoSignedTx = 12304
     DeviceBackToBoot = 903
     RebootToBoardloader = 904
     DeviceInfoSettings = 10001
@@ -9085,6 +9089,77 @@ class NEMCosignatoryModification(protobuf.MessageType):
     ) -> None:
         self.type = type
         self.public_key = public_key
+
+
+class NeoGetAddress(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 12301
+    FIELDS = {
+        1: protobuf.Field("address_n", "uint32", repeated=True, required=False),
+        2: protobuf.Field("show_display", "bool", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        address_n: Optional[Sequence["int"]] = None,
+        show_display: Optional["bool"] = None,
+    ) -> None:
+        self.address_n: Sequence["int"] = address_n if address_n is not None else []
+        self.show_display = show_display
+
+
+class NeoAddress(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 12302
+    FIELDS = {
+        1: protobuf.Field("address", "string", repeated=False, required=False),
+        2: protobuf.Field("public_key", "bytes", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        address: Optional["str"] = None,
+        public_key: Optional["bytes"] = None,
+    ) -> None:
+        self.address = address
+        self.public_key = public_key
+
+
+class NeoSignTx(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 12303
+    FIELDS = {
+        1: protobuf.Field("address_n", "uint32", repeated=True, required=False),
+        2: protobuf.Field("raw_tx", "bytes", repeated=False, required=True),
+        3: protobuf.Field("network_magic", "uint32", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        raw_tx: "bytes",
+        network_magic: "int",
+        address_n: Optional[Sequence["int"]] = None,
+    ) -> None:
+        self.address_n: Sequence["int"] = address_n if address_n is not None else []
+        self.raw_tx = raw_tx
+        self.network_magic = network_magic
+
+
+class NeoSignedTx(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 12304
+    FIELDS = {
+        1: protobuf.Field("public_key", "bytes", repeated=False, required=True),
+        2: protobuf.Field("signature", "bytes", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        public_key: "bytes",
+        signature: "bytes",
+    ) -> None:
+        self.public_key = public_key
+        self.signature = signature
 
 
 class NervosGetAddress(protobuf.MessageType):

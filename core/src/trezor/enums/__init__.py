@@ -412,6 +412,10 @@ if TYPE_CHECKING:
         BenfenMessageSignature = 12206
         BenfenTxRequest = 12207
         BenfenTxAck = 12208
+        NeoGetAddress = 12301
+        NeoAddress = 12302
+        NeoSignTx = 12303
+        NeoSignedTx = 12304
         DeviceBackToBoot = 903
         RebootToBoardloader = 904
         DeviceInfoSettings = 10001
