@@ -37,8 +37,8 @@ uint8_t fpsensor_gpio_init()
 
     // SPI_INT     FP_IRQ      PB15
     GPIO_InitStruct.Pin = GPIO_PIN_15;
-    GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+    GPIO_InitStruct.Pull = GPIO_PULLDOWN;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     GPIO_InitStruct.Alternate = 0; // ignored
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
@@ -64,7 +64,16 @@ void fpsensor_state_set(bool state)
 void fpsensor_irq_enable(void)
 {
     fp_touched = false;
-    HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+
+    EXTI_HandleTypeDef hexti = {0};
+
+    EXTI_ConfigTypeDef pExtiConfig;
+    pExtiConfig.Line = EXTI_LINE_15;
+    pExtiConfig.Mode = EXTI_MODE_INTERRUPT;
+    pExtiConfig.Trigger = EXTI_TRIGGER_RISING;
+    pExtiConfig.GPIOSel = EXTI_GPIOB;
+
+    HAL_EXTI_SetConfigLine(&hexti, &pExtiConfig);
 }
 
 void fpsensor_data_cache_clear(void)
@@ -78,7 +87,12 @@ void fpsensor_irq_disable(void)
 {
     fp_touched = false;
     __HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_15);
-    HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);
+    EXTI_HandleTypeDef hexti = {0};
+    EXTI_ConfigTypeDef pExtiConfig;
+    pExtiConfig.Line = EXTI_LINE_15;
+    pExtiConfig.Mode = EXTI_MODE_NONE;
+    pExtiConfig.GPIOSel = EXTI_GPIOB;
+    HAL_EXTI_SetConfigLine(&hexti, &pExtiConfig);
 }
 
 int fpsensor_detect(void)
