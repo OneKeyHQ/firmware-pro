@@ -83,6 +83,8 @@ __all__ = (
     "confirm_ton_connect",
     "confirm_ton_signverify",
     "confirm_unknown_token_transfer",
+    "confirm_neo_token_transfer",
+    "confirm_neo_vote",
 )
 
 
@@ -1364,6 +1366,58 @@ async def confirm_sol_message(
     )
     await raise_if_cancelled(
         interact(ctx, screen, "confirm_sol_message", ButtonRequestType.ProtectCall)
+    )
+
+
+async def confirm_neo_token_transfer(
+    ctx: wire.GenericContext,
+    from_addr: str,
+    to_addr: str,
+    fee: str,
+    amount: str,
+    network_magic: int | None,
+) -> None:
+    from trezor.strings import strip_amount
+
+    striped_amount, striped = strip_amount(amount)
+    title = _(i18n_keys.TITLE__SEND_MULTILINE).format(striped_amount)
+    from trezor.lvglui.scrs.template import NeoTokenTransfer
+
+    screen = NeoTokenTransfer(
+        title,
+        from_addr=from_addr,
+        to_addr=to_addr,
+        fee=fee,
+        amount=amount,
+        primary_color=ctx.primary_color,
+        icon_path=ctx.icon_path,
+        striped=striped,
+        network_magic=network_magic,
+    )
+    await raise_if_cancelled(
+        interact(ctx, screen, "neo_token_transfer", ButtonRequestType.ProtectCall)
+    )
+
+
+async def confirm_neo_vote(
+    ctx: wire.GenericContext,
+    from_address: str,
+    vote_to: str,
+    is_remove_vote: bool,
+    network_magic: int | None = None,
+) -> None:
+    from trezor.lvglui.scrs.template import NeoVote
+
+    screen = NeoVote(
+        from_address,
+        vote_to,
+        is_remove_vote,
+        primary_color=ctx.primary_color,
+        icon_path=ctx.icon_path,
+        network_magic=network_magic,
+    )
+    await raise_if_cancelled(
+        interact(ctx, screen, "neo_vote", ButtonRequestType.ProtectCall)
     )
 
 

@@ -180,6 +180,11 @@ def find_message_handler_module(msg_type: int) -> str:
             return "apps.nem.get_address"
         if msg_type == MessageType.NEMSignTx:
             return "apps.nem.sign_tx"
+        # neo
+        if msg_type == MessageType.NeoGetAddress:
+            return "apps.neo.get_address"
+        if msg_type == MessageType.NeoSignTx:
+            return "apps.neo.sign_tx"
 
         # stellar
         if msg_type == MessageType.StellarGetAddress:

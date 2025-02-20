@@ -4353,6 +4353,142 @@ class TronAssetFreeze(FullSizeWindow):
         self.group_more.add_dummy()
 
 
+class NeoTokenTransfer(FullSizeWindow):
+    def __init__(
+        self,
+        title,
+        from_addr: str,
+        to_addr: str,
+        amount: str,
+        fee: str,
+        primary_color,
+        icon_path,
+        striped: bool = False,
+        network_magic: int | None = None,
+    ):
+        super().__init__(
+            title,
+            subtitle=None,
+            confirm_text=_(i18n_keys.BUTTON__CONTINUE),
+            cancel_text=_(i18n_keys.BUTTON__REJECT),
+            primary_color=primary_color,
+            icon_path="A:/res/icon-send.png",
+            sub_icon_path=icon_path,
+        )
+        self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
+        if striped:
+            self.group_amounts = ContainerFlexCol(
+                self.container, None, padding_row=0, no_align=True
+            )
+            self.item_group_header = CardHeader(
+                self.group_amounts,
+                _(i18n_keys.LIST_KEY__AMOUNT__COLON),
+                "A:/res/group-icon-amount.png",
+            )
+            self.group_body_amount = DisplayItem(
+                self.group_amounts,
+                None,
+                amount,
+            )
+            self.group_amounts.add_dummy()
+
+        self.group_directions = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_directions,
+            _(i18n_keys.FORM__DIRECTIONS),
+            "A:/res/group-icon-directions.png",
+        )
+        self.item_group_body_to_addr = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__TO__COLON),
+            to_addr,
+        )
+        self.item_group_body_from_addr = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__FROM__COLON),
+            from_addr,
+        )
+        self.group_directions.add_dummy()
+
+        self.group_fees = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_fees, _(i18n_keys.FORM__FEES), "A:/res/group-icon-fees.png"
+        )
+        self.item_group_body_fee = DisplayItem(
+            self.group_fees, _(i18n_keys.LIST_KEY__FEE__COLON), fee
+        )
+        self.group_fees.add_dummy()
+        if network_magic:
+            self.group_more = ContainerFlexCol(
+                self.container, None, padding_row=0, no_align=True
+            )
+            self.item_group_header = CardHeader(
+                self.group_more, _(i18n_keys.FORM__MORE), "A:/res/group-icon-more.png"
+            )
+            self.item_group_body_network_magic = DisplayItem(
+                self.group_more, _(i18n_keys.GLOBAL_TARGET_NETWORK), str(network_magic)
+            )
+            self.group_more.add_dummy()
+
+
+class NeoVote(FullSizeWindow):
+    def __init__(
+        self,
+        from_address: str,
+        vote_to: str,
+        is_remove_vote: bool,
+        primary_color,
+        icon_path,
+        network_magic: int | None = None,
+    ):
+        super().__init__(
+            f"Neo {_(i18n_keys.TITLE__VOTE)}"
+            if not is_remove_vote
+            else f"Neo {_(i18n_keys.TITLE_REMOVE_VOTE)}",
+            None,
+            _(i18n_keys.BUTTON__CONTINUE),
+            _(i18n_keys.BUTTON__REJECT),
+            primary_color=primary_color,
+            icon_path=icon_path,
+        )
+        self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
+        self.group_directions = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_directions,
+            _(i18n_keys.FORM__DIRECTIONS),
+            "A:/res/group-icon-directions.png",
+        )
+        if not is_remove_vote:
+            self.item_group_body_vote_to = DisplayItem(
+                self.group_directions,
+                _(i18n_keys.GLOBAL_CANDIDATE),
+                vote_to,
+            )
+        self.item_group_body_from_addr = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__VOTER__COLON),
+            from_address,
+        )
+        self.group_directions.add_dummy()
+        if network_magic:
+            self.group_more = ContainerFlexCol(
+                self.container, None, padding_row=0, no_align=True
+            )
+            self.item_group_header = CardHeader(
+                self.group_more, _(i18n_keys.FORM__MORE), "A:/res/group-icon-more.png"
+            )
+            self.item_group_body_network_magic = DisplayItem(
+                self.group_more, _(i18n_keys.GLOBAL_TARGET_NETWORK), str(network_magic)
+            )
+            self.group_more.add_dummy()
+
+
 class UrResponse(FullSizeWindow):
     def __init__(
         self,

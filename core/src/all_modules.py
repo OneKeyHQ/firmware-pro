@@ -725,6 +725,20 @@ apps.near.sign_tx
 import apps.near.sign_tx
 apps.near.transaction
 import apps.near.transaction
+apps.neo
+import apps.neo
+apps.neo.get_address
+import apps.neo.get_address
+apps.neo.helpers
+import apps.neo.helpers
+apps.neo.layout
+import apps.neo.layout
+apps.neo.sign_tx
+import apps.neo.sign_tx
+apps.neo.tokens
+import apps.neo.tokens
+apps.neo.transaction
+import apps.neo.transaction
 apps.nervos
 import apps.nervos
 apps.nervos.get_address
