@@ -14,7 +14,7 @@
 UART_HandleTypeDef uart;
 UART_HandleTypeDef *huart = &uart;
 
-// static DMA_HandleTypeDef hdma_tx;
+static DMA_HandleTypeDef hdma_tx;
 static DMA_HandleTypeDef hdma_rx;
 
 static bool uart_tx_done = false;
@@ -22,8 +22,8 @@ static bool uart_tx_done = false;
 #define UART_PACKET_MAX_LEN 128
 static uint8_t dma_uart_rev_buf[UART_PACKET_MAX_LEN]
     __attribute__((section(".sram3")));
-// static uint8_t dma_uart_send_buf[UART_PACKET_MAX_LEN]
-//     __attribute__((section(".sram3")));
+static uint8_t dma_uart_send_buf[UART_PACKET_MAX_LEN]
+    __attribute__((section(".sram3")));
 uint32_t usart_fifo_len = 0;
 
 uint8_t uart_data_in[UART_BUF_MAX_LEN];
@@ -76,21 +76,21 @@ void ble_usart_init(void) {
   }
 
   // Configure DMA
-  // hdma_tx.Instance = UARTx_TX_DMA_STREAM;
+  hdma_tx.Instance = UARTx_TX_DMA_STREAM;
 
-  // hdma_tx.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
-  // hdma_tx.Init.Request = UARTx_TX_DMA_REQUEST;
-  // hdma_tx.Init.Direction = DMA_MEMORY_TO_PERIPH;
-  // hdma_tx.Init.PeriphInc = DMA_PINC_DISABLE;
-  // hdma_tx.Init.MemInc = DMA_MINC_ENABLE;
-  // hdma_tx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
-  // hdma_tx.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
-  // hdma_tx.Init.Mode = DMA_NORMAL;
-  // hdma_tx.Init.Priority = DMA_PRIORITY_MEDIUM;
+  hdma_tx.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+  hdma_tx.Init.Request = UARTx_TX_DMA_REQUEST;
+  hdma_tx.Init.Direction = DMA_MEMORY_TO_PERIPH;
+  hdma_tx.Init.PeriphInc = DMA_PINC_DISABLE;
+  hdma_tx.Init.MemInc = DMA_MINC_ENABLE;
+  hdma_tx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+  hdma_tx.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+  hdma_tx.Init.Mode = DMA_NORMAL;
+  hdma_tx.Init.Priority = DMA_PRIORITY_MEDIUM;
 
-  // HAL_DMA_Init(&hdma_tx);
+  HAL_DMA_Init(&hdma_tx);
 
-  // __HAL_LINKDMA(huart, hdmatx, hdma_tx);
+  __HAL_LINKDMA(huart, hdmatx, hdma_tx);
 
   hdma_rx.Instance = UARTx_RX_DMA_STREAM;
 
@@ -112,8 +112,8 @@ void ble_usart_init(void) {
   NVIC_SetPriority(UARTx_DMA_RX_IRQn, IRQ_PRI_DMA);
   HAL_NVIC_EnableIRQ(UARTx_DMA_RX_IRQn);
 
-  // NVIC_SetPriority(UARTx_DMA_TX_IRQn, IRQ_PRI_DMA);
-  // HAL_NVIC_EnableIRQ(UARTx_DMA_TX_IRQn);
+  NVIC_SetPriority(UARTx_DMA_TX_IRQn, IRQ_PRI_DMA);
+  HAL_NVIC_EnableIRQ(UARTx_DMA_TX_IRQn);
 
   NVIC_SetPriority(UART4_IRQn, IRQ_PRI_UART);
   HAL_NVIC_EnableIRQ(UART4_IRQn);
@@ -141,22 +141,23 @@ void ble_usart_send_byte(uint8_t data) {
 }
 
 void ble_usart_send(uint8_t *buf, uint32_t len) {
-  HAL_UART_Transmit(huart, buf, len, 0xFFFF);
-  // while (len > 0) {
-  //   uart_tx_done = false;
-  //   uint32_t send_len = len > UART_PACKET_MAX_LEN ? UART_PACKET_MAX_LEN :
-  //   len; memcpy(dma_uart_send_buf, buf, send_len);
-  //   HAL_UART_Transmit_DMA(huart, dma_uart_send_buf, send_len);
-  //   uint32_t start = HAL_GetTick();
-  //   while (!uart_tx_done) {
-  //     if (HAL_GetTick() - start > 500) {
-  //       return;
-  //     }
-  //     __WFI();
-  //   }
-  //   len -= send_len;
-  //   buf += send_len;
-  // }
+  while (len > 0) {
+    uart_tx_done = false;
+    uint32_t send_len = len > UART_PACKET_MAX_LEN ? UART_PACKET_MAX_LEN : len;
+    memcpy(dma_uart_send_buf, buf, send_len);
+    if (HAL_UART_Transmit_DMA(huart, dma_uart_send_buf, send_len) != HAL_OK) {
+      return;
+    }
+    uint32_t start = HAL_GetTick();
+    while (!uart_tx_done) {
+      if (HAL_GetTick() - start > 500) {
+        return;
+      }
+      __WFI();
+    }
+    len -= send_len;
+    buf += send_len;
+  }
 }
 
 bool ble_read_byte(uint8_t *buf) {

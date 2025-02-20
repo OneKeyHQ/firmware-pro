@@ -153,6 +153,7 @@ void RTC_WKUP_IRQHandler(void) {
 void enter_stop_mode(bool restart, uint32_t shutdown_seconds, bool wake_up) {
   static uint32_t seconds = 0;
   static uint32_t rtc_period = 0;
+  bool power_off = false;
   if (is_usb_connected()) {
     return;
   }
@@ -171,7 +172,8 @@ void enter_stop_mode(bool restart, uint32_t shutdown_seconds, bool wake_up) {
       if (wakeup_by_rtc) {
         seconds -= rtc_period;
         if (seconds == 0) {
-          ble_power_off();
+          power_off = true;
+          break;
         }
         restart = true;
       }
@@ -190,7 +192,8 @@ void enter_stop_mode(bool restart, uint32_t shutdown_seconds, bool wake_up) {
       }
       seconds -= rtc_period;
       if (seconds == 0) {
-        ble_power_off();
+        power_off = true;
+        break;
       }
     }
   } else {
@@ -198,6 +201,10 @@ void enter_stop_mode(bool restart, uint32_t shutdown_seconds, bool wake_up) {
       lptim_set_period(LPTIMER_PERIOD);
     }
     HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
+  }
+  hal_delay(5);
+  if (power_off) {
+    ble_power_off();
   }
   sdram_set_normal_mode();
   touch_disable_irq();
