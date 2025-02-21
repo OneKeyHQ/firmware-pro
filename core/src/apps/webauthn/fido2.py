@@ -681,6 +681,7 @@ async def se_gen_seed(keepalive_callback: KeepaliveCallback) -> bool:
             ret = se_thd89.fido_seed()
             if ret:
                 storage.device._FIDO_SEED_GEN = True
+                set_homescreen()
                 return True
             else:
                 keepalive_callback()
@@ -1095,9 +1096,7 @@ class Fido2ConfirmNoCredentials(Fido2ConfirmGetAssertion):
 
         await show_popup(
             title=_(i18n_keys.TITLE__FIDO2_AUTHENTICATE_NOT_REGISTERED),
-            description=_(
-                i18n_keys.SUBTITLE__THIS_DEVICE_IS_AREADY_REGISTERED_WITH_STR
-            ),
+            description=_(i18n_keys.SUBTITLE__FIDO2_AUTHENTICATE_NOT_REGISTERED),
             description_param=self._creds[0].app_name(),
             timeout_ms=_POPUP_TIMEOUT_MS,
         )
