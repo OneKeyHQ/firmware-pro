@@ -85,7 +85,6 @@ void fpsensor_data_cache_clear(void)
 
 void fpsensor_irq_disable(void)
 {
-    fp_touched = false;
     __HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_15);
     EXTI_HandleTypeDef hexti = {0};
     EXTI_ConfigTypeDef pExtiConfig;
