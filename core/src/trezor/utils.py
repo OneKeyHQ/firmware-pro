@@ -177,7 +177,10 @@ def lcd_resume(timeouts_ms: int | None = None) -> bool:
     uart.ctrl_wireless_charge(False)
     if display.backlight() != device.get_brightness() or timeouts_ms:
         global AUTO_POWER_OFF
-        display.backlight(device.get_brightness())
+        from trezor.lvglui.scrs.homescreen import BacklightSetting
+
+        if not BacklightSetting.page_is_visible():
+            display.backlight(device.get_brightness())
         AUTO_POWER_OFF = False
         from trezor.lvglui.scrs import fingerprints
 

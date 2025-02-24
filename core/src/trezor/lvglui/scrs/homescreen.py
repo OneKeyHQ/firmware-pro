@@ -3187,6 +3187,15 @@ class LanguageSetting(AnimScreen):
 
 
 class BacklightSetting(AnimScreen):
+    @classmethod
+    def page_is_visible(cls) -> bool:
+        try:
+            if cls._instance is not None and cls._instance.is_visible():
+                return True
+        except Exception:
+            pass
+        return False
+
     def __init__(self, prev_scr=None):
         if not hasattr(self, "_init"):
             self._init = True
