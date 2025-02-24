@@ -527,10 +527,16 @@ class FullSizeWindow(lv.obj):
             return [self.layout_title or ""] + [self.layout_subtitle or ""]
 
     def destroy(self, delay_ms=400):
-        self.del_delayed(delay_ms)
+        try:
+            self.del_delayed(delay_ms)
+        except Exception:
+            pass
 
     def _delete_cb(self, _anim):
-        self.del_delayed(100)
+        try:
+            self.del_delayed(100)
+        except Exception:
+            pass
 
     def _load_anim_hor(self):
         Anim(

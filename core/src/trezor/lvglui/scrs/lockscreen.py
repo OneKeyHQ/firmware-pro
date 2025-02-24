@@ -14,10 +14,12 @@ ANIM_PLAYBACK_DELAY = 5
 class LockScreen(Screen):
     @classmethod
     def retrieval(cls) -> tuple[bool, "LockScreen" | None]:
-        if hasattr(cls, "_instance") and cls._instance.is_visible():
-            return True, cls._instance
-        else:
-            return False, None
+        try:
+            if cls._instance.is_visible():
+                return True, cls._instance
+        except Exception:
+            pass
+        return False, None
 
     def __init__(self, device_name, ble_name="", dev_state=None):
         lockscreen = device.get_homescreen()

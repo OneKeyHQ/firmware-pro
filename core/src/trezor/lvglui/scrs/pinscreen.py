@@ -76,11 +76,12 @@ class InputNum(FullSizeWindow):
 
     @classmethod
     def get_window_if_visible(cls) -> "InputNum" | None:
-        return (
-            cls._instance
-            if (cls._instance is not None and cls._instance.is_visible())
-            else None
-        )
+        try:
+            if cls._instance is not None and cls._instance.is_visible():
+                return cls._instance
+        except Exception:
+            pass
+        return None
 
     def __init__(self, **kwargs):
         super().__init__(
@@ -169,11 +170,12 @@ class InputPin(FullSizeWindow):
 
     @classmethod
     def get_window_if_visible(cls) -> "InputPin" | None:
-        return (
-            cls._instance
-            if (cls._instance is not None and cls._instance.is_visible())
-            else None
-        )
+        try:
+            if cls._instance is not None and cls._instance.is_visible():
+                return cls._instance
+        except Exception:
+            pass
+        return None
 
     def __init__(self, **kwargs):
         super().__init__(
@@ -250,7 +252,10 @@ class InputPin(FullSizeWindow):
 
     def refresh_fingerprint_prompt(self):
         if hasattr(self, "fingerprint_prompt"):
-            self.fingerprint_prompt.delete()
+            try:
+                self.fingerprint_prompt.delete()
+            except Exception:
+                pass
 
     def on_event(self, event_obj):
         code = event_obj.code
