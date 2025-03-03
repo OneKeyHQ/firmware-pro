@@ -107,6 +107,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorio_MOTOR_tock_obj,
 // mod_trezorio_MOTOR_play);
 
 STATIC const mp_rom_map_elem_t mod_trezorio_MOTOR_locals_dict_table[] = {
+    {MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_MOTOR)},
     {MP_ROM_QSTR(MP_QSTR_tick), MP_ROM_PTR(&mod_trezorio_MOTOR_tick_obj)},
     {MP_ROM_QSTR(MP_QSTR_tock), MP_ROM_PTR(&mod_trezorio_MOTOR_tock_obj)},
     // {MP_ROM_QSTR(MP_QSTR_play), MP_ROM_PTR(&mod_trezorio_MOTOR_play_obj)},
@@ -115,7 +116,7 @@ STATIC const mp_rom_map_elem_t mod_trezorio_MOTOR_locals_dict_table[] = {
 STATIC MP_DEFINE_CONST_DICT(mod_trezorio_MOTOR_locals_dict,
                             mod_trezorio_MOTOR_locals_dict_table);
 
-STATIC const mp_obj_type_t mod_trezorio_MOTOR_type = {
+STATIC const mp_obj_type_t mod_trezorio_MOTOR_module = {
     {&mp_type_type},
     .name = MP_QSTR_MOTOR,
     .make_new = mod_trezorio_MOTOR_make_new,

@@ -64,6 +64,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_trezorio_NFC_send_recv_obj, 1, 2,
                                            mod_trezorio_NFC_send_recv);
 
 STATIC const mp_rom_map_elem_t mod_trezorio_NFC_globals_table[] = {
+    {MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_nfc)},
     {MP_ROM_QSTR(MP_QSTR_pwr_ctrl), MP_ROM_PTR(&mod_trezorio_NFC_pwr_ctrl_obj)},
     {MP_ROM_QSTR(MP_QSTR_poll_card),
      MP_ROM_PTR(&mod_trezorio_NFC_poll_card_obj)},
@@ -74,7 +75,7 @@ STATIC const mp_rom_map_elem_t mod_trezorio_NFC_globals_table[] = {
 STATIC MP_DEFINE_CONST_DICT(mod_trezorio_NFC_globals,
                             mod_trezorio_NFC_globals_table);
 
-STATIC const mp_obj_module_t mod_trezorcrypto_NFC_module = {
+STATIC const mp_obj_module_t mod_trezorio_NFC_module = {
     .base = {&mp_type_module},
     .globals = (mp_obj_dict_t *)&mod_trezorio_NFC_globals,
 };

@@ -213,8 +213,8 @@ typedef long mp_off_t;
         __WFI(); \
     } while (0);
 
-#define MICROPY_HW_BOARD_NAME "TREZORv2"
-#define MICROPY_HW_MCU_NAME "STM3h747xx"
+#define MICROPY_HW_BOARD_NAME "OneKeyPro"
+#define MICROPY_HW_MCU_NAME "STM32H7"
 #define MICROPY_HW_HAS_SDCARD 0
 
 // There is no classical C heap in bare-metal ports, only Python
