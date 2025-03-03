@@ -48,6 +48,7 @@ impl FieldDef {
             4 => FieldType::String,
             5 => FieldType::Enum(unsafe { get_enum(self.enum_or_msg_offset) }),
             6 => FieldType::Msg(unsafe { get_msg(self.enum_or_msg_offset) }),
+            7 => FieldType::Float,
             _ => unreachable!(),
         }
     }
@@ -81,10 +82,13 @@ pub enum FieldType {
     String,
     Enum(EnumDef),
     Msg(MsgDef),
+    Float,
 }
 
 pub const PRIMITIVE_TYPE_VARINT: u8 = 0;
+pub const PRIMITIVE_TYPE_FIXED64BITS: u8 = 1;
 pub const PRIMITIVE_TYPE_LENGTH_DELIMITED: u8 = 2;
+pub const PRIMITIVE_TYPE_FIXED32BITS: u8 = 5;
 
 impl FieldType {
     pub fn primitive_type(&self) -> u8 {
@@ -95,6 +99,7 @@ impl FieldType {
             FieldType::Bytes | FieldType::String | FieldType::Msg(_) => {
                 PRIMITIVE_TYPE_LENGTH_DELIMITED
             }
+            FieldType::Float => PRIMITIVE_TYPE_FIXED32BITS,
         }
     }
 }

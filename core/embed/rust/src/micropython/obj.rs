@@ -132,6 +132,21 @@ impl TryFrom<Obj> for bool {
     }
 }
 
+impl TryFrom<Obj> for f32 {
+    type Error = Error;
+
+    fn try_from(obj: Obj) -> Result<Self, Self::Error> {
+        let mut float: ffi::mp_float_t = 0.0;
+
+        let result = catch_exception(|| unsafe { ffi::mp_obj_get_float_maybe(obj, &mut float) })?;
+        if result {
+            Ok(float.try_into()?)
+        } else {
+            Err(Error::TypeError)
+        }
+    }
+}
+
 impl TryFrom<Obj> for i32 {
     type Error = Error;
 
@@ -182,6 +197,14 @@ impl From<bool> for Obj {
         } else {
             Obj::const_false()
         }
+    }
+}
+
+impl TryFrom<f32> for Obj {
+    type Error = Error;
+
+    fn try_from(val: f32) -> Result<Self, Self::Error> {
+        catch_exception(|| unsafe { ffi::mp_obj_new_float(val.into()) })
     }
 }
 
