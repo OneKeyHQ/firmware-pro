@@ -102,7 +102,7 @@ class LOCAL_CTL:
         """
 
 
-# extmod/modtrezorio/modtrezorio-moto.h
+# extmod/modtrezorio/modtrezorio-motor.h
 class MOTOR:
     """
     """

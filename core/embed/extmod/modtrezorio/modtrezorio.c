@@ -45,6 +45,7 @@ bool local_interface_ready = false;
 #include "modtrezorio-vcp.h"
 #include "modtrezorio-webusb.h"
 #include "modtrezorio-usb.h"
+#include "modtrezorio-hwinfo.h"
 #include "modtrezorio-ble.h"
 #include "modtrezorio-camera.h"
 #include "modtrezorio-fatfs.h"
@@ -105,6 +106,7 @@ STATIC const mp_rom_map_elem_t mp_module_trezorio_globals_table[] = {
     {MP_ROM_QSTR(MP_QSTR_FINGERPRINT_STATE), MP_ROM_INT(FINGERPRINT_IFACE)},
     {MP_ROM_QSTR(MP_QSTR_MOTOR), MP_ROM_PTR(&mod_trezorio_MOTOR_module)},
     {MP_ROM_QSTR(MP_QSTR_nfc), MP_ROM_PTR(&mod_trezorio_NFC_module)},
+    {MP_ROM_QSTR(MP_QSTR_hwinfo), MP_ROM_PTR(&mod_trezorio_hwinfo_module)},
 
     {MP_ROM_QSTR(MP_QSTR_FlashOTP), MP_ROM_PTR(&mod_trezorio_FlashOTP_type)},
 
