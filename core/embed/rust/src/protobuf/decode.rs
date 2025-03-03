@@ -156,6 +156,9 @@ impl Decoder {
                             let len = num.try_into()?;
                             stream.read(len)?;
                         }
+                        defs::PRIMITIVE_TYPE_FIXED32BITS => {
+                            stream.read_float()?;
+                        }
                         _ => {
                             return Err(error::unknown_field_type());
                         }
@@ -193,6 +196,9 @@ impl Decoder {
                         let num = stream.read_uvarint()?;
                         let len = num.try_into()?;
                         stream.read(len)?;
+                    }
+                    defs::PRIMITIVE_TYPE_FIXED32BITS => {
+                        stream.read_float()?;
                     }
                     _ => {
                         return Err(error::unknown_field_type());
@@ -242,6 +248,10 @@ impl Decoder {
             FieldType::SVarInt => {
                 let signed_int = zigzag::to_signed(num);
                 Ok(signed_int.try_into()?)
+            }
+            FieldType::Float => {
+                let buf = stream.read_float()?;
+                buf.try_into()
             }
             FieldType::Bool => {
                 let boolean = num != 0;
@@ -312,6 +322,16 @@ impl<'a> InputStream<'a> {
             .ok_or_else(error::end_of_buffer)?;
         self.pos += 1;
         Ok(val)
+    }
+
+    pub fn read_float(&mut self) -> Result<f32, Error> {
+        let len = 4;
+        let buf = self
+            .buf
+            .get(self.pos..self.pos + len)
+            .ok_or_else(error::end_of_buffer)?;
+        self.pos += len;
+        Ok(f32::from_be_bytes(buf[0..4].try_into().unwrap()))
     }
 
     pub fn read_uvarint(&mut self) -> Result<u64, Error> {

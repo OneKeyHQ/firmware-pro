@@ -112,6 +112,11 @@ impl Encoder {
                 let uint = zigzag::to_unsigned(sint);
                 stream.write_uvarint(uint)?;
             }
+            FieldType::Float => {
+                let float = f32::try_from(value)?;
+                let buffer = float.to_le_bytes();
+                stream.write(&buffer)?;
+            }
             FieldType::Bool => {
                 let boolean = bool::try_from(value)?;
                 let uint = if boolean { 1 } else { 0 };
