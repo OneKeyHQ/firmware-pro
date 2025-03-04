@@ -45,19 +45,18 @@ bool local_interface_ready = false;
 #include "modtrezorio-vcp.h"
 #include "modtrezorio-webusb.h"
 #include "modtrezorio-usb.h"
-// clang-format on
-#if defined TREZOR_MODEL_T
+#include "modtrezorio-hwinfo.h"
 #include "modtrezorio-ble.h"
 #include "modtrezorio-camera.h"
 #include "modtrezorio-fatfs.h"
 #include "modtrezorio-fingerprint.h"
 #include "modtrezorio-local.h"
-#include "modtrezorio-moto.h"
+#include "modtrezorio-motor.h"
 #include "modtrezorio-nfc.h"
 #include "modtrezorio-sbu.h"
 #include "modtrezorio-sdcard.h"
 #include "modtrezorio-spi.h"
-#endif
+// clang-format on
 
 /// package: trezorio.__init__
 /// from . import fatfs, sdcard
@@ -90,7 +89,6 @@ bool local_interface_ready = false;
 STATIC const mp_rom_map_elem_t mp_module_trezorio_globals_table[] = {
     {MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_trezorio)},
 
-#if defined TREZOR_MODEL_T
     {MP_ROM_QSTR(MP_QSTR_fatfs), MP_ROM_PTR(&mod_trezorio_fatfs_module)},
     {MP_ROM_QSTR(MP_QSTR_SBU), MP_ROM_PTR(&mod_trezorio_SBU_type)},
     {MP_ROM_QSTR(MP_QSTR_sdcard), MP_ROM_PTR(&mod_trezorio_sdcard_module)},
@@ -106,17 +104,9 @@ STATIC const mp_rom_map_elem_t mp_module_trezorio_globals_table[] = {
     {MP_ROM_QSTR(MP_QSTR_UART), MP_ROM_INT(UART_IFACE)},
     {MP_ROM_QSTR(MP_QSTR_USB_STATE), MP_ROM_INT(USB_STATE_IFACE)},
     {MP_ROM_QSTR(MP_QSTR_FINGERPRINT_STATE), MP_ROM_INT(FINGERPRINT_IFACE)},
-    {MP_ROM_QSTR(MP_QSTR_MOTOR), MP_ROM_PTR(&mod_trezorio_MOTOR_type)},
-    {MP_ROM_QSTR(MP_QSTR_nfc), MP_ROM_PTR(&mod_trezorcrypto_NFC_module)},
-#elif defined TREZOR_MODEL_1 || defined TREZOR_MODEL_R
-    {MP_ROM_QSTR(MP_QSTR_BUTTON), MP_ROM_INT(BUTTON_IFACE)},
-    {MP_ROM_QSTR(MP_QSTR_BUTTON_PRESSED),
-     MP_ROM_INT((BTN_EVT_DOWN >> 24) & 0x3U)},
-    {MP_ROM_QSTR(MP_QSTR_BUTTON_RELEASED),
-     MP_ROM_INT((BTN_EVT_UP >> 24) & 0x3U)},
-    {MP_ROM_QSTR(MP_QSTR_BUTTON_LEFT), MP_ROM_INT(BTN_LEFT)},
-    {MP_ROM_QSTR(MP_QSTR_BUTTON_RIGHT), MP_ROM_INT(BTN_RIGHT)},
-#endif
+    {MP_ROM_QSTR(MP_QSTR_MOTOR), MP_ROM_PTR(&mod_trezorio_MOTOR_module)},
+    {MP_ROM_QSTR(MP_QSTR_nfc), MP_ROM_PTR(&mod_trezorio_NFC_module)},
+    {MP_ROM_QSTR(MP_QSTR_hwinfo), MP_ROM_PTR(&mod_trezorio_hwinfo_module)},
 
     {MP_ROM_QSTR(MP_QSTR_FlashOTP), MP_ROM_PTR(&mod_trezorio_FlashOTP_type)},
 
