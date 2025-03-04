@@ -41,3 +41,45 @@ def dump_message_buffer(msg: MessageType) -> bytearray:
     buffer = bytearray(encoded_length(msg))
     encode(buffer, msg)
     return buffer
+
+
+def print_message(msg: MessageType, indent: int = 0, drop_none: bool = False):
+    if indent == 0:
+        print(
+            f"========================= BEGIN --- Msg: {msg.MESSAGE_NAME} Type: {msg.MESSAGE_WIRE_TYPE} ========================="
+        )
+
+    try:
+        for key, value in msg.__dict__.items():
+            if value:
+                if type(value) is type(msg):
+                    print(
+                        f"{'    ' * (indent)}{str(key)}:{value.MESSAGE_NAME}:{type(value)} = "
+                    )
+                    print_message(value, indent + 1)
+                else:
+                    print(f"{'    ' * (indent)}{str(key)}:{type(value)} = ", end="")
+                    if type(value) is not bytes:
+                        print(
+                            str(value)
+                        )  # have to use otherwise may corrupt the output
+                    else:
+                        print("".join(f"{x:02x}" for x in value))
+            elif not drop_none:
+                print(f"{'    ' * (indent)}{str(key)}:{type(value)} = {str(value)}")
+            else:
+                continue
+
+    except Exception as ex:
+        from traceback import print_exception
+
+        print(
+            f"Error while handling Msg: {msg.MESSAGE_NAME} Type: {msg.MESSAGE_WIRE_TYPE}"
+        )
+        print_exception(ex)
+        pass
+
+    if indent == 0:
+        print(
+            f"========================= END --- Msg: {msg.MESSAGE_NAME} Type: {msg.MESSAGE_WIRE_TYPE} ========================="
+        )

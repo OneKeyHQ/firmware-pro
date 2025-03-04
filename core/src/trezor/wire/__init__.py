@@ -341,14 +341,18 @@ class Context:
         if __debug__:
             log.debug(
                 __name__,
-                "%s:%x write: %s",
+                "%s:%x write: %s %s",
                 self.iface.iface_num(),
                 self.sid,
                 msg.MESSAGE_NAME,
+                msg.MESSAGE_WIRE_TYPE,
             )
 
         # cannot write message without wire type
         assert msg.MESSAGE_WIRE_TYPE is not None
+
+        if __debug__:
+            protobuf.print_message(msg, drop_none=True)
 
         msg_size = protobuf.encoded_length(msg)
 

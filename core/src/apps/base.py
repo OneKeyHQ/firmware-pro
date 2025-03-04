@@ -2,14 +2,13 @@ from typing import TYPE_CHECKING
 
 import storage.cache
 import storage.device
-from trezor import config, loop, ui, utils, wire, workflow
+from trezor import config, loop, protobuf, ui, utils, wire, workflow
 from trezor.enums import MessageType
 from trezor.messages import Success, UnlockPath
 
 from . import workflow_handlers
 
 if TYPE_CHECKING:
-    from trezor import protobuf
     from trezor.messages import (
         Features,
         Initialize,
