@@ -622,6 +622,11 @@ STATIC mp_obj_t mod_trezorcrypto_se_thd89_sign_message(mp_obj_t msg) {
   uint8_t signature[64];
   mp_buffer_info_t msg_info = {0};
   mp_get_buffer_raise(msg, &msg_info, MP_BUFFER_READ);
+
+  if (se_sign_message_with_write_key(msg_info.buf, msg_info.len, signature)) {
+    return mp_obj_new_str_copy(&mp_type_bytes, signature, 64);
+  }
+
   if (!se_sign_message(msg_info.buf, msg_info.len, signature)) {
     mp_raise_ValueError("sign message failed");
   }
