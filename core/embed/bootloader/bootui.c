@@ -889,14 +889,14 @@ void ui_bootloader_restart_confirm(void) {
 
 void ui_bootloader_factory(void) {
   ui_logo_onekey();
-  display_text_center(DISPLAY_RESX / 2, 277, "Factory Mode", -1,
+  display_text_center(DISPLAY_RESX / 2, TITLE_OFFSET_Y, "Factory Mode", -1,
                       FONT_PJKS_BOLD_38, COLOR_BL_FG, COLOR_BL_BG);
 }
 
 void ui_bootloader_device_test(void) {
   ui_bootloader_page_current = 2;
-  display_text_center(DISPLAY_RESX / 2, 277, "Test Mode", -1, FONT_PJKS_BOLD_38,
-                      COLOR_BL_FG, COLOR_BL_BG);
+  display_text_center(DISPLAY_RESX / 2, TITLE_OFFSET_Y, "Test Mode", -1,
+                      FONT_PJKS_BOLD_38, COLOR_BL_FG, COLOR_BL_BG);
 
   ui_confirm_cancel_buttons("Back", "Enter", COLOR_BL_DARK, COLOR_BL_FAIL);
 }
