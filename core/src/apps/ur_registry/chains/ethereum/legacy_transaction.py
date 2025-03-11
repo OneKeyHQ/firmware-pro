@@ -43,7 +43,7 @@ class EthereumSignTxTransacion:
         # pyright: on
 
     @staticmethod
-    def get_tx(req: EthSignRequest):
+    def gen_request(req: EthSignRequest):
         return EthereumSignTxTransacion.fromSerializedTx(
             req.get_sign_data(), req.get_chain_id(), req.get_address_n()
         )
@@ -55,7 +55,7 @@ class EthereumSignTxTransacion:
         from trezor import wire
 
         # pyright: off
-        tx = self.get_tx(self.req)
+        tx = self.gen_request(self.req)
         resp = await sign_tx(wire.QR_CONTEXT, tx)
         self.signature = (
             resp.signature_r + resp.signature_s + resp.signature_v.to_bytes(4, "big")

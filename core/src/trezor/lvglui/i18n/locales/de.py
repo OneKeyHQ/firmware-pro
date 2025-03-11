@@ -802,7 +802,7 @@ translations = [
     "Wenn Sie jetzt beenden, müssen Sie Ihre Wiederherstellungsphrase beim erneuten Aufrufen erneut bestätigen. Möchten Sie wirklich beenden?",
     "Nicht unterstützte Wiederherstellungsphrase",
     "Die aktuelle Hardware-Wallet unterstützt nur Wiederherstellungsphrasen mit 12, 18 und 24 Wörtern.\nDiese Lite-Sicherung kann nicht wiederhergestellt werden.",
-    "Öffnen Sie OneKey und scannen Sie den QR-Code. BTC- und EVM-Netzwerke werden unterstützt.",
+    "Öffnen Sie die OneKey-App und scannen Sie den QR-Code. Unterstützt BTC-, SOL-, ETH- und EVM-Netzwerke.",
     "Unstimmigkeit der Geldbörse",
     "Ihre in der App ausgewählte Wallet stimmt nicht mit der Hardware-Wallet überein. Bitte überprüfen Sie dies und versuchen Sie es erneut.",
     "Nicht standardmäßige Nachrichtensignatur.",

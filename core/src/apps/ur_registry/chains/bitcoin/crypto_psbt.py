@@ -1,3 +1,5 @@
+from apps.ur_registry.registry_types import CRYPTO_PSBT
+
 from ...ur_py.ur import cbor_lite
 from ...ur_py.ur.ur import UR
 
@@ -14,11 +16,11 @@ class CryptoPSBT:
 
     @staticmethod
     def get_registry_type() -> str:
-        return "crypto-psbt"
+        return CRYPTO_PSBT.get_registry_type()
 
     @staticmethod
     def get_tag() -> int:
-        return 310  # 40310
+        return CRYPTO_PSBT.get_tag()
 
     def cbor_encode(self) -> bytes:
         encoder = cbor_lite.CBOREncoder()
@@ -38,3 +40,10 @@ class CryptoPSBT:
     def from_cbor(cbor: bytes) -> "CryptoPSBT":
         decoder = cbor_lite.CBORDecoder(cbor)
         return CryptoPSBT.cbor_decode(decoder)
+
+    @staticmethod
+    async def gen_request(ur):
+        req = CryptoPSBT.from_cbor(ur.cbor)
+        from apps.ur_registry.chains.bitcoin.transaction import SignPsbt
+
+        return SignPsbt(req)

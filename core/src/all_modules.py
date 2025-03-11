@@ -981,6 +981,18 @@ apps.ur_registry.chains.hardware_requests.hardware_call
 import apps.ur_registry.chains.hardware_requests.hardware_call
 apps.ur_registry.chains.hardware_requests.verify_address
 import apps.ur_registry.chains.hardware_requests.verify_address
+apps.ur_registry.chains.solana
+import apps.ur_registry.chains.solana
+apps.ur_registry.chains.solana.sol_offchain_message
+import apps.ur_registry.chains.solana.sol_offchain_message
+apps.ur_registry.chains.solana.sol_sign_request
+import apps.ur_registry.chains.solana.sol_sign_request
+apps.ur_registry.chains.solana.sol_signature
+import apps.ur_registry.chains.solana.sol_signature
+apps.ur_registry.chains.solana.sol_transaction
+import apps.ur_registry.chains.solana.sol_transaction
+apps.ur_registry.chains.solana.sol_unsafe_message
+import apps.ur_registry.chains.solana.sol_unsafe_message
 apps.ur_registry.crypto_coin_info
 import apps.ur_registry.crypto_coin_info
 apps.ur_registry.crypto_hd_key

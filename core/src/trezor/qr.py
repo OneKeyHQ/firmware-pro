@@ -5,6 +5,12 @@ from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
 from trezor.lvglui.scrs import lv
 
 from apps.ur_registry.chains import MismatchError
+from apps.ur_registry.registry_types import (
+    CRYPTO_PSBT,
+    ETH_SIGN_REQUEST,
+    HARDWARE_CALL,
+    SOL_SIGN_REQUEST,
+)
 from apps.ur_registry.ur_py.ur.ur import UR
 from apps.ur_registry.ur_py.ur.ur_encoder import UREncoder
 
@@ -79,7 +85,12 @@ class QRTask:
     async def finish(self):
         assert self.ur_type is not None, "ur should not be None."
         registry_type = self.ur_type
-        if registry_type == "eth-sign-request":
+        if __debug__:
+            print(f"qr task finished... {registry_type}")
+        if registry_type in [
+            ETH_SIGN_REQUEST.get_registry_type(),
+            SOL_SIGN_REQUEST.get_registry_type(),
+        ]:
             if self.req is not None:
                 from trezor.ui.layouts import show_ur_response
 
@@ -89,14 +100,23 @@ class QRTask:
                         _(i18n_keys.TITLE__EXPORT_SIGNED_TRANSACTION),
                         self.req.qr,
                     )
-        elif registry_type == "onekey-app-call-device":
+        elif registry_type in [
+            HARDWARE_CALL.get_registry_type(),
+            CRYPTO_PSBT.get_registry_type(),
+        ]:
             if self.req is not None:
                 from trezor.ui.layouts import show_ur_response
 
                 if self.req.qr is not None:
+                    if registry_type == HARDWARE_CALL.get_registry_type():
+                        title = _(i18n_keys.CONTENT__EXPORT_ACCOUNT)
+                    elif registry_type == CRYPTO_PSBT.get_registry_type():
+                        title = _(i18n_keys.TITLE__EXPORT_SIGNED_TRANSACTION)
+                    else:
+                        title = None
                     await show_ur_response(
                         wire.QR_CONTEXT,
-                        _(i18n_keys.CONTENT__EXPORT_ACCOUNT),
+                        title,
                         self.req.qr,
                     )
                 elif self.req.encoder is not None:
@@ -106,25 +126,12 @@ class QRTask:
                         None,
                         self.req.encoder,
                     )
-        elif registry_type == "crypto-psbt":
+                else:
+                    if __debug__:
+                        print("no qr or encoder")
+        else:
             if __debug__:
-                print("sign psbt finshed...")
-            if self.req is not None:
-                from trezor.ui.layouts import show_ur_response
-
-                if self.req.qr is not None:
-                    await show_ur_response(
-                        wire.QR_CONTEXT,
-                        _(i18n_keys.TITLE__EXPORT_SIGNED_TRANSACTION),
-                        self.req.qr,
-                    )
-                elif self.req.encoder is not None:
-                    await show_ur_response(
-                        wire.QR_CONTEXT,
-                        None,
-                        None,
-                        self.req.encoder,
-                    )
+                print(f"unknown type {registry_type}")
         self.req = None
         if self.callback_obj is not None:
             lv.event_send(self.callback_obj.nav_back.nav_btn, lv.EVENT.CLICKED, None)
@@ -136,15 +143,12 @@ class QRTask:
     async def gen_request(self, ur: UR) -> bool:
         self.ur_type = ur.registry_type
         registry_type = self.ur_type
-        success = False
         if __debug__:
             print(f"receive >> request ur type: {registry_type}")
+        from apps.ur_registry.chains.requests_handler import get_request_class
 
-        if registry_type not in [
-            "eth-sign-request",
-            "onekey-app-call-device",
-            "crypto-psbt",
-        ]:
+        RequestClass = get_request_class(registry_type)
+        if RequestClass is None:
             if __debug__:
                 print(f"unsupported type {registry_type}")
             from trezor.ui.layouts import show_error_no_interact
@@ -155,95 +159,34 @@ class QRTask:
                     i18n_keys.CONTENT__QR_CODE_TYPE_NOT_SUPPORT_PLEASE_TRY_AGAIN
                 ),
             )
+            return False
+        try:
+            self.req = await RequestClass.gen_request(ur)
+            if __debug__:
+                print("req: ", type(self.req))
+        except MismatchError:
+            from trezor.ui.layouts import show_error_no_interact
+
+            await show_error_no_interact(
+                title=_(i18n_keys.CONTENT__WALLET_MISMATCH),
+                subtitle=_(i18n_keys.CONTENT__WALLET_MISMATCH_DESC),
+            )
+            return False
+        except Exception as e:
+            if __debug__:
+                import sys
+
+                sys.print_exception(e)  # type: ignore["print_exception" is not a known member of module]
+            from trezor.ui.layouts import show_error_no_interact
+
+            await show_error_no_interact(
+                title=_(i18n_keys.TITLE__INVALID_TRANSACTION),
+                subtitle=_(i18n_keys.CONTENT__TX_DATA_IS_INCORRECT_PLEASE_TRY_AGAIN),
+            )
+            return False
         else:
-            if registry_type == "eth-sign-request":
-                from apps.ur_registry.chains.ethereum.eth_sign_request import (
-                    EthSignRequest,
-                )
-
-                try:
-                    self.req = await EthSignRequest.gen_request(ur)
-                    if __debug__:
-                        print("req: ", type(self.req))
-                except MismatchError:
-                    from trezor.ui.layouts import show_error_no_interact
-
-                    await show_error_no_interact(
-                        title=_(i18n_keys.CONTENT__WALLET_MISMATCH),
-                        subtitle=_(i18n_keys.CONTENT__WALLET_MISMATCH_DESC),
-                    )
-                except Exception as e:
-                    if __debug__:
-                        import sys
-
-                        sys.print_exception(e)  # type: ignore["print_exception" is not a known member of module]
-                    from trezor.ui.layouts import show_error_no_interact
-
-                    await show_error_no_interact(
-                        title=_(i18n_keys.TITLE__INVALID_TRANSACTION),
-                        subtitle=_(
-                            i18n_keys.CONTENT__TX_DATA_IS_INCORRECT_PLEASE_TRY_AGAIN
-                        ),
-                    )
-                else:
-                    success = True
-            elif registry_type == "onekey-app-call-device":
-                from apps.ur_registry.chains.hardware_requests.hardware_call import (
-                    HardwareCall,
-                )
-
-                try:
-                    self.req = await HardwareCall.gen_request(ur)
-                    if __debug__:
-                        print("req: ", type(self.req))
-                except MismatchError:
-                    from trezor.ui.layouts import show_error_no_interact
-
-                    await show_error_no_interact(
-                        title=_(i18n_keys.CONTENT__WALLET_MISMATCH),
-                        subtitle=_(i18n_keys.CONTENT__WALLET_MISMATCH_DESC),
-                    )
-                except Exception as e:
-                    if __debug__:
-                        import sys
-
-                        sys.print_exception(e)  # type: ignore["print_exception" is not a known member of module]
-                    from trezor.ui.layouts import show_error_no_interact
-
-                    await show_error_no_interact(
-                        title=_(i18n_keys.TITLE__DATA_FORMAT_NOT_SUPPORT),
-                        subtitle=_(
-                            i18n_keys.CONTENT__TX_DATA_IS_INCORRECT_PLEASE_TRY_AGAIN
-                        ),
-                    )
-                else:
-                    success = True
-            elif registry_type == "crypto-psbt":
-                from apps.ur_registry.chains.bitcoin.transaction import SignPsbt
-
-                try:
-                    self.req = await SignPsbt.gen_request(ur)
-                    if __debug__:
-                        print("req: ", type(self.req))
-                except Exception as e:
-                    if __debug__:
-                        import sys
-
-                        sys.print_exception(e)  # type: ignore["print_exception" is not a known member of module]
-                    from trezor.ui.layouts import show_error_no_interact
-
-                    await show_error_no_interact(
-                        title=_(i18n_keys.TITLE__INVALID_TRANSACTION),
-                        subtitle=_(
-                            i18n_keys.CONTENT__TX_DATA_IS_INCORRECT_PLEASE_TRY_AGAIN
-                        ),
-                    )
-                else:
-                    success = True
-
-        if success:
             self.ready_signal.publish(True)
-        return success
+        return True
 
 
 qr_task = QRTask()

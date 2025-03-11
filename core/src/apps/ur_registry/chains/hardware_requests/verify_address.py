@@ -14,7 +14,7 @@ class VerifyAddressRequest:
         params = self.req.get_params()[0]
         if any(key not in params for key in ("chain", "path", "address")):
             raise ValueError("Invalid param")
-        if params["chain"] == "ETH":
+        if params["chain"].lower() == "eth":
             from apps.ethereum.onekey.get_address import get_address as eth_get_address
 
             if "chainId" not in params:
@@ -27,7 +27,7 @@ class VerifyAddressRequest:
             # pyright: off
             await eth_get_address(wire.QR_CONTEXT, msg)
             # pyright: on
-        elif params["chain"] in ["BTC", "TBTC", "SBTC"]:
+        elif params["chain"].lower() in ["btc", "tbtc", "sbtc"]:
             from apps.bitcoin.get_address import get_address as btc_get_address
 
             if "scriptType" not in params:
@@ -40,6 +40,16 @@ class VerifyAddressRequest:
                 coin_name="Bitcoin" if params["chain"] == "BTC" else "Testnet",
             )
             await btc_get_address(wire.QR_CONTEXT, msg)
+            # pyright: on
+        elif params["chain"].lower() == "sol":
+            from apps.solana.get_address import get_address as sol_get_address
+
+            msg = messages.SolanaGetAddress(
+                address_n=paths.parse_path(params["path"]),
+                show_display=True,
+            )
+            # pyright: off
+            await sol_get_address(wire.QR_CONTEXT, msg)
             # pyright: on
         else:
             raise ValueError("Invalid chain")

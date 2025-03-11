@@ -56,7 +56,7 @@ class FeeMarketEIP1559Transaction:
         # pyright: on
 
     @staticmethod
-    def get_tx(req: EthSignRequest):
+    def gen_request(req: EthSignRequest):
         return FeeMarketEIP1559Transaction.fromSerializedTx(
             req.get_sign_data(), req.get_address_n()
         )
@@ -67,7 +67,7 @@ class FeeMarketEIP1559Transaction:
         from apps.ur_registry.ur_py.ur.ur_encoder import UREncoder
 
         # pyright: off
-        req = self.get_tx(self.req)
+        req = self.gen_request(self.req)
         resp = await sign_tx_eip1559(wire.QR_CONTEXT, req)
         self.signature = (
             resp.signature_r + resp.signature_s + resp.signature_v.to_bytes(1, "big")

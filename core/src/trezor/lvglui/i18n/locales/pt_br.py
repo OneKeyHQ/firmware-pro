@@ -802,7 +802,7 @@ translations = [
     "Se você sair agora, precisará verificar novamente sua frase de recuperação ao entrar novamente. Você tem certeza que quer sair?",
     "Frase de recuperação não suportada",
     "A carteira de hardware atual suporta apenas frases de recuperação de 12, 18 e 24 palavras.\nEste backup Lite não pode ser restaurado.",
-    "Abra o OneKey e escaneie o código QR, compatível com redes BTC e EVM.",
+    "Abra o aplicativo OneKey e escaneie o código QR, ele suporta redes BTC, SOL, ETH e EVM.",
     "Incompatibilidade de Carteira",
     "Sua carteira selecionada no aplicativo não corresponde à carteira de hardware. Por favor, verifique e tente novamente.",
     "Assinatura de mensagem não padrão.",

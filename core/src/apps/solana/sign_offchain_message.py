@@ -104,9 +104,51 @@ def prepare_message(
     return bytes(bw.buffer)
 
 
+def decode_offchain_message(
+    message: bytes, *, standard: bool = False
+) -> tuple[int, int, bytes, bytes | None]:
+    message_length = len(message)
+    min_length = _PREAMBLE_LENGTH if standard else _PREAMBLE_LENGTH_LEDGER
+    max_length = _MAX_MESSAGE_LENGTH_WITH_PREAMBLE
+    if message_length > max_length or message_length < min_length:
+        raise Exception(
+            f"Message length must be between {min_length} and {max_length} bytes, got {message_length}"
+        )
+
+    from trezor.utils import BufferReader
+
+    br = BufferReader(message)
+    sign_domain = br.read_memoryview(16)
+    if sign_domain != _SIGN_DOMAIN:
+        raise Exception(f"Invalid sign domain: {sign_domain}")
+    message_version = int.from_bytes(br.read_memoryview(1), "little")
+    if message_version not in _ALLOWED_HEADER_VERSIONS:
+        raise Exception(f"Message version must be 0, got {message_version}")
+    if standard:
+        application_domain = br.read(_APPLICATION_DOMAIN_LENGTH)
+    else:
+        application_domain = None
+    message_format = int.from_bytes(br.read_memoryview(1), "little")
+    if message_format not in _ALLOWED_MESSAGE_FORMATS:
+        raise Exception(f"Message format must be 0 or 1, got {message_format}")
+    if standard:
+        signer_count = int.from_bytes(br.read_memoryview(1), "little")
+        if signer_count != _SIGNER_COUNT:
+            raise Exception(f"Signer count must be 1, got {signer_count}")
+        _signer_pub_key = br.read(_PUBLIC_KEY_LENGTH)
+        if __debug__:
+            print(f"signer_pub_key: {_signer_pub_key}")
+    message_length = int.from_bytes(br.read_memoryview(2), "little")
+    if message_length != br.remaining_count():
+        raise Exception(f"Invalid message length: {message_length}")
+    message = br.read(message_length)
+    return (message_version, message_format, message, application_domain)
+
+
 def sanitize_message(msg: SolanaSignOffChainMessage):
     """Sanitize the message."""
     message = msg.message
+    msg_length = len(message)
     if (
         msg.application_domain
         and len(msg.application_domain) != _APPLICATION_DOMAIN_LENGTH
@@ -114,11 +156,12 @@ def sanitize_message(msg: SolanaSignOffChainMessage):
         raise wire.DataError(
             f"Application domain must be 32 bytes, got {len(msg.application_domain)}"
         )
-    if len(message) > (
+    max_length = (
         _MAX_MESSAGE_LENGTH if msg.application_domain else _MAX_MESSAGE_LENGTH_LEDGER
-    ):
+    )
+    if msg_length > max_length:
         raise wire.DataError(
-            f"Message is too long, maximum length is {_MAX_MESSAGE_LENGTH} bytes, got {len(message)}"
+            f"Message length must less than {max_length} bytes, got {msg_length}"
         )
     if msg.message_version not in _ALLOWED_HEADER_VERSIONS:
         raise wire.DataError(f"Message version must be 0, got {msg.message_version}")

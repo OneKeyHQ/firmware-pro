@@ -1897,7 +1897,7 @@ class WalletList(Screen):
         self.onekey = ListItemBtn(
             self.container,
             _(i18n_keys.ITEM__ONEKEY_WALLET),
-            _(i18n_keys.CONTENT__BTC_AND_EVM_COMPATIBLE_NETWORKS),
+            _(i18n_keys.CONTENT__BTC_SOL_ETH_N_EVM_NETWORKS),
             left_img_src="A:/res/ok-logo-48.png",
         )
         self.onekey.text_layout_vertical()

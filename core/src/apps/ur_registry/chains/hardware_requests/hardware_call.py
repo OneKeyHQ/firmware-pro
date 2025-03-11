@@ -1,4 +1,5 @@
 from apps.ur_registry.chains import MismatchError
+from apps.ur_registry.registry_types import HARDWARE_CALL
 from apps.ur_registry.ur_py.ur import cbor_lite
 
 
@@ -11,11 +12,11 @@ class HardwareCall:
 
     @staticmethod
     def get_registry_type():
-        return "onekey-app-call-device"
+        return HARDWARE_CALL.get_registry_type()
 
     @staticmethod
     def get_tag() -> int | None:
-        pass
+        return HARDWARE_CALL.get_tag()
 
     def get_xfp(self):
         return self.xfp

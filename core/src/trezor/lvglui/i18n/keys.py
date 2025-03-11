@@ -18,10 +18,10 @@ TITLE__RESTORE_WALLET = 5
 BUTTON__CANCEL = 6
 # Confirm
 BUTTON__CONFIRM = 7
-# Using a strong PIN to protects your wallet from unauthorized physical access
-# .
+# Using a strong PIN to protect your wallet from unauthorized physical access.
 CHECK__SETUP_SET_A_PIN__1 = 8
-# Keeping your PIN secured, be sure to store it separate from recovery phrase.
+# Keep your PIN secure, and be sure to store it separately from your recovery
+# phrase.
 CHECK__SETUP_SET_A_PIN__2 = 9
 # Set a PIN
 TITLE__SET_A_PIN = 10
@@ -1755,7 +1755,8 @@ TITLE__UNSUPPORTED_RECOVERY_PHRASE = 800
 # The current hardware wallet only supports 12, 18, and 24-word recovery phras
 # es.\nThis Lite backup cannot be restored.
 TITLE__UNSUPPORTED_RECOVERY_PHRASE_DESC = 801
-# Open OneKey and scan the QR code, supporting BTC and EVM networks.
+# Open OneKey App and scan the QR Code, supports BTC, SOL, ETH, and EVM networ
+# ks.
 CONTENT__OPEN_ONEKEY_SCAN_THE_QRCODE = 802
 # Wallet Mismatch
 CONTENT__WALLET_MISMATCH = 803
@@ -1900,7 +1901,7 @@ SECURITY__SOLANA_RAW_SIGNING_TX_WARNING = 866
 ITEM__SECURITY_PROTECTION = 867
 # Basic Tutorial
 ITEM__BASIC_TUTORIAL = 868
-# BTC, SOL,ETH & EVM networks
+# BTC, SOL, ETH & EVM networks
 CONTENT__BTC_SOL_ETH_N_EVM_NETWORKS = 869
 # OneKey App
 TITLE__ONEKEY_APP = 870

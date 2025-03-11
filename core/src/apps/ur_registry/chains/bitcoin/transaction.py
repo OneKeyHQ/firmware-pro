@@ -6,7 +6,6 @@ from trezor.crypto.base58 import sha256d_32
 from trezor.enums import InputScriptType, OutputScriptType, RequestType
 
 from apps.ur_registry.chains import MismatchError
-from apps.ur_registry.ur_py.ur.ur_encoder import UREncoder
 
 from .crypto_psbt import CryptoPSBT
 from .psbt.key import ExtendedPubKey
@@ -553,6 +552,8 @@ class SignPsbt:
                             f"adding taproot signature {binascii.hexlify(sig).decode()} for input {input_num}"
                         )
             p += 1
+        from apps.ur_registry.ur_py.ur.ur_encoder import UREncoder
+        from .crypto_psbt import CryptoPSBT
 
         crypto_psbt = CryptoPSBT(psbt.serialize())
         del psbt
@@ -690,8 +691,3 @@ class SignPsbt:
                     print(
                         f"signature for index {idx} is: {binascii.hexlify(sig).decode()}"
                     )
-
-    @staticmethod
-    async def gen_request(ur) -> "SignPsbt":
-        req = CryptoPSBT.from_cbor(ur.cbor)
-        return SignPsbt(req)

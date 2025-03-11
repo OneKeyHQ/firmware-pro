@@ -802,7 +802,7 @@ translations = [
     "Se esci adesso, dovrai verificare nuovamente la frase di recupero quando rientri. Sei sicuro di voler uscire?",
     "Frase di recupero non supportata",
     "Il portafoglio hardware attuale supporta solo frasi di recupero da 12, 18 e 24 parole.\nQuesto backup Lite non può essere ripristinato.",
-    "Apri OneKey e scansiona il codice QR, supportando le reti BTC ed EVM.",
+    "Apri l'app OneKey e scansiona il codice QR. Supporta le reti BTC, SOL, ETH ed EVM.",
     "Incompatibilità del portafoglio",
     "Il portafoglio selezionato nell'app non corrisponde al portafoglio hardware. Si prega di controllare e riprovare.",
     "Firma del messaggio non standard.",

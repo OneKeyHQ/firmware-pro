@@ -15,9 +15,10 @@ class GetMultiAccountsRequest:
             raise ValueError("Invalid param")
         else:
             from apps.ur_registry.crypto_multi_accounts import CryptoMultiAccounts
-            from trezor.messages import GetPublicKey
-            from apps.bitcoin import get_public_key as bitcoin_get_public_key
+            from trezor.messages import HDNodeType, BatchGetPublickeys, Path, PublicKey
             from apps.common import paths as paths_utils
+            from apps.common.keychain import get_keychain
+            from apps.misc.batch_get_pubkeys import validate
             from storage import device
             from trezor import utils
             from apps.ur_registry import helpers, crypto_coin_info
@@ -30,37 +31,79 @@ class GetMultiAccountsRequest:
             for param in params:
                 chain = param["chain"]
                 paths = param["paths"]
-                if chain in ("ETH", "BTC", "TBTC", "SBTC"):
-                    coin_info = crypto_coin_info.CryptoCoinInfo(
-                        crypto_coin_info.Bitcoin
-                        if chain in ["BTC", "TBTC", "SBTC"]
-                        else crypto_coin_info.Ethereum,
-                        crypto_coin_info.MainNet
-                        if chain in ["BTC", "ETH"]
-                        else crypto_coin_info.TestNet,
+                if chain.lower() in ("eth", "btc", "tbtc", "sbtc", "sol"):
+                    if chain.lower() in ("btc", "tbtc", "sbtc"):
+                        coin_type = crypto_coin_info.Bitcoin
+                    elif chain.lower() in ("sol",):
+                        coin_type = crypto_coin_info.Solana
+                    else:
+                        coin_type = crypto_coin_info.Ethereum
+                    network = (
+                        crypto_coin_info.TestNet
+                        if chain.lower() in ("tbtc", "sbtc")
+                        else crypto_coin_info.MainNet
                     )
+                    coin_info = crypto_coin_info.CryptoCoinInfo(
+                        coin_type,
+                        network,
+                    )
+                    if coin_type == crypto_coin_info.Solana:
+                        curve_name = "ed25519"
+                    else:
+                        curve_name = "secp256k1"
+                    validate(
+                        BatchGetPublickeys(
+                            ecdsa_curve_name=curve_name,
+                            paths=[
+                                Path(address_n=paths_utils.parse_path(path))
+                                for path in paths
+                            ],
+                        )
+                    )
+                    # pyright: off
+                    if curve_name == "ed25519":
+                        root_fingerprint = (
+                            await get_keychain(
+                                wire.QR_CONTEXT,
+                                "secp256k1",
+                                [paths_utils.AlwaysMatchingSchema],
+                            )
+                        ).root_fingerprint()
+                    else:
+                        root_fingerprint = None
+                    keychain = await get_keychain(
+                        wire.QR_CONTEXT,
+                        curve_name,
+                        [paths_utils.AlwaysMatchingSchema],
+                    )
+                    if root_fingerprint is None:
+                        root_fingerprint = keychain.root_fingerprint()
+                    # pyright: on
                     for path in paths:
-                        # pyright: off
-                        pub_key = await bitcoin_get_public_key.get_public_key(
-                            wire.QR_CONTEXT,
-                            GetPublicKey(
-                                address_n=paths_utils.parse_path(path),
-                                coin_name="Bitcoin"
-                                if chain in ["BTC", "ETH"]
-                                else "Testnet",
+                        node = keychain.derive(paths_utils.parse_path(path))
+                        pub_key = PublicKey(
+                            node=HDNodeType(
+                                depth=node.depth(),
+                                child_num=node.child_num(),
+                                fingerprint=node.fingerprint(),
+                                chain_code=node.chain_code(),
+                                public_key=node.public_key(),
                             ),
+                            xpub="",
+                            root_fingerprint=root_fingerprint,
                         )
-                        # pyright: on
-                        if not root_fingerprint:
-                            root_fingerprint = pub_key.root_fingerprint
-                        hdkey = helpers.generate_HDKey(
-                            pub_key,
-                            coin_info,
-                            path,
-                            pub_key.root_fingerprint,
-                            None,
-                            None,
-                        )
+                        if coin_type == crypto_coin_info.Solana:
+                            hdkey = helpers.generate_HDKey_ED25519(
+                                pub_key.node.public_key[1:],
+                                path,
+                            )
+                        else:
+                            hdkey = helpers.generate_HDKey(
+                                pub_key,
+                                coin_info,
+                                path,
+                                root_fingerprint,
+                            )
                         keys.append(hdkey)
             assert root_fingerprint is not None, "Root fingerprint should not be None"
             name = helpers.reveal_name(wire.QR_CONTEXT, root_fingerprint)

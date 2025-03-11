@@ -7,6 +7,7 @@ NETWORK = 2
 # CoinType
 Bitcoin = 0
 Ethereum = 60
+Solana = 501
 
 # Network
 MainNet = 0

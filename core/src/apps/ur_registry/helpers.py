@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from .crypto_coin_info import Bitcoin, CryptoCoinInfo, Ethereum, MainNet
+from .crypto_coin_info import Bitcoin, CryptoCoinInfo, Ethereum, MainNet, Solana
 from .crypto_hd_key import CryptoHDKey
 from .crypto_key_path import CryptoKeyPath
 
@@ -12,6 +12,8 @@ BTC_SEGWIT_PREFIX: str = "m/49'/0'/0'"
 BTC_NATIVE_SEGWIT_PREFIX: str = "m/84'/0'/0'"
 BTC_TAPROOT_PREFIX: str = "m/86'/0'/0'"
 ETH_STANDARD_PREFIX: str = "m/44'/60'/0'"
+SOL_STANDARD_PATH: str = "m/44'/501'/0'/0'"
+SOL_LEDGER_LIVE_PATH: str = "m/44'/501'/0'"
 
 
 def generate_HDKey(
@@ -19,8 +21,8 @@ def generate_HDKey(
     coin_info: CryptoCoinInfo,
     path: str,
     root_fingerprint: int | None,
-    name: str | None,
-    note: str | None,
+    name: str | None = None,
+    note: str | None = None,
 ) -> CryptoHDKey:
     hdkey = CryptoHDKey()
     assert root_fingerprint is not None, "Root fingerprint should not be None"
@@ -32,6 +34,24 @@ def generate_HDKey(
         CryptoKeyPath.from_path(path, root_fingerprint),
         None,
         pubkey.node.fingerprint,
+        name,
+        note,
+    )
+    return hdkey
+
+
+def generate_HDKey_ED25519(
+    pubkey: bytes, path: str, name: str | None = None, note: str | None = None
+) -> CryptoHDKey:
+    hdkey = CryptoHDKey()
+    hdkey.new_extended_key(
+        False,
+        pubkey,
+        b"",
+        CryptoCoinInfo(Solana, MainNet),
+        CryptoKeyPath.from_path(path, None),
+        None,
+        None,
         name,
         note,
     )
@@ -117,4 +137,22 @@ def generate_hdkey_BTCTaproot(pubkey: PublicKey) -> CryptoHDKey:
         pubkey.root_fingerprint,
         None,
         "account.btc_taproot",
+    )
+
+
+def generate_hdkey_SOLStandard(pubkey: bytes) -> CryptoHDKey:
+    return generate_HDKey_ED25519(
+        pubkey,
+        SOL_STANDARD_PATH,
+        None,
+        "account.standard",
+    )
+
+
+def generate_hdkey_SOLLedgerLive(pubkey: bytes) -> CryptoHDKey:
+    return generate_HDKey_ED25519(
+        pubkey,
+        SOL_LEDGER_LIVE_PATH,
+        None,
+        "account.ledger_live",
     )

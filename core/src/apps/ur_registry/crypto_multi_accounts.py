@@ -142,8 +142,9 @@ class CryptoMultiAccounts:
 
 
 async def generate_crypto_multi_accounts(ctx: wire.Context) -> UREncoder:
-    from trezor.messages import GetPublicKey
+    from trezor.messages import GetPublicKey, BatchGetPublickeys, Path
     from apps.bitcoin import get_public_key as bitcoin_get_public_key
+    from apps.misc import batch_get_pubkeys as misc_batch_get_pubkeys
     from apps.common import paths
     from storage import device
     from trezor import utils
@@ -163,6 +164,17 @@ async def generate_crypto_multi_accounts(ctx: wire.Context) -> UREncoder:
     btc_taproot_pub = await bitcoin_get_public_key.get_public_key(
         ctx, GetPublicKey(address_n=paths.parse_path(helpers.BTC_TAPROOT_PREFIX))
     )
+    sol_pubs = await misc_batch_get_pubkeys.batch_get_pubkeys(
+        ctx,
+        BatchGetPublickeys(
+            ecdsa_curve_name="ed25519",
+            paths=[
+                Path(address_n=paths.parse_path(helpers.SOL_STANDARD_PATH)),
+                Path(address_n=paths.parse_path(helpers.SOL_LEDGER_LIVE_PATH)),
+            ],
+        ),
+    )
+
     assert eth_pub.root_fingerprint is not None, "Root fingerprint should not be None"
     name = helpers.reveal_name(ctx, eth_pub.root_fingerprint)
     cma = CryptoMultiAccounts(
@@ -173,6 +185,8 @@ async def generate_crypto_multi_accounts(ctx: wire.Context) -> UREncoder:
             helpers.generate_hdkey_BTCSegWit(btc_segwit_pub),
             helpers.generate_hdkey_BTCNativeSegWit(btc_native_segwit_pub),
             helpers.generate_hdkey_BTCTaproot(btc_taproot_pub),
+            helpers.generate_hdkey_SOLStandard(sol_pubs.public_keys[0]),
+            helpers.generate_hdkey_SOLLedgerLive(sol_pubs.public_keys[1]),
         ],
         device=name,
         device_id=device.get_device_id(),

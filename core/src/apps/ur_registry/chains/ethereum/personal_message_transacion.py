@@ -9,7 +9,7 @@ class EthereumPersonalMessageTransacion:
         self.qr = None
         self.encoder = None
 
-    def get_tx(self):
+    def gen_request(self):
         return EthereumSignMessage(
             address_n=self.req.get_address_n(),
             message=self.req.get_sign_data(),
@@ -22,7 +22,7 @@ class EthereumPersonalMessageTransacion:
         from apps.ur_registry.ur_py.ur.ur_encoder import UREncoder
 
         # pyright: off
-        tx = self.get_tx()
+        tx = self.gen_request()
         resp = await sign_message(wire.QR_CONTEXT, tx)
         self.signature = resp.signature
         eth_signature = EthSignature(
