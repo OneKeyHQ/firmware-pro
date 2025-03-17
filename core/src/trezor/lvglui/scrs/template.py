@@ -214,6 +214,7 @@ class BTCDeriveSelectionScreen(FullSizeWindow):
                 self.container,
                 text,
                 has_next=False,
+                use_transition=False,
             )
             btn.add_check_img()
             if text == addr_type:
@@ -283,6 +284,7 @@ class ETHDeriveSelectionScreen(FullSizeWindow):
                 self.container,
                 text,
                 has_next=False,
+                use_transition=False,
             )
             btn.add_check_img()
             if text == addr_type:
