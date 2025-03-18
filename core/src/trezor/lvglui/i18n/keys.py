@@ -1661,8 +1661,8 @@ ACTION__LEARN_MORE = 758
 CONTENT__SCAN_THE_QR_CODE_TO_VIEW_THE_DETAILED_TUTORIAL = 759
 # Access Wallet
 FORM__ACCESS_WALLET = 760
-# Open the OKX Mobile App, go to Wallet, select "I already have one" > "Hardwa
-# re wallet" > "OneKey".
+# Open the OKX Mobile App, go to Wallet, select "Add wallet" > "Hardware walle
+# t" > "OneKey".
 FORM__ACCESS_WALLET_DESC = 761
 # Import Wallet Accounts
 FORM__IMPORT_WALLET_ACCOUNTS = 762
@@ -1690,17 +1690,17 @@ CONTENT__BROWSER_EXTENSION = 771
 FORM__OPEN_METAMASK_IN_YOUR_BROWSER = 772
 # Connect Hardware Wallet
 FORM__CONNECT_HARDWARE_WALLET = 773
-# Choose "TREZOR", click "Continue", select "Allow once for this session", and
-# follow the on-screen instructions to export. Input your OneKey wallet PIN w
-# hen prompted.
+# Select "OneKey" > "Continue", then choose your device in the dialog box and
+# click "Connect". On the authorization page, select "Allow this session", and
+# follow the on-screen instructions to export your account.
 FORM__CONNECT_HARDWARE_WALLET_DESC = 774
 # Unlock Account
 FORM__UNLOCK_ACCOUNT = 775
 # From the list of accounts, select the one you wish to connect and click "Unl
 # ock".
 FORM__UNLOCK_ACCOUNT_DESC = 776
-# Open the OKX wallet extension, select "Import Wallet" > "Hardware wallet" >
-# "OneKey".
+# Open the OKX wallet extension, select "Add wallet" > "Connect hardware walle
+# t" > "OneKey".
 FORM__OPEN_THE_OKX_WALLET_EXTENSION = 777
 # Install OneKey Bridge
 FORM__INSTALL_ONEKEY_BRIDGE = 778
@@ -1723,7 +1723,7 @@ TITLE_RESTART_DEVICE_DESC = 784
 TITLE_CONFIRM_ADDRESS = 785
 # Return to the app, and scan the QR code below.
 TITLE_CONFIRM_ADDRESS_DESC = 786
-# BTC and EVM‒compatible networks
+# BTC, ETH & EVM networks
 CONTENT__BTC_AND_EVM_COMPATIBLE_NETWORKS = 787
 # Open OneKey and scan the QR code below
 CONTENT__OPEN_ONEKEY_AND_SCAN_THE_QR_CODE_BELOW = 788
@@ -1911,4 +1911,21 @@ GLOBAL_CANDIDATE = 871
 GLOBAL_TARGET_NETWORK = 872
 # Remove vote
 TITLE_REMOVE_VOTE = 873
+# High-risk operation: This transaction contains delegatecall, which could all
+# ow external code to control your wallet
+GNOSIS_SAFE_SIG_DELEGATECALL_WARNING_TEXT = 874
+# Operation
+GLOBAL_OPERATION = 875
+# Gnosis Safe Transaction
+GNOSIS_SAFE_SIG_TITLE = 876
+# Safe Tx Gas
+GNOSIS_SAGE_SIG_SAFE_TX_GAS = 877
+# Base Gas
+GLOBAL_BASE_GAS = 878
+# Gas Token
+GLOBAL_GAS_TOKEN = 879
+# Refund Receiver
+GNOSIS_SAGE_SIG_REFUND_RECEIVER = 880
+# Do you want to sign this Gnosis Safe transaction?
+GNOSIS_SAGE_SIG_DOUBLE_CHECK_TO_CONFIRM_DESC_TEXT = 881
 # fmt: on

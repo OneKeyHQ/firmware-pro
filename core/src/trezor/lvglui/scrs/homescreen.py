@@ -760,6 +760,8 @@ class ShowAddress(AnimScreen):
                 self.init_ui()
 
         else:
+            if not self.is_visible():
+                self._load_scr(self)
             # self.container.delete()
             # self.init_ui()
             gc.collect()
@@ -1314,8 +1316,10 @@ class NftGallery(Screen):
             }
             super().__init__(**kwargs)
         else:
-            self.overview.delete()
-            self.container.delete()
+            if hasattr(self, "overview") and self.overview:
+                self.overview.delete()
+            if hasattr(self, "container") and self.container:
+                self.container.delete()
 
         nft_counts = 0
         file_name_list = []
@@ -1571,6 +1575,8 @@ class SettingsScreen(AnimScreen):
         else:
             self.from_appdrawer = False
             self.refresh_text()
+            if not self.is_visible():
+                self._load_scr(self)
             return
         # if __debug__:
         #     self.add_style(StyleWrapper().bg_color(lv_colors.ONEKEY_GREEN_1), 0)
@@ -1664,6 +1670,8 @@ class ConnectWalletWays(Screen):
             }
             super().__init__(**kwargs)
         else:
+            if not self.is_visible():
+                self._load_scr(self)
             return
         airgap_enabled = device.is_airgap_mode()
         if airgap_enabled:
@@ -1762,7 +1770,7 @@ class ConnectWalletGuide(Screen):
         self.okx = ListItemBtn(
             self.container,
             _(i18n_keys.ITEM__OKX_WALLET),
-            "BTC·ETH·TRON·SOL·NEAR ...",
+            _(i18n_keys.CONTENT__BTC_AND_EVM_COMPATIBLE_NETWORKS),
             left_img_src="A:/res/okx-logo-48.png",
         )
         self.okx.text_layout_vertical(pad_top=17, pad_ver=20)
@@ -2005,6 +2013,8 @@ class BackupWallet(Screen):
             }
             super().__init__(**kwargs)
         else:
+            if not self.is_visible():
+                self._load_scr(self)
             return
 
         self.container = ContainerFlexCol(
@@ -2207,6 +2217,8 @@ class ScanScreen(Screen):
             }
             super().__init__(**kwargs)
         else:
+            if not self.is_visible():
+                self._load_scr(self)
             return
 
         self.nav_back.align(lv.ALIGN.TOP_RIGHT, 0, 44)
@@ -5184,6 +5196,8 @@ class UserGuide(Screen):
         if not hasattr(self, "_init"):
             self._init = True
         else:
+            if not self.is_visible():
+                self._load_scr(self)
             return
         kwargs = {
             "prev_scr": prev_scr,

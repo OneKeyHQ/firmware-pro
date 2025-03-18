@@ -48,7 +48,8 @@ def init_lvgl() -> None:
     indev_drv.init()
     indev_drv.type = lv.INDEV_TYPE.POINTER
     indev_drv.read_cb = lcd.ts_read
-    indev_drv.long_press_time = 2000
+    indev_drv.long_press_time = 500
+    indev_drv.long_press_repeat_time = 200
     indev_drv.register()
 
 
@@ -257,93 +258,8 @@ class StatusBar(lv.obj):
 
 
 def retrieve_icon_path(value: int, charging: bool) -> str:
-
-    if value >= 95:
-        return (
-            "A:/res/battery-100-green.png"
-            if charging
-            else "A:/res/battery-100-white.png"
-        )
-    elif value >= 90:
-        return (
-            "A:/res/battery-95-green.png" if charging else "A:/res/battery-95-white.png"
-        )
-    elif value >= 85:
-        return (
-            "A:/res/battery-90-green.png" if charging else "A:/res/battery-90-white.png"
-        )
-    elif value >= 80:
-        return (
-            "A:/res/battery-85-green.png" if charging else "A:/res/battery-85-white.png"
-        )
-    elif value >= 75:
-        return (
-            "A:/res/battery-80-green.png" if charging else "A:/res/battery-80-white.png"
-        )
-    elif value >= 70:
-        return (
-            "A:/res/battery-75-green.png" if charging else "A:/res/battery-75-white.png"
-        )
-    elif value >= 65:
-        return (
-            "A:/res/battery-70-green.png" if charging else "A:/res/battery-70-white.png"
-        )
-    elif value >= 60:
-        return (
-            "A:/res/battery-65-green.png" if charging else "A:/res/battery-65-white.png"
-        )
-    elif value >= 55:
-        return (
-            "A:/res/battery-60-green.png" if charging else "A:/res/battery-60-white.png"
-        )
-    elif value >= 50:
-        return (
-            "A:/res/battery-55-green.png" if charging else "A:/res/battery-55-white.png"
-        )
-    elif value >= 45:
-        return (
-            "A:/res/battery-50-green.png" if charging else "A:/res/battery-50-white.png"
-        )
-    elif value >= 40:
-        return (
-            "A:/res/battery-45-green.png" if charging else "A:/res/battery-45-white.png"
-        )
-    elif value >= 35:
-        return (
-            "A:/res/battery-40-green.png" if charging else "A:/res/battery-40-white.png"
-        )
-    elif value >= 30:
-        return (
-            "A:/res/battery-35-green.png" if charging else "A:/res/battery-35-white.png"
-        )
-    elif value >= 25:
-        return (
-            "A:/res/battery-30-green.png" if charging else "A:/res/battery-30-white.png"
-        )
-    elif value >= 20:
-        return (
-            "A:/res/battery-25-green.png" if charging else "A:/res/battery-25-white.png"
-        )
-    elif value >= 15:
-        return (
-            "A:/res/battery-20-green.png" if charging else "A:/res/battery-20-white.png"
-        )
-    elif value >= 10:
-        return (
-            "A:/res/battery-15-green.png" if charging else "A:/res/battery-15-white.png"
-        )
-    elif value >= 5:
-        return (
-            "A:/res/battery-10-green.png" if charging else "A:/res/battery-10-white.png"
-        )
-    elif value >= 0:
-        return (
-            "A:/res/battery-5-green.png" if charging else "A:/res/battery-5-white.png"
-        )
-    else:
-        # show nothing, the path is not exist
-        return (
-            "A:/res/battery-none-green.png"
-            if charging
-            else "A:/res/battery-none-white.png"
-        )
+    color = "green" if charging else "white"
+    for threshold in range(95, -1, -5):
+        if value >= threshold:
+            return f"A:/res/battery-{threshold + 5}-{color}.png"
+    return f"A:/res/battery-none-{color}.png"
