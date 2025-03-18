@@ -51,6 +51,7 @@
 
 void touch_test(void);
 
+bool touch_is_inited();
 void touch_init(void);
 // void touch_power_on(void);
 void touch_power_off(void);

@@ -81,54 +81,97 @@ void reboot_to_boot(void) {
   svc_reset_system();
 }
 
+// print line height (DISPLAY_CHAR_HEIGHT + 2)
+// up and down padding 8
+// which is (800-(8*2))/(26+2)=28 lines max
+#define DISP_LINE_TO_Y(LINE) (8 + (DISPLAY_CHAR_HEIGHT + 2) * (LINE))
+
 void __attribute__((noreturn))
-__fatal_error(const char *expr, const char *msg, const char *file, int line,
-              const char *func) {
-  display_orientation(0);
-  display_backlight(255);
-  display_printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
-  display_print_color(RGB16(0x69, 0x69, 0x69), COLOR_BLACK);
-  display_printf("\nFATAL ERROR:\n");
-  if (expr) {
-    display_printf("expr: %s\n", expr);
-  }
-  if (msg) {
-    display_printf("msg : %s\n", msg);
-  }
-  if (file) {
-    display_printf("file: %s:%d\n", file, line);
-  }
-  if (func) {
-    display_printf("func: %s\n", func);
-  }
+__fatal_error(const char* expr, const char* msg, const char* file, int line,
+              const char* func) {
+  static bool triggered = false;
+  static int print_y;
+
+  if (!triggered) {
+    display_orientation(0);
+    display_backlight(255);
+    display_print_clear();
+    display_clear();
+    display_print_color(RGB16(0x69, 0x69, 0x69), COLOR_BLACK);
+
+    display_image(9, 50, 46, 40, toi_icon_warning + 12,
+                  sizeof(toi_icon_warning) - 12);
+    display_text(8, 140, "System error occurred", -1, FONT_NORMAL, COLOR_WHITE,
+                 COLOR_BLACK);
+
 #ifdef SCM_REVISION
-  const uint8_t *rev = (const uint8_t *)SCM_REVISION;
-  display_printf("rev : %02x%02x%02x%02x%02x\n", rev[0], rev[1], rev[2], rev[3],
-                 rev[4]);
+    const uint8_t* rev = (const uint8_t*)SCM_REVISION;
+    display_text_printf(8, DISP_LINE_TO_Y(26), "rev: %02x%02x%02x%02x%02x",
+                        rev[0], rev[1], rev[2], rev[3], rev[4]);
+    print_y += (DISPLAY_CHAR_HEIGHT + 2);
 #endif
 #ifdef BUILD_ID
-  const uint8_t *id = (const uint8_t *)BUILD_ID;
-  display_printf("build id: %s\n", id);
+    const uint8_t* id = (const uint8_t*)BUILD_ID;
+    display_text_printf(8, DISP_LINE_TO_Y(27), "build id: %s", id);
+    print_y += (DISPLAY_CHAR_HEIGHT + 2);
 #endif
-  display_printf("\n\n");
-  display_image(9, 50, 46, 40, toi_icon_warning + 12,
-                sizeof(toi_icon_warning) - 12);
-  display_text(8, 140, "System problem detected.", -1, FONT_NORMAL, COLOR_WHITE,
-               COLOR_BLACK);
-  display_text(8, 784, "Tap to restart ...", -1, FONT_NORMAL, COLOR_WHITE,
-               COLOR_BLACK);
-  // shutdown();
-  while (!touch_click()) {
+
+    print_y = DISP_LINE_TO_Y(20);
+    display_text_printf(8, print_y, "FATAL ERROR:");
+    print_y += (DISPLAY_CHAR_HEIGHT + 2);
+  } else {
+    print_y = DISP_LINE_TO_Y(14);
+
+    display_text_printf(8, print_y, "FATAL ERROR (while handling):");
+    print_y += (DISPLAY_CHAR_HEIGHT + 2);
   }
-  restart();
+
+  if (expr) {
+    display_text_printf(8, print_y, "expr: %s", expr);
+    print_y += (DISPLAY_CHAR_HEIGHT + 2);
+  }
+  if (msg) {
+    display_text_printf(8, print_y, "msg: %s", msg);
+    print_y += (DISPLAY_CHAR_HEIGHT + 2);
+  }
+  if (file) {
+    display_text_printf(8, print_y, "file: %s:%d", file, line);
+    print_y += (DISPLAY_CHAR_HEIGHT + 2);
+  }
+  if (func) {
+    display_text_printf(8, print_y, "func: %s", func);
+    print_y += (DISPLAY_CHAR_HEIGHT + 2);
+  }
+
+  display_text_printf(8, print_y, "---------------------------------------");
+  print_y += (DISPLAY_CHAR_HEIGHT + 2);
+
+  if (!triggered) {
+    triggered = true;
+
+    if (touch_is_inited()) {
+      display_text(8, DISP_LINE_TO_Y(28), "Tap to restart ...", -1, FONT_NORMAL,
+                   COLOR_WHITE, COLOR_BLACK);
+      while (!touch_click()) {
+      }
+      restart();
+    }
+  }
+
+  display_bar(0, DISP_LINE_TO_Y(28) - (DISPLAY_CHAR_HEIGHT + 2), DISPLAY_RESX,
+              DISPLAY_RESY, COLOR_BLACK);
+  display_text(8, DISP_LINE_TO_Y(28), "Hold power button to shutdown ...", -1,
+               FONT_NORMAL, COLOR_WHITE, COLOR_BLACK);
+
   for (;;)
     ;
 }
 
 void __attribute__((noreturn))
-error_shutdown(const char *line1, const char *line2, const char *line3,
-               const char *line4) {
+error_shutdown(const char* line1, const char* line2, const char* line3,
+               const char* line4) {
   display_orientation(0);
+  display_backlight(255);
 #ifdef TREZOR_FONT_NORMAL_ENABLE
   uint16_t font_color = RGB16(0x69, 0x69, 0x69);
   display_clear();
@@ -174,17 +217,24 @@ error_shutdown(const char *line1, const char *line2, const char *line3,
   }
   display_printf("\nPlease unplug the device.\n");
 #endif
-  display_backlight(255);
-  // shutdown();
-  while (!touch_click()) {
+
+  if (touch_is_inited()) {
+    display_text(8, 784, "Tap to restart ...", -1, FONT_NORMAL, COLOR_WHITE,
+                 COLOR_BLACK);
+    while (!touch_click()) {
+    }
+    restart();
+  } else {
+    display_text(8, 784, "Hold power button to shutdown ...", -1, FONT_NORMAL,
+                 COLOR_WHITE, COLOR_BLACK);
   }
-  restart();
+
   for (;;)
     ;
 }
 
-void error_reset(const char *line1, const char *line2, const char *line3,
-                 const char *line4) {
+void error_reset(const char* line1, const char* line2, const char* line3,
+                 const char* line4) {
   display_orientation(0);
   display_printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
   display_print_color(RGB16(0x69, 0x69, 0x69), COLOR_BLACK);
@@ -233,8 +283,8 @@ void error_pin_max_prompt(void) {
 }
 
 #ifndef NDEBUG
-void __assert_func(const char *file, int line, const char *func,
-                   const char *expr) {
+void __assert_func(const char* file, int line, const char* func,
+                   const char* expr) {
   __fatal_error(expr, "assert failed", file, line, func);
 }
 #endif
@@ -252,8 +302,8 @@ void clear_otg_hs_memory(void) {
                                       // that the peripheral memory is
                                       // accessible
   memset_reg(
-      (volatile void *)USB_OTG_HS_DATA_FIFO_RAM,
-      (volatile void *)(USB_OTG_HS_DATA_FIFO_RAM + USB_OTG_HS_DATA_FIFO_SIZE),
+      (volatile void*)USB_OTG_HS_DATA_FIFO_RAM,
+      (volatile void*)(USB_OTG_HS_DATA_FIFO_RAM + USB_OTG_HS_DATA_FIFO_SIZE),
       0);
   __HAL_RCC_USB_OTG_HS_CLK_DISABLE();  // disable USB OTG_HS peripheral clock as
                                        // the peripheral is not needed right now
@@ -290,10 +340,10 @@ void collect_hw_entropy(void) {
          NULL);
 }
 
-bool check_all_ones(const void *data, int len) {
+bool check_all_ones(const void* data, int len) {
   if (!data) return false;
   uint8_t result = 0xff;
-  const uint8_t *ptr = (const uint8_t *)data;
+  const uint8_t* ptr = (const uint8_t*)data;
 
   for (; len; len--, ptr++) {
     result &= *ptr;
@@ -303,10 +353,10 @@ bool check_all_ones(const void *data, int len) {
   return (result == 0xff);
 }
 
-bool check_all_zeros(const void *data, int len) {
+bool check_all_zeros(const void* data, int len) {
   if (!data) return false;
   uint8_t result = 0x0;
-  const uint8_t *ptr = (const uint8_t *)data;
+  const uint8_t* ptr = (const uint8_t*)data;
 
   for (; len; len--, ptr++) {
     result |= *ptr;
