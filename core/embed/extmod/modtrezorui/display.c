@@ -568,13 +568,6 @@ void display_loader_ex(uint16_t progress, bool indeterminate, int yoffset,
 
 #ifndef TREZOR_PRINT_DISABLE
 
-#define DISPLAY_FONT_SIZE 16
-#define DISPLAY_CHAR_X_RES 8
-#define DISPLAY_CHAR_WIDTH 8
-#define DISPLAY_CHAR_HIGHT 26
-#define DISPLAY_PRINT_COLS (DISPLAY_RESX / DISPLAY_CHAR_WIDTH)
-#define DISPLAY_PRINT_ROWS (DISPLAY_RESY / DISPLAY_CHAR_HIGHT)
-
 static char display_print_buf[DISPLAY_PRINT_ROWS][DISPLAY_PRINT_COLS];
 static uint16_t display_print_fgcolor = COLOR_WHITE,
                 display_print_bgcolor = COLOR_BLACK;
@@ -618,10 +611,10 @@ void display_print(const char *text, int textlen) {
   for (int i = 0; i < textlen; i++) {
     switch (text[i]) {
       case '\r':
-        // erase hight set to (DISPLAY_CHAR_HIGHT * 2) due to some font char
-        // hights are different, which may cause ghosting issue
-        display_bar(0, DISPLAY_CHAR_HIGHT * (row), DISPLAY_RESX,
-                    DISPLAY_CHAR_HIGHT * 2, display_print_bgcolor);
+        // erase height set to (DISPLAY_CHAR_HEIGHT * 2) due to some font char
+        // heights are different, which may cause ghosting issue
+        display_bar(0, DISPLAY_CHAR_HEIGHT * (row), DISPLAY_RESX,
+                    DISPLAY_CHAR_HEIGHT * 2, display_print_bgcolor);
         col = 0;
         width = 0;
         break;
@@ -667,7 +660,7 @@ void display_print(const char *text, int textlen) {
 
   for (int y = 0; y < DISPLAY_PRINT_ROWS; y++) {
     if (display_print_buf[y][0] != 0) {
-      display_text(8, (y + 1) * DISPLAY_CHAR_HIGHT, &display_print_buf[y][0],
+      display_text(8, (y + 1) * DISPLAY_CHAR_HEIGHT, &display_print_buf[y][0],
                    -1, FONT_NORMAL, display_print_fgcolor,
                    display_print_bgcolor);
     }
@@ -924,6 +917,21 @@ int display_text_split(const char *text, int textlen, int font,
     }
   }
   return textlen;
+}
+
+void display_text_printf(int x, int y, const char *fmt, ...) {
+  if (!strchr(fmt, '%')) {
+    display_text(x, y, fmt, strlen(fmt), FONT_NORMAL, display_print_fgcolor,
+                 display_print_bgcolor);
+  } else {
+    va_list va;
+    va_start(va, fmt);
+    char buf[256] = {0};
+    int len = mini_vsnprintf(buf, sizeof(buf), fmt, va);
+    display_text(x, y, buf, len, FONT_NORMAL, display_print_fgcolor,
+                 display_print_bgcolor);
+    va_end(va);
+  }
 }
 
 #define QR_MAX_VERSION 9

@@ -77,6 +77,13 @@
 #define FONT_PJKS_BOLD_26 (-9)
 #endif
 
+#define DISPLAY_FONT_SIZE 16
+#define DISPLAY_CHAR_X_RES 8
+#define DISPLAY_CHAR_WIDTH 8
+#define DISPLAY_CHAR_HEIGHT 26
+#define DISPLAY_PRINT_COLS (DISPLAY_RESX / DISPLAY_CHAR_WIDTH)
+#define DISPLAY_PRINT_ROWS (DISPLAY_RESY / DISPLAY_CHAR_HEIGHT)
+
 // provided by port
 
 void display_init(void);
@@ -129,7 +136,8 @@ void display_text_right(int x, int y, const char *text, int textlen, int font,
 int display_text_width(const char *text, int textlen, int font);
 int display_text_split(const char *text, int textlen, int font,
                        int requested_width);
-int display_text_height(int font);
+
+void display_text_printf(int x, int y, const char *fmt, ...);
 
 void display_qrcode(int x, int y, const char *data, uint32_t datalen,
                     uint8_t scale);
