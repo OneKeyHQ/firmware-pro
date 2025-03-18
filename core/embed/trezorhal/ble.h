@@ -7,10 +7,9 @@
 
 extern uint8_t battery_cap;
 extern uint8_t dev_pwr_sta;
+extern uint8_t dev_pwr_err;
 
 #define BLE_NAME_LEN 16
-#define CHARGE_BY_USB 0x01
-#define CHARGE_BY_WIRELESS 0x02
 
 // BLE send command
 #define BLE_CMD_ADV 0x01
@@ -20,16 +19,42 @@ extern uint8_t dev_pwr_sta;
 #define BLE_CMD_FM_VER 0x05
 #define BLE_CMD_PROTO_VER 0x06
 #define BLE_CMD_BOOT_VER 0x07
-#define BLE_CMD_PLUG_STA 0x08
+#define BLE_CMD_POWER_STA 0x08
 #define BLE_CMD_EQ 0x09
-#define BLE_CMD_RPESS 0x0A
-#define BLE_CMD_PWR 0x0B
+#define BLE_CMD_KEY_STA 0x0A
+#define BLE_CMD_POWER_ERR 0x0B
 #define BLE_CMD_FLASHLED_STATE 0x0C
 #define BLE_CMD_BATTERY_INFO 0x0D
 #define BLE_CMD_DEV_KEY 0x0E
 #define BLE_CMD_BT_BUILD_ID 0x10
 #define BLE_CMD_BT_HASH 0x11
 #define BLE_CMD_BT_MAC 0x12
+
+#if defined(BLE_CMD_POWER_STA)
+#define BLE_INSERT_POWER 0x01
+#define BLE_REMOVE_POWER 0x02
+#define BLE_CHARGING_PWR 0x03
+#define BLE_CHAGE_OVER 0x04
+
+#define CHARGE_TYPE_USB 0x01
+#define CHARGE_TYPE_WIRELESS 0x02
+#endif
+
+#if defined(BLE_CMD_KEY_STA)
+#define BLE_KEY_SHORT_PRESS 0x01
+#define BLE_KEY_LONG_PRESS 0x02
+#define BLE_KEY_PRESS 0x20
+#define BLE_KEY_RELEASE 0x40
+#endif
+
+#if defined(BLE_CMD_POWER_ERR)
+#define BLE_CMD_POWER_ERR__NONE 0x00
+#define BLE_CMD_POWER_ERR__PMU_OVER_TEMP 0x01
+#define BLE_CMD_POWER_ERR__BATT_OVER_TEMP 0x02
+#define BLE_CMD_POWER_ERR__BATT_UNDER_TEMP 0x03
+#define BLE_CMD_POWER_ERR__BATT_OVER_VOLTAGE 0x04
+#define BLE_CMD_POWER_ERR__CHARGE_TIMEOUT 0x05
+#endif
 
 #define BLE_KEY_RESP_SUCCESS 0x00
 #define BLE_KEY_RESP_FAILED 0x01
@@ -127,6 +152,7 @@ void ble_reset(void);
 #define ble_set_switch(...)
 #define ble_get_switch(...) false
 #define change_ble_sta(...)
+
 #endif
 
 #endif

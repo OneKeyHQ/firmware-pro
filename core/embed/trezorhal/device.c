@@ -1168,10 +1168,10 @@ void device_burnin_test(bool force) {
           charge_type_last = charge_type;
           display_bar(0, battery_info_offset_y - 20, 360, FONT_HEIGHT,
                       COLOR_BLACK);
-          if (CHARGE_BY_USB == charge_type_last) {
+          if (CHARGE_TYPE_USB == charge_type_last) {
             display_text(0, battery_info_offset_y, "charging via usb", -1,
                          FONT_NORMAL, COLOR_WHITE, COLOR_BLACK);
-          } else if (CHARGE_BY_WIRELESS == charge_type_last) {
+          } else if (CHARGE_TYPE_WIRELESS == charge_type_last) {
             display_text(0, battery_info_offset_y, "charging  via wireless", -1,
                          FONT_NORMAL, COLOR_WHITE, COLOR_BLACK);
           } else {

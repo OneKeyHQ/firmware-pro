@@ -7,6 +7,7 @@
 
 uint8_t battery_cap = 0xFF;
 uint8_t dev_pwr_sta = 0;
+uint8_t dev_pwr_err = 0;
 
 static usart_msg ble_usart_msg;
 static bool get_ble_name = false;
@@ -30,7 +31,6 @@ static uint8_t ble_build[8] = {0};
 static uint8_t ble_hash[32] = {0};
 static uint8_t ble_mac_addr[6] = {0};
 static uint8_t dev_press_sta = 0;
-static uint8_t dev_pwr = 0;
 static int ble_request_state = -1;
 static uint8_t ble_response_buf[64];
 
@@ -345,30 +345,30 @@ void ble_uart_poll(void) {
       memcpy(ble_boot_ver, ble_usart_msg.cmd_vale, 5);
       get_ble_boot_ver = true;
       break;
-    case BLE_CMD_PLUG_STA:
+    case BLE_CMD_POWER_STA:
       get_ble_charging = true;
-      if (ble_usart_msg.cmd_vale[0] == 1 || ble_usart_msg.cmd_vale[0] == 3 ||
-          ble_usart_msg.cmd_vale[0] == 4) {
+      if (ble_usart_msg.cmd_vale[0] == BLE_INSERT_POWER ||
+          ble_usart_msg.cmd_vale[0] == BLE_CHARGING_PWR ||
+          ble_usart_msg.cmd_vale[0] == BLE_CHAGE_OVER) {
         dev_pwr_sta = 1;
-        if (ble_usart_msg.cmd_vale[1] == CHARGE_BY_USB ||
-            ble_usart_msg.cmd_vale[1] == CHARGE_BY_WIRELESS) {
+        if (ble_usart_msg.cmd_vale[1] == CHARGE_TYPE_USB ||
+            ble_usart_msg.cmd_vale[1] == CHARGE_TYPE_WIRELESS) {
           ble_charging_type = ble_usart_msg.cmd_vale[1];
         }
       } else {
         dev_pwr_sta = 0;
         ble_charging_type = 0;
       }
-
       break;
     case BLE_CMD_EQ:
       get_ble_battery = true;
       battery_cap = ble_usart_msg.cmd_vale[0];
       break;
-    case BLE_CMD_RPESS:
+    case BLE_CMD_KEY_STA:
       dev_press_sta = ble_usart_msg.cmd_vale[0];
       break;
-    case BLE_CMD_PWR:
-      dev_pwr = ble_usart_msg.cmd_vale[0];
+    case BLE_CMD_POWER_ERR:
+      dev_pwr_err = ble_usart_msg.cmd_vale[0];
       break;
     case BLE_CMD_BATTERY_INFO:
       if (ble_usart_msg.cmd_vale[0] == BLE_BATTERY_INFO_VOLTAGE) {
