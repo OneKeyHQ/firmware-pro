@@ -377,3 +377,37 @@ def sign_typed_data_hash(
             message_hash=message_hash,
         )
     )
+
+@expect(messages.EthereumGnosisSafeSignature)
+def sign_safe_tx(
+    client: "TrezorClient",
+    n: "Address",
+    to: str,
+    value: bytes,
+    data: bytes,
+    operation: int,
+    safeTxGas: bytes,
+    baseGas: bytes,
+    gasPrice: bytes,
+    gasToken: str,
+    refundReceiver: str,
+    nonce: bytes,
+    chain_id: int,
+    verifying_contract: str,
+) -> "MessageType":
+    return client.call(
+        messages.EthereumGnosisSafeTxRequest(address_n=n,
+                                             to=to,
+                                             value=value,
+                                             data=data,
+                                             operation=messages.EthereumGnosisSafeTxOperation.CALL if operation == 0 else messages.EthereumGnosisSafeTxOperation.DELEGATE_CALL,
+                                             safeTxGas=safeTxGas,
+                                             baseGas=baseGas,
+                                             gasPrice=gasPrice,
+                                             gasToken=gasToken,
+                                             refundReceiver=refundReceiver,
+                                             nonce=nonce,
+                                             chain_id=chain_id,
+                                             verifyingContract=verifying_contract,
+        )
+    )

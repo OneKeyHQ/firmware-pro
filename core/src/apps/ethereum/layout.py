@@ -38,6 +38,7 @@ if TYPE_CHECKING:
     from typing import Awaitable, Iterable
 
     from trezor.wire import Context
+    from trezor.messages import EthereumGnosisSafeTxRequest
 
 
 def require_confirm_tx(
@@ -433,3 +434,34 @@ def limit_str(s: str, limit: int = 16) -> str:
         return s
 
     return ".." + s[-limit:]
+
+
+async def require_confirm_safe_tx(
+    ctx: Context, from_address: str, msg: EthereumGnosisSafeTxRequest
+) -> None:
+
+    from trezor.ui.layouts import confirm_safe_tx
+
+    await confirm_safe_tx(
+        ctx,
+        from_address,
+        msg.to,
+        format_ethereum_amount(int.from_bytes(msg.value, "big"), None, msg.chain_id),
+        msg.data,
+        int(msg.operation),
+        int.from_bytes(msg.safeTxGas, "big"),
+        int.from_bytes(msg.baseGas, "big"),
+        format_ethereum_amount(int.from_bytes(msg.gasPrice, "big"), None, msg.chain_id),
+        msg.gasToken if not is_native_token(msg.gasToken) else "ETH",
+        msg.refundReceiver,
+        int.from_bytes(msg.nonce, "big"),
+        msg.verifyingContract,
+    )
+
+
+def is_native_token(token_address: str) -> bool:
+    token_address = token_address.lower()
+    return token_address in (
+        "0x0000000000000000000000000000000000000000",
+        "0000000000000000000000000000000000000000",
+    )

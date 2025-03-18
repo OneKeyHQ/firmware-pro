@@ -1079,6 +1079,8 @@ if not utils.BITCOIN_ONLY:
     import trezor.enums.EthereumDataTypeOneKey
     trezor.enums.EthereumDefinitionType
     import trezor.enums.EthereumDefinitionType
+    trezor.enums.EthereumGnosisSafeTxOperation
+    import trezor.enums.EthereumGnosisSafeTxOperation
     trezor.enums.MoneroNetworkType
     import trezor.enums.MoneroNetworkType
     trezor.enums.NEMImportanceTransferMode
@@ -1225,6 +1227,8 @@ if not utils.BITCOIN_ONLY:
     import apps.ethereum.onekey.keychain
     apps.ethereum.onekey.sign_message
     import apps.ethereum.onekey.sign_message
+    apps.ethereum.onekey.sign_safe_tx
+    import apps.ethereum.onekey.sign_safe_tx
     apps.ethereum.onekey.sign_tx
     import apps.ethereum.onekey.sign_tx
     apps.ethereum.onekey.sign_tx_eip1559

@@ -41,6 +41,7 @@ if TYPE_CHECKING:
     from trezor.enums import EthereumDataType  # noqa: F401
     from trezor.enums import EthereumDataTypeOneKey  # noqa: F401
     from trezor.enums import EthereumDefinitionType  # noqa: F401
+    from trezor.enums import EthereumGnosisSafeTxOperation  # noqa: F401
     from trezor.enums import FailureType  # noqa: F401
     from trezor.enums import InputScriptType  # noqa: F401
     from trezor.enums import MessageType  # noqa: F401
@@ -5023,6 +5024,58 @@ if TYPE_CHECKING:
 
         @classmethod
         def is_type_of(cls, msg: Any) -> TypeGuard["EthereumTypedDataValueAckOneKey"]:
+            return isinstance(msg, cls)
+
+    class EthereumGnosisSafeTxRequest(protobuf.MessageType):
+        address_n: "list[int]"
+        to: "str"
+        value: "bytes"
+        data: "bytes | None"
+        operation: "EthereumGnosisSafeTxOperation"
+        safeTxGas: "bytes"
+        baseGas: "bytes"
+        gasPrice: "bytes"
+        gasToken: "str"
+        refundReceiver: "str"
+        nonce: "bytes"
+        chain_id: "int"
+        verifyingContract: "str"
+
+        def __init__(
+            self,
+            *,
+            to: "str",
+            value: "bytes",
+            operation: "EthereumGnosisSafeTxOperation",
+            safeTxGas: "bytes",
+            baseGas: "bytes",
+            gasPrice: "bytes",
+            gasToken: "str",
+            refundReceiver: "str",
+            nonce: "bytes",
+            chain_id: "int",
+            verifyingContract: "str",
+            address_n: "list[int] | None" = None,
+            data: "bytes | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["EthereumGnosisSafeTxRequest"]:
+            return isinstance(msg, cls)
+
+    class EthereumGnosisSafeSignature(protobuf.MessageType):
+        signature: "bytes"
+
+        def __init__(
+            self,
+            *,
+            signature: "bytes",
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["EthereumGnosisSafeSignature"]:
             return isinstance(msg, cls)
 
     class EthereumStructMemberOneKey(protobuf.MessageType):

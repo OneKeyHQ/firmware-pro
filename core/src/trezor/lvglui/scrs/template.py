@@ -4708,3 +4708,171 @@ class ConnectWalletTutorial(FullSizeWindow):
                     return
                 if target == self.btn_no:
                     self.destroy(10)
+
+
+class GnosisSafeTxDetails(FullSizeWindow):
+    def __init__(
+        self,
+        from_address: str,
+        to_address: str,
+        value: str,
+        call_data: bytes | None,
+        opeartion: int,
+        safe_tx_gas: int,
+        base_gas: int,
+        gas_price: str,
+        gas_token: str,
+        refund_receiver: str,
+        nonce: int,
+        verifying_contract: str,
+        icon_path: str,
+        primary_color: str,
+    ):
+        super().__init__(
+            _(i18n_keys.GNOSIS_SAFE_SIG_TITLE),
+            None,
+            _(i18n_keys.BUTTON__CONFIRM),
+            _(i18n_keys.BUTTON__REJECT),
+            icon_path=icon_path,
+            primary_color=primary_color,
+        )
+        is_delegate_call = opeartion == 1
+        if is_delegate_call:
+            self.warning_banner = Banner(
+                self.content_area,
+                3,
+                _(i18n_keys.GNOSIS_SAFE_SIG_DELEGATECALL_WARNING_TEXT),
+            )
+            self.warning_banner.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, 40)
+        self.container = ContainerFlexCol(
+            self.content_area,
+            self.title if not is_delegate_call else self.warning_banner,
+            pos=(0, 40 if not is_delegate_call else 8),
+        )
+        self.group_directions = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_directions,
+            _(i18n_keys.FORM__DIRECTIONS),
+            "A:/res/group-icon-directions.png",
+        )
+        self.group_body_amount = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__AMOUNT__COLON),
+            value,
+        )
+        self.item_group_body_to_addr = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__INTERACT_WITH),
+            to_address,
+        )
+        self.item_group_body_from_addr = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__SIGNER__COLON),
+            from_address,
+        )
+        self.group_directions.add_dummy()
+
+        self.group_more = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_more, _(i18n_keys.FORM__MORE), "A:/res/group-icon-more.png"
+        )
+        self.item_group_operation = DisplayItem(
+            self.group_more,
+            _(i18n_keys.GLOBAL_OPERATION),
+            "CALL" if opeartion == 0 else "#FF1100 DELEGATECALL#",
+        )
+        self.item_group_nonce = DisplayItem(
+            self.group_more,
+            "Nonce",
+            str(nonce),
+        )
+        self.item_group_verifying_contract = DisplayItem(
+            self.group_more,
+            "VerifyingContract",
+            verifying_contract,
+        )
+        self.group_more.add_dummy()
+
+        self.group_fees = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_fees,
+            _(i18n_keys.FORM__FEES),
+            "A:/res/group-icon-fees.png",
+        )
+        self.item_group_body_safe_tx_gas = DisplayItem(
+            self.group_fees,
+            _(i18n_keys.GNOSIS_SAGE_SIG_SAFE_TX_GAS),
+            str(safe_tx_gas),
+        )
+        self.item_group_body_base_gas = DisplayItem(
+            self.group_fees,
+            _(i18n_keys.GLOBAL_BASE_GAS),
+            str(base_gas),
+        )
+        self.item_group_body_gas_price = DisplayItem(
+            self.group_fees,
+            _(i18n_keys.LIST_KEY__GAS_PRICE__COLON),
+            gas_price,
+        )
+        self.item_group_body_gas_token = DisplayItem(
+            self.group_fees,
+            _(i18n_keys.GLOBAL_GAS_TOKEN),
+            gas_token,
+        )
+        self.item_group_body_refund = DisplayItem(
+            self.group_fees,
+            _(i18n_keys.GNOSIS_SAGE_SIG_REFUND_RECEIVER),
+            refund_receiver,
+        )
+        self.group_fees.add_dummy()
+
+        if call_data:
+            from trezor import strings
+
+            self.data_str = strings.format_customer_data(call_data)
+            if not self.data_str:
+                return
+            self.long_data = False
+            if len(self.data_str) > 225:
+                self.long_data = True
+                self.data = self.data_str[:222] + "..."
+            else:
+                self.data = self.data_str
+            self.item_data = CardItem(
+                self.container,
+                _(i18n_keys.LIST_KEY__DATA__COLON),
+                self.data,
+                "A:/res/group-icon-data.png",
+            )
+            if self.long_data:
+                self.show_full_data = NormalButton(
+                    self.item_data.content, _(i18n_keys.BUTTON__VIEW_DATA)
+                )
+                self.show_full_data.set_size(lv.SIZE.CONTENT, 77)
+                self.show_full_data.add_style(
+                    StyleWrapper().text_font(font_GeistSemiBold26).pad_hor(24), 0
+                )
+                self.show_full_data.align(lv.ALIGN.CENTER, 0, 0)
+                self.show_full_data.remove_style(None, lv.PART.MAIN | lv.STATE.PRESSED)
+                self.show_full_data.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
+
+    def on_click(self, event_obj):
+        code = event_obj.code
+        target = event_obj.get_target()
+        if code == lv.EVENT.CLICKED:
+            if target == self.show_full_data:
+                PageAbleMessage(
+                    _(i18n_keys.TITLE__VIEW_DATA),
+                    self.data_str,
+                    None,
+                    primary_color=self.primary_color,
+                    font=font_GeistMono28,
+                    confirm_text=None,
+                    cancel_text=None,
+                )

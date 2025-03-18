@@ -148,6 +148,7 @@ class DisplayItem(lv.obj):
 
         self.label = lv.label(self)
         self.label.set_size(lv.pct(100), lv.SIZE.CONTENT)
+        self.label.set_recolor(True)
         self.label.set_text(content)
         self.label.add_style(
             StyleWrapper()

@@ -85,6 +85,7 @@ __all__ = (
     "confirm_unknown_token_transfer",
     "confirm_neo_token_transfer",
     "confirm_neo_vote",
+    "confirm_safe_tx",
 )
 
 
@@ -1421,7 +1422,9 @@ async def confirm_neo_vote(
     )
 
 
-async def confirm_final(ctx: wire.Context, chain_name: str) -> None:
+async def confirm_final(
+    ctx: wire.Context, chain_name: str, hold_level: int = 0
+) -> None:
     from trezor.ui.layouts.lvgl import confirm_action
 
     await confirm_action(
@@ -1435,6 +1438,7 @@ async def confirm_final(ctx: wire.Context, chain_name: str) -> None:
         hold=True,
         anim_dir=0,
         icon=ctx.icon_path,
+        hold_level=hold_level,
     )
     await show_popup(
         _(i18n_keys.TITLE__TRANSACTION_SIGNED),
@@ -2420,3 +2424,41 @@ async def confirm_near_transfer(
         await raise_if_cancelled(
             interact(ctx, screen, "near_transfer", ButtonRequestType.ProtectCall)
         )
+
+
+async def confirm_safe_tx(
+    ctx: wire.GenericContext,
+    from_address: str,
+    to_addr: str,
+    value: str,
+    call_data: bytes | None,
+    operation: int,
+    safe_tx_gas: int,
+    base_gas: int,
+    gas_price: str,
+    gas_token: str,
+    refund_receiver: str,
+    nonce: int,
+    verifying_contract: str,
+) -> None:
+    from trezor.lvglui.scrs.template import GnosisSafeTxDetails
+
+    screen = GnosisSafeTxDetails(
+        from_address,
+        to_addr,
+        value,
+        call_data,
+        operation,
+        safe_tx_gas,
+        base_gas,
+        gas_price,
+        gas_token,
+        refund_receiver,
+        nonce,
+        verifying_contract,
+        ctx.icon_path,
+        ctx.primary_color,
+    )
+    await raise_if_cancelled(
+        interact(ctx, screen, "confirm_safe_tx", ButtonRequestType.ProtectCall)
+    )

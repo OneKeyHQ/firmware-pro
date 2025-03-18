@@ -166,6 +166,8 @@ if TYPE_CHECKING:
         EthereumTypedDataValueAckOneKey = 20115
         EthereumTypedDataSignatureOneKey = 20116
         EthereumSignTypedHashOneKey = 20117
+        EthereumGnosisSafeTxRequest = 20118
+        EthereumGnosisSafeSignature = 20119
         NEMGetAddress = 67
         NEMAddress = 68
         NEMSignTx = 69
@@ -671,6 +673,10 @@ if TYPE_CHECKING:
     class EthereumDefinitionType(IntEnum):
         NETWORK = 0
         TOKEN = 1
+
+    class EthereumGnosisSafeTxOperation(IntEnum):
+        CALL = 0
+        DELEGATE_CALL = 1
 
     class EthereumDataTypeOneKey(IntEnum):
         UINT = 1
