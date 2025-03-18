@@ -266,7 +266,7 @@ def _networks_iterator() -> Iterator[NetworkInfoTuple]:
         "RBTC",  # symbol
         "Rootstock",  # name
         "evm-rbtc.png",  # name
-        0xD2D2D2,  # primary_color
+        0xFF9100,  # primary_color
     )
     yield (
         31,  # chain_id
