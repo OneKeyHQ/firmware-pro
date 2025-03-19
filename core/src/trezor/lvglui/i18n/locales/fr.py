@@ -882,5 +882,9 @@ translations = [
     "Jeton de gaz",
     "Receveur de remboursement",
     "Voulez-vous signer cette transaction Gnosis Safe ?",
+    "Activer les clés FIDO",
+    "Lorsqu'il est activé, OneKey fonctionne comme une clé de sécurité pour la connexion sans mot de passe et l'authentification à deux facteurs sur les sites web et les applications.",
+    "Clés FIDO désactivées. Impossible d'enregistrer ou de vérifier les identifiants. Réactivez pour restaurer.",
+    "Désactiver les clés FIDO",
 ]
 # fmt: on

@@ -882,5 +882,9 @@ translations = [
     "Gas Token",
     "Refund Receiver",
     "Do you want to sign this Gnosis Safe transaction?",
+    "Enable FIDO Keys",
+    "When enabled, OneKey works as a security key for passwordless login and 2FA across websites and apps.",
+    "FIDO Keys disabled. Cannot register or verify credentials. Re-enable to restore.",
+    "Disable FIDO Keys",
 ]
 # fmt: on

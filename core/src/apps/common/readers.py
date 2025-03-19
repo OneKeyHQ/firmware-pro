@@ -51,7 +51,7 @@ def _from_bytes_to_signed(bs: bytes, byteorder) -> int:
         raise ValueError("Empty bytes")
     if byteorder not in ["big", "little"]:
         raise ValueError("Invalid byteorder")
-    negative = bs[0] if byteorder == "big" else bs[-1] & 0x80
+    negative = bs[0] & 0x80 if byteorder == "big" else bs[-1] & 0x80
     if not negative:
         return int.from_bytes(bs, byteorder)
     neg_b = bytes(~b & 0xFF for b in bs)
@@ -60,17 +60,17 @@ def _from_bytes_to_signed(bs: bytes, byteorder) -> int:
 
 def read_uint16_le(r: BufferReader) -> int:
     data = r.read_memoryview(2)
-    return _from_bytes_to_signed(data, "little")
+    return int.from_bytes(data, "little")
 
 
 def read_uint32_le(r: BufferReader) -> int:
     data = r.read_memoryview(4)
-    return _from_bytes_to_signed(data, "little")
+    return int.from_bytes(data, "little")
 
 
 def read_uint64_le(r: BufferReader) -> int:
     data = r.read_memoryview(8)
-    return _from_bytes_to_signed(data, "little")
+    return int.from_bytes(data, "little")
 
 
 def read_int8_le(r: BufferReader) -> int:

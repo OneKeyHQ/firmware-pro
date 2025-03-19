@@ -1,5 +1,6 @@
 from micropython import const
 
+import storage
 from trezor import io, utils
 
 
@@ -43,7 +44,7 @@ if utils.EMULATOR:
 _iface_iter = iter(range(5))
 
 ENABLE_IFACE_DEBUG = __debug__
-ENABLE_IFACE_WEBAUTHN = not utils.BITCOIN_ONLY
+ENABLE_IFACE_WEBAUTHN = storage.device.is_fido_enabled()
 ENABLE_IFACE_VCP = __debug__
 
 # interface used for trezor wire protocol

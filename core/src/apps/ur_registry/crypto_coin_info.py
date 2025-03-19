@@ -38,6 +38,8 @@ class CryptoCoinInfo:
             self.coin_type = Bitcoin
         elif coin_type == 60:
             self.coin_type = Ethereum
+        elif coin_type == 501:
+            self.coin_type = Solana
         else:
             self.coin_type = Bitcoin
 

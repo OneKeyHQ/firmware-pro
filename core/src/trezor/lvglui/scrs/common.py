@@ -92,6 +92,13 @@ class AnimScreen(lv.obj):
             self.title.set_long_mode(lv.label.LONG.DOT)
             self.title.set_style_text_align(lv.TEXT_ALIGN.CENTER, 0)
             self.title.align(lv.ALIGN.TOP_MID, 0, 63)
+        if "rti_path" in kwargs:
+            self.rti_btn = lv.imgbtn(self.content_area)
+            self.rti_btn.set_size(48, 48)
+            self.rti_btn.set_ext_click_area(100)
+            self.rti_btn.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
+            self.rti_btn.add_style(StyleWrapper().bg_img_src(kwargs["rti_path"]), 0)
+            self.rti_btn.align(lv.ALIGN.TOP_RIGHT, -12, 56)
         if "icon_path" in kwargs:
             self.icon = lv.img(self.content_area)
             self.icon.set_src(kwargs["icon_path"])
@@ -124,14 +131,19 @@ class AnimScreen(lv.obj):
             if utils.lcd_resume():
                 return
             if isinstance(target, lv.imgbtn):
-                if target == self.nav_back.nav_btn:
+                if hasattr(self, "nav_back") and target == self.nav_back.nav_btn:
                     if self.prev_scr is not None:  #
                         self.load_screen(self.prev_scr, destroy_self=True)
+                elif hasattr(self, "rti_btn") and target == self.rti_btn:
+                    self.on_click_ext(target)
             else:
                 if hasattr(self, "btn") and target == self.btn:
                     self.on_click(target)
 
-    def on_click(self, event_obj):
+    def on_click(self, target):
+        pass
+
+    def on_click_ext(self, target):
         pass
 
     async def request(self) -> Any:
@@ -157,7 +169,8 @@ class AnimScreen(lv.obj):
                 SubTitle,
                 Navigation,
             )
-            apply_animations(targets, back=back, exclude_types=exclude_types)
+            if targets:
+                apply_animations(targets, back=back, exclude_types=exclude_types)
             lv.scr_load(scr)
         else:
             scr.set_pos(0, 0)
@@ -232,6 +245,14 @@ class Screen(lv.obj):
                 self.icon.align_to(self.nav_back, lv.ALIGN.OUT_BOTTOM_LEFT, 12, 8)
             else:
                 self.icon.align(lv.ALIGN.TOP_LEFT, 12, 56)
+        # rt_icon
+        if "rti_path" in kwargs:
+            self.rti_btn = lv.imgbtn(self.content_area)
+            self.rti_btn.set_size(48, 48)
+            self.rti_btn.set_ext_click_area(100)
+            self.rti_btn.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
+            self.rti_btn.add_style(StyleWrapper().bg_img_src(kwargs["rti_path"]), 0)
+            self.rti_btn.align(lv.ALIGN.TOP_RIGHT, -12, 56)
         # title
         if "title" in kwargs:
             self.title = Title(self.content_area, None, (), kwargs["title"])
@@ -267,15 +288,20 @@ class Screen(lv.obj):
             if utils.lcd_resume():
                 return
             if isinstance(target, lv.imgbtn):
-                if target == self.nav_back.nav_btn:
-                    if self.prev_scr is not None:
+                if hasattr(self, "nav_back") and target == self.nav_back.nav_btn:
+                    if self.prev_scr is not None:  #
                         self.load_screen(self.prev_scr, destroy_self=True)
+                elif hasattr(self, "rti_btn") and target == self.rti_btn:
+                    self.on_click_ext(target)
             else:
                 if hasattr(self, "btn") and target == self.btn:
                     self.on_click(target)
 
     # click event callback
-    def on_click(self, event_obj):
+    def on_click(self, target):
+        pass
+
+    def on_click_ext(self, target):
         pass
 
     async def request(self) -> Any:

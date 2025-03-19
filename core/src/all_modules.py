@@ -981,6 +981,8 @@ apps.ur_registry.chains.hardware_requests.hardware_call
 import apps.ur_registry.chains.hardware_requests.hardware_call
 apps.ur_registry.chains.hardware_requests.verify_address
 import apps.ur_registry.chains.hardware_requests.verify_address
+apps.ur_registry.chains.requests_handler
+import apps.ur_registry.chains.requests_handler
 apps.ur_registry.chains.solana
 import apps.ur_registry.chains.solana
 apps.ur_registry.chains.solana.sol_offchain_message

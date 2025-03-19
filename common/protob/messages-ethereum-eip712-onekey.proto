@@ -94,6 +94,12 @@ enum EthereumGnosisSafeTxOperation {
     DELEGATE_CALL = 1;
 }
 
+/**
+ * Request: Ask device to sign Gnosis Safe transaction
+ * @start
+ * @next EthereumGnosisSafeTxRequest
+ * @next Failure
+ */
 message EthereumGnosisSafeTxRequest {
     repeated uint32 address_n = 1;
     required string to = 2;
@@ -110,6 +116,10 @@ message EthereumGnosisSafeTxRequest {
     required string verifyingContract = 13;
 }
 
+/**
+ * Response: the signature of the Gnosis Safe transaction
+ * @end
+ */
 message EthereumGnosisSafeSignature {
     required bytes signature = 1;
 }

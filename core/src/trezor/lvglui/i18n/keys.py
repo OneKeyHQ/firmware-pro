@@ -1928,4 +1928,14 @@ GLOBAL_GAS_TOKEN = 879
 GNOSIS_SAGE_SIG_REFUND_RECEIVER = 880
 # Do you want to sign this Gnosis Safe transaction?
 GNOSIS_SAGE_SIG_DOUBLE_CHECK_TO_CONFIRM_DESC_TEXT = 881
+# Enable FIDO Keys
+SECURITY__ENABLE_FIDO_KEYS = 882
+# When enabled, OneKey works as a security key for passwordless login and 2FA
+# across websites and apps.
+SECURITY__ENABLE_FIDO_KEYS_DESC = 883
+# FIDO Keys disabled. Cannot register or verify credentials. Re-enable to rest
+# ore.
+FIDO_DISABLED_INFO_TEXT = 884
+# Disable FIDO Keys
+SECURITY__DISABLE_FIDO_KEYS = 885
 # fmt: on

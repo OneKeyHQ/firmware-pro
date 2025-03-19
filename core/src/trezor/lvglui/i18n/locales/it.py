@@ -882,5 +882,9 @@ translations = [
     "Token Gas",
     "Ricevitore del Rimborso",
     "Vuoi firmare questa transazione Gnosis Safe?",
+    "Abilita le chiavi FIDO",
+    "Quando abilitato, OneKey funziona come una chiave di sicurezza per l'accesso senza password e l'autenticazione a due fattori su siti web e app.",
+    "Chiavi FIDO disabilitate. Impossibile registrare o verificare le credenziali. Riabilitare per ripristinare.",
+    "Disabilita le chiavi FIDO",
 ]
 # fmt: on

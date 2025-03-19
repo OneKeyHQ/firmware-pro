@@ -882,5 +882,9 @@ translations = [
     "Token de Gás",
     "Receptor de Reembolso",
     "Você quer assinar esta transação do Gnosis Safe?",
+    "Ativar Chaves FIDO",
+    "Quando ativado, o OneKey funciona como uma chave de segurança para login sem senha e 2FA em sites e aplicativos.",
+    "Chaves FIDO desativadas. Não é possível registrar ou verificar credenciais. Reative para restaurar.",
+    "Desativar Chaves FIDO",
 ]
 # fmt: on
