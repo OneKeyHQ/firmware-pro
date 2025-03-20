@@ -310,6 +310,17 @@ chain_list = [
         "primary_color": 0xFFFFFF,
     },
     {
+        "msg_type": MessageType.NeoGetAddress,
+        "symbol": " NEO",
+        "name": "Neo",
+        "msg_class": "NeoGetAddress",
+        "index_pos": -1,
+        "base_path": [0x80000000 + 44, 0x80000000 + 888, 0x80000000 + 0, 0, 0],
+        "icon_96": "A:/res/chain-neo.png",
+        "icon_48": "A:/res/chain-neo-48.png",
+        "primary_color": 0x06CCAB,
+    },
+    {
         "msg_type": MessageType.GetAddress,
         "symbol": " NEUR",
         "name": "Neurai",
