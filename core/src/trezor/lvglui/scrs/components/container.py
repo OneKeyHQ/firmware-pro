@@ -78,6 +78,39 @@ class ContainerFlexRow(lv.obj):
         )
 
 
+class ContainerFlex(lv.obj):
+    def __init__(
+        self,
+        parent,
+        align_base,
+        align=lv.ALIGN.OUT_TOP_MID,
+        pos: tuple = (0, -48),
+        padding_col: int = 8,
+        flex_flow: lv.FLEX_FLOW = lv.FLEX_FLOW.ROW,
+        main_align: lv.FLEX_ALIGN = lv.FLEX_ALIGN.CENTER,
+        cross_align: lv.FLEX_ALIGN = lv.FLEX_ALIGN.CENTER,
+        track_align: lv.FLEX_ALIGN = lv.FLEX_ALIGN.CENTER,
+    ) -> None:
+        super().__init__(parent)
+        self.remove_style_all()
+        self.set_size(lv.pct(100), lv.SIZE.CONTENT)
+        if align_base:
+            self.align_to(align_base, align, pos[0], pos[1])
+        self.add_style(
+            StyleWrapper()
+            .bg_color(lv_colors.BLACK)
+            .bg_opa(lv.OPA.TRANSP)
+            .radius(0)
+            .border_width(0)
+            .pad_column(padding_col),
+            0,
+        )
+        self.set_flex_flow(flex_flow)
+        # align style of the items in the container
+        self.set_flex_align(main_align, cross_align, track_align)
+        self.set_layout(lv.LAYOUT_FLEX.value)
+
+
 class ContainerGrid(lv.obj):
     def __init__(
         self,
