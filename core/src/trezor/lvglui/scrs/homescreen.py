@@ -48,8 +48,8 @@ GRID_CELL_SIZE_ROWS = const(240)
 GRID_CELL_SIZE_COLS = const(144)
 
 if __debug__:
-    APP_DRAWER_UP_TIME = 50
-    APP_DRAWER_DOWN_TIME = 150
+    APP_DRAWER_UP_TIME = 10
+    APP_DRAWER_DOWN_TIME = 50
     APP_DRAWER_UP_DELAY = 15
     APP_DRAWER_DOWN_DELAY = 0
     PATH_OVER_SHOOT = lv.anim_t.path_overshoot
@@ -132,20 +132,24 @@ class MainScreen(Screen):
         self.up_arrow.align_to(self.bottom_tips, lv.ALIGN.OUT_TOP_MID, 0, -8)
 
         self.apps = self.AppDrawer(self)
+        self.apps.add_flag(lv.obj.FLAG.HIDDEN)
         self.add_event_cb(self.on_slide_up, lv.EVENT.GESTURE, None)
         save_app_obj(self)
 
     def hidden_others(self, hidden: bool = True):
-        # if hidden:
-        #     # self.subtitle.add_flag(lv.obj.FLAG.HIDDEN)
-        #     # self.title.add_flag(lv.obj.FLAG.HIDDEN)
-        #     self.bottom_bar.add_flag(lv.obj.FLAG.HIDDEN)
-
-        # else:
-        #     # self.subtitle.clear_flag(lv.obj.FLAG.HIDDEN)
-        #     # self.title.clear_flag(lv.obj.FLAG.HIDDEN)
-        #     self.bottom_bar.clear_flag(lv.obj.FLAG.HIDDEN)
-        pass
+        if hidden:
+            self.set_style_bg_img_src(None, 0)
+            if hasattr(self, "title"):
+                self.title.add_flag(lv.obj.FLAG.HIDDEN)
+            if hasattr(self, "subtitle"):
+                self.subtitle.add_flag(lv.obj.FLAG.HIDDEN)
+        else:
+            homescreen = device.get_homescreen()
+            self.set_style_bg_img_src(homescreen, 0)
+            if hasattr(self, "title"):
+                self.title.clear_flag(lv.obj.FLAG.HIDDEN)
+            if hasattr(self, "subtitle"):
+                self.subtitle.clear_flag(lv.obj.FLAG.HIDDEN)
 
     def change_state(self, busy: bool):
         if busy:
@@ -169,6 +173,7 @@ class MainScreen(Screen):
                     # self.hidden_others()
                     # if hasattr(self, "dev_state"):
                     #     self.dev_state.hidden()
+                    self.apps.clear_flag(lv.obj.FLAG.HIDDEN)
                     self.apps.show()
             elif _dir == lv.DIR.BOTTOM:
                 lv.event_send(self.apps, lv.EVENT.GESTURE, None)
@@ -216,7 +221,7 @@ class MainScreen(Screen):
             super().__init__(parent)
             self.parent = parent
             self.remove_style_all()
-            self.set_pos(0, 800)
+            self.set_pos(0, 0)
             self.set_size(lv.pct(100), lv.pct(100))
             self.add_style(
                 StyleWrapper().bg_color(lv_colors.BLACK).bg_opa().border_width(0),
@@ -246,7 +251,7 @@ class MainScreen(Screen):
 
             self.connect = lv.imgbtn(self)
             self.connect.set_size(216, 216)
-            self.connect.set_pos(16, 148)
+            self.connect.set_pos(16, 200)
             self.connect.set_style_bg_img_src("A:/res/app-connect.jpg", 0)
             self.connect.add_style(click_style, lv.PART.MAIN | lv.STATE.PRESSED)
             self.connect.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
@@ -368,22 +373,22 @@ class MainScreen(Screen):
             self.add_event_cb(self.on_pressed, lv.EVENT.PRESSED, None)
             self.add_event_cb(self.on_released, lv.EVENT.RELEASED, None)
             self.show_anim = Anim(
-                800,
-                0,
+                200,
+                148,
                 self.set_position,
                 start_cb=self.show_anim_start_cb,
                 delay=15 if not __debug__ else APP_DRAWER_UP_DELAY,
                 del_cb=self.show_anim_del_cb,
                 time=130 if not __debug__ else APP_DRAWER_UP_TIME,
-                path_cb=lv.anim_t.path_ease_in
+                path_cb=lv.anim_t.path_linear
                 if not __debug__
                 else APP_DRAWER_UP_PATH_CB,
             )
             self.dismiss_anim = Anim(
-                0,
-                800,
+                148,
+                200,
                 self.set_position,
-                path_cb=lv.anim_t.path_ease_out
+                path_cb=lv.anim_t.path_linear
                 if not __debug__
                 else APP_DRAWER_DOWN_PATH_CB,
                 time=50 if not __debug__ else APP_DRAWER_DOWN_TIME,
@@ -431,7 +436,21 @@ class MainScreen(Screen):
             ]
 
         def set_position(self, val):
-            self.set_y(val)
+            if not hasattr(self, "_last_position"):
+                self._last_position = val
+            y_offset = val - self._last_position
+            position_threshold = 2
+            if abs(y_offset) >= position_threshold:
+                current_group = (
+                    self.group_1 if self.select_page_index == 0 else self.group_2
+                )
+                for obj in current_group:
+                    if obj in (self.container, self.img_down):
+                        continue
+                    current_y = obj.get_y()
+                    obj.set_y(current_y + y_offset)
+                    print(current_y + y_offset)
+                self._last_position = val
 
         def on_gesture(self, event_obj):
             code = event_obj.code
@@ -493,6 +512,7 @@ class MainScreen(Screen):
 
         def dismiss_anim_del_cb(self, _anim):
             self.parent.hidden_others(False)
+            self.add_flag(lv.obj.FLAG.HIDDEN)
 
         def show(self):
             if self.visible:
@@ -5310,55 +5330,116 @@ class BlindSign(Screen):
                     pass
 
 
-class UserGuide(Screen):
+class UserGuide(AnimScreen):
+    def collect_animation_targets(self) -> list:
+        targets = []
+        if hasattr(self, "container") and self.container:
+            targets.append(self.container)
+        return targets
+
     def __init__(self, prev_scr=None):
         if not hasattr(self, "_init"):
             self._init = True
+            self.from_appdrawer = True
+            kwargs = {
+                "prev_scr": prev_scr,
+                "title": _(i18n_keys.APP__USER_GUIDE),
+                "nav_back": True,
+            }
+            super().__init__(**kwargs)
         else:
-            if not self.is_visible():
-                self._load_scr(self)
+            self.from_appdrawer = False
+            self.refresh_text()
             return
-        kwargs = {
-            "prev_scr": prev_scr,
-            "title": _(i18n_keys.APP__USER_GUIDE),
-            "nav_back": True,
-        }
-        super().__init__(**kwargs)
+
+        self.container = ContainerFlexCol(self.content_area, self.title, padding_row=2)
+        self.base_tutorial = ListItemBtn(
+            self.container, _(i18n_keys.ITEM__BASIC_TUTORIAL)
+        )
+        self.security_protection = ListItemBtn(
+            self.container, _(i18n_keys.ITEM__SECURITY_PROTECTION)
+        )
+        self.need_help = ListItemBtn(self.container, _(i18n_keys.ITEM__NEED_HELP))
+        self.container.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
+        self.load_screen(self)
+
+    def refresh_text(self):
+        self.title.set_text(_(i18n_keys.APP__USER_GUIDE))
+        self.base_tutorial.label_left.set_text(_(i18n_keys.ITEM__BASIC_TUTORIAL))
+        self.security_protection.label_left.set_text(
+            _(i18n_keys.ITEM__SECURITY_PROTECTION)
+        )
+        self.need_help.label_left.set_text(_(i18n_keys.ITEM__NEED_HELP))
+
+    def on_click(self, event_obj):
+        code = event_obj.code
+        target = event_obj.get_target()
+        if code == lv.EVENT.CLICKED:
+            if utils.lcd_resume():
+                return
+            if target == self.base_tutorial:
+                BaseTutorial(self)
+            elif target == self.security_protection:
+                SecurityProtection(self)
+            elif target == self.need_help:
+                HelpDetails()
+            else:
+                if __debug__:
+                    print("Unknown")
+
+    def _load_scr(self, scr: "AnimScreen", back: bool = False) -> None:
+        if self.from_appdrawer:
+            scr.set_pos(0, 0)
+            lv.scr_load(scr)
+        else:
+            super()._load_scr(scr, back)
+
+
+class BaseTutorial(AnimScreen):
+    def collect_animation_targets(self) -> list:
+        targets = []
+        if hasattr(self, "container") and self.container:
+            targets.append(self.container)
+        return targets
+
+    def __init__(self, prev_scr=None):
+        if not hasattr(self, "_init"):
+            self._init = True
+            self.from_appdrawer = True
+            kwargs = {
+                "prev_scr": prev_scr,
+                "title": _(i18n_keys.APP__USER_GUIDE),
+                "nav_back": True,
+            }
+            super().__init__(**kwargs)
+        else:
+            self.from_appdrawer = False
+            self.refresh_text()
+            return
 
         self.container = ContainerFlexCol(self.content_area, self.title, padding_row=2)
         self.app_tutorial = ListItemBtn(
             self.container, _(i18n_keys.ITEM__ONEKEY_APP_TUTORIAL)
         )
-        self.hardware_wallet = ListItemBtn(
+        self.power_off = ListItemBtn(
             self.container,
-            _(i18n_keys.ITEM__HOW_HARDWARE_WALLET_WORKS),
+            _(i18n_keys.TITLE__POWER_ON_OFF__GUIDE),
         )
         self.recovery_phrase = ListItemBtn(
             self.container,
             _(i18n_keys.ITEM__WHAT_IS_RECOVERY_PHRASE),
         )
-        self.passphrase = ListItemBtn(
-            self.container,
-            _(i18n_keys.ITEM__PASSPHRASE_ACCESS_HIDDEN_WALLETS),
-        )
-        self.passkeys = ListItemBtn(
-            self.container,
-            _(i18n_keys.FIDO_FIDO_KEYS_LABEL),
-        )
-        self.power_off = ListItemBtn(
-            self.container,
-            _(i18n_keys.TITLE__POWER_ON_OFF__GUIDE),
-        )
-        self.pin_protection = ListItemBtn(
-            self.container,
-            _(i18n_keys.ITEM__ENABLE_PIN_PROTECTION),
-        )
-        self.fingerprint = ListItemBtn(
-            self.container,
-            _(i18n_keys.TITLE__FINGERPRINT),
-        )
-        self.need_help = ListItemBtn(self.container, _(i18n_keys.ITEM__NEED_HELP))
         self.container.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
+        self.load_screen(self)
+        gc.collect()
+
+    def refresh_text(self):
+        self.title.set_text(_(i18n_keys.APP__USER_GUIDE))
+        self.app_tutorial.label_left.set_text(_(i18n_keys.ITEM__ONEKEY_APP_TUTORIAL))
+        self.power_off.label_left.set_text(_(i18n_keys.TITLE__POWER_ON_OFF__GUIDE))
+        self.recovery_phrase.label_left.set_text(
+            _(i18n_keys.ITEM__WHAT_IS_RECOVERY_PHRASE)
+        )
 
     def on_click(self, event_obj):
         code = event_obj.code
@@ -5374,14 +5455,83 @@ class UserGuide(Screen):
                 PowerOnOffDetails()
             elif target == self.recovery_phrase:
                 RecoveryPhraseDetails()
-            elif target == self.pin_protection:
+            else:
+                if __debug__:
+                    print("Unknown")
+
+
+class SecurityProtection(AnimScreen):
+    def collect_animation_targets(self) -> list:
+        targets = []
+        if hasattr(self, "container") and self.container:
+            targets.append(self.container)
+        return targets
+
+    def __init__(self, prev_scr=None):
+        if not hasattr(self, "_init"):
+            self._init = True
+            self.from_appdrawer = True
+            kwargs = {
+                "prev_scr": prev_scr,
+                "title": _(i18n_keys.APP__USER_GUIDE),
+                "nav_back": True,
+            }
+            super().__init__(**kwargs)
+        else:
+            self.from_appdrawer = False
+            self.refresh_text()
+            return
+
+        self.container = ContainerFlexCol(self.content_area, self.title, padding_row=2)
+        self.pin_protection = ListItemBtn(
+            self.container,
+            _(i18n_keys.ITEM__ENABLE_PIN_PROTECTION),
+        )
+        self.fingerprint = ListItemBtn(
+            self.container,
+            _(i18n_keys.TITLE__FINGERPRINT),
+        )
+        self.hardware_wallet = ListItemBtn(
+            self.container,
+            _(i18n_keys.ITEM__HOW_HARDWARE_WALLET_WORKS),
+        )
+        self.passphrase = ListItemBtn(
+            self.container,
+            _(i18n_keys.ITEM__PASSPHRASE_ACCESS_HIDDEN_WALLETS),
+        )
+        self.passkeys = ListItemBtn(
+            self.container,
+            _(i18n_keys.FIDO_FIDO_KEYS_LABEL),
+        )
+        self.container.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
+        self.load_screen(self)
+
+    def refresh_text(self):
+        self.title.set_text(_(i18n_keys.APP__USER_GUIDE))
+        self.pin_protection.label_left.set_text(
+            _(i18n_keys.ITEM__ENABLE_PIN_PROTECTION)
+        )
+        self.fingerprint.label_left.set_text(_(i18n_keys.TITLE__FINGERPRINT))
+        self.hardware_wallet.label_left.set_text(
+            _(i18n_keys.ITEM__HOW_HARDWARE_WALLET_WORKS)
+        )
+        self.passphrase.label_left.set_text(
+            _(i18n_keys.ITEM__PASSPHRASE_ACCESS_HIDDEN_WALLETS)
+        )
+        self.passkeys.label_left.set_text(_(i18n_keys.FIDO_FIDO_KEYS_LABEL))
+
+    def on_click(self, event_obj):
+        code = event_obj.code
+        target = event_obj.get_target()
+        if code == lv.EVENT.CLICKED:
+            if utils.lcd_resume():
+                return
+            if target == self.pin_protection:
                 PinProtectionDetails()
             elif target == self.hardware_wallet:
                 HardwareWalletDetails()
             elif target == self.passphrase:
                 PassphraseDetails()
-            elif target == self.need_help:
-                HelpDetails()
             elif target == self.fingerprint:
                 FingerprintDetails()
             elif target == self.passkeys:
@@ -5391,9 +5541,6 @@ class UserGuide(Screen):
             else:
                 if __debug__:
                     print("Unknown")
-
-    def _load_scr(self, scr: "Screen", back: bool = False) -> None:
-        lv.scr_load(scr)
 
 
 class PowerOnOffDetails(FullSizeWindow):
