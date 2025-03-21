@@ -294,7 +294,7 @@ static void charge_switch(void) {
     return;
   }
 
-  if (ble_get_charge_type() == CHARGE_BY_USB) {
+  if (ble_get_charge_type() == CHARGE_TYPE_USB) {
     if (!charge_enabled || !charge_configured) {
       charge_configured = true;
       charge_enabled = true;
