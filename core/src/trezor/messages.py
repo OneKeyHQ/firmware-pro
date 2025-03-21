@@ -9064,6 +9064,9 @@ if TYPE_CHECKING:
         ext_ton_amount: "list[int]"
         ext_payload: "list[str]"
         jetton_amount_bytes: "bytes | None"
+        init_data_initial_chunk: "bytes | None"
+        init_data_length: "int | None"
+        signing_message_repr: "bytes | None"
 
         def __init__(
             self,
@@ -9089,6 +9092,9 @@ if TYPE_CHECKING:
             is_bounceable: "bool | None" = None,
             is_testnet_only: "bool | None" = None,
             jetton_amount_bytes: "bytes | None" = None,
+            init_data_initial_chunk: "bytes | None" = None,
+            init_data_length: "int | None" = None,
+            signing_message_repr: "bytes | None" = None,
         ) -> None:
             pass
 
@@ -9099,17 +9105,33 @@ if TYPE_CHECKING:
     class TonSignedMessage(protobuf.MessageType):
         signature: "bytes | None"
         signning_message: "bytes | None"
+        init_data_length: "int | None"
 
         def __init__(
             self,
             *,
             signature: "bytes | None" = None,
             signning_message: "bytes | None" = None,
+            init_data_length: "int | None" = None,
         ) -> None:
             pass
 
         @classmethod
         def is_type_of(cls, msg: Any) -> TypeGuard["TonSignedMessage"]:
+            return isinstance(msg, cls)
+
+    class TonTxAck(protobuf.MessageType):
+        init_data_chunk: "bytes"
+
+        def __init__(
+            self,
+            *,
+            init_data_chunk: "bytes",
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["TonTxAck"]:
             return isinstance(msg, cls)
 
     class TonSignProof(protobuf.MessageType):

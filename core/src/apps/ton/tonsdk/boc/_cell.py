@@ -201,6 +201,9 @@ def deserialize_cell_data(cell_data, reference_index_size):
     cell = Cell()
     cell.is_exotic = is_exotic
 
+    if cell.is_exotic:
+        raise NotImplementedError("Exotic cells are not implemented")
+
     if len(cell_data) < data_bytes_size + reference_index_size * ref_num:
         raise Exception("Not enough bytes to encode cell data")
 
@@ -340,3 +343,24 @@ def deserialize_boc(serialized_boc):
         root_cells.append(cells_array[ri])
 
     return root_cells
+
+
+def validate_cell_repr(cell_repr: bytes) -> bool:
+
+    if len(cell_repr) < 2:
+        return False
+
+    d1 = cell_repr[0]
+    d2 = cell_repr[1]
+
+    refs_count = d1 & 0x07
+
+    data_bytes = (d2 + 1) // 2
+
+    expected_length = 2
+    expected_length += data_bytes
+    expected_length += refs_count * 2
+    expected_length += refs_count * 32
+    if len(cell_repr) != expected_length:
+        raise Exception("Invalid cell repr")
+    return True

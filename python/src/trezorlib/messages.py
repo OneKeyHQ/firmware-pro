@@ -397,6 +397,7 @@ class MessageType(IntEnum):
     TonSignedMessage = 11904
     TonSignProof = 11905
     TonSignedProof = 11906
+    TonTxAck = 11907
     ScdoGetAddress = 12001
     ScdoAddress = 12002
     ScdoSignTx = 12003
@@ -11234,6 +11235,9 @@ class TonSignMessage(protobuf.MessageType):
         19: protobuf.Field("ext_ton_amount", "uint64", repeated=True, required=False),
         20: protobuf.Field("ext_payload", "string", repeated=True, required=False),
         21: protobuf.Field("jetton_amount_bytes", "bytes", repeated=False, required=False),
+        22: protobuf.Field("init_data_initial_chunk", "bytes", repeated=False, required=False),
+        23: protobuf.Field("init_data_length", "uint32", repeated=False, required=False),
+        24: protobuf.Field("signing_message_repr", "bytes", repeated=False, required=False),
     }
 
     def __init__(
@@ -11260,6 +11264,9 @@ class TonSignMessage(protobuf.MessageType):
         is_bounceable: Optional["bool"] = False,
         is_testnet_only: Optional["bool"] = False,
         jetton_amount_bytes: Optional["bytes"] = None,
+        init_data_initial_chunk: Optional["bytes"] = None,
+        init_data_length: Optional["int"] = None,
+        signing_message_repr: Optional["bytes"] = None,
     ) -> None:
         self.address_n: Sequence["int"] = address_n if address_n is not None else []
         self.ext_destination: Sequence["str"] = ext_destination if ext_destination is not None else []
@@ -11282,6 +11289,9 @@ class TonSignMessage(protobuf.MessageType):
         self.is_bounceable = is_bounceable
         self.is_testnet_only = is_testnet_only
         self.jetton_amount_bytes = jetton_amount_bytes
+        self.init_data_initial_chunk = init_data_initial_chunk
+        self.init_data_length = init_data_length
+        self.signing_message_repr = signing_message_repr
 
 
 class TonSignedMessage(protobuf.MessageType):
@@ -11289,6 +11299,7 @@ class TonSignedMessage(protobuf.MessageType):
     FIELDS = {
         1: protobuf.Field("signature", "bytes", repeated=False, required=False),
         2: protobuf.Field("signning_message", "bytes", repeated=False, required=False),
+        3: protobuf.Field("init_data_length", "uint32", repeated=False, required=False),
     }
 
     def __init__(
@@ -11296,9 +11307,25 @@ class TonSignedMessage(protobuf.MessageType):
         *,
         signature: Optional["bytes"] = None,
         signning_message: Optional["bytes"] = None,
+        init_data_length: Optional["int"] = None,
     ) -> None:
         self.signature = signature
         self.signning_message = signning_message
+        self.init_data_length = init_data_length
+
+
+class TonTxAck(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 11907
+    FIELDS = {
+        1: protobuf.Field("init_data_chunk", "bytes", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        init_data_chunk: "bytes",
+    ) -> None:
+        self.init_data_chunk = init_data_chunk
 
 
 class TonSignProof(protobuf.MessageType):

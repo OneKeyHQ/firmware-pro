@@ -49,14 +49,21 @@ def sign_message(client: "TrezorClient",
                 workchain: messages.TonWorkChain=messages.TonWorkChain.BASECHAIN,
                 bounceable: bool = False,
                 test_only: bool = False,
+                init_data: str = None,
                 ext_destination: list[str] = None,
                 ext_ton_amount: list[int] = None,
-                ext_payload: list[str] = None
+                ext_payload: list[str] = None,
+                signing_message_repr: str = None
                 ):
     if jetton_amount_bytes is not None:
         jetton_amount_bytes = int(jetton_amount_bytes).to_bytes((int(jetton_amount_bytes).bit_length() + 7) // 8, byteorder='big')
-    return client.call(
-        messages.TonSignMessage(
+    if signing_message_repr is not None:
+        signing_message_repr = bytes.fromhex(signing_message_repr[2:] if signing_message_repr.startswith("0x") else signing_message_repr)
+    if init_data is not None:
+        init_data_bytes = bytes.fromhex(init_data[2:] if init_data.startswith("0x") else init_data)
+    else:
+        init_data_bytes = None
+    msg = messages.TonSignMessage(
             address_n=n,
             destination=destination,
             jetton_master_address=jetton_master_address,
@@ -69,17 +76,32 @@ def sign_message(client: "TrezorClient",
             mode=mode,
             seqno=seqno,
             expire_at=expire_at,
-            version=version,
+            wallet_version=version,
             is_raw_data=is_raw_data,
             wallet_id=wallet_id,
             workchain=workchain,
-            bounceable=bounceable,
-            is_test_only=test_only,
+            is_bounceable=bounceable,
+            is_testnet_only=test_only,
             ext_destination=ext_destination,
             ext_ton_amount=ext_ton_amount,
-            ext_payload=ext_payload
+            ext_payload=ext_payload,
+            signing_message_repr=signing_message_repr
         )
-    )
+    if init_data_bytes is not None:
+        msg.init_data_length = len(init_data_bytes)
+        init_data_bytes, chunk = init_data_bytes[1024:], init_data_bytes[:1024]
+        msg.init_data_initial_chunk = chunk
+    else:
+        msg.init_data_length = 0
+    response = client.call(msg)
+    assert isinstance(response, messages.TonSignedMessage)
+
+    while response.init_data_length is not None:
+        init_data_length = response.init_data_length
+        init_data_bytes, chunk = init_data_bytes[init_data_length:], init_data_bytes[:init_data_length]
+        response = client.call(messages.TonTxAck(init_data_chunk=chunk))
+        assert isinstance(response, messages.TonSignedMessage)
+    return response
 
 @expect(messages.TonSignedProof)
 def sign_proof(client: "TrezorClient",

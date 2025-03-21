@@ -389,6 +389,7 @@ if TYPE_CHECKING:
         TonSignedMessage = 11904
         TonSignProof = 11905
         TonSignedProof = 11906
+        TonTxAck = 11907
         ScdoGetAddress = 12001
         ScdoAddress = 12002
         ScdoSignTx = 12003

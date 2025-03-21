@@ -48,7 +48,7 @@ class WalletContract(Contract):
         payload: Union[Cell, str, bytes, None] = None,
         is_raw_data: bool = False,
         send_mode=SendModeEnum.ignore_errors | SendModeEnum.pay_gas_separately,
-        state_init=None,
+        state_init: bytes = None,
         ext_to: List[str] = None,
         ext_amount: List[int] = None,
         ext_payload: List[Union[Cell, str, bytes, None]] = None,
@@ -71,7 +71,16 @@ class WalletContract(Contract):
         order_header = Contract.create_internal_message_header(
             dest=Address(to_addr), grams=amount
         )
-        order = Contract.create_common_msg_info(order_header, state_init, payload_cell)
+
+        state_init_cell = None
+        if state_init:
+            if state_init.startswith(Cell.REACH_BOC_MAGIC_PREFIX):
+                state_init_cell = Cell.one_from_boc(state_init)
+            else:
+                raise ValueError("Invalid state init")
+        order = Contract.create_common_msg_info(
+            order_header, state_init_cell, payload_cell
+        )
         signing_message = self.create_signing_message(expire_at, seqno)
         signing_message.bits.write_uint8(send_mode)
         signing_message.refs.append(order)

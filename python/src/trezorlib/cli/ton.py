@@ -85,9 +85,11 @@ def get_address(client: "TrezorClient",
 @click.option("-w", "--workchain", type=ChoiceType(WORKCHAIN), default="base")
 @click.option("-b", "--bounceable", is_flag=True)
 @click.option("-t", "--test-only", is_flag=True)
+@click.option("-i", "--init_data", type=str)
 @click.option("-ed", "--ext-destination", multiple=True, type=str)
 @click.option("-ea", "--ext-ton-amount", multiple=True, type=int)
 @click.option("-ep", "--ext-payload", multiple=True, type=str)
+@click.option("-h", "--signing-message-repr", type=str)
 @with_client
 def sign_message(client: "TrezorClient",
                 address: str,
@@ -108,9 +110,11 @@ def sign_message(client: "TrezorClient",
                 workchain: messages.TonWorkChain,
                 bounceable: bool,
                 test_only: bool,
+                init_data: str,
                 ext_destination: tuple[str, ...],
                 ext_ton_amount: tuple[int, ...],
-                ext_payload: tuple[str, ...]
+                ext_payload: tuple[str, ...],
+                signing_message_repr: str
                 ) -> bytes:
     """Sign Ton Transaction."""
     address_n = tools.parse_path(address)
@@ -135,12 +139,14 @@ def sign_message(client: "TrezorClient",
                 workchain,
                 bounceable,
                 test_only,
+                init_data,
                 list(ext_destination),
                 list(ext_ton_amount),
-                list(ext_payload)
+                list(ext_payload),
+                signing_message_repr
     )
 
-    return resp.signature.hex(), resp.signning_message.hex()
+    return resp.signature.hex(), resp.signning_message.hex() if resp.signning_message is not None else None
 
 @cli.command()
 @click.option("-n", "--address", required=True, help=PATH_HELP)
