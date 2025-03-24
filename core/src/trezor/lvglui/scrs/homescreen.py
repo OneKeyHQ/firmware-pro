@@ -449,7 +449,6 @@ class MainScreen(Screen):
                         continue
                     current_y = obj.get_y()
                     obj.set_y(current_y + y_offset)
-                    print(current_y + y_offset)
                 self._last_position = val
 
         def on_gesture(self, event_obj):
