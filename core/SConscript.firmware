@@ -886,6 +886,11 @@ if FROZEN:
         ])
     )
 
+    SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'apps/ur_registry/*.py'))
+    SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'apps/ur_registry/*/*.py'))
+    SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'apps/ur_registry/*/*/*.py'))
+    SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'apps/ur_registry/*/*/*/*.py'))
+
     if EVERYTHING:
         SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'apps/binance/*.py'))
         SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'trezor/enums/Binance*.py'))
@@ -970,12 +975,7 @@ if FROZEN:
         SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'apps/scdo/*.py'))
 
         SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'apps/alephium/*.py'))
-        SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'apps/benfen/*.py'))
-
-        SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'apps/ur_registry/*.py'))
-        SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'apps/ur_registry/*/*.py'))
-        SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'apps/ur_registry/*/*/*.py'))
-        SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'apps/ur_registry/*/*/*/*.py'))
+        SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'apps/benfen/*.py'))        
 
     source_mpy = env.FrozenModule(source=SOURCE_PY, source_dir=SOURCE_PY_DIR, bitcoin_only=BITCOIN_ONLY)
 

@@ -8,12 +8,19 @@ class VerifyAddressRequest:
         self.encoder = None
 
     async def run(self):
-        from trezor import wire, messages
+        from trezor import wire, messages, utils
         from apps.common import paths
 
         params = self.req.get_params()[0]
         if any(key not in params for key in ("chain", "path", "address")):
             raise ValueError("Invalid param")
+
+        if utils.BITCOIN_ONLY:
+            if params["chain"].lower() not in ["btc", "tbtc", "sbtc"]:
+                raise ValueError(
+                    "Only Bitcoin chains are supported in BITCOIN_ONLY mode"
+                )
+
         if params["chain"].lower() == "eth":
             from apps.ethereum.onekey.get_address import get_address as eth_get_address
 

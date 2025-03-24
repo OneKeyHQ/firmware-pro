@@ -31,6 +31,11 @@ class GetMultiAccountsRequest:
             for param in params:
                 chain = param["chain"]
                 paths = param["paths"]
+                if utils.BITCOIN_ONLY:
+                    if chain.lower() not in ("btc", "tbtc", "sbtc"):
+                        raise ValueError(
+                            "Only Bitcoin chains are supported in BITCOIN_ONLY mode"
+                        )
                 if chain.lower() in ("eth", "btc", "tbtc", "sbtc", "sol"):
                     if chain.lower() in ("btc", "tbtc", "sbtc"):
                         coin_type = crypto_coin_info.Bitcoin

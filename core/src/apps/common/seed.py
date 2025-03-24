@@ -108,8 +108,19 @@ else:
 
     @cache.stored_async(cache.APP_COMMON_SEED)
     async def get_seed(ctx: wire.Context) -> bytes:
-        passphrase = await get_passphrase(ctx)
-        return mnemonic.get_seed(passphrase, progress_bar=False)
+        if not utils.USE_THD89:
+            passphrase = await get_passphrase(ctx)
+            return mnemonic.get_seed(passphrase, progress_bar=False)
+        else:
+            from trezor.crypto import se_thd89
+
+            state = se_thd89.get_session_state()
+
+            if not state[0] & 0x80:
+                passphrase = await get_passphrase(ctx)
+                return mnemonic.get_seed(passphrase, progress_bar=False)
+            else:
+                return b""
 
 
 @cache.stored(cache.APP_COMMON_SEED_WITHOUT_PASSPHRASE)

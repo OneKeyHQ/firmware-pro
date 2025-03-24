@@ -577,8 +577,8 @@ enum MessageType {
 
 
     //onekey
-    MessageType_DeviceBackToBoot = 903 [(wire_in) = true];
-    MessageType_RebootToBoardloader = 904 [(wire_in) = true];
+    MessageType_DeviceBackToBoot = 903 [(bitcoin_only) = true,(wire_in) = true];
+    MessageType_RebootToBoardloader = 904 [(bitcoin_only) = true,(wire_in) = true];
 
     MessageType_DeviceInfoSettings = 10001 [(wire_in) = true, (wire_bootloader) = true];
     MessageType_GetDeviceInfo = 10002 [(wire_in) = true, (wire_bootloader) = true];
@@ -586,23 +586,23 @@ enum MessageType {
     MessageType_ReadSEPublicKey = 10004 [(wire_in) = true, (wire_bootloader) = true];
     MessageType_SEPublicKey = 10005 [(wire_out) = true, (wire_bootloader) = true];
     MessageType_WriteSEPublicCert = 10006 [(wire_in) = true, (wire_bootloader) = true];
-    MessageType_ReadSEPublicCert = 10007 [(wire_in) = true, (wire_bootloader) = true];
-    MessageType_SEPublicCert = 10008 [(wire_out) = true, (wire_bootloader) = true];
+    MessageType_ReadSEPublicCert = 10007 [(bitcoin_only) = true,(wire_in) = true, (wire_bootloader) = true];
+    MessageType_SEPublicCert = 10008 [(bitcoin_only) = true,(wire_out) = true, (wire_bootloader) = true];
     // MessageType_SpiFlashWrite = 10009 [deprecated = true];
     // MessageType_SpiFlashRead = 10010 [deprecated = true];
     // MessageType_SpiFlashData = 10011 [deprecated = true];
-    MessageType_SESignMessage = 10012 [(wire_in) = true, (wire_bootloader) = true];
-    MessageType_SEMessageSignature = 10013 [(wire_out) = true, (wire_bootloader) = true];
+    MessageType_SESignMessage = 10012 [(bitcoin_only) = true,(wire_in) = true, (wire_bootloader) = true];
+    MessageType_SEMessageSignature = 10013 [(bitcoin_only) = true,(wire_out) = true, (wire_bootloader) = true];
     // MessageType_NFTWriteInfo = 10014 [deprecated = true];
     // MessageType_NFTWriteData = 10015 [deprecated = true];
-    MessageType_ResourceUpload = 10018 [(wire_in) = true];
+    MessageType_ResourceUpload = 10018 [(bitcoin_only) = true,(wire_in) = true];
     MessageType_ZoomRequest = 10019 [(wire_out) = true];
     MessageType_ResourceRequest = 10020 [(wire_out) = true];
     MessageType_ResourceAck = 10021 [(wire_in) = true];
-    MessageType_ResourceUpdate = 10022 [(wire_in) = true];
-    MessageType_ListResDir = 10023 [(wire_in) = true];
+    MessageType_ResourceUpdate = 10022 [(bitcoin_only) = true,(wire_in) = true];
+    MessageType_ListResDir = 10023 [(bitcoin_only) = true,(wire_in) = true];
     MessageType_FileInfoList = 10024 [(wire_out) = true];
-    MessageType_OnekeyGetFeatures = 10025 [(wire_in) = true];
-    MessageType_OnekeyFeatures = 10026 [(wire_out) = true];
+    MessageType_OnekeyGetFeatures = 10025 [(bitcoin_only) = true,(wire_in) = true];
+    MessageType_OnekeyFeatures = 10026 [(bitcoin_only) = true,(wire_out) = true];
     MessageType_WriteSEPrivateKey = 10027 [(wire_in) = true, (wire_bootloader) = true];
 }

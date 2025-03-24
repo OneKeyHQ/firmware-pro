@@ -265,16 +265,27 @@ class MainScreen(Screen):
             self.page_items = [[] for _ in range(2)]
 
         def init_items(self):
-            items = [
-                ("connect", "app-connect", i18n_keys.APP__CONNECT_WALLET),
-                ("scan", "app-scan", i18n_keys.APP__SCAN),
-                ("my_address", "app-address", i18n_keys.APP__ADDRESS),
-                ("settings", "app-settings", i18n_keys.APP__SETTINGS),
-                ("passkey", "app-keys", i18n_keys.FIDO_FIDO_KEYS_LABEL),
-                ("backup", "app-backup", i18n_keys.APP__BACK_UP),
-                ("nft", "app-nft", i18n_keys.APP__NFT_GALLERY),
-                ("guide", "app-tips", i18n_keys.APP__TIPS),
-            ]
+            if utils.BITCOIN_ONLY:
+                items = [
+                    ("connect", "app-connect", i18n_keys.APP__CONNECT_WALLET),
+                    ("scan", "app-scan", i18n_keys.APP__SCAN),
+                    ("my_address", "app-address", i18n_keys.APP__ADDRESS),
+                    ("settings", "app-settings", i18n_keys.APP__SETTINGS),
+                    ("backup", "app-backup", i18n_keys.APP__BACK_UP),
+                    ("nft", "app-nft", i18n_keys.APP__NFT_GALLERY),
+                    ("guide", "app-tips", i18n_keys.APP__TIPS),
+                ]
+            else:
+                items = [
+                    ("connect", "app-connect", i18n_keys.APP__CONNECT_WALLET),
+                    ("scan", "app-scan", i18n_keys.APP__SCAN),
+                    ("my_address", "app-address", i18n_keys.APP__ADDRESS),
+                    ("settings", "app-settings", i18n_keys.APP__SETTINGS),
+                    ("passkey", "app-keys", i18n_keys.FIDO_FIDO_KEYS_LABEL),
+                    ("backup", "app-backup", i18n_keys.APP__BACK_UP),
+                    ("nft", "app-nft", i18n_keys.APP__NFT_GALLERY),
+                    ("guide", "app-tips", i18n_keys.APP__TIPS),
+                ]
 
             for idx, (name, img, text) in enumerate(items):
                 page = 0 if idx < 4 else 1
@@ -682,15 +693,17 @@ class ShowAddress(AnimScreen):
 
     async def _get_passphrase_from_user(self, init=False, prev_scr=None):
         try:
-            from apps.ethereum.onekey.get_address import get_address as eth_get_address
+            from apps.bitcoin.get_address import get_address as btc_get_address
             from trezor import messages
+            from trezor.enums import InputScriptType
 
-            msg = messages.EthereumGetAddressOneKey(
-                address_n=[0x80000000 + 44, 0x80000000 + 60, 0x80000000 + 0, 0, 0],
+            msg = messages.GetAddress(
+                address_n=[0x80000000 + 44, 0x80000000 + 0, 0x80000000 + 0, 0, 0],
                 show_display=False,
+                script_type=InputScriptType.SPENDADDRESS,
             )
             # pyright: off
-            await eth_get_address(wire.DummyContext(), msg)
+            await btc_get_address(wire.DummyContext(), msg)
             # pyright: on
 
         except Exception:
@@ -807,6 +820,7 @@ class ShowAddress(AnimScreen):
         self.created_count = 0
         self.current_page = 0
         self.items_per_page = 5
+        self.max_pages = 0
 
         self.chain_buttons = []
         for _i in range(self.items_per_page):
@@ -821,16 +835,18 @@ class ShowAddress(AnimScreen):
             btn.add_flag(lv.obj.FLAG.HIDDEN)
 
         self._create_visible_chain_buttons()
+        self.max_pages = (len(self.chains) - 1) // self.items_per_page
 
-        self.next_btn = NormalButton(self, "")
-        self.next_btn.set_size(224, 98)
-        self.next_btn.align(lv.ALIGN.BOTTOM_RIGHT, -12, -8)
-        self.next_btn.set_style_bg_img_src("A:/res/arrow-right-2.png", 0)
+        if self.max_pages > 0:
+            self.next_btn = NormalButton(self, "")
+            self.next_btn.set_size(224, 98)
+            self.next_btn.align(lv.ALIGN.BOTTOM_RIGHT, -12, -8)
+            self.next_btn.set_style_bg_img_src("A:/res/arrow-right-2.png", 0)
 
-        self.back_btn = NormalButton(self, "")
-        self.back_btn.set_size(224, 98)
-        self.back_btn.align(lv.ALIGN.BOTTOM_LEFT, 12, -8)
-        self.back_btn.set_style_bg_img_src("A:/res/arrow-left-2.png", 0)
+            self.back_btn = NormalButton(self, "")
+            self.back_btn.set_size(224, 98)
+            self.back_btn.align(lv.ALIGN.BOTTOM_LEFT, 12, -8)
+            self.back_btn.set_style_bg_img_src("A:/res/arrow-left-2.png", 0)
 
         self.disable_style = (
             StyleWrapper()
@@ -847,8 +863,9 @@ class ShowAddress(AnimScreen):
 
         self._create_visible_chain_buttons()
 
-        self.update_page_buttons()
-        self.next_btn.add_style(self.enable_style, 0)
+        if self.max_pages > 0:
+            self.update_page_buttons()
+            self.next_btn.add_style(self.enable_style, 0)
 
         self.animations_next = []
         self.animations_prev = []
@@ -897,13 +914,12 @@ class ShowAddress(AnimScreen):
         btn.add_style(self.disable_style, 0)
 
     def update_page_buttons(self):
-        max_pages = (len(self.chains) - 1) // self.items_per_page
         if self.current_page == 0:
             self.disable_page_buttons(self.back_btn)
             if not self.next_btn.has_flag(lv.btn.FLAG.CLICKABLE):
                 self.enable_page_buttons(self.next_btn)
 
-        elif self.current_page == max_pages:
+        elif self.current_page == self.max_pages:
             self.disable_page_buttons(self.next_btn)
             if not self.back_btn.has_flag(lv.btn.FLAG.CLICKABLE):
                 self.enable_page_buttons(self.back_btn)
@@ -915,8 +931,7 @@ class ShowAddress(AnimScreen):
                 self.enable_page_buttons(self.back_btn)
 
     def next_page(self):
-        max_pages = (len(self.chains) - 1) // self.items_per_page
-        if self.current_page < max_pages:
+        if self.current_page < self.max_pages:
             self.current_page += 1
             self._create_visible_chain_buttons()
             for anim in self.animations_next:
@@ -973,9 +988,9 @@ class ShowAddress(AnimScreen):
 
             else:
                 gc.collect()
-                if target == self.back_btn:
+                if hasattr(self, "back_btn") and target == self.back_btn:
                     self.prev_page()
-                elif target == self.next_btn:
+                elif hasattr(self, "next_btn") and target == self.next_btn:
                     self.next_page()
 
     async def _handle_passphrase_change(self, coro):

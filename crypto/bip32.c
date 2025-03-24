@@ -656,11 +656,18 @@ int hdnode_sign(HDNode *node, const uint8_t *msg, uint32_t msg_len,
   } else if (node->curve == &curve25519_info) {
     return 1;  // signatures are not supported
   } else {
+#if !BITCOIN_ONLY
     if (node->curve == &ed25519_info || node->curve == &ed25519_cardano_info ||
         node->curve == &ed25519_cardano_ledger_info ||
         node->curve == &ed25519_cardano_trezor_info) {
       ed25519_sign(msg, msg_len, node->private_key, sig);
-    } else if (node->curve == &ed25519_sha3_info) {
+    }
+#else
+    if (node->curve == &ed25519_info) {
+      ed25519_sign(msg, msg_len, node->private_key, sig);
+    }
+#endif
+    else if (node->curve == &ed25519_sha3_info) {
       ed25519_sign_sha3(msg, msg_len, node->private_key, sig);
 #if USE_KECCAK
     } else if (node->curve == &ed25519_keccak_info) {
