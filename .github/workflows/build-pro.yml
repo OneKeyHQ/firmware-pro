@@ -5,7 +5,42 @@ on:
 
 jobs:
   build-pro:
+    name: "Build Pro (${{ matrix.artifact_suffix }})"
     runs-on: ubuntu-20.04
+    outputs:
+      firmware_version: ${{ steps.vars.outputs.firmware_version }}
+      boot_version: ${{ steps.vars.outputs.boot_version }}
+      short_hash: ${{ steps.vars.outputs.short_hash }}
+      build_date: ${{ steps.vars.outputs.build_date }}
+      artifacts_url: ${{ steps.vars.outputs.artifacts_url }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - production: 1
+            bitcoin_only: 0
+            secret_key_1_name: "SECRET_KEY_1"
+            secret_key_2_name: "SECRET_KEY_2"
+            output_dir: prod
+            artifact_suffix: "prod"
+          - production: 1
+            bitcoin_only: 1
+            secret_key_1_name: "SECRET_KEY_1"
+            secret_key_2_name: "SECRET_KEY_2"
+            output_dir: prod-bc-only
+            artifact_suffix: "prod-bc-only"
+          - production: 0
+            bitcoin_only: 0
+            secret_key_1_name: "SECRET_QA_KEY_1"
+            secret_key_2_name: "SECRET_QA_KEY_2"
+            output_dir: qa
+            artifact_suffix: "qa"
+          - production: 0
+            bitcoin_only: 1
+            secret_key_1_name: "SECRET_QA_KEY_1"
+            secret_key_2_name: "SECRET_QA_KEY_2"
+            output_dir: qa-bc-only
+            artifact_suffix: "qa-bc-only"
 
     steps:
       - name: "Checkout"
@@ -15,7 +50,7 @@ jobs:
         id: vars
         run: |
           BOOT_VERSION=$(./tools/version.sh ./core/embed/bootloader/version.h)
-          FIRMWARE_VERSION=$(cat ./core/embed/firmware/version.h | grep -E '#define ONEKEY_VERSION_(MAJOR|MINOR|PATCH)' | awk '{printf "%s.", $3}' | sed 's/\.$//')
+          FIRMWARE_VERSION=$(grep -E '#define ONEKEY_VERSION_(MAJOR|MINOR|PATCH)' ./core/embed/firmware/version.h | awk '{printf "%s.", $3}' | sed 's/\.$//')
           BUILD_DATE=$(date +"%Y%m%d")
           SHORT_HASH=$(git rev-parse --short HEAD)
 
@@ -23,59 +58,85 @@ jobs:
           echo "FIRMWARE_VERSION=$FIRMWARE_VERSION" >> $GITHUB_ENV
           echo "BUILD_DATE=$BUILD_DATE" >> $GITHUB_ENV
           echo "SHORT_HASH=$SHORT_HASH" >> $GITHUB_ENV
-          echo "ARTIFACTS_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"" >> $GITHUB_ENV
+          ARTIFACTS_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          echo "ARTIFACTS_URL=${ARTIFACTS_URL}" >> $GITHUB_ENV
 
-      - name: "Build boardloader bootloader firmware for production"
+          echo "firmware_version=$FIRMWARE_VERSION" >> $GITHUB_OUTPUT
+          echo "boot_version=$BOOT_VERSION" >> $GITHUB_OUTPUT
+          echo "short_hash=$SHORT_HASH" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+          echo "artifacts_url=$ARTIFACTS_URL" >> $GITHUB_OUTPUT
+
+      - name: "Build firmware"
         env:
-          PRODUCTION: 1
+          PRODUCTION: ${{ matrix.production }}
+          SECRET_1: ${{ secrets[matrix.secret_key_1_name] }}
+          SECRET_2: ${{ secrets[matrix.secret_key_2_name] }}
         run: |
           sh <(curl -L https://releases.nixos.org/nix/nix-2.23.3/install) --no-daemon
           . $HOME/.nix-profile/etc/profile.d/nix.sh
-          nix-shell --run "poetry install"
-          git submodule update --init --recursive
-          nix-shell --run "poetry run make -C core build_boardloader"
-          nix-shell --run "poetry run make -C core build_bootloader"
-          nix-shell --run "poetry run make -C core build_firmware"
-          nix-shell --run "poetry run core/tools/headertool.py -h core/build/firmware/pro*Stable*.bin -S 1:${{ secrets.SECRET_KEY_1 }} -S 2:${{ secrets.SECRET_KEY_2 }}"
-          mkdir -p core/build/output/prod
-          cp ./core/build/boardloader/boardloader.bin core/build/output/prod
-          cp ./core/build/bootloader/pro.bootloader*Stable*.bin core/build/output/prod
-          cp ./core/build/firmware/pro*Stable*.bin core/build/output/prod
-          tools/hash.py -t bootloader -f core/build/bootloader/bootloader.bin > core/build/output/prod/bootloader_sha256.txt
-          tools/hash.py -t firmware -f core/build/firmware/pro.*.bin > core/build/output/prod/firmware_sha256.txt
 
-      - name: "Build boardloader bootloader firmware for qa"
-        env:
-          PRODUCTION: 0
-        run: |
-          sh <(curl -L https://releases.nixos.org/nix/nix-2.23.3/install) --no-daemon
-          . $HOME/.nix-profile/etc/profile.d/nix.sh
           nix-shell --run "poetry install"
           git submodule update --init --recursive
-          nix-shell --run "poetry run make -C core clean"
-          nix-shell --run "poetry run make -C core build_boardloader"
-          nix-shell --run "poetry run make -C core build_boardloader_reflash_dev"
-          nix-shell --run "poetry run make -C core build_bootloader"
-          nix-shell --run "poetry run make -C core build_firmware"
-          nix-shell --run "poetry run core/tools/headertool.py -h core/build/boardloader_reflash_dev/boardloader_reflash_dev.bin -S 1:${{ secrets.SECRET_QA_KEY_1 }} -S 2:${{ secrets.SECRET_QA_KEY_2 }}"
-          nix-shell --run "poetry run core/tools/headertool.py -h core/build/bootloader/pro.bootloader*Stable*.bin -S 1:${{ secrets.SECRET_QA_KEY_1 }} -S 2:${{ secrets.SECRET_QA_KEY_2 }}"
-          nix-shell --run "poetry run core/tools/headertool.py -h core/build/firmware/pro*Stable*.bin -S 1:${{ secrets.SECRET_QA_KEY_1 }} -S 2:${{ secrets.SECRET_QA_KEY_2 }}"
-          mkdir -p core/build/output/qa
-          cp ./core/build/boardloader/boardloader.bin core/build/output/qa
-          cp ./core/build/boardloader_reflash_dev/boardloader_reflash_dev.bin core/build/output/qa
-          cp ./core/build/bootloader/pro.bootloader*Stable*.bin core/build/output/qa
-          cp ./core/build/firmware/pro*Stable*.bin core/build/output/qa
-          tools/hash.py -t bootloader -f core/build/bootloader/bootloader.bin > core/build/output/qa/bootloader_sha256.txt
-          tools/hash.py -t firmware -f core/build/firmware/pro.*.bin >> core/build/output/qa/firmware_sha256.txt
+
+          if [ "${{ matrix.bitcoin_only }}" = "1" ]; then
+            nix-shell --run "poetry run make -C core build_firmware BITCOIN_ONLY=1"
+          else
+            nix-shell --run "poetry run make -C core build_boardloader"
+
+            if [ "$PRODUCTION" = "0" ]; then
+              nix-shell --run "poetry run make -C core build_boardloader_reflash_dev"
+            fi
+
+            nix-shell --run "poetry run make -C core build_bootloader"
+            nix-shell --run "poetry run make -C core build_firmware"
+          fi
+
+          if [ "${{ matrix.bitcoin_only }}" = "0" ]; then
+            nix-shell --run "poetry run core/tools/headertool.py -h core/build/bootloader/pro.bootloader*Stable*.bin \
+              -S 1:$SECRET_1 -S 2:$SECRET_2"
+          fi
+
+          nix-shell --run "poetry run core/tools/headertool.py -h core/build/firmware/pro*Stable*.bin \
+            -S 1:$SECRET_1 -S 2:$SECRET_2"
+
+          if [ "$PRODUCTION" = "0" ] && [ "${{ matrix.bitcoin_only }}" = "0" ]; then
+            nix-shell --run "poetry run core/tools/headertool.py -h core/build/boardloader_reflash_dev/boardloader_reflash_dev.bin \
+              -S 1:$SECRET_1 -S 2:$SECRET_2"
+          fi
+
+          mkdir -p core/build/output/${{ matrix.output_dir }}
+
+          if [ "${{ matrix.bitcoin_only }}" = "0" ]; then
+            cp ./core/build/boardloader/boardloader.bin core/build/output/${{ matrix.output_dir }}
+
+            if [ "$PRODUCTION" = "0" ]; then
+              cp ./core/build/boardloader_reflash_dev/boardloader_reflash_dev.bin core/build/output/${{ matrix.output_dir }}
+            fi
+
+            cp ./core/build/bootloader/pro.bootloader*Stable*.bin core/build/output/${{ matrix.output_dir }}
+            tools/hash.py -t bootloader -f core/build/bootloader/bootloader.bin > core/build/output/${{ matrix.output_dir }}/bootloader_sha256.txt
+          fi
+
+          cp ./core/build/firmware/pro*Stable*.bin core/build/output/${{ matrix.output_dir }}
+          tools/hash.py -t firmware -f core/build/firmware/pro.*.bin > core/build/output/${{ matrix.output_dir }}/firmware_sha256.txt
 
       - name: "Upload Artifacts"
         uses: actions/upload-artifact@v4
         with:
-          name: firmware-${{ github.sha }}
-          path: |
-            ./core/build/output
+          name: firmware-${{ matrix.artifact_suffix }}-${{ env.SHORT_HASH }}
+          path: ./core/build/output/
 
-      - name: "Notify to Slack"
+  notify-slack:
+    runs-on: ubuntu-latest
+    needs: build-pro
+    env:
+      FIRMWARE_VERSION: ${{ needs.build-pro.outputs.firmware_version }}
+      BOOT_VERSION: ${{ needs.build-pro.outputs.boot_version }}
+      SHORT_HASH: ${{ needs.build-pro.outputs.short_hash }}
+      BUILD_DATE: ${{ needs.build-pro.outputs.build_date }}
+    steps:
+      - name: "Send notification"
         uses: onekeyhq/actions/notice-slack-app-update@main
         with:
           web-hook-url: ${{ secrets.SLACK_DEV_RELEASE_WEBHOOK }}
@@ -84,8 +145,6 @@ jobs:
           artifact-bundle-id: 'so.onekey.firmware.pro'
           artifact-version-name: '${{ env.FIRMWARE_VERSION }}'
           artifact-version-code: '${{ env.SHORT_HASH }}-${{ env.BUILD_DATE }}'
-          artifact-download-url: '${{ env.ARTIFACTS_URL }}'
+          artifact-download-url: '${{ needs.build-pro.outputs.artifacts_url }}'
           change-log: 'firmware@${{ env.FIRMWARE_VERSION }} / boot@${{ env.BOOT_VERSION }}'
           custom-issue-url: ''
-          custom-message-title: ''
-          custom-message-payload: ''

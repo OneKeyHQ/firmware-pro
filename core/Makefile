@@ -62,6 +62,10 @@ endif
 CFLAGS += -DBUILD_COMMIT='\"$(BUILD_COMMIT)\"'
 
 
+ifeq ($(BITCOIN_ONLY), 1)
+    FIRMWARE_BUILD_NAME:=$(FIRMWARE_BUILD_NAME)-bc_only
+endif
+
 TESTPATH = $(CURDIR)/../tests
 
 EMU = $(CURDIR)/emu.py
