@@ -5347,6 +5347,9 @@ class UserGuide(AnimScreen):
             }
             super().__init__(**kwargs)
         else:
+            if not self.is_visible():
+                self.from_appdrawer = True
+                self._load_scr(self, True)
             self.from_appdrawer = False
             self.refresh_text()
             return
