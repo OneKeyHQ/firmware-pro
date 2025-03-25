@@ -5331,6 +5331,8 @@ class BlindSign(Screen):
 
 class UserGuide(AnimScreen):
     def collect_animation_targets(self) -> list:
+        if lv.scr_act() == MainScreen._instance:
+            return []
         targets = []
         if hasattr(self, "container") and self.container:
             targets.append(self.container)
@@ -5348,8 +5350,7 @@ class UserGuide(AnimScreen):
             super().__init__(**kwargs)
         else:
             if not self.is_visible():
-                self.from_appdrawer = True
-                self._load_scr(self, True)
+                self._load_scr(self, lv.scr_act() != self)
             self.from_appdrawer = False
             self.refresh_text()
             return
