@@ -38,7 +38,7 @@ if TYPE_CHECKING:
     from typing import Awaitable, Iterable
 
     from trezor.wire import Context
-    from trezor.messages import EthereumGnosisSafeTxRequest
+    from trezor.messages import EthereumGnosisSafeTxAck
 
 
 def require_confirm_tx(
@@ -437,7 +437,7 @@ def limit_str(s: str, limit: int = 16) -> str:
 
 
 async def require_confirm_safe_tx(
-    ctx: Context, from_address: str, msg: EthereumGnosisSafeTxRequest
+    ctx: Context, from_address: str, msg: EthereumGnosisSafeTxAck
 ) -> None:
 
     from trezor.ui.layouts import confirm_safe_tx

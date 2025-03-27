@@ -174,8 +174,8 @@ class MessageType(IntEnum):
     EthereumTypedDataValueAckOneKey = 20115
     EthereumTypedDataSignatureOneKey = 20116
     EthereumSignTypedHashOneKey = 20117
-    EthereumGnosisSafeTxRequest = 20118
-    EthereumGnosisSafeSignature = 20119
+    EthereumGnosisSafeTxAck = 20118
+    EthereumGnosisSafeTxRequest = 20119
     NEMGetAddress = 67
     NEMAddress = 68
     NEMSignTx = 69
@@ -6711,21 +6711,24 @@ class EthereumTypedDataValueAckOneKey(protobuf.MessageType):
 
 
 class EthereumGnosisSafeTxRequest(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 20119
+
+
+class EthereumGnosisSafeTxAck(protobuf.MessageType):
     MESSAGE_WIRE_TYPE = 20118
     FIELDS = {
-        1: protobuf.Field("address_n", "uint32", repeated=True, required=False),
-        2: protobuf.Field("to", "string", repeated=False, required=True),
-        3: protobuf.Field("value", "bytes", repeated=False, required=True),
-        4: protobuf.Field("data", "bytes", repeated=False, required=False),
-        5: protobuf.Field("operation", "EthereumGnosisSafeTxOperation", repeated=False, required=True),
-        6: protobuf.Field("safeTxGas", "bytes", repeated=False, required=True),
-        7: protobuf.Field("baseGas", "bytes", repeated=False, required=True),
-        8: protobuf.Field("gasPrice", "bytes", repeated=False, required=True),
-        9: protobuf.Field("gasToken", "string", repeated=False, required=True),
-        10: protobuf.Field("refundReceiver", "string", repeated=False, required=True),
-        11: protobuf.Field("nonce", "bytes", repeated=False, required=True),
-        12: protobuf.Field("chain_id", "uint64", repeated=False, required=True),
-        13: protobuf.Field("verifyingContract", "string", repeated=False, required=True),
+        1: protobuf.Field("to", "string", repeated=False, required=True),
+        2: protobuf.Field("value", "bytes", repeated=False, required=True),
+        3: protobuf.Field("data", "bytes", repeated=False, required=False),
+        4: protobuf.Field("operation", "EthereumGnosisSafeTxOperation", repeated=False, required=True),
+        5: protobuf.Field("safeTxGas", "bytes", repeated=False, required=True),
+        6: protobuf.Field("baseGas", "bytes", repeated=False, required=True),
+        7: protobuf.Field("gasPrice", "bytes", repeated=False, required=True),
+        8: protobuf.Field("gasToken", "string", repeated=False, required=True),
+        9: protobuf.Field("refundReceiver", "string", repeated=False, required=True),
+        10: protobuf.Field("nonce", "bytes", repeated=False, required=True),
+        11: protobuf.Field("chain_id", "uint64", repeated=False, required=True),
+        12: protobuf.Field("verifyingContract", "string", repeated=False, required=True),
     }
 
     def __init__(
@@ -6742,10 +6745,8 @@ class EthereumGnosisSafeTxRequest(protobuf.MessageType):
         nonce: "bytes",
         chain_id: "int",
         verifyingContract: "str",
-        address_n: Optional[Sequence["int"]] = None,
         data: Optional["bytes"] = None,
     ) -> None:
-        self.address_n: Sequence["int"] = address_n if address_n is not None else []
         self.to = to
         self.value = value
         self.operation = operation
@@ -6758,20 +6759,6 @@ class EthereumGnosisSafeTxRequest(protobuf.MessageType):
         self.chain_id = chain_id
         self.verifyingContract = verifyingContract
         self.data = data
-
-
-class EthereumGnosisSafeSignature(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = 20119
-    FIELDS = {
-        1: protobuf.Field("signature", "bytes", repeated=False, required=True),
-    }
-
-    def __init__(
-        self,
-        *,
-        signature: "bytes",
-    ) -> None:
-        self.signature = signature
 
 
 class EthereumStructMemberOneKey(protobuf.MessageType):

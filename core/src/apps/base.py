@@ -605,10 +605,9 @@ def reload_settings_from_storage(timeout_ms: int | None = None) -> None:
     workflow.idle_timer.remove(lock_device_if_unlocked)
     if not storage.device.is_initialized():
         return
+    autolock_delay_ms = storage.device.get_autolock_delay_ms()
     workflow.idle_timer.set(
-        timeout_ms
-        if timeout_ms is not None
-        else storage.device.get_autolock_delay_ms(),
+        timeout_ms if timeout_ms is not None else autolock_delay_ms,
         screen_off_if_possible,
     )
     if utils.AUTO_POWER_OFF:

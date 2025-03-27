@@ -1320,7 +1320,7 @@ class BlobDisPlay(FullSizeWindow):
             self.content_area, self.title, pos=(0, 40), padding_row=0
         )
         self.container.add_dummy()
-        self.item_data = DisplayItem(self.container, description, content)
+        self.item_data = DisplayItem(self.container, description, content[:240])
         self.container.add_dummy()
         self.long_message = False
         if len(content) > 240:
@@ -4513,6 +4513,7 @@ class UrResponse(FullSizeWindow):
         self.qr = QRCode(
             self.content_area,
             self.qr_code if self.qr_code else encoder.next_part(),  # type: ignore["next_part" is not a known member of "None"]
+            size=440,
         )
         self.qr.align_to(self.subtitle, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 30)
         self.content_area.clear_flag(lv.obj.FLAG.SCROLL_ELASTIC)
@@ -4736,6 +4737,7 @@ class GnosisSafeTxDetails(FullSizeWindow):
             icon_path=icon_path,
             primary_color=primary_color,
         )
+        self.primary_color = primary_color
         is_delegate_call = opeartion == 1
         if is_delegate_call:
             self.warning_banner = Banner(

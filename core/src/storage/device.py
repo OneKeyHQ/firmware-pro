@@ -385,10 +385,10 @@ else:
 AUTOSHUTDOWN_DELAY_DEFAULT = 10 * 60 * 1000  # 10 minutes
 AUTOLOCK_DELAY_DEFAULT = 60 * 1000  # 1 minute
 # autolock intervals larger than AUTOLOCK_DELAY_MAXIMUM cause issues in the scheduler
-if __debug__:
-    AUTOSHUTDOWN_DELAY_MAXIMUM = AUTOLOCK_DELAY_MAXIMUM = 0x2000_0000  # ~6 days
-else:
-    AUTOSHUTDOWN_DELAY_MAXIMUM = AUTOLOCK_DELAY_MAXIMUM = 0x1000_0000  # ~3 days
+# if __debug__:
+#     AUTOSHUTDOWN_DELAY_MAXIMUM = AUTOLOCK_DELAY_MAXIMUM = 0x2000_0000  # ~6 days
+# else:
+AUTOSHUTDOWN_DELAY_MAXIMUM = AUTOLOCK_DELAY_MAXIMUM = 0x1000_0000  # ~3 days
 
 # Length of SD salt auth tag.
 # Other SD-salt-related constants are in sd_salt.py

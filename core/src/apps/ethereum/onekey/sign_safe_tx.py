@@ -1,20 +1,14 @@
 from typing import TYPE_CHECKING
 
 from trezor.crypto.curve import secp256k1
-from trezor.messages import EthereumGnosisSafeSignature, EthereumGnosisSafeTxRequest
+from trezor.messages import (
+    EthereumGnosisSafeTxAck,
+    EthereumTypedDataSignatureOneKey as EthereumTypedDataSignature,
+)
 from trezor.ui.layouts import confirm_final
 
-from apps.common import paths
-
-from .. import networks
-from ..helpers import (
-    address_from_bytes,
-    bytes_from_address,
-    get_color_and_icon,
-    get_display_network_name,
-)
+from ..helpers import address_from_bytes, bytes_from_address
 from ..layout import require_confirm_safe_tx
-from .keychain import PATTERNS_ADDRESS, with_keychain_from_path
 from .sign_typed_data import get_hash_writer, keccak256, write_leftpad32
 
 if TYPE_CHECKING:
@@ -34,28 +28,15 @@ DOMAIN_SEPARATOR_TYPEHASH = b"G\xe7\x954\xa2E\x95.\x8b\x16\x89:3k\x85\xa3\xd9\xe
 SAFE_TX_TYPEHASH = b"\xbb\x83\x10\xd4\x866\x8d\xb6\xbdo\x84\x94\x02\xfd\xd7:\xd5=1kZK&D\xadn\xfe\x0f\x94\x12\x86\xd8"
 
 
-@with_keychain_from_path(*PATTERNS_ADDRESS)
 async def sign_safe_tx(
-    ctx: Context, msg: EthereumGnosisSafeTxRequest, keychain: Keychain
-) -> EthereumGnosisSafeSignature:
-    await paths.validate_path(ctx, keychain, msg.address_n, force_strict=False)
+    ctx: Context, msg: EthereumGnosisSafeTxAck, keychain: Keychain, address_n: list[int]
+) -> EthereumTypedDataSignature:
 
-    if msg.chain_id:
-        network = networks.by_chain_id(msg.chain_id)
-    else:
-        if len(msg.address_n) > 1:  # path has slip44 network identifier
-            network = networks.by_slip44(msg.address_n[1] & 0x7FFF_FFFF)
-        else:
-            network = None
-    ctx.primary_color, ctx.icon_path = get_color_and_icon(
-        network.chain_id if network else None
-    )
     if msg.operation == 1:
         from trezor.lvglui.scrs import lv_colors
 
         ctx.primary_color = lv_colors.ONEKEY_RED_1
-    ctx.name = get_display_network_name(network)
-    node = keychain.derive(msg.address_n, force_strict=False)
+    node = keychain.derive(address_n, force_strict=False)
     from_address = address_from_bytes(node.ethereum_pubkeyhash())
 
     await require_confirm_safe_tx(ctx, from_address, msg)
@@ -68,7 +49,8 @@ async def sign_safe_tx(
         node.private_key(), data_hash, False, secp256k1.CANONICAL_SIG_ETHEREUM
     )
 
-    return EthereumGnosisSafeSignature(
+    return EthereumTypedDataSignature(
+        address=address_from_bytes(node.ethereum_pubkeyhash()),
         signature=signature[1:] + signature[0:1],
     )
 
@@ -81,7 +63,7 @@ def get_domain_separator_hash(chain_id: int, verifying_contract: str) -> bytes:
     return h_w.get_digest()
 
 
-def get_safe_tx_hash(msg: EthereumGnosisSafeTxRequest) -> bytes:
+def get_safe_tx_hash(msg: EthereumGnosisSafeTxAck) -> bytes:
     calldata_hash = keccak256(msg.data if msg.data else b"")
     h_w = get_hash_writer()
     h_w.extend(SAFE_TX_TYPEHASH)

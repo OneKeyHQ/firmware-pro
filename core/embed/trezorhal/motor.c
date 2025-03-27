@@ -58,8 +58,8 @@ static void motor_io_init(void) {
 inline void motor_ctrl(MOTOR_ACTION* act) {
   // as HAL_GPIO_WritePin only cares if PinState == GPIO_PIN_RESET
   // we don't have to filter non zero values
-  HAL_GPIO_WritePin(GPIOK, GPIO_PIN_2, ((*act).state & 0b0000001));
-  HAL_GPIO_WritePin(GPIOK, GPIO_PIN_3, ((*act).state & 0b0000010));
+  HAL_GPIO_WritePin(GPIOK, GPIO_PIN_2, (act->state & 0b0000001));
+  HAL_GPIO_WritePin(GPIOK, GPIO_PIN_3, (act->state & 0b0000010));
 }
 
 static bool motor_timer_init() {
@@ -105,7 +105,7 @@ void motor_cpu_play(MOTOR_ACTION* act_list, size_t act_list_len) {
   MOTOR_ACTION* act_list_index = act_list;
   while (act_list_index < (act_list + act_list_len)) {
     motor_ctrl(act_list_index);
-    HAL_Delay((*act_list_index).durnation_us / 1000);
+    HAL_Delay(act_list_index->durnation_us / 1000);
     act_list_index++;
   }
 }
@@ -119,7 +119,7 @@ void TIM7_IRQHandler() {
         motor_ctrl(_act_list_index);
         _act_list_index++;
         __HAL_TIM_SET_AUTORELOAD(&TIM7_Handle,
-                                 (*_act_list_index).durnation_us - 1);
+                                 _act_list_index->durnation_us - 1);
         __HAL_TIM_ENABLE(&TIM7_Handle);
       } else {
         motor_reset();
@@ -139,7 +139,7 @@ void motor_timer_play(MOTOR_ACTION* act_list, size_t act_list_len) {
       &act_list[0];  // explicitly point to first element in the array
   _act_list_index_max = act_list + act_list_len;
 
-  __HAL_TIM_SET_AUTORELOAD(&TIM7_Handle, (*_act_list_index).durnation_us - 1);
+  __HAL_TIM_SET_AUTORELOAD(&TIM7_Handle, _act_list_index->durnation_us - 1);
   __HAL_TIM_ENABLE(&TIM7_Handle);
 }
 

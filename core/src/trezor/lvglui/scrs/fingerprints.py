@@ -138,13 +138,13 @@ class CollectFingerprintStart(FullSizeWindow):
         self.anim.set_repeat_count(0xFFFF)  # infinite
         self.anim.set_path_cb(lv.anim_t.path_ease_in_out)
         self.anim.set_custom_exec_cb(lambda _a, val: self.anim_set_x(val))
-        lv.anim_t.start(self.anim)
+        self.anim_r = lv.anim_t.start(self.anim)
 
     def anim_set_x(self, x):
         try:
             self.arrow.set_x(x)
         except Exception:
-            pass
+            lv.anim_del(self.anim_r.var, None)
 
 
 class CollectFingerprintProgress(FullSizeWindow):

@@ -481,27 +481,3 @@ def sign_typed_data_hash(
         "signature": f"0x{ret.signature.hex()}",
     }
     return output
-
-@cli.command()
-@click.option("-n", "--address", required=True, help=PATH_HELP)
-@click.option("-t", "--to", required=True, help="To address")
-@click.option("-v", "--value", required=True, help="Value")
-@click.option("-d", "--data", required=False, help="Data")
-@click.option("-o", "--operation", type=int, required=True, help="Operation")
-@click.option("-s", "--safe_tx_gas", required=True, help="SafeTxGas")
-@click.option("-b", "--base_gas", required=True, help="BaseGas")
-@click.option("-p", "--gas_price", required=True, help="GasPrice")
-@click.option("-g", "--gas_token", required=True, help="GasToken")
-@click.option("-r", "--refund_receiver", required=True, help="RefundReceiver")
-@click.option("-n", "--nonce", required=True, help="Nonce")
-@click.option("-c", "--chain_id", type=int, required=True, help="ChainId", default=1)
-@click.option("-e", "--verifying_contract", required=True, help="VerifyingContract")
-@with_client
-def sign_safe_tx(client: "TrezorClient", address: str, to: str, value: str, data: Optional[str], operation: int, safe_tx_gas: str, base_gas: str, gas_price: str, gas_token: str, refund_receiver: str, nonce: str, chain_id: int, verifying_contract: str) -> Dict[str, str]:
-    """Sign Gnosis Safe transaction."""
-    address_n = tools.parse_path(address)
-    ret = ethereum.sign_safe_tx(client, address_n, to, bytes.fromhex(value), bytes.fromhex(data) if data else None, operation, bytes.fromhex(safe_tx_gas), bytes.fromhex(base_gas), bytes.fromhex(gas_price), gas_token, refund_receiver, bytes.fromhex(nonce), chain_id, verifying_contract)
-    output = {
-        "signature": f"0x{ret.signature.hex()}",
-    }
-    return output

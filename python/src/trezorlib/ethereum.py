@@ -326,7 +326,23 @@ def sign_typed_data(
         definitions=definitions,
     )
     response = client.call(request)
-
+    if isinstance(response, messages.EthereumGnosisSafeTxRequest):
+        response = client.call(
+            messages.EthereumGnosisSafeTxAck(
+                to=data["message"]["to"],
+                value=int_to_big_endian(int(data["message"]["value"])),
+                data=decode_hex(data["message"]["data"]),
+                operation=int(data["message"]["operation"]),
+                safeTxGas=int_to_big_endian(int(data["message"]["safeTxGas"])),
+                baseGas=int_to_big_endian(int(data["message"]["baseGas"])),
+                gasPrice=int_to_big_endian(int(data["message"]["gasPrice"])),
+                gasToken=data["message"]["gasToken"],
+                refundReceiver=data["message"]["refundReceiver"],
+                nonce=int_to_big_endian(int(data["message"]["nonce"])),
+                chain_id=int.from_bytes(decode_hex(data["domain"]["chainId"]), "big"),
+                verifyingContract=data["domain"]["verifyingContract"],
+            )
+        )
     # Sending all the types
     while isinstance(response, messages.EthereumTypedDataStructRequest):
         struct_name = response.name

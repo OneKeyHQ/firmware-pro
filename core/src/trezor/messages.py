@@ -5027,7 +5027,12 @@ if TYPE_CHECKING:
             return isinstance(msg, cls)
 
     class EthereumGnosisSafeTxRequest(protobuf.MessageType):
-        address_n: "list[int]"
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["EthereumGnosisSafeTxRequest"]:
+            return isinstance(msg, cls)
+
+    class EthereumGnosisSafeTxAck(protobuf.MessageType):
         to: "str"
         value: "bytes"
         data: "bytes | None"
@@ -5055,27 +5060,12 @@ if TYPE_CHECKING:
             nonce: "bytes",
             chain_id: "int",
             verifyingContract: "str",
-            address_n: "list[int] | None" = None,
             data: "bytes | None" = None,
         ) -> None:
             pass
 
         @classmethod
-        def is_type_of(cls, msg: Any) -> TypeGuard["EthereumGnosisSafeTxRequest"]:
-            return isinstance(msg, cls)
-
-    class EthereumGnosisSafeSignature(protobuf.MessageType):
-        signature: "bytes"
-
-        def __init__(
-            self,
-            *,
-            signature: "bytes",
-        ) -> None:
-            pass
-
-        @classmethod
-        def is_type_of(cls, msg: Any) -> TypeGuard["EthereumGnosisSafeSignature"]:
+        def is_type_of(cls, msg: Any) -> TypeGuard["EthereumGnosisSafeTxAck"]:
             return isinstance(msg, cls)
 
     class EthereumStructMemberOneKey(protobuf.MessageType):

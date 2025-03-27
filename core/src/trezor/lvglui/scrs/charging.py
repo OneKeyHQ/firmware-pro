@@ -84,7 +84,7 @@ class ChargingPromptScr(lv.obj):
         self.anim.set_repeat_count(0xFFFF)
         self.anim.set_path_cb(lv.anim_t.path_ease_in_out)
         self.anim.set_custom_exec_cb(lambda _a, val: self.anim_scale(val))
-        lv.anim_t.start(self.anim)
+        self.anim_r = lv.anim_t.start(self.anim)
 
     def anim_scale(self, scale):
         try:
@@ -99,6 +99,7 @@ class ChargingPromptScr(lv.obj):
     def on_event(self, event_obj: lv.event_t):
         code = event_obj.code
         if code == lv.EVENT.CLICKED:
+            lv.anim_del(self.anim_r.var, None)
             self.destroy()
         elif code == lv.EVENT.DELETE:
             ChargingPromptScr.reset()

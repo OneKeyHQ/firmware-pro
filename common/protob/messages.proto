@@ -241,8 +241,8 @@ enum MessageType {
     MessageType_EthereumTypedDataValueAckOneKey = 20115 [(wire_in) = true];
     MessageType_EthereumTypedDataSignatureOneKey = 20116 [(wire_out) = true];
     MessageType_EthereumSignTypedHashOneKey = 20117 [(wire_in) = true];
-    MessageType_EthereumGnosisSafeTxRequest = 20118 [(wire_in) = true];
-    MessageType_EthereumGnosisSafeSignature = 20119 [(wire_out) = true];
+    MessageType_EthereumGnosisSafeTxAck = 20118 [(wire_in) = true];
+    MessageType_EthereumGnosisSafeTxRequest = 20119 [(wire_out) = true];
 
     // NEM
     MessageType_NEMGetAddress = 67 [(wire_in) = true];

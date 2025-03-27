@@ -17,6 +17,7 @@ option java_outer_classname = "TrezorMessageEthereumEIP712OneKey";
  * @next EthereumTypedDataStructRequestOneKey
  * @next EthereumTypedDataValueRequestOneKey
  * @next EthereumTypedDataSignatureOneKey
+ * @next EthereumGnosisSafeTxRequest
  * @next Failure
  */
 message EthereumSignTypedDataOneKey {
@@ -95,31 +96,30 @@ enum EthereumGnosisSafeTxOperation {
 }
 
 /**
- * Request: Ask device to sign Gnosis Safe transaction
+ * Request: Ask device for Gnosis Safe transaction data
  * @start
- * @next EthereumGnosisSafeTxRequest
+ * @next EthereumGnosisSafeTxAck
  * @next Failure
  */
 message EthereumGnosisSafeTxRequest {
-    repeated uint32 address_n = 1;
-    required string to = 2;
-    required bytes value = 3;
-    optional bytes data = 4;
-    required EthereumGnosisSafeTxOperation operation = 5;
-    required bytes safeTxGas = 6;
-    required bytes baseGas = 7;
-    required bytes gasPrice = 8;
-    required string gasToken = 9;
-    required string refundReceiver = 10;
-    required bytes nonce = 11;
-    required uint64 chain_id = 12;
-    required string verifyingContract = 13;
 }
-
 /**
- * Response: the signature of the Gnosis Safe transaction
- * @end
+ * Request: the Gnosis Safe transaction data
+ * @start
+ * @next EthereumTypedDataSignatureOneKey
+ * @next Failure
  */
-message EthereumGnosisSafeSignature {
-    required bytes signature = 1;
+message EthereumGnosisSafeTxAck {
+    required string to = 1;
+    required bytes value = 2;
+    optional bytes data = 3;
+    required EthereumGnosisSafeTxOperation operation = 4;
+    required bytes safeTxGas = 5;
+    required bytes baseGas = 6;
+    required bytes gasPrice = 7;
+    required string gasToken = 8;
+    required string refundReceiver = 9;
+    required bytes nonce = 10;
+    required uint64 chain_id = 11;
+    required string verifyingContract = 12;
 }

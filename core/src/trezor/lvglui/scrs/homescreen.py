@@ -1486,6 +1486,8 @@ class NftManager(Screen):
 
 class SettingsScreen(AnimScreen):
     def collect_animation_targets(self) -> list:
+        if lv.scr_act() == MainScreen._instance:
+            return []
         targets = []
         if hasattr(self, "container") and self.container:
             targets.append(self.container)
@@ -1494,7 +1496,6 @@ class SettingsScreen(AnimScreen):
     def __init__(self, prev_scr=None):
         if not hasattr(self, "_init"):
             self._init = True
-            self.from_appdrawer = True
             kwargs = {
                 "prev_scr": prev_scr,
                 "title": _(i18n_keys.TITLE__SETTINGS),
@@ -1502,10 +1503,9 @@ class SettingsScreen(AnimScreen):
             }
             super().__init__(**kwargs)
         else:
-            self.from_appdrawer = False
             self.refresh_text()
             if not self.is_visible():
-                self._load_scr(self)
+                self._load_scr(self, lv.scr_act() != self)
             return
         # if __debug__:
         #     self.add_style(StyleWrapper().bg_color(lv_colors.ONEKEY_GREEN_1), 0)
@@ -1549,7 +1549,6 @@ class SettingsScreen(AnimScreen):
             left_img_src="A:/res/about.png",
         )
         self.container.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
-        self.load_screen(self)
 
     def refresh_text(self):
         self.title.set_text(_(i18n_keys.TITLE__SETTINGS))
@@ -1586,13 +1585,6 @@ class SettingsScreen(AnimScreen):
                 AirGapSetting(self)
             elif target == self.fido_keys:
                 FidoKeysSetting(self)
-
-    def _load_scr(self, scr: "Screen", back: bool = False) -> None:
-        if self.from_appdrawer:
-            scr.set_pos(0, 0)
-            lv.scr_load(scr)
-        else:
-            super()._load_scr(scr, back)
 
 
 class ConnectWalletWays(Screen):
@@ -2056,6 +2048,7 @@ class ConnectWallet(FullSizeWindow):
             self.content_area,
             data,
             icon_path=icon_path,
+            size=440,
         )
         self.qr.align_to(self.subtitle, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 40)
 
@@ -4912,6 +4905,8 @@ class FidoKeysSetting(AnimScreen):
         if not hasattr(self, "_init"):
             self._init = True
         else:
+            if not self.is_visible():
+                self._load_scr(self)
             return
         super().__init__(
             prev_scr=prev_scr, title=_(i18n_keys.FIDO_FIDO_KEYS_LABEL), nav_back=True
@@ -4977,6 +4972,7 @@ class FidoKeysToggle(FullSizeWindow):
                     await loop.sleep(1000)
                     utils.reset()
 
+                loop.pop_tasks_on_iface(io.UART | io.POLL_READ)
                 device.set_fido_enable(self.enable)
                 workflow.spawn(restart_delay())
 

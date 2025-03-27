@@ -7,6 +7,8 @@ from trezor.enums import EthereumDataType
 from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
 from trezor.messages import (
     EthereumFieldType,
+    EthereumGnosisSafeTxAck,
+    EthereumGnosisSafeTxRequest,
     EthereumSignTypedData,
     EthereumTypedDataSignature,
     EthereumTypedDataStructAck,
@@ -67,6 +69,22 @@ async def sign_typed_data(
         network.chain_id if network else None
     )
     ctx.name = get_display_network_name(network)
+    if msg.primary_type == "SafeTx":
+        from .onekey.sign_safe_tx import sign_safe_tx
+        from . import networks
+
+        ack = await ctx.call(EthereumGnosisSafeTxRequest(), EthereumGnosisSafeTxAck)
+        if network is None or network == networks.UNKNOWN_NETWORK:
+            network = networks.by_chain_id(ack.chain_id)
+            ctx.primary_color, ctx.icon_path = get_color_and_icon(
+                network.chain_id if network else None
+            )
+            ctx.name = get_display_network_name(network)
+        resp = await sign_safe_tx(ctx, ack, keychain, msg.address_n)
+        return EthereumTypedDataSignature(
+            address=resp.address,
+            signature=resp.signature,
+        )
     data_hash = await generate_typed_data_hash(
         ctx, msg.primary_type, msg.metamask_v4_compat
     )

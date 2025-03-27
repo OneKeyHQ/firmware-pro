@@ -489,7 +489,7 @@ class SearchDeviceScreen(FullSizeWindow):
         self.anim.set_repeat_count(0xFFFF)  # infinite
         self.anim.set_path_cb(lv.anim_t.path_linear)
         self.anim.set_custom_exec_cb(lambda _a, val: self.set_angle(val))
-        lv.anim_t.start(self.anim)
+        self.anim_r = lv.anim_t.start(self.anim)
         self.searching = True
         loop.schedule(run_card_search(self))
 
@@ -497,7 +497,7 @@ class SearchDeviceScreen(FullSizeWindow):
         try:
             self.img_bg.set_angle(angle)
         except Exception:
-            pass
+            lv.anim_del(self.anim_r.var, None)
 
 
 class TransferDataScreen(FullSizeWindow):

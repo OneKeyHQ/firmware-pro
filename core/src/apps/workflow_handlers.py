@@ -158,8 +158,6 @@ def find_message_handler_module(msg_type: int) -> str:
             return "apps.ethereum.onekey.sign_typed_data"
         if msg_type == MessageType.EthereumSignTypedHashOneKey:
             return "apps.ethereum.onekey.sign_typed_data_hash"
-        if msg_type == MessageType.EthereumGnosisSafeTxRequest:
-            return "apps.ethereum.onekey.sign_safe_tx"
 
         # monero
         if msg_type == MessageType.MoneroGetAddress:

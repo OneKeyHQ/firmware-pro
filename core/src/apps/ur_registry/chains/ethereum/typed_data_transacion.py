@@ -1,6 +1,5 @@
 import re
 from typing import Any, Optional
-from ubinascii import unhexlify
 
 from trezor import messages
 from trezor.enums import EthereumDataType
@@ -109,10 +108,14 @@ class EthereumTypedDataTransacion:
 
     @staticmethod
     def decode_hex(value: str) -> bytes:
-        if value.startswith("0x") or value.startswith("0X"):
-            return unhexlify(value[2:])
-        else:
-            return unhexlify(value)
+        from binascii import unhexlify
+
+        hex_str = value.replace("0x", "").replace("0X", "")
+
+        if len(hex_str) % 2:
+            hex_str = "0" + hex_str
+
+        return unhexlify(hex_str)
 
     @staticmethod
     def encode_data(value: Any, type_name: str) -> bytes:
@@ -159,8 +162,14 @@ class EthereumTypedDataTransacion:
         # pyright: off
         task = sign_typed_data(QR_CONTEXT, request)
         loop.spawn(self.interact())
-        resp = await loop.spawn(task)
-        await QR_CONTEXT.interact_stop()
+        try:
+            resp = await loop.spawn(task)
+        except Exception as e:
+            if __debug__:
+                print(f"Error: {e}")
+            raise e
+        finally:
+            await QR_CONTEXT.interact_stop()
         # pyright: on
         self.signature = resp.signature
         eth_signature = EthSignature(
@@ -184,57 +193,97 @@ class EthereumTypedDataTransacion:
                 if __debug__:
                     print("eth sign type data interaction finished")
                 break
-
-            if messages.EthereumTypedDataStructRequest.is_type_of(response):
-                struct_name = response.name
-                members: list["messages.EthereumStructMember"] = []
-                for field in types[struct_name]:
-                    field_type = EthereumTypedDataTransacion.get_field_type(
-                        field["type"], types
-                    )
-                    struct_member = messages.EthereumStructMember(
-                        type=field_type,
-                        name=field["name"],
-                    )
-                    members.append(struct_member)
-
-                response = messages.EthereumTypedDataStructAck(members=members)
-                await QR_CONTEXT.qr_send(response)
-            elif messages.EthereumTypedDataValueRequest.is_type_of(response):
-                root_index = response.member_path[0]
-                # Index 0 is for the domain data, 1 is for the actual message
-                if root_index == 0:
-                    member_typename = "EIP712Domain"
-                    member_data = data["domain"]
-                elif root_index == 1:
-                    member_typename = data["primaryType"]
-                    member_data = data["message"]
-                else:
-                    raise ValueError("Root index can only be 0 or 1")
-
-                for index in response.member_path[1:]:
-                    if isinstance(member_data, dict):
-                        member_def = types[member_typename][index]
-                        member_typename = member_def["type"]
-                        member_data = member_data[member_def["name"]]
-                    elif isinstance(member_data, list):
-                        member_typename = EthereumTypedDataTransacion.typeof_array(
-                            member_typename
+            try:
+                if messages.EthereumTypedDataStructRequest.is_type_of(response):
+                    struct_name = response.name
+                    members: list["messages.EthereumStructMember"] = []
+                    for field in types[struct_name]:
+                        field_type = EthereumTypedDataTransacion.get_field_type(
+                            field["type"], types
                         )
-                        member_data = member_data[index]
+                        struct_member = messages.EthereumStructMember(
+                            type=field_type,
+                            name=field["name"],
+                        )
+                        members.append(struct_member)
 
-                if isinstance(member_data, list):
-                    # Sending the length as uint16
-                    encoded_data = len(member_data).to_bytes(2, "big")
-                else:
-                    encoded_data = EthereumTypedDataTransacion.encode_data(
-                        member_data, member_typename
+                    response = messages.EthereumTypedDataStructAck(members=members)
+                elif messages.EthereumTypedDataValueRequest.is_type_of(response):
+                    root_index = response.member_path[0]
+                    # Index 0 is for the domain data, 1 is for the actual message
+                    if root_index == 0:
+                        member_typename = "EIP712Domain"
+                        member_data = data["domain"]
+                    elif root_index == 1:
+                        member_typename = data["primaryType"]
+                        member_data = data["message"]
+                    else:
+                        raise ValueError("Root index can only be 0 or 1")
+
+                    for index in response.member_path[1:]:
+                        if isinstance(member_data, dict):
+                            member_def = types[member_typename][index]
+                            member_typename = member_def["type"]
+                            member_data = member_data[member_def["name"]]
+                        elif isinstance(member_data, list):
+                            member_typename = EthereumTypedDataTransacion.typeof_array(
+                                member_typename
+                            )
+                            member_data = member_data[index]
+
+                    if isinstance(member_data, list):
+                        # Sending the length as uint16
+                        encoded_data = len(member_data).to_bytes(2, "big")
+                    else:
+                        encoded_data = EthereumTypedDataTransacion.encode_data(
+                            member_data, member_typename
+                        )
+
+                    response = messages.EthereumTypedDataValueAck(value=encoded_data)
+                elif messages.ButtonRequest.is_type_of(response):
+                    response = messages.ButtonAck()
+                elif messages.EthereumGnosisSafeTxRequest.is_type_of(response):
+                    message = data["message"]
+                    operation = int(message["operation"])
+                    from trezor.enums import EthereumGnosisSafeTxOperation
+
+                    if operation == 0:
+                        operation = EthereumGnosisSafeTxOperation.CALL
+                    elif operation == 1:
+                        operation = EthereumGnosisSafeTxOperation.DELEGATE_CALL
+                    else:
+                        raise ValueError(f"Invalid operation: {operation}")
+                    response = messages.EthereumGnosisSafeTxAck(
+                        to=message["to"],
+                        value=int(message["value"]).to_bytes(32, "big"),
+                        data=EthereumTypedDataTransacion.decode_hex(message["data"]),
+                        operation=operation,
+                        safeTxGas=int(message["safeTxGas"]).to_bytes(32, "big"),
+                        baseGas=int(message["baseGas"]).to_bytes(32, "big"),
+                        gasPrice=int(message["gasPrice"]).to_bytes(32, "big"),
+                        gasToken=message["gasToken"],
+                        refundReceiver=message["refundReceiver"],
+                        nonce=int(message["nonce"]).to_bytes(32, "big"),
+                        chain_id=int.from_bytes(
+                            EthereumTypedDataTransacion.decode_hex(
+                                data["domain"]["chainId"]
+                            ),
+                            "big",
+                        ),
+                        verifyingContract=data["domain"]["verifyingContract"],
                     )
-
-                response = messages.EthereumTypedDataValueAck(value=encoded_data)
+                else:
+                    response = messages.Failure(
+                        code=messages.FailureType.UnexpectedMessage,
+                        message=f"Unknown message {response.MESSAGE_NAME}",
+                    )
+                    if __debug__:
+                        print(f"Message error: {response}.")
+            except Exception as e:
+                if __debug__:
+                    print(f"Data error: {e}")
+                response = messages.Failure(
+                    code=messages.FailureType.DataError, message=f"Error: {e}"
+                )
+            finally:
                 await QR_CONTEXT.qr_send(response)
-            elif messages.ButtonRequest.is_type_of(response):
-                response = messages.ButtonAck()
-                await QR_CONTEXT.qr_send(response)
-            else:
-                raise ValueError(f"Error messages {response}.")

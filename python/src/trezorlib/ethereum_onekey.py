@@ -291,7 +291,23 @@ def sign_typed_data(
         metamask_v4_compat=metamask_v4_compat,
     )
     response = client.call(request)
-
+    if isinstance(response, messages.EthereumGnosisSafeTxRequest):
+        response = client.call(
+            messages.EthereumGnosisSafeTxAck(
+                to=data["message"]["to"],
+                value=int(data["message"]["value"]).to_bytes(32, "big"),
+                data=decode_hex(data["message"]["data"]),
+                operation=int(data["message"]["operation"]),
+                safeTxGas=int(data["message"]["safeTxGas"]).to_bytes(32, "big"),
+                baseGas=int(data["message"]["baseGas"]).to_bytes(32, "big"),
+                gasPrice=int(data["message"]["gasPrice"]).to_bytes(32, "big"),
+                gasToken=data["message"]["gasToken"],
+                refundReceiver=data["message"]["refundReceiver"],
+                nonce=int(data["message"]["nonce"]).to_bytes(32, "big"),
+                chain_id=int.from_bytes(decode_hex(data["domain"]["chainId"]), "big"),
+                verifyingContract=data["domain"]["verifyingContract"],
+            )
+        )
     # Sending all the types
     while isinstance(response, messages.EthereumTypedDataStructRequestOneKey):
         struct_name = response.name
@@ -375,39 +391,5 @@ def sign_typed_data_hash(
             address_n=n,
             domain_separator_hash=domain_hash,
             message_hash=message_hash,
-        )
-    )
-
-@expect(messages.EthereumGnosisSafeSignature)
-def sign_safe_tx(
-    client: "TrezorClient",
-    n: "Address",
-    to: str,
-    value: bytes,
-    data: bytes,
-    operation: int,
-    safeTxGas: bytes,
-    baseGas: bytes,
-    gasPrice: bytes,
-    gasToken: str,
-    refundReceiver: str,
-    nonce: bytes,
-    chain_id: int,
-    verifying_contract: str,
-) -> "MessageType":
-    return client.call(
-        messages.EthereumGnosisSafeTxRequest(address_n=n,
-                                             to=to,
-                                             value=value,
-                                             data=data,
-                                             operation=messages.EthereumGnosisSafeTxOperation.CALL if operation == 0 else messages.EthereumGnosisSafeTxOperation.DELEGATE_CALL,
-                                             safeTxGas=safeTxGas,
-                                             baseGas=baseGas,
-                                             gasPrice=gasPrice,
-                                             gasToken=gasToken,
-                                             refundReceiver=refundReceiver,
-                                             nonce=nonce,
-                                             chain_id=chain_id,
-                                             verifyingContract=verifying_contract,
         )
     )

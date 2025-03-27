@@ -64,7 +64,7 @@ class PageAbleMessage(FullSizeWindow):
         # # close button
         # self.close = NormalButton(self, cancel_text)
         self.container = ContainerFlexRow(self, None, padding_col=0)
-        self.container.align(lv.ALIGN.BOTTOM_MID, 0, -20)
+        self.container.align(lv.ALIGN.BOTTOM_MID, 0, -126)
         self.pages_size = len(content) // self.page_size + 1
         if self.pages_size > 1:
             # indicator dots
