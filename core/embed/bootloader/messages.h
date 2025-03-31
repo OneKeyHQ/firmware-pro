@@ -43,6 +43,8 @@ void send_success(uint8_t iface_num, const char *text);
 
 void send_user_abort(uint8_t iface_num, const char *msg);
 
+void send_msg_features_simple(uint8_t iface_num);
+
 secbool msg_parse_header(const uint8_t *buf, uint16_t *msg_id,
                          uint32_t *msg_size);
 

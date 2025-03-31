@@ -87,6 +87,41 @@ typedef struct {
   uint8_t __sig[64];
 } __attribute__((packed)) image_header_th89;
 
+typedef enum {
+  UPDATE_MCU = 1,
+  UPDATE_SE = 2,
+  UPDATE_BLE = 3,
+  UPDATE_BOOTLOADER = 4
+} update_item_type_t;
+
+typedef struct {
+  update_item_type_t type;
+  uint32_t offset;
+  uint32_t length;
+  char current_version[16];
+  char new_version[16];
+} update_item_t;
+
+// MCU, 4 SE, BLE
+#define UPDATE_ITEM_COUNT 6
+
+typedef struct {
+  secbool current_version_valid;
+  secbool new_version_valid;
+  secbool vendor_changed;
+  secbool wipe_required;
+} mcu_update_info_t;
+typedef struct {
+  update_item_t items[UPDATE_ITEM_COUNT];
+  update_item_t boot;
+  uint32_t item_count;
+  uint32_t se_count;
+  uint8_t mcu_location;
+  uint8_t se_location[4];
+  uint8_t ble_location;
+  mcu_update_info_t mcu_update_info;
+} update_info_t;
+
 #define MAX_VENDOR_PUBLIC_KEYS 8
 
 #define VTRUST_WAIT 0x000F
@@ -161,7 +196,8 @@ secbool __wur verify_bootloader(image_header* const hdr,
 
 secbool __wur install_firmware(const uint8_t* const buffer, const size_t size,
                                char* error_msg, size_t error_msg_len,
-                               size_t* const processed,
+                               size_t* const processed, uint8_t percent_start,
+                               uint8_t weights,
                                void (*const progress_callback)(int));
 secbool __wur verify_firmware(vendor_header* const vhdr,
                               image_header* const hdr,

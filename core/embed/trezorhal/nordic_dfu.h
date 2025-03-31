@@ -52,8 +52,7 @@ bool bluetooth_detect_dfu();
 void bluetooth_reset();
 bool bluetooth_enter_dfu();
 bool bluetooth_update(uint8_t* init_data, uint8_t init_len, uint8_t* firmware,
-                      uint32_t fm_len,
-                      void (*ui_display_progressBar)(char* title, char* notes,
-                                                     int progress));
+                      uint32_t fm_len, uint8_t percent_start, uint8_t weights,
+                      void (*ui_display_progressBar)(int));
 
 #endif

@@ -116,7 +116,6 @@ static void _usb_write_flush(usb_write_state *state) {
     r = usb_webusb_write_blocking(state->iface_num, state->buf, USB_PACKET_SIZE,
                                   USB_TIMEOUT);
   } else {
-    hal_delay(5);
     r = spi_slave_send(state->buf, USB_PACKET_SIZE, USB_TIMEOUT);
   }
   ensure(sectrue * (r == USB_PACKET_SIZE), NULL);
@@ -322,6 +321,20 @@ void send_user_abort(uint8_t iface_num, const char *msg) {
   MSG_SEND_ASSIGN_VALUE(code, FailureType_Failure_ActionCancelled);
   MSG_SEND_ASSIGN_STRING(message, msg);
   MSG_SEND(Failure);
+}
+
+void send_msg_features_simple(uint8_t iface_num) {
+  MSG_SEND_INIT(Features);
+  MSG_SEND_ASSIGN_STRING(vendor, "onekey.so");
+  MSG_SEND_ASSIGN_REQUIRED_VALUE(major_version, VERSION_MAJOR);
+  MSG_SEND_ASSIGN_REQUIRED_VALUE(minor_version, VERSION_MINOR);
+  MSG_SEND_ASSIGN_REQUIRED_VALUE(patch_version, VERSION_PATCH);
+  MSG_SEND_ASSIGN_VALUE(bootloader_mode, true);
+  MSG_SEND_ASSIGN_STRING(model, "T");
+
+  MSG_SEND_ASSIGN_VALUE(onekey_device_type, OneKeyDeviceType_PRO);
+
+  MSG_SEND(Features);
 }
 
 static void send_msg_features(uint8_t iface_num,

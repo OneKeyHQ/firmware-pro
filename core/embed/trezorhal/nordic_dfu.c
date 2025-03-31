@@ -284,7 +284,7 @@ bool updateBle(uint8_t *init_data, uint8_t init_len, uint8_t *firmware,
   display_bar(0, 400, DISPLAY_RESX, 400, COLOR_BLACK);
   while (fm_len > 0) {
     display_progress("Installing bluetooth firmware",
-                     1000 * offset_i / totol_len);
+                     100 * offset_i / totol_len);
     len = fm_len > max_size ? max_size : fm_len;
     if (create_object(fw_type, len) != true) return false;
     crc_i = crc32(firmware, offset_i + len);
@@ -333,9 +333,8 @@ bool bluetooth_enter_dfu() {
 }
 
 bool bluetooth_update(uint8_t *init_data, uint8_t init_len, uint8_t *firmware,
-                      uint32_t fm_len,
-                      void (*ui_display_progressBar)(char *title, char *notes,
-                                                     int progress)) {
+                      uint32_t fm_len, uint8_t percent_start, uint8_t weights,
+                      void (*ui_display_progressBar)(int)) {
   uint32_t crc_i = 0;
   uint32_t offset_i = 0;
   uint32_t len;
@@ -357,8 +356,8 @@ bool bluetooth_update(uint8_t *init_data, uint8_t init_len, uint8_t *firmware,
 
   while (fm_len > 0) {
     ui_display_progressBar(
-        NULL, NULL,
-        100U * offset_i /
+        percent_start +
+        weights * offset_i /
             totol_len);  // both message set to NULL to keep whatever was there
 
     len = fm_len > max_size ? max_size : fm_len;

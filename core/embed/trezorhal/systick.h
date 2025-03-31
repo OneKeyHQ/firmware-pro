@@ -36,7 +36,7 @@
 #define POW2_CEIL(x) ((((x) - 1) | ((x) - 1) >> 1 | ((x) - 1) >> 2 | ((x) - 1) >> 3) + 1)
 
 enum {
-    SYSTICK_DISPATCH_DMA = 0,
+    SYSTICK_DISPATCH_USB_TINY = 0,
     SYSTICK_DISPATCH_MAX
 };
 

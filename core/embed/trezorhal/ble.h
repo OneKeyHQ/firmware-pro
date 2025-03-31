@@ -133,6 +133,7 @@ void ble_get_dev_info(void);
 void ble_refresh_dev_info(void);
 void ble_set_flashled(uint8_t value);
 bool ble_get_version(char **ver);
+bool ble_get_version_with_timeout(char **ver);
 bool ble_get_pubkey(uint8_t *pubkey);
 bool ble_lock_pubkey(void);
 bool ble_sign_msg(uint8_t *msg, uint32_t msg_len, uint8_t *sign);

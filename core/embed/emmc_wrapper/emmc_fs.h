@@ -68,6 +68,12 @@ typedef struct
     } attrib;
 } EMMC_PATH_INFO;
 
+typedef enum
+{
+    PATH_FILE,
+    PATH_DIR
+} PathType;
+
 // macros
 #define OKEMMC_DBG_STATUS_SETUP()                                 \
   {                                                               \
@@ -116,6 +122,7 @@ bool emmc_fs_mount(bool onekey_data, bool user_data);
 bool emmc_fs_unmount(bool onekey_data, bool user_data);
 bool emmc_fs_path_exist(const char* path_buff);
 bool emmc_fs_path_info(const char* path_buff, EMMC_PATH_INFO* file_info);
+bool emmc_fs_path_type(const char* path, PathType* path_type);
 
 // bool emmc_fs_fix_permission_internal(char* path_buff_internal);
 bool emmc_fs_fix_permission(bool onekey_data, bool user_data);
