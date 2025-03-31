@@ -41,32 +41,6 @@ else:
     chain_list = [
         bitcoin_chain_info,
         {
-            "msg_type": MessageType.GetAddress,
-            "symbol": " BTC",
-            "name": "Bitcoin",
-            "msg_class": "GetAddress",
-            "index_pos": -3,
-            "legacy_path": [0x80000000 + 44, 0x80000000 + 0, 0x80000000 + 0, 0, 0],
-            "native_segwit_path": [
-                0x80000000 + 84,
-                0x80000000 + 0,
-                0x80000000 + 0,
-                0,
-                0,
-            ],
-            "nested_segwit_path": [
-                0x80000000 + 49,
-                0x80000000 + 0,
-                0x80000000 + 0,
-                0,
-                0,
-            ],
-            "taproot_path": [0x80000000 + 86, 0x80000000 + 0, 0x80000000 + 0, 0, 0],
-            "icon_96": "A:/res/btc-btc.png",
-            "icon_48": "A:/res/btc-btc-48.png",
-            "primary_color": 0xFF9C00,
-        },
-        {
             "msg_type": MessageType.EthereumGetAddressOneKey,
             "symbol": " ETH",
             "name": "Ethereum",
@@ -739,18 +713,11 @@ class AddressManager:
                 )
                 ctx.icon_path = self.current_chain_info["icon_96"]
 
-                if not utils.BITCOIN_ONLY:
-                    address = (
-                        address_resp.npub
-                        if chain_info["msg_type"] != MessageType.NostrGetPublicKey
-                        else address_resp.address
-                    )
-                else:
-                    address = address_resp.address
-
                 self.user_interaction = await show_address_offline(
                     ctx,
-                    address=address,
+                    address=address_resp.address
+                    if chain_info["msg_type"] != MessageType.NostrGetPublicKey
+                    else address_resp.npub,
                     network=self.current_chain_info["name"],
                     addr_type=self.addr_type,
                     account_name=f" Account #{self.current_index + 1}",
