@@ -713,11 +713,18 @@ class AddressManager:
                 )
                 ctx.icon_path = self.current_chain_info["icon_96"]
 
+                if utils.BITCOIN_ONLY:
+                    address = address_resp.address
+                else:
+                    address = (
+                        address_resp.address
+                        if chain_info["msg_type"] != MessageType.NostrGetPublicKey
+                        else address_resp.npub
+                    )
+
                 self.user_interaction = await show_address_offline(
                     ctx,
-                    address=address_resp.address
-                    if chain_info["msg_type"] != MessageType.NostrGetPublicKey
-                    else address_resp.npub,
+                    address=address,
                     network=self.current_chain_info["name"],
                     addr_type=self.addr_type,
                     account_name=f" Account #{self.current_index + 1}",
