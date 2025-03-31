@@ -94,6 +94,30 @@ bool ble_get_version(char **ver) {
   return true;
 }
 
+bool ble_get_version_with_timeout(char **ver) {
+  if (get_ble_ver) {
+    *ver = ble_ver;
+    return true;
+  }
+  ble_cmd_req(BLE_INFO, BLE_INFO_VER_FW);
+  uint8_t counter = 0;
+  while (1) {
+    ble_uart_poll();
+    if (get_ble_ver) {
+      *ver = ble_ver;
+      break;
+    }
+    counter++;
+    hal_delay(100);
+    if (counter > 20) {
+      return false;
+    }
+    ble_cmd_req(BLE_INFO, BLE_INFO_VER_FW);
+  }
+
+  return true;
+}
+
 bool ble_get_pubkey(uint8_t *pubkey) {
   uint8_t cmd[64] = {0};
   uint8_t counter = 0;

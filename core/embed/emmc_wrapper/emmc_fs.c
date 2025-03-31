@@ -210,6 +210,29 @@ FRESULT emmc_fs_f_stat(const TCHAR* path_buff, FILINFO* fno)
     return fresult;
 }
 
+bool emmc_fs_path_type(const char* path, PathType* path_type)
+{
+    FILINFO file_info;
+    FRESULT res = f_stat(path, &file_info);
+    if ( res != FR_OK )
+    {
+        return false;
+    }
+    if ( path_type == NULL )
+    {
+        return true;
+    }
+    if ( file_info.fattrib & AM_DIR )
+    {
+        *path_type = PATH_DIR;
+    }
+    else
+    {
+        *path_type = PATH_FILE;
+    }
+    return true;
+}
+
 bool emmc_fs_path_exist(const char* path_buff)
 {
     // status update

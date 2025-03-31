@@ -118,6 +118,17 @@ const char* format_ver(const char* format, uint32_t version) {
 static uint16_t boot_background;
 static bool ble_name_show = false;
 static int ui_bootloader_page_current = 0;
+
+static int current_progress_value = 0;
+
+int get_current_progress_value(void) { return current_progress_value; }
+
+char* format_progress_value(char* prefix) {
+  static char buf[128] = {0};
+  mini_snprintf(buf, sizeof(buf), "%s %d", prefix, current_progress_value);
+  return buf;
+}
+
 int get_ui_bootloader_page_current(void) { return ui_bootloader_page_current; }
 
 void ui_logo_onekey(void) {
@@ -252,9 +263,7 @@ void ui_screen_firmware_fingerprint(const image_header* const hdr) {
 
 // install UI
 
-void ui_screen_install_confirm_newvendor_or_downgrade_wipe(
-    const vendor_header* const vhdr, const image_header* const hdr,
-    secbool downgrade_wipe) {
+void ui_screen_install_confirm_newvendor_or_downgrade_wipe(char* new_version) {
   vendor_header current_vhdr;
   image_header current_hdr;
   // char str[128] = {0};
@@ -272,10 +281,8 @@ void ui_screen_install_confirm_newvendor_or_downgrade_wipe(
   ui_statusbar_update();
   ui_logo_warning();
 
-  display_text_center(
-      MAX_DISPLAY_RESX / 2, TITLE_OFFSET_Y,
-      (sectrue == downgrade_wipe) ? "Firmware Downgrade" : "Vendor Change", -1,
-      FONT_PJKS_BOLD_38, COLOR_BL_FG, COLOR_BL_BG);
+  display_text_center(MAX_DISPLAY_RESX / 2, TITLE_OFFSET_Y, "Vendor Change", -1,
+                      FONT_PJKS_BOLD_38, COLOR_BL_FG, COLOR_BL_BG);
   display_text_center(DISPLAY_RESX / 2, SUBTITLE_OFFSET_Y,
                       "Still installing this firmware?", -1, FONT_NORMAL,
                       COLOR_BL_SUBTITLE, COLOR_BL_BG);
@@ -293,16 +300,9 @@ void ui_screen_install_confirm_newvendor_or_downgrade_wipe(
   // } while (split);
   display_bar_radius_ex(BOARD_OFFSET_X, 295, BUTTON_FULL_WIDTH, BUTTON_HEIGHT,
                         COLOR_BL_PANEL, COLOR_BL_BG, BUTTON_RADIUS);
-  const char* ver_str = format_ver("%d.%d.%d", current_hdr.onekey_version);
-  display_text_right(MAX_DISPLAY_RESX / 2 - 25, 350, ver_str, -1, FONT_NORMAL,
-                     COLOR_BL_SUBTITLE, COLOR_BL_DARK);
-  ver_str = format_ver("%d.%d.%d", hdr->onekey_version);
 
-  display_text(MAX_DISPLAY_RESX / 2 + 25, 350, ver_str, -1, FONT_NORMAL,
+  display_text(MAX_DISPLAY_RESX / 2 + 25, 350, new_version, -1, FONT_NORMAL,
                COLOR_BL_SUBTITLE, COLOR_BL_DARK);
-
-  display_image(227, 330, 25, 23, toi_icon_arrow_right + 12,
-                sizeof(toi_icon_arrow_right) - 12);
 
   ui_confirm_cancel_buttons("Cancel", "Install", COLOR_BL_DARK, COLOR_BL_FAIL);
 }
@@ -333,6 +333,16 @@ void ui_screen_confirm(char* title, char* note_l1, char* note_l2, char* note_l3,
   ui_confirm_cancel_buttons("Back", "OK", COLOR_BL_DARK, COLOR_BL_FAIL);
 }
 
+void ui_screen_progress_bar_init(char* title, char* notes, int progress) {
+  ui_statusbar_update();
+  ui_logo_onekey();
+  if (title != NULL) {
+    display_text_center(DISPLAY_RESX / 2, TITLE_OFFSET_Y, title, -1,
+                        FONT_PJKS_BOLD_38, COLOR_BL_FG, COLOR_BL_BG);
+  }
+  display_progress(notes ? notes : "Keep connected.", progress);
+}
+
 void ui_screen_progress_bar_prepare(char* title, char* notes) {
   ui_statusbar_update();
   ui_logo_onekey();
@@ -340,13 +350,14 @@ void ui_screen_progress_bar_prepare(char* title, char* notes) {
 }
 
 void ui_screen_progress_bar_update(char* title, char* notes, int progress) {
-  if (title != NULL)
+  if (title != NULL) {
     display_text_center(DISPLAY_RESX / 2, TITLE_OFFSET_Y, title, -1,
                         FONT_PJKS_BOLD_38, COLOR_BL_FG, COLOR_BL_BG);
+  }
 
   if ((progress >= 0) && (progress <= 100)) {
     if (progress > 0) {
-      display_progress(NULL, progress * 10);
+      display_progress(NULL, progress);
     }
   } else {
     display_progress(notes ? notes : "Keep connected.", 0);
@@ -368,10 +379,13 @@ void ui_screen_install_progress_erase(int pos, int len) {
   display_text_center(DISPLAY_RESX / 2, TITLE_OFFSET_Y, "Installing", -1,
                       FONT_PJKS_BOLD_38, COLOR_BL_FG, COLOR_BL_BG);
 
-  display_progress("Keep connected.", 250 * pos / len);
+  display_progress("Keep connected.", 25 * pos / len);
 }
 
-void ui_screen_install_progress_upload(int pos) { display_progress(NULL, pos); }
+void ui_screen_install_progress_upload(int pos) {
+  current_progress_value = pos;
+  display_progress(NULL, pos);
+}
 
 // wipe UI
 
@@ -403,7 +417,7 @@ void ui_screen_wipe(void) {
 }
 
 void ui_screen_wipe_progress(int pos, int len) {
-  display_progress(NULL, 1000 * pos / len);
+  display_progress(NULL, 100 * pos / len);
 }
 
 void ui_screen_wipe_done(void) {
@@ -657,6 +671,20 @@ void ui_wipe_confirm(const image_header* const hdr) {
   ui_confirm_cancel_buttons("Cancel", "Wipe", COLOR_BL_DARK, COLOR_BL_FAIL);
 }
 
+void ui_screen_install_title_clear(void) {
+  display_bar(0, TITLE_OFFSET_Y - 30, DISPLAY_RESX, TITLE_OFFSET_Y + 90,
+              COLOR_BLACK);
+}
+
+void ui_show_version_info(int y, char* current_ver, char* new_ver) {
+  display_text_right(3 * DISPLAY_RESX / 4 - 15, y, current_ver, -1, FONT_NORMAL,
+                     COLOR_WHITE, COLOR_BL_PANEL);
+  display_text(3 * DISPLAY_RESX / 4 + 20, y, new_ver, -1, FONT_NORMAL,
+               COLOR_WHITE, COLOR_BL_PANEL);
+  display_image(350, y - 20, 25, 23, toi_icon_arrow_right + 12,
+                sizeof(toi_icon_arrow_right) - 12);
+}
+
 void ui_install_confirm(image_header* current_hdr,
                         const image_header* const new_hdr) {
   if ((current_hdr == NULL) || (new_hdr == NULL)) return;
@@ -722,10 +750,88 @@ void ui_install_thd89_confirm(const char* old_ver, const char* boot_ver) {
   ui_confirm_cancel_buttons("Cancel", "Install", COLOR_BL_DARK, COLOR_BL_DONE);
 }
 
+void ui_update_info_show(update_info_t update_info) {
+  int offset_y = SUBTITLE_OFFSET_Y;
+  int offset_x = 32;
+  int bar_height = 66;
+  int font_offset = 8;
+
+  ui_statusbar_update();
+  ui_logo_onekey();
+
+  display_text_center(DISPLAY_RESX / 2, TITLE_OFFSET_Y, "Update Firmware", -1,
+                      FONT_PJKS_BOLD_38, COLOR_BL_FG, COLOR_BL_BG);
+
+  if (update_info.boot.type == UPDATE_BOOTLOADER) {
+    display_bar_radius_ex(BUTTON_LEFT_OFFSET_X, offset_y - bar_height / 2,
+                          BUTTON_FULL_WIDTH, bar_height, COLOR_BL_PANEL,
+                          COLOR_BL_BG, bar_height / 2);
+
+    display_text(offset_x, offset_y + font_offset, "Bootloader", -1,
+                 FONT_NORMAL, COLOR_BL_FG, COLOR_BL_BG);
+
+    ui_show_version_info(offset_y + font_offset,
+                         update_info.boot.current_version,
+                         update_info.boot.new_version);
+    offset_y += 80;
+  }
+
+  if (update_info.mcu_location) {
+    display_bar_radius_ex(BUTTON_LEFT_OFFSET_X, offset_y - bar_height / 2,
+                          BUTTON_FULL_WIDTH, bar_height, COLOR_BL_PANEL,
+                          COLOR_BL_BG, bar_height / 2);
+
+    display_text(offset_x, offset_y + font_offset, "System", -1, FONT_NORMAL,
+                 COLOR_BL_FG, COLOR_BL_BG);
+
+    ui_show_version_info(
+        offset_y + font_offset,
+        update_info.items[update_info.mcu_location - 1].current_version,
+        update_info.items[update_info.mcu_location - 1].new_version);
+    offset_y += 80;
+  }
+
+  if (update_info.se_count) {
+    display_bar_radius_ex(BUTTON_LEFT_OFFSET_X, offset_y - bar_height / 2,
+                          BUTTON_FULL_WIDTH, bar_height, COLOR_BL_PANEL,
+                          COLOR_BL_BG, bar_height / 2);
+
+    display_text(offset_x, offset_y + font_offset, "SE", -1, FONT_NORMAL,
+                 COLOR_BL_FG, COLOR_BL_BG);
+    ui_show_version_info(
+        offset_y + font_offset,
+        update_info.items[update_info.se_location[0] - 1].current_version,
+        update_info.items[update_info.se_location[0] - 1].new_version);
+    offset_y += 80;
+  }
+
+  if (update_info.ble_location) {
+    display_bar_radius_ex(BUTTON_LEFT_OFFSET_X, offset_y - bar_height / 2,
+                          BUTTON_FULL_WIDTH, bar_height, COLOR_BL_PANEL,
+                          COLOR_BL_BG, bar_height / 2);
+
+    display_text(offset_x, offset_y + font_offset, "Bluetooth", -1, FONT_NORMAL,
+                 COLOR_BL_FG, COLOR_BL_BG);
+    ui_show_version_info(
+        offset_y + font_offset,
+        update_info.items[update_info.ble_location - 1].current_version,
+        update_info.items[update_info.ble_location - 1].new_version);
+    offset_y += 80;
+  }
+
+  ui_confirm_cancel_buttons("Cancel", "Install", COLOR_BL_DARK, COLOR_BL_DONE);
+}
+
 void ui_bootloader_first(const image_header* const hdr) {
   ui_bootloader_page_current = 0;
   uint8_t se_state;
   char se_info[64] = {0};
+
+  static image_header* current_hdr = NULL;
+
+  if (current_hdr == NULL && hdr) {
+    current_hdr = (image_header*)hdr;
+  }
 
   ui_statusbar_update();
   // info icon 48 * 48 - the entry point of the bootloader details
@@ -747,8 +853,8 @@ void ui_bootloader_first(const image_header* const hdr) {
 
   display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY - 92, "SafeOS", -1,
                       FONT_PJKS_BOLD_38, COLOR_BL_FG, COLOR_BL_BG);
-  if (hdr) {
-    const char* ver_str = format_ver("%d.%d.%d", (hdr->onekey_version));
+  if (current_hdr) {
+    const char* ver_str = format_ver("%d.%d.%d", (current_hdr->onekey_version));
     display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY - 50, ver_str, -1,
                         FONT_NORMAL, COLOR_BL_SUBTITLE, COLOR_BL_BG);
   }

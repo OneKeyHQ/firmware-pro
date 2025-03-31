@@ -149,6 +149,7 @@ secbool load_thd89_image_header(const uint8_t* const data, const uint32_t magic,
   // if (hdr->hdrlen != IMAGE_HEADER_SIZE) return secfalse;
 
   memcpy(&hdr->expiry, data + 8, 4);
+  memcpy(&hdr->version, data + 16, 4);
   // TODO: expiry mechanism needs to be ironed out before production or those
   // devices won't accept expiring bootloaders (due to boardloader write
   // protection).
@@ -533,7 +534,8 @@ secbool verify_bootloader(image_header* const hdr, secbool* const hdr_valid,
 
 secbool install_firmware(const uint8_t* const buffer, const size_t size,
                          char* error_msg, size_t error_msg_len,
-                         size_t* const processed,
+                         size_t* const processed, uint8_t percent_start,
+                         uint8_t weights,
                          void (*const progress_callback)(int)) {
   // sanity check
   if (buffer == NULL ||          // pointer invalid
@@ -712,7 +714,7 @@ secbool install_firmware(const uint8_t* const buffer, const size_t size,
     }
 
     // update progress
-    progress_callback((1000 * processed_size / size));
+    progress_callback(percent_start + weights * processed_size / size);
     if (processed != NULL) *processed = processed_size;
   }
 

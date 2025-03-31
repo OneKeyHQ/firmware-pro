@@ -24,8 +24,8 @@ bool se_back_to_boot(void);
 bool se_active_app(void);
 bool se_update(uint8_t step, uint8_t *data, uint16_t data_len);
 bool se_back_to_boot_progress(void);
-bool se_update_firmware(uint8_t *data, uint32_t data_len,
-                        void (*ui_callback)(int progress));
+bool se_update_firmware(uint8_t *data, uint32_t data_len, uint8_t percent_start,
+                        uint8_t weights, void (*ui_callback)(int progress));
 bool se_active_app_progress(void);
 bool se_verify_firmware(uint8_t *header, uint32_t header_len);
 bool se_check_firmware(void);

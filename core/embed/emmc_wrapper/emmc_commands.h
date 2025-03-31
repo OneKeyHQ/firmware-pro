@@ -196,4 +196,6 @@ int process_msg_EmmcDirList(uint8_t iface_num, uint32_t msg_size, uint8_t* buf);
 int process_msg_EmmcDirMake(uint8_t iface_num, uint32_t msg_size, uint8_t* buf);
 int process_msg_EmmcDirRemove(uint8_t iface_num, uint32_t msg_size, uint8_t* buf);
 
+int check_firmware_from_file(uint8_t iface_num);
+
 #endif //_EMMC_COMMANDS_H_

@@ -1057,12 +1057,12 @@ void _display_progress(uint16_t y, const char *desc, int permil) {
     display_text_center(MAX_DISPLAY_RESX / 2, y + 50, desc, -1, FONT_NORMAL,
                         COLOR_WHITE, COLOR_BLACK);
   }
-  display_progress_percent(MAX_DISPLAY_RESX / 2, y - 20, permil / 10);
+  display_progress_percent(MAX_DISPLAY_RESX / 2, y - 20, permil);
   if (permil == 0) {
     display_bar_radius(12, y, 456, 12, COLOR_PROCESS, COLOR_BLACK, 4);
   }
 
-  uint16_t width = permil * 456 / 1000;
+  uint16_t width = permil * 456 / 100;
 
   display_bar_radius(12, y, width, 12, COLOR_WHITE, COLOR_PROCESS, 4);
 }

@@ -24,6 +24,9 @@
 #include <stdint.h>
 #include "secbool.h"
 
+#define USB_IFACE_NUM 0
+#define USB_IFACE_NULL 0xFF
+
 #define USB_EP_DIR_MASK 0x80
 #define USB_EP_DIR_OUT 0x00
 #define USB_EP_DIR_IN 0x80

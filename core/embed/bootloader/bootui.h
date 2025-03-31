@@ -24,6 +24,8 @@
 #include "secbool.h"
 #include "stdbool.h"
 
+char* format_progress_value(char* prefix);
+
 const char* format_ver(const char* format, uint32_t version);
 void ui_screen_boot(const vendor_header* const vhdr,
                     const image_header* const hdr);
@@ -42,15 +44,14 @@ void ui_screen_firmware_fingerprint(const image_header* const hdr);
 
 void ui_screen_install_confirm_upgrade(const vendor_header* const vhdr,
                                        const image_header* const hdr);
-void ui_screen_install_confirm_newvendor_or_downgrade_wipe(
-    const vendor_header* const vhdr, const image_header* const hdr,
-    secbool downgrade_wipe);
+void ui_screen_install_confirm_newvendor_or_downgrade_wipe(char* new_version);
 void ui_screen_install_start(void);
 void ui_screen_install_progress_erase(int pos, int len);
 void ui_screen_install_progress_upload(int pos);
 
 void ui_screen_confirm(char* title, char* note_l1, char* note_l2, char* note_l3,
                        char* note_l4);
+void ui_screen_progress_bar_init(char* title, char* notes, int progress);
 void ui_screen_progress_bar_prepare(char* title, char* notes);
 void ui_screen_progress_bar_update(char* msg_status, char* notes, int progress);
 
@@ -86,10 +87,13 @@ void ui_bootloader_simple(void);
 void ui_bootloader_first(const image_header* const hdr);
 void ui_bootloader_view_details(const image_header* const hdr);
 void ui_wipe_confirm(const image_header* const hdr);
+void ui_show_version_info(int y, char* current_ver, char* new_ver);
+void ui_screen_install_title_clear(void);
 void ui_install_confirm(image_header* current_hdr,
                         const image_header* const new_hdr);
 void ui_install_ble_confirm(void);
 void ui_install_thd89_confirm(const char* old_ver, const char* boot_ver);
+void ui_update_info_show(update_info_t update_info);
 void ui_install_progress(image_header* current_hdr,
                          const image_header* const new_hdr);
 void ui_bootloader_page_switch(const image_header* const hdr);

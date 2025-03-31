@@ -66,8 +66,6 @@
 #include "camera.h"
 #include "emmc_wrapper.h"
 
-#define USB_IFACE_NUM 0
-
 #if !PRODUCTION
 
 // DO NOT USE THIS UNLESS YOU KNOW WHAT YOU ARE DOING
@@ -307,6 +305,50 @@ static void charge_switch(void) {
       ble_cmd_req(BLE_PWR, BLE_PWR_CHARGE_DISABLE);
     }
   }
+}
+
+void bootloader_usb_loop_tiny(uint32_t tick) {
+  static uint32_t tick_start = 0;
+  if (tick_start == 0) {
+    tick_start = tick;
+  }
+  // 500ms
+  if (tick - tick_start > 500) {
+    tick_start = tick;
+    uint8_t buf[USB_PACKET_SIZE];
+    bool cmd_received = false;
+    if (USB_PACKET_SIZE == spi_slave_poll(buf)) {
+      host_channel = CHANNEL_SLAVE;
+      cmd_received = true;
+    } else if (USB_PACKET_SIZE ==
+               usb_webusb_read(USB_IFACE_NUM, buf, USB_PACKET_SIZE)) {
+      host_channel = CHANNEL_USB;
+      cmd_received = true;
+    }
+    if (cmd_received) {
+      if (buf[0] != '?' || buf[1] != '#' || buf[2] != '#') {
+        return;
+      }
+      if (buf[3] == 0 && buf[4] == 0) {
+        send_msg_features_simple(USB_IFACE_NUM);
+      } else {
+        send_failure(USB_IFACE_NUM, FailureType_Failure_ProcessError,
+                     format_progress_value("Update mode"));
+      }
+    }
+  }
+}
+
+void enable_usb_tiny_task(bool init_usb) {
+  if (init_usb) {
+    usb_init_all(secfalse);
+    usb_start();
+  }
+  systick_enable_dispatch(SYSTICK_DISPATCH_USB_TINY, bootloader_usb_loop_tiny);
+}
+
+void disable_usb_tiny_task(void) {
+  systick_disable_dispatch(SYSTICK_DISPATCH_USB_TINY);
 }
 
 static secbool bootloader_usb_loop(const vendor_header* const vhdr,
@@ -595,6 +637,10 @@ static void check_bootloader_version(void) {
 
 #endif
 
+static bool enter_boot_forced(void) {
+  return *BOOT_TARGET_FLAG_ADDR == BOOT_TARGET_BOOTLOADER;
+}
+
 static BOOT_TARGET decide_boot_target(vendor_header* const vhdr,
                                       image_header* const hdr,
                                       secbool* vhdr_valid, secbool* hdr_valid,
@@ -753,6 +799,10 @@ int main(void) {
 
 #endif
 
+  if (!enter_boot_forced()) {
+    check_firmware_from_file(USB_IFACE_NULL);
+  }
+
   vendor_header vhdr;
   image_header hdr;
   secbool vhdr_valid = secfalse;
@@ -800,8 +850,14 @@ int main(void) {
 
       if ((vhdr.vtrust & VTRUST_CLICK) == 0) {
         ui_screen_boot_click();
-        while (touch_read() == 0)
-          ;
+        int counter = 0;
+        while (touch_read() == 0) {
+          hal_delay(10);
+          counter++;
+          if (counter > 200) {
+            break;
+          }
+        }
       }
     }
 
