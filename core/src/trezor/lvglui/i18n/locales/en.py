@@ -886,5 +886,11 @@ translations = [
     "When enabled, OneKey works as a security key for passwordless login and 2FA across websites and apps.",
     "FIDO Keys disabled. Cannot register or verify credentials. Re-enable to restore.",
     "Disable FIDO Keys",
+    "Invalid Phrases",
+    "You can edit a single word or start over.",
+    "Start over",
+    "Forgetting your passphrase will lose access to funds",
+    "Edit",
+    "Vote count",
 ]
 # fmt: on

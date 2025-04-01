@@ -886,5 +886,11 @@ translations = [
     "Quando ativado, o OneKey funciona como uma chave de segurança para login sem senha e 2FA em sites e aplicativos.",
     "Chaves FIDO desativadas. Não é possível registrar ou verificar credenciais. Reative para restaurar.",
     "Desativar Chaves FIDO",
+    "Frases Inválidas",
+    "Você pode editar uma única palavra ou começar de novo.",
+    "Começar novamente",
+    "Esquecer sua senha resultará na perda de acesso aos fundos",
+    "Editar",
+    "Contagem de votos",
 ]
 # fmt: on

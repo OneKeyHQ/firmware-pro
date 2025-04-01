@@ -829,6 +829,7 @@ class TonWorkChain(IntEnum):
 class TronResourceCode(IntEnum):
     BANDWIDTH = 0
     ENERGY = 1
+    TRON_POWER = 2
 
 
 class AlephiumGetAddress(protobuf.MessageType):
@@ -11405,7 +11406,7 @@ class TronSignTx(protobuf.MessageType):
         2: protobuf.Field("ref_block_bytes", "bytes", repeated=False, required=True),
         3: protobuf.Field("ref_block_hash", "bytes", repeated=False, required=True),
         4: protobuf.Field("expiration", "uint64", repeated=False, required=True),
-        5: protobuf.Field("data", "string", repeated=False, required=False),
+        5: protobuf.Field("data", "bytes", repeated=False, required=False),
         6: protobuf.Field("contract", "TronContract", repeated=False, required=True),
         7: protobuf.Field("timestamp", "uint64", repeated=False, required=True),
         8: protobuf.Field("fee_limit", "uint64", repeated=False, required=False),
@@ -11420,7 +11421,7 @@ class TronSignTx(protobuf.MessageType):
         contract: "TronContract",
         timestamp: "int",
         address_n: Optional[Sequence["int"]] = None,
-        data: Optional["str"] = None,
+        data: Optional["bytes"] = None,
         fee_limit: Optional["int"] = None,
     ) -> None:
         self.address_n: Sequence["int"] = address_n if address_n is not None else []
@@ -11488,6 +11489,7 @@ class TronContract(protobuf.MessageType):
     MESSAGE_WIRE_TYPE = None
     FIELDS = {
         2: protobuf.Field("transfer_contract", "TronTransferContract", repeated=False, required=False),
+        4: protobuf.Field("vote_witness_contract", "TronVoteWitnessContract", repeated=False, required=False),
         11: protobuf.Field("freeze_balance_contract", "TronFreezeBalanceContract", repeated=False, required=False),
         12: protobuf.Field("unfreeze_balance_contract", "TronUnfreezeBalanceContract", repeated=False, required=False),
         13: protobuf.Field("withdraw_balance_contract", "TronWithdrawBalanceContract", repeated=False, required=False),
@@ -11497,12 +11499,16 @@ class TronContract(protobuf.MessageType):
         56: protobuf.Field("withdraw_expire_unfreeze_contract", "TronWithdrawExpireUnfreezeContract", repeated=False, required=False),
         57: protobuf.Field("delegate_resource_contract", "TronDelegateResourceContract", repeated=False, required=False),
         58: protobuf.Field("undelegate_resource_contract", "TronUnDelegateResourceContract", repeated=False, required=False),
+        3: protobuf.Field("provider", "bytes", repeated=False, required=False),
+        5: protobuf.Field("contract_name", "bytes", repeated=False, required=False),
+        6: protobuf.Field("permission_id", "uint32", repeated=False, required=False),
     }
 
     def __init__(
         self,
         *,
         transfer_contract: Optional["TronTransferContract"] = None,
+        vote_witness_contract: Optional["TronVoteWitnessContract"] = None,
         freeze_balance_contract: Optional["TronFreezeBalanceContract"] = None,
         unfreeze_balance_contract: Optional["TronUnfreezeBalanceContract"] = None,
         withdraw_balance_contract: Optional["TronWithdrawBalanceContract"] = None,
@@ -11512,8 +11518,12 @@ class TronContract(protobuf.MessageType):
         withdraw_expire_unfreeze_contract: Optional["TronWithdrawExpireUnfreezeContract"] = None,
         delegate_resource_contract: Optional["TronDelegateResourceContract"] = None,
         undelegate_resource_contract: Optional["TronUnDelegateResourceContract"] = None,
+        provider: Optional["bytes"] = None,
+        contract_name: Optional["bytes"] = None,
+        permission_id: Optional["int"] = None,
     ) -> None:
         self.transfer_contract = transfer_contract
+        self.vote_witness_contract = vote_witness_contract
         self.freeze_balance_contract = freeze_balance_contract
         self.unfreeze_balance_contract = unfreeze_balance_contract
         self.withdraw_balance_contract = withdraw_balance_contract
@@ -11523,6 +11533,9 @@ class TronContract(protobuf.MessageType):
         self.withdraw_expire_unfreeze_contract = withdraw_expire_unfreeze_contract
         self.delegate_resource_contract = delegate_resource_contract
         self.undelegate_resource_contract = undelegate_resource_contract
+        self.provider = provider
+        self.contract_name = contract_name
+        self.permission_id = permission_id
 
 
 class TronTransferContract(protobuf.MessageType):
@@ -11701,6 +11714,40 @@ class TronUnDelegateResourceContract(protobuf.MessageType):
         self.resource = resource
         self.balance = balance
         self.receiver_address = receiver_address
+
+
+class TronVoteWitnessContract(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = None
+    FIELDS = {
+        2: protobuf.Field("votes", "Vote", repeated=True, required=False),
+        3: protobuf.Field("support", "bool", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        votes: Optional[Sequence["Vote"]] = None,
+        support: Optional["bool"] = None,
+    ) -> None:
+        self.votes: Sequence["Vote"] = votes if votes is not None else []
+        self.support = support
+
+
+class Vote(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = None
+    FIELDS = {
+        1: protobuf.Field("vote_address", "string", repeated=False, required=True),
+        2: protobuf.Field("vote_count", "uint32", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        vote_address: "str",
+        vote_count: "int",
+    ) -> None:
+        self.vote_address = vote_address
+        self.vote_count = vote_count
 
 
 class WebAuthnListResidentCredentials(protobuf.MessageType):

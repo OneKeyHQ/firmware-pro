@@ -2322,6 +2322,26 @@ async def confirm_tron_delegate(
     )
 
 
+async def confirm_tron_vote(
+    ctx: wire.GenericContext,
+    title: str,
+    voter: str,
+    votes: list[tuple[str, int]],
+) -> None:
+    from trezor.lvglui.scrs.template import TronVoteWitness, AlgoCommon
+
+    screen = AlgoCommon(title, ctx.primary_color, ctx.icon_path)
+    await raise_if_cancelled(
+        interact(
+            ctx, screen, "confirm_tron_vote_overview", ButtonRequestType.ProtectCall
+        )
+    )
+    screen = TronVoteWitness(voter, votes, ctx.primary_color)
+    await raise_if_cancelled(
+        interact(ctx, screen, "confirm_tron_vote", ButtonRequestType.ProtectCall)
+    )
+
+
 async def confirm_tron_common(
     ctx: wire.GenericContext,
     title: str,

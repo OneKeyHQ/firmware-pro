@@ -886,5 +886,11 @@ translations = [
     "Quando abilitato, OneKey funziona come una chiave di sicurezza per l'accesso senza password e l'autenticazione a due fattori su siti web e app.",
     "Chiavi FIDO disabilitate. Impossibile registrare o verificare le credenziali. Riabilitare per ripristinare.",
     "Disabilita le chiavi FIDO",
+    "Frasi non valide",
+    "Puoi modificare una singola parola o ricominciare da capo.",
+    "Ricomincia",
+    "Dimenticare la tua passphrase ti farà perdere l'accesso ai fondi",
+    "Modifica",
+    "Conteggio voti",
 ]
 # fmt: on

@@ -6,7 +6,6 @@ from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
 from trezor.strings import format_amount
 from trezor.ui.layouts import confirm_address, confirm_output, should_show_details
 from trezor.ui.layouts.lvgl.altcoin import confirm_total_tron
-from trezor.utils import chunks
 
 from . import tokens
 
@@ -236,6 +235,24 @@ def require_confirm_undelegate(
     )
 
 
+def require_confirm_vote_witness(
+    ctx: Context,
+    signer: str,
+    votes: list[tuple[str, int]],
+    support: bool | None,
+) -> Awaitable[None]:
+    from trezor.ui.layouts.lvgl import confirm_tron_vote
+
+    return confirm_tron_vote(
+        ctx,
+        "Vote for Witness"
+        if (support is None or support)
+        else "Remove Vote for Witness",
+        signer,
+        votes,
+    )
+
+
 def format_amount_trx(value: int, token: tokens.TokenInfo | None) -> str:
     if token:
         suffix = token.symbol
@@ -245,11 +262,3 @@ def format_amount_trx(value: int, token: tokens.TokenInfo | None) -> str:
         decimals = 6
 
     return f"{format_amount(value, decimals)} {suffix}"
-
-
-def split_address(address):
-    return chunks(address, 16)
-
-
-def split_text(text):
-    return chunks(text, 18)

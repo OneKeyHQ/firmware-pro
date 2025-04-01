@@ -7,7 +7,7 @@ from trezor.ui.layouts import confirm_final
 
 from apps.common import paths
 from apps.common.keychain import Keychain, auto_keychain
-from apps.tron.address import _address_base58, get_address_from_public_key
+from apps.tron.address import address_base58, get_address_from_public_key
 from apps.tron.serialize import serialize
 
 from . import ICON, PRIMARY_COLOR, layout, tokens
@@ -84,7 +84,7 @@ async def _require_confirm_by_type(ctx, transaction, owner_address):
             token = tokens.token_by_address(
                 "TRC20", contract.trigger_smart_contract.contract_address
             )
-            recipient = _address_base58(b"\x41" + data[16:36])
+            recipient = address_base58(b"\x41" + data[16:36])
             value = int.from_bytes(data[36:68], "big")
 
             if token is tokens.UNKNOWN_TOKEN:
@@ -178,6 +178,14 @@ async def _require_confirm_by_type(ctx, transaction, owner_address):
             contract.undelegate_resource_contract.balance,
             contract.undelegate_resource_contract.receiver_address,
             None,
+        )
+    elif contract.vote_witness_contract:
+        vote_contract = contract.vote_witness_contract
+        await layout.require_confirm_vote_witness(
+            ctx,
+            owner_address,
+            [(vote.vote_address, vote.vote_count) for vote in vote_contract.votes],
+            vote_contract.support,
         )
     else:
         raise wire.DataError("Invalid transaction type")

@@ -764,3 +764,4 @@ if TYPE_CHECKING:
     class TronResourceCode(IntEnum):
         BANDWIDTH = 0
         ENERGY = 1
+        TRON_POWER = 2

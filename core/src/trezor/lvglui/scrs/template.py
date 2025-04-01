@@ -4353,6 +4353,61 @@ class TronAssetFreeze(FullSizeWindow):
         self.group_more.add_dummy()
 
 
+class TronVoteWitness(FullSizeWindow):
+    def __init__(
+        self,
+        voter,
+        votes,
+        primary_color,
+    ):
+        super().__init__(
+            _(i18n_keys.TITLE__SIGN_STR_TRANSACTION).format("Tron"),
+            None,
+            _(i18n_keys.BUTTON__CONTINUE),
+            _(i18n_keys.BUTTON__REJECT),
+            primary_color=primary_color,
+        )
+        self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
+
+        self.group_directions = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_directions,
+            _(i18n_keys.FORM__DIRECTIONS),
+            "A:/res/group-icon-directions.png",
+        )
+        self.item_group_body_voter = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__VOTER__COLON),
+            voter,
+        )
+        self.group_directions.add_dummy()
+
+        self.group_more = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_more, _(i18n_keys.FORM__MORE), "A:/res/group-icon-more.png"
+        )
+        multi_vote = len(votes) > 1
+        for i, (candidate, count) in enumerate(votes):
+            self.item_group_body_vote = DisplayItem(
+                self.group_more,
+                f"{_(i18n_keys.GLOBAL_CANDIDATE)} #{i + 1}"
+                if multi_vote
+                else _(i18n_keys.GLOBAL_CANDIDATE),
+                candidate,
+            )
+            self.item_group_body_vote.label_top.set_recolor(False)
+            self.item_group_body_vote_count = DisplayItem(
+                self.group_more,
+                _(i18n_keys.GLOBAL__VOTE_COUNT),
+                str(count),
+            )
+        self.group_more.add_dummy()
+
+
 class NeoTokenTransfer(FullSizeWindow):
     def __init__(
         self,

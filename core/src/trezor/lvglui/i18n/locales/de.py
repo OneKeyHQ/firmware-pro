@@ -886,5 +886,11 @@ translations = [
     "Wenn aktiviert, funktioniert OneKey als Sicherheitsschlüssel für passwortloses Anmelden und 2FA auf Websites und in Apps.",
     "FIDO-Schlüssel deaktiviert. Anmeldedaten können nicht registriert oder überprüft werden. Erneut aktivieren, um wiederherzustellen.",
     "FIDO-Schlüssel deaktivieren",
+    "Ungültige Phrasen",
+    "Sie können ein einzelnes Wort bearbeiten oder von vorne beginnen.",
+    "Von vorne anfangen",
+    "Das Vergessen Ihrer Passphrase führt zum Verlust des Zugangs zu Geldern.",
+    "Bearbeiten",
+    "Stimmenauszählung",
 ]
 # fmt: on

@@ -1938,4 +1938,16 @@ SECURITY__ENABLE_FIDO_KEYS_DESC = 883
 FIDO_DISABLED_INFO_TEXT = 884
 # Disable FIDO Keys
 SECURITY__DISABLE_FIDO_KEYS = 885
+# Invalid Phrases
+INVALID_PHRASES__TITLE = 886
+# You can edit a single word or start over.
+INVALID_PHRASES__DESC = 887
+# Start over
+GLOBAL__START_OVER = 888
+# Forgetting your passphrase will lose access to funds
+PASSPHRASE_FORGETTING_WARNING_TEXT = 889
+# Edit
+GLOBAL__EDIT = 890
+# Vote count
+GLOBAL__VOTE_COUNT = 891
 # fmt: on
