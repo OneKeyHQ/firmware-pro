@@ -379,10 +379,10 @@ if TYPE_CHECKING:
 if __debug__:
     AUTOLOCK_DELAY_MINIMUM = AUTOSHUTDOWN_DELAY_MINIMUM = 10 * 1000  # 10 seconds
 else:
-    AUTOLOCK_DELAY_MINIMUM = 60 * 1000  # 1 minute
-    AUTOSHUTDOWN_DELAY_MINIMUM = 30 * 1000  # 30 seconds
+    AUTOLOCK_DELAY_MINIMUM = 30 * 1000  # 30 seconds
+    AUTOSHUTDOWN_DELAY_MINIMUM = 60 * 1000  # 1 minute
 
-AUTOSHUTDOWN_DELAY_DEFAULT = 10 * 60 * 1000  # 10 minutes
+AUTOSHUTDOWN_DELAY_DEFAULT = 5 * 60 * 1000  # 5 minutes
 AUTOLOCK_DELAY_DEFAULT = 60 * 1000  # 1 minute
 # autolock intervals larger than AUTOLOCK_DELAY_MAXIMUM cause issues in the scheduler
 # if __debug__:
