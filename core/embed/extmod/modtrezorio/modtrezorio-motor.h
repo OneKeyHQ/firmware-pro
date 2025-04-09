@@ -72,7 +72,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorio_MOTOR_tick_obj,
 ///     Weak vibrate
 ///     """
 STATIC mp_obj_t mod_trezorio_MOTOR_tock(mp_obj_t self) {
-  motor_tick();
+  motor_tock();
   return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorio_MOTOR_tock_obj,
