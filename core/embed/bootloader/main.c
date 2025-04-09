@@ -648,6 +648,23 @@ int main(void) {
                       // mpu may already running
   mpu_ctrl(sectrue);  // ensure enabled
 
+  // disable all external communication or user input irq
+  // will be re-enabled later by calling their init function
+  // bluetooth uart
+  HAL_NVIC_DisableIRQ(UART4_IRQn);
+  HAL_NVIC_ClearPendingIRQ(UART4_IRQn);
+  // bluetooth spi
+  HAL_NVIC_DisableIRQ(SPI2_IRQn);
+  HAL_NVIC_ClearPendingIRQ(SPI2_IRQn);
+  HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);
+  HAL_NVIC_ClearPendingIRQ(EXTI15_10_IRQn);
+  // usb
+  HAL_NVIC_DisableIRQ(OTG_HS_IRQn);
+  HAL_NVIC_ClearPendingIRQ(OTG_HS_IRQn);
+
+  __enable_irq();
+  __enable_fault_irq();
+
   lcd_ltdc_dsi_disable();
   sdram_reinit();
   // lcd_para_init(DISPLAY_RESX, DISPLAY_RESY, LCD_PIXEL_FORMAT_RGB565);
@@ -789,12 +806,10 @@ int main(void) {
     }
 
     display_clear();
-
     bus_fault_disable();
 
-    // Disable SPI Chip Select interrupt for compatibility with older firmware
-    // versions
-    spi_disable_cs_irq();
+    __disable_irq();
+    __disable_fault_irq();
 
     // enable firmware region
     mpu_config_firmware(sectrue, sectrue);

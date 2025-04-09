@@ -5,6 +5,10 @@
   .global reset_handler
   .type reset_handler, STT_FUNC
 reset_handler:
+
+  // disable all irq and exceptions
+  cpsid if
+  
   // setup environment for subsequent stage of code
   ldr r0, =axiram_start // r0 - point to beginning of axiram
   ldr r1, =axiram_end   // r1 - point to byte after the end of axiram
@@ -26,12 +30,6 @@ reset_handler:
   bl rng_get
   ldr r1, = __stack_chk_guard
   str r0, [r1]
-
-  // re-enable exceptions
-  // according to "ARM Cortex-M Programming Guide to Memory Barrier Instructions" Application Note 321, section 4.7:
-  // "If it is not necessary to ensure that a pended interrupt is recognized immediately before
-  // subsequent operations, it is not necessary to insert a memory barrier instruction."
-  cpsie f
 
   // enter the application code
   bl main

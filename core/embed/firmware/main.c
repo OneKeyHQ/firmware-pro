@@ -94,8 +94,8 @@ static void copyflash2sdram(void) {
 }
 
 int main(void) {
-  extern uint32_t _vector_offset;
-  SCB->VTOR = (uint32_t)&_vector_offset;
+  SystemCoreClockUpdate();
+  dwt_init();
 
   mpu_config_boardloader(sectrue, secfalse);
   mpu_config_bootloader(sectrue, secfalse);
@@ -104,8 +104,24 @@ int main(void) {
                       // mpu may already running
   mpu_ctrl(sectrue);  // ensure enabled
 
-  SystemCoreClockUpdate();
-  dwt_init();
+  // disable all external communication or user input irq
+  // will be re-enabled later by calling their init function
+  // bluetooth uart
+  HAL_NVIC_DisableIRQ(UART4_IRQn);
+  HAL_NVIC_ClearPendingIRQ(UART4_IRQn);
+  // bluetooth spi
+  HAL_NVIC_DisableIRQ(SPI2_IRQn);
+  HAL_NVIC_ClearPendingIRQ(SPI2_IRQn);
+  HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);
+  HAL_NVIC_ClearPendingIRQ(EXTI15_10_IRQn);
+  // usb
+  HAL_NVIC_DisableIRQ(OTG_HS_IRQn);
+  HAL_NVIC_ClearPendingIRQ(OTG_HS_IRQn);
+
+  // re-enable global irq
+  __enable_irq();
+  __enable_fault_irq();
+
   lcd_ltdc_dsi_disable();
   sdram_reinit();
   // lcd_para_init(DISPLAY_RESX, DISPLAY_RESY, LCD_PIXEL_FORMAT_RGB565);

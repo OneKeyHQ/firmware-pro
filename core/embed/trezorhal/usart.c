@@ -89,7 +89,6 @@ void ble_usart_init(void) {
   hdma_tx.Init.Priority = DMA_PRIORITY_MEDIUM;
 
   HAL_DMA_Init(&hdma_tx);
-
   __HAL_LINKDMA(huart, hdmatx, hdma_tx);
 
   hdma_rx.Instance = UARTx_RX_DMA_STREAM;
@@ -105,17 +104,22 @@ void ble_usart_init(void) {
   hdma_rx.Init.Priority = DMA_PRIORITY_MEDIUM;
 
   HAL_DMA_Init(&hdma_rx);
-
   __HAL_LINKDMA(huart, hdmarx, hdma_rx);
+
+  // clear all on going tx/rx
+  HAL_UART_Abort(huart);
 
   /*##-4- Configure the NVIC for DMA #########################################*/
   NVIC_SetPriority(UARTx_DMA_RX_IRQn, IRQ_PRI_DMA);
+  HAL_NVIC_ClearPendingIRQ(UARTx_DMA_RX_IRQn);
   HAL_NVIC_EnableIRQ(UARTx_DMA_RX_IRQn);
 
   NVIC_SetPriority(UARTx_DMA_TX_IRQn, IRQ_PRI_DMA);
+  HAL_NVIC_ClearPendingIRQ(UARTx_DMA_TX_IRQn);
   HAL_NVIC_EnableIRQ(UARTx_DMA_TX_IRQn);
 
   NVIC_SetPriority(UART4_IRQn, IRQ_PRI_UART);
+  HAL_NVIC_ClearPendingIRQ(UART4_IRQn);
   HAL_NVIC_EnableIRQ(UART4_IRQn);
 
   __HAL_UART_ENABLE_IT(huart, UART_IT_IDLE);
