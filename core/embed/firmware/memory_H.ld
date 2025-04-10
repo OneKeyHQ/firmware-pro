@@ -59,6 +59,7 @@ SECTIONS {
   } >EXRAM AT>FLASH2
 
   .flash : ALIGN(512) {
+    _stext = .;
     KEEP(*(.vector_table_ex));
     . = ALIGN(1024);
     _vector_offset = .;
@@ -71,6 +72,7 @@ SECTIONS {
     /* KEEP(*(.bootloader)); */
     /* *(.bootloader*); */
     /*. = ALIGN(512); */
+    _etext = .;
   } >FLASH AT>FLASH
 
   .data : ALIGN(4) {

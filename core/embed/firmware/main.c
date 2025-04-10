@@ -73,6 +73,7 @@
 #ifdef USE_SECP256K1_ZKP
 #include "zkp_context.h"
 #endif
+#include "cm_backtrace.h"
 
 // from util.s
 extern void shutdown_privileged(void);
@@ -137,6 +138,7 @@ int main(void) {
     qspi_flash_config();
     qspi_flash_memory_mapped();
   }
+  cm_backtrace_init("pro", "h1.0", "s1.0");
 
   ble_usart_init();
   spi_slave_init();
@@ -234,45 +236,6 @@ void NMI_Handler(void) {
   { error_shutdown("Internal error", "(CS)", NULL, NULL); }
 }
 
-// Hard fault handler
-#if defined SYSTEM_VIEW
-enum { r0, r1, r2, r3, r12, lr, pc, psr };
-void STACK_DUMP(unsigned int *stack) {
-  display_printf("[STACK DUMP]\n");
-  display_printf("R0 = 0x%08x\n", stack[r0]);
-  display_printf("R1 = 0x%08x\n", stack[r1]);
-  display_printf("R2 = 0x%08x\n", stack[r2]);
-  display_printf("R3 = 0x%08x\n", stack[r3]);
-  display_printf("R12 = 0x%08x\n", stack[r12]);
-  display_printf("LR = 0x%08x\n", stack[lr]);
-  display_printf("PC = 0x%08x\n", stack[pc]);
-  display_printf("PSR = 0x%08x\n", stack[psr]);
-  display_printf("BFAR = 0x%08x\n", (*((volatile unsigned int *)(0xE000ED38))));
-  display_printf("CFSR = 0x%08x\n", (*((volatile unsigned int *)(0xE000ED28))));
-  display_printf("HFSR = 0x%08x\n", (*((volatile unsigned int *)(0xE000ED2C))));
-  display_printf("DFSR = 0x%08x\n", (*((volatile unsigned int *)(0xE000ED30))));
-  display_printf("AFSR = 0x%08x\n", (*((volatile unsigned int *)(0xE000ED3C))));
-  exit(0);
-  return;
-}
-
-__attribute__((naked)) void HardFault_Handler(void) {
-  __asm volatile(
-      " tst lr, #4    \n"  // Test Bit 3 to see which stack pointer we should
-                           // use.
-      " ite eq        \n"  // Tell the assembler that the nest 2 instructions
-                           // are if-then-else
-      " mrseq r0, msp \n"  // Make R0 point to main stack pointer
-      " mrsne r0, psp \n"  // Make R0 point to process stack pointer
-      " b STACK_DUMP \n"   // Off to C land
-  );
-}
-#else
-void HardFault_Handler(void) {
-  error_shutdown("Internal error", "(HF)", NULL, NULL);
-}
-#endif
-
 void MemManage_Handler_MM(void) {
   error_shutdown("Internal error", "(MM)", NULL, NULL);
 }
@@ -285,7 +248,7 @@ void BusFault_Handler(void) {
   error_shutdown("Internal error", "(BF)", NULL, NULL);
 }
 
-void UsageFault_Handler(void) {
+void ShowUsageFault(void) {
   error_shutdown("Internal error", "(UF)", NULL, NULL);
 }
 

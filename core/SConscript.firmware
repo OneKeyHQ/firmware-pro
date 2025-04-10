@@ -452,8 +452,13 @@ if PRODUCTION_MODEL == 'H':
         'embed/firmware/mphalport.c',
         'embed/firmware/nlrthumb.c',
         'embed/firmware/startup.S',
-
     ]
+
+    SOURCE_CM_BACKTRACE = [
+        'embed/cm_backtrace/cm_backtrace.c',
+        'embed/cm_backtrace/fault_handler/gcc/cmb_fault.S'
+    ]
+
     SOURCE_TREZORHAL = [
         'embed/trezorhal/system_stm32h7xx.c',
         'embed/trezorhal/adc.c',
@@ -697,6 +702,7 @@ if PRODUCTION_MODEL == 'H':
             '.',
             'embed/rust',
             'embed/firmware',
+            'embed/cm_backtrace',
             'embed/trezorhal',
             'embed/trezorhal/fatfs',
             'embed/trezorhal/fp',
@@ -1084,6 +1090,8 @@ obj_program.extend(env.Object(source=SOURCE_MICROPYTHON_SPEED, COPT='-O3'))
 obj_program.extend(env.Object(source=SOURCE_STMHAL))
 obj_program.extend(env.Object(source=SOURCE_LVGL))
 obj_program.extend(env.Object(source=SOURCE_TREZORHAL))
+obj_program.extend(env.Object(source=SOURCE_CM_BACKTRACE))
+
 if FROZEN:
     obj_program.extend(env.Object(source=source_mpyc))
 
