@@ -4,6 +4,7 @@ from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
 
 from . import font_GeistRegular26
 from .common import Screen, lv, lv_colors
+from .components.doubleclick import DoubleClickDetector
 from .widgets.style import StyleWrapper
 
 ANIM_TIME = 20
@@ -23,6 +24,7 @@ class LockScreen(Screen):
 
     def __init__(self, device_name, ble_name="", dev_state=None):
         lockscreen = device.get_homescreen()
+        self.double_click = DoubleClickDetector(click_timeout=800, click_dist=50)
         if not hasattr(self, "_init"):
             self._init = True
             super().__init__(title=device_name, subtitle=ble_name)
@@ -154,8 +156,17 @@ class LockScreen(Screen):
             if self.channel.takers:
                 self.channel.publish("clicked")
             else:
-                if not ui.display.backlight() and not device.is_tap_awake_enabled():
-                    return
+                if not ui.display.backlight():
+                    if not device.is_tap_awake_enabled():
+                        return
+                    else:
+                        indev = lv.indev_get_act()
+                        point = lv.point_t()
+                        indev.get_point(point)
+                        is_double = self.double_click.handle_click(point)
+                        if not is_double:
+                            return
+
                 if utils.turn_on_lcd_if_possible():
                     return
                 from trezor import workflow

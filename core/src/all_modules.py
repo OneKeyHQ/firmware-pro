@@ -213,6 +213,8 @@ trezor.lvglui.scrs.components.button
 import trezor.lvglui.scrs.components.button
 trezor.lvglui.scrs.components.container
 import trezor.lvglui.scrs.components.container
+trezor.lvglui.scrs.components.doubleclick
+import trezor.lvglui.scrs.components.doubleclick
 trezor.lvglui.scrs.components.keyboard
 import trezor.lvglui.scrs.components.keyboard
 trezor.lvglui.scrs.components.label
