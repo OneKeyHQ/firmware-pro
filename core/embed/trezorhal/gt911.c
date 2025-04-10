@@ -111,7 +111,7 @@ uint32_t gt911_read_location(void) {
 
 void gt911_enter_sleep(void) {
   uint8_t data[1] = {0x05};
-  gt911_write(GTP_REG_SLEEP, data, 1);
+  gt911_write(GTP_REG_COMMAND, data, 1);
 }
 
 void gt911_enable_irq(void) {
@@ -135,10 +135,39 @@ void gt911_test(void) {
   }
 }
 
+void gt911_set_config(void) {
+  uint8_t config_data[sizeof(GT911_Config_t)] = {0};
+  GT911_Config_t *p_config = (GT911_Config_t *)config_data;
+
+  gt911_read(GTP_REG_CONFIG_DATA, (uint8_t *)config_data, 1);
+  if (config_data[0] == 0x4F) {
+    return;
+  }
+
+  gt911_read(GTP_REG_CONFIG_DATA, (uint8_t *)config_data, sizeof(config_data));
+
+  p_config->config_version = 0x4F;  // ‘O’
+
+  p_config->shake_count = 0x22;
+  p_config->noise_reduction = 10;
+  p_config->screen_touch_level = 0xA0;
+
+  p_config->check_sum = 0;
+  for (int i = 0; i < sizeof(config_data) - 2; i++) {
+    p_config->check_sum += config_data[i];
+  }
+  p_config->check_sum = (~p_config->check_sum) + 1;
+  p_config->config_refresh = 0x01;
+
+  gt911_write(GTP_REG_CONFIG_DATA, (uint8_t *)config_data, sizeof(config_data));
+}
+
 void gt911_init(void) {
   i2c_handle_touchpanel =
       &i2c_handles[i2c_find_channel_by_device(I2C_TOUCHPANEL)];
   gt911_io_init();
   gt911_reset();
   i2c_init_by_device(I2C_TOUCHPANEL);
+
+  gt911_set_config();
 }
