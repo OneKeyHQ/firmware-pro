@@ -785,9 +785,9 @@ BUTTON__SET_WALLPAPER = 355
 # Lock Screen
 ITEM__LOCK_SCREEN = 356
 TITLE__LOCK_SCREEN = 356
-# During locked, tap the screen to wake up the display.
+# During locked, double-tap the screen to wake up the display.
 CONTENT__TAP_TO_WAKE_ENABLED__HINT = 357
-# Tap to Wake
+# Double-tap to Wake
 ITEM__TAP_TO_WAKE = 358
 # During locked, press the power button to wake the display.
 CONTENT__TAP_TO_WAKE_DISABLED__HINT = 359
