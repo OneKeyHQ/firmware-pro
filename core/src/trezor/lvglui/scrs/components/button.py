@@ -70,6 +70,15 @@ class NormalButton(lv.btn):
         self.add_style(StyleWrapper().bg_color(bg_color).text_color(text_color), 0)
         self.add_flag(lv.btn.FLAG.CLICKABLE)
 
+    def enable_no_bg_mode(self):
+        self.add_style(StyleWrapper().bg_color(lv_colors.BLACK), 0)
+        self.add_style(
+            StyleWrapper().bg_color(lv_colors.ONEKEY_BLACK).bg_opa(),
+            lv.PART.MAIN | lv.STATE.PRESSED,
+        )
+        self.clear_flag(lv.obj.FLAG.CLICKABLE)
+        self.click_mask.add_flag(lv.obj.FLAG.CLICKABLE)
+
 
 class ListItemBtn(lv.btn):
     def __init__(

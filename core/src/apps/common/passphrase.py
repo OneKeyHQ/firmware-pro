@@ -64,7 +64,8 @@ async def _request_on_host(ctx: wire.Context) -> str:
     if ack.passphrase:
         from trezor.ui.layouts import require_confirm_passphrase
 
-        await require_confirm_passphrase(ctx, ack.passphrase)
+        if not await require_confirm_passphrase(ctx, ack.passphrase):
+            raise wire.ActionCancelled("Passphrase cancelled")
 
     return ack.passphrase
 

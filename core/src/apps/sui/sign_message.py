@@ -24,14 +24,13 @@ async def sign_message(
     address = sui_address_from_pubkey(pub_key_bytes)
 
     len_bytes = uleb_encode(len(msg.message))
-    intentMessage = PERSONALMESSAGE_INTENT_BYTES + len_bytes + msg.message
-
+    hasher = blake2b(outlen=32)
+    hasher.update(PERSONALMESSAGE_INTENT_BYTES)
+    hasher.update(len_bytes)
+    hasher.update(msg.message)
     from trezor.ui.layouts import confirm_signverify
 
     ctx.primary_color, ctx.icon_path = lv.color_hex(PRIMARY_COLOR), ICON
     await confirm_signverify(ctx, "Sui", decode_message(msg.message), address, False)
-
-    signature = ed25519.sign(
-        node.private_key(), blake2b(data=intentMessage, outlen=32).digest()
-    )
+    signature = ed25519.sign(node.private_key(), hasher.digest())
     return SuiMessageSignature(signature=signature, address=address)

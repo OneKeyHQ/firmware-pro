@@ -752,14 +752,17 @@ async def confirm_data(
     ctx: wire.GenericContext,
     br_type: str,
     title: str,
-    data: bytes | str,
+    data: bytes | str | bytearray,
     description: str | None = None,
     br_code: ButtonRequestType = ButtonRequestType.Other,
 ) -> None:
     from trezor.lvglui.scrs.template import ContractDataOverview
 
     if isinstance(data, (bytes, bytearray)):
-        data_str = "0x" + hexlify(data).decode()
+        if len(data) > 1024:
+            data_str = hexlify(data).decode()
+        else:
+            data_str = "0x" + hexlify(data).decode()
     else:
         data_str = data
     return await raise_if_cancelled(
@@ -1115,30 +1118,34 @@ def draw_simple_text(
     )
 
 
-async def request_passphrase_on_device(ctx: wire.GenericContext, max_len: int) -> str:
+async def request_passphrase_on_device(
+    ctx: wire.GenericContext, max_len: int, result: str | None = None
+) -> str:
     await button_request(
         ctx, "passphrase_device", code=ButtonRequestType.PassphraseEntry
     )
     from trezor.lvglui.scrs.passphrase import PassphraseRequest
 
-    screen = PassphraseRequest(max_len)
-    result = await ctx.wait(screen.request())
-    if result is None:
-        raise wire.ActionCancelled("Passphrase entry cancelled")
+    while True:
+        screen = PassphraseRequest(max_len, result)
+        result = await ctx.wait(screen.request())
+        if result is None:
+            raise wire.ActionCancelled("Passphrase entry cancelled")
 
-    assert isinstance(result, str)
+        assert isinstance(result, str)
 
-    await require_confirm_passphrase(ctx, result)
+        if await require_confirm_passphrase(ctx, result, from_device=True):
+            break
     return result
 
 
-async def require_confirm_passphrase(ctx: wire.GenericContext, passphrase: str) -> None:
+async def require_confirm_passphrase(
+    ctx: wire.GenericContext, passphrase: str, from_device: bool = False
+) -> bool:
     from trezor.lvglui.scrs.template import PassphraseDisplayConfirm
 
-    screen = PassphraseDisplayConfirm(passphrase)
-    await raise_if_cancelled(
-        interact(ctx, screen, "confirm_passphrase", ButtonRequestType.ProtectCall)
-    )
+    screen = PassphraseDisplayConfirm(passphrase, from_device)
+    return bool(await ctx.wait(screen.request()))
 
 
 async def request_pin_on_device(
@@ -1472,7 +1479,7 @@ async def confirm_password_input(ctx: wire.Context) -> None:
 
 
 async def confirm_blind_sign_common(
-    ctx: wire.Context, signer: str, raw_message: bytes
+    ctx: wire.Context, signer: str, raw_message: bytes | bytearray
 ) -> None:
 
     from trezor.lvglui.scrs.template import BlindingSignCommon

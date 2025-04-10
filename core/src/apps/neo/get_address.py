@@ -33,7 +33,7 @@ async def get_address(
             ctx,
             address=address,
             address_n=path,
-            network="Neo",
+            network="Neo N3",
         )
 
     return NeoAddress(address=address, public_key=pub_key_bytes)

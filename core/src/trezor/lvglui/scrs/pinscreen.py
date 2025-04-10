@@ -178,9 +178,10 @@ class InputPin(FullSizeWindow):
         return None
 
     def __init__(self, **kwargs):
+        subtitle = kwargs.get("subtitle", "")
         super().__init__(
             title=kwargs.get("title") or _(i18n_keys.TITLE__ENTER_PIN),
-            subtitle=kwargs.get("subtitle", ""),
+            subtitle=subtitle,
             anim_dir=0,
         )
         self.__class__._instance = self
@@ -193,43 +194,25 @@ class InputPin(FullSizeWindow):
             0,
         )
         self.title.align(lv.ALIGN.TOP_MID, 0, 24)
+
         self.subtitle.add_style(
             StyleWrapper()
             .text_font(font_GeistRegular26)
             .max_width(368)
-            .text_color(lv_colors.ONEKEY_RED_1)
+            .text_color(lv_colors.WHITE)
+            .bg_color(lv_colors.ONEKEY_RED_2 if subtitle else lv_colors.BLACK)
+            .bg_opa(lv.OPA.COVER)
+            .pad_hor(8)
+            .pad_ver(16)
+            .radius(40)
             .text_align_center(),
             0,
         )
 
-        if self.subtitle.get_text() != "":
-            self.subtitle.add_style(
-                StyleWrapper().text_font(font_GeistRegular26)
-                # .max_width(310)
-                .text_color(lv_colors.WHITE)
-                .bg_color(lv_colors.ONEKEY_RED_2)
-                .bg_opa(lv.OPA.COVER)
-                .pad_hor(8)
-                .pad_ver(16)
-                .radius(40)
-                .text_align_center(),
-                0,
-            )
-            # self.subtitle.add_style(
-            #     StyleWrapper()
-            #     .text_font(font_GeistRegular26)
-            #     .max_width(368)
-            #     .text_color(lv_colors.ONEKEY_RED_1)
-            #     .text_align_center(),
-            #     0,
-            # )
+        title_height = self.title.get_height()
+        subtitle_y = 40 if title_height > 60 else 70
+        self.subtitle.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, subtitle_y)
 
-            title_height = self.title.get_height()
-            subtitle_y = 40 if title_height > 60 else 70
-            self.subtitle.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, subtitle_y)
-            self.subtitle.move_foreground()
-
-        # self.subtitle.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
         self._show_fingerprint_prompt_if_necessary()
         self.clear_flag(lv.obj.FLAG.SCROLLABLE)
         self.keyboard = NumberKeyboard(self)
@@ -242,6 +225,18 @@ class InputPin(FullSizeWindow):
             0,
         )
 
+    def change_subtitle(self, subtitle: str):
+        self.subtitle.set_style_bg_color(
+            lv_colors.ONEKEY_RED_2 if subtitle else lv_colors.BLACK, 0
+        )
+        self.subtitle.set_text(subtitle)
+        keyboard_text = self.keyboard.ta.get_text()
+        if keyboard_text:
+            if subtitle:
+                self.keyboard.ta.align_to(self.subtitle, lv.ALIGN.OUT_BOTTOM_MID, 0, 10)
+            else:
+                self.keyboard.ta.align(lv.ALIGN.TOP_MID, 0, 188)
+
     def _show_fingerprint_prompt_if_necessary(self):
         from . import fingerprints
 
@@ -249,27 +244,64 @@ class InputPin(FullSizeWindow):
             self.fingerprint_prompt = lv.img(self.content_area)
             self.fingerprint_prompt.set_src("A:/res/fingerprint-prompt.png")
             self.fingerprint_prompt.set_pos(414, 30)
+            self.anim = lv.anim_t()
+            self.anim.init()
+            self.anim.set_var(self.fingerprint_prompt)
+            self.anim.set_values(414, 404)
+            self.anim.set_time(100)
+            self.anim.set_playback_delay(10)
+            self.anim.set_playback_time(100)
+            self.anim.set_repeat_delay(20)
+            self.anim.set_repeat_count(2)
+            self.anim.set_path_cb(lv.anim_t.path_ease_in_out)
+            self.anim.set_custom_exec_cb(lambda _a, val: self.anim_set_x(val))
+
+    def anim_set_x(self, val):
+        try:
+            self.fingerprint_prompt.set_x(val)
+        except Exception:
+            pass
 
     def refresh_fingerprint_prompt(self):
         if hasattr(self, "fingerprint_prompt"):
             try:
                 self.fingerprint_prompt.delete()
+                del self.fingerprint_prompt
+                del self.anim
+                self.change_subtitle("")
             except Exception:
                 pass
+
+    def show_fp_failed_prompt(self, level: int = 0):
+        if level:
+            if level == 1:
+                subtitle = _(i18n_keys.MSG__FINGERPRINT_NOT_RECOGNIZED_TRY_AGAIN)
+            elif level == 2:
+                subtitle = _(
+                    i18n_keys.MSG__YOUR_PIN_CODE_REQUIRED_TO_ENABLE_FINGERPRINT_UNLOCK
+                )
+            elif level == 3:
+                subtitle = _(i18n_keys.MSG__PUT_FINGER_ON_THE_FINGERPRINT)
+            elif level == 4:
+                subtitle = _(i18n_keys.MSG__CLEAN_FINGERPRINT_SENSOR_AND_TRY_AGAIN)
+            else:
+                subtitle = ""
+            self.change_subtitle(subtitle)
+        if hasattr(self, "fingerprint_prompt"):
+            lv.anim_t.start(self.anim)
 
     def on_event(self, event_obj):
         code = event_obj.code
         if code == lv.EVENT.VALUE_CHANGED:
             utils.lcd_resume()
             if self.keyboard.ta.get_text() != "":
-                self.subtitle.set_text("")
-                self.subtitle.remove_style_all()
+                self.change_subtitle("")
             return
         elif code == lv.EVENT.READY:
-            input = self.keyboard.ta.get_text()
-            if len(input) < 4:
+            input_text = self.keyboard.ta.get_text()
+            if len(input_text) < 4:
                 return
-            self.channel.publish(input)
+            self.channel.publish(input_text)
         elif code == lv.EVENT.CANCEL:
             self.channel.publish(0)
 

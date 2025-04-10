@@ -153,18 +153,17 @@ async def show_dry_run_different_type(ctx: wire.GenericContext) -> None:
     )
 
 
-async def show_invalid_mnemonic(ctx: wire.GenericContext, word_count: int) -> None:
-    if backup_types.is_slip39_word_count(word_count):
+async def show_invalid_mnemonic(
+    ctx: wire.GenericContext, mnemonics: list[str]
+) -> None | int:
+    if backup_types.is_slip39_word_count(len(mnemonics)):
         pass
     else:
-        await show_warning(
-            ctx,
-            "warning_invalid_seed",
-            _(i18n_keys.SUBTITLE__DEVICE_RECOVER_INVALID_RECOVERY_PHRASE),
-            header=_(i18n_keys.TITLE__INVALID_RECOVERY_PHRASE),
-            icon="A:/res/danger.png",
-            btn_yes_bg_color=lv_colors.ONEKEY_BLACK,
-        )
+        from trezor.lvglui.scrs.recovery_device import InvalidMnemonic
+
+        screen = InvalidMnemonic(mnemonics)
+
+        return await ctx.wait(screen.request())
 
 
 async def show_share_already_added(ctx: wire.GenericContext) -> None:

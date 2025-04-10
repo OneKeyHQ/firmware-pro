@@ -45,7 +45,7 @@ def make_digest(raw_tx: bytes, network_magic: int = NETWORK_MAINNET) -> bytes:
 
 def retrieve_network(network_magic: int) -> tuple[str, bool]:
     if is_mainnet(network_magic):
-        return "Neo", True
+        return "Neo N3", True
     elif is_testnet(network_magic):
         return "Neo Testnet", True
     else:

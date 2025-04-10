@@ -10,6 +10,7 @@ from trezor.errors import MnemonicError
 from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
 from trezor.messages import Success
 from trezor.ui.layouts import show_onekey_app_guide, show_popup, show_success
+from trezor.ui.layouts.lvgl.recovery import request_word
 
 from apps.base import set_homescreen
 from apps.common import mnemonic
@@ -104,24 +105,26 @@ async def _continue_recovery_process(
         await _request_share_first_screen(ctx, word_count)
 
     secret = None
+    words = None
     while secret is None:
-        if is_first_step:
-            # If we are starting recovery, ask for word count first...
-            if not word_count:
-                word_count = await _request_word_count(ctx, dry_run)
-            # ...and only then show the starting screen with word count.
-            await _request_share_first_screen(ctx, word_count)
-        assert word_count is not None
-
-        # ask for mnemonic words one by one
-        try:
-            words = await layout.request_mnemonic(ctx, word_count, backup_type)
-        except wire.ActionCancelled:
-            continue
-
-        # if they were invalid or some checks failed we continue and request them again
         if not words:
-            continue
+            if is_first_step:
+                # If we are starting recovery, ask for word count first...
+                if not word_count:
+                    word_count = await _request_word_count(ctx, dry_run)
+                # ...and only then show the starting screen with word count.
+                await _request_share_first_screen(ctx, word_count)
+            assert word_count is not None
+
+            # ask for mnemonic words one by one
+            try:
+                words = await layout.request_mnemonic(ctx, word_count, backup_type)
+            except wire.ActionCancelled:
+                continue
+
+            # if they were invalid or some checks failed we continue and request them again
+            if not words:
+                continue
 
         try:
             secret, backup_type = await _process_words(ctx, words)
@@ -130,7 +133,27 @@ async def _continue_recovery_process(
             # that the first step is complete.
             is_first_step = False
         except MnemonicError:
-            await layout.show_invalid_mnemonic(ctx, word_count)
+            words_list = words.split(" ")
+            while True:
+                result = await layout.show_invalid_mnemonic(ctx, words_list)
+                if result is not None:
+                    assert word_count is not None
+                    try:
+                        word = await request_word(
+                            ctx,
+                            result,
+                            word_count,
+                            is_slip39=backup_types.is_slip39_word_count(word_count),
+                        )
+                    except wire.ActionCancelled:
+                        continue
+                    else:
+                        words_list[result] = word
+                        words = " ".join(words_list)
+                        break
+                else:
+                    words = None
+                    break
 
     assert backup_type is not None
     if dry_run:

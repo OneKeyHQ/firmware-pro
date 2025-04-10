@@ -1,3 +1,5 @@
+import gc
+
 from trezor import wire
 from trezor.crypto.curve import ed25519
 from trezor.crypto.hashlib import blake2b
@@ -30,7 +32,7 @@ async def sign_tx(ctx: wire.Context, msg: SuiSignTx, keychain: Keychain) -> SuiS
 
         data_total = msg.data_length
         data = bytearray()
-        data += msg.data_initial_chunk
+        data.extend(msg.data_initial_chunk)
         data_left = data_total - len(msg.data_initial_chunk)
 
         hash_fn = blake2b(outlen=32)
@@ -39,10 +41,10 @@ async def sign_tx(ctx: wire.Context, msg: SuiSignTx, keychain: Keychain) -> SuiS
             resp = await send_request_chunk(ctx, data_left)
             data_left -= len(resp.data_chunk)
             hash_fn.update(resp.data_chunk)
-            data += resp.data_chunk
+            data.extend(resp.data_chunk)
 
         hash = hash_fn.digest()
-        await confirm_blind_sign_common(ctx, address, bytes(data))
+        await confirm_blind_sign_common(ctx, address, data)
     else:
         intent = msg.raw_tx[:3]
         if INTENT_BYTES != intent:
@@ -57,6 +59,8 @@ async def sign_tx(ctx: wire.Context, msg: SuiSignTx, keychain: Keychain) -> SuiS
 
 
 async def send_request_chunk(ctx: wire.Context, data_left: int) -> SuiTxAck:
+    gc.collect()
+
     req = SuiTxRequest()
     if data_left <= 1024:
         req.data_length = data_left

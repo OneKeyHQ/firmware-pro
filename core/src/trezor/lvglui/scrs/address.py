@@ -318,7 +318,7 @@ else:
         {
             "msg_type": MessageType.NeoGetAddress,
             "symbol": " NEO",
-            "name": "Neo",
+            "name": "Neo N3",
             "msg_class": "NeoGetAddress",
             "index_pos": -1,
             "base_path": [0x80000000 + 44, 0x80000000 + 888, 0x80000000 + 0, 0, 0],

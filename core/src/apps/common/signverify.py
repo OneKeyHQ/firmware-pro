@@ -1,3 +1,4 @@
+import gc
 from typing import TYPE_CHECKING
 from ubinascii import hexlify
 
@@ -32,10 +33,22 @@ def is_non_printable(message: str) -> bool:
 
 
 def decode_message(message: bytes) -> str:
+    message_len = len(message)
+
+    def to_hex(message: bytes) -> str:
+        hex_message = hexlify(message).decode()
+        if message_len > 1024:
+            return hex_message
+        else:
+            return "0x" + hex_message
+
     try:
-        decoded_message = bytes(message).decode()
+        if message_len > 1024:
+            gc.collect()
+        decoded_message = message.decode()
         if is_non_printable(decoded_message):
-            return f"0x{hexlify(message).decode()}"
+            return to_hex(message)
         return decoded_message
     except UnicodeError:
-        return f"0x{hexlify(message).decode()}"
+        gc.collect()
+        return to_hex(message)

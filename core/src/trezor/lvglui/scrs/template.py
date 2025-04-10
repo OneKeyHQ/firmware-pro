@@ -605,7 +605,7 @@ class Message(FullSizeWindow):
             )
             self.show_full_message.set_size(lv.SIZE.CONTENT, 77)
             self.show_full_message.add_style(
-                StyleWrapper().text_font(font_GeistSemiBold26), 0
+                StyleWrapper().text_font(font_GeistSemiBold26).pad_hor(24), 0
             )
             self.show_full_message.align(lv.ALIGN.CENTER, 0, 0)
             self.show_full_message.remove_style(None, lv.PART.MAIN | lv.STATE.PRESSED)
@@ -1293,6 +1293,7 @@ class ContractDataOverview(FullSizeWindow):
                     font=font_GeistMono28,
                     confirm_text=None,
                     cancel_text=None,
+                    page_size=351,
                 )
 
 
@@ -2395,19 +2396,26 @@ class SecurityCheck(FullSizeWindow):
 
 
 class PassphraseDisplayConfirm(FullSizeWindow):
-    def __init__(self, passphrase: str):
+    def __init__(self, passphrase: str, from_device: bool):
         super().__init__(
             title=_(i18n_keys.TITLE__USE_THIS_PASSPHRASE),
             subtitle=_(i18n_keys.SUBTITLE__USE_THIS_PASSPHRASE),
             confirm_text=_(i18n_keys.BUTTON__CONFIRM),
-            cancel_text=_(i18n_keys.BUTTON__CANCEL),
+            cancel_text=_(i18n_keys.GLOBAL__EDIT)
+            if from_device
+            else _(i18n_keys.BUTTON__CANCEL),
             anim_dir=0,
         )
+
+        self.warning_banner = Banner(
+            self.content_area, 2, _(i18n_keys.PASSPHRASE_FORGETTING_WARNING_TEXT)
+        )
+        self.warning_banner.align_to(self.subtitle, lv.ALIGN.OUT_BOTTOM_MID, 0, 20)
 
         self.panel = lv.obj(self.content_area)
         self.panel.remove_style_all()
         self.panel.set_size(456, 272)
-        self.panel.align_to(self.subtitle, lv.ALIGN.OUT_BOTTOM_MID, 0, 40)
+        self.panel.align_to(self.warning_banner, lv.ALIGN.OUT_BOTTOM_MID, 0, 10)
 
         self.panel.add_style(
             StyleWrapper()
@@ -4932,4 +4940,5 @@ class GnosisSafeTxDetails(FullSizeWindow):
                     font=font_GeistMono28,
                     confirm_text=None,
                     cancel_text=None,
+                    page_size=351,
                 )

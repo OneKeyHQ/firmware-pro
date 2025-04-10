@@ -109,8 +109,14 @@ async def handle_fingerprint():
                     visible, scr = LockScreen.retrieval()
                     if visible and scr is not None:
                         motor.vibrate()
+                        from trezor.lvglui.scrs.pinscreen import InputPin
+
+                        pin_wind = InputPin.get_window_if_visible()
+                        if pin_wind:
+                            pin_wind.show_fp_failed_prompt(warning_level)
+                        else:
+                            scr.show_finger_mismatch_anim()
                         scr.show_tips(warning_level)
-                        scr.show_finger_mismatch_anim()
                     await loop.sleep(500)
                 else:
                     if __debug__:
