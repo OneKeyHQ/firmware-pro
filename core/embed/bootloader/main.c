@@ -864,9 +864,6 @@ int main(void) {
     display_clear();
     bus_fault_disable();
 
-    __disable_irq();
-    __disable_fault_irq();
-
     // enable firmware region
     mpu_config_firmware(sectrue, sectrue);
 
