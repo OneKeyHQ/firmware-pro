@@ -52,11 +52,11 @@ def brightness2_percent_str(brightness: int) -> str:
 GRID_CELL_SIZE_ROWS = const(240)
 GRID_CELL_SIZE_COLS = const(144)
 
+APP_DRAWER_UP_TIME = 10
+APP_DRAWER_DOWN_TIME = 50
+APP_DRAWER_UP_DELAY = 15
+APP_DRAWER_DOWN_DELAY = 0
 if __debug__:
-    APP_DRAWER_UP_TIME = 10
-    APP_DRAWER_DOWN_TIME = 50
-    APP_DRAWER_UP_DELAY = 15
-    APP_DRAWER_DOWN_DELAY = 0
     PATH_OVER_SHOOT = lv.anim_t.path_overshoot
     PATH_BOUNCE = lv.anim_t.path_bounce
     PATH_LINEAR = lv.anim_t.path_linear
@@ -257,7 +257,7 @@ class MainScreen(Screen):
                 cross_align=lv.FLEX_ALIGN.CENTER,
                 track_align=lv.FLEX_ALIGN.SPACE_BETWEEN,
             )
-            self.main_cont.set_size(448, 550)
+            self.main_cont.set_size(448, 575)
             self.main_cont.set_pos(16, 200)
             self.main_cont.set_style_pad_column(16, 0)
             self.main_cont.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
@@ -295,16 +295,17 @@ class MainScreen(Screen):
                     item.add_flag(lv.obj.FLAG.HIDDEN)
 
         def create_item(self, name, img_src, text_key):
-            cont = ContainerFlex(
-                self.main_cont,
-                None,
-                padding_col=0,
-                flex_flow=lv.FLEX_FLOW.COLUMN,
-                main_align=lv.FLEX_ALIGN.SPACE_BETWEEN,
-                cross_align=lv.FLEX_ALIGN.CENTER,
-                track_align=lv.FLEX_ALIGN.CENTER,
+            cont = lv.obj(self.main_cont)
+            cont.add_style(
+                StyleWrapper()
+                .bg_color(lv_colors.BLACK)
+                .bg_opa(lv.OPA.TRANSP)
+                .radius(0)
+                .border_width(0)
+                .pad_all(0),
+                0,
             )
-            cont.set_size(216, 216 + 40)
+            cont.set_size(216, 280)
             cont.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
 
             btn = lv.imgbtn(cont)
@@ -317,6 +318,7 @@ class MainScreen(Screen):
                 lv.PART.MAIN | lv.STATE.PRESSED,
             )
             btn.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
+            btn.align(lv.ALIGN.TOP_MID, 0, 0)
 
             label = lv.label(cont)
             label.set_text(_(text_key))
@@ -331,6 +333,8 @@ class MainScreen(Screen):
             label.add_style(
                 StyleWrapper().text_opa(lv.OPA._70), lv.PART.MAIN | lv.STATE.PRESSED
             )
+
+            label.align_to(btn, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
 
             self.text_label[text_key] = label
 
@@ -364,9 +368,9 @@ class MainScreen(Screen):
                 148,
                 self.set_position,
                 start_cb=self.show_anim_start_cb,
-                delay=15 if not __debug__ else APP_DRAWER_UP_DELAY,
+                delay=APP_DRAWER_UP_DELAY,
                 del_cb=self.show_anim_del_cb,
-                time=130 if not __debug__ else APP_DRAWER_UP_TIME,
+                time=APP_DRAWER_UP_TIME,
                 path_cb=lv.anim_t.path_linear
                 if not __debug__
                 else APP_DRAWER_UP_PATH_CB,
