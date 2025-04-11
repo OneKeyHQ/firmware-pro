@@ -456,6 +456,7 @@ if PRODUCTION_MODEL == 'H':
 
     SOURCE_CM_BACKTRACE = [
         'embed/cm_backtrace/cm_backtrace.c',
+        'embed/cm_backtrace/cmb_user_cfg.c',
         'embed/cm_backtrace/fault_handler/gcc/cmb_fault.S'
     ]
 
