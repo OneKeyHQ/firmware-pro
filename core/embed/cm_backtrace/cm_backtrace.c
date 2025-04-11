@@ -614,6 +614,7 @@ static uint32_t statck_del_fpu_regs(uint32_t fault_handler_lr, uint32_t sp) {
  */
 void cm_backtrace_fault(uint32_t fault_handler_lr, uint32_t fault_handler_sp) {
     uint32_t stack_pointer = fault_handler_sp, saved_regs_addr = stack_pointer;
+    delete_err_info_file();         //delete existing error info file
 #ifdef CMB_USING_DUMP_STACK_INFO
     uint32_t tcb_stack_pointer = 0;
 #endif
