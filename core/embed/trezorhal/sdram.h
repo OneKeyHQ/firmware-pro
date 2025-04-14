@@ -62,7 +62,7 @@
   (FMC_SDRAM_ADDRESS + FMC_SDRAM_LTDC_BUFFER_LEN + FMC_SDRAM_LVGL_BUFFER_LEN + \
    FMC_SDRAM_USER_HEAP_LEN +                                                   \
    FMC_SDRAM_JPEG_OUTPUT_DATA_BUFFER_LEN)  // 0xD1C00000
-#define FMC_SDRAM_FIRMWARE_P2_LEN MB(2)    // 0xD1E00000
+#define FMC_SDRAM_FIRMWARE_P2_LEN MB(4)    // 0xD2000000
 
 // HANDLE
 extern SDRAM_HandleTypeDef hsdram[1];

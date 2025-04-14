@@ -4,14 +4,14 @@ ENTRY(reset_handler)
 
 MEMORY {
   FLASH  (rx)  : ORIGIN = 0x08060000, LENGTH = 1536K
-  FLASH2 (r)   : ORIGIN = 0x90000000, LENGTH = 2048K
+  FLASH2 (r)   : ORIGIN = 0x90000000, LENGTH = 4096K
   AXIRAM (wal) : ORIGIN = 0x24000000, LENGTH = 512K
   SRAM   (wal) : ORIGIN = 0x20000000, LENGTH = 128K
   SRAM1   (wal) : ORIGIN = 0x30000000, LENGTH = 128K
   SRAM2   (wal) : ORIGIN = 0x30020000, LENGTH = 128K
   /* SRAM3 is used for DMA */
   SRAM3   (wal) : ORIGIN = 0x30040000, LENGTH = 32K
-  EXRAM   (wal) : ORIGIN = 0xD1C00000, LENGTH = 2048K
+  EXRAM   (wal) : ORIGIN = 0xD1C00000, LENGTH = 4096K
 }
 
 main_stack_base = ORIGIN(SRAM) + LENGTH(SRAM); /* 8-byte aligned full descending stack */
