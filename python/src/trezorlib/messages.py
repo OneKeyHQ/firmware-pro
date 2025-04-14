@@ -11499,6 +11499,7 @@ class TronContract(protobuf.MessageType):
         56: protobuf.Field("withdraw_expire_unfreeze_contract", "TronWithdrawExpireUnfreezeContract", repeated=False, required=False),
         57: protobuf.Field("delegate_resource_contract", "TronDelegateResourceContract", repeated=False, required=False),
         58: protobuf.Field("undelegate_resource_contract", "TronUnDelegateResourceContract", repeated=False, required=False),
+        59: protobuf.Field("cancel_all_unfreeze_v2_contract", "TronCancelAllUnfreezeV2Contract", repeated=False, required=False),
         3: protobuf.Field("provider", "bytes", repeated=False, required=False),
         5: protobuf.Field("contract_name", "bytes", repeated=False, required=False),
         6: protobuf.Field("permission_id", "uint32", repeated=False, required=False),
@@ -11518,6 +11519,7 @@ class TronContract(protobuf.MessageType):
         withdraw_expire_unfreeze_contract: Optional["TronWithdrawExpireUnfreezeContract"] = None,
         delegate_resource_contract: Optional["TronDelegateResourceContract"] = None,
         undelegate_resource_contract: Optional["TronUnDelegateResourceContract"] = None,
+        cancel_all_unfreeze_v2_contract: Optional["TronCancelAllUnfreezeV2Contract"] = None,
         provider: Optional["bytes"] = None,
         contract_name: Optional["bytes"] = None,
         permission_id: Optional["int"] = None,
@@ -11533,6 +11535,7 @@ class TronContract(protobuf.MessageType):
         self.withdraw_expire_unfreeze_contract = withdraw_expire_unfreeze_contract
         self.delegate_resource_contract = delegate_resource_contract
         self.undelegate_resource_contract = undelegate_resource_contract
+        self.cancel_all_unfreeze_v2_contract = cancel_all_unfreeze_v2_contract
         self.provider = provider
         self.contract_name = contract_name
         self.permission_id = permission_id
@@ -11714,6 +11717,10 @@ class TronUnDelegateResourceContract(protobuf.MessageType):
         self.resource = resource
         self.balance = balance
         self.receiver_address = receiver_address
+
+
+class TronCancelAllUnfreezeV2Contract(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = None
 
 
 class TronVoteWitnessContract(protobuf.MessageType):

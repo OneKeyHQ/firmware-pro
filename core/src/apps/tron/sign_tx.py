@@ -179,6 +179,11 @@ async def _require_confirm_by_type(ctx, transaction, owner_address):
             contract.undelegate_resource_contract.receiver_address,
             None,
         )
+    elif contract.cancel_all_unfreeze_v2_contract:
+        await layout.require_confirm_cancel_all_unfreeze_v2(
+            ctx,
+            owner_address,
+        )
     elif contract.vote_witness_contract:
         vote_contract = contract.vote_witness_contract
         await layout.require_confirm_vote_witness(

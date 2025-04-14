@@ -9286,6 +9286,7 @@ if TYPE_CHECKING:
         withdraw_expire_unfreeze_contract: "TronWithdrawExpireUnfreezeContract | None"
         delegate_resource_contract: "TronDelegateResourceContract | None"
         undelegate_resource_contract: "TronUnDelegateResourceContract | None"
+        cancel_all_unfreeze_v2_contract: "TronCancelAllUnfreezeV2Contract | None"
         provider: "bytes | None"
         contract_name: "bytes | None"
         permission_id: "int | None"
@@ -9304,6 +9305,7 @@ if TYPE_CHECKING:
             withdraw_expire_unfreeze_contract: "TronWithdrawExpireUnfreezeContract | None" = None,
             delegate_resource_contract: "TronDelegateResourceContract | None" = None,
             undelegate_resource_contract: "TronUnDelegateResourceContract | None" = None,
+            cancel_all_unfreeze_v2_contract: "TronCancelAllUnfreezeV2Contract | None" = None,
             provider: "bytes | None" = None,
             contract_name: "bytes | None" = None,
             permission_id: "int | None" = None,
@@ -9476,6 +9478,12 @@ if TYPE_CHECKING:
 
         @classmethod
         def is_type_of(cls, msg: Any) -> TypeGuard["TronUnDelegateResourceContract"]:
+            return isinstance(msg, cls)
+
+    class TronCancelAllUnfreezeV2Contract(protobuf.MessageType):
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["TronCancelAllUnfreezeV2Contract"]:
             return isinstance(msg, cls)
 
     class TronVoteWitnessContract(protobuf.MessageType):

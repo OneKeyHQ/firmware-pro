@@ -235,6 +235,15 @@ def require_confirm_undelegate(
     )
 
 
+def require_confirm_cancel_all_unfreeze_v2(
+    ctx: Context,
+    signer: str,
+) -> Awaitable[None]:
+    from trezor.ui.layouts.lvgl import confirm_tron_unfreeze
+
+    return confirm_tron_unfreeze(ctx, "Cancel All UnStaking", signer, None, None)
+
+
 def require_confirm_vote_witness(
     ctx: Context,
     signer: str,

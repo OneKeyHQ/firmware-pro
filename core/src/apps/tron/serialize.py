@@ -214,6 +214,11 @@ def pack_contract(contract, owner_address):
             cmessage,
             base58.decode_check(contract.undelegate_resource_contract.receiver_address),
         )
+    elif contract.cancel_all_unfreeze_v2_contract:
+        write_varint(retc, 59)
+        api = "CancelAllUnfreezeV2Contract"
+        add_field(cmessage, 1, TYPE_LEN)
+        write_bytes_with_length(cmessage, base58.decode_check(owner_address))
     else:
         raise ValueError("Invalid contract type")
 

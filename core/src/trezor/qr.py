@@ -214,7 +214,14 @@ def scan_qr(callback_obj):
                 camera.stop()
                 # await qr_task.callback_finish()
                 break
-            qr_data = camera.scan_qrcode(80, 180)
+            try:
+                qr_data = camera.scan_qrcode(80, 180)
+            except Exception as e:
+                if __debug__:
+                    print(f"scan qrcode error: {e}")
+                await callback_obj.error_feedback()
+                await loop.sleep(100)
+                continue
             if qr_data:
                 if __debug__:
                     print(qr_data.decode("utf-8"))

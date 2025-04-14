@@ -105,7 +105,8 @@ message TronSignTx {
             optional uint64 balance = 3;
             optional string receiver_address = 4;
         }
-
+        message TronCancelAllUnfreezeV2Contract {
+        }
         // Vote Witness Contract
         message TronVoteWitnessContract {
             message Vote {
@@ -126,6 +127,7 @@ message TronSignTx {
         optional TronWithdrawExpireUnfreezeContract withdraw_expire_unfreeze_contract = 56;
         optional TronDelegateResourceContract delegate_resource_contract = 57;
         optional TronUnDelegateResourceContract undelegate_resource_contract = 58;
+        optional TronCancelAllUnfreezeV2Contract cancel_all_unfreeze_v2_contract = 59;
         optional bytes provider = 3;
         optional bytes contract_name = 5;
         optional uint32 permission_id = 6;

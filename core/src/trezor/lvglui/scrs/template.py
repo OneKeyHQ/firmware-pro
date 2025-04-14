@@ -4320,45 +4320,47 @@ class TronAssetFreeze(FullSizeWindow):
             sender,
         )
         self.group_directions.add_dummy()
-
-        self.group_more = ContainerFlexCol(
-            self.container, None, padding_row=0, no_align=True
-        )
-        self.item_group_header = CardHeader(
-            self.group_more, _(i18n_keys.FORM__MORE), "A:/res/group-icon-more.png"
-        )
-        if resource is not None:
-            self.item_body_resource = DisplayItem(
-                self.group_more, _(i18n_keys.LIST_KEY__RESOURCE_COLON), resource
+        if any((resource, balance, receiver, duration, lock)):
+            self.group_more = ContainerFlexCol(
+                self.container, None, padding_row=0, no_align=True
             )
-        if balance:
-            if is_freeze:
-                self.item_body_freeze_balance = DisplayItem(
-                    self.group_more,
-                    _(i18n_keys.LIST_KEY__FROZEN_BALANCE_COLON),
-                    balance,
+            self.item_group_header = CardHeader(
+                self.group_more, _(i18n_keys.FORM__MORE), "A:/res/group-icon-more.png"
+            )
+            if resource is not None:
+                self.item_body_resource = DisplayItem(
+                    self.group_more, _(i18n_keys.LIST_KEY__RESOURCE_COLON), resource
                 )
-            else:
-                self.item_body_balance = DisplayItem(
+            if balance:
+                if is_freeze:
+                    self.item_body_freeze_balance = DisplayItem(
+                        self.group_more,
+                        _(i18n_keys.LIST_KEY__FROZEN_BALANCE_COLON),
+                        balance,
+                    )
+                else:
+                    self.item_body_balance = DisplayItem(
+                        self.group_more,
+                        _(i18n_keys.LIST_KEY__AMOUNT__COLON),
+                        balance,
+                    )
+            if duration:
+                self.item_body_duration = DisplayItem(
                     self.group_more,
-                    _(i18n_keys.LIST_KEY__AMOUNT__COLON),
-                    balance,
+                    _(i18n_keys.LIST_KEY__FROZEN_DURATION_COLON),
+                    duration,
                 )
-        if duration:
-            self.item_body_duration = DisplayItem(
-                self.group_more,
-                _(i18n_keys.LIST_KEY__FROZEN_DURATION_COLON),
-                duration,
-            )
-        if receiver is not None:
-            self.item_body_receiver = DisplayItem(
-                self.group_more, _(i18n_keys.LIST_KEY__RECEIVER_ADDRESS_COLON), receiver
-            )
-        if lock is not None:
-            self.item_body_lock = DisplayItem(
-                self.group_more, _(i18n_keys.LIST_KEY__LOCK_COLON), lock
-            )
-        self.group_more.add_dummy()
+            if receiver is not None:
+                self.item_body_receiver = DisplayItem(
+                    self.group_more,
+                    _(i18n_keys.LIST_KEY__RECEIVER_ADDRESS_COLON),
+                    receiver,
+                )
+            if lock is not None:
+                self.item_body_lock = DisplayItem(
+                    self.group_more, _(i18n_keys.LIST_KEY__LOCK_COLON), lock
+                )
+            self.group_more.add_dummy()
 
 
 class TronVoteWitness(FullSizeWindow):
