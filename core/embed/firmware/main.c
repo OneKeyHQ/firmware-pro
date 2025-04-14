@@ -236,15 +236,20 @@ void NMI_Handler(void) {
   { error_shutdown("Internal error", "(CS)", NULL, NULL); }
 }
 
-void MemManage_Handler_MM(void) {
+//Show fault
+void ShowHardFault(void) {
+  error_shutdown("Internal error", "(HF)", NULL, NULL);
+}
+
+void ShowMemManage_MM(void) {
   error_shutdown("Internal error", "(MM)", NULL, NULL);
 }
 
-void MemManage_Handler_SO(void) {
+void ShowMemManage_SO(void) {
   error_shutdown("Internal error", "(SO)", NULL, NULL);
 }
 
-void BusFault_Handler(void) {
+void ShowBusFault(void) {
   error_shutdown("Internal error", "(BF)", NULL, NULL);
 }
 

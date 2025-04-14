@@ -38,6 +38,35 @@ HardFault_Handler:
     MOV     r0, lr                  /* get lr */
     MOV     r1, sp                  /* get stack pointer (current is MSP) */
     BL      cm_backtrace_fault
+    BL      ShowHardFault
+
+
+.global MemManage_Handler_MM
+.type MemManage_Handler_MM, %function
+MemManage_Handler_MM:
+    MOV     r0, lr                  /* get lr */
+    MOV     r1, sp                  /* get stack pointer (current is MSP) */
+    BL      cm_backtrace_fault
+    BL      ShowMemManage_MM
+
+
+.global MemManage_Handler_SO
+.type MemManage_Handler_SO, %function
+MemManage_Handler_SO:
+    MOV     r0, lr                  /* get lr */
+    MOV     r1, sp                  /* get stack pointer (current is MSP) */
+    BL      cm_backtrace_fault
+    BL      ShowMemManage_SO
+
+
+.global BusFault_Handler
+.type BusFault_Handler, %function
+BusFault_Handler:
+    MOV     r0, lr                  /* get lr */
+    MOV     r1, sp                  /* get stack pointer (current is MSP) */
+    BL      cm_backtrace_fault
+    BL      ShowBusFault
+
 
 .global UsageFault_Handler
 .type UsageFault_Handler, %function
