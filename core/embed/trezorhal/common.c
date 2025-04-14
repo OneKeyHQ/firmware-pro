@@ -57,6 +57,8 @@ volatile uint32_t system_reset = 0;
 
 // from util.s
 extern void shutdown_privileged(void);
+// from delay.c
+extern void software_delay_ms(uint32_t delay);
 
 void shutdown(void) {
 #ifdef USE_SVC_SHUTDOWN
@@ -175,6 +177,7 @@ error_shutdown(const char* line1, const char* line2, const char* line3,
 #ifdef TREZOR_FONT_NORMAL_ENABLE
   uint16_t font_color = RGB16(0x69, 0x69, 0x69);
   display_clear();
+  software_delay_ms(3);
   display_image(9, 50, 46, 40, toi_icon_warning + 12,
                 sizeof(toi_icon_warning) - 12);
   display_text(8, 140, "System problem detected.", -1, FONT_NORMAL, COLOR_WHITE,
