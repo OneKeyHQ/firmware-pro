@@ -39,6 +39,7 @@ HardFault_Handler:
     MOV     r1, sp                  /* get stack pointer (current is MSP) */
     BL      cm_backtrace_fault
     BL      ShowHardFault
+    B       HAL_NVIC_SystemReset
 
 
 .global MemManage_Handler_MM
@@ -48,6 +49,7 @@ MemManage_Handler_MM:
     MOV     r1, sp                  /* get stack pointer (current is MSP) */
     BL      cm_backtrace_fault
     BL      ShowMemManage_MM
+    B       HAL_NVIC_SystemReset
 
 
 .global MemManage_Handler_SO
@@ -57,6 +59,7 @@ MemManage_Handler_SO:
     MOV     r1, sp                  /* get stack pointer (current is MSP) */
     BL      cm_backtrace_fault
     BL      ShowMemManage_SO
+    B       HAL_NVIC_SystemReset
 
 
 .global BusFault_Handler
@@ -66,6 +69,7 @@ BusFault_Handler:
     MOV     r1, sp                  /* get stack pointer (current is MSP) */
     BL      cm_backtrace_fault
     BL      ShowBusFault
+    B       HAL_NVIC_SystemReset
 
 
 .global UsageFault_Handler
@@ -75,6 +79,7 @@ UsageFault_Handler:
     MOV     r1, sp                  /* get stack pointer (current is MSP) */
     BL      cm_backtrace_fault
     BL      ShowUsageFault
+    B       HAL_NVIC_SystemReset
 
 
 Fault_Loop:
