@@ -74,6 +74,7 @@
 #include "zkp_context.h"
 #endif
 #include "cm_backtrace.h"
+#include "version.h"
 
 // from util.s
 extern void shutdown_privileged(void);
@@ -138,7 +139,7 @@ int main(void) {
     qspi_flash_config();
     qspi_flash_memory_mapped();
   }
-  cm_backtrace_init("pro", "h1.0", "s1.0");
+  cm_backtrace_init("firmware", hw_ver_to_str(get_hw_ver()), ONEKEY_VERSION);
 
   ble_usart_init();
   spi_slave_init();
