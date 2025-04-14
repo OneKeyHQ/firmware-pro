@@ -4,7 +4,7 @@
 #include "stdio.h"
 #include "emmc_fs.h"
 
-#define CMB_ERR_INFO_FILE "0:err_info.txt"
+#define CMB_ERR_INFO_FILE "0:fault_info.txt"
 
 void delete_err_info_file(void)
 {
