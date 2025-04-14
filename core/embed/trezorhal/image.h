@@ -23,6 +23,8 @@
 #include <stdint.h>
 #include "secbool.h"
 
+#include "sdram.h"
+
 #define BOARDLOADER_START 0x08000000
 #define BOOTLOADER_START 0x08020000
 #define FIRMWARE_START 0x08060000
@@ -38,7 +40,10 @@
 #define BOOTLOADER_IMAGE_MAXSIZE (BOOTLOADER_SECTORS_COUNT * IMAGE_CHUNK_SIZE)
 
 #define FIRMWARE_IMAGE_MAGIC 0x46324354  // TC2F
-#define FIRMWARE_IMAGE_MAXSIZE (FIRMWARE_SECTORS_COUNT * IMAGE_CHUNK_SIZE)
+#define FIRMWARE_IMAGE_INNER_SIZE \
+  (FIRMWARE_INNER_SECTORS_COUNT * IMAGE_CHUNK_SIZE)
+#define FIRMWARE_IMAGE_MAXSIZE \
+  (FIRMWARE_IMAGE_INNER_SIZE + FMC_SDRAM_FIRMWARE_P2_LEN)
 
 #define FIRMWARE_IMAGE_MAGIC_BLE 0x33383235
 #define FIRMWARE_IMAGE_MAXSIZE_BLE (128 * 1024)
@@ -56,7 +61,7 @@ typedef struct {
   uint32_t version;
   uint32_t fix_version;
   uint32_t onekey_version;
-  uint8_t reserved_1[4];
+  uint32_t hash_block;
   uint8_t hashes[512];
   uint8_t reserved[399];
   uint8_t build_id[16];
@@ -182,7 +187,8 @@ secbool __wur check_image_contents_ADV(const vendor_header* const vhdr,
                                        const image_header* const hdr,
                                        const uint8_t* const code_buffer,
                                        const size_t code_len_skipped,
-                                       const size_t code_len_check);
+                                       const size_t code_len_check,
+                                       bool chcek_remain);
 
 secbool __wur install_bootloader(const uint8_t* const buffer, const size_t size,
                                  char* error_msg, size_t error_msg_len,

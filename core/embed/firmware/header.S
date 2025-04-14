@@ -27,7 +27,7 @@ g_header:
     .byte ONEKEY_VERSION_MINOR       // onekey_minor
     .byte ONEKEY_VERSION_PATCH       // onekey_patch
     .byte ONEKEY_VERSION_BUILD       // onekey_build
-    . = . + 4                        // reserved
+    .word 0                          // hash block size
     . = . + 512                      // hash1 ... hash16
 
 #if !defined TREZOR_MODEL_1

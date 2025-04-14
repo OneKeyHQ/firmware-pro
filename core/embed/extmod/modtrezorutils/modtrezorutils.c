@@ -46,13 +46,13 @@
 #include "mini_printf.h"
 #endif
 
-static void ui_progress(mp_obj_t ui_wait_callback, uint32_t current,
-                        uint32_t total) {
-  if (mp_obj_is_callable(ui_wait_callback)) {
-    mp_call_function_2_protected(ui_wait_callback, mp_obj_new_int(current),
-                                 mp_obj_new_int(total));
-  }
-}
+// static void ui_progress(mp_obj_t ui_wait_callback, uint32_t current,
+//                         uint32_t total) {
+//   if (mp_obj_is_callable(ui_wait_callback)) {
+//     mp_call_function_2_protected(ui_wait_callback, mp_obj_new_int(current),
+//                                  mp_obj_new_int(total));
+//   }
+// }
 
 /// def consteq(sec: bytes, pub: bytes) -> bool:
 ///     """
@@ -162,44 +162,9 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorutils_reset_obj,
 ///     """
 STATIC mp_obj_t mod_trezorutils_firmware_hash(size_t n_args,
                                               const mp_obj_t *args) {
-  BLAKE2S_CTX ctx;
-  mp_buffer_info_t chal = {0};
-  if (n_args > 0 && args[0] != mp_const_none) {
-    mp_get_buffer_raise(args[0], &chal, MP_BUFFER_READ);
-  }
-
-  if (chal.len != 0) {
-    if (blake2s_InitKey(&ctx, BLAKE2S_DIGEST_LENGTH, chal.buf, chal.len) != 0) {
-      mp_raise_msg(&mp_type_ValueError, "Invalid challenge.");
-    }
-  } else {
-    blake2s_Init(&ctx, BLAKE2S_DIGEST_LENGTH);
-  }
-
-  mp_obj_t ui_wait_callback = mp_const_none;
-  if (n_args > 1 && args[1] != mp_const_none) {
-    ui_wait_callback = args[1];
-  }
-
-  ui_progress(ui_wait_callback, 0, FIRMWARE_SECTORS_COUNT);
-  for (int i = 0; i < FIRMWARE_SECTORS_COUNT; i++) {
-    uint8_t sector = FIRMWARE_SECTORS[i];
-    uint32_t size = flash_sector_size(sector);
-    const void *data = flash_get_address(sector, 0, size);
-    if (data == NULL) {
-      mp_raise_msg(&mp_type_RuntimeError, "Failed to read firmware.");
-    }
-    blake2s_Update(&ctx, data, size);
-    ui_progress(ui_wait_callback, i + 1, FIRMWARE_SECTORS_COUNT);
-  }
-
+  // we use onekey firmware hash
   vstr_t vstr = {0};
   vstr_init_len(&vstr, BLAKE2S_DIGEST_LENGTH);
-  if (blake2s_Final(&ctx, vstr.buf, vstr.len) != 0) {
-    vstr_clear(&vstr);
-    mp_raise_msg(&mp_type_RuntimeError, "Failed to finalize firmware hash.");
-  }
-
   return mp_obj_new_str_from_vstr(&mp_type_bytes, &vstr);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_trezorutils_firmware_hash_obj, 0,

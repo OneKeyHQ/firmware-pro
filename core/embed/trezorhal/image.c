@@ -79,6 +79,7 @@ secbool load_image_header(const uint8_t* const data, const uint32_t magic,
   memcpy(&hdr->version, data + 16, 4);
   memcpy(&hdr->fix_version, data + 20, 4);
   memcpy(&hdr->onekey_version, data + 24, 4);
+  memcpy(&hdr->hash_block, data + 28, 4);
 
   memcpy(hdr->hashes, data + 32, 512);
 
@@ -329,7 +330,8 @@ secbool check_image_contents_ADV(const vendor_header* const vhdr,
                                  const image_header* const hdr,
                                  const uint8_t* const code_buffer,
                                  const size_t code_len_skipped,
-                                 const size_t code_len_check) {
+                                 const size_t code_len_check,
+                                 bool chcek_remain) {
   // sanity check
   if (
       // vhdr == NULL || // this is allowed since bootloader image have no vhdr
@@ -340,7 +342,10 @@ secbool check_image_contents_ADV(const vendor_header* const vhdr,
   }
 
   // const vars
-  const size_t hash_chunk_size = FLASH_FIRMWARE_SECTOR_SIZE * 2;
+  size_t hash_chunk_size = FLASH_FIRMWARE_SECTOR_SIZE * 2;
+  if (hdr->hash_block != 0) {
+    hash_chunk_size = hdr->hash_block;
+  }
   const size_t first_chunk_skip =
       ((vhdr != NULL) ? vhdr->hdrlen : 0) + hdr->hdrlen;
 
@@ -369,6 +374,17 @@ secbool check_image_contents_ADV(const vendor_header* const vhdr,
     }
 
     if (processed_size >= code_len_check) {
+      if (chcek_remain) {
+        for (int i = block; i < 16; i++) {
+          if (memcmp(hdr->hashes + i * 32,
+                     "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+                     "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+                     "\x00\x00\x00\x00",
+                     32) != 0) {
+            return secfalse;
+          }
+        }
+      }
       // make sure we actually checked something
       if (processed_size > 0)
         // flag set to valid
@@ -519,7 +535,7 @@ secbool verify_bootloader(image_header* const hdr, secbool* const hdr_valid,
   ExecuteCheck_ADV(
       check_image_contents_ADV(NULL, &_hdr,
                                (const uint8_t*)BOOTLOADER_START + _hdr.hdrlen,
-                               0, _hdr.codelen),
+                               0, _hdr.codelen, true),
       sectrue, {
         if (error_msg != NULL)
           strncpy(error_msg, "Bootloader code invalid!", error_msg_len);
@@ -558,21 +574,10 @@ secbool install_firmware(const uint8_t* const buffer, const size_t size,
     return secfalse;
 
   // prepare
-  if (get_hw_ver() >= HW_VER_3P0A) {
-    // enusure dir exists and remove p2 file
-    if (!emmc_fs_dir_make("0:/data") ||
-        !emmc_fs_file_delete("0:/data/fw_p2.bin")) {
-      strncpy(error_msg, "Flash firmware prepare failed! (EMMC)",
-              error_msg_len);
-      return secfalse;
-    }
-  } else {
-    // not worth it, take too long (8M for 25s)
-    // if ( HAL_OK != qspi_flash_erase_chip() )
-    // {
-    //     strncpy(error_msg, "Flash firmware prepare failed! (QSPI)",
-    //     error_msg_len); return secfalse;
-    // }
+  if (!emmc_fs_dir_make("0:/data") ||
+      !emmc_fs_file_delete("0:/data/fw_p2.bin")) {
+    strncpy(error_msg, "Flash firmware prepare failed! (EMMC)", error_msg_len);
+    return secfalse;
   }
 
   // install
@@ -633,102 +638,30 @@ secbool install_firmware(const uint8_t* const buffer, const size_t size,
           });
     } else {
       // install p2
-
-      if (get_hw_ver() >= HW_VER_3P0A) {
-        // EMMC
-        uint32_t emmc_fs_processed = 0;
-        EXEC_RETRY(
-            10, true, {},
-            {
-              return emmc_fs_file_write(
-                  "0:/data/fw_p2.bin", (processed_size - fw_internal_size),
-                  (uint8_t*)(buffer + processed_size),
-                  MIN((size - processed_size), FLASH_FIRMWARE_SECTOR_SIZE),
-                  &emmc_fs_processed, false, true);
-            },
-            {
-              processed_size += emmc_fs_processed;
-              hal_delay(100);  // delay for visual
-            },
-            {
-              strncpy(error_msg, "Flash write failed! (EMMC)", error_msg_len);
-              return secfalse;
-            });
-      } else {
-        // QSPI
-
-        // erase
-        EXEC_RETRY(
-            10, sectrue, {},
-            {
-              return flash_erase(FIRMWARE_SECTORS[processed_size /
-                                                  FLASH_FIRMWARE_SECTOR_SIZE]);
-            },
-            {},
-            {
-              strncpy(error_msg, "Flash firmware area erase failed! (QSPI)",
-                      error_msg_len);
-              return secfalse;
-            });
-
-        // unlock
-        EXEC_RETRY(
-            10, sectrue, {}, { return flash_unlock_write(); }, {},
-            {
-              strncpy(error_msg, "Flash unlock failed! (QSPI)", error_msg_len);
-              return secfalse;
-            });
-
-        // write
-        for (size_t sector_offset = 0;
-             sector_offset < FLASH_FIRMWARE_SECTOR_SIZE; sector_offset += 32) {
-          // write with retry, max 10 retry allowed
-          EXEC_RETRY(
-              10, sectrue, {},
-              {
-                return flash_write_words(
-                    FIRMWARE_SECTORS[processed_size /
-                                     FLASH_FIRMWARE_SECTOR_SIZE],
-                    sector_offset, (uint32_t*)(buffer + processed_size));
-              },
-              {},
-              {
-                strncpy(error_msg, "Flash write failed! (QSPI)", error_msg_len);
-                return secfalse;
-              });
-
-          processed_size +=
-              ((size - processed_size) > 32)
-                  ? 32  // since we could only write 32 byte a time
-                  : (size - processed_size);
-        }
-
-        // lock
-        EXEC_RETRY(
-            10, sectrue, {}, { return flash_lock_write(); }, {},
-            {
-              strncpy(error_msg, "Flash unlock failed! (QSPI)", error_msg_len);
-              return secfalse;
-            });
-      }
+      // EMMC
+      uint32_t emmc_fs_processed = 0;
+      EXEC_RETRY(
+          10, true, {},
+          {
+            return emmc_fs_file_write(
+                "0:/data/fw_p2.bin", (processed_size - fw_internal_size),
+                (uint8_t*)(buffer + processed_size),
+                MIN((size - processed_size), FLASH_FIRMWARE_SECTOR_SIZE),
+                &emmc_fs_processed, false, true);
+          },
+          {
+            processed_size += emmc_fs_processed;
+            hal_delay(100);  // delay for visual
+          },
+          {
+            strncpy(error_msg, "Flash write failed! (EMMC)", error_msg_len);
+            return secfalse;
+          });
     }
-
     // update progress
     progress_callback(percent_start + weights * processed_size / size);
     if (processed != NULL) *processed = processed_size;
   }
-
-  if (get_hw_ver() < HW_VER_3P0A) {
-    // wipe unused sectors (P1 and P2 QSPI only)
-    size_t used_sector_count =
-        (processed_size / FLASH_FIRMWARE_SECTOR_SIZE) +
-        ((processed_size % FLASH_FIRMWARE_SECTOR_SIZE) != 0 ? 1 : 0);
-    while (used_sector_count < FIRMWARE_SECTORS_COUNT) {
-      flash_erase(FIRMWARE_SECTORS[used_sector_count]);
-      used_sector_count++;
-    }
-  }
-
   return sectrue;
 }
 
@@ -773,9 +706,7 @@ secbool verify_firmware(vendor_header* const vhdr, image_header* const hdr,
   // const vars
   const size_t fw_internal_size =
       FLASH_FIRMWARE_SECTOR_SIZE * FIRMWARE_INNER_SECTORS_COUNT;
-  const size_t fw_external_size =
-      FLASH_FIRMWARE_SECTOR_SIZE *
-      (FIRMWARE_SECTORS_COUNT - FIRMWARE_INNER_SECTORS_COUNT);
+  const size_t fw_external_size = FMC_SDRAM_FIRMWARE_P2_LEN;
 
   // verify vhdr
   ExecuteCheck_ADV(load_vendor_header((const uint8_t*)FIRMWARE_START, FW_KEY_M,
@@ -809,7 +740,7 @@ secbool verify_firmware(vendor_header* const vhdr, image_header* const hdr,
       check_image_contents_ADV(
           &_vhdr, &_hdr,
           (const uint8_t*)FIRMWARE_START + _vhdr.hdrlen + _hdr.hdrlen, 0,
-          fw_internal_size - (_vhdr.hdrlen + _hdr.hdrlen)),
+          fw_internal_size - (_vhdr.hdrlen + _hdr.hdrlen), false),
       sectrue, {
         if (error_msg != NULL)
           strncpy(error_msg, "Firmware code invalid! (P1)", error_msg_len);
@@ -817,39 +748,43 @@ secbool verify_firmware(vendor_header* const vhdr, image_header* const hdr,
       });
 
   // verify p2
-  if (get_hw_ver() >= HW_VER_3P0A) {
-    EMMC_PATH_INFO path_info = {0};
-    uint32_t processed_len = 0;
+  EMMC_PATH_INFO path_info = {0};
+  uint32_t processed_len = 0;
 
-    ExecuteCheck_ADV(emmc_fs_path_info("0:data/fw_p2.bin", &path_info), true, {
-      if (error_msg != NULL)
-        strncpy(error_msg, "Firmware code invalid! (P2_EMMC_1)", error_msg_len);
-      return secfalse;
-    });
+  ExecuteCheck_ADV(emmc_fs_path_info("0:data/fw_p2.bin", &path_info), true, {
+    if (error_msg != NULL)
+      strncpy(error_msg, "Firmware code invalid! (P2_EMMC_1)", error_msg_len);
+    return secfalse;
+  });
 
-    ExecuteCheck_ADV(
-        emmc_fs_file_read(
-            "0:data/fw_p2.bin", 0, (uint32_t*)FMC_SDRAM_FIRMWARE_P2_ADDRESS,
-            MAX(path_info.size, fw_external_size), &processed_len),
-        true, {
-          if (error_msg != NULL)
-            strncpy(error_msg, "Firmware code invalid! (P2_EMMC_2)",
-                    error_msg_len);
-          return secfalse;
-        });
-  } else {
-    memcpy((uint8_t*)FMC_SDRAM_FIRMWARE_P2_ADDRESS, (const uint8_t*)0x90000000,
-           _hdr.codelen - (fw_internal_size - (_vhdr.hdrlen + _hdr.hdrlen)));
+  if (path_info.size > fw_external_size) {
+    if (error_msg != NULL)
+      strncpy(error_msg, "Firmware file P2 too large!", error_msg_len);
+    return secfalse;
   }
+
+  ExecuteCheck_ADV(
+      emmc_fs_file_read("0:data/fw_p2.bin", 0,
+                        (uint32_t*)FMC_SDRAM_FIRMWARE_P2_ADDRESS,
+                        MAX(path_info.size, fw_external_size), &processed_len),
+      true, {
+        if (error_msg != NULL)
+          strncpy(error_msg, "Firmware code invalid! (P2_EMMC_2)",
+                  error_msg_len);
+        return secfalse;
+      });
 
   ExecuteCheck_ADV(
       check_image_contents_ADV(
           &_vhdr, &_hdr, (const uint8_t*)FMC_SDRAM_FIRMWARE_P2_ADDRESS,
           (fw_internal_size - (_vhdr.hdrlen + _hdr.hdrlen)),
-          _hdr.codelen - (fw_internal_size - (_vhdr.hdrlen + _hdr.hdrlen))),
+          _hdr.codelen - (fw_internal_size - (_vhdr.hdrlen + _hdr.hdrlen)),
+          true),
       sectrue, {
         memset((uint8_t*)FMC_SDRAM_FIRMWARE_P2_ADDRESS, 0x00,
-               (2 * 1024 * 1024));  // wipe the buffer if fail
+               _hdr.codelen -
+                   (fw_internal_size -
+                    (_vhdr.hdrlen + _hdr.hdrlen)));  // wipe the buffer if fail
         if (error_msg != NULL)
           strncpy(error_msg, "Firmware code invalid! (P2)", error_msg_len);
         return secfalse;

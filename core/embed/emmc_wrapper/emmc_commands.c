@@ -600,10 +600,18 @@ static int check_file_contents(uint8_t iface_num, const uint8_t* buffer, uint32_
                 }
             );
 
+            if ( file_hdr.codelen - (FIRMWARE_IMAGE_INNER_SIZE - (file_vhdr.hdrlen + file_hdr.hdrlen)) >
+                 FMC_SDRAM_FIRMWARE_P2_LEN )
+            {
+                send_failure(iface_num, FailureType_Failure_ProcessError, "Firmware file P2 too big!");
+                return -1;
+            }
+
             // check file firmware hash
             ExecuteCheck_MSGS_ADV(
                 check_image_contents_ADV(
-                    &file_vhdr, &file_hdr, p_data + file_vhdr.hdrlen + file_hdr.hdrlen, 0, file_hdr.codelen
+                    &file_vhdr, &file_hdr, p_data + file_vhdr.hdrlen + file_hdr.hdrlen, 0, file_hdr.codelen,
+                    true
                 ),
                 sectrue,
                 {
@@ -614,9 +622,7 @@ static int check_file_contents(uint8_t iface_num, const uint8_t* buffer, uint32_
 
             // check file size
             ExecuteCheck_MSGS_ADV(
-                (file_vhdr.hdrlen + file_hdr.hdrlen + file_hdr.codelen <=
-                 FIRMWARE_SECTORS_COUNT * FLASH_FIRMWARE_SECTOR_SIZE),
-                true,
+                (file_vhdr.hdrlen + file_hdr.hdrlen + file_hdr.codelen <= FIRMWARE_IMAGE_MAXSIZE), true,
                 {
                     send_failure(iface_num, FailureType_Failure_ProcessError, "Firmware file is too big!");
                     return -1;
@@ -844,7 +850,7 @@ int check_bootloader_update(image_header* file_hdr)
          ) )
         return -1;
 
-    if ( !check_image_contents_ADV(NULL, file_hdr, buffer + file_hdr->hdrlen, 0, file_hdr->codelen) )
+    if ( !check_image_contents_ADV(NULL, file_hdr, buffer + file_hdr->hdrlen, 0, file_hdr->codelen, true) )
         return -1;
 
     // check header stated size matchs file size

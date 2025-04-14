@@ -71,6 +71,7 @@ V2_SIGS_REQUIRED = 2
 
 ONEV2_CHUNK_SIZE = 1024 * 64
 V2_CHUNK_SIZE = 1024 * 256
+FIREMWARE_SIZE_LIMIT = V2_CHUNK_SIZE * 16
 
 
 def _transform_vendor_trust(data: bytes) -> bytes:
@@ -193,7 +194,7 @@ FirmwareHeader = c.Struct(
     "version" / VersionLong,
     "fix_version" / VersionLong,
     "onekey_version" / VersionLong,
-    "_reserved" / c.Padding(4),
+    "hash_block" / c.Int32ul,
     "hashes" / c.Bytes(32)[16],    
 
     "v1_signatures" / c.Bytes(64)[V1_SIGNATURE_SLOTS],
@@ -354,7 +355,9 @@ def calculate_code_hashes(
     hash_function: Callable = blake2s,
     chunk_size: int = V2_CHUNK_SIZE,
     padding_byte: Optional[bytes] = None,
-) -> List[bytes]:
+) -> Tuple[List[bytes], int]:
+
+    chunk_size = V2_CHUNK_SIZE if len(code) <= FIREMWARE_SIZE_LIMIT else V2_CHUNK_SIZE*2
     hashes = []
     # End offset for each chunk. Normally this would be (i+1)*chunk_size for i-th chunk,
     # but the first chunk is shorter by code_offset, so all end offsets are shifted.
@@ -373,7 +376,7 @@ def calculate_code_hashes(
 
         start = end
 
-    return hashes
+    return hashes, 0 if chunk_size == V2_CHUNK_SIZE else chunk_size
 
 
 def validate_code_hashes(fw: c.Container, version: FirmwareFormat) -> None:
@@ -390,7 +393,7 @@ def validate_code_hashes(fw: c.Container, version: FirmwareFormat) -> None:
         chunk_size = V2_CHUNK_SIZE
         padding_byte = None
 
-    expected_hashes = calculate_code_hashes(
+    expected_hashes, chunk_size = calculate_code_hashes(
         image.code, image._code_offset, hash_function, chunk_size, padding_byte
     )
     if expected_hashes != image.header.hashes:

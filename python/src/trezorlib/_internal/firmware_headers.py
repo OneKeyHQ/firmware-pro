@@ -253,11 +253,12 @@ class BinImage(SignableImage):
     def __init__(self, fw: c.Container) -> None:
         super().__init__(fw)
         self.header = self.fw.image.header
-        self.code_hashes = firmware.calculate_code_hashes(
+        self.code_hashes, self.hash_block = firmware.calculate_code_hashes(
             self.fw.image.code, self.fw.image._code_offset
         )
         self.digest_header = self.header.copy()
         self.digest_header.hashes = self.code_hashes
+        self.digest_header.hash_block = self.hash_block
 
     def insert_signature(self, signature: bytes, sigmask: int) -> None:
         super().insert_signature(signature, sigmask)
@@ -269,6 +270,7 @@ class BinImage(SignableImage):
 
     def rehash(self) -> None:
         self.header.hashes = self.code_hashes
+        self.header.hash_block = self.hash_block
 
     def format(self, verbose: bool = False) -> str:
         header_out = self.header.copy()
