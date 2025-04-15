@@ -237,7 +237,7 @@ void NMI_Handler(void) {
   { error_shutdown("Internal error", "(CS)", NULL, NULL); }
 }
 
-//Show fault
+// Show fault
 void ShowHardFault(void) {
   error_shutdown("Internal error", "(HF)", NULL, NULL);
 }

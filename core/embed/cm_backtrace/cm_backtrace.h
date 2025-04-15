@@ -22,8 +22,8 @@
  * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
- * Function: It is an head file for this library. You can see all be called functions.
- * Created on: 2016-12-15
+ * Function: It is an head file for this library. You can see all be called
+ * functions. Created on: 2016-12-15
  */
 
 #ifndef _CORTEXM_BACKTRACE_H_
@@ -35,7 +35,8 @@
 extern "C" {
 #endif
 
-void cm_backtrace_init(const char *firmware_name, const char *hardware_ver, const char *software_ver);
+void cm_backtrace_init(const char *firmware_name, const char *hardware_ver,
+                       const char *software_ver);
 void cm_backtrace_firmware_info(void);
 size_t cm_backtrace_call_stack(uint32_t *buffer, size_t size, uint32_t sp);
 void cm_backtrace_assert(uint32_t sp);

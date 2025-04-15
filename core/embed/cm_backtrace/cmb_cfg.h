@@ -31,35 +31,41 @@
 
 #define CMB_USER_CFG
 
-#ifdef	CMB_USER_CFG
+#ifdef CMB_USER_CFG
 #include "cmb_user_cfg.h"
-#define cmb_println(...)            cmb_user_println(__VA_ARGS__)
+#define cmb_println(...) cmb_user_println(__VA_ARGS__)
 #define CMB_USING_BARE_METAL_PLATFORM
 /* enable OS platform */
 /* #define CMB_USING_OS_PLATFORM */
 /* OS platform type, must config when CMB_USING_OS_PLATFORM is enable */
-/* #define CMB_OS_PLATFORM_TYPE           CMB_OS_PLATFORM_RTT or CMB_OS_PLATFORM_UCOSII or CMB_OS_PLATFORM_UCOSIII or CMB_OS_PLATFORM_FREERTOS or CMB_OS_PLATFORM_RTX5 or CMB_OS_PLATFORM_THREADX */
+/* #define CMB_OS_PLATFORM_TYPE           CMB_OS_PLATFORM_RTT or
+ * CMB_OS_PLATFORM_UCOSII or CMB_OS_PLATFORM_UCOSIII or CMB_OS_PLATFORM_FREERTOS
+ * or CMB_OS_PLATFORM_RTX5 or CMB_OS_PLATFORM_THREADX */
 /* cpu platform type, must config by user */
-#define CMB_CPU_PLATFORM_TYPE           CMB_CPU_ARM_CORTEX_M7
+#define CMB_CPU_PLATFORM_TYPE CMB_CPU_ARM_CORTEX_M7
 /* enable dump stack information */
 /* #define CMB_USING_DUMP_STACK_INFO */
 /* language of print information */
-#define CMB_PRINT_LANGUAGE              CMB_PRINT_LANGUAGE_ENGLISH
+#define CMB_PRINT_LANGUAGE CMB_PRINT_LANGUAGE_ENGLISH
 #else
 /* print line, must config by user */
-#define cmb_println(...)            printf(__VA_ARGS__);printf("\n")
+#define cmb_println(...) \
+  printf(__VA_ARGS__);   \
+  printf("\n")
 /* enable bare metal(no OS) platform */
 #define CMB_USING_BARE_METAL_PLATFORM
 /* enable OS platform */
 /* #define CMB_USING_OS_PLATFORM */
 /* OS platform type, must config when CMB_USING_OS_PLATFORM is enable */
-/* #define CMB_OS_PLATFORM_TYPE           CMB_OS_PLATFORM_RTT or CMB_OS_PLATFORM_UCOSII or CMB_OS_PLATFORM_UCOSIII or CMB_OS_PLATFORM_FREERTOS or CMB_OS_PLATFORM_RTX5 or CMB_OS_PLATFORM_THREADX */
+/* #define CMB_OS_PLATFORM_TYPE           CMB_OS_PLATFORM_RTT or
+ * CMB_OS_PLATFORM_UCOSII or CMB_OS_PLATFORM_UCOSIII or CMB_OS_PLATFORM_FREERTOS
+ * or CMB_OS_PLATFORM_RTX5 or CMB_OS_PLATFORM_THREADX */
 /* cpu platform type, must config by user */
-#define CMB_CPU_PLATFORM_TYPE           CMB_CPU_ARM_CORTEX_M7
+#define CMB_CPU_PLATFORM_TYPE CMB_CPU_ARM_CORTEX_M7
 /* enable dump stack information */
 /* #define CMB_USING_DUMP_STACK_INFO */
 /* language of print information */
-#define CMB_PRINT_LANGUAGE              CMB_PRINT_LANGUAGE_ENGLISH
+#define CMB_PRINT_LANGUAGE CMB_PRINT_LANGUAGE_ENGLISH
 #endif
 
 #endif /* _CMB_CFG_H_ */
