@@ -26,8 +26,8 @@
 #include "flash.h"
 #include "rand.h"
 #include "supervise.h"
-#include "touch.h"
 #include "systick.h"
+#include "touch.h"
 
 #if defined(STM32F427xx) || defined(STM32F405xx)
 #include "stm32f4xx_ll_utils.h"
