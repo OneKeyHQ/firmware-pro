@@ -264,7 +264,7 @@ static secbool try_bootloader_update(bool do_update, bool auto_reboot) {
 
   if (sectrue != check_image_contents_ADV(NULL, &file_hdr,
                                           boardloader_buf + file_hdr.hdrlen, 0,
-                                          file_hdr.codelen))
+                                          file_hdr.codelen, true))
     return secfalse;
 
   // check header stated size matchs file size
