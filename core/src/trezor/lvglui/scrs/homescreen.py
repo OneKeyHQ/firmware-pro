@@ -1552,6 +1552,11 @@ class SettingsScreen(AnimScreen):
             _(i18n_keys.ITEM__ABOUT_DEVICE),
             left_img_src="A:/res/about.png",
         )
+        if not utils.PRODUCTION:
+            self.fp_test = ListItemBtn(
+                self.container,
+                "指纹测试",
+            )
         self.container.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
 
     def refresh_text(self):
@@ -1589,6 +1594,8 @@ class SettingsScreen(AnimScreen):
                 AirGapSetting(self)
             elif target == self.fido_keys:
                 FidoKeysSetting(self)
+            elif not utils.PRODUCTION and target == self.fp_test:
+                FingerprintTest(self)
 
 
 class ConnectWalletWays(Screen):
@@ -2719,6 +2726,125 @@ if __debug__:
                 value = target.get_value()
                 SETTINGS_MOVE_DELAY = value
                 self.percent5.set_text(f"{value} ms")
+
+
+class FingerprintTest(Screen):
+    def __init__(self, prev_scr=None):
+        if not hasattr(self, "_init"):
+            self._init = True
+            kwargs = {
+                "prev_scr": prev_scr,
+                "nav_back": True,
+            }
+            super().__init__(**kwargs)
+        else:
+            return
+
+        from trezorio import fingerprint
+
+        sensitivity, area = fingerprint.get_sensitivity_and_area()
+
+        self.sensitivity = sensitivity
+        self.area = area
+
+        # region
+        self.app_drawer_up = lv.label(self.content_area)
+        self.app_drawer_up.set_size(456, lv.SIZE.CONTENT)
+        self.app_drawer_up.add_style(
+            StyleWrapper()
+            .pad_all(12)
+            .text_font(font_GeistRegular30)
+            .text_color(lv_colors.WHITE),
+            0,
+        )
+        self.app_drawer_up.set_text("按压阈值:")
+        self.app_drawer_up.align_to(self.nav_back, lv.ALIGN.OUT_BOTTOM_LEFT, 12, 20)
+
+        self.slider = lv.slider(self.content_area)
+        self.slider.set_size(456, 80)
+        self.slider.set_ext_click_area(20)
+        self.slider.set_range(20, 250)
+        self.slider.set_value(self.sensitivity, lv.ANIM.OFF)
+        self.slider.align_to(self.app_drawer_up, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 20)
+
+        self.slider.add_style(
+            StyleWrapper().border_width(0).radius(40).bg_color(lv_colors.GRAY_1), 0
+        )
+        self.slider.add_style(
+            StyleWrapper().bg_color(lv_colors.WHITE).pad_all(-50), lv.PART.KNOB
+        )
+        self.slider.add_style(
+            StyleWrapper().radius(0).bg_color(lv_colors.WHITE), lv.PART.INDICATOR
+        )
+        self.percent = lv.label(self.slider)
+        self.percent.align(lv.ALIGN.CENTER, 0, 0)
+        self.percent.add_style(
+            StyleWrapper().text_font(font_GeistRegular30).text_color(lv_colors.RED),
+            0,
+        )
+        self.percent.set_text(f"{self.sensitivity}")
+        self.slider.clear_flag(lv.obj.FLAG.GESTURE_BUBBLE)
+        self.slider.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
+
+        self.app_drawer_up_delay = lv.label(self.content_area)
+        self.app_drawer_up_delay.set_size(456, lv.SIZE.CONTENT)
+        self.app_drawer_up_delay.add_style(
+            StyleWrapper()
+            .pad_all(12)
+            .text_font(font_GeistRegular30)
+            .text_color(lv_colors.WHITE),
+            0,
+        )
+        self.app_drawer_up_delay.set_text("面积:")
+        self.app_drawer_up_delay.align_to(self.slider, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 20)
+
+        self.slider1 = lv.slider(self.content_area)
+        self.slider1.set_size(456, 80)
+        self.slider1.set_ext_click_area(20)
+        self.slider1.set_range(1, 12)
+        self.slider1.set_value(self.area, lv.ANIM.OFF)
+        self.slider1.align_to(self.app_drawer_up_delay, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 20)
+
+        self.slider1.add_style(
+            StyleWrapper().border_width(0).radius(40).bg_color(lv_colors.GRAY_1), 0
+        )
+        self.slider1.add_style(
+            StyleWrapper().bg_color(lv_colors.WHITE).pad_all(-50), lv.PART.KNOB
+        )
+        self.slider1.add_style(
+            StyleWrapper().radius(0).bg_color(lv_colors.WHITE), lv.PART.INDICATOR
+        )
+        self.percent1 = lv.label(self.slider1)
+        self.percent1.align(lv.ALIGN.CENTER, 0, 0)
+        self.percent1.add_style(
+            StyleWrapper().text_font(font_GeistRegular30).text_color(lv_colors.RED),
+            0,
+        )
+        self.percent1.set_text(f"{self.area}")
+        self.slider1.clear_flag(lv.obj.FLAG.GESTURE_BUBBLE)
+        self.slider1.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
+        # endregion
+
+        self.add_event_cb(self.on_value_changed, lv.EVENT.VALUE_CHANGED, None)
+        # self.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
+
+    def on_nav_back(self, event_obj):
+        pass
+
+    def on_value_changed(self, event_obj):
+        from trezorio import fingerprint
+
+        target = event_obj.get_target()
+        if target == self.slider:
+            value = target.get_value()
+            self.sensitivity = value
+            self.percent.set_text(f"{value}")
+            fingerprint.set_sensitivity_and_area(value, self.area)
+        elif target == self.slider1:
+            value = target.get_value()
+            self.area = value
+            self.percent1.set_text(f"{value}")
+            fingerprint.set_sensitivity_and_area(self.sensitivity, value)
 
 
 class GeneralScreen(AnimScreen):

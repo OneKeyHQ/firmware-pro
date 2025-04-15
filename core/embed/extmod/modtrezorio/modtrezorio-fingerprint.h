@@ -18,6 +18,7 @@
  */
 
 #include "fingerprint.h"
+#include "fpsensor_driver.h"
 /// package: trezorio.fingerprint
 
 /// class FpError(OSError):
@@ -252,7 +253,7 @@ STATIC mp_obj_t mod_trezorio_fingerprint_list_template(void) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorio_fingerprint_list_template_obj,
                                  mod_trezorio_fingerprint_list_template);
 
-///  def sleep() -> bool:
+/// def sleep() -> bool:
 ///      """
 ///      make fingerprint sensor to sleep mode.
 ///      """
@@ -266,6 +267,42 @@ STATIC mp_obj_t mod_trezorio_fingerprint_sleep(void) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorio_fingerprint_sleep_obj,
                                  mod_trezorio_fingerprint_sleep);
+
+/// def set_sensitivity_and_area(sensitivity: int, area: int) -> bool:
+///     """
+///     Set fingerprint sensor sensitivity and area.
+///     """
+
+STATIC mp_obj_t mod_trezorio_fingerprint_set_sensitivity_and_area(
+    mp_obj_t sensitivity, mp_obj_t area) {
+  uint8_t sensitivity_ = trezor_obj_get_uint8(sensitivity);
+  uint8_t area_ = trezor_obj_get_uint8(area);
+  fpsensor_set_config_param(sensitivity_, area_);
+  return mp_const_true;
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(
+    mod_trezorio_fingerprint_set_sensitivity_and_area_obj,
+    mod_trezorio_fingerprint_set_sensitivity_and_area);
+
+/// def get_sensitivity_and_area() -> tuple[int, int]:
+///     """
+///     Get fingerprint sensor sensitivity and area.
+///     """
+
+STATIC mp_obj_t mod_trezorio_fingerprint_get_sensitivity_and_area(void) {
+  uint32_t sensitivity;
+  uint16_t area;
+  fpsensor_get_config_param(&sensitivity, &area);
+  mp_obj_tuple_t *tuple = MP_OBJ_TO_PTR(mp_obj_new_tuple(2, NULL));
+  tuple->items[0] = MP_OBJ_NEW_SMALL_INT(sensitivity);
+  tuple->items[1] = MP_OBJ_NEW_SMALL_INT(area);
+  return MP_OBJ_FROM_PTR(tuple);
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(
+    mod_trezorio_fingerprint_get_sensitivity_and_area_obj,
+    mod_trezorio_fingerprint_get_sensitivity_and_area);
 
 STATIC const mp_rom_map_elem_t mod_trezorio_fingerprint_globals_table[] = {
     {MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_fingerprint)},
@@ -295,6 +332,10 @@ STATIC const mp_rom_map_elem_t mod_trezorio_fingerprint_globals_table[] = {
     {MP_ROM_QSTR(MP_QSTR_ExtractFeatureFail),
      MP_ROM_PTR(&mp_type_ExtractFeatureFail)},
     {MP_ROM_QSTR(MP_QSTR_NotMatch), MP_ROM_PTR(&mp_type_NotMatch)},
+    {MP_ROM_QSTR(MP_QSTR_set_sensitivity_and_area),
+     MP_ROM_PTR(&mod_trezorio_fingerprint_set_sensitivity_and_area_obj)},
+    {MP_ROM_QSTR(MP_QSTR_get_sensitivity_and_area),
+     MP_ROM_PTR(&mod_trezorio_fingerprint_get_sensitivity_and_area_obj)},
 };
 
 STATIC MP_DEFINE_CONST_DICT(mod_trezorio_fingerprint_globals,

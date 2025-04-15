@@ -205,3 +205,9 @@ uint8_t fpsensor_set_config_param(uint32_t u32FingerStatusThres, uint16_t u16Fin
 
     return FPSENSOR_OK;
 }
+
+void fpsensor_get_config_param(uint32_t* u32FingerStatusThres, uint16_t* u16FingerArea)
+{
+    *u32FingerStatusThres = g_u32FPStatusThres;
+    *u16FingerArea = g_u16FingerArea;
+}

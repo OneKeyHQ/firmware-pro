@@ -19,6 +19,7 @@ from trezorutils import (  # noqa: F401; FIRMWARE_SECTORS_COUNT,; firmware_secto
     BW_STANDARD,
     BW_URL,
     BW_MINIMAL,
+    PRODUCTION,
     consteq,
     firmware_hash,
     firmware_vendor,

@@ -86,7 +86,24 @@ def list_template() -> tuple[int | None] | None:
     List fingerprints.
     returns: tuple of fingerprint ids
     """
- def sleep() -> bool:
+
+
+# extmod/modtrezorio/modtrezorio-fingerprint.h
+def sleep() -> bool:
      """
      make fingerprint sensor to sleep mode.
      """
+
+
+# extmod/modtrezorio/modtrezorio-fingerprint.h
+def set_sensitivity_and_area(sensitivity: int, area: int) -> bool:
+    """
+    Set fingerprint sensor sensitivity and area.
+    """
+
+
+# extmod/modtrezorio/modtrezorio-fingerprint.h
+def get_sensitivity_and_area() -> tuple[int, int]:
+    """
+    Get fingerprint sensor sensitivity and area.
+    """

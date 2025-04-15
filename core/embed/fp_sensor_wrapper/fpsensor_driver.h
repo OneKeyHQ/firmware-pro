@@ -260,5 +260,6 @@ uint8_t fpsesor_read_testpattern(uint8_t* pu8bufimage, uint32_t length, uint8_t 
 * Others:       无
 */
 uint8_t fpsensor_set_config_param(uint32_t u32FingerStatusThres, uint16_t u16FingerArea);
+void fpsensor_get_config_param(uint32_t* u32FingerStatusThres, uint16_t* u16FingerArea);
 
 #endif
