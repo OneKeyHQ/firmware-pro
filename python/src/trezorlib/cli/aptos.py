@@ -45,12 +45,13 @@ def get_address(client: "TrezorClient", address: str, show_display: bool) -> str
 
 @cli.command()
 @click.option("-n", "--address", required=True, help=PATH_HELP)
+@click.option("-t", "--tx-type", type=int, default=0)
 @click.argument("message")
 @with_client
-def sign_raw_tx(client: "TrezorClient", address: str, message: str):
+def sign_raw_tx(client: "TrezorClient", address: str, tx_type: int, message: str):
     """Sign a hex-encoded raw message with out prefix_bytes sha256(APTOS::RawTransaction)."""
     address_n = tools.parse_path(address)
-    resp = aptos.sign_tx(client, address_n, bytes.fromhex(message))
+    resp = aptos.sign_tx(client, address_n, bytes.fromhex(message), tx_type)
     result = {
         "public_key": f"0x{resp.public_key.hex()}",
         "signature": f"0x{resp.signature.hex()}",
