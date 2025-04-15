@@ -26,11 +26,8 @@ void cmb_user_println(const char *format, ...) {
     if (file_info.path_exist) {
       offset = file_info.size;
     }
-  } else {
-    return;
+    emmc_fs_file_write(CMB_ERR_INFO_FILE, offset, (void *)str, strlen(str),
+                       NULL, false, true);
   }
-  emmc_fs_file_write(CMB_ERR_INFO_FILE, offset, (void *)str, strlen(str), NULL,
-                     false, true);
-
   va_end(args);
 }
