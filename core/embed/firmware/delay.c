@@ -116,16 +116,3 @@ mp_uint_t mp_hal_ticks_ms(void) {
 mp_uint_t mp_hal_ticks_us(void) {
     return uwTick * 1000;
 }
-
-void software_delay_ms(uint32_t delay)
-{
-    uint32_t sysClockHz = HAL_RCC_GetSysClockFreq();
-    // 4 cycles per loop, 1000 loops per ms
-    uint32_t loops_per_ms = sysClockHz / (4 * 1000);
-
-    while (delay--) {
-        for (volatile uint32_t i = 0; i < loops_per_ms; i++) {
-            __NOP();
-        }
-    }
-}
