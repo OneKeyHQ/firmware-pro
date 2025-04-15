@@ -185,6 +185,7 @@ void cm_backtrace_init(const char *firmware_name, const char *hardware_ver,
  */
 void cm_backtrace_firmware_info(void) {
   cmb_println(print_info[PRINT_FIRMWARE_INFO], fw_name, hw_ver, sw_ver);
+  cmb_println("BUILD_COMMIT:%s", BUILD_COMMIT);
 }
 
 #ifdef CMB_USING_OS_PLATFORM
