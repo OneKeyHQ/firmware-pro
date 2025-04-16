@@ -118,6 +118,7 @@ SOURCE_STMHAL = [
     'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_ll_fmc.c',
     'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_ll_sdmmc.c',
     'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_ll_usb.c',
+    # 'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Src/stm32h7xx_ll_delayblock.c',
 ]
 
 SOURCE_BOOTLOADER = [

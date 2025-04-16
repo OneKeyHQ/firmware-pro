@@ -2,9 +2,184 @@
 
 #include <stdio.h>
 
-#include <string.h>
+#include <memory.h>
 #include "common.h"
 #include "emmc.h"
+#include "util_macros.h"
+
+#if SDMMC_SD_MODE
+static SD_HandleTypeDef hsd1;
+
+void FUN_NO_OPTMIZE emmc_init(void) {
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+  /* Peripheral clock enable */
+  __HAL_RCC_SDMMC1_CLK_ENABLE();
+  __HAL_RCC_GPIOC_CLK_ENABLE();
+  __HAL_RCC_GPIOD_CLK_ENABLE();
+
+  /**SDMMC1 GPIO Configuration
+  PC12    ------> SDMMC1_CK
+  PD2     ------> SDMMC1_CMD
+  PC8     ------> SDMMC1_D0
+  PC9     ------> SDMMC1_D1
+  PC10    ------> SDMMC1_D2
+  PC11    ------> SDMMC1_D3
+  */
+  GPIO_InitStruct.Pin = GPIO_PIN_10 | GPIO_PIN_11 | GPIO_PIN_12 | GPIO_PIN_8 |
+                        GPIO_PIN_9 | GPIO_PIN_7 | GPIO_PIN_6;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  GPIO_InitStruct.Alternate = GPIO_AF12_SDIO1;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  GPIO_InitStruct.Pin = GPIO_PIN_2;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  GPIO_InitStruct.Alternate = GPIO_AF12_SDIO1;
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+
+  hsd1.Instance = SDMMC1;
+  hsd1.Init.ClockEdge = SDMMC_CLOCK_EDGE_RISING;
+  hsd1.Init.ClockPowerSave = SDMMC_CLOCK_POWER_SAVE_DISABLE;
+  hsd1.Init.BusWide = SDMMC_BUS_WIDE_4B;
+  hsd1.Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_ENABLE;
+  hsd1.Init.ClockDiv = 2;  // div=2 means /4, so 200M /4 = 50M
+
+  HAL_StatusTypeDef hal_stat = HAL_OK;
+  hal_stat = HAL_SD_Init(&hsd1);
+  ensure((hal_stat == HAL_OK) ? sectrue : secfalse, "HAL_SD_Init fail");
+  hal_stat = HAL_SD_ConfigWideBusOperation(&hsd1, SDMMC_BUS_WIDE_4B);
+  ensure((hal_stat == HAL_OK) ? sectrue : secfalse,
+         "HAL_SD_ConfigWideBusOperation fail");
+  hal_stat = HAL_SD_ConfigSpeedBusOperation(&hsd1, SDMMC_SPEED_MODE_AUTO);
+  ensure((hal_stat == HAL_OK) ? sectrue : secfalse,
+         "HAL_SD_ConfigSpeedBusOperation fail");
+}
+
+void emmc_deinit() {
+  // deinit
+  if (HAL_SD_DeInit(&hsd1) != HAL_OK) {
+    ensure(0, "mmc deinit fail");
+  }
+
+  // reset and close clock
+  __HAL_RCC_SDMMC1_FORCE_RESET();
+  __HAL_RCC_SDMMC1_RELEASE_RESET();
+  __HAL_RCC_SDMMC1_CLK_DISABLE();
+
+  // release gpios
+  HAL_GPIO_DeInit(GPIOC, GPIO_PIN_10 | GPIO_PIN_11 | GPIO_PIN_12 | GPIO_PIN_8 |
+                             GPIO_PIN_9 | GPIO_PIN_7 | GPIO_PIN_6);
+  HAL_GPIO_DeInit(GPIOB, GPIO_PIN_9 | GPIO_PIN_8);
+  HAL_GPIO_DeInit(GPIOD, GPIO_PIN_2);
+}
+
+uint8_t emmc_get_card_state(void) {
+  return ((HAL_SD_GetCardState(&hsd1) == HAL_SD_CARD_TRANSFER)
+              ? MMC_TRANSFER_OK
+              : MMC_TRANSFER_BUSY);
+}
+
+void emmc_get_card_info(EMMC_CardInfoTypeDef* card_info) {
+  if (HAL_SD_GetCardInfo(&hsd1, card_info) == HAL_OK) {
+  }
+}
+
+uint8_t emmc_read_blocks(uint8_t* data, uint32_t address, uint32_t nums,
+                         uint32_t timeout) {
+  if (HAL_SD_ReadBlocks(&hsd1, data, address, nums, timeout) == HAL_OK) {
+    uint32_t tickstart = HAL_GetTick();
+    while (emmc_get_card_state() != MMC_TRANSFER_OK) {
+      /* Check for the Timeout */
+      if (((HAL_GetTick() - tickstart) > timeout) || (timeout == 0U)) {
+        return MMC_ERROR;
+      }
+    }
+    return MMC_OK;
+  } else {
+    return MMC_ERROR;
+  }
+}
+
+uint8_t emmc_write_blocks(uint8_t* data, uint32_t address, uint32_t nums,
+                          uint32_t timeout) {
+  if (HAL_SD_WriteBlocks(&hsd1, data, address, nums, timeout) == HAL_OK) {
+    uint32_t tickstart = HAL_GetTick();
+    while (emmc_get_card_state() != MMC_TRANSFER_OK) {
+      /* Check for the Timeout */
+      if (((HAL_GetTick() - tickstart) > timeout) || (timeout == 0U)) {
+        return MMC_ERROR;
+      }
+    }
+    return MMC_OK;
+  } else {
+    return MMC_ERROR;
+  }
+}
+
+uint8_t emmc_read_blocks_dma(uint8_t* data, uint32_t address, uint32_t nums,
+                             uint32_t timeout) {
+  uint32_t tickstart = HAL_GetTick();
+  if (HAL_SD_ReadBlocks_DMA(&hsd1, data, address, nums) == HAL_OK) {
+    while (emmc_get_card_state() != MMC_TRANSFER_OK) {
+      /* Check for the Timeout */
+      if (timeout != HAL_MAX_DELAY) {
+        if (((HAL_GetTick() - tickstart) > timeout) || (timeout == 0U)) {
+          return MMC_ERROR;
+        }
+      }
+    }
+    return MMC_OK;
+  } else {
+    return MMC_ERROR;
+  }
+}
+
+uint8_t emmc_write_blocks_dma(uint8_t* data, uint32_t address, uint32_t nums,
+                              uint32_t timeout) {
+  if (HAL_SD_WriteBlocks_DMA(&hsd1, data, address, nums) == HAL_OK) {
+    return MMC_OK;
+  } else {
+    return MMC_ERROR;
+  }
+}
+
+uint8_t emmc_erase(uint32_t start_address, uint32_t end_address) {
+  if (HAL_SD_Erase(&hsd1, start_address, end_address) == HAL_OK) {
+    uint32_t tickstart = HAL_GetTick();
+    while (emmc_get_card_state() != MMC_TRANSFER_OK) {
+      /* Check for the Timeout */
+      if ((HAL_GetTick() - tickstart) > EMMC_TIMEOUT) {
+        return MMC_ERROR;
+      }
+    }
+    return MMC_OK;
+  }
+  return MMC_ERROR;
+}
+
+uint64_t emmc_get_capacity_in_bytes(void) {
+  EMMC_CardInfoTypeDef card_info = {0};
+  emmc_get_card_info(&card_info);
+  return (uint64_t)card_info.LogBlockNbr * card_info.LogBlockSize;
+}
+
+void emmc_test(void) {
+  uint8_t buf[512];
+  for (int i = 0; i < 512; i++) {
+    buf[i] = i;
+  }
+  emmc_write_blocks(buf, 0, 1, 500);
+  memset(buf, 0x00, 512);
+  emmc_read_blocks(buf, 0, 1, 500);
+  for (int i = 0; i < 512; i++) {
+    // display_printf(" %X\n", buf[i]);
+  }
+}
+
+#else
 
 static MMC_HandleTypeDef hmmc1;
 
@@ -189,3 +364,5 @@ void emmc_test(void) {
     // display_printf(" %X\n", buf[i]);
   }
 }
+
+#endif

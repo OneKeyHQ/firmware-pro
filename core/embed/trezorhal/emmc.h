@@ -3,7 +3,12 @@
 
 #include STM32_HAL_H
 
+#define SDMMC_SD_MODE 0
+#if SDMMC_SD_MODE
+#define EMMC_CardInfoTypeDef HAL_SD_CardInfoTypeDef
+#else
 #define EMMC_CardInfoTypeDef HAL_MMC_CardInfoTypeDef
+#endif
 
 #define MMC_OK ((uint8_t)0x00)
 #define MMC_ERROR ((uint8_t)0x01)
