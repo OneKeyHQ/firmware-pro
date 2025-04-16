@@ -18,6 +18,8 @@ extern unsigned short CameraFrameCnt;
 #define WIN_W 320
 #define WIN_H 320
 
+#define CAMERA_MCLK_FROM_MCO 0
+
 // dcmi
 HAL_DCMI_StateTypeDef dcmi_get_state();
 uint32_t dcmi_get_error();

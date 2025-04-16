@@ -150,6 +150,22 @@ void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef* hdcmi)
 #define CAMERA_PWDN_HIGH() HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11, GPIO_PIN_SET)
 #define CAMERA_PWDN_LOW()  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11, GPIO_PIN_RESET)
 
+#if CAMERA_MCLK_FROM_MCO
+static void camera_clk_ctrl(bool enable)
+{
+    if ( enable )
+    {
+        HAL_RCC_MCOConfig(RCC_MCO1, RCC_MCO1SOURCE_HSI48, RCC_MCODIV_2);
+    }
+    else
+    {
+          #define MCO1_GPIO_PORT         GPIOA
+          #define MCO1_PIN               GPIO_PIN_8
+        HAL_GPIO_DeInit(MCO1_GPIO_PORT, MCO1_PIN);
+    }
+}
+#endif
+
 void camera_io_init()
 {
     __HAL_RCC_GPIOD_CLK_ENABLE();
@@ -332,10 +348,16 @@ void camera_power_off(void)
     camera_delay(10);
     camera_powered = false;
     camera_configured = false;
+    #if CAMERA_MCLK_FROM_MCO
+    camera_clk_ctrl(false);
+    #endif
 }
 
 void camera_power_on(void)
 {
+    #if CAMERA_MCLK_FROM_MCO
+    camera_clk_ctrl(true);
+    #endif
     if ( !camera_powered )
     {
         CAMERA_PWDN_LOW();
