@@ -58,10 +58,19 @@ def generate_HDKey_ED25519(
     return hdkey
 
 
-def reveal_name(ctx, root_fingerprint: int) -> str:
+def reveal_name(ctx, root_fingerprint: int, eth_only: bool = False) -> str:
     from apps.common import passphrase
+    import storage
 
-    name = "OneKey Pro"
+    device_name = "OneKey Pro"
+
+    serial_no = storage.device.get_serial() if not eth_only else None
+
+    name_components = [device_name]
+
+    if serial_no:
+        name_components.append(serial_no)
+
     if passphrase.is_enabled() and ctx.passphrase:
         from binascii import hexlify
         from trezor.crypto.hashlib import blake2b
@@ -71,8 +80,9 @@ def reveal_name(ctx, root_fingerprint: int) -> str:
             outlen=4,
             personal=b"OKPassphraseUsed",
         ).digest()
-        name = f"OneKey Pro-{hexlify(state).decode()}"
-    return name
+        name_components.append(hexlify(state).decode())
+
+    return "-".join(name_components)
 
 
 def generate_hdkey_ETHStandard(
@@ -82,7 +92,7 @@ def generate_hdkey_ETHStandard(
         assert (
             pubkey.root_fingerprint is not None
         ), "Root fingerprint should not be None"
-        name = reveal_name(ctx, pubkey.root_fingerprint)
+        name = reveal_name(ctx, pubkey.root_fingerprint, True)
     else:
         name = None
     hdkey = generate_HDKey(
