@@ -71,6 +71,7 @@ def reveal_name(ctx, root_fingerprint: int, eth_only: bool = False) -> str:
     if serial_no:
         name_components.append(serial_no)
 
+    name = ":".join(name_components)
     if passphrase.is_enabled() and ctx.passphrase:
         from binascii import hexlify
         from trezor.crypto.hashlib import blake2b
@@ -80,9 +81,9 @@ def reveal_name(ctx, root_fingerprint: int, eth_only: bool = False) -> str:
             outlen=4,
             personal=b"OKPassphraseUsed",
         ).digest()
-        name_components.append(hexlify(state).decode())
+        name = f"{name}-{hexlify(state).decode()}"
 
-    return "-".join(name_components)
+    return name
 
 
 def generate_hdkey_ETHStandard(
