@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+from storage import device
 from trezor.crypto.curve import secp256k1
 from trezor.messages import (
     EthereumSignTypedHashOneKey as EthereumSignTypedHash,
@@ -39,12 +40,20 @@ async def sign_typed_data_hash(
     ctx.name = get_display_network_name(network)
     domain_hash = msg.domain_separator_hash
     message_hash = msg.message_hash or b""
-    await confirm_typed_hash(
-        ctx, decode_message(domain_hash), decode_message(message_hash)
-    )
-    data_hash = keccak256(b"\x19\x01" + domain_hash + message_hash)
 
-    await confirm_typed_hash_final(ctx)
+    if device.is_turbomode_enabled():
+        from trezor.ui.layouts.lvgl import confirm_turbo
+
+        await confirm_turbo(
+            ctx, "Sign Message", network.name if network else "Unknown Network"
+        )
+    else:
+        await confirm_typed_hash(
+            ctx, decode_message(domain_hash), decode_message(message_hash)
+        )
+        await confirm_typed_hash_final(ctx)
+
+    data_hash = keccak256(b"\x19\x01" + domain_hash + message_hash)
 
     node = keychain.derive(msg.address_n, force_strict=False)
     signature = secp256k1.sign(

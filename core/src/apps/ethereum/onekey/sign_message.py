@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+from storage import device
 from trezor.crypto.curve import secp256k1
 from trezor.messages import EthereumMessageSignatureOneKey as EthereumMessageSignature
 from trezor.ui.layouts import confirm_signverify
@@ -41,14 +42,23 @@ async def sign_message(
     ctx.primary_color, ctx.icon_path = get_color_and_icon(
         network.chain_id if network else None
     )
-    await confirm_signverify(
-        ctx,
-        get_display_network_name(network),
-        decode_message(msg.message),
-        address,
-        verify=False,
-        evm_chain_id=None if network is not networks.UNKNOWN_NETWORK else msg.chain_id,
-    )
+    if device.is_turbomode_enabled():
+        from trezor.ui.layouts.lvgl import confirm_turbo
+
+        await confirm_turbo(
+            ctx, "Sign Message", network.name if network else "Unknown Network"
+        )
+    else:
+        await confirm_signverify(
+            ctx,
+            get_display_network_name(network),
+            decode_message(msg.message),
+            address,
+            verify=False,
+            evm_chain_id=None
+            if network is not networks.UNKNOWN_NETWORK
+            else msg.chain_id,
+        )
 
     signature = secp256k1.sign(
         node.private_key(),

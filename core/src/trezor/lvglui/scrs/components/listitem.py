@@ -367,3 +367,104 @@ class DisplayItemWithFont_TextPairs(DisplayItemWithTextPairs):
         font=font_GeistRegular30,
     ):
         super().__init__(parent, title, content_pairs, bg_color, radius, font)
+
+
+class ShortInfoItem(lv.obj):
+    def __init__(
+        self,
+        parent,
+        img_src,
+        title_text,
+        subtitle_text,
+        bg_color=lv_colors.ONEKEY_BLACK_4,
+        border_color=lv_colors.WHITE_3,
+        title_color=lv_colors.WHITE,
+        subtitle_color=lv_colors.ONEKEY_GRAY_4,
+        icon_boarder_color=lv_colors.WHITE,
+    ):
+        super().__init__(parent)
+        self.remove_style_all()
+
+        self.set_size(400, 70)
+        self.add_style(
+            StyleWrapper()
+            .bg_color(bg_color)
+            .bg_opa(lv.OPA._60)
+            .radius(40)
+            .border_width(2)
+            .border_color(border_color)
+            .border_opa(lv.OPA._20),
+            0,
+        )
+        self.clear_flag(lv.obj.FLAG.SCROLLABLE)
+
+        if img_src and img_src != "A:/res/evm-none.png":
+            self.bottom_circle = lv.obj(self)
+            self.bottom_circle.set_size(70, 70)
+            self.bottom_circle.align(lv.ALIGN.LEFT_MID, -1, 0)
+            self.bottom_circle.add_style(
+                StyleWrapper()
+                .bg_color(icon_boarder_color)
+                .bg_opa(lv.OPA._50)
+                .radius(35)
+                .border_width(0),
+                0,
+            )
+            self.bottom_circle.clear_flag(lv.obj.FLAG.SCROLLABLE)
+
+            self.middle_circle = lv.obj(self)
+            self.middle_circle.set_size(60, 60)
+            self.middle_circle.align_to(self.bottom_circle, lv.ALIGN.CENTER, 0, 0)
+            self.middle_circle.add_style(
+                StyleWrapper()
+                .bg_color(lv_colors.WHITE)
+                .bg_opa(lv.OPA.COVER)
+                .radius(30)
+                .border_width(0),
+                0,
+            )
+            self.middle_circle.clear_flag(lv.obj.FLAG.SCROLLABLE)
+
+            self.img = lv.img(self)
+            self.img.set_src(img_src)
+            self.img.set_zoom(133)
+            self.img.align_to(self.middle_circle, lv.ALIGN.CENTER, 0, 0)
+            self.img.set_style_radius(25, 0)
+            self.img.move_foreground()
+        else:
+            self.img = lv.img(self)
+            self.img.set_src("A:/res/turbo-send.png")
+            self.img.set_style_radius(35, 0)
+            self.img.move_foreground()
+            self.img.align(lv.ALIGN.LEFT_MID, -1, 0)
+
+        self.title = lv.label(self)
+        self.title.set_text(title_text)
+        self.title.set_long_mode(lv.label.LONG.DOT)
+        self.title.set_width(320)
+        self.title.add_style(
+            StyleWrapper()
+            .text_color(title_color)
+            .text_font(font_GeistRegular26)
+            .text_letter_space(0),
+            0,
+        )
+        if hasattr(self, "bottom_circle"):
+            self.title.align_to(self.bottom_circle, lv.ALIGN.OUT_RIGHT_MID, 14, -12)
+        else:
+            self.title.align_to(self.img, lv.ALIGN.OUT_RIGHT_MID, 14, -12)
+
+        self.subtitle = lv.label(self)
+        self.subtitle.set_text(subtitle_text)
+        self.subtitle.set_long_mode(lv.label.LONG.DOT)
+        self.subtitle.set_width(320)
+        self.subtitle.add_style(
+            StyleWrapper()
+            .text_color(subtitle_color)
+            .text_font(font_GeistRegular20)
+            .text_letter_space(0),
+            0,
+        )
+        self.subtitle.align_to(self.title, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 4)
+
+        self.add_flag(lv.obj.FLAG.CLICKABLE)

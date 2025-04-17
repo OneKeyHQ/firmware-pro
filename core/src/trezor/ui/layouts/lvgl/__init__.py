@@ -1286,6 +1286,24 @@ async def confirm_sol_transfer(
         )
 
 
+async def confirm_turbo(
+    ctx: wire.GenericContext, message_text: str, chain_name: str
+) -> None:
+
+    from trezor.lvglui.scrs.template import Turbo
+
+    screen = Turbo(
+        message_text,
+        chain_name,
+        ctx.primary_color,
+        ctx.icon_path,
+    )
+    print(ctx.icon_path)
+    await raise_if_cancelled(
+        interact(ctx, screen, "turbo", ButtonRequestType.ProtectCall)
+    )
+
+
 async def confirm_sol_create_ata(
     ctx: wire.GenericContext,
     fee_payer: str,

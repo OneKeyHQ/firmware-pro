@@ -1,6 +1,6 @@
 import utime
 
-from trezor import utils
+from trezor import motor, utils
 from trezor.enums import InputScriptType
 from trezor.lvglui.scrs.components.button import NormalButton
 from trezor.lvglui.scrs.components.pageable import PageAbleMessage
@@ -4952,3 +4952,350 @@ class GnosisSafeTxDetails(FullSizeWindow):
                     cancel_text=None,
                     page_size=351,
                 )
+
+
+class Turbo(FullSizeWindow):
+    def __init__(
+        self,
+        message_text="Unknown Message",
+        chain_name="Unknown Network",
+        primary_color=lv_colors.ONEKEY_GREEN,
+        icon_path="A:/res/turbo-send.png",
+    ):
+        super().__init__(
+            None,
+            None,
+        )
+
+        self.add_style(
+            StyleWrapper().bg_img_src("A:/res/rgb565.jpg"),
+            0,
+        )
+
+        self.content_area.add_style(
+            StyleWrapper().bg_opa(lv.OPA.TRANSP),
+            0,
+        )
+        self.content_area.clear_flag(lv.obj.FLAG.SCROLLABLE)
+
+        # 标题
+        self.title = lv.img(self.content_area)
+        self.title.set_src("A:/res/Turbomode.png")
+        self.title.align(lv.ALIGN.TOP_MID, 0, 60)
+
+        from .components.listitem import ShortInfoItem
+
+        self.info_item = ShortInfoItem(
+            parent=self.content_area,
+            img_src=icon_path,
+            title_text=message_text,
+            subtitle_text=chain_name,
+            bg_color=lv_colors.ONEKEY_GRAY_3,
+            border_color=lv_colors.WHITE,
+            icon_boarder_color=primary_color,
+        )
+        self.info_item.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, 50)
+
+        # 确认按钮
+        click_style = (
+            StyleWrapper()
+            .bg_img_recolor_opa(lv.OPA._30)
+            .bg_img_recolor(lv_colors.BLACK)
+        )
+        self.confirm_btn = lv.imgbtn(self.content_area)
+        self.confirm_btn.set_size(280, 280)
+        self.confirm_btn.align_to(self.info_item, lv.ALIGN.OUT_BOTTOM_MID, 0, 75)
+        self.confirm_btn.set_style_bg_img_src("A:/res/Turn.png", 0)
+        self.confirm_btn.add_style(click_style, lv.PART.MAIN | lv.STATE.PRESSED)
+        self.confirm_btn.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
+        self.confirm_btn.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
+        self.confirm_btn.add_event_cb(self.on_click, lv.EVENT.PRESSED, None)
+
+        self.click_confirmed = False
+
+        self.ripple_container = lv.obj(self.content_area)
+        self.ripple_container.set_size(440, 440)  # 足够大以容纳扩散效果
+        self.ripple_container.align_to(self.confirm_btn, lv.ALIGN.CENTER, 0, 0)
+        self.ripple_container.set_style_bg_opa(lv.OPA.TRANSP, 0)  # 透明背景
+        self.ripple_container.set_style_border_width(0, 0)  # 无边框
+        self.ripple_container.set_style_pad_all(0, 0)  # 无内边距
+        self.ripple_container.clear_flag(lv.obj.FLAG.CLICKABLE)  # 不可点击
+
+        # 创建2个水波圆环
+        self.ripples = []
+        for i in range(2):
+            ripple_data = self.create_ripple(i)
+            self.ripples.append(ripple_data)
+
+        # 取消交易
+        self.btn_no = NormalButton(self, "Reject")
+
+        self.btn_no.add_style(
+            StyleWrapper().bg_color(lv_colors.BLACK).bg_opa(lv.OPA.TRANSP),
+            lv.PART.MAIN | lv.STATE.DEFAULT,
+        )
+
+        self.btn_no.add_style(
+            StyleWrapper().bg_color(lv_colors.ONEKEY_BLACK).bg_opa(lv.OPA._30),
+            lv.PART.MAIN | lv.STATE.PRESSED,
+        )
+
+        self.btn_no.clear_flag(lv.obj.FLAG.CLICKABLE)
+        self.btn_no.click_mask.add_flag(lv.obj.FLAG.CLICKABLE)
+        self.btn_no.align(lv.ALIGN.BOTTOM_LEFT, 12, -8)
+        self.btn_no.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
+
+    def create_ripple(
+        self,
+        index,
+        start_value=260,
+        end_value=440,
+        time=700,
+        delay=1000,
+        repeat_count=lv.ANIM_REPEAT.INFINITE,
+        repeat_delay=1000,
+    ):
+        """创建单个水波圆环及其动画"""
+        ripple = lv.arc(self.ripple_container)
+        ripple.set_size(start_value, start_value)  # 初始大小改为start_value
+        ripple.align(lv.ALIGN.CENTER, 0, 0)
+
+        # 设置为完整圆环
+        ripple.set_bg_angles(0, 360)
+        ripple.set_range(0, 360)
+        ripple.set_value(360)
+        ripple.remove_style(None, lv.PART.KNOB)  # 移除旋钮
+
+        # 设置圆环样式
+        style_ripple = lv.style_t()
+        style_ripple.init()
+        style_ripple.set_arc_color(lv_colors.WHITE)
+        style_ripple.set_arc_width(4)  # 初始线条宽度
+        style_ripple.set_arc_opa(0)  # 初始透明度为0
+        ripple.add_style(style_ripple, lv.PART.INDICATOR)
+
+        # 设置为不可点击
+        ripple.clear_flag(lv.obj.FLAG.CLICKABLE)
+
+        # 保存样式引用以便后续更新
+        ripple_data = {
+            "arc": ripple,
+            "style": style_ripple,
+            "index": index,  # 保存水波的索引
+            "last_size": start_value,  # 记录上一次的大小
+            "vibrated": False,  # 记录是否已经震动过
+            "transition_point": 280,  # 添加过渡点
+        }
+
+        # 设置背景透明
+        style_bg = lv.style_t()
+        style_bg.init()
+        style_bg.set_arc_opa(lv.OPA.TRANSP)
+        ripple.add_style(style_bg, lv.PART.MAIN)
+
+        # 创建动画
+        anim = lv.anim_t()
+        anim.init()
+        anim.set_var(ripple)
+        anim.set_time(time)  # 动画持续时间
+        anim.set_values(start_value, end_value)  # 从start_value扩散到end_value
+        anim.set_delay(delay + index * 400)  # 错开开始时间
+        anim.set_repeat_count(repeat_count)
+        anim.set_repeat_delay(repeat_delay)
+
+        # 自定义动画回调函数
+        def create_ripple_cb(r_data):
+            return lambda a, val: self.update_ripple(r_data, val)
+
+        anim.set_custom_exec_cb(create_ripple_cb(ripple_data))
+
+        # 添加动画开始回调
+        if index == 0:  # 只为外圈水波添加开始回调
+
+            def anim_start_cb(a):
+                # 创建一个短暂延迟后的震动，确保动画已经可见
+                ripple_data["animation_started"] = True
+
+            anim.set_start_cb(anim_start_cb)
+
+        anim_obj = lv.anim_t.start(anim)
+
+        ripple_data["anim"] = anim_obj
+        return ripple_data
+
+    def update_ripple(self, ripple_data, size):
+        """更新水波圆环的大小和透明度"""
+        ripple = ripple_data["arc"]
+        style = ripple_data["style"]
+        last_size = ripple_data["last_size"]
+        index = ripple_data["index"]
+        transition_point = ripple_data["transition_point"]  # 获取过渡点
+
+        # 检测水波是否刚开始新一轮扩散
+        if (
+            # index == 0 and
+            size <= transition_point + 50
+            and last_size > transition_point  # 当前大小接近最小值
+            and not self.click_confirmed  # 上一次大小明显大于过渡点
+            and not ripple_data["vibrated"]  # 已经释放confirm，不震动
+        ):  # 本轮还未震动过
+
+            print(f"# ripple vibrate")
+            motor.vibrate(weak=True)
+
+            ripple_data["vibrated"] = True  # 标记已震动
+
+        # 当size接近最大值时重置震动标记，为下一轮做准备
+        if size > 400 and ripple_data["vibrated"]:
+            ripple_data["vibrated"] = False
+            print(f"# ripple vibrate reset")
+
+        # 更新大小
+        ripple.set_size(size, size)
+        ripple.align(lv.ALIGN.CENTER, 0, 0)
+
+        # 计算透明度 - 分两个阶段
+        min_size, max_size = 260, 440
+
+        if size < transition_point:
+            # 第一阶段：从0增加到100
+            phase_progress = (size - min_size) / (transition_point - min_size)
+            opa = int(phase_progress * 100)
+        else:
+            # 第二阶段：从100减少到0
+            phase_progress = (size - transition_point) / (max_size - transition_point)
+            opa = int(100 * (1 - phase_progress))
+
+        # 确保透明度在有效范围内
+        opa = max(0, min(100, opa))
+        style.set_arc_opa(opa)
+
+        # 计算弧形宽度 - 从4到12
+        min_width, max_width = 4, 12
+        width_progress = (size - min_size) / (max_size - min_size)
+        width = min_width + (max_width - min_width) * width_progress
+        style.set_arc_width(int(width))
+
+        # 保存当前大小用于下次比较
+        ripple_data["last_size"] = size
+
+        # 强制重绘
+        ripple.invalidate()
+
+    def destroy(self, delay_ms=1100):
+        print("# destroy")
+        for ripple_data in self.ripples:
+            lv.anim_del(ripple_data["anim"].var, None)
+        self.del_delayed(delay_ms)
+
+    def on_click(self, event_obj):
+        code = event_obj.code
+        target = event_obj.get_target()
+        print(f"# Event code: {code}, Target: {target}")
+        if code == lv.EVENT.PRESSED:
+            print("# Pressed")
+            if hasattr(self, "confirm_btn") and target == self.confirm_btn:
+                motor.vibrate(weak=True)
+
+        elif code == lv.EVENT.CLICKED:
+            print(f"# target: {target}")
+            if target == self.btn_no.click_mask:
+                print("# Reject")
+                self.destroy()
+                self.channel.publish(0)
+
+            elif hasattr(self, "confirm_btn") and target == self.confirm_btn:
+                print("# Starting confirm animation")
+                self.click_confirmed = True
+                for ripple_data in self.ripples:
+                    lv.anim_del(ripple_data["anim"].var, None)
+                    ripple_data["arc"].delete()
+                    del ripple_data["arc"]
+                self.start_confirm_animation()
+
+                if hasattr(self, "confirm_btn"):
+                    self.confirm_btn.delete()
+                    del self.confirm_btn
+
+                motor.vibrate()
+
+                # self.destroy(1100)
+                # self.channel.publish(1)
+
+    def start_confirm_animation(self):
+        """启动确认按钮的旋转动画"""
+
+        ripple_data = self.create_ripple(
+            index=0,
+            start_value=440,
+            end_value=260,
+            time=300,
+            delay=0,
+            repeat_count=1,
+        )
+        self.ripples.append(ripple_data)
+        self.ripple_container.move_foreground()
+
+        self.confirm_bg = lv.img(self.content_area)
+        self.confirm_bg.set_src("A:/res/turn-bg.png")
+        self.confirm_bg.align_to(self.confirm_btn, lv.ALIGN.CENTER, 0, 0)
+
+        self.img_mask = lv.obj(self.confirm_bg)
+        self.img_mask.set_size(220, 220)
+        self.img_mask.align_to(self.confirm_btn, lv.ALIGN.CENTER, 0, 0)
+        self.img_mask.set_style_radius(110, 0)
+        self.img_mask.set_style_border_width(0, 0)
+        self.img_mask.set_style_border_opa(lv.OPA.TRANSP, 0)
+        self.img_mask.set_style_bg_opa(lv.OPA.TRANSP, 0)
+        self.img_mask.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
+        self.img_mask.move_foreground()
+
+        self.img_arrow = lv.img(self.img_mask)
+        self.img_arrow.set_src("A:/res/turn-arrow.png")
+        self.img_arrow.align_to(self.confirm_btn, lv.ALIGN.CENTER, 0, 0)
+        self.img_arrow.set_y(int(-192))
+        self.img_arrow.set_style_img_opa(lv.OPA.COVER, 0)
+        self.img_arrow.move_foreground()
+
+        self.img_mark = lv.img(self.confirm_bg)
+        self.img_mark.set_src("A:/res/turbo-done-96.png")
+        self.img_mark.align_to(self.confirm_btn, lv.ALIGN.CENTER, 0, 0)
+        self.img_mark.set_style_img_opa(lv.OPA.TRANSP, 0)
+        self.img_mark.move_foreground()
+
+        # 创建arrow动画
+        anim_arrow = lv.anim_t()
+        anim_arrow.init()
+        anim_arrow.set_var(self.img_arrow)
+        anim_arrow.set_time(300)  # 动画持续时间(ms)
+        anim_arrow.set_values(lv.OPA.COVER, 0)  # 从0度旋转到360度
+        anim_arrow.set_custom_exec_cb(lambda a, val: self.set_arrow(val))
+        anim_arrow.set_ready_cb(lambda a: self.animation_completed())
+
+        # 创建done动画
+        anim_mark = lv.anim_t()
+        anim_mark.init()
+        anim_mark.set_var(self.img_mark)
+        anim_mark.set_time(400)  # 动画持续时间(ms)
+        anim_mark.set_values(lv.OPA.TRANSP, lv.OPA.COVER)
+        anim_mark.set_custom_exec_cb(lambda a, val: self.set_mark(val))
+        anim_mark.set_delay(200)
+
+        # 启动动画
+        lv.anim_t.start(anim_arrow)
+        lv.anim_t.start(anim_mark)
+
+    def set_arrow(self, opa):
+        pos = opa / lv.OPA.COVER * 200
+        self.img_arrow.set_y(int(-192) + int(pos))
+
+    def set_mark(self, opa):
+        self.img_mark.set_style_img_opa(int(opa), 0)
+
+    def animation_completed(self):
+        self.finish_timer = lv.timer_create(self._do_finish, 200, None)
+        self.finish_timer.set_repeat_count(1)
+
+    def _do_finish(self, t):
+        self.destroy(500)
+        self.channel.publish(1)

@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+from storage import device
 from trezor import wire
 from trezor.crypto.curve import ed25519
 from trezor.crypto.hashlib import sha256
@@ -78,31 +79,38 @@ async def sign_tx(
         for i in message.instructions
     )
     ctx.primary_color, ctx.icon_path = lv.color_hex(PRIMARY_COLOR), ICON
-    if should_blind_sign:
-        from trezor.ui.layouts.lvgl import confirm_sol_blinding_sign
-        from apps.common.signverify import decode_message
 
-        message_hex = decode_message(sha256(msg.raw_tx).digest())
-        await confirm_sol_blinding_sign(ctx, str(fee_payer), message_hex)
+    if device.is_turbomode_enabled():
+        from trezor.ui.layouts.lvgl import confirm_turbo
+
+        await confirm_turbo(ctx, "Sign Transaction", "Solana")
     else:
-        # enumerate instructions in message
-        for i in message.instructions:
-            program_id = accounts_keys[i.program_id_index]
-            accounts = [accounts_keys[ix] for ix in i.accounts]
-            if program_id == SYS_PROGRAM_ID:
-                from .system.program import parse
 
-                await parse(ctx, accounts, i.data)
-            elif program_id == SPL_TOKEN_PROGRAM_ID:
-                from .spl.spl_token_program import parse
+        if should_blind_sign:
+            from trezor.ui.layouts.lvgl import confirm_sol_blinding_sign
+            from apps.common.signverify import decode_message
 
-                await parse(ctx, accounts, i.data)
-            elif program_id == SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID:
-                from .spl.ata_program import parse
+            message_hex = decode_message(sha256(msg.raw_tx).digest())
+            await confirm_sol_blinding_sign(ctx, str(fee_payer), message_hex)
+        else:
+            # enumerate instructions in message
+            for i in message.instructions:
+                program_id = accounts_keys[i.program_id_index]
+                accounts = [accounts_keys[ix] for ix in i.accounts]
+                if program_id == SYS_PROGRAM_ID:
+                    from .system.program import parse
 
-                await parse(ctx, accounts, i.data)
-            elif program_id == SPL_MEMO_PROGRAM_ID:
-                from .spl.memo.memo_program import parse
+                    await parse(ctx, accounts, i.data)
+                elif program_id == SPL_TOKEN_PROGRAM_ID:
+                    from .spl.spl_token_program import parse
+
+                    await parse(ctx, accounts, i.data)
+                elif program_id == SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID:
+                    from .spl.ata_program import parse
+
+                    await parse(ctx, accounts, i.data)
+                elif program_id == SPL_MEMO_PROGRAM_ID:
+                    from .spl.memo.memo_program import parse
 
                 await parse(ctx, accounts if len(accounts) > 0 else [fee_payer], i.data)
             # # elif program_id == STAKE_PROGRAM_ID:
@@ -113,7 +121,7 @@ async def sign_tx(
             #     print("Unknown instruction detached")
     from trezor.ui.layouts import confirm_final
 
-    await confirm_final(ctx, "SOL")
+        await confirm_final(ctx, "SOL")
     signature = ed25519.sign(node.private_key(), msg.raw_tx)
     return SolanaSignedTx(signature=signature)
 

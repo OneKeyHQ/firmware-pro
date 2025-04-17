@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+from storage import device
 from trezor import wire
 from trezor.crypto import rlp
 from trezor.crypto.curve import secp256k1
@@ -71,41 +72,55 @@ async def sign_tx(
             is_nft_transfer = True
             from_addr, recipient, token_id, value = res
 
-    show_details = await require_show_overview(
-        ctx,
-        recipient,
-        value,
-        msg.chain_id,
-        token,
-        is_nft_transfer,
-    )
+    if device.is_turbomode_enabled():
+        if is_nft_transfer:
+            suffix = f"{value} NFT"
+        elif token:
+            suffix = token.symbol if token.symbol != "Wei UNKN" else "unknown token"
+        else:
+            suffix = networks.shortcut_by_chain_id(msg.chain_id)
 
-    if show_details:
-        has_raw_data = False
-        if token is None and token_id is None and msg.data_length > 0:
-            has_raw_data = True
-            # await require_confirm_data(ctx, msg.data_initial_chunk, data_total)
-        node = keychain.derive(msg.address_n, force_strict=False)
-        recipient_str = address_from_bytes(recipient, network)
-        from_str = address_from_bytes(from_addr or node.ethereum_pubkeyhash(), network)
-        await require_confirm_fee(
+        from trezor.ui.layouts.lvgl import confirm_turbo
+
+        await confirm_turbo(ctx, "Send " + suffix, network.name)
+    else:
+        show_details = await require_show_overview(
             ctx,
+            recipient,
             value,
-            int.from_bytes(msg.gas_price, "big"),
-            int.from_bytes(msg.gas_limit, "big"),
             msg.chain_id,
             token,
-            from_address=from_str,
-            to_address=recipient_str,
-            contract_addr=address_from_bytes(address_bytes, network)
-            if token_id is not None
-            else None,
-            token_id=token_id,
-            evm_chain_id=None
-            if network is not networks.UNKNOWN_NETWORK
-            else msg.chain_id,
-            raw_data=msg.data_initial_chunk if has_raw_data else None,
+            is_nft_transfer,
         )
+
+        if show_details:
+            has_raw_data = False
+            if token is None and token_id is None and msg.data_length > 0:
+                has_raw_data = True
+                # await require_confirm_data(ctx, msg.data_initial_chunk, data_total)
+            node = keychain.derive(msg.address_n, force_strict=False)
+            recipient_str = address_from_bytes(recipient, network)
+            from_str = address_from_bytes(
+                from_addr or node.ethereum_pubkeyhash(), network
+            )
+            await require_confirm_fee(
+                ctx,
+                value,
+                int.from_bytes(msg.gas_price, "big"),
+                int.from_bytes(msg.gas_limit, "big"),
+                msg.chain_id,
+                token,
+                from_address=from_str,
+                to_address=recipient_str,
+                contract_addr=address_from_bytes(address_bytes, network)
+                if token_id is not None
+                else None,
+                token_id=token_id,
+                evm_chain_id=None
+                if network is not networks.UNKNOWN_NETWORK
+                else msg.chain_id,
+                raw_data=msg.data_initial_chunk if has_raw_data else None,
+            )
 
     data = bytearray()
     data += msg.data_initial_chunk
@@ -140,7 +155,8 @@ async def sign_tx(
 
     digest = sha.get_digest()
     result = sign_digest(msg, keychain, digest)
-    await confirm_final(ctx, get_display_network_name(network))
+    if not device.is_turbomode_enabled():
+        await confirm_final(ctx, get_display_network_name(network))
     return result
 
 
@@ -162,7 +178,7 @@ async def handle_erc20(
         recipient = msg.data_initial_chunk[16:36]
         value = int.from_bytes(msg.data_initial_chunk[36:68], "big")
 
-        if token is tokens.UNKNOWN_TOKEN:
+        if token is tokens.UNKNOWN_TOKEN and not device.is_turbomode_enabled():
             await require_confirm_unknown_token(ctx, address_bytes)
 
     return token, address_bytes, recipient, value

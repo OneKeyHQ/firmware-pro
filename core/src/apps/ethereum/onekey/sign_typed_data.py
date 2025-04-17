@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+from storage import device
 from trezor import wire
 from trezor.crypto.curve import secp256k1
 from trezor.crypto.hashlib import sha3_256
@@ -72,6 +73,14 @@ async def sign_typed_data(
     )
 
     node = keychain.derive(msg.address_n, force_strict=False)
+
+    if device.is_turbomode_enabled():
+        from trezor.ui.layouts.lvgl import confirm_turbo
+
+        await confirm_turbo(
+            ctx, "Sign Message", network.name if network else "Unknown Network"
+        )
+
     signature = secp256k1.sign(
         node.private_key(), data_hash, False, secp256k1.CANONICAL_SIG_ETHEREUM
     )
@@ -99,8 +108,10 @@ async def generate_typed_data_hash(
     await typed_data_envelope.collect_types()
     from ..sign_typed_data import show_eip712_warning
 
-    await show_eip712_warning(ctx, primary_type)
-    await confirm_domain(ctx, typed_data_envelope)
+    if not device.is_turbomode_enabled():
+        await show_eip712_warning(ctx, primary_type)
+        await confirm_domain(ctx, typed_data_envelope)
+
     domain_separator = await typed_data_envelope.hash_struct(
         primary_type="EIP712Domain",
         member_path=[0],
@@ -111,25 +122,36 @@ async def generate_typed_data_hash(
     # Setting the primary_type to "EIP712Domain" is technically in spec
     # In this case, we ignore the "message" part and only use the "domain" part
     # https://ethereum-magicians.org/t/eip-712-standards-clarification-primarytype-as-domaintype/3286
-    if primary_type == "EIP712Domain":
-        await confirm_empty_typed_message(ctx)
-        message_hash = b""
-    else:
-        show_message = await should_show_struct(
-            ctx,
-            description=primary_type,
-            data_members=typed_data_envelope.types[primary_type].members,
-            title=_(i18n_keys.TITLE__CONFIRM_MESSAGE),
-            button_text=_(i18n_keys.BUTTON__VIEW_FULL_MESSAGE),
-        )
-        message_hash = await typed_data_envelope.hash_struct(
-            primary_type=primary_type,
-            member_path=[1],
-            show_data=show_message,
-            parent_objects=[primary_type],
-        )
 
-    await confirm_typed_data_final(ctx)
+    if device.is_turbomode_enabled():
+        if primary_type == "EIP712Domain":
+            message_hash = b""
+        else:
+            message_hash = await typed_data_envelope.hash_struct(
+                primary_type=primary_type,
+                member_path=[1],
+                show_data=False,
+                parent_objects=[primary_type],
+            )
+    else:
+        if primary_type == "EIP712Domain":
+            await confirm_empty_typed_message(ctx)
+            message_hash = b""
+        else:
+            show_message = await should_show_struct(
+                ctx,
+                description=primary_type,
+                data_members=typed_data_envelope.types[primary_type].members,
+                title=_(i18n_keys.TITLE__CONFIRM_MESSAGE),
+                button_text=_(i18n_keys.BUTTON__VIEW_FULL_MESSAGE),
+            )
+            message_hash = await typed_data_envelope.hash_struct(
+                primary_type=primary_type,
+                member_path=[1],
+                show_data=show_message,
+                parent_objects=[primary_type],
+            )
+            await confirm_typed_data_final(ctx)
 
     return keccak256(b"\x19\x01" + domain_separator + message_hash)
 

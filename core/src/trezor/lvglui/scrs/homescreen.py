@@ -40,6 +40,7 @@ from .components.listitem import (
     DisplayItemWithFont_30,
     DisplayItemWithFont_TextPairs,
     ImgGridItem,
+    ListItemWithLeadingCheckbox,
 )
 from .deviceinfo import DeviceInfoManager
 from .widgets.style import StyleWrapper
@@ -5148,6 +5149,7 @@ class WalletScreen(AnimScreen):
             self.container, _(i18n_keys.ITEM__CHECK_RECOVERY_PHRASE)
         )
         self.passphrase = ListItemBtn(self.container, _(i18n_keys.ITEM__PASSPHRASE))
+        self.turbo_mode = ListItemBtn(self.container, "Turbo mode")
         self.trezor_mode = ListItemBtnWithSwitch(
             self.container, _(i18n_keys.ITEM__COMPATIBLE_WITH_TREZOR)
         )
@@ -5193,6 +5195,8 @@ class WalletScreen(AnimScreen):
                 # pyright: on
             elif target == self.passphrase:
                 PassphraseScreen(self)
+            elif target == self.turbo_mode:
+                TurboModeScreen(self)
             elif target == self.rest_device:
                 from apps.management.wipe_device import wipe_device
                 from trezor.messages import WipeDevice
@@ -5416,6 +5420,130 @@ class PassphraseTipsConfirm(FullSizeWindow):
             else:
                 return
             self.show_dismiss_anim()
+
+
+class TurboModeScreen(AnimScreen):
+    def collect_animation_targets(self) -> list:
+        targets = []
+        if hasattr(self, "container") and self.container:
+            targets.append(self.container)
+        if hasattr(self, "tips") and self.tips:
+            targets.append(self.tips)
+        return targets
+
+    def __init__(self, prev_scr=None):
+        if not hasattr(self, "_init"):
+            self._init = True
+        else:
+            return
+        super().__init__(prev_scr, title="Turbo mode", nav_back=True)
+
+        self.container = ContainerFlexCol(self.content_area, self.title, padding_row=2)
+
+        self.turbo_mode = ListItemBtnWithSwitch(self.container, "Turbo mode")
+        self.turbo_mode.add_style(
+            StyleWrapper().bg_color(lv_colors.ONEKEY_BLACK_3).bg_opa(lv.OPA.COVER), 0
+        )
+        if not device.is_turbomode_enabled():
+            self.turbo_mode.clear_state()
+
+        self.tips = lv.label(self.content_area)
+        self.tips.align_to(self.container, lv.ALIGN.OUT_BOTTOM_LEFT, 8, 16)
+        self.tips.set_long_mode(lv.label.LONG.WRAP)
+        self.tips.add_style(
+            StyleWrapper()
+            .text_font(font_GeistRegular26)
+            .width(448)
+            .text_color(lv_colors.WHITE_2)
+            .text_align_left(),
+            0,
+        )
+        self.tips.set_text(
+            "Sign transactions with one click.(only EVM Network and Solana)"
+        )
+
+        self.container.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
+        self.turbo_mode.add_event_cb(
+            self.on_value_changed, lv.EVENT.VALUE_CHANGED, None
+        )
+
+        self.load_screen(self)
+        gc.collect()
+
+    def on_value_changed(self, event_obj):
+        code = event_obj.code
+        target = event_obj.get_target()
+        if code == lv.EVENT.VALUE_CHANGED:
+            if target == self.turbo_mode.switch:
+                if not device.is_turbomode_enabled():
+                    TurboModeConfirm(self, True)
+                    self.turbo_mode.add_state()
+                else:
+                    self.turbo_mode.clear_state()
+                    device.set_turbomode_enable(False)
+
+    def reset_switch(self):
+        self.turbo_mode.clear_state()
+
+
+class TurboModeConfirm(FullSizeWindow):
+    def __init__(self, callback_obj, enable=False):
+        if enable:
+            super().__init__(
+                title="Enable turbo mode",
+                subtitle="Sign transactions with one click",
+                confirm_text="Slide to enable",
+                cancel_text="Cancel",
+                hold_confirm=True,
+            )
+            self.container = ContainerFlexCol(
+                self.content_area, self.subtitle, padding_row=2
+            )
+            self.item1 = ListItemWithLeadingCheckbox(
+                self.container,
+                "Once enabled, the device will omit details when reviewing transactions.I know the risks.",
+                radius=40,
+            )
+
+            self.enable = enable
+            self.callback_obj = callback_obj
+
+        self.slider_enable(False)
+        self.container.add_event_cb(self.on_value_changed, lv.EVENT.VALUE_CHANGED, None)
+
+    def eventhandler(self, event_obj):
+        code = event_obj.code
+        target = event_obj.get_target()
+        if code == lv.EVENT.CLICKED:
+            if utils.lcd_resume():
+                return
+            if target == self.btn_no.click_mask:
+                self.callback_obj.reset_switch()
+                self.destroy(200)
+        elif code == lv.EVENT.READY and self.hold_confirm:
+            if target == self.slider:
+                device.set_turbomode_enable(self.enable)
+                self.destroy(200)
+
+    def on_value_changed(self, event_obj):
+        code = event_obj.code
+        target = event_obj.get_target()
+        if code == lv.EVENT.VALUE_CHANGED:
+            if target == self.item1.checkbox:
+                if target.get_state() & lv.STATE.CHECKED:
+                    self.item1.enable_bg_color()
+                    self.slider_enable()
+                else:
+                    self.item1.enable_bg_color(False)
+                    self.slider_enable(False)
+
+    def slider_enable(self, enable: bool = True):
+        if enable:
+            self.slider.add_flag(lv.obj.FLAG.CLICKABLE)
+            self.slider.enable()
+        else:
+            self.slider.clear_flag(lv.obj.FLAG.CLICKABLE)
+            self.slider.enable(False)
 
 
 class CryptoScreen(Screen):
