@@ -359,6 +359,12 @@ uint32_t _spi_slave_poll_ex(uint8_t* buf, bool fido)
             len = total_len > SPI_PKG_SIZE ? SPI_PKG_SIZE : total_len;
             return fifo_read_lock(&spi_fifo_in, buf, len);
         }
+#if BOOT_ONLY
+        else
+        {
+            fifo_flush(&spi_fifo_in);
+        }
+#endif
     }
 
     return 0;
