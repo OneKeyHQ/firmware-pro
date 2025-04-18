@@ -115,16 +115,18 @@ def get_nonce(client: "TrezorClient"):
     return client.call(messages.GetNonce())
 
 
-@expect(messages.EcdsaPublicKeys, field="public_keys", ret_type=List[bytes])
+@expect(messages.EcdsaPublicKeys)
 def batch_get_publickeys(
     client: "TrezorClient",
     paths: List[Sequence[int]],
     ecdsa_curve_name: str = "ed25519",
+    include_node: bool = False,
 ):
     assert (len(paths) <= 20, "Support up to paths' size 20")
     return client.call(
         messages.BatchGetPublickeys(
             paths=[messages.Path(address_n=path) for path in paths],
             ecdsa_curve_name=ecdsa_curve_name,
+            include_node=include_node,
         )
     )

@@ -14,15 +14,17 @@
 # You should have received a copy of the License along with this library.
 # If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.
 
-from typing import TYPE_CHECKING, List, Tuple
+from typing import TYPE_CHECKING, Tuple
 
 import click
 
 from .. import misc, tools
 from . import with_client
+from trezorlib.messages import EcdsaPublicKeys
 
 if TYPE_CHECKING:
     from ..client import TrezorClient
+
 
 
 @click.group(name="crypto")
@@ -70,15 +72,20 @@ def decrypt_keyvalue(
     help="the ecdsa curve to use, e.g. ed25519, secp256k1...",
 )
 @click.argument("paths", nargs=-1, required=True, type=str)
+@click.option(
+    "-i",
+    "--include-node",
+    is_flag=True,
+    help="include node information in the output",
+)
 @with_client
 def batch_get_publickeys(
-    client: "TrezorClient", paths: Tuple[str], curve: str
-) -> List[bytes]:
+    client: "TrezorClient", paths: Tuple[str], curve: str, include_node: bool
+) -> EcdsaPublicKeys:
     """Batch get publicKeys by given paths.
     paths: we want to used for public keys, e.g. "m/44'/0'/0'" "m/44'/0'/0'/0/0'"... support up to 20 path
     """
     assert (len(paths) <= 20, "Support up to paths' size 20")
     paths_n = list(map(tools.parse_path, paths))
-    pubkeys = misc.batch_get_publickeys(client, paths_n, curve)
-    pubkeys_hex = [pubkey.hex() for pubkey in pubkeys]
-    return pubkeys_hex
+    result = misc.batch_get_publickeys(client, paths_n, curve, include_node)
+    return result

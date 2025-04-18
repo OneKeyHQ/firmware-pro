@@ -4260,6 +4260,7 @@ class BatchGetPublickeys(protobuf.MessageType):
     FIELDS = {
         1: protobuf.Field("ecdsa_curve_name", "string", repeated=False, required=False),
         2: protobuf.Field("paths", "Path", repeated=True, required=False),
+        3: protobuf.Field("include_node", "bool", repeated=False, required=False),
     }
 
     def __init__(
@@ -4267,23 +4268,31 @@ class BatchGetPublickeys(protobuf.MessageType):
         *,
         paths: Optional[Sequence["Path"]] = None,
         ecdsa_curve_name: Optional["str"] = 'ed25519',
+        include_node: Optional["bool"] = False,
     ) -> None:
         self.paths: Sequence["Path"] = paths if paths is not None else []
         self.ecdsa_curve_name = ecdsa_curve_name
+        self.include_node = include_node
 
 
 class EcdsaPublicKeys(protobuf.MessageType):
     MESSAGE_WIRE_TYPE = 10017
     FIELDS = {
         1: protobuf.Field("public_keys", "bytes", repeated=True, required=False),
+        2: protobuf.Field("hd_nodes", "HDNodeType", repeated=True, required=False),
+        3: protobuf.Field("root_fingerprint", "uint32", repeated=False, required=False),
     }
 
     def __init__(
         self,
         *,
         public_keys: Optional[Sequence["bytes"]] = None,
+        hd_nodes: Optional[Sequence["HDNodeType"]] = None,
+        root_fingerprint: Optional["int"] = None,
     ) -> None:
         self.public_keys: Sequence["bytes"] = public_keys if public_keys is not None else []
+        self.hd_nodes: Sequence["HDNodeType"] = hd_nodes if hd_nodes is not None else []
+        self.root_fingerprint = root_fingerprint
 
 
 class Path(protobuf.MessageType):
