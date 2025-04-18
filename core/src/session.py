@@ -18,10 +18,19 @@ apps.base.boot()
 utils.RESTART_MAIN_LOOP = False
 
 
+async def flush_fido_buffer():
+    from trezor import io
+
+    while True:
+        await loop.wait(io.SPI_FIDO_FACE | io.POLL_READ)
+
+
 if not utils.BITCOIN_ONLY and usb.ENABLE_IFACE_WEBAUTHN:
     import apps.webauthn
 
     apps.webauthn.boot()
+else:
+    loop.schedule(flush_fido_buffer())
 
 if __debug__:
     import apps.debug
