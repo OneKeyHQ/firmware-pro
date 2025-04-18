@@ -9,7 +9,10 @@
 #include "irq.h"
 #include "usart.h"
 
-#define USART_TIMEOUT 0x100000
+#define BAUD_RATE 115200
+#define UART_ONE_BIT_TIME_US (1000000 / BAUD_RATE)
+// max timeout is 0xffffffff * UART_ONE_BIT_TIME_US
+#define UART_TIMEOUT_MS (2)
 
 UART_HandleTypeDef uart;
 UART_HandleTypeDef *huart = &uart;
@@ -60,7 +63,7 @@ void ble_usart_init(void) {
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   huart->Instance = UART4;
-  huart->Init.BaudRate = 115200;
+  huart->Init.BaudRate = BAUD_RATE;
   huart->Init.WordLength = UART_WORDLENGTH_8B;
   huart->Init.StopBits = UART_STOPBITS_1;
   huart->Init.Parity = UART_PARITY_NONE;
@@ -122,7 +125,10 @@ void ble_usart_init(void) {
   HAL_NVIC_ClearPendingIRQ(UART4_IRQn);
   HAL_NVIC_EnableIRQ(UART4_IRQn);
 
-  __HAL_UART_ENABLE_IT(huart, UART_IT_IDLE);
+  HAL_UART_EnableReceiverTimeout(huart);
+  HAL_UART_ReceiverTimeout_Config(
+      huart, (UART_TIMEOUT_MS * 1000) / UART_ONE_BIT_TIME_US);
+  __HAL_UART_ENABLE_IT(huart, UART_IT_RTO);
   HAL_UART_Receive_DMA(huart, dma_uart_rev_buf, sizeof(dma_uart_rev_buf));
 }
 
@@ -276,8 +282,8 @@ void UART4_IRQHandler(void) {
   if (__HAL_UART_GET_FLAG(huart, UART_FLAG_WUF)) {
     __HAL_UART_CLEAR_FLAG(huart, UART_CLEAR_WUF);
   }
-  if (__HAL_UART_GET_FLAG(huart, UART_FLAG_IDLE)) {
-    __HAL_UART_CLEAR_FLAG(huart, UART_FLAG_IDLE);
+  if (__HAL_UART_GET_FLAG(huart, UART_FLAG_RTOF)) {
+    __HAL_UART_CLEAR_FLAG(huart, UART_CLEAR_RTOF);
     HAL_UART_Abort(huart);
     usart_fifo_len =
         sizeof(dma_uart_rev_buf) - __HAL_DMA_GET_COUNTER(huart->hdmarx);
