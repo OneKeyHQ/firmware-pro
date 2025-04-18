@@ -53,18 +53,17 @@ BOOT_BUILD_VERSION=$(shell ../tools/version.sh ./embed/bootloader/version.h)
 FIRMWARE_BUILD_VERSION=$(shell cat ./embed/firmware/version.h | grep -E '#define ONEKEY_VERSION_(MAJOR|MINOR|PATCH)' | awk '{printf "%s.", $$3}' | sed 's/\.$$//')
 ifndef BUILD_ID
 BUILD_COMMIT=$(shell git rev-parse HEAD | cut -c1-7)
+ifeq ($(BITCOIN_ONLY), 1)
+FIRMWARE_BUILD_NAME=pro.$(FIRMWARE_BUILD_VERSION)-Stable-bc-only-$(BUILD_DATE)-$(BUILD_COMMIT)
+else
 FIRMWARE_BUILD_NAME=pro.$(FIRMWARE_BUILD_VERSION)-Stable-$(BUILD_DATE)-$(BUILD_COMMIT)
+endif
 BOOT_BUILD_NAME=pro.bootloader.$(BOOT_BUILD_VERSION)-Stable-$(BUILD_DATE)-$(BUILD_COMMIT)
 else
 FIRMWARE_BUILD_NAME=pro.$(FIRMWARE_BUILD_VERSION)-Alpha-$(BUILD_DATE)-$(BUILD_ID)
 BOOT_BUILD_NAME=pro.bootloader.$(BOOT_BUILD_VERSION)-Alpha-$(BUILD_DATE)-$(BUILD_ID)
 endif
 CFLAGS += -DBUILD_COMMIT='\"$(BUILD_COMMIT)\"'
-
-
-ifeq ($(BITCOIN_ONLY), 1)
-    FIRMWARE_BUILD_NAME:=$(FIRMWARE_BUILD_NAME)-bc_only
-endif
 
 TESTPATH = $(CURDIR)/../tests
 

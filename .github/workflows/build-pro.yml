@@ -6,7 +6,7 @@ on:
 jobs:
   build-pro:
     name: "Build Pro (${{ matrix.artifact_suffix }})"
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     outputs:
       firmware_version: ${{ steps.vars.outputs.firmware_version }}
       boot_version: ${{ steps.vars.outputs.boot_version }}
