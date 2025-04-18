@@ -40,7 +40,7 @@ def init_lvgl() -> None:
     disp_drv.flush_cb = lcd.flush
     disp_drv.hor_res = 480
     disp_drv.ver_res = 800
-    # disp_drv.full_refresh = True
+    disp_drv.full_refresh = True
     # disp_drv.direct_mode = True
     disp_drv.register()
 

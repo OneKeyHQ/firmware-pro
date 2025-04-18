@@ -752,3 +752,16 @@ void lcd_refresh_resume(void) {
       ;
   }
 }
+
+void lcd_set_src_addr(uint32_t addr) {
+  hlcd_ltdc.Instance = LTDC;
+  LTDC_LAYERCONFIG config;
+  config.x0 = 0;
+  config.x1 = lcd_params.hres;
+  config.y0 = 0;
+  config.y1 = lcd_params.vres;
+  config.pixel_format = lcd_params.pixel_format_ltdc;
+  config.address = addr;
+  if (ltdc_layer_config(&hlcd_ltdc, 0, &config) != HAL_OK)
+    dbg_printf("ltdc_layer_config failed !\r\n");
+}
