@@ -1265,6 +1265,8 @@ static int update_firmware_from_file(uint8_t iface_num, const char* path, bool c
                 send_user_abort_nocheck(iface_num, "Firmware install cancelled");
                 return -4;
             }
+            display_clear();
+            ui_statusbar_update();
         }
 
         // ui start install

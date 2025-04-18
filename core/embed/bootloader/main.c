@@ -214,6 +214,12 @@ static secbool get_device_serial(char* serial, size_t len) {
 }
 
 static void usb_init_all(secbool usb21_landing) {
+  static bool usb_init_done = false;
+  if (usb_init_done) {
+    return;
+  }
+  usb_init_done = true;
+
   usb_dev_info_t dev_info = {
       .device_class = 0x00,
       .device_subclass = 0x00,

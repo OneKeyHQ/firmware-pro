@@ -330,6 +330,12 @@ uint32_t _spi_slave_poll_ex(uint8_t* buf, bool fido)
 
     fifo_read_peek(&spi_fifo_in, header, sizeof(header));
 
+    if ( memcmp(header, "fid", 3) != 0 && header[0] != '?' )
+    {
+        fifo_flush(&spi_fifo_in);
+        return 0;
+    }
+
     if ( fido )
     {
         if ( memcmp(header, "fid", 3) == 0 )
@@ -354,8 +360,6 @@ uint32_t _spi_slave_poll_ex(uint8_t* buf, bool fido)
             return fifo_read_lock(&spi_fifo_in, buf, len);
         }
     }
-
-    fifo_flush(&spi_fifo_in);
 
     return 0;
 }

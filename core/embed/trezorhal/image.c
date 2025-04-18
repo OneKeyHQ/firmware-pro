@@ -751,44 +751,47 @@ secbool verify_firmware(vendor_header* const vhdr, image_header* const hdr,
   EMMC_PATH_INFO path_info = {0};
   uint32_t processed_len = 0;
 
-  ExecuteCheck_ADV(emmc_fs_path_info("0:data/fw_p2.bin", &path_info), true, {
-    if (error_msg != NULL)
-      strncpy(error_msg, "Firmware code invalid! (P2_EMMC_1)", error_msg_len);
-    return secfalse;
-  });
+  if (_hdr.codelen > fw_internal_size - (_vhdr.hdrlen + _hdr.hdrlen)) {
+    ExecuteCheck_ADV(emmc_fs_path_info("0:data/fw_p2.bin", &path_info), true, {
+      if (error_msg != NULL)
+        strncpy(error_msg, "Firmware code invalid! (P2_EMMC_1)", error_msg_len);
+      return secfalse;
+    });
 
-  if (path_info.size > fw_external_size) {
-    if (error_msg != NULL)
-      strncpy(error_msg, "Firmware file P2 too large!", error_msg_len);
-    return secfalse;
+    if (path_info.size > fw_external_size) {
+      if (error_msg != NULL)
+        strncpy(error_msg, "Firmware file P2 too large!", error_msg_len);
+      return secfalse;
+    }
+
+    ExecuteCheck_ADV(
+        emmc_fs_file_read(
+            "0:data/fw_p2.bin", 0, (uint32_t*)FMC_SDRAM_FIRMWARE_P2_ADDRESS,
+            MAX(path_info.size, fw_external_size), &processed_len),
+        true, {
+          if (error_msg != NULL)
+            strncpy(error_msg, "Firmware code invalid! (P2_EMMC_2)",
+                    error_msg_len);
+          return secfalse;
+        });
+
+    ExecuteCheck_ADV(
+        check_image_contents_ADV(
+            &_vhdr, &_hdr, (const uint8_t*)FMC_SDRAM_FIRMWARE_P2_ADDRESS,
+            (fw_internal_size - (_vhdr.hdrlen + _hdr.hdrlen)),
+            _hdr.codelen - (fw_internal_size - (_vhdr.hdrlen + _hdr.hdrlen)),
+            true),
+        sectrue, {
+          memset((uint8_t*)FMC_SDRAM_FIRMWARE_P2_ADDRESS, 0x00,
+                 _hdr.codelen - (fw_internal_size -
+                                 (_vhdr.hdrlen +
+                                  _hdr.hdrlen)));  // wipe the buffer if fail
+          if (error_msg != NULL)
+            strncpy(error_msg, "Firmware code invalid! (P2)", error_msg_len);
+          return secfalse;
+        });
   }
 
-  ExecuteCheck_ADV(
-      emmc_fs_file_read("0:data/fw_p2.bin", 0,
-                        (uint32_t*)FMC_SDRAM_FIRMWARE_P2_ADDRESS,
-                        MAX(path_info.size, fw_external_size), &processed_len),
-      true, {
-        if (error_msg != NULL)
-          strncpy(error_msg, "Firmware code invalid! (P2_EMMC_2)",
-                  error_msg_len);
-        return secfalse;
-      });
-
-  ExecuteCheck_ADV(
-      check_image_contents_ADV(
-          &_vhdr, &_hdr, (const uint8_t*)FMC_SDRAM_FIRMWARE_P2_ADDRESS,
-          (fw_internal_size - (_vhdr.hdrlen + _hdr.hdrlen)),
-          _hdr.codelen - (fw_internal_size - (_vhdr.hdrlen + _hdr.hdrlen)),
-          true),
-      sectrue, {
-        memset((uint8_t*)FMC_SDRAM_FIRMWARE_P2_ADDRESS, 0x00,
-               _hdr.codelen -
-                   (fw_internal_size -
-                    (_vhdr.hdrlen + _hdr.hdrlen)));  // wipe the buffer if fail
-        if (error_msg != NULL)
-          strncpy(error_msg, "Firmware code invalid! (P2)", error_msg_len);
-        return secfalse;
-      });
   _code_valid = sectrue;
   if (code_valid != NULL) *code_valid = _code_valid;
 

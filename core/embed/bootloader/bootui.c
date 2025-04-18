@@ -298,11 +298,12 @@ void ui_screen_install_confirm_newvendor_or_downgrade_wipe(char* new_version) {
   //   loop++;
   //   offset += split;
   // } while (split);
-  display_bar_radius_ex(BOARD_OFFSET_X, 295, BUTTON_FULL_WIDTH, BUTTON_HEIGHT,
-                        COLOR_BL_PANEL, COLOR_BL_BG, BUTTON_RADIUS);
+  // display_bar_radius_ex(BOARD_OFFSET_X, 295, BUTTON_FULL_WIDTH,
+  // BUTTON_HEIGHT,
+  //                       COLOR_BL_PANEL, COLOR_BL_BG, BUTTON_RADIUS);
 
-  display_text(MAX_DISPLAY_RESX / 2 + 25, 350, new_version, -1, FONT_NORMAL,
-               COLOR_BL_SUBTITLE, COLOR_BL_DARK);
+  // display_text(MAX_DISPLAY_RESX / 2 + 25, 350, new_version, -1, FONT_NORMAL,
+  //              COLOR_BL_SUBTITLE, COLOR_BL_DARK);
 
   ui_confirm_cancel_buttons("Cancel", "Install", COLOR_BL_DARK, COLOR_BL_FAIL);
 }
