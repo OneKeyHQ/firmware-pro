@@ -29,7 +29,7 @@ typedef struct __attribute__((packed)) {
   int8_t ofs_y;
 } glyph_dsc_t;
 
-#define FONT_CACHE_NUM 64
+#define FONT_CACHE_NUM 32
 
 typedef struct {
   uint32_t unicode_letter;

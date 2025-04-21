@@ -678,10 +678,8 @@ class AddressManager:
         else:
             return self._prepare_default_message()
 
-    async def generate_address(self, name, index=0, ctx=None):
+    async def generate_address(self, name, index=0, ctx=wire.DUMMY_CONTEXT):
         """Main logic for generating addresses"""
-
-        ctx = wire.DummyContext()
 
         self.current_index = index
         state = self.STATE.INIT

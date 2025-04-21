@@ -707,7 +707,7 @@ class ShowAddress(AnimScreen):
                 script_type=InputScriptType.SPENDADDRESS,
             )
             # pyright: off
-            await btc_get_address(wire.DummyContext(), msg)
+            await btc_get_address(wire.QRContext(), msg)
             # pyright: on
 
         except Exception:
