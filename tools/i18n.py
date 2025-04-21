@@ -88,7 +88,7 @@ def write_langfile(lang_map):
         f.write("# according to ISO_639-1 and ISO-3166 country codes\n")
         f.write("\n".join(content) + "\n")
         f.write("\nlangs_keys = [x[0] for x in langs]\n")
-        f.write("\nlangs_values = \"\\n\".join([v[1] for v in langs])\n")
+        f.write('\nlangs_values = "\\n".join([v[1] for v in langs])\n')
 
 
 def main():

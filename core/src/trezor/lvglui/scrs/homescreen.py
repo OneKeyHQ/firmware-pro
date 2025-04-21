@@ -3949,16 +3949,32 @@ class AboutSetting(AnimScreen):
             "SE Bootloader",
             se_boot_content_pairs,
         )
+
         self.serial = DisplayItemWithFont_30(
             self.container, _(i18n_keys.ITEM__SERIAL_NUMBER), preloaded_info["serial"]
         )
-
         self.serial.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
-        self.fcc_id = DisplayItemWithFont_30(self.container, "FCC ID", "2BB8VP1")
 
+        self.fcc_id = DisplayItemWithFont_30(self.container, "FCC ID", "2BB8VP1")
+        self.fcc_id.set_style_pad_right(0, 0)
         self.fcc_icon = lv.img(self.fcc_id)
-        self.fcc_icon.set_src("A:/res/fcc-logo.png")
-        self.fcc_icon.align(lv.ALIGN.RIGHT_MID, 0, -5)
+        self.fcc_icon.set_src("A:/res/icon-fcc.png")
+        self.fcc_icon.align(lv.ALIGN.RIGHT_MID, 0, 0)
+
+        self.mic_id = DisplayItemWithFont_30(self.container, "MIC ID", "211-240720")
+        self.mic_id.set_style_pad_right(0, 0)
+        self.mic_icon = lv.img(self.mic_id)
+        self.mic_icon.set_src("A:/res/icon-mic.png")
+        self.mic_icon.align(lv.ALIGN.RIGHT_MID, 0, 0)
+
+        self.anatel_id = DisplayItemWithFont_30(
+            self.container, "ANATEL ID", "02335-25-16343"
+        )
+        self.anatel_id.set_style_pad_right(0, 0)
+        self.anatel_icon = lv.img(self.anatel_id)
+        self.anatel_icon.set_src("A:/res/icon-anatel.png")
+        self.anatel_icon.align(lv.ALIGN.RIGHT_MID, 0, 0)
+
         self.container.add_dummy()
 
         self.firmware_update = NormalButton(

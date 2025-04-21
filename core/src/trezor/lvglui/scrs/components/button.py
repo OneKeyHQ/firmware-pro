@@ -12,7 +12,9 @@ from .transition import BtnClickTransition, DefaultTransition
 
 
 class NormalButton(lv.btn):
-    def __init__(self, parent, text=_(i18n_keys.BUTTON__NEXT), enable=True) -> None:
+    def __init__(
+        self, parent, text=_(i18n_keys.BUTTON__NEXT), enable=True, pressed_style=None
+    ) -> None:
         super().__init__(parent)
         self.remove_style_all()
         self.set_size(456, 98)
@@ -31,7 +33,8 @@ class NormalButton(lv.btn):
         else:
             self.disable()
         self.add_style(
-            StyleWrapper()
+            pressed_style
+            or StyleWrapper()
             .bg_opa(lv.OPA._60)
             .transform_height(-2)
             .transform_width(-2)
@@ -70,12 +73,13 @@ class NormalButton(lv.btn):
         self.add_style(StyleWrapper().bg_color(bg_color).text_color(text_color), 0)
         self.add_flag(lv.btn.FLAG.CLICKABLE)
 
-    def enable_no_bg_mode(self):
+    def enable_no_bg_mode(self, skip_pressed_style=False):
         self.add_style(StyleWrapper().bg_color(lv_colors.BLACK), 0)
-        self.add_style(
-            StyleWrapper().bg_color(lv_colors.ONEKEY_BLACK).bg_opa(),
-            lv.PART.MAIN | lv.STATE.PRESSED,
-        )
+        if not skip_pressed_style:
+            self.add_style(
+                StyleWrapper().bg_color(lv_colors.ONEKEY_BLACK).bg_opa(),
+                lv.PART.MAIN | lv.STATE.PRESSED,
+            )
         self.clear_flag(lv.obj.FLAG.CLICKABLE)
         self.click_mask.add_flag(lv.obj.FLAG.CLICKABLE)
 
