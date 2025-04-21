@@ -476,6 +476,67 @@ def _token_iterator(chain_id: int) -> Iterator[tuple[bytes, str, int, str]]:
             18,
             "Wrapped Ether",
         )
+    if chain_id == 30:  # Rootstock
+        yield (  # address, symbol, decimals, name
+            b"\xe7\x00\x69\x1d\xa7\xb9\x85\x1f\x2f\x35\xf8\xb8\x18\x2c\x69\xc5\x3c\xca\xd9\xdb",
+            "DOC",
+            18,
+            "Dollar on Chain",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xef\x85\x25\x4a\xa4\xa8\x49\x0b\xcc\x9c\x02\xae\x38\x51\x3c\xae\x83\x03\xfb\x53",
+            "mBTC",
+            18,
+            "Midas BTC Yield Token",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x9a\xc7\xfe\x28\x96\x7b\x30\xe3\xa4\xe6\xe0\x32\x86\xd7\x15\xb4\x2b\x45\x3d\x10",
+            "MOC",
+            18,
+            "MOC",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xdd\x62\x9e\x52\x41\xcb\xc5\x91\x98\x47\x78\x3e\x6c\x96\xb2\xde\x47\x54\xe4\x38",
+            "mTBILL",
+            18,
+            "Midas US Treasury Bill Token",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x2a\xcc\x95\x75\x8f\x8b\x5f\x58\x34\x70\xba\x26\x5e\xb6\x85\xa8\xf4\x5f\xc9\xd5",
+            "RIF",
+            18,
+            "RIF",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x74\xc9\xf2\xb0\x05\x81\xf1\xb1\x1a\xa7\xff\x05\xaa\x9f\x60\x8b\x73\x89\xde\x67",
+            "USDC.e",
+            6,
+            "Bridged USDC (Stargate)",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x3a\x15\x46\x1d\x8a\xe0\xf0\xfb\x5f\xa2\x62\x9e\x9d\xa7\xd6\x6a\x79\x4a\x6e\x37",
+            "USDRIF",
+            18,
+            "USDRIF",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xaf\x36\x8c\x91\x79\x3c\xb2\x27\x39\x38\x6d\xfc\xbb\xb2\xf1\xa9\xe4\xbc\xbe\xbf",
+            "USDT",
+            6,
+            "USDT",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x2f\x6f\x07\xcd\xcf\x35\x88\x94\x4b\xf4\xc4\x2a\xc7\x4f\xf2\x4b\xf5\x6e\x75\x90",
+            "WETH",
+            18,
+            "WETH",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x54\x2f\xda\x31\x73\x18\xeb\xf1\xd3\xde\xaf\x76\xe0\xb6\x32\x74\x1a\x7e\x67\x7d",
+            "WRBTC",
+            18,
+            "Wrapped BTC",
+        )
     if chain_id == 56:  # BSC
         yield (  # address, symbol, decimals, name
             b"\xfe\xea\x0b\xdd\x3d\x07\xeb\x6f\xe3\x05\x93\x88\x78\xc0\xca\xdb\xfa\x16\x90\x42",
