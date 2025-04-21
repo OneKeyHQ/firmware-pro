@@ -557,8 +557,7 @@ static bool _camera_test(void) {
     camera_capture_start();
     if (camera_capture_done()) {
       dma2d_copy_buffer((uint32_t *)CAM_BUF_ADDRESS,
-                        (uint32_t *)FMC_SDRAM_LTDC_BUFFER_ADDRESS, 80, 240,
-                        WIN_W, WIN_H);
+                        (uint32_t *)lcd_get_src_addr(), 80, 240, WIN_W, WIN_H);
     }
 
     ui_res = ui_response_ex();
@@ -944,21 +943,21 @@ void device_burnin_test(bool force) {
         case 0:
           // display_bar(0, 0, MAX_DISPLAY_RESX, MAX_DISPLAY_RESY, COLOR_RED);
           if (jped_decode("res/wallpaper-1.jpg",
-                          FMC_SDRAM_LVGL_BUFFER_ADDRESS) != 0) {
+                          FMC_SDRAM_LTDC_BUFFER_ADDRESS) != 0) {
             display_print_clear();
             display_printf("show wallpaper-1.jpg err\n");
           }
           break;
         case 1:
           if (jped_decode("res/wallpaper-2.jpg",
-                          FMC_SDRAM_LVGL_BUFFER_ADDRESS) != 0) {
+                          FMC_SDRAM_LTDC_BUFFER_ADDRESS) != 0) {
             display_print_clear();
             display_printf("show wallpaper-2.jpg err\n");
           }
           break;
         case 2:
           if (jped_decode("res/wallpaper-3.jpg",
-                          FMC_SDRAM_LVGL_BUFFER_ADDRESS) != 0) {
+                          FMC_SDRAM_LTDC_BUFFER_ADDRESS) != 0) {
             display_print_clear();
             display_printf("show wallpaper-3.jpg err\n");
           }
@@ -1197,8 +1196,8 @@ void device_burnin_test(bool force) {
       camera_capture_start();
       if (camera_capture_done()) {
         dma2d_copy_buffer((uint32_t *)CAM_BUF_ADDRESS,
-                          (uint32_t *)FMC_SDRAM_LTDC_BUFFER_ADDRESS, 80, 300,
-                          WIN_W, WIN_H);
+                          (uint32_t *)lcd_get_src_addr(), 80, 300, WIN_W,
+                          WIN_H);
       }
     }
 

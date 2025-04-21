@@ -138,9 +138,7 @@ int camera_qr_decode(uint32_t x, uint32_t y, uint8_t* data, uint32_t data_len)
     }
     if ( camera_capture_done() )
     {
-        dma2d_copy_buffer(
-            (uint32_t*)CAM_BUF_ADDRESS, (uint32_t*)FMC_SDRAM_LTDC_BUFFER_ADDRESS, x, y, WIN_W, WIN_H
-        );
+        dma2d_copy_buffer((uint32_t*)CAM_BUF_ADDRESS, (uint32_t*)lcd_get_src_addr(), x, y, WIN_W, WIN_H);
         len = zbar_decode_buffer((uint8_t*)CAM_BUF_ADDRESS, data, data_len);
     }
 
