@@ -102,8 +102,8 @@ static void dcmi_init()
     DMA_DCMI_Handle.Init.Mode = DMA_CIRCULAR;
     DMA_DCMI_Handle.Init.Priority = DMA_PRIORITY_HIGH;
     DMA_DCMI_Handle.Init.FIFOMode = DMA_FIFOMODE_ENABLE;
-    DMA_DCMI_Handle.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_1QUARTERFULL;
-    DMA_DCMI_Handle.Init.MemBurst = DMA_MBURST_SINGLE;
+    DMA_DCMI_Handle.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
+    DMA_DCMI_Handle.Init.MemBurst = DMA_MBURST_INC4;
     DMA_DCMI_Handle.Init.PeriphBurst = DMA_PBURST_SINGLE;
 
     NVIC_SetPriority(DCMI_IRQn, IRQ_PRI_DCMI_DMA);

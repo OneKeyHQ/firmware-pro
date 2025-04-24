@@ -252,7 +252,7 @@ def scan_qr(callback_obj):
                             else:
                                 decoder.reset()
                                 continue
-            await loop.sleep(50)
+            await loop.sleep(5)
 
     workflow.spawn(camear_scan())
 
