@@ -66,6 +66,8 @@
 #include "camera.h"
 #include "emmc_wrapper.h"
 
+static bool usb_tiny_enable = false;
+
 #if !PRODUCTION
 
 // DO NOT USE THIS UNLESS YOU KNOW WHAT YOU ARE DOING
@@ -313,34 +315,30 @@ static void charge_switch(void) {
   }
 }
 
-void bootloader_usb_loop_tiny(uint32_t tick) {
-  static uint32_t tick_start = 0;
-  if (tick_start == 0) {
-    tick_start = tick;
+void bootloader_usb_loop_tiny(void) {
+  if (!usb_tiny_enable) {
+    return;
   }
-  // 500ms
-  if (tick - tick_start > 500) {
-    tick_start = tick;
-    uint8_t buf[USB_PACKET_SIZE];
-    bool cmd_received = false;
-    if (USB_PACKET_SIZE == spi_slave_poll(buf)) {
-      host_channel = CHANNEL_SLAVE;
-      cmd_received = true;
-    } else if (USB_PACKET_SIZE ==
-               usb_webusb_read(USB_IFACE_NUM, buf, USB_PACKET_SIZE)) {
-      host_channel = CHANNEL_USB;
-      cmd_received = true;
+
+  uint8_t buf[USB_PACKET_SIZE];
+  bool cmd_received = false;
+  if (USB_PACKET_SIZE == spi_slave_poll(buf)) {
+    host_channel = CHANNEL_SLAVE;
+    cmd_received = true;
+  } else if (USB_PACKET_SIZE ==
+             usb_webusb_read(USB_IFACE_NUM, buf, USB_PACKET_SIZE)) {
+    host_channel = CHANNEL_USB;
+    cmd_received = true;
+  }
+  if (cmd_received) {
+    if (buf[0] != '?' || buf[1] != '#' || buf[2] != '#') {
+      return;
     }
-    if (cmd_received) {
-      if (buf[0] != '?' || buf[1] != '#' || buf[2] != '#') {
-        return;
-      }
-      if (buf[3] == 0 && buf[4] == 0) {
-        send_msg_features_simple(USB_IFACE_NUM);
-      } else {
-        send_failure(USB_IFACE_NUM, FailureType_Failure_ProcessError,
-                     format_progress_value("Update mode"));
-      }
+    if (buf[3] == 0 && buf[4] == 0) {
+      send_msg_features_simple(USB_IFACE_NUM);
+    } else {
+      send_failure(USB_IFACE_NUM, FailureType_Failure_ProcessError,
+                   format_progress_value("Update mode"));
     }
   }
 }
@@ -350,12 +348,10 @@ void enable_usb_tiny_task(bool init_usb) {
     usb_init_all(secfalse);
     usb_start();
   }
-  systick_enable_dispatch(SYSTICK_DISPATCH_USB_TINY, bootloader_usb_loop_tiny);
+  usb_tiny_enable = true;
 }
 
-void disable_usb_tiny_task(void) {
-  systick_disable_dispatch(SYSTICK_DISPATCH_USB_TINY);
-}
+void disable_usb_tiny_task(void) { usb_tiny_enable = false; }
 
 static secbool bootloader_usb_loop(const vendor_header* const vhdr,
                                    const image_header* const hdr) {

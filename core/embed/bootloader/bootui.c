@@ -382,10 +382,11 @@ void ui_screen_install_progress_erase(int pos, int len) {
 
   display_progress("Keep connected.", 25 * pos / len);
 }
-
+extern void bootloader_usb_loop_tiny(void);
 void ui_screen_install_progress_upload(int pos) {
   current_progress_value = pos;
   display_progress(NULL, pos);
+  bootloader_usb_loop_tiny();
 }
 
 // wipe UI
