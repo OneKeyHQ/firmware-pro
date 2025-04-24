@@ -33,6 +33,7 @@ def init_lvgl() -> None:
     disp_buf1 = lv.disp_draw_buf_t()
     buf1_1 = lcd.framebuffer(1)
     buf2_2 = lcd.framebuffer(2)
+    # disp_buf1.init(buf1_1, buf2_2, len(buf1_1))
     disp_buf1.init(buf1_1, buf2_2, len(buf1_1))
     disp_drv = lv.disp_drv_t()
     disp_drv.init()
@@ -40,7 +41,8 @@ def init_lvgl() -> None:
     disp_drv.flush_cb = lcd.flush
     disp_drv.hor_res = 480
     disp_drv.ver_res = 800
-    disp_drv.full_refresh = True
+    if buf2_2 is not None:
+        disp_drv.full_refresh = True
     # disp_drv.direct_mode = True
     disp_drv.register()
 

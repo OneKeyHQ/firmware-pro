@@ -18,20 +18,36 @@ static mp_obj_t mp_disp_drv_framebuffer(mp_obj_t n_obj) {
   if (n < 0 || n > 1) {
     return mp_const_none;
   }
-
+#ifdef LVGL_DOUBLE_BUFFER
   if (fb[n] == NULL) {
     static lv_color_t *lv_disp_buf =
         (lv_color_t *)(FMC_SDRAM_LTDC_BUFFER_ADDRESS);
-    ;
     fb[n] = MP_STATE_PORT(disp_drv_fb[n]) = lv_disp_buf + 480 * 800 * n;
   }
+#else
+  if (n == 1) {
+    // single buffer mode, the second buffer is not used.
+    return mp_const_none;
+  }
+  if (fb[n] == NULL) {
+    static lv_color_t *lv_disp_buf =
+        (lv_color_t *)(FMC_SDRAM_LTDC_BUFFER_ADDRESS);
+    fb[n] = MP_STATE_PORT(disp_drv_fb[n]) = lv_disp_buf + 480 * 800;
+  }
+#endif
   return mp_obj_new_bytearray_by_ref(sizeof(lv_color_t) * 480 * 800,
                                      (void *)fb[n]);
 }
 
 static void mp_disp_drv_flush(lv_disp_drv_t *disp_drv, const lv_area_t *area,
                               lv_color_t *color_p) {
+#ifdef LVGL_DOUBLE_BUFFER
   lcd_set_src_addr((uint32_t)color_p);
+#else
+  dma2d_copy_buffer((uint32_t *)color_p, (uint32_t *)lcd_get_src_addr(),
+                    area->x1, area->y1, area->x2 - area->x1 + 1,
+                    area->y2 - area->y1 + 1);
+#endif
   lv_disp_flush_ready(disp_drv);
 }
 
