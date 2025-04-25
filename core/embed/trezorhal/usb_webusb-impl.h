@@ -292,6 +292,7 @@ static void usb_webusb_class_data_out(USBD_HandleTypeDef *dev,
     // schedule next reading until user reads this one
     // Clear the IN EP buffer
     USBD_LL_FlushEP(dev, state->ep_in);
+    state->ep_in_is_idle = 1;
     state->last_read_len = USBD_LL_GetRxDataSize(dev, ep_num);
   }
 }
