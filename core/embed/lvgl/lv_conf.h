@@ -22,9 +22,9 @@
 #include "../trezorhal/secure_heap.h"
 
 #define LODEPNG_NO_COMPILE_ALLOCATORS
-#define lodepng_malloc pvPortMalloc
-#define lodepng_realloc pvPortReMalloc
-#define lodepng_free vPortFree
+#define lodepng_malloc sdram_malloc
+#define lodepng_realloc sdram_realloc
+#define lodepng_free sdram_free
 
 /*====================
    COLOR SETTINGS

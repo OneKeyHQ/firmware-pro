@@ -3,8 +3,8 @@
 
 #include "secure_heap.h"
 
-#define font_malloc pvPortMalloc
-#define font_free vPortFree
+#define font_malloc sdram_malloc
+#define font_free sdram_free
 
 #define SRAM1 __attribute__((section("sram1")))
 #define EXRAM __attribute__((section("exram")))

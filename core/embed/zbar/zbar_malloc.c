@@ -7,7 +7,7 @@ static int counter = 0;
 
 
 void *zbar_malloc(size_t size) {
-    void *ptr = pvPortMalloc(size);
+    void *ptr = sdram_malloc(size);
     if (ptr == NULL) {
         mp_raise_msg(&mp_type_MemoryError, "out of heap memory");
     }
@@ -15,12 +15,12 @@ void *zbar_malloc(size_t size) {
 }
 
 void zbar_free(void *ptr) {    
-  vPortFree(ptr);
+  sdram_free(ptr);
 }
 
 void *zbar_realloc(void *ptr, size_t size) {
 
-    void *ptr2 = pvPortReMalloc(ptr, size);
+    void *ptr2 = sdram_realloc(ptr, size);
     if (ptr2 == NULL) {
         mp_raise_msg(&mp_type_MemoryError, "out of heap memory");
     }
@@ -29,7 +29,7 @@ void *zbar_realloc(void *ptr, size_t size) {
 
 void *zbar_calloc(size_t nmemb, size_t size) {
 
-    void *ptr = pvPortCalloc(nmemb , size);
+    void *ptr = sdram_calloc(nmemb , size);
     if (ptr == NULL) {
         mp_raise_msg(&mp_type_MemoryError, "out of heap memory");
     }

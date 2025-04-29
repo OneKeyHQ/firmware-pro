@@ -137,7 +137,7 @@ static char* encode(const uint8_t* in_buf, size_t in_len, char* out_buf, char se
 static size_t add_crc(const uint8_t* in_buf, size_t in_len, uint8_t** in_with_crc_buf) {
     uint32_t crc = crc32n(in_buf, in_len);
     size_t in_with_crc_len = in_len + sizeof(crc);
-    *in_with_crc_buf = pvPortMalloc(in_with_crc_len);
+    *in_with_crc_buf = sdram_malloc(in_with_crc_len);
     memcpy(*in_with_crc_buf, in_buf, in_len);
     memcpy(*in_with_crc_buf + in_len, &crc, sizeof(crc));
     return in_with_crc_len;
@@ -147,9 +147,9 @@ static char* encode_with_separator(const uint8_t* in_buf, size_t in_len, char se
     uint8_t* in_with_crc_buf;
     size_t in_with_crc_len = add_crc(in_buf, in_len, &in_with_crc_buf);
     size_t out_len = in_with_crc_len * 5;
-    char* out_buf = pvPortMalloc(out_len);
+    char* out_buf = sdram_malloc(out_len);
     encode(in_with_crc_buf, in_with_crc_len, out_buf, separator);
-    vPortFree(in_with_crc_buf);
+    sdram_free(in_with_crc_buf);
     return out_buf;
 }
 
@@ -157,7 +157,7 @@ static char* encode_minimal(const uint8_t* in_buf, size_t in_len) {
     uint8_t* in_with_crc_buf;
     size_t in_with_crc_len = add_crc(in_buf, in_len, &in_with_crc_buf);
     size_t out_len = in_with_crc_len * 2 + 1;
-    char* out_buf = pvPortMalloc(out_len);
+    char* out_buf = sdram_malloc(out_len);
 
     const uint8_t* in_p = in_with_crc_buf;
     char* out_p = out_buf;
@@ -168,7 +168,7 @@ static char* encode_minimal(const uint8_t* in_buf, size_t in_len) {
     }
     *out_p = '\0';
 
-    vPortFree(in_with_crc_buf);
+    sdram_free(in_with_crc_buf);
     return out_buf;
 }
 
@@ -190,7 +190,7 @@ static bool decode(const char* in_string, uint8_t** out_buf, size_t* out_len, ch
     size_t separator_len = separator == 0 ? 0 : 1;
     size_t out_max_size = in_string_len / (word_len + separator_len) + 1;
     if(out_max_size < 5) return false;
-    uint8_t* buf = pvPortMalloc(out_max_size);
+    uint8_t* buf = sdram_malloc(out_max_size);
 
     const char* in_p = in_string;
     const char* end_p = in_p + in_string_len;
@@ -225,7 +225,7 @@ static bool decode(const char* in_string, uint8_t** out_buf, size_t* out_len, ch
     return true;
 
     fail:
-        vPortFree(buf);
+        sdram_free(buf);
         return false;
 }
 

@@ -119,11 +119,8 @@ PRIVILEGED_DATA static size_t xBlockAllocatedBit = 0;
 
 /*-----------------------------------------------------------*/
 
-int xTaskResumeAll( void ){
-    return 0;
-}
 
-void * pvPortMalloc( size_t xWantedSize )
+void * sdram_malloc( size_t xWantedSize )
 {
     BlockLink_t * pxBlock, * pxPreviousBlock, * pxNewBlockLink;
     void * pvReturn = NULL;
@@ -262,7 +259,6 @@ void * pvPortMalloc( size_t xWantedSize )
 
         traceMALLOC( pvReturn, xWantedSize );
     }
-    ( void ) xTaskResumeAll();
 
     #if ( configUSE_MALLOC_FAILED_HOOK == 1 )
         {
@@ -283,12 +279,12 @@ void * pvPortMalloc( size_t xWantedSize )
 }
 /*-----------------------------------------------------------*/
 
-void * pvPortReMalloc( void * pv , size_t xWantedSize ){
+void * sdram_realloc( void * pv , size_t xWantedSize ){
     if ( xWantedSize == 0 ){
-        vPortFree( pv );
+        sdram_free( pv );
         return NULL;
     }
-    void * pvNew = pvPortMalloc( xWantedSize );
+    void * pvNew = sdram_malloc( xWantedSize );
 
     if ( pvNew == NULL ){
         return NULL;
@@ -296,19 +292,19 @@ void * pvPortReMalloc( void * pv , size_t xWantedSize ){
 
     if ( pv != NULL ){
         memcpy( pvNew, pv, xWantedSize );
-        vPortFree( pv );
+        sdram_free( pv );
     }
 
     return pvNew;
 }
 
-void * pvPortCalloc( size_t num, size_t size ){
-    void * pv = pvPortMalloc( num * size );
+void * sdram_calloc( size_t num, size_t size ){
+    void * pv = sdram_malloc( num * size );
     memset( pv, 0, num * size );
     return pv;
 }
 
-void vPortFree( void * pv )
+void sdram_free( void * pv )
 {
     uint8_t * puc = ( uint8_t * ) pv;
     BlockLink_t * pxLink;
@@ -342,7 +338,6 @@ void vPortFree( void * pv )
                     prvInsertBlockIntoFreeList( ( ( BlockLink_t * ) pxLink ) );
                     xNumberOfSuccessfulFrees++;
                 }
-                ( void ) xTaskResumeAll();
             }
             else
             {
@@ -357,13 +352,13 @@ void vPortFree( void * pv )
 }
 /*-----------------------------------------------------------*/
 
-size_t xPortGetFreeHeapSize( void )
+size_t sdram_get_free_heap_size( void )
 {
     return xFreeBytesRemaining;
 }
 /*-----------------------------------------------------------*/
 
-size_t xPortGetMinimumEverFreeHeapSize( void )
+size_t sdram_get_minimum_ever_free_heap_size( void )
 {
     return xMinimumEverFreeBytesRemaining;
 }
@@ -521,7 +516,6 @@ void vPortGetHeapStats( HeapStats_t * pxHeapStats )
             } while( pxBlock != pxEnd );
         }
     }
-    ( void ) xTaskResumeAll();
 
     pxHeapStats->xSizeOfLargestFreeBlockInBytes = xMaxSize;
     pxHeapStats->xSizeOfSmallestFreeBlockInBytes = xMinSize;

@@ -74,31 +74,31 @@ typedef struct xHeapStats
  * @return Pointer to the memory region if the allocation is successful, NULL
  * otherwise.
  */
-void * pvPortMalloc( size_t xWantedSize );
+void * sdram_malloc( size_t xWantedSize );
 
-void * pvPortReMalloc( void * pv , size_t xWantedSize );
+void * sdram_realloc( void * pv , size_t xWantedSize );
 
-void * pvPortCalloc( size_t num, size_t size );
+void * sdram_calloc( size_t num, size_t size );
 
 /**
  * @brief Frees the previously allocated memory.
  *
  * @param[in] pv Pointer to the memory to be freed.
  */
-void vPortFree( void * pv );
+void sdram_free( void * pv );
 
 /**
  * @brief Get the free heap size.
  *
  * @return Free heap size.
  */
-size_t xPortGetFreeHeapSize( void );
+size_t sdram_get_free_heap_size( void );
 
 /**
  * @brief Get the minimum ever free heap size.
  *
  * @return Minimum ever free heap size.
  */
-size_t xPortGetMinimumEverFreeHeapSize( void );
+size_t sdram_get_minimum_ever_free_heap_size( void );
 
 #endif /* __SECURE_HEAP_H__ */

@@ -518,7 +518,7 @@ STATIC mp_obj_t mod_trezorutils_bytewords_decode(mp_obj_t type,
   vstr_t vstr = {0};
   vstr_init_len(&vstr, outlen);
   memcpy(vstr.buf, outbuf, outlen);
-  vPortFree(outbuf);
+  sdram_free(outbuf);
 
   return mp_obj_new_str_from_vstr(&mp_type_bytes, &vstr);
 }

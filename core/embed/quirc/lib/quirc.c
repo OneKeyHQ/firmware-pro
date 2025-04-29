@@ -20,8 +20,8 @@
 
 #include "secure_heap.h"
 
-#define malloc(x) pvPortMalloc(x)
-#define free(x) vPortFree(x)
+#define malloc(x) sdram_malloc(x)
+#define free(x) sdram_free(x)
 
 const char *quirc_version(void)
 {
