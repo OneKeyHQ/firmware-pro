@@ -170,8 +170,8 @@ class URDecoder:
     def processed_parts_count(self):
         return self.fountain_decoder.processed_parts_count
 
-    def estimated_percent_complete(self):
-        return self.fountain_decoder.estimated_percent_complete()
+    def estimated_percent_complete(self) -> int:
+        return int(self.fountain_decoder.estimated_percent_complete() * 100)
 
     def is_success(self):
         result = self.result

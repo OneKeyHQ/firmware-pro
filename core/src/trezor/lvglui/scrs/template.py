@@ -4619,7 +4619,7 @@ class ErrorFeedback(FullSizeWindow):
         )
 
     def destroy(self):
-        return super().destroy(0)
+        return super().destroy(100)
 
 
 ##################

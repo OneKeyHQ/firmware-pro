@@ -97,7 +97,7 @@ class QRTask:
                 if self.req.qr is not None:
                     await show_ur_response(
                         wire.QR_CONTEXT,
-                        _(i18n_keys.TITLE__EXPORT_SIGNED_TRANSACTION),
+                        None,  # _(i18n_keys.TITLE__EXPORT_SIGNED_TRANSACTION)
                         self.req.qr,
                     )
         elif registry_type in [
@@ -108,15 +108,15 @@ class QRTask:
                 from trezor.ui.layouts import show_ur_response
 
                 if self.req.qr is not None:
-                    if registry_type == HARDWARE_CALL.get_registry_type():
-                        title = _(i18n_keys.CONTENT__EXPORT_ACCOUNT)
-                    elif registry_type == CRYPTO_PSBT.get_registry_type():
-                        title = _(i18n_keys.TITLE__EXPORT_SIGNED_TRANSACTION)
-                    else:
-                        title = None
+                    # if registry_type == HARDWARE_CALL.get_registry_type():
+                    #     title = _(i18n_keys.CONTENT__EXPORT_ACCOUNT)
+                    # elif registry_type == CRYPTO_PSBT.get_registry_type():
+                    #     title = _(i18n_keys.TITLE__EXPORT_SIGNED_TRANSACTION)
+                    # else:
+                    #     title = None
                     await show_ur_response(
                         wire.QR_CONTEXT,
-                        title,
+                        None,
                         self.req.qr,
                     )
                 elif self.req.encoder is not None:
@@ -219,21 +219,24 @@ def scan_qr(callback_obj):
             except Exception as e:
                 if __debug__:
                     print(f"scan qrcode error: {e}")
-                await callback_obj.error_feedback()
-                await loop.sleep(100)
+                await callback_obj.transition_to(callback_obj.SCAN_STATE_ERROR)
+                # await loop.sleep(100)
                 continue
             if qr_data:
                 if __debug__:
-                    print(qr_data.decode("utf-8"))
+                    print(qr_data.decode())
                 try:
-                    decoder.receive_part(qr_data.decode("utf-8"))
+                    decoder.receive_part(qr_data.decode())
                     del qr_data
                 except Exception:
                     decoder.reset()
-                    await callback_obj.error_feedback()
-                    await loop.sleep(100)
+                    await callback_obj.transition_to(callback_obj.SCAN_STATE_ERROR)
+                    # await loop.sleep(100)
                     continue
                 else:
+                    await callback_obj.on_process_update(
+                        decoder.estimated_percent_complete()
+                    )
                     if decoder.is_complete():
                         motor.vibrate()
                         if type(decoder.result) is UR:
@@ -251,6 +254,9 @@ def scan_qr(callback_obj):
                                 break
                             else:
                                 decoder.reset()
+                                await callback_obj.transition_to(
+                                    callback_obj.SCAN_STATE_IDLE
+                                )
                                 continue
             await loop.sleep(5)
 
@@ -338,8 +344,11 @@ async def handle_qr_task():
                 title=_(i18n_keys.CONTENT__WALLET_MISMATCH),
                 subtitle=_(i18n_keys.CONTENT__WALLET_MISMATCH_DESC),
             )
-            loop.clear()
-            return  # pylint: disable=lost-exception
+            # loop.clear()
+            # return  # pylint: disable=lost-exception
+            if qr_task.callback_obj is not None:
+                qr_task.callback_obj.notify_close()
+            continue
         except Exception as exec:
             if __debug__:
                 log.exception(__name__, exec)
@@ -352,5 +361,8 @@ async def handle_qr_task():
                         i18n_keys.CONTENT__TX_DATA_IS_INCORRECT_PLEASE_TRY_AGAIN
                     ),
                 )
-            loop.clear()
-            return  # pylint: disable=lost-exception
+            # loop.clear()
+            # return  # pylint: disable=lost-exception
+            if qr_task.callback_obj is not None:
+                qr_task.callback_obj.notify_close()
+            continue  # pylint: disable=lost-exception

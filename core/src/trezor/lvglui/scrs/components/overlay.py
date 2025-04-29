@@ -43,3 +43,38 @@ class OverlayWithProcessBar(Overlay):
     def set_value(self, value: int):
         self.process_bar.set_value(value, lv.ANIM.ON)
         self.precess_value.set_text(f"{value}/{self.max_value}")
+
+
+# class ScanSuccessOverlay(Overlay):
+#     def __init__(self, parent, text: str):
+#         super().__init__(parent)
+#         self.set_size(lv.pct(100), 684)
+#         self.add_style(
+#             StyleWrapper().bg_color(lv_colors.BLACK).bg_opa(lv.OPA._90).border_width(0),
+#             0,
+#         )
+#         self.fake_bg = lv.img(self)
+#         self.fake_bg.set_src("A:/res/scan-success-overlay.png")
+#         self.fake_bg.set_size(480, 480)
+#         self.fake_bg.align(lv.ALIGN.TOP_MID, 0, 49)
+#         self.panel = lv.obj(self)
+#         self.panel.add_style(
+#             StyleWrapper().bg_opa(lv.OPA.TRANSP).border_width(0),
+#             0,
+#         )
+#         self.panel.set_size(440, lv.SIZE.CONTENT)
+#         self.panel.align(lv.ALIGN.TOP_MID, 0, 223)
+#         self.scan_loading = lv.img(self.panel)
+#         self.scan_loading.set_src("A:/res/scan-success-loading.png")
+#         self.scan_loading.set_size(64, 64)
+#         self.scan_loading.align(lv.ALIGN.TOP_MID, 0, 0)
+#         self.tips = lv.label(self.panel)
+#         self.tips.set_text(text)
+#         self.tips.add_style(
+#             StyleWrapper()
+#             .text_font(font_GeistRegular30)
+#             .text_color(lv_colors.LIGHT_GRAY),
+#             0,
+#         )
+#         self.tips.align_to(self.scan_loading, lv.ALIGN.OUT_BOTTOM_MID, 0, 16)
+#         self.align(lv.ALIGN.BOTTOM_MID, 0, 0)
