@@ -364,10 +364,10 @@ size_t sdram_get_minimum_ever_free_heap_size( void )
 }
 /*-----------------------------------------------------------*/
 
-void vPortInitialiseBlocks( void )
-{
-    /* This just exists to keep the linker quiet. */
-}
+//void vPortInitialiseBlocks( void )
+//{
+//    /* This just exists to keep the linker quiet. */
+//}
 /*-----------------------------------------------------------*/
 
 static void prvHeapInit( void ) /* PRIVILEGED_FUNCTION */
@@ -481,7 +481,7 @@ static void prvInsertBlockIntoFreeList( BlockLink_t * pxBlockToInsert ) /* PRIVI
 }
 /*-----------------------------------------------------------*/
 
-void vPortGetHeapStats( HeapStats_t * pxHeapStats )
+void sdram_get_heap_stats( HeapStats_t * pxHeapStats )
 {
     BlockLink_t * pxBlock;
     size_t xBlocks = 0, xMaxSize = 0, xMinSize = portMAX_DELAY; /* portMAX_DELAY used as a portable way of getting the maximum value. */
