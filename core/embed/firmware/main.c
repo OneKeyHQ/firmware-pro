@@ -74,6 +74,8 @@
 #include "zkp_context.h"
 #endif
 #include "cm_backtrace.h"
+#include "cmsis_os2.h"
+#include "test_task.h"
 #include "version.h"
 
 // from util.s
@@ -98,7 +100,9 @@ static void copyflash2sdram(void) {
 int main(void) {
   SystemCoreClockUpdate();
   dwt_init();
-
+  // SysTick->CTRL = 0;
+  // SysTick->LOAD = 0;
+  // SysTick->VAL  = 0;
   mpu_config_boardloader(sectrue, secfalse);
   mpu_config_bootloader(sectrue, secfalse);
   mpu_config_firmware(sectrue, sectrue);
@@ -123,6 +127,8 @@ int main(void) {
   // re-enable global irq
   __enable_irq();
   __enable_fault_irq();
+
+  HAL_Init();
 
   lcd_ltdc_dsi_disable();
   sdram_reinit();
@@ -190,35 +196,54 @@ int main(void) {
   ensure(sectrue * (zkp_context_init() == 0), NULL);
 #endif
   printf("CORE: Preparing stack\n");
+  // osKernelInitialize();
+  printf("create test task\n");
+  // CreateTestTask();
+  printf("os start\n");
+  // osKernelStart();
+  // return 0;
+
+  int light = 200;
+  while (1) {
+    if (light != 0) {
+      light = 0;
+    } else {
+      light = 200;
+    }
+    display_backlight(light);
+    HAL_Delay(1000);
+    printf("my loop\n");
+  }
   // Stack limit should be less than real stack size, so we have a chance
   // to recover from limit hit.
-  mp_stack_set_top(&_estack);
-  mp_stack_set_limit((char *)&_estack - (char *)&_sstack - 1024);
-
-#if MICROPY_ENABLE_PYSTACK
-  static mp_obj_t pystack[2048];
-  mp_pystack_init(pystack, &pystack[MP_ARRAY_SIZE(pystack)]);
-#endif
-
-  // GC init
-  printf("CORE: Starting GC\n");
-  gc_init(&_heap_start, &_heap_end);
-
-  // Interpreter init
-  printf("CORE: Starting interpreter\n");
-  mp_init();
-  mp_obj_list_init(mp_sys_argv, 0);
-  mp_obj_list_init(mp_sys_path, 0);
-  mp_obj_list_append(
-      mp_sys_path,
-      MP_OBJ_NEW_QSTR(MP_QSTR_));  // current dir (or base dir of the script)
-
-  // Execute the main script
-  printf("CORE: Executing main script\n");
-  pyexec_frozen_module("main.py");
-  // Clean up
-  printf("CORE: Main script finished, cleaning up\n");
-  mp_deinit();
+  //  mp_stack_set_top(&_estack);
+  //  mp_stack_set_limit((char *)&_estack - (char *)&_sstack - 1024);
+  //
+  // #if MICROPY_ENABLE_PYSTACK
+  //  static mp_obj_t pystack[2048];
+  //  mp_pystack_init(pystack, &pystack[MP_ARRAY_SIZE(pystack)]);
+  // #endif
+  //
+  //  // GC init
+  //  printf("CORE: Starting GC\n");
+  //  gc_init(&_heap_start, &_heap_end);
+  //
+  //  // Interpreter init
+  //  printf("CORE: Starting interpreter\n");
+  //  mp_init();
+  //  mp_obj_list_init(mp_sys_argv, 0);
+  //  mp_obj_list_init(mp_sys_path, 0);
+  //  mp_obj_list_append(
+  //      mp_sys_path,
+  //      MP_OBJ_NEW_QSTR(MP_QSTR_));  // current dir (or base dir of the
+  //      script)
+  //
+  //  // Execute the main script
+  //  printf("CORE: Executing main script\n");
+  //  pyexec_frozen_module("main.py");
+  //  // Clean up
+  //  printf("CORE: Main script finished, cleaning up\n");
+  //  mp_deinit();
 
   return 0;
 }

@@ -15,7 +15,7 @@ USE_THD89 = ARGUMENTS.get('USE_THD89', '0')
 FEATURE_FLAGS = {
     "RDI": True,
     "SECP256K1_ZKP": True,  # required for trezor.crypto.curve.bip340 (BIP340/Taproot)
-    "SYSTEM_VIEW": False,
+    "SYSTEM_VIEW": True,
     "LVGL_DOUBLE_BUFFER": False,
 }
 
@@ -455,6 +455,22 @@ if PRODUCTION_MODEL == 'H':
         'embed/firmware/startup.S',
     ]
 
+    SOURCE_FREERTOS = [
+        'embed/FreeRTOS-Kernel/Source/croutine.c',
+        'embed/FreeRTOS-Kernel/Source/event_groups.c',
+        'embed/FreeRTOS-Kernel/Source/list.c',
+        'embed/FreeRTOS-Kernel/Source/queue.c',
+        'embed/FreeRTOS-Kernel/Source/tasks.c',
+        'embed/FreeRTOS-Kernel/Source/timers.c',
+        'embed/FreeRTOS-Kernel/Source/portable/MemMang/heap_4.c',
+        'embed/FreeRTOS-Kernel/Source/portable/GCC/ARM_CM7/r0p1/port.c',
+        'embed/FreeRTOS-Kernel/CMSIS/RTOS2/FreeRTOS/Source/cmsis_os2.c',
+    ]
+
+    SOURCE_TASKS = [
+        'embed/tasks/test_task.c',
+    ]
+
     SOURCE_CM_BACKTRACE = [
         'embed/cm_backtrace/cm_backtrace.c',
         'embed/cm_backtrace/cmb_user_cfg.c',
@@ -707,6 +723,10 @@ if PRODUCTION_MODEL == 'H':
             '.',
             'embed/rust',
             'embed/firmware',
+            'embed/FreeRTOS-Kernel/Source/include',
+            'embed/FreeRTOS-Kernel/Source/portable/GCC/ARM_CM7/r0p1',
+            'embed/FreeRTOS-Kernel/CMSIS/RTOS2/FreeRTOS/Include',
+            'embed/tasks',
             'embed/cm_backtrace',
             'embed/trezorhal',
             'embed/trezorhal/fatfs',
@@ -1095,6 +1115,8 @@ obj_program.extend(env.Object(source=SOURCE_MICROPYTHON_SPEED, COPT='-O3'))
 obj_program.extend(env.Object(source=SOURCE_STMHAL))
 obj_program.extend(env.Object(source=SOURCE_LVGL))
 obj_program.extend(env.Object(source=SOURCE_TREZORHAL))
+obj_program.extend(env.Object(source=SOURCE_FREERTOS))
+obj_program.extend(env.Object(source=SOURCE_TASKS))
 obj_program.extend(env.Object(source=SOURCE_CM_BACKTRACE))
 
 if FROZEN:
