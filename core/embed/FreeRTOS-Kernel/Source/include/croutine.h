@@ -29,6 +29,7 @@
 
 #ifndef CO_ROUTINE_H
 #define CO_ROUTINE_H
+#include "FreeRTOS.h"
 
 #ifndef INC_FREERTOS_H
 #error \
