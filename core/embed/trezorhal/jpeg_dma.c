@@ -7,8 +7,8 @@
 #include "ff.h"
 #include "irq.h"
 
-#define CHUNK_SIZE_IN ((uint32_t)(4 * 1024))
 #define CHUNK_SIZE_OUT ((uint32_t)(64 * 1024))
+#define MAX_JPEG_SIZE (1024 * 1024)
 
 JPEG_HandleTypeDef JPEG_Handle;
 JPEG_ConfTypeDef JPEG_Info;
@@ -229,6 +229,10 @@ int jpeg_decode_start(const char *path) {
   }
   uint32_t file_size = 0;
   if (jpeg_decode_file_size(&file_size) != 0) {
+    jpeg_decode_file_close();
+    return -1;
+  }
+  if (file_size > MAX_JPEG_SIZE || file_size == 0) {
     jpeg_decode_file_close();
     return -1;
   }
