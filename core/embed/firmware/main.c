@@ -100,7 +100,7 @@ static void copyflash2sdram(void) {
 int main(void) {
   SystemCoreClockUpdate();
   dwt_init();
-  // SysTick->CTRL = 0;
+  SysTick->CTRL = 0;
   // SysTick->LOAD = 0;
   // SysTick->VAL  = 0;
   mpu_config_boardloader(sectrue, secfalse);
