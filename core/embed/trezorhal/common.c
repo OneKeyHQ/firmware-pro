@@ -19,12 +19,12 @@
 
 #include STM32_HAL_H
 
-#include <string.h>
-
 #include "common.h"
+#include <string.h>
 #include "display.h"
 #include "flash.h"
 #include "rand.h"
+#include "stdio.h"
 #include "supervise.h"
 #include "systick.h"
 #include "touch.h"
@@ -375,4 +375,19 @@ void ensure_compatible_settings(void) {
 #ifdef TREZOR_MODEL_T
   display_set_big_endian();
 #endif
+}
+
+static const char* short_file_name(const char* path) {
+  const char* file = strrchr(path, '/');
+  if (!file) file = strrchr(path, '\\');
+  file = file ? file + 1 : path;
+
+  size_t len = strlen(file);
+  return (len > 8) ? file + (len - 8) : file;
+}
+
+void show_assert(const char* msg, const char* file, int line) {
+  char str1[64];
+  sprintf(str1, "assert,file=%s,line=%u", short_file_name(file), line);
+  error_shutdown(msg, str1, NULL, NULL);
 }

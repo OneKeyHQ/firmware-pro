@@ -127,4 +127,6 @@ bool check_all_ones(const void *data, int len);
 
 bool check_all_zeros(const void *data, int len);
 
+void show_assert(const char *msg, const char *file, int line);
+
 #endif

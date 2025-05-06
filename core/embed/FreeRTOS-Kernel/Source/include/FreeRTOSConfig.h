@@ -416,13 +416,14 @@
  * number of the failing assert (for example, "vAssertCalled( __FILE__, __LINE__
  * )" or it can simple disable interrupts and sit in a loop to halt all
  * execution on the failing line for viewing in a debugger. */
-#include "stdio.h"
 
-#define configASSERT(x)                                      \
-  if ((x) == 0) {                                            \
-    printf("assert,file=%s\nline=%u\n", __FILE__, __LINE__); \
-    for (;;)                                                 \
-      ;                                                      \
+#include "common.h"
+
+#define configASSERT(x)                          \
+  if ((x) == 0) {                                \
+    show_assert("freertos", __FILE__, __LINE__); \
+    for (;;)                                     \
+      ;                                          \
   }
 
 /******************************************************************************/
