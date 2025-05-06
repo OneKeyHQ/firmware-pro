@@ -55,7 +55,7 @@ HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority) {
 
   /*##-2- Configure the NVIC for TIMx ########################################*/
   /* Set the TIMx priority */
-  HAL_NVIC_SetPriority(TIM3_IRQn, TickPriority, 0);
+  HAL_NVIC_SetPriority(TIM3_IRQn, 3, 0);
 
   /* Enable the TIMx global Interrupt */
   HAL_NVIC_EnableIRQ(TIM3_IRQn);

@@ -391,3 +391,14 @@ void show_assert(const char* msg, const char* file, int line) {
   sprintf(str1, "assert,file=%s,line=%u", short_file_name(file), line);
   error_shutdown(msg, str1, NULL, NULL);
 }
+
+#include <stdarg.h>
+
+void print_test(const char* fmt, ...) {
+  static char buf[128];
+  va_list args;
+  va_start(args, fmt);
+  vsnprintf(buf, sizeof(buf), fmt, args);
+  va_end(args);
+  error_shutdown(buf, NULL, NULL, NULL);
+}

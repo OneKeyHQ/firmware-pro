@@ -557,15 +557,16 @@ void xPortPendSVHandler(void) {
           configMAX_SYSCALL_INTERRUPT_PRIORITY));
 }
 /*-----------------------------------------------------------*/
-#include "systemview.h"
-extern volatile uint32_t uwTick;
+
 void xPortSysTickHandler(void) {
-  SEGGER_SYSVIEW_RecordEnterISR();
   /* The SysTick runs at the lowest interrupt priority, so when this interrupt
    * executes all interrupts must be unmasked.  There is therefore no need to
    * save and then restore the interrupt mask value as its value is already
    * known. */
-  uwTick++;
+
+  if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) {
+    return;
+  }
   portDISABLE_INTERRUPTS();
   traceISR_ENTER();
   {
@@ -580,7 +581,6 @@ void xPortSysTickHandler(void) {
     }
   }
   portENABLE_INTERRUPTS();
-  SEGGER_SYSVIEW_RecordExitISR();
 }
 /*-----------------------------------------------------------*/
 

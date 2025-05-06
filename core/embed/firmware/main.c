@@ -100,10 +100,6 @@ static void copyflash2sdram(void) {
 int main(void) {
   SystemCoreClockUpdate();
   dwt_init();
-  SysTick->CTRL = 0;
-  NVIC_ClearPendingIRQ(SysTick_IRQn);
-  // SysTick->LOAD = 0;
-  // SysTick->VAL  = 0;
   mpu_config_boardloader(sectrue, secfalse);
   mpu_config_bootloader(sectrue, secfalse);
   mpu_config_firmware(sectrue, sectrue);
@@ -124,7 +120,10 @@ int main(void) {
   // usb
   HAL_NVIC_DisableIRQ(OTG_HS_IRQn);
   HAL_NVIC_ClearPendingIRQ(OTG_HS_IRQn);
-
+  SysTick->CTRL = 0;
+  SysTick->LOAD = 0;
+  SysTick->VAL  = 0;
+  NVIC_ClearPendingIRQ(SysTick_IRQn);
   // re-enable global irq
   __enable_irq();
   __enable_fault_irq();
@@ -196,25 +195,34 @@ int main(void) {
 #ifdef USE_SECP256K1_ZKP
   ensure(sectrue * (zkp_context_init() == 0), NULL);
 #endif
-  printf("CORE: Preparing stack\n");
-  // osKernelInitialize();
-  printf("create test task\n");
-  // CreateTestTask();
-  printf("os start\n");
-  // osKernelStart();
+  //printf("CORE: Preparing stack\n");
+  osKernelInitialize();
+  //printf("create test task\n");
+  CreateTestTask();
+  //printf("os start\n");
+  osKernelStart();
   // return 0;
+  // uint8_t *heap_test = pvPortMalloc(128);
+  // if (heap_test != NULL) {
+  //  error_shutdown("Internal error", "(HEAP)", NULL, NULL);
+  // }
+  // vTaskSuspendAll();
 
-  int light = 200;
-  while (1) {
-    if (light != 0) {
-      light = 0;
-    } else {
-      light = 200;
-    }
-    display_backlight(light);
-    HAL_Delay(1000);
-    printf("my loop\n");
-  }
+  //portENTER_CRITICAL();
+  //portEXIT_CRITICAL();
+  //configASSERT(0);
+  //error_shutdown("Internal error", "(HEAP)", NULL, NULL);
+  //int light = 200;
+  //while (1) {
+  //  if (light != 0) {
+  //    light = 0;
+  //  } else {
+  //    light = 200;
+  //  }
+  //  display_backlight(light);
+  //  HAL_Delay(1000);
+  //  printf("my loop\n");
+  //}
   // Stack limit should be less than real stack size, so we have a chance
   // to recover from limit hit.
   //  mp_stack_set_top(&_estack);
