@@ -58,7 +58,7 @@ extern __IO uint32_t uwTick;
 
 systick_dispatch_t systick_dispatch_table[SYSTICK_DISPATCH_NUM_SLOTS];
 
-void SysTick_Handler(void) {
+void __SysTick_Handler(void) {
   SEGGER_SYSVIEW_RecordEnterISR();
   // this is a millisecond tick counter that wraps after approximately
   // 49.71 days = (0xffffffff / (24 * 60 * 60 * 1000))

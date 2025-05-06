@@ -628,9 +628,9 @@
  * Defaults to 1 if left undefined. */
 #define configCHECK_HANDLER_INSTALLATION 1
 
-#define vPortSVCHandler __SVC_Handler
+#define vPortSVCHandler SVC_Handler
 #define xPortPendSVHandler PendSV_Handler
-#define xPortSysTickHandler __SysTick_Handler
+#define xPortSysTickHandler SysTick_Handler
 
 /******************************************************************************/
 /* Definitions that include or exclude functionality. *************************/

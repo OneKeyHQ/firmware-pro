@@ -101,6 +101,7 @@ int main(void) {
   SystemCoreClockUpdate();
   dwt_init();
   SysTick->CTRL = 0;
+  NVIC_ClearPendingIRQ(SysTick_IRQn);
   // SysTick->LOAD = 0;
   // SysTick->VAL  = 0;
   mpu_config_boardloader(sectrue, secfalse);
@@ -323,7 +324,7 @@ void SVC_C_Handler(uint32_t *stack) {
   }
 }
 
-__attribute__((naked)) void SVC_Handler(void) {
+__attribute__((naked)) void __SVC_Handler(void) {
   __asm volatile(
       " tst lr, #4    \n"    // Test Bit 3 to see which stack pointer we should
                              // use.

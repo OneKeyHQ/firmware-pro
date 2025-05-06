@@ -88,9 +88,9 @@ void enable_systemview() {
   // SysTick is running at CPU speed
   // Configure SysTick to fire every ms
   //
-  //SYSTICK->RVR = (SystemCoreClock / 1000) - 1;  // set reload
-  //SYSTICK->CVR = 0x00;                          // set counter
-  //SYSTICK->CSR = 0x07;                          // enable systick
+  // SYSTICK->RVR = (SystemCoreClock / 1000) - 1;  // set reload
+  // SYSTICK->CVR = 0x00;                          // set counter
+  // SYSTICK->CSR = 0x07;                          // enable systick
 }
 
 #ifdef SYSTEMVIEW_DEST_RTT
