@@ -6,7 +6,19 @@ LOKALISE_PROJECT_ID = "393278776072b9891cb763.27916840"
 BASE_PATH = os.path.join(
     os.path.dirname(__file__), "..", "core/src/trezor/lvglui/i18n/"
 )
-SUPPORTED_LANGS = ("en", "zh_CN", "zh_HK", "ja", "ko", "fr", "de", "ru", "es", "it", "pt_BR")
+SUPPORTED_LANGS = (
+    "en",
+    "zh_CN",
+    "zh_HK",
+    "ja",
+    "ko",
+    "fr",
+    "de",
+    "ru",
+    "es",
+    "it",
+    "pt_BR",
+)
 CHARS_NORMAL = set()
 CHARS_TITLE = set()
 CHARS_SUBTITLE = set()
@@ -91,9 +103,22 @@ def main():
     for lang_display_text in languages_map.values():
         CHARS_NORMAL.update(c for c in lang_display_text if len(c.encode("UTF-8")) > 1)
 
-    all_keys = client.keys(
-        LOKALISE_PROJECT_ID, {"include_translations": 1, "limit": 1000}
-    ).items
+    all_keys = []
+    page = 1
+    PAGE_SIZE = 1000
+
+    while True:
+        response = client.keys(
+            LOKALISE_PROJECT_ID,
+            {"include_translations": 1, "limit": PAGE_SIZE, "page": page},
+        )
+        items = response.items
+        if not items:
+            break
+        all_keys.extend(items)
+        if len(items) < PAGE_SIZE:
+            break
+        page += 1
     all_keys.sort(key=lambda k: k.key_id)
 
     index = 0
@@ -144,6 +169,7 @@ def main():
         chars_list = list(chars[0])
         chars_list.sort()
         print(chars[1], "".join(chars_list))
+    print(f"total keys: {len(all_keys)}")
 
 
 if __name__ == "__main__":
