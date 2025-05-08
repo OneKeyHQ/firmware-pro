@@ -198,7 +198,7 @@ int main(void) {
 #endif
   //printf("CORE: Preparing stack\n");
   osKernelInitialize();
-  //CreateTestTask();
+  CreateTestTask();
   CreateMicroPythonTask();
   osKernelStart();
 
@@ -333,10 +333,10 @@ mp_obj_t mp_builtin_open(uint n_args, const mp_obj_t *args, mp_map_t *kwargs) {
 }
 MP_DEFINE_CONST_FUN_OBJ_KW(mp_builtin_open_obj, 1, mp_builtin_open);
 
-#ifdef UART_PRINT
+//#ifdef UART_PRINT
 int _write(int fd, char *pBuffer, int size)
 {
   ble_usart_send((uint8_t *)pBuffer, size);
   return size;
 }
-#endif
+//#endif
