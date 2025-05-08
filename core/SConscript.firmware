@@ -470,6 +470,7 @@ if PRODUCTION_MODEL == 'H':
 
     SOURCE_TASKS = [
         'embed/tasks/test_task.c',
+        'embed/tasks/micropython_task.c',
     ]
 
     SOURCE_CM_BACKTRACE = [

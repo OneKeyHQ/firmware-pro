@@ -76,6 +76,7 @@
 #include "cm_backtrace.h"
 #include "cmsis_os2.h"
 #include "test_task.h"
+#include "micropython_task.h"
 #include "version.h"
 
 // from util.s
@@ -197,9 +198,8 @@ int main(void) {
 #endif
   //printf("CORE: Preparing stack\n");
   osKernelInitialize();
-  //printf("create test task\n");
   CreateTestTask();
-  //printf("os start\n");
+  CreateMicroPythonTask();
   osKernelStart();
   // return 0;
   // uint8_t *heap_test = pvPortMalloc(128);
