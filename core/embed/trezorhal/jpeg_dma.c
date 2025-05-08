@@ -7,20 +7,8 @@
 #include "ff.h"
 #include "irq.h"
 
-typedef struct {
-  volatile uint8_t State;
-  uint8_t *DataBuffer;
-  volatile uint32_t DataBufferSize;
-
-} JPEG_Data_BufferTypeDef;
-
-#define CHUNK_SIZE_IN ((uint32_t)(4 * 1024))
 #define CHUNK_SIZE_OUT ((uint32_t)(64 * 1024))
-
-#define JPEG_BUFFER_EMPTY 0
-#define JPEG_BUFFER_FULL 1
-
-#define NB_INPUT_DATA_BUFFERS 2
+#define MAX_JPEG_SIZE (1024 * 1024)
 
 JPEG_HandleTypeDef JPEG_Handle;
 JPEG_ConfTypeDef JPEG_Info;
@@ -28,19 +16,12 @@ JPEG_ConfTypeDef JPEG_Info;
 volatile uint32_t Jpeg_HWDecodingEnd = 0, Jpeg_HWDecodingError = 0;
 
 uint32_t FrameBufferAddress;
-uint32_t size;
 
-uint8_t JPEG_Data_InBuffer0[CHUNK_SIZE_IN] __attribute__((aligned(4)));
+uint8_t *g_inputJpegBuffer = NULL;
+uint32_t g_inputJpegSize = 0;
+uint32_t g_inputJpegOffset = 0;
 
-uint8_t JPEG_Data_InBuffer1[CHUNK_SIZE_IN] __attribute__((aligned(4)));
-
-JPEG_Data_BufferTypeDef Jpeg_IN_BufferTab[NB_INPUT_DATA_BUFFERS] = {
-    {JPEG_BUFFER_EMPTY, JPEG_Data_InBuffer0, 0},
-    {JPEG_BUFFER_EMPTY, JPEG_Data_InBuffer1, 0}};
-
-uint32_t JPEG_IN_Read_BufferIndex = 0;
-uint32_t JPEG_IN_Write_BufferIndex = 0;
-volatile uint32_t Input_Is_Paused = 0;
+uint8_t *g_outputBuffer = NULL;
 
 typedef struct {
   FIL fatfs_file;
@@ -59,6 +40,26 @@ int jpeg_decode_file_open(const char *path) {
     return lv_fs_open(&file_operation.lvgl_file, path, LV_FS_MODE_RD);
   } else if (file_operation.mode == JPEG_FILE_FATFS) {
     return f_open(&file_operation.fatfs_file, path, FA_READ);
+  }
+  return -1;
+}
+
+int jpeg_decode_file_size(uint32_t *size) {
+  if (file_operation.mode == JPEG_FILE_LVGL) {
+    uint32_t curr_pos = 0;
+    uint32_t file_size = 0;
+    lv_fs_tell(&file_operation.lvgl_file, &curr_pos);
+    if (lv_fs_seek(&file_operation.lvgl_file, 0, LV_FS_SEEK_END) !=
+        LV_FS_RES_OK) {
+      return -1;
+    }
+    lv_fs_tell(&file_operation.lvgl_file, &file_size);
+    lv_fs_seek(&file_operation.lvgl_file, curr_pos, LV_FS_SEEK_SET);
+    *size = file_size;
+    return 0;
+  } else if (file_operation.mode == JPEG_FILE_FATFS) {
+    *size = f_size(&file_operation.fatfs_file);
+    return 0;
   }
   return -1;
 }
@@ -93,8 +94,7 @@ void HAL_JPEG_MspInit(JPEG_HandleTypeDef *hjpeg) {
   /* Enable MDMA clock */
   __HAL_RCC_MDMA_CLK_ENABLE();
 
-  // HAL_NVIC_SetPriority(JPEG_IRQn, 0x07, 0x00);
-  NVIC_SetPriority(MDMA_IRQn, IRQ_PRI_JPEG);
+  NVIC_SetPriority(JPEG_IRQn, IRQ_PRI_JPEG);
   HAL_NVIC_EnableIRQ(JPEG_IRQn);
 
   /* Input MDMA */
@@ -184,98 +184,21 @@ void MDMA_IRQHandler() {
   HAL_MDMA_IRQHandler(JPEG_Handle.hdmaout);
 }
 
-uint32_t JPEG_InputHandler(JPEG_HandleTypeDef *hjpeg) {
-  if (Jpeg_HWDecodingEnd == 0 && Jpeg_HWDecodingError == 0) {
-    if (Jpeg_IN_BufferTab[JPEG_IN_Write_BufferIndex].State ==
-        JPEG_BUFFER_EMPTY) {
-      if (jpeg_decode_file_read(
-              Jpeg_IN_BufferTab[JPEG_IN_Write_BufferIndex].DataBuffer,
-              CHUNK_SIZE_IN,
-              (uint32_t *)(&Jpeg_IN_BufferTab[JPEG_IN_Write_BufferIndex]
-                                .DataBufferSize)) == FR_OK) {
-        Jpeg_IN_BufferTab[JPEG_IN_Write_BufferIndex].State = JPEG_BUFFER_FULL;
-      } else {
-        return 1;
-      }
-
-      if ((Input_Is_Paused == 1) &&
-          (JPEG_IN_Write_BufferIndex == JPEG_IN_Read_BufferIndex)) {
-        Input_Is_Paused = 0;
-        HAL_JPEG_ConfigInputBuffer(
-            hjpeg, Jpeg_IN_BufferTab[JPEG_IN_Read_BufferIndex].DataBuffer,
-            Jpeg_IN_BufferTab[JPEG_IN_Read_BufferIndex].DataBufferSize);
-
-        HAL_JPEG_Resume(hjpeg, JPEG_PAUSE_RESUME_INPUT);
-      }
-
-      JPEG_IN_Write_BufferIndex++;
-      if (JPEG_IN_Write_BufferIndex >= NB_INPUT_DATA_BUFFERS) {
-        JPEG_IN_Write_BufferIndex = 0;
-      }
-    }
-    return 0;
-  } else {
-    return 1;
-  }
-}
-
 void HAL_JPEG_GetDataCallback(JPEG_HandleTypeDef *hjpeg,
                               uint32_t NbDecodedData) {
-#if 0
-  if (NbDecodedData ==
-      Jpeg_IN_BufferTab[JPEG_IN_Read_BufferIndex].DataBufferSize) {
-    Jpeg_IN_BufferTab[JPEG_IN_Read_BufferIndex].State = JPEG_BUFFER_EMPTY;
-    Jpeg_IN_BufferTab[JPEG_IN_Read_BufferIndex].DataBufferSize = 0;
-
-    JPEG_IN_Read_BufferIndex++;
-    if (JPEG_IN_Read_BufferIndex >= NB_INPUT_DATA_BUFFERS) {
-      JPEG_IN_Read_BufferIndex = 0;
-    }
-
-    if (Jpeg_IN_BufferTab[JPEG_IN_Read_BufferIndex].State ==
-        JPEG_BUFFER_EMPTY) {
-      HAL_JPEG_Pause(hjpeg, JPEG_PAUSE_RESUME_INPUT);
-      Input_Is_Paused = 1;
-    } else {
-      HAL_JPEG_ConfigInputBuffer(
-          hjpeg, Jpeg_IN_BufferTab[JPEG_IN_Read_BufferIndex].DataBuffer,
-          Jpeg_IN_BufferTab[JPEG_IN_Read_BufferIndex].DataBufferSize);
-    }
-  } else {
-    HAL_JPEG_ConfigInputBuffer(
-        hjpeg,
-        Jpeg_IN_BufferTab[JPEG_IN_Read_BufferIndex].DataBuffer + NbDecodedData,
-        Jpeg_IN_BufferTab[JPEG_IN_Read_BufferIndex].DataBufferSize -
-            NbDecodedData);
+  g_inputJpegOffset += NbDecodedData;
+  if (g_inputJpegOffset < g_inputJpegSize) {
+    HAL_JPEG_ConfigInputBuffer(hjpeg, g_inputJpegBuffer + g_inputJpegOffset,
+                               g_inputJpegSize - g_inputJpegOffset);
   }
-#else
-  if (NbDecodedData ==
-      Jpeg_IN_BufferTab[JPEG_IN_Read_BufferIndex].DataBufferSize) {
-    jpeg_decode_file_read(Jpeg_IN_BufferTab[0].DataBuffer, CHUNK_SIZE_IN,
-                          (uint32_t *)(&Jpeg_IN_BufferTab[0].DataBufferSize));
-    HAL_JPEG_ConfigInputBuffer(hjpeg, Jpeg_IN_BufferTab[0].DataBuffer,
-                               Jpeg_IN_BufferTab[0].DataBufferSize);
-  } else if (NbDecodedData <
-             Jpeg_IN_BufferTab[JPEG_IN_Read_BufferIndex].DataBufferSize) {
-    HAL_JPEG_ConfigInputBuffer(
-        hjpeg, Jpeg_IN_BufferTab[0].DataBuffer + NbDecodedData,
-        Jpeg_IN_BufferTab[0].DataBufferSize - NbDecodedData);
-    Jpeg_IN_BufferTab[0].DataBufferSize -= NbDecodedData;
-  } else {
-    HAL_JPEG_ConfigInputBuffer(hjpeg, NULL, 0);
-    Jpeg_IN_BufferTab[0].DataBufferSize = 0;
-  }
-
-#endif
 }
 
 void HAL_JPEG_DataReadyCallback(JPEG_HandleTypeDef *hjpeg, uint8_t *pDataOut,
                                 uint32_t OutDataLength) {
   /* Update JPEG encoder output buffer address*/
-  FrameBufferAddress += OutDataLength;
+  g_outputBuffer += OutDataLength;
 
-  HAL_JPEG_ConfigOutputBuffer(hjpeg, (uint8_t *)FrameBufferAddress,
-                              CHUNK_SIZE_OUT);
+  HAL_JPEG_ConfigOutputBuffer(hjpeg, g_outputBuffer, CHUNK_SIZE_OUT);
 }
 
 void HAL_JPEG_InfoReadyCallback(JPEG_HandleTypeDef *hjpeg,
@@ -297,30 +220,47 @@ void jpeg_init(void) {
 void jpeg_decode_init(uint32_t address) {
   Jpeg_HWDecodingEnd = 0;
   Jpeg_HWDecodingError = 0;
-  FrameBufferAddress = address;
+  g_outputBuffer = (uint8_t *)address;
 }
 
 int jpeg_decode_start(const char *path) {
   if (jpeg_decode_file_open(path) != 0) {
     return -1;
   }
-  if (jpeg_decode_file_read(
-          Jpeg_IN_BufferTab[0].DataBuffer, CHUNK_SIZE_IN,
-          (uint32_t *)(&Jpeg_IN_BufferTab[0].DataBufferSize)) == 0) {
-    Jpeg_IN_BufferTab[0].State = JPEG_BUFFER_FULL;
+  uint32_t file_size = 0;
+  if (jpeg_decode_file_size(&file_size) != 0) {
+    jpeg_decode_file_close();
+    return -1;
+  }
+  if (file_size > MAX_JPEG_SIZE || file_size == 0) {
+    jpeg_decode_file_close();
+    return -1;
+  }
+
+  g_inputJpegBuffer = lodepng_malloc(file_size);
+  g_inputJpegOffset = 0;
+  uint32_t state = disable_irq();
+  if (jpeg_decode_file_read(g_inputJpegBuffer, file_size, &g_inputJpegSize) ==
+      0) {
+    enable_irq(state);
   } else {
+    enable_irq(state);
+    lodepng_free(g_inputJpegBuffer);
+    return -1;
+  }
+  if (g_inputJpegSize != file_size) {
+    lodepng_free(g_inputJpegBuffer);
     return -1;
   }
   /* Start JPEG decoding with DMA method */
-  HAL_JPEG_Decode_DMA(&JPEG_Handle, Jpeg_IN_BufferTab[0].DataBuffer,
-                      Jpeg_IN_BufferTab[0].DataBufferSize,
-                      (uint8_t *)FrameBufferAddress, CHUNK_SIZE_OUT);
+  HAL_JPEG_Decode_DMA(&JPEG_Handle, g_inputJpegBuffer, g_inputJpegSize,
+                      g_outputBuffer, CHUNK_SIZE_OUT);
 
   uint32_t time_started = HAL_GetTick();
   while ((jpeg_get_decode_state() == 0) && (jpeg_get_decode_error() == 0)) {
     if (HAL_GetTick() - time_started > 500) Jpeg_HWDecodingError = 1;
   }
-
+  lodepng_free(g_inputJpegBuffer);
   if (Jpeg_HWDecodingError) {
     return -2;
   }
