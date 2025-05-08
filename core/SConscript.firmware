@@ -17,7 +17,7 @@ FEATURE_FLAGS = {
     "SECP256K1_ZKP": True,  # required for trezor.crypto.curve.bip340 (BIP340/Taproot)
     "SYSTEM_VIEW": False,
     "LVGL_DOUBLE_BUFFER": False,
-    "UART_PRINT": True,
+    "UART_PRINT": False,
 }
 
 CCFLAGS_MOD = ''

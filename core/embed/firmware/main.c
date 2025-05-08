@@ -198,31 +198,10 @@ int main(void) {
 #endif
   //printf("CORE: Preparing stack\n");
   osKernelInitialize();
-  CreateTestTask();
+  //CreateTestTask();
   CreateMicroPythonTask();
   osKernelStart();
-  // return 0;
-  // uint8_t *heap_test = pvPortMalloc(128);
-  // if (heap_test != NULL) {
-  //  error_shutdown("Internal error", "(HEAP)", NULL, NULL);
-  // }
-  // vTaskSuspendAll();
 
-  //portENTER_CRITICAL();
-  //portEXIT_CRITICAL();
-  //configASSERT(0);
-  //error_shutdown("Internal error", "(HEAP)", NULL, NULL);
-  //int light = 200;
-  //while (1) {
-  //  if (light != 0) {
-  //    light = 0;
-  //  } else {
-  //    light = 200;
-  //  }
-  //  display_backlight(light);
-  //  HAL_Delay(1000);
-  //  printf("my loop\n");
-  //}
   // Stack limit should be less than real stack size, so we have a chance
   // to recover from limit hit.
   //  mp_stack_set_top(&_estack);
@@ -244,8 +223,7 @@ int main(void) {
   //  mp_obj_list_init(mp_sys_path, 0);
   //  mp_obj_list_append(
   //      mp_sys_path,
-  //      MP_OBJ_NEW_QSTR(MP_QSTR_));  // current dir (or base dir of the
-  //      script)
+  //      MP_OBJ_NEW_QSTR(MP_QSTR_));  // current dir (or base dir of the script)
   //
   //  // Execute the main script
   //  printf("CORE: Executing main script\n");

@@ -98,6 +98,10 @@ SECTIONS {
     . = ALIGN(4);
   } >SRAM2
 
+  .sram2 : {
+		*(sram2)
+	} >SRAM2
+
   .bss : ALIGN(4) {
     *(.bss*);
     . = ALIGN(4);
