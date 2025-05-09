@@ -55,13 +55,16 @@ ifndef BUILD_ID
 BUILD_COMMIT=$(shell git rev-parse HEAD | cut -c1-7)
 ifeq ($(BITCOIN_ONLY), 1)
 FIRMWARE_BUILD_NAME=pro.$(FIRMWARE_BUILD_VERSION)-Stable-bc-only-$(BUILD_DATE)-$(BUILD_COMMIT)
+FIRMWARE_BUILD_ID=pro.$(FIRMWARE_BUILD_VERSION)-Stable-bc-only-$(BUILD_COMMIT)
 else
 FIRMWARE_BUILD_NAME=pro.$(FIRMWARE_BUILD_VERSION)-Stable-$(BUILD_DATE)-$(BUILD_COMMIT)
+FIRMWARE_BUILD_ID=pro.$(FIRMWARE_BUILD_VERSION)-Stable-$(BUILD_COMMIT)
 endif
 BOOT_BUILD_NAME=pro.bootloader.$(BOOT_BUILD_VERSION)-Stable-$(BUILD_DATE)-$(BUILD_COMMIT)
 else
 FIRMWARE_BUILD_NAME=pro.$(FIRMWARE_BUILD_VERSION)-Alpha-$(BUILD_DATE)-$(BUILD_ID)
 BOOT_BUILD_NAME=pro.bootloader.$(BOOT_BUILD_VERSION)-Alpha-$(BUILD_DATE)-$(BUILD_ID)
+FIRMWARE_BUILD_ID=pro.$(FIRMWARE_BUILD_VERSION)-Alpha-$(BUILD_ID)
 endif
 CFLAGS += -DBUILD_COMMIT='\"$(BUILD_COMMIT)\"'
 
@@ -173,13 +176,13 @@ build_boardloader_reflash_dev: build_boardloader ## build boardloader_reflash_de
 	python embed/boardloader_reflash_dev/bin2array.py -l 16 -i $(BOARDLOADER_BUILD_DIR)/boardloader.bin -o $(BOAR_DEV_REFLASH_BUILD_DIR)/payload.h
 	$(SCONS) CFLAGS="$(CFLAGS)" PRODUCTION="$(PRODUCTION)" TREZOR_MODEL="$(TREZOR_MODEL)" PRODUCTION_MODEL="$(PRODUCTION_MODEL)" $(BOAR_DEV_REFLASH_BUILD_DIR)/boardloader_reflash_dev.bin
 
-build_bootloader: CFLAGS += -DBUILD_ID='\"bootloader.$(BOOT_BUILD_VERSION)-$(BUILD_DATE)-$(BUILD_COMMIT)\"'
+build_bootloader: CFLAGS += -DBUILD_ID='\"bootloader.$(BOOT_BUILD_VERSION)-$(BUILD_COMMIT)\"'
 build_bootloader: CFLAGS += -DSCM_REVISION='\"$(SCM_REVISION)\"'
 build_bootloader: ## build bootloader
 	$(SCONS) CFLAGS="$(CFLAGS)" PRODUCTION="$(PRODUCTION)" TREZOR_MODEL="$(TREZOR_MODEL)" PRODUCTION_MODEL="$(PRODUCTION_MODEL)" $(BOOTLOADER_BUILD_DIR)/bootloader.bin
 	cp $(BOOTLOADER_BUILD_DIR)/bootloader.bin $(BOOTLOADER_BUILD_DIR)/$(BOOT_BUILD_NAME).bin
 
-build_firmware: CFLAGS += -DBUILD_ID='\"$(FIRMWARE_BUILD_NAME)\"'
+build_firmware: CFLAGS += -DBUILD_ID='\"$(FIRMWARE_BUILD_ID)\"'
 build_firmware: CFLAGS += -DSCM_REVISION='\"$(SCM_REVISION)\"'
 build_firmware: templates build_cross ## build firmware with frozen modules
 	$(SCONS) CFLAGS="$(CFLAGS)" PRODUCTION="$(PRODUCTION)" TREZOR_MODEL="$(TREZOR_MODEL)" PRODUCTION_MODEL="$(PRODUCTION_MODEL)" PYOPT="$(PYOPT)" BITCOIN_ONLY="$(BITCOIN_ONLY)" UI2="$(UI2)" USE_THD89="$(USE_THD89)" $(FIRMWARE_BUILD_DIR)/firmware.bin
