@@ -89,8 +89,6 @@ static void MicroPythonTask(void *pvParameter) {
   __asm volatile("mov %0, sp" : "=r"(sp));
   mp_stack_set_top((void *)sp);
 
-  // 栈限制：设为任务栈大小减去安全余量
-  // 比如给了 24 KB 栈，留 1 KB 安全区
   mp_stack_set_limit(24 * 1024 - 1024);
 
  #if MICROPY_ENABLE_PYSTACK
@@ -100,7 +98,7 @@ static void MicroPythonTask(void *pvParameter) {
 
   // GC init
   printf("CORE: Starting GC\n");
-  gc_init(&_heap_start, &_heap_end);
+  gc_init((void *)MICROPYTHON_HEAP_ADDRESS, (void *)(MICROPYTHON_HEAP_ADDRESS + MICROPYTHON_HEAP_LEN));
 
   // Interpreter init
   printf("CORE: Starting interpreter\n");
