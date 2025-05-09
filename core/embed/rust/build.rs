@@ -77,7 +77,7 @@ fn prepare_bindings() -> bindgen::Builder {
             "-I../../vendor/micropython/lib/stm32lib/CMSIS/STM32H7xx/Include",
             "-I../../vendor/micropython/lib/cmsis/inc",
             "-I../../vendor/lvgl_mp/lvgl",
-            "-I../../embed/lvgl",
+            "-I../../embed/lvgl_legacy",
             "-DSTM32H747xx",
             "-DCORE_CM7",
             "-DUSE_HAL_DRIVER",
