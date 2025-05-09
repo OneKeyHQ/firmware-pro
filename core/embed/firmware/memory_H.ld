@@ -36,8 +36,6 @@ _ram_end = sram_end;
 _codelen = LENGTH(FLASH) - SIZEOF(.vendorheader) - SIZEOF(.header) + SIZEOF(.flash2);
 _flash_start = ORIGIN(FLASH);
 _flash_end = ORIGIN(FLASH) + LENGTH(FLASH);
-_heap_start = ADDR(.heap);
-_heap_end = ADDR(.heap) + SIZEOF(.heap);
 
 _flash2_load_addr = LOADADDR(.flash2);
 _flash2_start = ORIGIN(EXRAM);
@@ -111,10 +109,10 @@ SECTIONS {
     . = 16K; /* this acts as a build time assertion that at least this much memory is available for stack use */
   } >SRAM
 
-  .heap : ALIGN(4) {
-    PROVIDE ( end = . );
-    PROVIDE ( _end = . );
-    . = 512K; /* this acts as a build time assertion that at least this much memory is available for heap use */
-    /*. = ABSOLUTE(sram_end - 16K);  this explicitly sets the end of the heap effectively giving the stack at most 16K */
+  .axiram : {
+    *(axiram);
+    . = ALIGN(4);
+    _end = .;
+    end = .;
   } >AXIRAM
 }

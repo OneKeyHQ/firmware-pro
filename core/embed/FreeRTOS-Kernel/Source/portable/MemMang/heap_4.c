@@ -99,7 +99,7 @@
  * heap - probably so it can be placed in a special segment or address. */
 extern uint8_t ucHeap[configTOTAL_HEAP_SIZE];
 #else
-PRIVILEGED_DATA static __attribute__((section("sram2"))) uint8_t ucHeap[configTOTAL_HEAP_SIZE];
+PRIVILEGED_DATA static __attribute__((section("axiram"))) uint8_t ucHeap[configTOTAL_HEAP_SIZE];
 #endif /* configAPPLICATION_ALLOCATED_HEAP */
 
 /* Define the linked list structure.  This is used to link free blocks in order
