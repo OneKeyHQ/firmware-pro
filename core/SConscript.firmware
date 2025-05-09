@@ -368,7 +368,7 @@ if LVGL_UI == '1':
     LVGL_BINDING_DIR = 'vendor/lvgl_mp'
     LVGL_DIR = f'{LVGL_BINDING_DIR}/lvgl'
     LVGL_BUILD = 'build/firmware'
-    INC = f' -Iembed/lvgl'
+    INC = f' -Iembed/lvgl_legacy'
     LVGL_PP = f'{LVGL_BUILD}/lvgl.pp.c'
     LVGL_MPY = f'{LVGL_BUILD}/lv_mpy.c'
     LVGL_MPY_METADATA =f'{LVGL_BUILD}/lv_mpy.json'
@@ -376,7 +376,7 @@ if LVGL_UI == '1':
 
     LV_INC = [
         f'{LVGL_DIR}/lvgl.h',
-        'embed/lvgl/lv_conf.h'
+        'embed/lvgl_legacy/lv_conf.h'
     ]
 
     env1 = Environment(ENV=os.environ)
@@ -394,7 +394,7 @@ if LVGL_UI == '1':
     SOURCE_MOD += [
         'lv_mpy.c',
     ]
-    SOURCE_MOD.extend(Glob('embed/lvgl/*.c'))
+    SOURCE_MOD.extend(Glob('embed/lvgl_legacy/*.c'))
 
 SOURCE_MICROPYTHON_SPEED = [
     'vendor/micropython/py/gc.c',
@@ -741,7 +741,7 @@ if PRODUCTION_MODEL == 'H':
             'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Inc',
             'vendor/micropython/lib/stm32lib/CMSIS/STM32H7xx/Include',
             'vendor/micropython/lib/cmsis/inc',
-            'embed/lvgl',
+            'embed/lvgl_legacy',
             'embed/fw_keys',
             'embed/debug_utils',
             'embed/emmc_wrapper',
