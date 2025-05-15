@@ -8,6 +8,7 @@
 #include "mini_printf.h"
 #include "mipi_lcd.h"
 #include "motor.h"
+#include "mpu.h"
 #include "qspi_flash.h"
 #include "rand.h"
 #include "se_thd89.h"
@@ -880,6 +881,8 @@ void device_burnin_test(bool force) {
 
   ble_set_flashled(flashled_value);
   ble_cmd_req(BLE_PWR, BLE_PWR_CHARGE_ENABLE);
+
+  mpu_config_firmware_p2(sectrue, secfalse);
 
   do {
     ble_uart_poll();

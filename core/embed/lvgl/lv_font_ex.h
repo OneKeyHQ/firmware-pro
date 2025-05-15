@@ -7,7 +7,6 @@
 #define font_free vPortFree
 
 #define SRAM1 __attribute__((section("sram1")))
-#define EXRAM __attribute__((section("exram")))
 #define SZ_TBL 3 * 1024
 
 #define LOCA_OFFSET 0x4C
