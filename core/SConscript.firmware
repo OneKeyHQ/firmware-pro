@@ -62,6 +62,9 @@ CCFLAGS_MOD += '-Wno-sequence-point '
 CPPPATH_MOD += [
     'vendor/trezor-crypto',
 ]
+
+CPPDEFINES_MOD += ['FREERTOS_ENABLE']
+
 CPPDEFINES_MOD += [
     'AES_128',
     'AES_192',
