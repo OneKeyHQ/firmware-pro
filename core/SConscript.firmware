@@ -9,7 +9,8 @@ EVERYTHING = BITCOIN_ONLY != '1'
 TREZOR_MODEL = ARGUMENTS.get('TREZOR_MODEL', 'T')
 UI2 = ARGUMENTS.get('UI2', '0') == '1' or TREZOR_MODEL in ('1', 'R')
 PRODUCTION_MODEL = ARGUMENTS.get('PRODUCTION_MODEL', 'H')
-LVGL_UI = '1'
+LVGL_UI = '0'
+LVGL_C = '1'
 USE_THD89 = ARGUMENTS.get('USE_THD89', '0')
 
 FEATURE_FLAGS = {
@@ -359,6 +360,13 @@ SOURCE_MICROPYTHON = [
     'vendor/micropython/py/modcollections.c',
 ]
 
+if LVGL_C == '1':
+    SOURCE_LVGL_C = Glob('embed/lvgl/src/*.c')
+    SOURCE_LVGL_C.extend(Glob('embed/lvgl/src/*/*.c'))
+    SOURCE_LVGL_C.extend(Glob('embed/lvgl/src/*/*/*.c'))
+    SOURCE_LVGL_C.extend(Glob('embed/lvgl/src/*/*/*/*.c'))
+    SOURCE_LVGL_C.extend(Glob('embed/lvgl/src/*/*/*/*/*.c'))
+
 if LVGL_UI == '1':
     SOURCE_LVGL = Glob('vendor/lvgl_mp/lvgl/src/*/*.c')
     SOURCE_LVGL.extend(Glob('vendor/lvgl_mp/lvgl/src/*/*/*.c'))
@@ -478,6 +486,12 @@ if PRODUCTION_MODEL == 'H':
         'embed/cm_backtrace/cmb_user_cfg.c',
         'embed/cm_backtrace/fault_handler/gcc/cmb_fault.S'
     ]
+
+    SOURCE_UTILS = Glob('embed/utils/*.c')
+
+    SOURCE_MEMORY = Glob('embed/memory/*.c')
+
+    SOURCE_PORTING = Glob('embed/porting/*.c')
 
     SOURCE_TREZORHAL = [
         'embed/trezorhal/system_stm32h7xx.c',
@@ -670,7 +684,7 @@ if FEATURE_FLAGS["LVGL_DOUBLE_BUFFER"]:
 if FEATURE_FLAGS['UART_PRINT']:
     CPPDEFINES_MOD += ['UART_PRINT', ('MICROPY_USE_INTERNAL_PRINTF', '0')]
 
-SOURCE_QSTR = SOURCE_MOD + SOURCE_MICROPYTHON + SOURCE_MICROPYTHON_SPEED + SOURCE_LVGL
+SOURCE_QSTR = SOURCE_MOD + SOURCE_MICROPYTHON + SOURCE_MICROPYTHON_SPEED
 
 env = Environment(ENV=os.environ, CFLAGS='%s -DPRODUCTION=%s -DPYOPT=%s -DBITCOIN_ONLY=%s -DUSE_THD89=%s' % (ARGUMENTS.get('CFLAGS', ''), ARGUMENTS.get('PRODUCTION', '0'), PYOPT, BITCOIN_ONLY, ARGUMENTS.get('USE_THD89', '0')))
 
@@ -733,6 +747,9 @@ if PRODUCTION_MODEL == 'H':
             'embed/FreeRTOS-Kernel/CMSIS/RTOS2/FreeRTOS/Include',
             'embed/tasks',
             'embed/cm_backtrace',
+            'embed/utils',
+            'embed/memory',
+            'embed/porting',
             'embed/trezorhal',
             'embed/trezorhal/fatfs',
             'embed/trezorhal/fp',
@@ -741,7 +758,8 @@ if PRODUCTION_MODEL == 'H':
             'vendor/micropython/lib/stm32lib/STM32H7xx_HAL_Driver/Inc',
             'vendor/micropython/lib/stm32lib/CMSIS/STM32H7xx/Include',
             'vendor/micropython/lib/cmsis/inc',
-            'embed/lvgl_legacy',
+            #'embed/lvgl_legacy',
+            'embed/lvgl',
             'embed/fw_keys',
             'embed/debug_utils',
             'embed/emmc_wrapper',
@@ -1118,11 +1136,15 @@ obj_program.extend(env.Object(source=SOURCE_FIRMWARE))
 obj_program.extend(env.Object(source=SOURCE_MICROPYTHON))
 obj_program.extend(env.Object(source=SOURCE_MICROPYTHON_SPEED, COPT='-O3'))
 obj_program.extend(env.Object(source=SOURCE_STMHAL))
-obj_program.extend(env.Object(source=SOURCE_LVGL))
+#obj_program.extend(env.Object(source=SOURCE_LVGL))
+obj_program.extend(env.Object(source=SOURCE_LVGL_C))
 obj_program.extend(env.Object(source=SOURCE_TREZORHAL))
 obj_program.extend(env.Object(source=SOURCE_FREERTOS))
 obj_program.extend(env.Object(source=SOURCE_TASKS))
 obj_program.extend(env.Object(source=SOURCE_CM_BACKTRACE))
+obj_program.extend(env.Object(source=SOURCE_UTILS))
+obj_program.extend(env.Object(source=SOURCE_MEMORY))
+obj_program.extend(env.Object(source=SOURCE_PORTING))
 
 if FROZEN:
     obj_program.extend(env.Object(source=source_mpyc))

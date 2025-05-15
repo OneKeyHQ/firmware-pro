@@ -79,6 +79,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include "FreeRTOS.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -52,7 +52,7 @@ async def handle_stop_mode():
 
 
 # run main event loop and specify which screen is the default
-apps.base.set_homescreen()
+#apps.base.set_homescreen()
 
 loop.schedule(handle_fingerprint())
 loop.schedule(fetch_all())
@@ -62,7 +62,7 @@ loop.schedule(handle_ble_info())
 
 loop.schedule(handle_usb_state())
 
-loop.schedule(lvgl_tick())
+#loop.schedule(lvgl_tick())
 loop.schedule(handle_qr_task())
 loop.schedule(handle_stop_mode())
 

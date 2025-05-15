@@ -6,6 +6,7 @@
 
 #include "ff.h"
 #include "irq.h"
+#include "secure_heap.h"
 
 #define CHUNK_SIZE_OUT ((uint32_t)(64 * 1024))
 #define MAX_JPEG_SIZE (1024 * 1024)
@@ -237,7 +238,7 @@ int jpeg_decode_start(const char *path) {
     return -1;
   }
 
-  g_inputJpegBuffer = lodepng_malloc(file_size);
+  g_inputJpegBuffer = sdram_malloc(file_size);
   g_inputJpegOffset = 0;
   uint32_t state = disable_irq();
   if (jpeg_decode_file_read(g_inputJpegBuffer, file_size, &g_inputJpegSize) ==
@@ -245,11 +246,11 @@ int jpeg_decode_start(const char *path) {
     enable_irq(state);
   } else {
     enable_irq(state);
-    lodepng_free(g_inputJpegBuffer);
+    sdram_free(g_inputJpegBuffer);
     return -1;
   }
   if (g_inputJpegSize != file_size) {
-    lodepng_free(g_inputJpegBuffer);
+    sdram_free(g_inputJpegBuffer);
     return -1;
   }
   /* Start JPEG decoding with DMA method */
@@ -260,7 +261,7 @@ int jpeg_decode_start(const char *path) {
   while ((jpeg_get_decode_state() == 0) && (jpeg_get_decode_error() == 0)) {
     if (HAL_GetTick() - time_started > 500) Jpeg_HWDecodingError = 1;
   }
-  lodepng_free(g_inputJpegBuffer);
+  sdram_free(g_inputJpegBuffer);
   if (Jpeg_HWDecodingError) {
     return -2;
   }
