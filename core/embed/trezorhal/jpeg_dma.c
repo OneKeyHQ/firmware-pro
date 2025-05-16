@@ -259,7 +259,11 @@ int jpeg_decode_start(const char *path) {
     return -1;
   }
   /* Start JPEG decoding with DMA method */
-  HAL_JPEG_Decode_DMA(&JPEG_Handle, g_inputJpegBuffer, CHUNK_SIZE_IN,
+  uint32_t indata_len = g_inputJpegSize;
+  if (indata_len > CHUNK_SIZE_IN) {
+    indata_len = CHUNK_SIZE_IN;
+  }
+  HAL_JPEG_Decode_DMA(&JPEG_Handle, g_inputJpegBuffer, indata_len,
                       g_outputBuffer, CHUNK_SIZE_OUT);
 
   uint32_t time_started = HAL_GetTick();
