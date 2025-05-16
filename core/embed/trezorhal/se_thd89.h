@@ -179,9 +179,9 @@ secbool se_fingerprint_state(void);
 secbool se_fingerprint_lock(void);
 secbool se_fingerprint_unlock(void);
 
-secbool se_fp_write(uint16_t offset, const void *val_dest, uint16_t len,
+secbool se_fp_write(uint32_t offset, const void *val_dest, uint32_t len,
                     uint8_t index, uint8_t total);
-secbool se_fp_read(uint16_t offset, void *val_dest, uint16_t len, uint8_t index,
+secbool se_fp_read(uint32_t offset, void *val_dest, uint32_t len, uint8_t index,
                    uint8_t total);
 
 int se_lite_card_ecdh(const uint8_t *publickey, uint8_t *sessionkey);

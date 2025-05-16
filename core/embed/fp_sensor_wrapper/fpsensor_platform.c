@@ -5,8 +5,11 @@
 
 SPI_HandleTypeDef spi_fp;
 static bool fp_touched = false;
-static uint8_t* fp_data_cache = (uint8_t*)0x38000000;
+static uint8_t fp_data_cache[FINGER_DATA_TOTAL_SIZE] __attribute__((section(".exram")));
 static bool fp_data_sync = false;
+static int fp_max_template_count = MAX_FINGERPRINT_COUNT;
+
+static uint32_t fp_data_version = FINGER_DATA_VERSION_NEW;
 
 typedef struct
 {
@@ -280,9 +283,7 @@ void fpsensor_delay_ms(uint32_t Timeout)
 }
 
 #include "secbool.h"
-
-extern secbool se_fp_write(uint16_t offset, const void* val_dest, uint16_t len, uint8_t index, uint8_t total);
-extern secbool se_fp_read(uint16_t offset, void* val_dest, uint16_t len, uint8_t index, uint8_t total);
+#include "se_thd89.h"
 
 /*
 * Function：    SF_Init
@@ -319,7 +320,7 @@ uint8_t SF_WriteData(uint8_t* buffer, uint32_t offset, uint32_t length)
     }
     else
     {
-        for ( uint8_t i = 0; i < MAX_FINGERPRINT_COUNT; i++ )
+        for ( uint8_t i = 0; i < fp_max_template_count; i++ )
         {
             if ( offset == TEMPLATE_ADDR_OFFSET + i * TEMPLATE_LENGTH )
             {
@@ -399,104 +400,126 @@ static uint32_t fp_crc32(uint8_t* buf, uint32_t len)
 bool fpsensor_data_init(void)
 {
     static bool data_inited = false;
-    uint32_t crc;
+    uint32_t offset, crc;
 
     if ( data_inited )
     {
         return true;
     }
 
+    ensure(se_fp_read(0, &fp_data_version, 4, 0, 0), "se_fp_read failed");
+
+    if ( fp_data_version != FINGER_DATA_VERSION_NEW )
+    {
+        fp_data_version = FINGER_DATA_VERSION_OLD;
+    }
+
+    char* se_version = se04_get_version();
+
+    if ( compare_str_version(se_version, "1.1.6") >= 0 )
+    {
+        fp_max_template_count = 6;
+    }
+    else
+    {
+        fp_max_template_count = 5;
+    }
+
     uint8_t* p_data;
     uint8_t counter = 0;
     uint8_t list[MAX_FINGERPRINT_COUNT] = {0};
 
-    for ( uint8_t i = 0; i < MAX_FINGERPRINT_COUNT; i++ )
+    for ( uint8_t i = 0; i < fp_max_template_count; i++ )
     {
         p_data = fp_data_cache + TEMPLATE_ADDR_OFFSET + i * TEMPLATE_LENGTH;
-        ensure(
-            se_fp_read(TEMPLATE_ADDR_OFFSET + i * TEMPLATE_TOTAL_LENGTH, p_data, 2, 0, 0), "se_fp_read failed"
-        );
+        offset = TEMPLATE_ADDR_OFFSET + i * TEMPLATE_TOTAL_LENGTH;
+        ensure(se_fp_read(offset, p_data, 2, 0, 0), "se_fp_read failed");
         if ( p_data[0] == 0x32 && p_data[1] == 0x34 )
         {
             list[counter++] = i;
         }
     }
 
+    if ( counter == 0 && fp_data_version == FINGER_DATA_VERSION_OLD )
+    {
+        fp_data_version = FINGER_DATA_VERSION_NEW;
+    }
+
     for ( uint8_t i = 0; i < counter; i++ )
     {
         p_data = fp_data_cache + TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_LENGTH;
+        offset = TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_TOTAL_LENGTH;
+        ensure(se_fp_read(offset, p_data, TEMPLATE_LENGTH, i, counter), "se_fp_read failed");
         ensure(
-            se_fp_read(
-                TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_TOTAL_LENGTH, p_data, TEMPLATE_LENGTH, i, counter
-            ),
-            "se_fp_read failed"
-        );
-        ensure(
-            se_fp_read(
-                TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_TOTAL_LENGTH + TEMPLATE_LENGTH, (uint8_t*)&crc,
-                TEMPLATE_DATA_CRC_LEN, 0, 0
-            ),
+            se_fp_read(offset + TEMPLATE_LENGTH, (uint8_t*)&crc, TEMPLATE_DATA_CRC_LEN, 0, 0),
             "se_fp_read failed"
         );
         if ( crc != fp_crc32(p_data, TEMPLATE_LENGTH) )
         {
             memset(p_data, 0, TEMPLATE_LENGTH);
-            se_fp_write(TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_TOTAL_LENGTH, "\xff\xff\xff\xff", 4, 0, 0);
+            ensure(se_fp_write(offset, "\xff\xff\xff\xff", 4, 0, 0), "se_fp_write failed");
         }
     }
+
     data_inited = true;
     return true;
 }
 
-bool fpsensor_data_save(bool update_all, uint8_t id)
+bool fpsensor_data_save(uint8_t index)
 {
     uint8_t* p_data;
-    uint32_t crc;
+    uint32_t offset, crc;
+    uint8_t id_group[4] = {0};
     uint8_t list[MAX_FINGERPRINT_COUNT] = {0};
     uint8_t counter = 0;
-    if ( update_all )
+
+    id_group[0] = index;
+
+    for ( uint8_t i = 0; i < fp_max_template_count; i++ )
     {
-        for ( uint8_t i = 0; i < MAX_FINGERPRINT_COUNT; i++ )
+        if ( fpsensor_cache.template_data_valid[i] )
         {
-            if ( fpsensor_cache.template_data_valid[i] )
+            list[counter++] = i;
+            id_group[counter] = i;
+            if ( counter == 3 )
             {
-                list[counter++] = i;
+                break;
             }
         }
     }
-    else
+
+    if ( counter )
     {
-        if ( fpsensor_cache.template_data_valid[id] )
+        ensure(se_fp_read(0, &fp_data_version, 4, 0, 0), "se_fp_read failed");
+
+        if ( fp_data_version != FINGER_DATA_VERSION_NEW )
         {
-            list[0] = id;
-            counter = 1;
-        }
-        else
-        {
-            return false;
+            fp_data_version = FINGER_DATA_VERSION_NEW;
+            ensure(se_fp_write(0, &fp_data_version, 4, 0, 0), "se_fp_write failed");
         }
     }
+
+    ensure(se_fp_write(4 + index * sizeof(id_group), id_group, sizeof(id_group), 0, 0), "se_fp_write failed");
 
     for ( uint8_t i = 0; i < counter; i++ )
     {
         p_data = fp_data_cache + TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_LENGTH;
         crc = fp_crc32(p_data, TEMPLATE_LENGTH);
-
+        offset = TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_TOTAL_LENGTH;
+        ensure(se_fp_write(offset, p_data, TEMPLATE_LENGTH, i, counter), "se_fp_write failed");
         ensure(
-            se_fp_write(
-                TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_TOTAL_LENGTH, p_data, TEMPLATE_LENGTH, i, counter
-            ),
-            "se_fp_write failed"
-        );
-        ensure(
-            se_fp_write(
-                TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_TOTAL_LENGTH + TEMPLATE_LENGTH, (uint8_t*)&crc,
-                TEMPLATE_DATA_CRC_LEN, 0, 0
-            ),
+            se_fp_write(offset + TEMPLATE_LENGTH, (uint8_t*)&crc, TEMPLATE_DATA_CRC_LEN, 0, 0),
             "se_fp_write failed"
         );
     }
+
     return true;
+}
+
+void fpsensor_data_get_group(uint8_t group[8])
+{
+    // memset(group, 0xff, 8);
+    ensure(se_fp_read(4, group, 8, 0, 0), "se_fp_read failed");
 }
 
 bool fpsensor_data_delete(bool all, uint8_t id)
@@ -504,9 +527,10 @@ bool fpsensor_data_delete(bool all, uint8_t id)
     uint8_t* p_data;
     uint8_t list[MAX_FINGERPRINT_COUNT] = {0};
     uint8_t counter = 0;
+    uint32_t offset;
     if ( all )
     {
-        for ( uint8_t i = 0; i < MAX_FINGERPRINT_COUNT; i++ )
+        for ( uint8_t i = 0; i < fp_max_template_count; i++ )
         {
             if ( fpsensor_cache.template_data_valid[i] )
             {
@@ -530,12 +554,85 @@ bool fpsensor_data_delete(bool all, uint8_t id)
     for ( uint8_t i = 0; i < counter; i++ )
     {
         p_data = fp_data_cache + TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_LENGTH;
+        offset = TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_TOTAL_LENGTH;
         memset(p_data, 0, TEMPLATE_LENGTH);
 
+        ensure(se_fp_write(offset, p_data, 4, 0, 0), "se_fp_write failed");
+    }
+    return true;
+}
+
+bool fpsensor_data_delete_group(uint8_t group_id[4])
+{
+    uint8_t* p_data;
+    uint8_t id_group[4] = {0xff, 0xff, 0xff, 0xff};
+    uint32_t offset;
+    for ( uint8_t i = 1; i < 4; i++ )
+    {
+        if ( group_id[i] > fp_max_template_count - 1 )
+        {
+            continue;
+        }
+        else
+        {
+            p_data = fp_data_cache + TEMPLATE_ADDR_OFFSET + group_id[i] * TEMPLATE_LENGTH;
+            offset = TEMPLATE_ADDR_OFFSET + group_id[i] * TEMPLATE_TOTAL_LENGTH;
+            memset(p_data, 0, TEMPLATE_LENGTH);
+
+            ensure(se_fp_write(offset, p_data, 4, 0, 0), "se_fp_write failed");
+        }
+    }
+    if ( group_id[0] <= 1 )
+    {
         ensure(
-            se_fp_write(TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_TOTAL_LENGTH, p_data, 4, 0, 0),
+            se_fp_write(4 + group_id[0] * sizeof(id_group), id_group, sizeof(id_group), 0, 0),
             "se_fp_write failed"
         );
     }
+
     return true;
+}
+
+void fpsensor_template_cache_clear(bool clear_data)
+{
+    for ( uint8_t i = 0; i < fp_max_template_count; i++ )
+    {
+        if ( fpsensor_cache.template_data_valid[i] )
+        {
+            fpsensor_cache.template_data_valid[i] = false;
+            if ( clear_data )
+            {
+                memset(fp_data_cache + TEMPLATE_ADDR_OFFSET + i * TEMPLATE_LENGTH, 0, TEMPLATE_LENGTH);
+            }
+        }
+    }
+}
+
+int fpsensor_get_max_template_count(void)
+{
+    return fp_max_template_count;
+}
+
+bool fpsensor_data_version_is_new(void)
+{
+    return fp_data_version == FINGER_DATA_VERSION_NEW;
+}
+
+void fpsensor_data_upgrade_prompted(void)
+{
+    uint32_t prompt_flag = 0x01;
+    ensure(
+        se_fp_write(offsetof(finger_storage_data_t, header.ver.prompt_flag), (uint8_t*)&prompt_flag, 4, 0, 0),
+        "se_fp_write failed"
+    );
+}
+
+bool fpsensor_data_upgrade_is_prompted(void)
+{
+    uint32_t prompt_flag = 0;
+    ensure(
+        se_fp_read(offsetof(finger_storage_data_t, header.ver.prompt_flag), (uint8_t*)&prompt_flag, 4, 0, 0),
+        "se_fp_read failed"
+    );
+    return prompt_flag == 0x01;
 }

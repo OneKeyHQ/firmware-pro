@@ -4672,72 +4672,128 @@ class FingerprintSetting(AnimScreen):
         self.container.clean()
         if hasattr(self, "container_fun"):
             self.container_fun.delete()
-            self.tips.delete()
 
+        from trezorio import fingerprint
         from . import fingerprints
 
         self.fingerprint_list = fingerprints.get_fingerprint_list()
-
         counter = fingerprints.get_fingerprint_count()
+        group_data = fingerprints.get_fingerprint_group()
+        self.data_new_version = fingerprints.data_version_is_new()
+
+        group1 = self._parse_group_data(group_data[0:4])
+        group2 = self._parse_group_data(group_data[4:8])
+
+        valid_fps = [fp for fp in self.fingerprint_list if fp is not None]
+
+        if __debug__:
+            print(f"fingerprint_list: {self.fingerprint_list}")
+            print(f"group_data: {group_data}")
+            print(f"group1: {group1}")
+            print(f"group2: {group2}")
+            print(f"valid_fps: {valid_fps}")
+            print(f"counter: {counter}")
+
+        self.groups = []
+        try:
+            if counter == 1:
+                self.groups = [
+                    {
+                        "group_id": valid_fps[0],
+                        "indexes": bytes([valid_fps[0], 0xFF, 0xFF]),
+                    }
+                ]
+            elif self.data_new_version:
+                if counter == 3:
+                    self.groups = [group1 if group1 else group2]
+                elif counter == 4:
+                    excluded_indexes = (
+                        group1["indexes"] if group1 else group2["indexes"]  # type: ignore [Object of type "None" is not subscriptable]
+                    )
+                    legacy_fp = [fp for fp in valid_fps if fp not in excluded_indexes]
+                    self.groups = [
+                        {
+                            "group_id": legacy_fp[0],
+                            "indexes": bytes([legacy_fp[0], 0xFF, 0xFF]),
+                        },
+                        group2 if group2 else group1,
+                    ]
+                    self.groups.sort(key=lambda g: g["group_id"])
+                else:
+                    self.groups = [g for g in [group1, group2] if g]
+                    if self.groups:
+                        self.groups.sort(key=lambda g: g["group_id"])
+                counter = (counter + 2) // 3
+
+        except Exception:
+            if __debug__:
+                print("fingerprint group error")
+            fingerprint.clear()
+            self.fingerprint_list = fingerprints.get_fingerprint_list()
+            counter = fingerprints.get_fingerprint_count()
+            self.groups = []
+
         self.added_fingerprints = []
-        if counter > 0:
-            for ids in self.fingerprint_list:
+        if not self.data_new_version:
+            for idx in self.fingerprint_list:
                 self.added_fingerprints.append(
                     ListItemBtn(
                         self.container,
-                        _(i18n_keys.FORM__FINGER_STR).format(ids + 1),
+                        _(i18n_keys.FORM__FINGER_STR).format(idx + 1),
                         left_img_src="A:/res/settings-fingerprint.png",
                         has_next=False,
                     )
-                    if ids is not None
+                    if idx is not None
                     else None
                 )
+        else:
+            for group in self.groups:
+                self.added_fingerprints.append(
+                    ListItemBtn(
+                        self.container,
+                        _(i18n_keys.FORM__FINGER_STR).format(group["group_id"] + 1),  # type: ignore [Object of type "None" is not subscriptable]
+                        left_img_src="A:/res/settings-fingerprint.png",
+                        has_next=False,
+                    )
+                )
+
         self.add_fingerprint = None
-        if counter < 3:
+
+        if counter < 2:
             self.add_fingerprint = ListItemBtn(
                 self.container,
                 _(i18n_keys.BUTTON__ADD_FINGERPRINT),
                 left_img_src="A:/res/settings-plus.png",
                 has_next=False,
             )
-        self.tips = lv.label(self.content_area)
-        self.tips.align_to(self.container, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 0)
-        self.tips.set_long_mode(lv.label.LONG.WRAP)
-        self.tips.set_text(
-            _(
-                i18n_keys.CONTENT__ALLOW_UP_TO_3_FINGERPRINTS_TO_BE_RECORDED_SIMULTANEOUSLY
-            )
-        )
-        self.tips.add_style(
-            StyleWrapper()
-            .text_font(font_GeistRegular26)
-            .width(456)
-            .text_color(lv_colors.WHITE_2)
-            .text_letter_space(-1)
-            .text_align_left()
-            .pad_ver(16)
-            .pad_hor(12),
-            0,
-        )
+
         self.container_fun = ContainerFlexCol(
-            self.content_area, self.tips, pos=(0, 12), padding_row=2
+            self.content_area, self.container, pos=(0, 12), padding_row=1
         )
         self.unlock = ListItemBtnWithSwitch(
             self.container_fun, _(i18n_keys.FORM__UNLOCK_DEVICE)
         )
+
         if not device.is_fingerprint_unlock_enabled():
             self.unlock.clear_state()
 
-    async def on_remove(self, i):
-        self.added_fingerprints.pop(i).delete()
+    def _parse_group_data(self, data):
+        if data and data[0] != 0xFF:
+            return {"group_id": data[0], "indexes": data[1:4]}
+        return None
+
+    async def on_remove(self, fp_id):
         from trezorio import fingerprint
 
-        if self.fingerprint_list[i] is not None:
-            # pyright: off
-            fingerprint.remove(self.fingerprint_list[i])
-            # pyright: on
-        else:
-            assert False
+        fingerprint.remove(fp_id)
+
+        self.fresh_show()
+
+    async def on_remove_group(self, group):
+        from trezorio import fingerprint
+
+        group_bytes = bytes([group["group_id"]]) + group["indexes"]
+        fingerprint.remove_group(group_bytes)
         self.fresh_show()
 
     def on_click(self, event_obj):
@@ -4747,28 +4803,42 @@ class FingerprintSetting(AnimScreen):
             from trezor.lvglui.scrs import fingerprints
 
             if target == self.add_fingerprint:
+                if not self.groups:
+                    group_id = 0
+                else:
+                    current_group_id = self.groups[0]["group_id"]  # type: ignore [Object of type "None" is not subscriptable]
+                    if current_group_id not in (0, 1):
+                        group_id = 0
+                    else:
+                        group_id = 1 - current_group_id
                 workflow.spawn(
                     fingerprints.add_fingerprint(
-                        self.fingerprint_list.index(None)
-                        if self.fingerprint_list
-                        else 0,
+                        group_id=group_id,
                         callback=lambda: self.fresh_show(),
                     )
                 )
             elif target in self.added_fingerprints:
-                for i, finger in enumerate(self.added_fingerprints):
-                    if target == finger:
-                        select_index = i
-                        # pyright: off
-                        workflow.spawn(
-                            fingerprints.request_delete_fingerprint(
-                                _(i18n_keys.FORM__FINGER_STR).format(
-                                    self.fingerprint_list[select_index] + 1
-                                ),
-                                on_remove=lambda: self.on_remove(select_index),
+                for i, item in enumerate(self.added_fingerprints):
+                    if target == item:
+                        if self.data_new_version:
+                            group = self.groups[i]
+                            prompt = _(i18n_keys.FORM__FINGER_STR).format(
+                                group["group_id"] + 1  # type: ignore [Object of type "None" is not subscriptable]
                             )
-                        )
-                        # pyright: on
+                            workflow.spawn(
+                                fingerprints.request_delete_fingerprint(
+                                    prompt,
+                                    on_remove=lambda: self.on_remove_group(group),
+                                )
+                            )
+                        else:
+                            fp_id = self.fingerprint_list[i]
+                            prompt = _(i18n_keys.FORM__FINGER_STR).format(i + 1)
+                            workflow.spawn(
+                                fingerprints.request_delete_fingerprint(
+                                    prompt, on_remove=lambda: self.on_remove(fp_id)
+                                )
+                            )
 
     def on_value_changed(self, event_obj):
         code = event_obj.code
