@@ -127,4 +127,6 @@ bool check_all_ones(const void *data, int len);
 
 bool check_all_zeros(const void *data, int len);
 
+int compare_str_version(const char *version1, const char *version2);
+
 #endif

@@ -2067,14 +2067,15 @@ secbool se_fingerprint_unlock(void) {
   return sectrue;
 }
 
-secbool se_fp_write(uint16_t offset, const void *val_dest, uint16_t len,
+secbool se_fp_write(uint32_t offset, const void *val_dest, uint32_t len,
                     uint8_t index, uint8_t total) {
-  uint8_t cmd[4] = {0};
+  uint8_t cmd[8] = {0};
   uint16_t packet_len = 0;
-  uint16_t packet_offset = 0;
+  uint32_t packet_offset = 0;
+  bool size_4 = false;
 
   bool show_progress = false;
-  uint16_t len_bak = len;
+  uint32_t len_bak = len;
   uint8_t percent = 0;
 
   if (total == 0) {
@@ -2088,16 +2089,36 @@ secbool se_fp_write(uint16_t offset, const void *val_dest, uint16_t len,
     }
   }
 
+  char *se_version = se04_get_version();
+  if (compare_str_version(se_version, "1.1.6") >= 0) {
+    size_4 = true;
+  }
+
   while (len) {
     packet_len = len > SE_DATA_MAX_LEN ? SE_DATA_MAX_LEN : len;
-    cmd[0] = ((packet_offset + offset) >> 8) & 0xFF;
-    cmd[1] = (packet_offset + offset) & 0xFF;
-    cmd[2] = (packet_len >> 8) & 0xFF;
-    cmd[3] = packet_len & 0xFF;
-    memcpy(APDU_DATA, cmd, 4);
-    memcpy(APDU_DATA + 4, (uint8_t *)val_dest + packet_offset, packet_len);
+    uint32_t combined_offset = packet_offset + offset;
+    if (!size_4) {
+      cmd[0] = (combined_offset >> 8) & 0xFF;
+      cmd[1] = combined_offset & 0xFF;
+      cmd[2] = (packet_len >> 8) & 0xFF;
+      cmd[3] = packet_len & 0xFF;
+      memcpy(APDU_DATA, cmd, 4);
+    } else {
+      cmd[0] = (combined_offset >> 24) & 0xFF;
+      cmd[1] = (combined_offset >> 16) & 0xFF;
+      cmd[2] = (combined_offset >> 8) & 0xFF;
+      cmd[3] = combined_offset & 0xFF;
+      cmd[4] = (packet_len >> 24) & 0xFF;
+      cmd[5] = (packet_len >> 16) & 0xFF;
+      cmd[6] = (packet_len >> 8) & 0xFF;
+      cmd[7] = packet_len & 0xFF;
+      memcpy(APDU_DATA, cmd, 8);
+    }
+
+    memcpy(APDU_DATA + (size_4 ? 8 : 4), (uint8_t *)val_dest + packet_offset,
+           packet_len);
     if (!se_fp_transmit_mac(SE_INS_WRITE_DATA, 0x00, 0x02, APDU_DATA,
-                            4 + packet_len, NULL, NULL)) {
+                            (size_4 ? 8 : 4) + packet_len, NULL, NULL)) {
       return secfalse;
     }
     packet_offset += packet_len;
@@ -2113,16 +2134,18 @@ secbool se_fp_write(uint16_t offset, const void *val_dest, uint16_t len,
   return sectrue;
 }
 
-secbool se_fp_read(uint16_t offset, void *val_dest, uint16_t len, uint8_t index,
+secbool se_fp_read(uint32_t offset, void *val_dest, uint32_t len, uint8_t index,
                    uint8_t total) {
-  uint8_t cmd[4] = {0};
+  uint8_t cmd[8] = {0};
 
   uint16_t packet_len = 0;
-  uint16_t packet_offset = 0;
+  uint32_t packet_offset = 0;
 
   bool show_progress = false;
-  uint16_t len_bak = len;
+  uint32_t len_bak = len;
   uint8_t percent = 0;
+
+  bool size_4 = false;
 
   if (total == 0) {
     total = 1;
@@ -2135,14 +2158,32 @@ secbool se_fp_read(uint16_t offset, void *val_dest, uint16_t len, uint8_t index,
     }
   }
 
+  char *se_version = se04_get_version();
+
+  if (compare_str_version(se_version, "1.1.6") >= 0) {
+    size_4 = true;
+  }
+
   while (len) {
     packet_len = len > SE_DATA_MAX_LEN ? SE_DATA_MAX_LEN : len;
-    cmd[0] = ((packet_offset + offset) >> 8) & 0xFF;
-    cmd[1] = (packet_offset + offset) & 0xFF;
-    cmd[2] = (packet_len >> 8) & 0xFF;
-    cmd[3] = packet_len & 0xFF;
+    uint32_t combined_offset = packet_offset + offset;
+    if (!size_4) {
+      cmd[0] = (combined_offset >> 8) & 0xFF;
+      cmd[1] = combined_offset & 0xFF;
+      cmd[2] = (packet_len >> 8) & 0xFF;
+      cmd[3] = packet_len & 0xFF;
+    } else {
+      cmd[0] = (combined_offset >> 24) & 0xFF;
+      cmd[1] = (combined_offset >> 16) & 0xFF;
+      cmd[2] = (combined_offset >> 8) & 0xFF;
+      cmd[3] = combined_offset & 0xFF;
+      cmd[4] = (packet_len >> 24) & 0xFF;
+      cmd[5] = (packet_len >> 16) & 0xFF;
+      cmd[6] = (packet_len >> 8) & 0xFF;
+      cmd[7] = packet_len & 0xFF;
+    }
 
-    if (!se_fp_transmit_mac(SE_INS_READ_DATA, 0x00, 0x02, cmd, 4,
+    if (!se_fp_transmit_mac(SE_INS_READ_DATA, 0x00, 0x02, cmd, (size_4 ? 8 : 4),
                             (uint8_t *)val_dest + packet_offset, &packet_len)) {
       return secfalse;
     }

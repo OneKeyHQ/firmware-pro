@@ -31,9 +31,9 @@ int fingerprint_enroll(uint8_t counter)
     (void)counter;
     return 0;
 }
-int fingerprint_save(uint8_t id)
+int fingerprint_save(uint8_t index)
 {
-    (void)id;
+    (void)index;
     return 0;
 }
 int fingerprint_match(uint8_t* match_id)
@@ -145,10 +145,10 @@ FP_RESULT fingerprint_enroll(uint8_t counter)
     return FP_OK;
 }
 
-int fingerprint_save(uint8_t id)
+int fingerprint_register_template(uint8_t id)
 {
 
-    if ( id > MAX_FINGERPRINT_COUNT - 1 )
+    if ( id > fpsensor_get_max_template_count() - 1 )
     {
         return -1;
     }
@@ -156,8 +156,18 @@ int fingerprint_save(uint8_t id)
     {
         return -1;
     }
-    fpsensor_data_save(false, id);
     return 0;
+}
+
+int fingerprint_save(uint8_t index)
+{
+    fpsensor_data_save(index);
+    return 0;
+}
+
+void fingerprint_get_group(uint8_t group[8])
+{
+    fpsensor_data_get_group(group);
 }
 
 FP_RESULT fingerprint_match(uint8_t* match_id)
@@ -202,7 +212,7 @@ FP_RESULT fingerprint_match(uint8_t* match_id)
 
 int fingerprint_delete(uint8_t id)
 {
-    if ( id > MAX_FINGERPRINT_COUNT - 1 )
+    if ( id > fpsensor_get_max_template_count() - 1 )
     {
         return -1;
     }
@@ -212,6 +222,12 @@ int fingerprint_delete(uint8_t id)
         return -1;
     }
     fpsensor_data_delete(false, id);
+    return 0;
+}
+
+int fingerprint_delete_group(uint8_t group_id[4])
+{
+    fpsensor_data_delete_group(group_id);
     return 0;
 }
 
