@@ -186,7 +186,9 @@ static lv_res_t decoder_open(lv_img_decoder_t *decoder,
       jpeg_decode_init(FMC_SDRAM_JPEG_OUTPUT_DATA_BUFFER_ADDRESS);
 
       /* Start JPEG decoding with DMA method */
-      jpeg_decode_start(fn);
+      if (jpeg_decode_start(fn) != 0) {
+        return LV_RES_INV;
+      }
 
       if (jpeg_get_decode_error() == 1) {
         return LV_RES_INV;

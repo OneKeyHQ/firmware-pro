@@ -25,5 +25,5 @@ void mpu_config_base();
 void mpu_config_boardloader(secbool access, secbool exec);
 void mpu_config_bootloader(secbool access, secbool exec);
 secbool mpu_config_firmware(secbool access, secbool exec);
-
+void mpu_config_firmware_p2(secbool access, secbool exec);
 #endif

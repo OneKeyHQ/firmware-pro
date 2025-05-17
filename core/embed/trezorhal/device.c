@@ -8,6 +8,7 @@
 #include "mini_printf.h"
 #include "mipi_lcd.h"
 #include "motor.h"
+#include "mpu.h"
 #include "qspi_flash.h"
 #include "rand.h"
 #include "se_thd89.h"
@@ -56,7 +57,7 @@ void device_verify_ble(void) {
   char *ble_ver;
   char info[64] = {0};
   ensure(ble_get_version(&ble_ver) ? sectrue : secfalse, NULL);
-  if (memcmp(ble_ver, "2.2.3", 5) < 0) {
+  if (compare_str_version(ble_ver, "2.2.3") < 0) {
     strcat(info, "current ble version: ");
     strcat(info, ble_ver);
     display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY / 2,
@@ -880,6 +881,8 @@ void device_burnin_test(bool force) {
 
   ble_set_flashled(flashled_value);
   ble_cmd_req(BLE_PWR, BLE_PWR_CHARGE_ENABLE);
+
+  mpu_config_firmware_p2(sectrue, secfalse);
 
   do {
     ble_uart_poll();

@@ -4,26 +4,26 @@
 
 #include STM32_HAL_H
 
+#include "display.h"
 #include "ff.h"
 #include "irq.h"
 #include "sdram.h"
 
 #define CHUNK_SIZE_IN ((uint32_t)(64 * 1024))
 #define CHUNK_SIZE_OUT ((uint32_t)(64 * 1024))
-#define MAX_JPEG_SIZE (1024 * 1024)
+#define MAX_JPEG_SIZE FMC_SDRAM_JPEG_INPUT_DATA_BUFFER_LEN
 
 JPEG_HandleTypeDef JPEG_Handle;
 JPEG_ConfTypeDef JPEG_Info;
 
 volatile uint32_t Jpeg_HWDecodingEnd = 0, Jpeg_HWDecodingError = 0;
 
-uint32_t FrameBufferAddress;
-
 uint8_t *g_inputJpegBuffer = NULL;
 uint32_t g_inputJpegSize = 0;
 uint32_t g_inputJpegOffset = 0;
 
 uint8_t *g_outputBuffer = NULL;
+uint32_t g_outputBufferOffset = 0;
 
 typedef struct {
   FIL fatfs_file;
@@ -203,12 +203,24 @@ void HAL_JPEG_DataReadyCallback(JPEG_HandleTypeDef *hjpeg, uint8_t *pDataOut,
                                 uint32_t OutDataLength) {
   /* Update JPEG encoder output buffer address*/
   g_outputBuffer += OutDataLength;
-
+  g_outputBufferOffset += OutDataLength;
+  if (g_outputBufferOffset + CHUNK_SIZE_OUT >
+      FMC_SDRAM_JPEG_OUTPUT_DATA_BUFFER_LEN) {
+    Jpeg_HWDecodingError = 1;
+    HAL_JPEG_Abort(hjpeg);
+  }
   HAL_JPEG_ConfigOutputBuffer(hjpeg, g_outputBuffer, CHUNK_SIZE_OUT);
 }
 
 void HAL_JPEG_InfoReadyCallback(JPEG_HandleTypeDef *hjpeg,
-                                JPEG_ConfTypeDef *pInfo) {}
+                                JPEG_ConfTypeDef *pInfo) {
+  JPEG_ConfTypeDef info;
+  HAL_JPEG_GetInfo(hjpeg, &info);
+  if (info.ImageWidth > DISPLAY_RESX || info.ImageHeight > DISPLAY_RESY) {
+    Jpeg_HWDecodingError = 1;
+    HAL_JPEG_Abort(hjpeg);
+  }
+}
 
 void HAL_JPEG_ErrorCallback(JPEG_HandleTypeDef *hjpeg) {
   Jpeg_HWDecodingError = 1;
@@ -227,6 +239,7 @@ void jpeg_decode_init(uint32_t address) {
   Jpeg_HWDecodingEnd = 0;
   Jpeg_HWDecodingError = 0;
   g_outputBuffer = (uint8_t *)address;
+  g_outputBufferOffset = 0;
 }
 
 int jpeg_decode_start(const char *path) {
@@ -243,7 +256,7 @@ int jpeg_decode_start(const char *path) {
     return -1;
   }
 
-  g_inputJpegBuffer = lodepng_malloc(file_size);
+  g_inputJpegBuffer = (uint8_t *)FMC_SDRAM_JPEG_INPUT_DATA_BUFFER_ADDRESS;
   g_inputJpegOffset = 0;
   uint32_t state = disable_irq();
   if (jpeg_decode_file_read(g_inputJpegBuffer, file_size, &g_inputJpegSize) ==
@@ -251,11 +264,9 @@ int jpeg_decode_start(const char *path) {
     enable_irq(state);
   } else {
     enable_irq(state);
-    lodepng_free(g_inputJpegBuffer);
     return -1;
   }
   if (g_inputJpegSize != file_size) {
-    lodepng_free(g_inputJpegBuffer);
     return -1;
   }
   /* Start JPEG decoding with DMA method */
@@ -268,9 +279,11 @@ int jpeg_decode_start(const char *path) {
 
   uint32_t time_started = HAL_GetTick();
   while ((jpeg_get_decode_state() == 0) && (jpeg_get_decode_error() == 0)) {
-    if (HAL_GetTick() - time_started > 500) Jpeg_HWDecodingError = 1;
+    if (HAL_GetTick() - time_started > 500) {
+      Jpeg_HWDecodingError = 1;
+      HAL_JPEG_Abort(&JPEG_Handle);
+    }
   }
-  lodepng_free(g_inputJpegBuffer);
   if (Jpeg_HWDecodingError) {
     return -2;
   }

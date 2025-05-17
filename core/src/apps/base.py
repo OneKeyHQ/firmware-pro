@@ -400,6 +400,7 @@ def set_homescreen() -> None:
     from trezor.lvglui.scrs import fingerprints
 
     ble_name = storage.device.get_ble_name()
+    first_unlock = False
     if storage.device.is_initialized():
         dev_state = get_state()
         device_name = storage.device.get_label()
@@ -420,6 +421,15 @@ def set_homescreen() -> None:
 
             store_ble_name(ble_name)
             screen = MainScreen(device_name, ble_name, dev_state)
+            if not first_unlock:
+                first_unlock = True
+                if (
+                    not fingerprints.data_version_is_new()
+                    and not fingerprints.data_upgrade_is_prompted()
+                ):
+                    fingerprints.FingerprintDataUpgrade(True)
+                    fingerprints.data_upgrade_prompted()
+
     else:
         from trezor.lvglui.scrs.initscreen import InitScreen
 

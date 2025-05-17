@@ -11,7 +11,8 @@ MEMORY {
   SRAM2   (wal) : ORIGIN = 0x30020000, LENGTH = 128K
   /* SRAM3 is used for DMA */
   SRAM3   (wal) : ORIGIN = 0x30040000, LENGTH = 32K
-  EXRAM   (wal) : ORIGIN = 0xD1C00000, LENGTH = 4096K
+  EXRAM   (wal) : ORIGIN = 0xD1B00000, LENGTH = 1024K
+  FW_RAM  (wal) : ORIGIN = 0xD1C00000, LENGTH = 4096K
 }
 
 main_stack_base = ORIGIN(SRAM) + LENGTH(SRAM); /* 8-byte aligned full descending stack */
@@ -40,7 +41,7 @@ _heap_start = ADDR(.heap);
 _heap_end = ADDR(.heap) + SIZEOF(.heap);
 
 _flash2_load_addr = LOADADDR(.flash2);
-_flash2_start = ORIGIN(EXRAM);
+_flash2_start = ORIGIN(FW_RAM);
 _flash2_end = _flash2_start + SIZEOF(.flash2);
 
 SECTIONS {
@@ -56,7 +57,7 @@ SECTIONS {
     build/firmware/frozen_mpy.o(.rodata*);
     build/firmware/vendor/secp256k1-zkp/src/secp256k1.o(.rodata*);
     . = ALIGN(512);
-  } >EXRAM AT>FLASH2
+  } >FW_RAM AT>FLASH2
 
   .flash : ALIGN(512) {
     _stext = .;
@@ -89,12 +90,18 @@ SECTIONS {
     . = ALIGN(4);
   } >SRAM3
 
+  .exram : ALIGN(4) {
+    *(.exram);
+    . = ALIGN(4);
+  } >EXRAM
+
   .bss2 : ALIGN(4) {
     *(.bss.global_image);
     *(.bss.global_feature);
     *(.bss.global_templet);
     *(.bss.totaledata1);
     *(.bss.totaledata2);
+    *(.bss.g_FeatureCmp);
     . = ALIGN(4);
   } >SRAM2
 

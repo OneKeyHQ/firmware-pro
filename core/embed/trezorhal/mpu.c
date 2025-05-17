@@ -46,6 +46,7 @@
 // --- misc
 #define MPU_REGION_SRAM3_DMA MPU_REGION_NUMBER9
 #define MPU_REGION_QSPI_FLASH MPU_REGION_NUMBER10
+#define MPU_REGION_FIRWWARE_P2 MPU_REGION_NUMBER11
 
 // --- flash subregion for stages
 #define MPU_SUBREGION_MASK_BK1_BOARD (uint8_t)(~0b00000001U)
@@ -267,8 +268,49 @@ secbool mpu_config_firmware(secbool access, secbool exec) {
     mpu_init_struct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
     HAL_MPU_ConfigRegion(&mpu_init_struct);
   }
+
+  // FIRWWARE P2
+  {
+    mpu_init_struct.Enable = MPU_REGION_ENABLE;
+    mpu_init_struct.Number = MPU_REGION_FIRWWARE_P2;
+    mpu_init_struct.BaseAddress = FMC_SDRAM_FIRMWARE_P2_ADDRESS;
+    mpu_init_struct.Size = MPU_REGION_SIZE_4MB;
+    mpu_init_struct.SubRegionDisable = 0x00;
+    mpu_init_struct.TypeExtField = MPU_TEX_LEVEL0;
+    mpu_init_struct.AccessPermission =
+        (exec == sectrue ? MPU_REGION_PRIV_RO_URO : MPU_REGION_FULL_ACCESS);
+    mpu_init_struct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
+    mpu_init_struct.IsShareable = MPU_ACCESS_NOT_SHAREABLE;
+    mpu_init_struct.IsCacheable = MPU_ACCESS_CACHEABLE;
+    mpu_init_struct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
+    HAL_MPU_ConfigRegion(&mpu_init_struct);
+  }
   __asm__ volatile("dsb");
   __asm__ volatile("isb");
 
   return sectrue;
+}
+
+void mpu_config_firmware_p2(secbool access, secbool exec) {
+  MPU_Region_InitTypeDef mpu_init_struct = {0};
+
+  // FIRWWARE P2
+  {
+    mpu_init_struct.Enable = MPU_REGION_ENABLE;
+    mpu_init_struct.Number = MPU_REGION_FIRWWARE_P2;
+    mpu_init_struct.BaseAddress = FMC_SDRAM_FIRMWARE_P2_ADDRESS;
+    mpu_init_struct.Size = MPU_REGION_SIZE_4MB;
+    mpu_init_struct.SubRegionDisable = 0x00;
+    mpu_init_struct.TypeExtField = MPU_TEX_LEVEL0;
+    mpu_init_struct.AccessPermission =
+        (exec == sectrue ? MPU_REGION_PRIV_RO_URO : MPU_REGION_FULL_ACCESS);
+    mpu_init_struct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
+    mpu_init_struct.IsShareable = MPU_ACCESS_NOT_SHAREABLE;
+    mpu_init_struct.IsCacheable = MPU_ACCESS_CACHEABLE;
+    mpu_init_struct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
+    HAL_MPU_ConfigRegion(&mpu_init_struct);
+  }
+
+  __asm__ volatile("dsb");
+  __asm__ volatile("isb");
 }
