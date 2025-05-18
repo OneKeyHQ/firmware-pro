@@ -77,6 +77,7 @@
 #include "cmsis_os2.h"
 #include "test_task.h"
 #include "micropython_task.h"
+#include "ui_task.h"
 #include "version.h"
 
 // from util.s
@@ -199,7 +200,8 @@ int main(void) {
   //printf("CORE: Preparing stack\n");
   osKernelInitialize();
   CreateTestTask();
-  CreateMicroPythonTask();
+  CreateUiTask();
+  //CreateMicroPythonTask();
   osKernelStart();
 
   // Stack limit should be less than real stack size, so we have a chance

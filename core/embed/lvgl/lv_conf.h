@@ -615,7 +615,7 @@
 
 #define LV_USE_CANVAS     1
 
-#define LV_USE_CHART      0
+#define LV_USE_CHART      1
 
 #define LV_USE_CHECKBOX   1
 
@@ -625,7 +625,7 @@
 
 #define LV_USE_IMAGEBUTTON     1
 
-#define LV_USE_KEYBOARD   0
+#define LV_USE_KEYBOARD   1
 
 #define LV_USE_LABEL      1
 #if LV_USE_LABEL
@@ -648,7 +648,7 @@
 
 #define LV_USE_ROLLER     1   /*Requires: lv_label*/
 
-#define LV_USE_SCALE      0
+#define LV_USE_SCALE      1
 
 #define LV_USE_SLIDER     1   /*Requires: lv_bar*/
 
@@ -662,7 +662,7 @@
 
 #define LV_USE_SPINNER    0
 
-#define LV_USE_SWITCH     0
+#define LV_USE_SWITCH     1
 
 #define LV_USE_TEXTAREA   1   /*Requires: lv_label*/
 #if LV_USE_TEXTAREA != 0
@@ -709,7 +709,7 @@
 #define LV_USE_FLEX 1
 
 /*A layout similar to Grid in CSS.*/
-#define LV_USE_GRID 0
+#define LV_USE_GRID 1
 
 /*====================
  * 3RD PARTS LIBRARIES
@@ -1086,7 +1086,7 @@
  ====================*/
 
 /*Show some widget. It might be required to increase `LV_MEM_SIZE` */
-#define LV_USE_DEMO_WIDGETS 0
+#define LV_USE_DEMO_WIDGETS 1
 
 /*Demonstrate the usage of encoder and keyboard*/
 #define LV_USE_DEMO_KEYPAD_AND_ENCODER 0

@@ -18,7 +18,7 @@ FEATURE_FLAGS = {
     "SECP256K1_ZKP": True,  # required for trezor.crypto.curve.bip340 (BIP340/Taproot)
     "SYSTEM_VIEW": False,
     "LVGL_DOUBLE_BUFFER": False,
-    "UART_PRINT": False,
+    "UART_PRINT": True,
 }
 
 CCFLAGS_MOD = ''
@@ -369,6 +369,10 @@ if LVGL_C == '1':
     SOURCE_LVGL_C.extend(Glob('embed/lvgl/src/*/*/*.c'))
     SOURCE_LVGL_C.extend(Glob('embed/lvgl/src/*/*/*/*.c'))
     SOURCE_LVGL_C.extend(Glob('embed/lvgl/src/*/*/*/*/*.c'))
+    SOURCE_LVGL_C.extend(Glob('embed/lvgl/demos/*.c'))
+    SOURCE_LVGL_C.extend(Glob('embed/lvgl/demos/widgets/*.c'))
+    SOURCE_LVGL_C.extend(Glob('embed/lvgl/demos/widgets/*/*.c'))
+
 
 if LVGL_UI == '1':
     SOURCE_LVGL = Glob('vendor/lvgl_mp/lvgl/src/*/*.c')
@@ -479,10 +483,7 @@ if PRODUCTION_MODEL == 'H':
         'embed/FreeRTOS-Kernel/CMSIS/RTOS2/FreeRTOS/Source/cmsis_os2.c',
     ]
 
-    SOURCE_TASKS = [
-        'embed/tasks/test_task.c',
-        'embed/tasks/micropython_task.c',
-    ]
+    SOURCE_TASKS = Glob('embed/tasks/*.c')
 
     SOURCE_CM_BACKTRACE = [
         'embed/cm_backtrace/cm_backtrace.c',
