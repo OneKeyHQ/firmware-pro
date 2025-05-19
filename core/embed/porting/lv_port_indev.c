@@ -5,6 +5,7 @@
 #include "stdio.h"
 //#include "touch_task.h"
 #include "user_utils.h"
+#include "touch.h"
 
 
 static void touchpad_init(void);
@@ -37,6 +38,19 @@ static void touchpad_init(void)
 static void touchpad_read(lv_indev_t *indev_drv, lv_indev_data_t *data)
 {
     UNUSED(indev_drv);
+    int pos = touch_read();
+    /* Save the pressed coordinates and the state */
+    if (pos & TOUCH_START || pos & TOUCH_MOVE) {
+      data->state = LV_INDEV_STATE_PR;
+    } else if (pos & TOUCH_END) {
+      data->state = LV_INDEV_STATE_REL;
+    } else {
+      data->state = LV_INDEV_STATE_REL;
+    }
+    /* Set the last pressed coordinates */
+    data->point.x = (pos >> 12) & 0xfff;
+    data->point.y = pos & 0xfff;
+
     //TouchStatus_t *pTouchStatus = GetTouchStatus();
     //data->state = pTouchStatus->touch ? LV_INDEV_STATE_PR : LV_INDEV_STATE_REL;
     //data->continue_reading = pTouchStatus->continueReading;
