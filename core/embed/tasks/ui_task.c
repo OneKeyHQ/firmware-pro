@@ -8,7 +8,7 @@
 #include "page.h"
 #include "pages_declare.h"
 
-#define LVGL_TICK                       5
+#define LVGL_TICK                       2
 
 
 osThreadId_t g_uiTaskHandle;
