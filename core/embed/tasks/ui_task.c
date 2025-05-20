@@ -5,6 +5,8 @@
 #include "lv_port_indev.h"
 #include "user_utils.h"
 #include "demos/lv_demos.h"
+#include "page.h"
+#include "pages_declare.h"
 
 #define LVGL_TICK                       5
 
@@ -35,7 +37,8 @@ static void UiTask(void *argument)
     lv_init();
     lv_port_disp_init();
     lv_port_indev_init();
-    lv_demo_widgets();
+    //lv_demo_widgets();
+    EnterNewPage(&g_homePage);
 
     while (1) {
         lv_timer_handler();

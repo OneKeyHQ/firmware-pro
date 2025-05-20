@@ -497,6 +497,8 @@ if PRODUCTION_MODEL == 'H':
 
     SOURCE_PORTING = Glob('embed/porting/*.c')
 
+    SOURCE_UI = Glob('embed/ui/*/*.c')
+
     SOURCE_TREZORHAL = [
         'embed/trezorhal/system_stm32h7xx.c',
         'embed/trezorhal/adc.c',
@@ -754,6 +756,9 @@ if PRODUCTION_MODEL == 'H':
             'embed/utils',
             'embed/memory',
             'embed/porting',
+            'embed/ui',
+            'embed/ui/framework',
+            'embed/ui/widgets',
             'embed/trezorhal',
             'embed/trezorhal/fatfs',
             'embed/trezorhal/fp',
@@ -1149,6 +1154,7 @@ obj_program.extend(env.Object(source=SOURCE_CM_BACKTRACE))
 obj_program.extend(env.Object(source=SOURCE_UTILS))
 obj_program.extend(env.Object(source=SOURCE_MEMORY))
 obj_program.extend(env.Object(source=SOURCE_PORTING))
+obj_program.extend(env.Object(source=SOURCE_UI))
 
 if FROZEN:
     obj_program.extend(env.Object(source=source_mpyc))
