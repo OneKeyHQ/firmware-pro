@@ -71,6 +71,7 @@ static void ShowCurrentPage(void)
     lv_obj_set_style_bg_color(g_currentPage->background, lv_color_black(), 0);
     lv_obj_set_style_border_width(g_currentPage->background, 0, 0);
     lv_obj_set_style_radius(g_currentPage->background, 0, 0);
+    lv_obj_set_style_pad_all(g_currentPage->background, 0, 0);
     if (g_currentPage->fullScreen) {
         lv_obj_set_size(g_currentPage->background, MY_DISP_HOR_RES, MY_DISP_VER_RES);
         lv_obj_align(g_currentPage->background, LV_ALIGN_TOP_LEFT, 0, 0);

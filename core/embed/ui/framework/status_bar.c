@@ -12,6 +12,9 @@ void CreateStatusBar(void)
 {
     g_statusBar = lv_obj_create(lv_scr_act());
     lv_obj_set_size(g_statusBar, MY_DISP_HOR_RES, STATUS_BAR_HEIGHT);
+    lv_obj_set_style_bg_color(g_statusBar, lv_color_black(), 0);
+    lv_obj_set_style_border_width(g_statusBar, 0, 0);
+    lv_obj_set_style_opa(g_statusBar, LV_OPA_0, 0);
 }
 
 void HandleStatusBarMsg(uint32_t code, void *data, uint32_t dataLen)
