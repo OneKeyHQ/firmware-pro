@@ -48,20 +48,14 @@ static void HomePageInit(void)
     lv_obj_set_style_bg_color(outerTileView, lv_color_black(), 0);
     lv_obj_set_style_border_width(outerTileView, 0, 0);
     lv_obj_set_scrollbar_mode(outerTileView, LV_SCROLLBAR_MODE_OFF);
-    //lv_obj_set_size(outerTileView, 480, 800);
-    lv_timer_handler();
-    printf("outerTileView size: %ld x %ld\n", lv_obj_get_width(outerTileView), lv_obj_get_height(outerTileView));
-    printf("GetPageBackground size: %ld x %ld\n", lv_obj_get_width(GetPageBackground()), lv_obj_get_height(GetPageBackground()));
 
     //add wallpaper
     tile = lv_tileview_add_tile(outerTileView, 0, 0, LV_DIR_BOTTOM);
-    printf("tile size: %ld x %ld\n", lv_obj_get_width(tile), lv_obj_get_height(tile));
     lv_obj_set_style_border_width(tile, 0, 0);
     lv_obj_set_scrollbar_mode(tile, LV_SCROLLBAR_MODE_OFF);
     img = lv_image_create(tile);
     lv_image_set_src(img, &img_wallpaper_1);
     lv_obj_align(img, LV_ALIGN_TOP_LEFT, 0, 0);
-    printf("tile size: %ld x %ld\n", lv_obj_get_width(tile), lv_obj_get_height(tile));
 
     //add main tile
     tile = lv_tileview_add_tile(outerTileView, 0, 1, LV_DIR_TOP);
@@ -69,7 +63,6 @@ static void HomePageInit(void)
     lv_obj_set_style_bg_color(mainTileView, lv_color_black(), 0);
     lv_obj_set_style_border_width(mainTileView, 0, 0);
     lv_obj_set_scrollbar_mode(mainTileView, LV_SCROLLBAR_MODE_OFF);
-    //lv_obj_set_size(mainTileView, 480, 800);
 
     tile = NULL;
 
