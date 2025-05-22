@@ -5,5 +5,6 @@
 
 extern Page_t g_homePage;
 extern Page_t g_settingsPage;
+extern Page_t g_aboutPage;
 
 #endif

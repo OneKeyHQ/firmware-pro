@@ -8,6 +8,7 @@
 #include "user_menu.h"
 
 static void SettingsPageInit(void);
+static void AbountButtonEventHandler(lv_event_t *e);
 
 Page_t g_settingsPage = {
     .init = SettingsPageInit,
@@ -21,11 +22,20 @@ static void SettingsPageInit(void)
         {"Settings 3", NULL},
         {"Settings 4", NULL},
         {"Settings 5", NULL},
-        {"Settings 6", NULL},
+        {"About", AbountButtonEventHandler},
         {"Settings 7", NULL},
         {"Settings 8", NULL},
         {"Settings 9", NULL},
     };
-    CreateGeneralNavigationBar(GetPageBackground());
+    CreateGeneralNavigationBar(GetPageBackground(), NULL);
     CreateUserMenu(GetPageBackground(), items, 9);
+}
+
+static void AbountButtonEventHandler(lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    if (code == LV_EVENT_CLICKED) {
+        printf("about\n");
+        EnterNewPage(&g_aboutPage);
+    }
 }

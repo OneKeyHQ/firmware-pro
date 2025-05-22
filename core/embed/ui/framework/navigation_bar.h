@@ -15,6 +15,6 @@ typedef struct {
 } NavigationBar_t;
 
 void CreateNavigationBar(lv_obj_t *parent, const NavigationBar_t *navigationBar);
-void CreateGeneralNavigationBar(lv_obj_t *parent);
+void CreateGeneralNavigationBar(lv_obj_t *parent, const char *title);
 
 #endif

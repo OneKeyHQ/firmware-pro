@@ -19,6 +19,7 @@ void CreateNavigationBar(lv_obj_t *parent, const NavigationBar_t *navigationBar)
         lv_obj_align(btn, LV_ALIGN_TOP_LEFT, 0, 0);
         lv_obj_set_style_bg_color(btn, lv_color_black(), 0);
         lv_obj_set_style_border_width(btn, 0, 0);
+        lv_obj_set_style_shadow_width(btn, 0, 0);
         lv_obj_add_event_cb(btn, navigationBar->leftBtnCb, LV_EVENT_CLICKED, NULL);
         img = lv_img_create(btn);
         lv_img_set_src(img, navigationBar->leftImgSrc);
@@ -30,6 +31,7 @@ void CreateNavigationBar(lv_obj_t *parent, const NavigationBar_t *navigationBar)
         lv_obj_align(btn, LV_ALIGN_TOP_RIGHT, 0, 0);
         lv_obj_set_style_bg_color(btn, lv_color_black(), 0);
         lv_obj_set_style_border_width(btn, 0, 0);
+        lv_obj_set_style_shadow_width(btn, 0, 0);
         lv_obj_add_event_cb(btn, navigationBar->rightBtnCb, LV_EVENT_CLICKED, NULL);
         img = lv_img_create(btn);
         lv_img_set_src(img, navigationBar->rightImgSrc);
@@ -38,18 +40,20 @@ void CreateNavigationBar(lv_obj_t *parent, const NavigationBar_t *navigationBar)
     if (navigationBar->middleText != NULL) {
         label = lv_label_create(bg);
         lv_label_set_text(label, navigationBar->middleText);
-        lv_obj_align(label, LV_ALIGN_TOP_MID, 0, 0);
+        lv_obj_set_style_text_font(label, &lv_font_montserrat_30, 0);
+        lv_obj_set_style_text_color(label, lv_color_white(), 0);
+        lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
     }
 }
 
-void CreateGeneralNavigationBar(lv_obj_t *parent)
+void CreateGeneralNavigationBar(lv_obj_t *parent, const char *title)
 {
     NavigationBar_t navigationBar = {
         .leftImgSrc = &img_nav_back,
         .leftBtnCb = BackButtonHandler,
         .rightImgSrc = NULL,
         .rightBtnCb = NULL,
-        .middleText = NULL,
+        .middleText = title,
     };
     CreateNavigationBar(parent, &navigationBar);
 }
