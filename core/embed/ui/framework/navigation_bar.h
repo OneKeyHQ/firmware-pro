@@ -5,7 +5,7 @@
 #include "stdbool.h"
 #include "lvgl.h"
 
-#define NAVIGATION_BAR_HEIGHT       24
+#define NAVIGATION_BAR_HEIGHT       64
 typedef struct {
     const void *leftImgSrc;
     lv_event_cb_t leftBtnCb;

@@ -7,6 +7,7 @@
 #include "demos/lv_demos.h"
 #include "page.h"
 #include "pages_declare.h"
+#include "status_bar.h"
 
 #define LVGL_TICK                       2
 
@@ -38,6 +39,7 @@ static void UiTask(void *argument)
     lv_port_disp_init();
     lv_port_indev_init();
     //lv_demo_widgets();
+    CreateStatusBar();
     EnterNewPage(&g_homePage);
 
     while (1) {

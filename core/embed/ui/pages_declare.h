@@ -4,5 +4,6 @@
 #include "page.h"
 
 extern Page_t g_homePage;
+extern Page_t g_settingsPage;
 
 #endif

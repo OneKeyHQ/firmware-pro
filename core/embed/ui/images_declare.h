@@ -12,6 +12,8 @@ extern const lv_img_dsc_t img_app_scan;
 extern const lv_img_dsc_t img_app_settings;
 extern const lv_img_dsc_t img_app_tips;
 
+extern const lv_img_dsc_t img_nav_back;
+
 extern const lv_img_dsc_t img_wallpaper_1;
 
 #endif

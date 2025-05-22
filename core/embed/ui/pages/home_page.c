@@ -30,17 +30,18 @@ Page_t g_homePage = {
 typedef struct {
     const lv_image_dsc_t *imgSrc;
     const char *text;
+    Page_t *page;
 } HomePageIconItem_t;
 
 static const HomePageIconItem_t homePageIconList[] = {
-    {&img_app_connect, "connect"},
-    {&img_app_scan, "scan"},
-    {&img_app_address, "address"},
-    {&img_app_settings, "settings"},
-    {&img_app_keys, "keys"},
-    {&img_app_backup, "backup"},
-    {&img_app_nft, "nft"},
-    {&img_app_tips, "tips"},
+    {&img_app_connect, "connect", NULL},
+    {&img_app_scan, "scan", NULL},
+    {&img_app_address, "address", NULL},
+    {&img_app_settings, "settings", &g_settingsPage},
+    {&img_app_keys, "keys", NULL},
+    {&img_app_backup, "backup", NULL},
+    {&img_app_nft, "nft", NULL},
+    {&img_app_tips, "tips", NULL},
 };
 
 lv_obj_t *g_wallpaper = NULL;
@@ -48,23 +49,8 @@ lv_obj_t *g_mainTileView = NULL;
 
 static void HomePageInit(void)
 {
-    //lv_obj_t *mainTileView, *outerTileView, *tile, *obj;
     lv_obj_t *tile;
     lv_obj_t *img, *label;
-
-//    //outer tile
-//    outerTileView = lv_tileview_create(GetPageBackground());
-//    lv_obj_set_style_bg_color(outerTileView, lv_color_black(), 0);
-//    lv_obj_set_style_border_width(outerTileView, 0, 0);
-//    lv_obj_set_scrollbar_mode(outerTileView, LV_SCROLLBAR_MODE_OFF);
-//
-//    //add wallpaper
-//    tile = lv_tileview_add_tile(outerTileView, 0, 0, LV_DIR_BOTTOM);
-//    lv_obj_set_style_border_width(tile, 0, 0);
-//    lv_obj_set_scrollbar_mode(tile, LV_SCROLLBAR_MODE_OFF);
-//    img = lv_image_create(tile);
-//    lv_image_set_src(img, &img_wallpaper_1);
-//    lv_obj_align(img, LV_ALIGN_TOP_LEFT, 0, 0);
 
     g_wallpaper = lv_image_create(GetPageBackground());
     lv_image_set_src(g_wallpaper, &img_wallpaper_1);
@@ -72,9 +58,7 @@ static void HomePageInit(void)
     lv_obj_add_flag(g_wallpaper, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_add_event_cb(g_wallpaper, WallpaperSlideEventHandler, LV_EVENT_CLICKED, NULL);
 
-
     //add main tile
-    //tile = lv_tileview_add_tile(outerTileView, 0, 1, LV_DIR_TOP);
     g_mainTileView = lv_tileview_create(GetPageBackground());
     lv_obj_set_style_bg_color(g_mainTileView, lv_color_black(), 0);
     lv_obj_set_style_border_width(g_mainTileView, 0, 0);
@@ -93,7 +77,7 @@ static void HomePageInit(void)
         lv_obj_align(img, LV_ALIGN_CENTER, (i % 2 == 0 ? -116 : 116), ((i % 4) < 2 ? -136 : 136));
         lv_obj_set_style_image_opa(img, LV_OPA_30, LV_STATE_PRESSED);
         lv_obj_add_flag(img, LV_OBJ_FLAG_CLICKABLE);
-        lv_obj_add_event_cb(img, ImgBtnEventHandler, LV_EVENT_CLICKED, NULL);
+        lv_obj_add_event_cb(img, ImgBtnEventHandler, LV_EVENT_CLICKED, homePageIconList[i].page);
         label = lv_label_create(tile);
         lv_obj_set_style_text_font(label, &lv_font_montserrat_26, 0);
         lv_label_set_text(label, homePageIconList[i].text);
@@ -120,6 +104,10 @@ static void ImgBtnEventHandler(lv_event_t *e)
     lv_event_code_t code = lv_event_get_code(e);
     if (code == LV_EVENT_CLICKED) {
         printf("clinked\n");
+        Page_t *page = lv_event_get_user_data(e);
+        if (page != NULL) {
+            EnterNewPage(page);
+        }
     }
 }
 
