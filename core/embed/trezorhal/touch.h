@@ -21,6 +21,7 @@
 #define TREZORHAL_TOUCH_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #if PRODUCTION_MODEL == 'H'
 #define TS_I2C_PORT GPIOB

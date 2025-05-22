@@ -18,7 +18,12 @@
 #define LV_CONF_H
 
 #include <stdint.h>
+#include "unix_heap_port.h"
 
+#define LODEPNG_NO_COMPILE_ALLOCATORS
+#define lodepng_malloc pvPortMalloc
+#define lodepng_realloc pvPortReMalloc
+#define lodepng_free vPortFree
 /*====================
    COLOR SETTINGS
  *====================*/

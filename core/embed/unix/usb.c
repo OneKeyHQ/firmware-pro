@@ -196,7 +196,7 @@ secbool usb_hid_can_write(uint8_t iface_num) {
   return usb_emulated_poll(iface_num, POLLOUT);
 }
 
-secbool usb_webusb_can_write(uint8_t iface_num) {
+int usb_webusb_can_write(uint8_t iface_num) {
   if (iface_num >= USBD_MAX_NUM_INTERFACES ||
       usb_ifaces[iface_num].type != USB_IFACE_TYPE_WEBUSB) {
     return secfalse;
@@ -259,4 +259,8 @@ secbool usb_configured(void) {
   }
 
   return sectrue;
+}
+
+bool usb_3320_host_connected(void) {
+  return 0;
 }

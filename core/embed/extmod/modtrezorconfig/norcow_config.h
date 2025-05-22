@@ -26,6 +26,11 @@
 #define NORCOW_SECTOR_COUNT 2
 #define NORCOW_SECTOR_SIZE (64 * 1024)
 
+#if defined (TREZOR_EMULATOR)
+#define NORCOW_SECTORS \
+  { FLASH_SECTOR_STORAGE_1, FLASH_SECTOR_STORAGE_2 }
+#endif
+
 /*
  * Current storage version.
  */

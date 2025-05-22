@@ -23,9 +23,6 @@
 #include "supervise.h"
 #endif
 #include "bc_bytewords.h"
-#include "se_thd89.h"
-#include "secure_heap.h"
-#include "sha2.h"
 #include "version.h"
 
 #if MICROPY_PY_TREZORUTILS
@@ -44,6 +41,9 @@
 #include "image.h"
 #include "low_power.h"
 #include "mini_printf.h"
+#include "se_thd89.h"
+#include "secure_heap.h"
+#include "sha2.h"
 #endif
 
 // static void ui_progress(mp_obj_t ui_wait_callback, uint32_t current,
@@ -178,8 +178,11 @@ STATIC mp_obj_t mod_trezorutils_onekey_firmware_hash(void) {
   vstr_t hash = {0};
 
   vstr_init_len(&hash, 32);
-
+#ifndef TREZOR_EMULATOR
   memcpy((uint8_t *)hash.buf, get_firmware_hash(), 32);
+#else
+  memset((uint8_t *)hash.buf, 0, 32);
+#endif
 
   return mp_obj_new_str_from_vstr(&mp_type_bytes, &hash);
 }
@@ -328,7 +331,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorutils_board_hash_obj,
 ///     """
 STATIC mp_obj_t mod_trezorutils_board_build_id(void) {
 #ifdef TREZOR_EMULATOR
-  mp_obj_new_str_copy(&mp_type_str, (const uint8_t *)"EMULATOR", 8);
+  return mp_obj_new_str_copy(&mp_type_str, (const uint8_t *)"EMULATOR", 8);
 #else
   char *str = get_boardloader_build_id();
 
@@ -344,7 +347,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorutils_board_build_id_obj,
 ///     """
 STATIC mp_obj_t mod_trezorutils_boot_build_id(void) {
 #ifdef TREZOR_EMULATOR
-  mp_obj_new_str_copy(&mp_type_str, (const uint8_t *)"EMULATOR", 8);
+  return mp_obj_new_str_copy(&mp_type_str, (const uint8_t *)"EMULATOR", 8);
 #else
   char *str = get_bootloader_build_id();
 
@@ -488,7 +491,11 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorutils_usb_data_connected_obj,
 STATIC mp_obj_t mod_trezorutils_get_tick(void) {
   uint32_t tick_cnts = 0;
 
+#ifdef TREZOR_EMULATOR
+  tick_cnts = 0;
+#else
   tick_cnts = HAL_GetTick();
+#endif
 
   return mp_obj_new_int_from_uint(tick_cnts);
 }
@@ -541,7 +548,10 @@ STATIC mp_obj_t mod_trezorutils_enter_lowpower(size_t n_args,
 
   bool wake_up = n_args > 2 && args[2] == mp_const_true;
 
+#ifndef TREZOR_EMULATOR
   enter_stop_mode(val_restart, val_ms / 1000, wake_up);
+#endif
+
   return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_trezorutils_enter_lowpower_obj,

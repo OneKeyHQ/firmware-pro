@@ -9,9 +9,13 @@
 
 #include "bc_bytewords.h"
 #include <string.h>
-// #include <assert.h>
+#ifdef TREZOR_EMULATOR
+#include <assert.h>
+#include "unix_heap_port.h"
+#else
+#include "secure_heap.h"
+#endif
 #include <ctype.h>
-#include"secure_heap.h"
 
 // #ifdef ARDUINO
 // #include <bc-crypto-base.h>

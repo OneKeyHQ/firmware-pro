@@ -150,7 +150,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorio_fingerprint_save_obj,
 ///     """
 
 STATIC mp_obj_t mod_trezorio_fingerprint_get_group(void) {
-  uint8_t group[8];
+  uint8_t group[8] = {0};
   fingerprint_get_group(group);
   return mp_obj_new_bytes(group, 8);
 }
@@ -342,8 +342,8 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_2(
 ///     """
 
 STATIC mp_obj_t mod_trezorio_fingerprint_get_sensitivity_and_area(void) {
-  uint32_t sensitivity;
-  uint16_t area;
+  uint32_t sensitivity = 0;
+  uint16_t area = 0;
   fpsensor_get_config_param(&sensitivity, &area);
   mp_obj_tuple_t *tuple = MP_OBJ_TO_PTR(mp_obj_new_tuple(2, NULL));
   tuple->items[0] = MP_OBJ_NEW_SMALL_INT(sensitivity);

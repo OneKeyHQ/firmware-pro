@@ -1,7 +1,5 @@
 #include "common.h"
-#ifndef EMULATOR
-  #include "fp_sensor_wrapper.h"
-#endif
+#include "fp_sensor_wrapper.h"
 #include "fingerprint.h"
 #include "irq.h"
 #ifdef SYSTEM_VIEW
@@ -17,55 +15,11 @@ bool fingerprint_module_status_get(void)
     return fingerprint_module_status;
 }
 
-#ifdef EMULATOR
-void fingerprint_get_version(char* version)
-{
-    strcpy(version, "1.0.0");
-}
-int fingerprint_detect(void)
-{
-    return 1;
-}
-int fingerprint_enroll(uint8_t counter)
-{
-    (void)counter;
-    return 0;
-}
-int fingerprint_save(uint8_t index)
-{
-    (void)index;
-    return 0;
-}
-int fingerprint_match(uint8_t* match_id)
-{
-    (void)match_id;
-    return 0;
-}
-int fingerprint_delete(uint8_t id)
-{
-    (void)id;
-    return 0;
-}
-int fingerprint_delete_all(void)
-{
-    return 0;
-}
-int fingerprint_get_count(uint8_t* count)
-{
-    (void)count;
-    return 0;
-}
-int fingerprint_get_list(uint8_t* list, uint8_t len)
-{
-    (void)list;
-    (void)len;
-    return 0;
-}
-#else
 void fingerprint_get_version(char* version)
 {
     FpLibVersion(version);
 }
+
 void fingerprint_init(void)
 {
     ensure_ex(fpsensor_gpio_init(), FPSENSOR_OK, "fpsensor_gpio_init failed");
@@ -402,4 +356,3 @@ void fingerprint_test(void)
         display_printf("FpaIdentify matched\n");
     }
 }
-#endif

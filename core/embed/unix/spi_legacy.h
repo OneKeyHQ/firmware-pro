@@ -4,5 +4,6 @@
 #include "spi.h"
 
 #define spi_slave_send(...) 0
+#define spi_slave_poll_fido(...) 0
 
 #endif

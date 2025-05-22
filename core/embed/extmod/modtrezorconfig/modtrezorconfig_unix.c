@@ -36,24 +36,9 @@
 #include "device.h"
 #include "display.h"
 #include "emmc.h"
-#include "fpsensor_platform.h"
 #include "mini_printf.h"
-#include "se_thd89.h"
-
-#define MAX_MNEMONIC_LEN 240
-
+#include "se_atca.h"
 #endif
-
-typedef struct {
-  bool hal_pin_initialized;
-  bool has_pin;
-  bool pin_unlocked_initialized;
-  bool pin_unlocked;
-  bool fp_unlocked_initialized;
-  bool fp_unlocked;
-} pin_state_t;
-
-static pin_state_t pin_state = {0};
 
 static secbool wrapped_ui_wait_callback(uint32_t wait, uint32_t progress,
                                         const char *message) {
@@ -78,29 +63,26 @@ static secbool wrapped_ui_wait_callback(uint32_t wait, uint32_t progress,
 ///     called from this module!
 ///     """
 STATIC mp_obj_t mod_trezorconfig_init(size_t n_args, const mp_obj_t *args) {
+#ifndef TREZOR_EMULATOR
+  if (se_is_wiping()) {
+    storage_wipe();
+  }
+#endif
+
   if (n_args > 0) {
     MP_STATE_VM(trezorconfig_ui_wait_callback) = args[0];
-    se_set_ui_callback(wrapped_ui_wait_callback);
+    storage_init(wrapped_ui_wait_callback, HW_ENTROPY_DATA, HW_ENTROPY_LEN);
+  } else {
+    storage_init(NULL, HW_ENTROPY_DATA, HW_ENTROPY_LEN);
   }
+  memzero(HW_ENTROPY_DATA, sizeof(HW_ENTROPY_DATA));
+#ifndef TREZOR_EMULATOR
+  se_get_status();
+#endif
   return mp_const_none;
 }
-
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_trezorconfig_init_obj, 0, 1,
                                            mod_trezorconfig_init);
-
-/// def is_initialized() -> bool:
-///     """
-///     Returns True if device is initialized.
-///     """
-STATIC mp_obj_t mod_trezorconfig_is_initialized(void) {
-  if (sectrue != se_isInitialized()) {
-    return mp_const_false;
-  }
-
-  return mp_const_true;
-}
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorconfig_is_initialized_obj,
-                                 mod_trezorconfig_is_initialized);
 
 /// def unlock(pin: str, ext_salt: bytes | None) -> bool:
 ///     """
@@ -119,25 +101,34 @@ STATIC mp_obj_t mod_trezorconfig_unlock(mp_obj_t pin, mp_obj_t ext_salt) {
       mp_raise_msg(&mp_type_ValueError, "Invalid length of external salt.");
   }
 
-  // display_clear();
-  // display_loader_ex(0, false, 0, 0xFFFF, 0x0000, NULL, 0, 0);
-  secbool ret = secfalse;
-
-  // verify se pin first when not in emulator
-  ret = se_verifyPin(pin_b.buf);
-  if (ret != sectrue) {
-    if (!pin_state.pin_unlocked_initialized) {
-      pin_state.pin_unlocked = false;
-      pin_state.pin_unlocked_initialized = true;
-    }
+#ifdef TREZOR_EMULATOR
+  if (sectrue != storage_unlock(pin_b.buf, pin_b.len, ext_salt_b.buf)) {
     return mp_const_false;
   }
+#else
+  display_clear();
+  display_loader_ex(0, false, 0, 0xFFFF, 0x0000, NULL, 0, 0);
+  secbool ret = secfalse;
+  // verify se pin first when not in emulator
+  bool verified = se_verifyPin(pin_b.buf);
+  ret = storage_unlock(pin_b.buf, pin_b.len, ext_salt_b.buf);
+  if (ret != sectrue) {
+    return mp_const_false;
+  } else {
+    if (!verified) {
+      if (se_hasPin()) {
+        se_reset_pin();
+      }
+      if (sectrue == storage_has_pin()) {
+        if (!se_changePin((char *)PIN_EMPTY, pin_b.buf)) {
+          return mp_const_false;
+        }
+      }
+    }
+  }
 
-  fpsensor_data_init();
-  pin_state.pin_unlocked = true;
-  pin_state.pin_unlocked_initialized = true;
-  pin_state.fp_unlocked = true;
-  pin_state.fp_unlocked_initialized = true;
+#endif
+
   return mp_const_true;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_trezorconfig_unlock_obj,
@@ -159,9 +150,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_trezorconfig_check_pin_obj,
 ///     Locks the storage.
 ///     """
 STATIC mp_obj_t mod_trezorconfig_lock(void) {
-  se_clearSecsta();
-  pin_state.pin_unlocked = false;
-  pin_state.pin_unlocked = false;
+  storage_lock();
   return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorconfig_lock_obj,
@@ -172,11 +161,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorconfig_lock_obj,
 ///     Returns True if storage is unlocked, False otherwise.
 ///     """
 STATIC mp_obj_t mod_trezorconfig_is_unlocked(void) {
-  if (!pin_state.pin_unlocked_initialized) {
-    pin_state.pin_unlocked = se_getSecsta() ? true : false;
-    pin_state.pin_unlocked_initialized = true;
-  }
-  if (!pin_state.pin_unlocked) {
+  if (sectrue != storage_is_unlocked()) {
     return mp_const_false;
   }
   return mp_const_true;
@@ -189,11 +174,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorconfig_is_unlocked_obj,
 ///     Returns True if storage has a configured PIN, False otherwise.
 ///     """
 STATIC mp_obj_t mod_trezorconfig_has_pin(void) {
-  if (!pin_state.hal_pin_initialized) {
-    pin_state.has_pin = se_hasPin() ? true : false;
-    pin_state.hal_pin_initialized = true;
-  }
-  if (!pin_state.has_pin) {
+  if (sectrue != storage_has_pin()) {
     return mp_const_false;
   }
 
@@ -207,12 +188,19 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorconfig_has_pin_obj,
 ///     Returns the number of remaining PIN entry attempts.
 ///     """
 STATIC mp_obj_t mod_trezorconfig_get_pin_rem(void) {
-  uint8_t retry_cnts = 0;
-  if (sectrue != se_getRetryTimes(&retry_cnts)) {
-    mp_raise_msg(&mp_type_RuntimeError, "Failed to get pin retry times.");
+#ifdef TREZOR_EMULATOR
+  return mp_obj_new_int_from_uint(storage_get_pin_rem());
+#else
+  int remain = storage_get_pin_rem();
+  int fail_count = se_pinFailedCounter();
+  int remain_se = 0;
+  if (fail_count < PIN_MAX_TRIES) {
+    remain_se = PIN_MAX_TRIES - fail_count;
+  } else {
+    remain_se = 0;
   }
-
-  return mp_obj_new_int_from_uint(retry_cnts);
+  return mp_obj_new_int_from_uint(remain < remain_se ? remain : remain_se);
+#endif
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorconfig_get_pin_rem_obj,
                                  mod_trezorconfig_get_pin_rem);
@@ -234,22 +222,38 @@ STATIC mp_obj_t mod_trezorconfig_change_pin(size_t n_args,
   mp_buffer_info_t newpin = {0};
   mp_get_buffer_raise(args[1], &newpin, MP_BUFFER_READ);
 
-  if (!pin_state.hal_pin_initialized) {
-    pin_state.has_pin = se_hasPin() ? true : false;
-    pin_state.hal_pin_initialized = true;
+  mp_buffer_info_t ext_salt_b = {0};
+  const uint8_t *old_ext_salt = NULL;
+  if (args[2] != mp_const_none) {
+    mp_get_buffer_raise(args[2], &ext_salt_b, MP_BUFFER_READ);
+    if (ext_salt_b.len != EXTERNAL_SALT_SIZE)
+      mp_raise_msg(&mp_type_ValueError, "Invalid length of external salt.");
+    old_ext_salt = ext_salt_b.buf;
   }
-
-  if (!pin_state.has_pin) {
-    if (sectrue != se_setPin(newpin.buf)) {
-      return mp_const_false;
-    }
-    pin_state.has_pin = true;
-
-  } else {
-    if (sectrue != se_changePin(oldpin.buf, newpin.buf)) {
-      return mp_const_false;
-    }
+  const uint8_t *new_ext_salt = NULL;
+  if (args[3] != mp_const_none) {
+    mp_get_buffer_raise(args[3], &ext_salt_b, MP_BUFFER_READ);
+    if (ext_salt_b.len != EXTERNAL_SALT_SIZE)
+      mp_raise_msg(&mp_type_ValueError, "Invalid length of external salt.");
+    new_ext_salt = ext_salt_b.buf;
   }
+#ifdef TREZOR_EMULATOR
+  if (sectrue != storage_change_pin(oldpin.buf, oldpin.len, newpin.buf,
+                                    newpin.len, old_ext_salt, new_ext_salt)) {
+    return mp_const_false;
+  }
+#else
+  display_clear();
+  display_loader_ex(0, false, 0, 0xFFFF, 0x0000, NULL, 0, 0);
+  if (sectrue != storage_change_pin(oldpin.buf, oldpin.len, newpin.buf,
+                                    newpin.len, old_ext_salt, new_ext_salt)) {
+    return mp_const_false;
+  }
+  display_loader_ex(1000, false, 0, 0xFFFF, 0x0000, NULL, 0, 0);
+  if (!se_setPin(newpin.buf)) {
+    return mp_const_false;
+  }
+#endif
   return mp_const_true;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_trezorconfig_change_pin_obj, 4,
@@ -262,7 +266,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_trezorconfig_change_pin_obj, 4,
 STATIC mp_obj_t mod_trezorconfig_ensure_not_wipe_code(mp_obj_t pin) {
   mp_buffer_info_t pin_b = {0};
   mp_get_buffer_raise(pin, &pin_b, MP_BUFFER_READ);
-  // storage_ensure_not_wipe_code(pin_b.buf, pin_b.len);
+  storage_ensure_not_wipe_code(pin_b.buf, pin_b.len);
   return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorconfig_ensure_not_wipe_code_obj,
@@ -273,10 +277,9 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorconfig_ensure_not_wipe_code_obj,
 ///     Returns True if storage has a configured wipe code, False otherwise.
 ///     """
 STATIC mp_obj_t mod_trezorconfig_has_wipe_code(void) {
-  if (sectrue != se_hasWipeCode()) {
+  if (sectrue != storage_has_wipe_code()) {
     return mp_const_false;
   }
-
   return mp_const_true;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorconfig_has_wipe_code_obj,
@@ -298,14 +301,17 @@ STATIC mp_obj_t mod_trezorconfig_change_wipe_code(size_t n_args,
   mp_buffer_info_t wipe_code_b = {0};
   mp_get_buffer_raise(args[2], &wipe_code_b, MP_BUFFER_READ);
 
-  if (pin_b.len == wipe_code_b.len) {
-    if (memcmp(pin_b.buf, wipe_code_b.buf, pin_b.len) == 0) {
-      mp_raise_msg(&mp_type_ValueError,
-                   "The new PIN must be different from your wipe code.");
-    }
+  mp_buffer_info_t ext_salt_b = {0};
+  const uint8_t *ext_salt = NULL;
+  if (args[1] != mp_const_none) {
+    mp_get_buffer_raise(args[1], &ext_salt_b, MP_BUFFER_READ);
+    if (ext_salt_b.len != EXTERNAL_SALT_SIZE)
+      mp_raise_msg(&mp_type_ValueError, "Invalid length of external salt.");
+    ext_salt = ext_salt_b.buf;
   }
 
-  if (sectrue != se_changeWipeCode(pin_b.buf, wipe_code_b.buf)) {
+  if (sectrue != storage_change_wipe_code(pin_b.buf, pin_b.len, ext_salt,
+                                          wipe_code_b.buf, wipe_code_b.len)) {
     return mp_const_false;
   }
   return mp_const_true;
@@ -313,73 +319,6 @@ STATIC mp_obj_t mod_trezorconfig_change_wipe_code(size_t n_args,
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(
     mod_trezorconfig_change_wipe_code_obj, 3, 3,
     mod_trezorconfig_change_wipe_code);
-
-/// def get_needs_backup() -> bool:
-///     """
-///     Returns needs_backup.
-///     """
-STATIC mp_obj_t mod_trezorconfig_get_needs_backup(void) {
-  bool needs_backup = false;
-  if (sectrue != se_get_needs_backup(&needs_backup)) {
-    return mp_const_false;
-  }
-
-  return needs_backup ? mp_const_true : mp_const_false;
-}
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorconfig_get_needs_backup_obj,
-                                 mod_trezorconfig_get_needs_backup);
-
-/// def set_needs_backup(needs_backup: bool = False) -> bool:
-///     """
-///     Set needs_backup.
-///     """
-STATIC mp_obj_t mod_trezorconfig_set_needs_backup(mp_obj_t needs_backup) {
-  bool needs_backup_b = mp_obj_is_true(needs_backup);
-
-  if (sectrue != se_set_needs_backup(needs_backup_b)) {
-    return mp_const_false;
-  }
-
-  return mp_const_true;
-}
-
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorconfig_set_needs_backup_obj,
-                                 mod_trezorconfig_set_needs_backup);
-
-/// def get_val_len(app: int, key: int, public: bool = False) -> int:
-///     """
-///     Gets the length of the value of the given key for the given app (or None
-///     if not set). Raises a RuntimeError if decryption or authentication of
-///     the stored value fails.
-///     """
-STATIC mp_obj_t mod_trezorconfig_get_val_len(size_t n_args,
-                                             const mp_obj_t *args) {
-  uint32_t key = trezor_obj_get_uint(args[1]);
-
-  bool is_private = key & (1 << 31);
-
-  secbool (*reader)(uint16_t, void *, uint16_t) =
-      is_private ? se_get_private_region : se_get_public_region;
-
-  // key is position
-  key &= ~(1 << 31);
-
-  uint8_t temp[4] = {0};
-  if (sectrue != reader(key, temp, 3)) {
-    return mp_const_none;
-  }
-  // has flag
-  if (temp[0] != 1) {
-    return mp_const_none;
-  }
-
-  uint16_t len = 0;
-  len = (temp[1] << 8) + temp[2];
-
-  return mp_obj_new_int_from_uint(len);
-}
-STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_trezorconfig_get_val_len_obj, 2,
-                                           3, mod_trezorconfig_get_val_len);
 
 /// def get(app: int, key: int, public: bool = False) -> bytes | None:
 ///     """
@@ -389,48 +328,24 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_trezorconfig_get_val_len_obj, 2,
 ///     """
 STATIC mp_obj_t mod_trezorconfig_get(size_t n_args, const mp_obj_t *args) {
   uint8_t app = trezor_obj_get_uint8(args[0]);
-  // webauthn resident credentials, FIDO2
-  if (app == 4) {
-    uint32_t index = trezor_obj_get_uint(args[1]);
-    uint16_t len = sizeof(CTAP_credential_id_storage) -
-                   FIDO2_RESIDENT_CREDENTIALS_HEADER_LEN;
-    CTAP_credential_id_storage cred_id = {0};
-
-    if (!se_get_fido2_resident_credentials(index, cred_id.rp_id_hash, &len)) {
-      return mp_const_none;
-    }
-    return mp_obj_new_bytes(cred_id.rp_id_hash, len);
+  if (app == 0 || app > MAX_APPID) {
+    mp_raise_msg(&mp_type_ValueError, "Invalid app ID.");
   }
-
-  uint32_t key = trezor_obj_get_uint(args[1]);
-
-  bool is_private = key & (1 << 31);
-
-  secbool (*reader)(uint16_t, void *, uint16_t) =
-      is_private ? se_get_private_region : se_get_public_region;
-
-  // key is position
-  key &= ~(1 << 31);
-
-  uint8_t temp[4] = {0};
-  if (sectrue != reader(key, temp, 3)) {
-    return mp_const_none;
+  uint8_t key = trezor_obj_get_uint8(args[1]);
+  if (n_args > 2 && args[2] == mp_const_true) {
+    app |= FLAG_PUBLIC;
   }
-  // has flag
-  if (temp[0] != 1) {
-    return mp_const_none;
-  }
-
+  uint16_t appkey = (app << 8) | key;
   uint16_t len = 0;
-  len = (temp[1] << 8) + temp[2];
-
+  if (sectrue != storage_get(appkey, NULL, 0, &len)) {
+    return mp_const_none;
+  }
   if (len == 0) {
     return mp_const_empty_bytes;
   }
   vstr_t vstr = {0};
   vstr_init_len(&vstr, len);
-  vstr.len = len;
-  if (sectrue != reader(key + 3, vstr.buf, vstr.len)) {
+  if (sectrue != storage_get(appkey, vstr.buf, vstr.len, &len)) {
     vstr_clear(&vstr);
     mp_raise_msg(&mp_type_RuntimeError, "Failed to get value from storage.");
   }
@@ -445,41 +360,18 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_trezorconfig_get_obj, 2, 3,
 ///     """
 STATIC mp_obj_t mod_trezorconfig_set(size_t n_args, const mp_obj_t *args) {
   uint8_t app = trezor_obj_get_uint8(args[0]);
-  // webauthn resident credentials, FIDO2
-  if (app == 4) {
-    uint32_t index = trezor_obj_get_uint(args[1]);
-
-    mp_buffer_info_t cred_id;
-    mp_get_buffer_raise(args[2], &cred_id, MP_BUFFER_READ);
-    if (cred_id.len > sizeof(CTAP_credential_id_storage) -
-                          FIDO2_RESIDENT_CREDENTIALS_HEADER_LEN) {
-      mp_raise_msg(&mp_type_RuntimeError, "Credential ID too long");
-    }
-    if (!se_set_fido2_resident_credentials(index, cred_id.buf, cred_id.len)) {
-      mp_raise_msg(&mp_type_RuntimeError, "Could not save value");
-    }
-    return mp_const_none;
+  if (app == 0 || app > MAX_APPID) {
+    mp_raise_msg(&mp_type_ValueError, "Invalid app ID.");
   }
-
-  uint32_t key = trezor_obj_get_uint(args[1]);
-  bool is_private = key & (1 << 31);
-  secbool (*writer)(uint16_t, const void *, uint16_t) =
-      is_private ? se_set_private_region : se_set_public_region;
-
+  uint8_t key = trezor_obj_get_uint8(args[1]);
+  if (n_args > 3 && args[3] == mp_const_true) {
+    app |= FLAG_PUBLIC;
+  }
+  uint16_t appkey = (app << 8) | key;
   mp_buffer_info_t value;
   mp_get_buffer_raise(args[2], &value, MP_BUFFER_READ);
-  if (value.len > UINT16_MAX) {
-    mp_raise_msg(&mp_type_RuntimeError, "Could not save value");
-  }
-  uint8_t temp[4] = {0};
-  temp[0] = 1;
-  temp[1] = (value.len >> 8) & 0xff;
-  temp[2] = value.len & 0xff;
-
-  if (sectrue != writer(key, temp, 3)) {
-    mp_raise_msg(&mp_type_RuntimeError, "Could not save value");
-  }
-  if (sectrue != writer(key + 3, value.buf, value.len)) {
+  if (value.len > UINT16_MAX ||
+      sectrue != storage_set(appkey, value.buf, value.len)) {
     mp_raise_msg(&mp_type_RuntimeError, "Could not save value");
   }
   return mp_const_none;
@@ -495,24 +387,22 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_trezorconfig_set_obj, 3, 4,
 ///     """
 STATIC mp_obj_t mod_trezorconfig_delete(size_t n_args, const mp_obj_t *args) {
   uint8_t app = trezor_obj_get_uint8(args[0]);
-  // webauthn resident credentials, FIDO2
-  if (app == 4) {
-    uint32_t index = trezor_obj_get_uint(args[1]);
-    if (!se_delete_fido2_resident_credentials(index)) {
-      mp_raise_msg(&mp_type_RuntimeError, "Could not delete value");
-    }
-    return mp_const_true;
+  if (app == 0 || app > MAX_APPID) {
+    mp_raise_msg(&mp_type_ValueError, "Invalid app ID.");
   }
-
-  uint32_t key = trezor_obj_get_uint(args[1]);
-  bool is_private = key & (1 << 31);
-  secbool (*writer)(uint16_t, const void *, uint16_t) =
-      is_private ? se_set_private_region : se_set_public_region;
-
-  uint8_t temp[1] = {0};
-  temp[0] = 0;
-  if (sectrue != writer(key, temp, 1)) {
-    mp_raise_msg(&mp_type_RuntimeError, "Could not delete key");
+  uint8_t key = trezor_obj_get_uint8(args[1]);
+  if (n_args > 2 && args[2] == mp_const_true) {
+    app |= FLAG_PUBLIC;
+  }
+  if (n_args > 3 && args[3] == mp_const_true) {
+    app |= FLAGS_WRITE;
+    if (args[2] != mp_const_true) {
+      mp_raise_msg(&mp_type_ValueError, "Writable entry must be public.");
+    }
+  }
+  uint16_t appkey = (app << 8) | key;
+  if (sectrue != storage_delete(appkey)) {
+    return mp_const_false;
   }
   return mp_const_true;
 }
@@ -527,9 +417,20 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_trezorconfig_delete_obj, 2, 4,
 ///     """
 STATIC mp_obj_t mod_trezorconfig_set_counter(size_t n_args,
                                              const mp_obj_t *args) {
+  uint8_t app = trezor_obj_get_uint8(args[0]);
+  if (app == 0 || app > MAX_APPID) {
+    mp_raise_msg(&mp_type_ValueError, "Invalid app ID.");
+  }
+  uint8_t key = trezor_obj_get_uint8(args[1]);
+  if (n_args > 3 && args[3] == mp_const_true) {
+    app |= FLAGS_WRITE;
+  } else {
+    app |= FLAG_PUBLIC;
+  }
+  uint16_t appkey = (app << 8) | key;
   mp_uint_t count = trezor_obj_get_uint(args[2]);
-  if (count > UINT32_MAX || !se_set_u2f_counter(count)) {
-    mp_raise_msg(&mp_type_RuntimeError, "Failed to set u2f counter.");
+  if (count > UINT32_MAX || sectrue != storage_set_counter(appkey, count)) {
+    mp_raise_msg(&mp_type_RuntimeError, "Failed to set value in storage.");
   }
   return mp_const_none;
 }
@@ -545,9 +446,20 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_trezorconfig_set_counter_obj, 3,
 ///     """
 STATIC mp_obj_t mod_trezorconfig_next_counter(size_t n_args,
                                               const mp_obj_t *args) {
+  uint8_t app = trezor_obj_get_uint8(args[0]);
+  if (app == 0 || app > MAX_APPID) {
+    mp_raise_msg(&mp_type_ValueError, "Invalid app ID.");
+  }
+  uint8_t key = trezor_obj_get_uint8(args[1]);
+  if (n_args > 2 && args[2] == mp_const_true) {
+    app |= FLAGS_WRITE;
+  } else {
+    app |= FLAG_PUBLIC;
+  }
+  uint16_t appkey = (app << 8) | key;
   uint32_t count = 0;
-  if (sectrue != se_get_u2f_counter(&count)) {
-    mp_raise_msg(&mp_type_RuntimeError, "Failed to get u2f counter.");
+  if (sectrue != storage_next_counter(appkey, &count)) {
+    mp_raise_msg(&mp_type_RuntimeError, "Failed to set value in storage.");
   }
   return mp_obj_new_int_from_uint(count);
 }
@@ -559,10 +471,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_trezorconfig_next_counter_obj, 2,
 ///     Erases the whole config. Use with caution!
 ///     """
 STATIC mp_obj_t mod_trezorconfig_wipe(void) {
-  fpsensor_data_cache_clear();
-  if (sectrue != se_reset_storage()) {
-    mp_raise_msg(&mp_type_RuntimeError, "Failed to reset storage.");
-  }
+  storage_wipe();
   return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorconfig_wipe_obj,
@@ -572,89 +481,49 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorconfig_wipe_obj,
 STATIC mp_obj_t mod_trezorconfig_se_import_mnemonic(mp_obj_t mnemonic) {
   mp_buffer_info_t mnemo = {0};
   mp_get_buffer_raise(mnemonic, &mnemo, MP_BUFFER_READ);
+  const char *pmnemonic = mnemo.len > 0 ? mnemo.buf : "";
 
-  if (sectrue != se_set_mnemonic(mnemo.buf, mnemo.len)) {
+  uint8_t mnemonic_bits[64] = {0};
+  int mnemonic_bits_len = mnemonic_to_bits(pmnemonic, mnemonic_bits);
+  if (mnemonic_bits_len == 0 || mnemonic_bits_len % 33 != 0) {
+    mp_raise_ValueError("Invalid mnemonic");
+  }
+  int strength = (mnemonic_bits_len / 11) * 8 * 4 / 3;
+  se_setSeedStrength(strength);
+  if (!se_importSeed(mnemonic_bits)) {
     return mp_const_false;
   }
-
   return mp_const_true;
 }
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorconfig_se_import_mnemonic_obj,
                                  mod_trezorconfig_se_import_mnemonic);
 
-/// def se_export_mnemonic() -> bytes:
-///     """
-///     Export mnemonic from SE.
-///     """
 STATIC mp_obj_t mod_trezorconfig_se_export_mnemonic(void) {
-  char mnemonic[MAX_MNEMONIC_LEN + 1];
+  uint8_t seed[64] = {0};
+  uint32_t strength = 0;
 
-  if (sectrue != se_exportMnemonic(mnemonic, sizeof(mnemonic))) {
-    mp_raise_ValueError("Get se mnemonic");
+  if (!se_isInitialized()) {
+    // mp_raise_ValueError("Device not initialized");
+    return mp_const_none;
+  }
+  if (!se_getSeedStrength(&strength)) {
+    mp_raise_ValueError("Get mnemonic strength");
   }
 
+  if (!se_export_seed(seed)) {
+    mp_raise_ValueError("Get mnemonic seed");
+  }
+  const char *mnemonic = mnemonic_from_data(seed, strength / 8);
   mp_obj_t res = mp_obj_new_str_copy(&mp_type_bytes, (const uint8_t *)mnemonic,
                                      strlen(mnemonic));
-  memzero(mnemonic, sizeof(mnemonic));
+  mnemonic_clear();
   return res;
 }
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorconfig_se_export_mnemonic_obj,
                                  mod_trezorconfig_se_export_mnemonic);
 
-/// def fingerprint_is_unlocked() -> bool:
-///     """
-///     Returns True if fingerprint is unlocked, False otherwise.
-///     """
-STATIC mp_obj_t mod_trezorcrypto_se_fingerprint_is_unlocked(void) {
-  if (!pin_state.fp_unlocked_initialized) {
-    pin_state.fp_unlocked = se_fingerprint_state() ? true : false;
-    pin_state.fp_unlocked_initialized = true;
-  }
-  if (!pin_state.fp_unlocked) {
-    return mp_const_false;
-  }
-  return mp_const_true;
-}
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(
-    mod_trezorcrypto_se_fingerprint_is_unlocked_obj,
-    mod_trezorcrypto_se_fingerprint_is_unlocked);
-
-/// def fingerprint_lock() -> bool:
-///     """
-///     fingerprint lock.
-///     """
-STATIC mp_obj_t mod_trezorcrypto_se_fingerprint_lock(void) {
-  if (sectrue != se_fingerprint_lock()) {
-    return mp_const_false;
-  }
-  pin_state.fp_unlocked = false;
-  return mp_const_true;
-}
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorcrypto_se_fingerprint_lock_obj,
-                                 mod_trezorcrypto_se_fingerprint_lock);
-
-/// def fingerprint_unlock() -> bool:
-///     """
-///     fingerprint unlock.
-///     """
-STATIC mp_obj_t mod_trezorcrypto_se_fingerprint_unlock(void) {
-  if (sectrue != se_fingerprint_unlock()) {
-    pin_state.fp_unlocked = false;
-    pin_state.fp_unlocked_initialized = true;
-    return mp_const_false;
-  }
-  pin_state.fp_unlocked = true;
-  pin_state.fp_unlocked_initialized = true;
-  return mp_const_true;
-}
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorcrypto_se_fingerprint_unlock_obj,
-                                 mod_trezorcrypto_se_fingerprint_unlock);
-
-#endif
-
-#ifndef TREZOR_EMULATOR
 /// def get_serial() -> str:
 ///     """
 ///     get device serial
@@ -664,10 +533,10 @@ STATIC mp_obj_t mod_trezorconfig_get_serial(void) {
 
   char *dev_serial;
   if (device_get_serial(&dev_serial)) {
-    res = mp_obj_new_str_copy(&mp_type_str, (const uint8_t *)dev_serial,
+    res = mp_obj_new_str_copy(&mp_type_bytes, (const uint8_t *)dev_serial,
                               strlen(dev_serial));
   } else {
-    res = mp_obj_new_str_copy(&mp_type_str, (const uint8_t *)"NULL",
+    res = mp_obj_new_str_copy(&mp_type_bytes, (const uint8_t *)"NULL",
                               strlen("NULL"));
   }
 
@@ -694,14 +563,14 @@ STATIC mp_obj_t mod_trezorconfig_get_capacity(void) {
   } else {
     mini_snprintf(cap_info, sizeof(cap_info), "%d Bytes", (unsigned int)cap);
   }
-  return mp_obj_new_str_copy(&mp_type_str, (const uint8_t *)cap_info,
+  return mp_obj_new_str_copy(&mp_type_bytes, (const uint8_t *)cap_info,
                              strlen(cap_info));
 }
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorconfig_get_capacity_obj,
                                  mod_trezorconfig_get_capacity);
-#endif
 
+#endif
 STATIC const mp_rom_map_elem_t mp_module_trezorconfig_globals_table[] = {
     {MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_trezorconfig)},
     {MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&mod_trezorconfig_init_obj)},
@@ -722,8 +591,6 @@ STATIC const mp_rom_map_elem_t mp_module_trezorconfig_globals_table[] = {
      MP_ROM_PTR(&mod_trezorconfig_has_wipe_code_obj)},
     {MP_ROM_QSTR(MP_QSTR_change_wipe_code),
      MP_ROM_PTR(&mod_trezorconfig_change_wipe_code_obj)},
-    {MP_ROM_QSTR(MP_QSTR_get_val_len),
-     MP_ROM_PTR(&mod_trezorconfig_get_val_len_obj)},
     {MP_ROM_QSTR(MP_QSTR_get), MP_ROM_PTR(&mod_trezorconfig_get_obj)},
     {MP_ROM_QSTR(MP_QSTR_set), MP_ROM_PTR(&mod_trezorconfig_set_obj)},
     {MP_ROM_QSTR(MP_QSTR_delete), MP_ROM_PTR(&mod_trezorconfig_delete_obj)},
@@ -741,21 +608,6 @@ STATIC const mp_rom_map_elem_t mp_module_trezorconfig_globals_table[] = {
      MP_ROM_PTR(&mod_trezorconfig_get_serial_obj)},
     {MP_ROM_QSTR(MP_QSTR_get_capacity),
      MP_ROM_PTR(&mod_trezorconfig_get_capacity_obj)},
-    {MP_ROM_QSTR(MP_QSTR_get_needs_backup),
-     MP_ROM_PTR(&mod_trezorconfig_get_needs_backup_obj)},
-    {MP_ROM_QSTR(MP_QSTR_set_needs_backup),
-     MP_ROM_PTR(&mod_trezorconfig_set_needs_backup_obj)},
-    {MP_ROM_QSTR(MP_QSTR_fingerprint_is_unlocked),
-     MP_ROM_PTR(&mod_trezorcrypto_se_fingerprint_is_unlocked_obj)},
-    {MP_ROM_QSTR(MP_QSTR_fingerprint_lock),
-     MP_ROM_PTR(&mod_trezorcrypto_se_fingerprint_lock_obj)},
-    {MP_ROM_QSTR(MP_QSTR_fingerprint_unlock),
-     MP_ROM_PTR(&mod_trezorcrypto_se_fingerprint_unlock_obj)},
-#endif
-#if USE_THD89
-    {MP_ROM_QSTR(MP_QSTR_is_initialized),
-     MP_ROM_PTR(&mod_trezorconfig_is_initialized_obj)},
-
 #endif
 };
 STATIC MP_DEFINE_CONST_DICT(mp_module_trezorconfig_globals,

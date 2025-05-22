@@ -20,7 +20,11 @@
 #include "py/objstr.h"
 
 #include "schnorr_bch.h"
+
+#if USE_THD89
 #include "se_thd89.h"
+#endif
+
 #include "vendor/trezor-crypto/secp256k1.h"
 
 /// package: trezorcrypto.schnorr_bch

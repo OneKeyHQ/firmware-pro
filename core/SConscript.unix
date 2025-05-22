@@ -84,7 +84,8 @@ CPPPATH_MOD += [
     'vendor/trezor-storage',
 ]
 SOURCE_MOD += [
-    'embed/extmod/modtrezorconfig/modtrezorconfig.c',
+    #'embed/extmod/modtrezorconfig/modtrezorconfig.c'
+    'embed/extmod/modtrezorconfig/modtrezorconfig_unix.c',
     'vendor/trezor-storage/norcow.c',
     'vendor/trezor-storage/storage.c',
 ]
@@ -219,7 +220,8 @@ if FEATURE_FLAGS["TREZOR_UI"]:
         'TREZOR_FONT_MONO_ENABLE',
     ]
     SOURCE_MOD += [
-        'embed/extmod/modtrezorui/display.c',
+        #'embed/extmod/modtrezorui/display.c'
+        'embed/extmod/modtrezorui/display-unix-pattern.c',
         'embed/extmod/modtrezorui/display-unix.c',
         'embed/extmod/modtrezorui/fonts/font_bitmap.c',
         'embed/extmod/modtrezorui/fonts/font_roboto_bold_20.c',
@@ -257,6 +259,7 @@ if RASPI:
 # modtrezorutils
 SOURCE_MOD += [
     'embed/extmod/modtrezorutils/modtrezorutils.c',
+    'embed/bytewords/bc_bytewords.c',
 ]
 
 # rust mods
@@ -501,6 +504,7 @@ env.Replace(
         'vendor/micropython/ports/unix',
         'vendor/micropython/lib/mp-readline',
         'vendor/lvgl_mp/lvgl',
+        'embed/bytewords',
     ] + CPPPATH_MOD,
     CPPDEFINES=[
         'TREZOR_EMULATOR',
@@ -798,7 +802,7 @@ env.Append(LINKFLAGS=f'-l{RUST_LIB}')
 #
 
 obj_program = []
-obj_program.extend(env.Object(source=SOURCE_MOD))
+obj_program.extend(env.Object(source=SOURCE_MOD, CCFLAGS='$CCFLAGS -Wno-unused-variable'))
 if FEATURE_FLAGS["SECP256K1_ZKP"]:
     obj_program.extend(env.Object(source=SOURCE_MOD_SECP256K1_ZKP, CCFLAGS='$CCFLAGS -Wno-unused-function'))
 obj_program.extend(env.Object(source=SOURCE_MICROPYTHON))
