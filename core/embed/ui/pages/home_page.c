@@ -9,16 +9,23 @@
 #include "status_bar.h"
 #include "images_declare.h"
 
+#define SLIDE_GRADIEMT      0
+#define SLIDE_TILEVIEW      1
+
+#define SLIDE_SELECT    SLIDE_GRADIEMT
+
 
 static void HomePageInit(void);
 static void HomePageDeinit(void);
 static void HomePageMsgHandler(uint32_t code, void *data, uint32_t dataLen);
 static void ImgBtnEventHandler(lv_event_t *e);
+#if (SLIDE_SELECT == SLIDE_GRADIEMT)
 static void WallpaperSlideEventHandler(lv_event_t *e);
 static void MainTileViewSlideEventHandler(lv_event_t *e);
 static void HideWallpaperAfterFade(lv_anim_t *a);
 static void ShowMainTileView(void);
 static void ShowWallpaper(void);
+#endif
 
 Page_t g_homePage = {
     .init = HomePageInit,
@@ -46,6 +53,8 @@ static const HomePageIconItem_t homePageIconList[] = {
 
 lv_obj_t *g_wallpaper = NULL;
 lv_obj_t *g_mainTileView = NULL;
+
+#if (SLIDE_SELECT == SLIDE_GRADIEMT)
 
 static void HomePageInit(void)
 {
@@ -88,6 +97,56 @@ static void HomePageInit(void)
     lv_obj_move_foreground(g_wallpaper);
 }
 
+#else
+
+static void HomePageInit(void)
+{
+    lv_obj_t *mainTileView, *outerTileView, *tile;
+    lv_obj_t *img, *label;
+
+    //outer tile
+    outerTileView = lv_tileview_create(GetPageBackground());
+    lv_obj_set_style_bg_color(outerTileView, lv_color_black(), 0);
+    lv_obj_set_style_border_width(outerTileView, 0, 0);
+    lv_obj_set_scrollbar_mode(outerTileView, LV_SCROLLBAR_MODE_OFF);
+
+    //add wallpaper
+    tile = lv_tileview_add_tile(outerTileView, 0, 0, LV_DIR_BOTTOM);
+    lv_obj_set_style_border_width(tile, 0, 0);
+    lv_obj_set_scrollbar_mode(tile, LV_SCROLLBAR_MODE_OFF);
+    img = lv_image_create(tile);
+    lv_image_set_src(img, &img_wallpaper_1);
+    lv_obj_align(img, LV_ALIGN_TOP_LEFT, 0, 0);
+
+    //add main tile
+    tile = lv_tileview_add_tile(outerTileView, 0, 1, LV_DIR_TOP);
+    mainTileView = lv_tileview_create(tile);
+    lv_obj_set_style_bg_color(mainTileView, lv_color_black(), 0);
+    lv_obj_set_style_border_width(mainTileView, 0, 0);
+    lv_obj_set_scrollbar_mode(mainTileView, LV_SCROLLBAR_MODE_OFF);
+
+    tile = NULL;
+
+    for (uint32_t i = 0; i < sizeof(homePageIconList) / sizeof(HomePageIconItem_t); i++) {
+        if (i % 4 == 0) {
+            tile = lv_tileview_add_tile(mainTileView, i / 4, 0, LV_DIR_HOR);
+        }
+        img = lv_image_create(tile);
+        lv_image_set_src(img, homePageIconList[i].imgSrc);
+        lv_obj_align(img, LV_ALIGN_CENTER, (i % 2 == 0 ? -116 : 116), ((i % 4) < 2 ? -136 : 136));
+        lv_obj_set_style_image_opa(img, LV_OPA_30, LV_STATE_PRESSED);
+        lv_obj_add_flag(img, LV_OBJ_FLAG_CLICKABLE);
+        lv_obj_add_event_cb(img, ImgBtnEventHandler, LV_EVENT_CLICKED, homePageIconList[i].page);
+        label = lv_label_create(tile);
+        lv_obj_set_style_text_font(label, &lv_font_montserrat_26, 0);
+        lv_label_set_text(label, homePageIconList[i].text);
+        lv_obj_set_style_text_color(label, lv_color_white(), 0);
+        lv_obj_align(label, LV_ALIGN_CENTER, (i % 2 == 0 ? -116 : 116), ((i % 4) < 2 ? -136 : 136) + 120);
+    }
+}
+
+#endif
+
 
 static void HomePageDeinit(void)
 {
@@ -111,6 +170,7 @@ static void ImgBtnEventHandler(lv_event_t *e)
     }
 }
 
+#if (SLIDE_SELECT == SLIDE_GRADIEMT)
 static void WallpaperSlideEventHandler(lv_event_t *e)
 {
     lv_event_code_t code = lv_event_get_code(e);
@@ -189,3 +249,4 @@ static void ShowWallpaper(void)
     lv_anim_set_path_cb(&a2, lv_anim_path_ease_out);
     lv_anim_start(&a2);
 }
+#endif
