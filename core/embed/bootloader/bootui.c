@@ -845,6 +845,9 @@ void ui_bootloader_first(const image_header* const hdr) {
   display_text_center(DISPLAY_RESX / 2, TITLE_OFFSET_Y, "Update Mode", -1,
                       FONT_PJKS_BOLD_38, COLOR_BL_FG, COLOR_BL_BG);
 
+  display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY / 2 + 32, "Factory Only",
+                      -1, FONT_PJKS_BOLD_38, COLOR_BL_FAIL, COLOR_BL_BG);
+
   if (ble_name_state()) {
     char* ble_name;
     ble_name = ble_get_name();

@@ -206,7 +206,27 @@ void device_para_init(void) {
   return;
 }
 
+void device_erase_opt(uint8_t blocks[], uint8_t num) {
+  FlashLockedData otp_data_buffer = {0xff};
+  memcpy((uint8_t *)&otp_data_buffer, flash_otp_data, sizeof(FlashLockedData));
+  for (uint8_t i = 0; i < num; i++) {
+    memset(otp_data_buffer.flash_otp[blocks[i]], 0xff, FLASH_OTP_BLOCK_SIZE);
+  }
+  uint8_t secotrs[1];
+  secotrs[0] = 15;
+  ensure(flash_erase_sectors(secotrs, 1, NULL), "erase data sector 15");
+  ensure(flash_unlock_write(), NULL);
+  for (size_t i = 0; i < sizeof(FlashLockedData); i += 32) {
+    ensure(
+        flash_write_words(15, i, (uint32_t *)((uint8_t *)&otp_data_buffer + i)),
+        NULL);
+  }
+  ensure(flash_lock_write(), NULL);
+}
+
 bool device_serial_set(void) { return serial_set; }
+
+void device_clear_serial_flag(void) { serial_set = false; }
 
 bool device_set_serial(char *dev_serial) {
   uint8_t buffer[FLASH_OTP_BLOCK_SIZE] = {0};

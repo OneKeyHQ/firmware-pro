@@ -761,6 +761,23 @@ int main(void) {
     device_para_init();
   }
 
+  char *se_version = se_get_version_ex();
+  if (strcmp(se_version, "1.9.9") == 0) {
+    char* serial;
+    uint8_t blocks[1] = {FLASH_OTP_DEVICE_SERIAL};
+    if (device_serial_set()) {
+      device_get_serial(&serial);
+      if (serial[10] == 'A') 
+      {
+        device_erase_opt(blocks, 1);
+        device_clear_serial_flag();
+        if (se_has_cerrificate()) {
+          se_write_certificate(NULL, 0);
+        }
+      }
+    }
+  }  
+
   if ((!device_serial_set() || !se_has_cerrificate()) && se_mode == 0) {
     display_clear();
     device_set_factory_mode(true);
@@ -813,7 +830,7 @@ int main(void) {
 
   BOOT_TARGET boot_target =
       decide_boot_target(&vhdr, &hdr, &vhdr_valid, &hdr_valid, &code_valid);
-  // boot_target = BOOT_TARGET_BOOTLOADER;
+  boot_target = BOOT_TARGET_BOOTLOADER;
 
   if (boot_target == BOOT_TARGET_BOOTLOADER) {
     display_clear();

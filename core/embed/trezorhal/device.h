@@ -50,11 +50,14 @@ void device_test(bool force);
 void device_burnin_test(bool force);
 void device_burnin_test_clear_flag(void);
 void device_generate_trng_data(void);
+void device_erase_opt(uint8_t blocks[], uint8_t num);
 ;
 #if !PRODUCTION
 bool device_backup_otp(bool overwrite);
 bool device_restore_otp();
 bool device_overwrite_serial(char *dev_serial);
 #endif
+
+void device_clear_serial_flag(void);
 
 #endif

@@ -1004,7 +1004,9 @@ secbool se_write_certificate(const uint8_t *cert, uint16_t len) {
     cmd[4] = len;
     cmd_len = 5;
   }
-  memcpy(cmd + cmd_len, cert, len);
+  if (cert != NULL && len > 0) {
+    memcpy(cmd + cmd_len, cert, len);
+  }
   return thd89_transmit(cmd, cmd_len + len, NULL, &resp_len);
 }
 

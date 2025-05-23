@@ -1337,7 +1337,10 @@ int check_firmware_from_file(uint8_t iface_num)
             }
         }
         emmc_fs_file_delete(UPDATE_INFO_FILE);
-        return update_firmware_from_file(iface_num, path_buffer, false);
+        if (update_firmware_from_file(iface_num, path_buffer, false) == 0) {
+            HAL_NVIC_SystemReset();
+            return 0;
+        }
     }
     return -1;
 }
