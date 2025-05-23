@@ -123,23 +123,26 @@ elseif (OPTIONS_FULL_32BIT)
 elseif (OPTIONS_TEST_SYSHEAP)
     set (BUILD_OPTIONS ${LVGL_TEST_OPTIONS_TEST_SYSHEAP})
     filter_compiler_options (C TEST_LIBS ${SANITIZE_AND_COVERAGE_OPTIONS})
-    set (LV_CONF_BUILD_DISABLE_EXAMPLES ON)
+    set (CONFIG_LV_BUILD_EXAMPLES OFF CACHE BOOL "disable examples" FORCE)
     set (ENABLE_TESTS ON)
+    add_definitions(-DREF_IMGS_PATH="ref_imgs/")
 elseif (OPTIONS_TEST_DEFHEAP)
     set (BUILD_OPTIONS ${LVGL_TEST_OPTIONS_TEST_DEFHEAP})
     filter_compiler_options (C TEST_LIBS ${SANITIZE_AND_COVERAGE_OPTIONS})
-    set (LV_CONF_BUILD_DISABLE_EXAMPLES ON)
+    set (CONFIG_LV_BUILD_EXAMPLES OFF CACHE BOOL "disable examples" FORCE)
     set (ENABLE_TESTS ON)
+    add_definitions(-DREF_IMGS_PATH="ref_imgs/")
 elseif (OPTIONS_TEST_MEMORYCHECK)
     # sanitizer is disabled because valgrind uses LD_PRELOAD and the
     # sanitizer lib needs to load first
     set (BUILD_OPTIONS ${LVGL_TEST_OPTIONS_TEST_SYSHEAP})
-    set (LV_CONF_BUILD_DISABLE_EXAMPLES ON)
+    set (CONFIG_LV_BUILD_EXAMPLES OFF CACHE BOOL "disable examples" FORCE)
     set (ENABLE_TESTS ON)
+    add_definitions(-DREF_IMGS_PATH="ref_imgs/")
 elseif (OPTIONS_TEST_VG_LITE)
     set (BUILD_OPTIONS ${LVGL_TEST_OPTIONS_VG_LITE} -DLVGL_CI_USING_SYS_HEAP ${SANITIZE_AND_COVERAGE_OPTIONS})
     filter_compiler_options (C TEST_LIBS ${SANITIZE_AND_COVERAGE_OPTIONS})
-    set (LV_CONF_BUILD_DISABLE_EXAMPLES ON)
+    set (CONFIG_LV_BUILD_EXAMPLES OFF CACHE BOOL "disable examples" FORCE)
     set (ENABLE_TESTS ON)
     add_definitions(-DREF_IMGS_PATH="ref_imgs_vg_lite/")
 
@@ -169,8 +172,6 @@ endif()
 
 # Options lvgl and examples are compiled with.
 set(COMPILE_OPTIONS
-    -DLV_CONF_PATH=${LVGL_TEST_DIR}/src/lv_test_conf.h
-    -DLV_BUILD_TEST
     ${BUILD_OPTIONS}
     ${BUILD_TARGET_DEF}
 )
@@ -205,6 +206,9 @@ if(NOT (CMAKE_C_COMPILER_ID STREQUAL "MSVC"))
         -Werror=strict-aliasing
         -Wno-double-promotion
         -Wno-unreachable-code
+        -Wno-gnu-zero-variadic-macro-arguments
+        -Wunused-function
+	-Wno-overlength-strings
     )
 else()
     list(APPEND COMPILE_OPTIONS
@@ -252,30 +256,48 @@ endif()
 get_filename_component(LVGL_DIR ${LVGL_TEST_DIR} DIRECTORY)
 
 # Include lvgl project file.
+# Set LV_BUILD_CONF_PATH so os_desktop.cmake knows about it before compiling lvgl
+# Used to preprocess lv_conf_internal.h with the test config
+set(LV_BUILD_CONF_PATH "${LVGL_TEST_DIR}/src/lv_test_conf.h" CACHE STRING "set test configuration")
+
 include(${LVGL_DIR}/CMakeLists.txt)
 target_compile_options(lvgl PUBLIC $<$<COMPILE_LANGUAGE:C>: ${LVGL_C_COMPILE_OPTIONS}>)
+target_compile_options(lvgl PUBLIC $<$<COMPILE_LANGUAGE:CXX>:${LVGL_CXX_COMPILE_OPTIONS}>)
+target_compile_definitions(lvgl PUBLIC LV_BUILD_TEST)
 if(NOT (CMAKE_C_COMPILER_ID STREQUAL "MSVC"))
-    target_compile_options(lvgl PUBLIC $<$<COMPILE_LANGUAGE:ASM>: ${LVGL_C_COMPILE_OPTIONS}>)
-endif()
-target_compile_options(lvgl PUBLIC $<$<COMPILE_LANGUAGE:CXX>: ${LVGL_CXX_COMPILE_OPTIONS}>)
-if (TARGET lvgl_examples)
-  target_compile_options(lvgl_examples PUBLIC ${LVGL_C_COMPILE_OPTIONS})
+    target_compile_options(lvgl PUBLIC $<$<COMPILE_LANGUAGE:ASM>:${LVGL_C_COMPILE_OPTIONS}>)
 endif()
 
+if (TARGET lvgl_thorvg)
+    target_compile_options(lvgl_thorvg PUBLIC $<$<COMPILE_LANGUAGE:C>:${LVGL_C_COMPILE_OPTIONS}>)
+    target_compile_options(lvgl_thorvg PUBLIC $<$<COMPILE_LANGUAGE:CXX>:${LVGL_CXX_COMPILE_OPTIONS}>)
+endif()
+
+if (TARGET lvgl_examples)
+    target_compile_options(lvgl_examples PUBLIC $<$<COMPILE_LANGUAGE:C>:${LVGL_C_COMPILE_OPTIONS}>)
+    target_compile_options(lvgl_examples PUBLIC $<$<COMPILE_LANGUAGE:CXX>:${LVGL_CXX_COMPILE_OPTIONS}>)
+endif()
+
+if (TARGET lvgl_demos)
+    target_compile_options(lvgl_demos PUBLIC $<$<COMPILE_LANGUAGE:C>:${LVGL_C_COMPILE_OPTIONS}>)
+    target_compile_options(lvgl_demos PUBLIC $<$<COMPILE_LANGUAGE:CXX>:${LVGL_CXX_COMPILE_OPTIONS}>)
+endif()
+
+
+# LVGL_CONF_DIR and LVGL_CONF_PATH are normalized and set by os_desktop.cmake
 
 set(TEST_INCLUDE_DIRS
     $<BUILD_INTERFACE:${LVGL_TEST_DIR}/src>
     $<BUILD_INTERFACE:${LVGL_TEST_DIR}/unity>
     $<BUILD_INTERFACE:${LVGL_TEST_DIR}>
+    $<BUILD_INTERFACE:${LVGL_CONF_DIR}>
 )
 
 file(GLOB_RECURSE TEST_IMAGES_SRC ${LVGL_TEST_DIR}/test_images/*.c)
 
 add_library(test_common
     STATIC
-        src/lv_test_indev.c
         src/lv_test_init.c
-        src/lv_test_helpers.c
         src/test_assets/test_animimg001.c
         src/test_assets/test_animimg002.c
         src/test_assets/test_animimg003.c
@@ -285,13 +307,15 @@ add_library(test_common
         src/test_assets/test_img_cogwheel_rgb565a8.c
         src/test_assets/test_img_cogwheel_xrgb8888.c
         src/test_assets/test_img_cogwheel_argb8888.c
+        src/test_assets/test_img_svg.c
         src/test_assets/test_font_1.c
         src/test_assets/test_font_2.c
         src/test_assets/test_font_3.c
         src/test_assets/test_font_montserrat_ascii_1bpp.c
         src/test_assets/test_font_montserrat_ascii_2bpp.c
         src/test_assets/test_font_montserrat_ascii_4bpp.c
-        src/test_assets/test_font_montserrat_ascii_4bpp_compressed.c
+        src/test_assets/test_font_montserrat_ascii_8bpp.c
+        src/test_assets/test_font_montserrat_ascii_3bpp_compressed.c
         src/test_assets/test_font_1_bin.c
         src/test_assets/test_font_2_bin.c
         src/test_assets/test_font_3_bin.c
@@ -307,12 +331,12 @@ add_library(test_common
         src/test_assets/test_imagebutton_right.c
         src/test_assets/test_music_button_play.c
         src/test_assets/test_lottie_approve.c
-        unity/unity_support.c
         unity/unity.c
         ${TEST_IMAGES_SRC}
 )
 target_include_directories(test_common PUBLIC ${TEST_INCLUDE_DIRS})
 target_compile_options(test_common PUBLIC ${LVGL_TESTFILE_COMPILE_OPTIONS})
+target_compile_definitions(test_common PRIVATE LV_BUILD_TEST ${LVGL_COMPILER_DEFINES})
 
 # Generate one test executable for each source file pair.
 # The sources in ${CMAKE_CURRENT_BINARY_DIR} is auto-generated, the
@@ -329,21 +353,40 @@ if(NOT WIN32)
 
     # Wayland
     find_package(PkgConfig)
-    pkg_check_modules(wayland-client REQUIRED wayland-client)
-    pkg_check_modules(wayland-cursor REQUIRED wayland-cursor)
-    pkg_check_modules(xkbcommon REQUIRED xkbcommon)
+    pkg_check_modules(wayland_client wayland-client)
 
-    link_libraries(wayland-client wayland-cursor xkbcommon)
+    if (wayland_client_FOUND)
+        pkg_check_modules(wayland-cursor REQUIRED wayland-cursor)
+        pkg_check_modules(xkbcommon REQUIRED xkbcommon)
 
-    # Add auto generated source required for XDG shell
-    include_directories("${LVGL_TEST_DIR}/wayland_protocols")
-    target_sources(test_common PUBLIC "wayland_protocols/wayland_xdg_shell.c")
+        link_libraries(wayland-client wayland-cursor xkbcommon)
 
+        # Add auto generated source required for XDG shell
+        include_directories("${LVGL_TEST_DIR}/wayland_protocols")
+        target_sources(test_common PUBLIC "wayland_protocols/wayland_xdg_shell.c")
+    else()
+        add_definitions(-DLV_USE_WAYLAND=0)
+    endif()
 endif()
 
 # libpng is required for the png test case
 find_package(PNG REQUIRED)
 include_directories(${PNG_INCLUDE_DIR})
+
+if(NOT WIN32)
+    # FFmpeg is optional for the image and video test cases
+    find_package(PkgConfig)
+    pkg_check_modules(FFMPEG libavformat libavcodec libswscale libavutil)
+    if(FFMPEG_FOUND)
+        include_directories(${FFMPEG_INCLUDE_DIRS})
+    else()
+        message("FFmpeg not found, defaulting to 0")
+        add_definitions(-DLV_USE_FFMPEG=0)
+    endif()
+else()
+    message("Disable FFmpeg for Windows")
+    add_definitions(-DLV_USE_FFMPEG=0)
+endif()
 
 # libfreetype is required for the font test case
 find_package(Freetype REQUIRED)
@@ -427,6 +470,7 @@ endif()
 if (TEST_LIBS_FILES)
     add_library(test_libs STATIC ${TEST_LIBS_FILES})
     target_include_directories(test_libs PUBLIC ${TEST_INCLUDE_DIRS} "src/test_libs")
+    target_compile_definitions(test_libs PRIVATE LV_BUILD_TEST ${LVGL_COMPILER_DEFINES})
     target_compile_options(test_libs PUBLIC ${LVGL_TESTFILE_COMPILE_OPTIONS})
     list(APPEND TEST_LIBS test_libs)
 endif()
@@ -466,6 +510,7 @@ foreach( test_case_fname ${TEST_CASE_FILES} )
             ${LIBDRM_LIBRARIES}
             ${LIBINPUT_LIBRARIES}
             ${JPEG_LIBRARIES}
+            ${FFMPEG_LIBRARIES}
             m
             pthread
             ${TEST_LIBS})

@@ -24,8 +24,8 @@ void lv_example_chart_2(void)
     lv_obj_set_width(chart, lv_pct(100));
     lv_obj_set_flex_grow(chart, 1);
     lv_chart_set_type(chart, LV_CHART_TYPE_BAR);
-    lv_chart_set_range(chart, LV_CHART_AXIS_PRIMARY_Y, 0, 100);
-    lv_chart_set_range(chart, LV_CHART_AXIS_SECONDARY_Y, 0, 400);
+    lv_chart_set_axis_range(chart, LV_CHART_AXIS_PRIMARY_Y, 0, 100);
+    lv_chart_set_axis_range(chart, LV_CHART_AXIS_SECONDARY_Y, 0, 400);
     lv_chart_set_point_count(chart, 12);
     lv_obj_set_style_radius(chart, 0, 0);
 
@@ -47,8 +47,8 @@ void lv_example_chart_2(void)
     /*Set the next points on 'ser1'*/
     uint32_t i;
     for(i = 0; i < 12; i++) {
-        lv_chart_set_next_value(chart, ser1, lv_rand(10, 60));
-        lv_chart_set_next_value(chart, ser2, lv_rand(50, 90));
+        lv_chart_set_next_value(chart, ser1, (int32_t)lv_rand(10, 60));
+        lv_chart_set_next_value(chart, ser2, (int32_t)lv_rand(50, 90));
     }
     lv_chart_refresh(chart); /*Required after direct set*/
 }

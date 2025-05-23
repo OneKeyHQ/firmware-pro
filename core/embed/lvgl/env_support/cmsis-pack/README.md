@@ -55,28 +55,37 @@ remove the misleading guide above this code segment.
    - LV_USE_DEMO_TRANSFORM
    - LV_USE_DEMO_SCROLL
    - LV_USE_DEMO_VECTOR_GRAPHIC
+   - LV_USE_DEMO_EBIKE
    - LV_USE_DRAW_VGLITE
    - LV_USE_DRAW_VG_LITE
    - LV_USE_PXP
+   - LV_USE_DRAW_G2D
    - LV_USE_DRAW_SDL
    - LV_USE_DRAW_ARM2D_SYNC
+   - LV_USE_DRAW_ARM2D_ASYNC
+   - LV_USE_DRAW_DAVE2D
+   - LV_USE_DRAW_DMA2D
    - LV_USE_SNAPSHOT
    - LV_USE_MONKEY
    - LV_USE_GRIDNAV
    - LV_USE_FRAGMENT
    - LV_USE_IMGFONT
    - LV_USE_LINUX_DRM
+   - LV_USE_LINUX_FBDEV
+   - LV_USE_WINDOWS
    - LV_USE_TFT_ESPI
    - LV_USE_ST7735
    - LV_USE_ST7789
    - LV_USE_ST7796
+   - LV_USE_ST_LTDC
    - LV_USE_ILI9341
    - LV_USE_RENESAS_GLCDC   
-   
+   - LV_USE_NEMA_GFX
+   - LV_USE_SVG
 5. Update `LV_LOG_PRINTF` to `1` and `LV_LOG_LEVEL` to `LV_LOG_LEVEL_USER`
 
 
-6. Set `LV_FONT_MONTSERRAT_12`, `LV_FONT_MONTSERRAT_24` and `LV_FONT_MONTSERRAT_16` to `1` (So Widgets and Benchmark can be compiled correctly, this is for improving the out of box experience.)
+6. Set `LV_FONT_MONTSERRAT_12`, ``LV_FONT_MONTSERRAT_20`, `LV_FONT_MONTSERRAT_24`, `LV_FONT_MONTSERRAT_26` and `LV_FONT_MONTSERRAT_16` to `1` (So Widgets and Benchmark can be compiled correctly, this is for improving the out of box experience.)
 
 
 7. Update macro `LV_ATTRIBUTE_MEM_ALIGN` and `LV_ATTRIBUTE_MEM_ALIGN_SIZE`  to force a WORD alignment.
@@ -110,6 +119,7 @@ Make sure `LV_MEM_SIZE` is no less than `(128*1024U)`.
     - \#define LV_USE_TINY_TTF 0
     - \#define LV_USE_RLOTTIE 0
     - \#define LV_USE_FFMPEG 0
+    - #define LV_USE_FONT_MANAGER 0
 
 9. update the definition of following macros: `LV_USE_VECTOR_GRAPHIC`, `LV_USE_THORVE_INTERNAL` and `LV_USE_THORVE_EXTERNAL` as 
 
@@ -191,6 +201,7 @@ with:
 14. Add the following macro definition to **COLOR SETTINGS** section:
 
 ```c
+/** Swap the high and low bytes for RGB565 */
 #define LV_COLOR_16_SWAP 0
 ```
 

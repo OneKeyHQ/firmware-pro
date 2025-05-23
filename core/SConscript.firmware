@@ -791,6 +791,7 @@ if PRODUCTION_MODEL == 'H':
             'APP_VER',
             'USE_HAL_DRIVER',
             'LV_LVGL_H_INCLUDE_SIMPLE',
+            'LV_CONF_INCLUDE_SIMPLE',
             ('STM32_HAL_H', '"<stm32h7xx.h>"'),
             ('QUIRC_FLOAT_TYPE', 'float'),
             ('DEVICE_TEST',1),

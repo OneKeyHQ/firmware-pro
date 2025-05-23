@@ -3,7 +3,7 @@
 
 static void ofs_y_anim(void * img, int32_t v)
 {
-    lv_image_set_offset_y(img, v);
+    lv_image_set_offset_y((lv_obj_t *)img, v);
 }
 
 /**
@@ -32,7 +32,7 @@ void lv_example_image_4(void)
     lv_anim_set_exec_cb(&a, ofs_y_anim);
     lv_anim_set_values(&a, 0, 100);
     lv_anim_set_duration(&a, 3000);
-    lv_anim_set_playback_duration(&a, 500);
+    lv_anim_set_reverse_duration(&a, 500);
     lv_anim_set_repeat_count(&a, LV_ANIM_REPEAT_INFINITE);
     lv_anim_start(&a);
 

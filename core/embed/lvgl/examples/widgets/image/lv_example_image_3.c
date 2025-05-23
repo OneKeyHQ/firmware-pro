@@ -3,12 +3,12 @@
 
 static void set_angle(void * img, int32_t v)
 {
-    lv_image_set_rotation(img, v);
+    lv_image_set_rotation((lv_obj_t *)img, v);
 }
 
 static void set_scale(void * img, int32_t v)
 {
-    lv_image_set_scale(img, v);
+    lv_image_set_scale((lv_obj_t *)img, v);
 }
 
 /**
@@ -35,7 +35,7 @@ void lv_example_image_3(void)
 
     lv_anim_set_exec_cb(&a, set_scale);
     lv_anim_set_values(&a, 128, 256);
-    lv_anim_set_playback_duration(&a, 3000);
+    lv_anim_set_reverse_duration(&a, 3000);
     lv_anim_start(&a);
 }
 

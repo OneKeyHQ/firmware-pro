@@ -26,7 +26,7 @@ typedef struct _my_theme_t my_theme_t;
 #define COLOR_SCR     lv_palette_lighten(LV_PALETTE_GREY, 4)
 #define COLOR_WHITE   lv_color_white()
 #define COLOR_LIGHT   lv_palette_lighten(LV_PALETTE_GREY, 2)
-#define COLOR_DARK    lv_color_black()
+#define COLOR_DARK    lv_palette_main(LV_PALETTE_GREY)
 #define COLOR_DIM     lv_palette_darken(LV_PALETTE_GREY, 2)
 #define SCROLLBAR_WIDTH     2
 
@@ -41,20 +41,12 @@ typedef struct {
     lv_style_t dark;
     lv_style_t dim;
     lv_style_t scrollbar;
-    lv_style_t button;
-    lv_style_t buttonPressed;
-    lv_style_t label;
-    lv_style_t line;
 #if LV_USE_ARC
     lv_style_t arc_line;
     lv_style_t arc_knob;
 #endif
 #if LV_USE_TEXTAREA
-    lv_style_t ta_pad, ta_cursor;
-#endif
-    lv_style_t led;
-#if LV_USE_CHECKBOX
-    lv_style_t cb_marker_pad, cb_marker, cb_marker_checked;
+    lv_style_t ta_cursor;
 #endif
 } my_theme_styles_t;
 
@@ -129,29 +121,6 @@ static void style_init(my_theme_t * theme)
     lv_style_set_arc_width(&theme->styles.dim, 2);
     lv_style_set_arc_color(&theme->styles.dim, COLOR_DIM);
 
-    style_init_reset(&theme->styles.button);
-    lv_style_set_border_width(&theme->styles.button, 0);
-    lv_style_set_bg_opa(&theme->styles.button, LV_OPA_COVER);
-    lv_style_set_bg_color(&theme->styles.button, lv_color_hex(0x000000));
-    lv_style_set_outline_width(&theme->styles.button, 0);
-    lv_style_set_shadow_width(&theme->styles.button, 0);
-    lv_style_set_radius(&theme->styles.button, 10);
-
-    style_init_reset(&theme->styles.buttonPressed);
-    lv_style_set_border_width(&theme->styles.buttonPressed, 0);
-    lv_style_set_bg_opa(&theme->styles.buttonPressed, LV_OPA_COVER);
-    lv_style_set_bg_color(&theme->styles.buttonPressed, lv_color_hex(0x353535));
-    lv_style_set_outline_width(&theme->styles.buttonPressed, 0);
-    lv_style_set_shadow_width(&theme->styles.buttonPressed, 0);
-    lv_style_set_radius(&theme->styles.buttonPressed, 10);
-
-    style_init_reset(&theme->styles.label);
-    lv_style_set_text_color(&theme->styles.label, lv_color_hex(0xFFFFFF));
-
-    style_init_reset(&theme->styles.line);
-    lv_style_set_line_width(&theme->styles.line, 2);
-    lv_style_set_line_color(&theme->styles.line, lv_color_hex(0x8F8F8F));
-
 #if LV_USE_ARC
     style_init_reset(&theme->styles.arc_line);
     lv_style_set_arc_width(&theme->styles.arc_line, 6);
@@ -160,46 +129,12 @@ static void style_init(my_theme_t * theme)
 #endif
 
 #if LV_USE_TEXTAREA
-    style_init_reset(&theme->styles.ta_pad);
-    lv_style_set_bg_color(&theme->styles.ta_pad, lv_color_hex(0x000000));
-    lv_style_set_bg_opa(&theme->styles.ta_pad, LV_OPA_COVER);
-    lv_style_set_border_color(&theme->styles.ta_pad, lv_color_hex(0x8F8F8F));
-    lv_style_set_border_width(&theme->styles.ta_pad, 2);
-    lv_style_set_radius(&theme->styles.ta_pad, 5);
-    lv_style_set_text_color(&theme->styles.ta_pad, lv_color_hex(0xFFFFFF));
-    lv_style_set_text_align(&theme->styles.ta_pad, LV_TEXT_ALIGN_CENTER);
     style_init_reset(&theme->styles.ta_cursor);
     lv_style_set_border_side(&theme->styles.ta_cursor, LV_BORDER_SIDE_LEFT);
     lv_style_set_border_color(&theme->styles.ta_cursor, COLOR_DIM);
     lv_style_set_border_width(&theme->styles.ta_cursor, 2);
     lv_style_set_bg_opa(&theme->styles.ta_cursor, LV_OPA_TRANSP);
     lv_style_set_anim_duration(&theme->styles.ta_cursor, 500);
-#endif
-    style_init_reset(&theme->styles.led);
-    lv_style_set_bg_opa(&theme->styles.led, LV_OPA_COVER);
-    lv_style_set_bg_color(&theme->styles.led, COLOR_LIGHT);
-    lv_style_set_line_width(&theme->styles.led, 1);
-    lv_style_set_line_color(&theme->styles.led, COLOR_LIGHT);
-    lv_style_set_arc_width(&theme->styles.led, 2);
-    lv_style_set_arc_color(&theme->styles.led, COLOR_LIGHT);
-    lv_style_set_radius(&theme->styles.led, 5);
-
-#if LV_USE_CHECKBOX
-    style_init_reset(&theme->styles.cb_marker_pad);
-    lv_style_set_pad_column(&theme->styles.cb_marker_pad, 5);
-    lv_style_set_text_color(&theme->styles.cb_marker_pad, COLOR_WHITE);
-
-    style_init_reset(&theme->styles.cb_marker);
-    lv_style_set_bg_color(&theme->styles.cb_marker, COLOR_DARK);
-    lv_style_set_bg_opa(&theme->styles.cb_marker, LV_OPA_COVER);
-    lv_style_set_pad_all(&theme->styles.cb_marker, 2);
-    lv_style_set_radius(&theme->styles.cb_marker, 5);
-    lv_style_set_border_width(&theme->styles.cb_marker, 1);
-    lv_style_set_border_color(&theme->styles.cb_marker, COLOR_WHITE);
-
-    style_init_reset(&theme->styles.cb_marker_checked);
-    lv_style_set_bg_image_src(&theme->styles.cb_marker_checked, LV_SYMBOL_OK);
-    lv_style_set_text_color(&theme->styles.cb_marker_checked, COLOR_WHITE);
 #endif
 }
 
@@ -308,13 +243,12 @@ static void theme_apply(lv_theme_t * th, lv_obj_t * obj)
             return;
         }
 #endif
-        lv_obj_add_style(obj, &theme->styles.dark, 0);
+        lv_obj_add_style(obj, &theme->styles.white, 0);
         lv_obj_add_style(obj, &theme->styles.scrollbar, LV_PART_SCROLLBAR);
     }
 #if LV_USE_BUTTON
-    else if (lv_obj_check_type(obj, &lv_button_class)) {
-        lv_obj_add_style(obj, &theme->styles.button, 0);
-        lv_obj_add_style(obj, &theme->styles.buttonPressed, LV_STATE_PRESSED);
+    else if(lv_obj_check_type(obj, &lv_button_class)) {
+        lv_obj_add_style(obj, &theme->styles.dark, 0);
     }
 #endif
 
@@ -355,19 +289,14 @@ static void theme_apply(lv_theme_t * th, lv_obj_t * obj)
 #if LV_USE_TABLE
     else if(lv_obj_check_type(obj, &lv_table_class)) {
         lv_obj_add_style(obj, &theme->styles.scrollbar, LV_PART_SCROLLBAR);
-        lv_obj_add_style(obj, &theme->styles.dark, LV_PART_ITEMS);
+        lv_obj_add_style(obj, &theme->styles.light, LV_PART_ITEMS);
     }
 #endif
 
 #if LV_USE_CHECKBOX
     else if(lv_obj_check_type(obj, &lv_checkbox_class)) {
-        //lv_obj_add_style(obj, &theme->styles.light, LV_PART_INDICATOR);
-        //lv_obj_add_style(obj, &theme->styles.dark, LV_PART_INDICATOR | LV_STATE_CHECKED);
-    
-        lv_obj_add_style(obj, &theme->styles.cb_marker_pad, 0);
-        lv_obj_add_style(obj, &theme->styles.cb_marker, LV_PART_INDICATOR);
-        lv_obj_add_style(obj, &theme->styles.cb_marker_checked, LV_PART_INDICATOR | LV_STATE_CHECKED);
-
+        lv_obj_add_style(obj, &theme->styles.light, LV_PART_INDICATOR);
+        lv_obj_add_style(obj, &theme->styles.dark, LV_PART_INDICATOR | LV_STATE_CHECKED);
     }
 #endif
 
@@ -399,10 +328,10 @@ static void theme_apply(lv_theme_t * th, lv_obj_t * obj)
         lv_obj_add_style(obj, &theme->styles.white, 0);
     }
     else if(lv_obj_check_type(obj, &lv_dropdownlist_class)) {
-        lv_obj_add_style(obj, &theme->styles.dark, 0);
+        lv_obj_add_style(obj, &theme->styles.white, 0);
         lv_obj_add_style(obj, &theme->styles.scrollbar, LV_PART_SCROLLBAR);
         lv_obj_add_style(obj, &theme->styles.light, LV_PART_SELECTED);
-        lv_obj_add_style(obj, &theme->styles.light, LV_PART_SELECTED | LV_STATE_CHECKED);
+        lv_obj_add_style(obj, &theme->styles.dark, LV_PART_SELECTED | LV_STATE_CHECKED);
     }
 #endif
 
@@ -430,9 +359,9 @@ static void theme_apply(lv_theme_t * th, lv_obj_t * obj)
 
 #if LV_USE_TEXTAREA
     else if(lv_obj_check_type(obj, &lv_textarea_class)) {
-        lv_obj_add_style(obj, &theme->styles.ta_pad, 0);
-        //lv_obj_add_style(obj, &theme->styles.scrollbar, LV_PART_SCROLLBAR);
-        //lv_obj_add_style(obj, &theme->styles.ta_cursor, LV_PART_CURSOR | LV_STATE_FOCUSED);
+        lv_obj_add_style(obj, &theme->styles.white, 0);
+        lv_obj_add_style(obj, &theme->styles.scrollbar, LV_PART_SCROLLBAR);
+        lv_obj_add_style(obj, &theme->styles.ta_cursor, LV_PART_CURSOR | LV_STATE_FOCUSED);
     }
 #endif
 
@@ -487,18 +416,7 @@ static void theme_apply(lv_theme_t * th, lv_obj_t * obj)
 
 #if LV_USE_LED
     else if(lv_obj_check_type(obj, &lv_led_class)) {
-        lv_obj_add_style(obj, &theme->styles.led, 0);
-    }
-#endif
-#if LV_USE_LABEL
-    else if (lv_obj_check_type(obj, &lv_label_class)) {
-        lv_obj_add_style(obj, &theme->styles.label, 0);
-    }
-#endif
-
-#if LV_USE_LINE
-    else if (lv_obj_check_type(obj, &lv_line_class)) {
-        lv_obj_add_style(obj, &theme->styles.line, 0);
+        lv_obj_add_style(obj, &theme->styles.light, 0);
     }
 #endif
 }

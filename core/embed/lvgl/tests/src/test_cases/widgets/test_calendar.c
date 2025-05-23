@@ -68,14 +68,14 @@ void test_calendar_set_today_date_gui(void)
     today.day = 21;
 
     lv_calendar_set_today_date(g_calendar, today.year, today.month, today.day);
-    lv_calendar_set_showed_date(g_calendar, 2022, 9);
+    lv_calendar_set_month_shown(g_calendar, 2022, 9);
 
     TEST_ASSERT_EQUAL_SCREENSHOT("widgets/calendar_01.png");
 }
 
 void test_calendar_set_showed_date_gui(void)
 {
-    lv_calendar_set_showed_date(g_calendar, 2022, 9);
+    lv_calendar_set_month_shown(g_calendar, 2022, 9);
 
     TEST_ASSERT_EQUAL_SCREENSHOT("widgets/calendar_02.png");
 }
@@ -125,7 +125,7 @@ void test_calendar_set_highlighted_dates_gui(void)
 
     lv_calendar_set_highlighted_dates(g_calendar, highlighted_days, 3);
 
-    lv_calendar_set_showed_date(g_calendar, 2022, 2);
+    lv_calendar_set_month_shown(g_calendar, 2022, 2);
 
     TEST_ASSERT_EQUAL_SCREENSHOT("widgets/calendar_03.png");
 }
@@ -136,7 +136,7 @@ void test_calendar_set_day_names_gui(void)
 
     lv_calendar_set_day_names(g_calendar, day_names);
 
-    lv_calendar_set_showed_date(g_calendar, 2022, 9);
+    lv_calendar_set_month_shown(g_calendar, 2022, 9);
 
     TEST_ASSERT_EQUAL_SCREENSHOT("widgets/calendar_04.png");
 }
@@ -164,18 +164,18 @@ void test_calendar_get_highlighted_dates_num(void)
 
 void test_calendar_header_dropdown_create_gui(void)
 {
-    lv_calendar_header_dropdown_create(g_calendar);
+    lv_calendar_add_header_dropdown(g_calendar);
 
-    lv_calendar_set_showed_date(g_calendar, 2022, 9);
+    lv_calendar_set_month_shown(g_calendar, 2022, 9);
 
     TEST_ASSERT_EQUAL_SCREENSHOT("widgets/calendar_05.png");
 }
 
 void test_calendar_header_arrow_create_gui(void)
 {
-    lv_calendar_header_arrow_create(g_calendar);
+    lv_calendar_add_header_arrow(g_calendar);
 
-    lv_calendar_set_showed_date(g_calendar, 2022, 10);    // Use October to avoid month name sliding
+    lv_calendar_set_month_shown(g_calendar, 2022, 10);    // Use October to avoid month name sliding
 
     TEST_ASSERT_EQUAL_SCREENSHOT("widgets/calendar_06.png");
 }
@@ -184,7 +184,7 @@ void test_calendar_event_key_down_gui(void)
 {
     uint32_t key = LV_KEY_DOWN;
 
-    lv_calendar_set_showed_date(g_calendar, 2022, 9);
+    lv_calendar_set_month_shown(g_calendar, 2022, 9);
 
     lv_obj_send_event(g_calendar, LV_EVENT_KEY, (void *) &key);
 
@@ -193,7 +193,7 @@ void test_calendar_event_key_down_gui(void)
 
 void test_calendar_get_pressed_date_null(void)
 {
-    lv_calendar_set_showed_date(g_calendar, 2022, 9);
+    lv_calendar_set_month_shown(g_calendar, 2022, 9);
 
     lv_calendar_date_t pressed_date;
 
@@ -213,7 +213,7 @@ void test_calendar_custom_year_list(void)
 {
     lv_obj_t  * calendar = lv_calendar_create(lv_screen_active());
 
-    lv_calendar_header_dropdown_create(calendar);
+    lv_calendar_add_header_dropdown(calendar);
 
     const char * years = "2024\n2023\n2022\n2021\n2020\n2019";
     lv_calendar_header_dropdown_set_year_list(calendar, years);
@@ -226,12 +226,12 @@ void test_calendar_chinese_calendar(void)
     lv_obj_set_size(g_calendar, 400, 350);
     lv_obj_center(g_calendar);
     lv_calendar_set_today_date(g_calendar, 2024, 03, 22);
-    lv_calendar_set_showed_date(g_calendar, 2024, 03);
+    lv_calendar_set_month_shown(g_calendar, 2024, 03);
 
-    lv_obj_set_style_text_font(g_calendar, &lv_font_simsun_14_cjk, LV_PART_MAIN);
+    lv_obj_set_style_text_font(g_calendar, &lv_font_source_han_sans_sc_14_cjk, LV_PART_MAIN);
     lv_calendar_set_chinese_mode(g_calendar, true);
 
     TEST_ASSERT_EQUAL_SCREENSHOT("widgets/calendar_09.png");
 }
 
-#endif
+#endif  /* LV_BUILD_TEST */

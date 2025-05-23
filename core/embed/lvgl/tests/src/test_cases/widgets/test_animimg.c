@@ -3,7 +3,6 @@
 #include "../../lvgl_private.h"
 
 #include "unity/unity.h"
-#include "lv_test_indev.h"
 
 LV_IMAGE_DECLARE(test_animimg001);
 LV_IMAGE_DECLARE(test_animimg002);
@@ -22,6 +21,7 @@ void setUp(void);
 void tearDown(void);
 void test_animimg_successful_create(void);
 void test_animimg_set_src(void);
+void test_animimg_set_src_reverse(void);
 void test_animimg_get_src_count(void);
 void test_animimg_set_duration(void);
 void test_animimg_set_repeat_count_infinite(void);
@@ -46,6 +46,13 @@ void test_animimg_successful_create(void)
 void test_animimg_set_src(void)
 {
     lv_animimg_set_src(animimg, (const void **) anim_imgs, 3);
+
+    TEST_ASSERT_NOT_NULL(animimg);
+}
+
+void test_animimg_set_src_reverse(void)
+{
+    lv_animimg_set_src_reverse(animimg, (const void **) anim_imgs, 3);
 
     TEST_ASSERT_NOT_NULL(animimg);
 }
@@ -102,6 +109,35 @@ void test_animimg_start(void)
     lv_animimg_start(animimg);
 
     TEST_ASSERT_NOT_NULL(animimg);
+}
+
+void test_animimg_property(void)
+{
+#if LV_USE_OBJ_PROPERTY
+    lv_property_t prop;
+    lv_obj_t * obj = lv_animimg_create(lv_screen_active());
+
+    prop.id = LV_PROPERTY_ANIMIMAGE_SRC;
+    prop.arg1.ptr = anim_imgs;
+    prop.arg2.num = 3;
+    TEST_ASSERT_TRUE(lv_obj_set_property(obj, &prop) == LV_RESULT_OK);
+    TEST_ASSERT_EQUAL_PTR(lv_obj_get_property(obj, LV_PROPERTY_ANIMIMAGE_SRC).ptr, anim_imgs);
+    TEST_ASSERT_EQUAL_PTR(lv_animimg_get_src(obj), anim_imgs);
+    TEST_ASSERT_EQUAL_INT(lv_animimg_get_src_count(obj), 3);
+    TEST_ASSERT_EQUAL_INT(3, lv_obj_get_property(obj, LV_PROPERTY_ANIMIMAGE_SRC_COUNT).num);
+
+    prop.id = LV_PROPERTY_ANIMIMAGE_DURATION;
+    prop.num = 1000;
+    TEST_ASSERT_TRUE(lv_obj_set_property(obj, &prop) == LV_RESULT_OK);
+    TEST_ASSERT_EQUAL_INT(1000, lv_animimg_get_duration(obj));
+    TEST_ASSERT_EQUAL_INT(1000, lv_obj_get_property(obj, LV_PROPERTY_ANIMIMAGE_DURATION).num);
+
+    prop.id = LV_PROPERTY_ANIMIMAGE_REPEAT_COUNT;
+    prop.num = LV_ANIM_REPEAT_INFINITE;
+    TEST_ASSERT_TRUE(lv_obj_set_property(obj, &prop) == LV_RESULT_OK);
+    TEST_ASSERT_EQUAL_INT(LV_ANIM_REPEAT_INFINITE, lv_animimg_get_repeat_count(obj));
+    TEST_ASSERT_EQUAL_INT(LV_ANIM_REPEAT_INFINITE, lv_obj_get_property(obj, LV_PROPERTY_ANIMIMAGE_REPEAT_COUNT).num_u);
+#endif
 }
 
 #endif

@@ -2,6 +2,15 @@ cmake_minimum_required(VERSION 3.12.4)
 
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
+if(NOT ESP_PLATFORM)
+  project(lvgl LANGUAGES C HOMEPAGE_URL https://github.com/lvgl/lvgl)
+  if(NOT (CMAKE_C_COMPILER_ID STREQUAL "MSVC"))
+    enable_language(CXX ASM)
+  else()
+    enable_language(CXX)
+  endif()
+endif()
+
 set(LVGL_ROOT_DIR ${CMAKE_CURRENT_LIST_DIR})
 
 if(ESP_PLATFORM)
@@ -11,7 +20,7 @@ elseif(ZEPHYR_BASE)
 elseif(MICROPY_DIR)
   include(${CMAKE_CURRENT_LIST_DIR}/env_support/cmake/micropython.cmake)
 else()
-  include(${CMAKE_CURRENT_LIST_DIR}/env_support/cmake/custom.cmake)
+  include(${CMAKE_CURRENT_LIST_DIR}/env_support/cmake/os_desktop.cmake)
 endif()
 
 #[[

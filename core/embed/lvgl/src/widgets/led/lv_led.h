@@ -22,7 +22,7 @@ extern "C" {
  *********************/
 /** Brightness when the LED if OFF */
 #ifndef LV_LED_BRIGHT_MIN
-# define LV_LED_BRIGHT_MIN 30
+# define LV_LED_BRIGHT_MIN 80
 #endif
 
 /** Brightness when the LED if ON */

@@ -3,7 +3,6 @@
 #include "../../lvgl_private.h"
 
 #include "unity/unity.h"
-#include "lv_test_indev.h"
 #include <string.h>
 
 #define OPTION_BUFFER_SZ        (20U)
@@ -32,13 +31,13 @@ void setUp(void)
     lv_roller_set_options(roller_mouse, default_roller_options, LV_ROLLER_MODE_NORMAL);
 
     g = lv_group_create();
-    lv_indev_set_group(lv_test_keypad_indev, g);
+    lv_indev_set_group(lv_test_indev_get_indev(LV_INDEV_TYPE_KEYPAD), g);
 
     encoder_g = lv_group_create();
-    lv_indev_set_group(lv_test_encoder_indev, encoder_g);
+    lv_indev_set_group(lv_test_indev_get_indev(LV_INDEV_TYPE_ENCODER), encoder_g);
 
     mouse_g = lv_group_create();
-    lv_indev_set_group(lv_test_mouse_indev, mouse_g);
+    lv_indev_set_group(lv_test_indev_get_indev(LV_INDEV_TYPE_POINTER), mouse_g);
 
     lv_group_add_obj(g, roller);
     lv_group_add_obj(encoder_g, roller_infinite);
@@ -125,12 +124,31 @@ void test_roller_infinite_mode_get_selected_option(void)
     TEST_ASSERT_EQUAL_STRING("Two", actual_str);
 }
 
+void test_roller_set_selected_option_str(void)
+{
+    bool selected;
+    TEST_ASSERT_EQUAL(0, lv_roller_get_selected(roller));
+
+    /* Test an item that exists in the roller */
+    selected = lv_roller_set_selected_str(roller, "Two", LV_ANIM_OFF);
+    TEST_ASSERT_TRUE(selected);
+
+    TEST_ASSERT_EQUAL(1, lv_roller_get_selected(roller));
+
+    /* Try to select an item that does not exist in the roller */
+    selected = lv_roller_set_selected_str(roller, "No", LV_ANIM_OFF);
+    TEST_ASSERT_FALSE(selected);
+
+    /* Make sure that the selection did not change */
+    TEST_ASSERT_EQUAL(1, lv_roller_get_selected(roller));
+}
+
 void test_roller_keypad_events(void)
 {
     int16_t expected_index = 1;
     int16_t actual_index = 0;
 
-    lv_test_indev_wait(20);
+    lv_test_wait(20);
 
     return;
 
@@ -337,14 +355,16 @@ void test_roller_properties(void)
     lv_property_t prop = { };
 
     prop.id = LV_PROPERTY_ROLLER_OPTIONS;
-    prop.ptr = "One\nTwo\nThree";
-    lv_roller_set_options(obj, prop.ptr, LV_ROLLER_MODE_NORMAL);
+    prop.arg1.ptr = "One\nTwo\nThree";
+    prop.arg2.num = LV_ROLLER_MODE_NORMAL;
+    TEST_ASSERT_TRUE(lv_obj_set_property(obj, &prop) == LV_RESULT_OK);
     TEST_ASSERT_EQUAL_STRING("One\nTwo\nThree", lv_roller_get_options(obj));
     TEST_ASSERT_EQUAL_STRING("One\nTwo\nThree", lv_obj_get_property(obj, LV_PROPERTY_ROLLER_OPTIONS).ptr);
 
     prop.id = LV_PROPERTY_ROLLER_SELECTED;
-    prop.num = 1;
-    lv_roller_set_selected(obj, 1, LV_ANIM_OFF);
+    prop.arg1.num = 1;
+    prop.arg2.enable = LV_ANIM_ON;
+    TEST_ASSERT_TRUE(lv_obj_set_property(obj, &prop) == LV_RESULT_OK);
     TEST_ASSERT_EQUAL_INT(1, lv_roller_get_selected(obj));
     TEST_ASSERT_EQUAL_INT(1, lv_obj_get_property(obj, LV_PROPERTY_ROLLER_SELECTED).num);
 #endif

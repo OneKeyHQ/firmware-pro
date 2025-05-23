@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @file lv_draw_sw_blend_l8.c
  *
  */
@@ -54,7 +54,7 @@ static void /* LV_ATTRIBUTE_FAST_MEM */ l8_image_blend(lv_draw_sw_blend_image_ds
     static void /* LV_ATTRIBUTE_FAST_MEM */ rgb565_image_blend(lv_draw_sw_blend_image_dsc_t * dsc);
 #endif
 
-#if LV_DRAW_SW_SUPPORT_RGB888
+#if LV_DRAW_SW_SUPPORT_RGB888 || LV_DRAW_SW_SUPPORT_XRGB8888
 static void /* LV_ATTRIBUTE_FAST_MEM */ rgb888_image_blend(lv_draw_sw_blend_image_dsc_t * dsc,
                                                            const uint8_t src_px_size);
 #endif
@@ -668,7 +668,7 @@ static void LV_ATTRIBUTE_FAST_MEM rgb565_image_blend(lv_draw_sw_blend_image_dsc_
 
 #endif
 
-#if LV_DRAW_SW_SUPPORT_RGB888
+#if LV_DRAW_SW_SUPPORT_RGB888 || LV_DRAW_SW_SUPPORT_XRGB8888
 
 static void LV_ATTRIBUTE_FAST_MEM rgb888_image_blend(lv_draw_sw_blend_image_dsc_t * dsc,
                                                      const uint8_t src_px_size)
@@ -879,6 +879,9 @@ static inline void LV_ATTRIBUTE_FAST_MEM blend_non_normal_pixel(uint8_t * dest, 
             break;
         case LV_BLEND_MODE_MULTIPLY:
             res = (*dest * src_lumi) >> 8;
+            break;
+        case LV_BLEND_MODE_DIFFERENCE:
+            res = LV_ABS(*dest - src_lumi);
             break;
         default:
             LV_LOG_WARN("Not supported blend mode: %d", mode);

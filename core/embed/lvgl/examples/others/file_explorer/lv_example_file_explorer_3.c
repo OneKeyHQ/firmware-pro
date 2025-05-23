@@ -45,7 +45,7 @@ static void sort_by_file_kind(lv_obj_t * tb, int16_t lo, int16_t hi)
 static void file_explorer_event_handler(lv_event_t * e)
 {
     lv_event_code_t code = lv_event_get_code(e);
-    lv_obj_t * obj = lv_event_get_target(e);
+    lv_obj_t * obj = lv_event_get_target_obj(e);
 
     if(code == LV_EVENT_VALUE_CHANGED) {
         const char * cur_path =  lv_file_explorer_get_current_path(obj);
@@ -68,21 +68,33 @@ void lv_example_file_explorer_3(void)
     lv_file_explorer_set_sort(file_explorer, LV_EXPLORER_SORT_NONE);
 
 #if LV_USE_FS_WIN32
-    lv_file_explorer_open_dir(file_explorer, "D:");
+    /* Note to Windows users:  the initial "C:" on these paths corresponds to
+     * the value of `LV_FS_WIN32_LETTER` in `lv_conf.h`, and should not be
+     * confused with the Windows/DOS drive letter.  It is an identifier that
+     * is used to enable LVGL to look up the appropriate driver from a list of
+     * registered file-system drivers.  `lv_fs_win32_init()` happens to use the
+     * identifier letter 'C' so "C:" is the driver-identifier-prefix used here.
+     * The "C:" following that is indeed the Windows/DOS drive letter and is
+     * part of the actual path that gets passed to the OS-level functions.
+     *
+     * See https://docs.lvgl.io/master/details/main-components/fs.html for details.
+     * File Explorer uses `lv_fs` internally, thus the required prefix in path strings.
+     */
+    lv_file_explorer_open_dir(file_explorer, "C:C:/");
 #if LV_FILE_EXPLORER_QUICK_ACCESS
-    lv_file_explorer_set_quick_access_path(file_explorer, LV_EXPLORER_HOME_DIR, "C:/Users/Public/Desktop");
-    lv_file_explorer_set_quick_access_path(file_explorer, LV_EXPLORER_VIDEO_DIR, "C:/Users/Public/Videos");
-    lv_file_explorer_set_quick_access_path(file_explorer, LV_EXPLORER_PICTURES_DIR, "C:/Users/Public/Pictures");
-    lv_file_explorer_set_quick_access_path(file_explorer, LV_EXPLORER_MUSIC_DIR, "C:/Users/Public/Music");
-    lv_file_explorer_set_quick_access_path(file_explorer, LV_EXPLORER_DOCS_DIR, "C:/Users/Public/Documents");
-    lv_file_explorer_set_quick_access_path(file_explorer, LV_EXPLORER_FS_DIR, "D:");
+    lv_file_explorer_set_quick_access_path(file_explorer, LV_EXPLORER_HOME_DIR, "C:C:/Users/Public/Desktop");
+    lv_file_explorer_set_quick_access_path(file_explorer, LV_EXPLORER_VIDEO_DIR, "C:C:/Users/Public/Videos");
+    lv_file_explorer_set_quick_access_path(file_explorer, LV_EXPLORER_PICTURES_DIR, "C:C:/Users/Public/Pictures");
+    lv_file_explorer_set_quick_access_path(file_explorer, LV_EXPLORER_MUSIC_DIR, "C:C:/Users/Public/Music");
+    lv_file_explorer_set_quick_access_path(file_explorer, LV_EXPLORER_DOCS_DIR, "C:C:/Users/Public/Documents");
+    lv_file_explorer_set_quick_access_path(file_explorer, LV_EXPLORER_FS_DIR, "C:C:/");
 #endif
 
 #else
     /* linux */
     lv_file_explorer_open_dir(file_explorer, "A:/");
 #if LV_FILE_EXPLORER_QUICK_ACCESS
-    char * envvar = "HOME";
+    const char * envvar = "HOME";
     char home_dir[LV_FS_MAX_PATH_LENGTH];
     strcpy(home_dir, "A:");
     /* get the user's home directory from the HOME environment variable*/

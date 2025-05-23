@@ -1,9 +1,7 @@
 #if LV_BUILD_TEST
 #include "../lvgl.h"
 #include "../../lvgl_private.h"
-
 #include "unity/unity.h"
-#include "lv_test_indev.h"
 #include <string.h>
 
 void setUp(void)
@@ -16,6 +14,7 @@ void tearDown(void)
     /* Function run after every test */
     lv_obj_clean(lv_screen_active());
 }
+
 void test_dropdown_create_delete(void)
 {
     lv_dropdown_create(lv_screen_active());
@@ -118,7 +117,7 @@ void test_dropdown_set_options(void)
 void test_dropdown_select(void)
 {
     lv_obj_t * dd1 = lv_dropdown_create(lv_screen_active());
-    lv_dropdown_set_selected(dd1, 2);
+    lv_dropdown_set_selected(dd1, 2, LV_ANIM_OFF);
 
     TEST_ASSERT_EQUAL(2, lv_dropdown_get_selected(dd1));
 
@@ -132,7 +131,7 @@ void test_dropdown_select(void)
     TEST_ASSERT_EQUAL_STRING("Opt", buf);
 
     /*Out of range*/
-    lv_dropdown_set_selected(dd1, 3);
+    lv_dropdown_set_selected(dd1, 3, LV_ANIM_OFF);
     TEST_ASSERT_EQUAL(2, lv_dropdown_get_selected(dd1));
 }
 
@@ -165,7 +164,7 @@ void test_dropdown_keypad(void)
     lv_obj_clean(lv_screen_active());
 
     lv_group_t * g = lv_group_create();
-    lv_indev_set_group(lv_test_keypad_indev, g);
+    lv_indev_set_group(lv_test_indev_get_indev(LV_INDEV_TYPE_KEYPAD), g);
 
     lv_obj_t * dd1 = lv_dropdown_create(lv_screen_active());
     lv_obj_set_pos(dd1, 20, 20);
@@ -258,7 +257,7 @@ void test_dropdown_keypad(void)
     TEST_ASSERT_FALSE(lv_dropdown_is_open(dd1));
     TEST_ASSERT_NOT_NULL(lv_dropdown_get_list(dd2));
 
-    lv_indev_set_group(lv_test_keypad_indev, NULL);
+    lv_indev_set_group(lv_test_indev_get_indev(LV_INDEV_TYPE_KEYPAD), NULL);
     lv_group_delete(g);
 }
 
@@ -267,7 +266,7 @@ void test_dropdown_encoder(void)
     lv_obj_clean(lv_screen_active());
 
     lv_group_t * g = lv_group_create();
-    lv_indev_set_group(lv_test_encoder_indev, g);
+    lv_indev_set_group(lv_test_indev_get_indev(LV_INDEV_TYPE_ENCODER), g);
 
     lv_obj_t * dd1 = lv_dropdown_create(lv_screen_active());
     lv_obj_set_pos(dd1, 20, 20);
@@ -302,9 +301,9 @@ void test_dropdown_encoder(void)
     lv_test_encoder_click();
     lv_test_encoder_turn(2);
     lv_test_encoder_press();
-    lv_test_indev_wait(1000);  //Long press
+    lv_test_wait(1000);  //Long press
     lv_test_encoder_release();
-    lv_test_indev_wait(50);
+    lv_test_wait(50);
     TEST_ASSERT_FALSE(lv_dropdown_is_open(dd1));
     TEST_ASSERT_EQUAL(4, lv_dropdown_get_selected(dd1));
     TEST_ASSERT_EQUAL(2, event_cnt);
@@ -314,7 +313,7 @@ void test_dropdown_encoder(void)
     TEST_ASSERT_FALSE(lv_dropdown_is_open(dd1));
     TEST_ASSERT_TRUE(lv_dropdown_is_open(dd2));
 
-    lv_indev_set_group(lv_test_encoder_indev, NULL);
+    lv_indev_set_group(lv_test_indev_get_indev(LV_INDEV_TYPE_ENCODER), NULL);
     lv_group_delete(g);
 }
 
@@ -324,12 +323,12 @@ void test_dropdown_render_1(void)
 
     lv_obj_t * dd1 = lv_dropdown_create(lv_screen_active());
     lv_obj_set_pos(dd1, 10, 10);
-    lv_dropdown_set_selected(dd1, 1);
+    lv_dropdown_set_selected(dd1, 1, LV_ANIM_OFF);
 
     lv_obj_t * dd2 = lv_dropdown_create(lv_screen_active());
     lv_obj_set_pos(dd2, 200, 10);
     lv_obj_set_width(dd2, 200);
-    lv_dropdown_set_selected(dd2, 2);
+    lv_dropdown_set_selected(dd2, 2, LV_ANIM_OFF);
     lv_dropdown_open(dd2);
     TEST_ASSERT_TRUE(lv_dropdown_get_selected_highlight(dd2));
     lv_dropdown_set_selected_highlight(dd2, false);
@@ -343,7 +342,7 @@ void test_dropdown_render_1(void)
     lv_dropdown_set_text(dd3, "A text");
     TEST_ASSERT_EQUAL_STRING("A text", lv_dropdown_get_text(dd3));
 
-    lv_dropdown_set_selected(dd3, 2);
+    lv_dropdown_set_selected(dd3, 2, LV_ANIM_OFF);
 
     TEST_ASSERT_EQUAL(LV_DIR_BOTTOM, lv_dropdown_get_dir(dd3));
     lv_dropdown_set_dir(dd3, LV_DIR_LEFT);
@@ -358,7 +357,7 @@ void test_dropdown_render_1(void)
     lv_obj_t * list = lv_dropdown_get_list(dd3);
     lv_obj_set_style_text_line_space(list, 5, 0);
     lv_obj_set_style_bg_color(list, lv_color_hex3(0xf00), LV_PART_SELECTED | LV_STATE_CHECKED);
-    lv_dropdown_set_selected(dd3, 3);
+    lv_dropdown_set_selected(dd3, 3, LV_ANIM_OFF);
 
     TEST_ASSERT_EQUAL_SCREENSHOT("widgets/dropdown_1.png");
 }
@@ -475,7 +474,8 @@ void test_dropdown_properties(void)
     TEST_ASSERT_EQUAL(2, lv_obj_get_property(obj, LV_PROPERTY_DROPDOWN_OPTION_COUNT).num);
 
     prop.id = LV_PROPERTY_DROPDOWN_SELECTED;
-    prop.num = 1;
+    prop.arg1.num = 1;
+    prop.arg2.enable = LV_ANIM_OFF;
     TEST_ASSERT_TRUE(lv_obj_set_property(obj, &prop) == LV_RESULT_OK);
     TEST_ASSERT_EQUAL_INT(1, lv_dropdown_get_selected(obj));
     TEST_ASSERT_EQUAL_INT(1, lv_obj_get_property(obj, LV_PROPERTY_DROPDOWN_SELECTED).num);

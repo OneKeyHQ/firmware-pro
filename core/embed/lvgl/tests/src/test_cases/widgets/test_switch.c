@@ -4,9 +4,6 @@
 
 #include "unity/unity.h"
 
-#include "lv_test_helpers.h"
-#include "lv_test_indev.h"
-
 #define SWITCHES_CNT    10
 
 uint8_t value_changed_event_cnt = 0;
@@ -75,14 +72,14 @@ void test_switch_animation(void)
     /* Trigger animation */
     mouse_click_on_switch();
     /* Wait some time  */
-    lv_test_indev_wait(50);
+    lv_test_wait(50);
 
     int32_t checked_anim_state = anim_sw->anim_state;
     TEST_ASSERT_GREATER_THAN(initial_anim_state, checked_anim_state);
     TEST_ASSERT(lv_obj_has_state(sw, LV_STATE_CHECKED));
 
     mouse_click_on_switch();
-    lv_test_indev_wait(50);
+    lv_test_wait(50);
 
     TEST_ASSERT_LESS_THAN(checked_anim_state, anim_sw->anim_state);
     TEST_ASSERT_FALSE(lv_obj_has_state(sw, LV_STATE_CHECKED));
@@ -131,6 +128,35 @@ void test_switch_should_state_change_when_event_bubbling_is_enabled(void)
     mouse_click_on_switch();
 
     TEST_ASSERT(lv_obj_has_state(sw, LV_STATE_CHECKED));
+}
+
+
+void test_screeshots(void)
+{
+    lv_obj_set_flex_flow(lv_screen_active(), LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(lv_screen_active(), LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_clean(scr);
+
+    sw = lv_switch_create(lv_screen_active());
+
+    sw = lv_switch_create(lv_screen_active());
+    lv_obj_add_state(sw, LV_STATE_CHECKED);
+
+    sw = lv_switch_create(lv_screen_active());
+
+    sw = lv_switch_create(lv_screen_active());
+    lv_obj_add_state(sw, LV_STATE_CHECKED | LV_STATE_DISABLED);
+
+    sw = lv_switch_create(lv_screen_active());
+    lv_switch_set_orientation(sw, LV_SWITCH_ORIENTATION_VERTICAL);
+    lv_obj_set_size(sw, 50, 100);
+
+    sw = lv_switch_create(lv_screen_active());
+    lv_switch_set_orientation(sw, LV_SWITCH_ORIENTATION_VERTICAL);
+    lv_obj_add_state(sw, LV_STATE_CHECKED);
+    lv_obj_set_size(sw, 50, 100);
+
+    TEST_ASSERT_EQUAL_SCREENSHOT("widgets/switch_1.png");
 }
 
 #endif

@@ -33,27 +33,15 @@ void test_scale_render_example_1(void)
     lv_scale_set_range(scale, 10, 40);
 
     TEST_ASSERT_EQUAL_SCREENSHOT("widgets/scale_1.png");
+
+    /* test no major ticks */
+    lv_scale_set_major_tick_every(scale, 0);
+    TEST_ASSERT_EQUAL_SCREENSHOT("widgets/scale_6.png");
 }
 
-/* An vertical scale with section and custom styling */
+/* An vertical scale and a horizontal scale with section and custom styling */
 void test_scale_render_example_2(void)
 {
-    lv_obj_t * scale = lv_scale_create(lv_screen_active());
-    lv_obj_set_size(scale, 60, 200);
-    lv_scale_set_label_show(scale, true);
-    lv_scale_set_mode(scale, LV_SCALE_MODE_VERTICAL_RIGHT);
-    lv_obj_center(scale);
-
-    lv_scale_set_total_tick_count(scale, 21);
-    lv_scale_set_major_tick_every(scale, 5);
-
-    lv_obj_set_style_length(scale, 5, LV_PART_ITEMS);
-    lv_obj_set_style_length(scale, 10, LV_PART_INDICATOR);
-    lv_scale_set_range(scale, 0, 100);
-
-    static const char * custom_labels[] = {"0 °C", "25 °C", "50 °C", "75 °C", "100 °C", NULL};
-    lv_scale_set_text_src(scale, custom_labels);
-
     static lv_style_t indicator_style;
     lv_style_init(&indicator_style);
 
@@ -65,25 +53,21 @@ void test_scale_render_example_2(void)
     lv_style_set_line_color(&indicator_style, lv_palette_darken(LV_PALETTE_BLUE, 3));
     lv_style_set_width(&indicator_style, 10U);      /*Tick length*/
     lv_style_set_line_width(&indicator_style, 2U);  /*Tick width*/
-    lv_obj_add_style(scale, &indicator_style, LV_PART_INDICATOR);
 
     static lv_style_t minor_ticks_style;
     lv_style_init(&minor_ticks_style);
     lv_style_set_line_color(&minor_ticks_style, lv_palette_lighten(LV_PALETTE_BLUE, 2));
     lv_style_set_width(&minor_ticks_style, 5U);         /*Tick length*/
     lv_style_set_line_width(&minor_ticks_style, 2U);    /*Tick width*/
-    lv_obj_add_style(scale, &minor_ticks_style, LV_PART_ITEMS);
 
     static lv_style_t main_line_style;
     lv_style_init(&main_line_style);
     /* Main line properties */
     lv_style_set_line_color(&main_line_style, lv_palette_darken(LV_PALETTE_BLUE, 3));
     lv_style_set_line_width(&main_line_style, 2U); // Tick width
-    lv_obj_add_style(scale, &main_line_style, LV_PART_MAIN);
 
-    /* Add a section */
-    static lv_style_t section_minor_tick_style;
     static lv_style_t section_label_style;
+    static lv_style_t section_minor_tick_style;
     static lv_style_t section_main_line_style;
 
     lv_style_init(&section_label_style);
@@ -104,18 +88,58 @@ void test_scale_render_example_2(void)
     lv_style_set_line_color(&section_main_line_style, lv_palette_darken(LV_PALETTE_RED, 3));
     lv_style_set_line_width(&section_main_line_style, 4U); /*Tick width*/
 
-    /* Configure section styles */
-    lv_scale_section_t * section = lv_scale_add_section(scale);
-    lv_scale_section_set_range(section, 75, 100);
-    lv_scale_section_set_style(section, LV_PART_INDICATOR, &section_label_style);
-    lv_scale_section_set_style(section, LV_PART_ITEMS, &section_minor_tick_style);
-    lv_scale_section_set_style(section, LV_PART_MAIN, &section_main_line_style);
+    uint32_t i;
+    for(i = 0; i < 2; i++) {
+        lv_obj_t * scale = lv_scale_create(lv_screen_active());
+        lv_scale_set_label_show(scale, true);
 
-    lv_obj_set_style_bg_color(scale, lv_palette_main(LV_PALETTE_BLUE_GREY), 0);
-    lv_obj_set_style_bg_opa(scale, LV_OPA_50, 0);
-    lv_obj_set_style_pad_left(scale, 8, 0);
-    lv_obj_set_style_radius(scale, 8, 0);
-    lv_obj_set_style_pad_ver(scale, 20, 0);
+        if(i == 0) {
+            lv_obj_set_size(scale, 60, 200);
+            lv_scale_set_mode(scale, LV_SCALE_MODE_VERTICAL_RIGHT);
+            lv_obj_align(scale, LV_ALIGN_CENTER, -100, 0);
+
+        }
+        else {
+            lv_obj_set_size(scale, 200, 60);
+            lv_scale_set_mode(scale, LV_SCALE_MODE_HORIZONTAL_TOP);
+            lv_obj_align(scale, LV_ALIGN_CENTER, 100, 0);
+        }
+
+        lv_scale_set_total_tick_count(scale, 21);
+        lv_scale_set_major_tick_every(scale, 5);
+
+        lv_obj_set_style_length(scale, 5, LV_PART_ITEMS);
+        lv_obj_set_style_length(scale, 10, LV_PART_INDICATOR);
+        lv_scale_set_range(scale, 0, 100);
+
+        static const char * custom_labels[] = {"0 °C", "25 °C", "50 °C", "75 °C", "100 °C", NULL};
+        lv_scale_set_text_src(scale, custom_labels);
+        /* Configure scale styles */
+        lv_obj_add_style(scale, &indicator_style, LV_PART_INDICATOR);
+        lv_obj_add_style(scale, &minor_ticks_style, LV_PART_ITEMS);
+        lv_obj_add_style(scale, &main_line_style, LV_PART_MAIN);
+
+        lv_scale_section_t * section = lv_scale_add_section(scale);
+        /* Configure section styles */
+        lv_scale_set_section_range(scale, section, 75, 100);
+        lv_scale_set_section_style_indicator(scale, section, &section_label_style);
+        lv_scale_set_section_style_items(scale, section, &section_minor_tick_style);
+        lv_scale_set_section_style_main(scale, section, &section_main_line_style);
+
+        lv_obj_set_style_bg_color(scale, lv_palette_main(LV_PALETTE_BLUE_GREY), 0);
+        lv_obj_set_style_bg_opa(scale, LV_OPA_50, 0);
+        lv_obj_set_style_radius(scale, 8, 0);
+
+        if(i == 0) {
+            lv_obj_set_style_pad_left(scale, 8, 0);
+            lv_obj_set_style_pad_ver(scale, 20, 0);
+
+        }
+        else {
+            lv_obj_set_style_pad_bottom(scale, 8, 0);
+            lv_obj_set_style_pad_hor(scale, 20, 0);
+        }
+    }
 
     TEST_ASSERT_EQUAL_SCREENSHOT("widgets/scale_2.png");
 }
@@ -214,10 +238,10 @@ void test_scale_render_example_4(void)
 
     /* Configure section styles */
     lv_scale_section_t * section = lv_scale_add_section(scale);
-    lv_scale_section_set_range(section, 75, 100);
-    lv_scale_section_set_style(section, LV_PART_INDICATOR, &section_label_style);
-    lv_scale_section_set_style(section, LV_PART_ITEMS, &section_minor_tick_style);
-    lv_scale_section_set_style(section, LV_PART_MAIN, &section_main_line_style);
+    lv_scale_set_section_range(scale, section, 75, 100);
+    lv_scale_set_section_style_indicator(scale, section, &section_label_style);
+    lv_scale_set_section_style_items(scale, section, &section_minor_tick_style);
+    lv_scale_set_section_style_main(scale, section, &section_main_line_style);
 
     TEST_ASSERT_EQUAL_SCREENSHOT("widgets/scale_4.png");
 }
@@ -228,8 +252,9 @@ static void draw_event_cb(lv_event_t * e)
     lv_draw_task_t * draw_task = lv_event_get_draw_task(e);
     lv_draw_dsc_base_t * base_dsc = lv_draw_task_get_draw_dsc(draw_task);
     lv_draw_label_dsc_t * label_draw_dsc = lv_draw_task_get_label_dsc(draw_task);
-    if(base_dsc->part == LV_PART_INDICATOR) {
-        if(label_draw_dsc) {
+    lv_draw_line_dsc_t * line_draw_dsc = lv_draw_task_get_line_dsc(draw_task);
+    if(label_draw_dsc) {
+        if(base_dsc->part == LV_PART_INDICATOR) {
             const lv_color_t color_idx[7] = {
                 lv_palette_main(LV_PALETTE_RED),
                 lv_palette_main(LV_PALETTE_ORANGE),
@@ -261,6 +286,26 @@ static void draw_event_cb(lv_event_t * e)
             draw_task->area.x1 -= (new_w - old_w) / 2;
             draw_task->area.x2 += ((new_w - old_w) + 1) / 2;  /* +1 for rounding */
 
+        }
+    }
+    else if(line_draw_dsc) {
+        if(base_dsc->part == LV_PART_INDICATOR || base_dsc->part == LV_PART_ITEMS) {
+            const lv_color_t color_idx[7] = {
+                lv_palette_main(LV_PALETTE_RED),
+                lv_palette_main(LV_PALETTE_ORANGE),
+                lv_palette_main(LV_PALETTE_YELLOW),
+                lv_palette_main(LV_PALETTE_GREEN),
+                lv_palette_main(LV_PALETTE_CYAN),
+                lv_palette_main(LV_PALETTE_BLUE),
+                lv_palette_main(LV_PALETTE_PURPLE),
+            };
+            uint32_t tick_idx = base_dsc->id1;
+            uint32_t tick_value = base_dsc->id2;
+
+            line_draw_dsc->color = color_idx[tick_idx % 7];
+
+            int32_t expected_tick_value = lv_map(tick_idx, 0, 31 - 1, 10, 40);
+            TEST_ASSERT_EQUAL(tick_value, expected_tick_value);
         }
     }
 }
@@ -301,16 +346,16 @@ void test_scale_set_style(void)
 
     /* Configure section styles */
     lv_scale_section_t * section = lv_scale_add_section(scale);
-    lv_scale_section_set_range(section, 75, 100);
+    lv_scale_set_section_range(scale, section, 75, 100);
 
-    lv_scale_section_set_style(section, LV_PART_MAIN, &section_main_line_style);
+    lv_scale_set_section_style_main(scale, section, &section_main_line_style);
     TEST_ASSERT_NOT_NULL(section->main_style);
     TEST_ASSERT_NULL(section->indicator_style);
     TEST_ASSERT_NULL(section->items_style);
 
     TEST_ASSERT_EQUAL(section->main_style, &section_main_line_style);
 
-    lv_scale_section_set_style(section, LV_PART_INDICATOR, &section_label_style);
+    lv_scale_set_section_style_indicator(scale, section, &section_label_style);
     TEST_ASSERT_NOT_NULL(section->main_style);
     TEST_ASSERT_NOT_NULL(section->indicator_style);
     TEST_ASSERT_NULL(section->items_style);
@@ -318,7 +363,7 @@ void test_scale_set_style(void)
     TEST_ASSERT_EQUAL(section->main_style, &section_main_line_style);
     TEST_ASSERT_EQUAL(section->indicator_style, &section_label_style);
 
-    lv_scale_section_set_style(section, LV_PART_ITEMS, &section_minor_tick_style);
+    lv_scale_set_section_style_items(scale, section, &section_minor_tick_style);
     TEST_ASSERT_NOT_NULL(section->main_style);
     TEST_ASSERT_NOT_NULL(section->indicator_style);
     TEST_ASSERT_NOT_NULL(section->items_style);
@@ -326,22 +371,6 @@ void test_scale_set_style(void)
     TEST_ASSERT_EQUAL(section->main_style, &section_main_line_style);
     TEST_ASSERT_EQUAL(section->indicator_style, &section_label_style);
     TEST_ASSERT_EQUAL(section->items_style, &section_minor_tick_style);
-
-    /* Invalid part */
-    lv_scale_section_set_style(section, LV_PART_CURSOR, &section_minor_tick_style);
-    TEST_ASSERT_NOT_NULL(section->main_style);
-    TEST_ASSERT_NOT_NULL(section->indicator_style);
-    TEST_ASSERT_NOT_NULL(section->items_style);
-
-    TEST_ASSERT_EQUAL(section->main_style, &section_main_line_style);
-    TEST_ASSERT_EQUAL(section->indicator_style, &section_label_style);
-    TEST_ASSERT_EQUAL(section->items_style, &section_minor_tick_style);
-
-    /* NULL section */
-    lv_scale_section_t * null_section = NULL;
-
-    lv_scale_section_set_range(null_section, 75, 100);
-    lv_scale_section_set_style(null_section, LV_PART_MAIN, &section_main_line_style);
 }
 
 /* The scale internally counts the number of custom labels until it finds the NULL sentinel */
@@ -416,6 +445,44 @@ void test_scale_angle_range(void)
     lv_scale_set_angle_range(scale, angle_range);
 
     TEST_ASSERT_EQUAL(angle_range, lv_scale_get_angle_range(scale));
+}
+
+void test_scale_rotation(void)
+{
+    lv_obj_t * scale = lv_scale_create(lv_screen_active());
+
+    lv_scale_set_rotation(scale, 135);
+    TEST_ASSERT_EQUAL(lv_scale_get_rotation(scale), 135);
+
+    lv_scale_set_rotation(scale, 375); /* 15 */
+    TEST_ASSERT_EQUAL(lv_scale_get_rotation(scale), 15);
+
+    lv_scale_set_rotation(scale, 540); /* 180 */
+    TEST_ASSERT_EQUAL(lv_scale_get_rotation(scale), 180);
+
+    lv_scale_set_rotation(scale, 1085); /* 5 */
+    TEST_ASSERT_EQUAL(lv_scale_get_rotation(scale), 5);
+
+    lv_scale_set_rotation(scale, -90); /* 270 */
+    TEST_ASSERT_EQUAL(lv_scale_get_rotation(scale), 270);
+
+    lv_scale_set_rotation(scale, -270); /* 90 */
+    TEST_ASSERT_EQUAL(lv_scale_get_rotation(scale), 90);
+
+    lv_scale_set_rotation(scale, -355); /* 5 */
+    TEST_ASSERT_EQUAL(lv_scale_get_rotation(scale), 5);
+
+    lv_scale_set_rotation(scale, -370); /* 350 */
+    TEST_ASSERT_EQUAL(lv_scale_get_rotation(scale), 350);
+
+    lv_scale_set_rotation(scale, -405); /* 315 */
+    TEST_ASSERT_EQUAL(lv_scale_get_rotation(scale), 315);
+
+    lv_scale_set_rotation(scale, -450); /* 270 */
+    TEST_ASSERT_EQUAL(lv_scale_get_rotation(scale), 270);
+
+    lv_scale_set_rotation(scale, -1075); /* 5 */
+    TEST_ASSERT_EQUAL(lv_scale_get_rotation(scale), 5);
 }
 
 void test_scale_range(void)
