@@ -8,7 +8,7 @@ import storage
 import storage.resident_credentials
 from storage.fido2 import KEY_AGREEMENT_PRIVKEY, KEY_AGREEMENT_PUBKEY
 from trezor import config, io, log, loop, ui, utils, workflow
-from trezor.crypto import aes, der, hashlib, hmac, random, se_thd89
+from trezor.crypto import aes, der, hashlib, hmac, random
 from trezor.crypto.curve import nist256p1
 from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
 from trezor.ui.components.common.confirm import Pageable
@@ -21,6 +21,9 @@ from apps.common import cbor
 from . import common
 from .credential import CRED_ID_MAX_LENGTH, Credential, Fido2Credential, U2fCredential
 from .resident_credentials import find_by_rp_id_hash, store_resident_credential
+
+if utils.USE_THD89:
+    from trezor.crypto import se_thd89
 
 _IFACE_HID = const(0)
 _IFACE_SPI = const(1)

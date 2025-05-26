@@ -5,13 +5,16 @@ from ubinascii import hexlify
 
 import storage.device
 from trezor import log, utils
-from trezor.crypto import bip32, chacha20poly1305, der, hashlib, hmac, random, se_thd89
+from trezor.crypto import bip32, chacha20poly1305, der, hashlib, hmac, random
 from trezor.crypto.curve import ed25519, nist256p1
 
 from apps.common import cbor, seed
 from apps.common.paths import HARDENED
 
 from . import common
+
+if utils.USE_THD89:
+    from trezor.crypto import se_thd89
 
 # Credential ID values
 _CRED_ID_VERSION = b"\xf1\xd0\x02\x00"

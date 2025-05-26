@@ -7,11 +7,14 @@ from trezorcrypto import (  # noqa: F401
     hmac,
     pbkdf2,
     random,
-    se_thd89,
+    #se_thd89,
     sha512_256,
 )
 
 from trezor import utils
+
+if utils.USE_THD89:
+    from trezorcrypto import se_thd89
 
 if not utils.BITCOIN_ONLY:
     from trezorcrypto import cardano, monero, nem  # noqa: F401

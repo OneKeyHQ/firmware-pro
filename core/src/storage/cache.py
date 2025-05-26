@@ -3,7 +3,9 @@ from trezorcrypto import random  # avoid pulling in trezor.crypto
 from typing import TYPE_CHECKING
 
 from trezor import utils
-from trezor.crypto import se_thd89
+
+if utils.USE_THD89:
+    from trezorcrypto import se_thd89
 
 if TYPE_CHECKING:
     from typing import Sequence, TypeVar, overload

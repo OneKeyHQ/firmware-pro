@@ -27,6 +27,8 @@ def i18n_refresh(lang: str | None = None):
 
 i18n_refresh("en" if not device.is_initialized() else None)
 
-
 def gettext(key):
-    return TRANSLATIONS[key]
+    if len(TRANSLATIONS) > key:
+        return TRANSLATIONS[key]
+    print(f"key {key} out of range")
+    return ""

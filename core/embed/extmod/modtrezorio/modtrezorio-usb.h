@@ -224,7 +224,10 @@ STATIC mp_obj_t mod_trezorio_USB_open(mp_obj_t self,
   }
 
   // Start the USB stack
-  // usb_start();
+#ifdef TREZOR_EMULATOR
+  usb_start();
+#endif
+
   o->state = USB_OPENED;
 
   // If we found any VCP interfaces, use the last one for stdio,

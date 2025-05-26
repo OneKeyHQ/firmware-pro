@@ -2,9 +2,11 @@ from typing import Iterable
 
 import storage.cache
 from trezor import protobuf, utils
-from trezor.crypto import se_thd89
 from trezor.enums import MessageType
 from trezor.utils import ensure
+
+if utils.USE_THD89:
+    from trezor.crypto import se_thd89
 
 WIRE_TYPES: dict[int, tuple[int, ...]] = {
     MessageType.AuthorizeCoinJoin: (MessageType.SignTx, MessageType.GetOwnershipProof),

@@ -796,6 +796,8 @@ def get_label() -> str:
     if _LABEL_VALUE is None:
         label = common.get(_NAMESPACE, _LABEL, True)  # public
         if label is None:
+            if utils.EMULATOR:
+                return utils.DEFAULT_LABEL
             previous_label_len = common.get_val_len(_NAMESPACE, _LABEL_DEPRECATED, True)
             if (
                 previous_label_len is not None
