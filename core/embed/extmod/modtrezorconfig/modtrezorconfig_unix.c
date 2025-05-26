@@ -569,8 +569,15 @@ STATIC mp_obj_t mod_trezorconfig_get_capacity(void) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorconfig_get_capacity_obj,
                                  mod_trezorconfig_get_capacity);
-
+#else
+STATIC mp_obj_t mod_trezorcrypto_se_fingerprint_is_unlocked(void) {
+  return mp_const_true;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(
+    mod_trezorcrypto_se_fingerprint_is_unlocked_obj,
+    mod_trezorcrypto_se_fingerprint_is_unlocked);
 #endif
+
 STATIC const mp_rom_map_elem_t mp_module_trezorconfig_globals_table[] = {
     {MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_trezorconfig)},
     {MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&mod_trezorconfig_init_obj)},
@@ -608,6 +615,9 @@ STATIC const mp_rom_map_elem_t mp_module_trezorconfig_globals_table[] = {
      MP_ROM_PTR(&mod_trezorconfig_get_serial_obj)},
     {MP_ROM_QSTR(MP_QSTR_get_capacity),
      MP_ROM_PTR(&mod_trezorconfig_get_capacity_obj)},
+#else
+    {MP_ROM_QSTR(MP_QSTR_fingerprint_is_unlocked),
+     MP_ROM_PTR(&mod_trezorcrypto_se_fingerprint_is_unlocked_obj)},
 #endif
 };
 STATIC MP_DEFINE_CONST_DICT(mp_module_trezorconfig_globals,

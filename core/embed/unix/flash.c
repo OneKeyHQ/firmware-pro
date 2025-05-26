@@ -34,38 +34,41 @@
 #define FLASH_FILE profile_flash_path()
 #endif
 
-static const uint32_t FLASH_SECTOR_TABLE[FLASH_SECTOR_COUNT + 1] = {
-    [0] = 0x08000000,   // - 0x08003FFF |  16 KiB
-    [1] = 0x08004000,   // - 0x08007FFF |  16 KiB
-    [2] = 0x08008000,   // - 0x0800BFFF |  16 KiB
-    [3] = 0x0800C000,   // - 0x0800FFFF |  16 KiB
-    [4] = 0x08010000,   // - 0x0801FFFF |  64 KiB
-    [5] = 0x08020000,   // - 0x0803FFFF | 128 KiB
-    [6] = 0x08040000,   // - 0x0805FFFF | 128 KiB
-    [7] = 0x08060000,   // - 0x0807FFFF | 128 KiB
-    [8] = 0x08080000,   // - 0x0809FFFF | 128 KiB
-    [9] = 0x080A0000,   // - 0x080BFFFF | 128 KiB
-    [10] = 0x080C0000,  // - 0x080DFFFF | 128 KiB
-    [11] = 0x080E0000,  // - 0x080FFFFF | 128 KiB
-#if defined TREZOR_MODEL_T || defined TREZOR_MODEL_R
-    [12] = 0x08100000,  // - 0x08103FFF |  16 KiB
-    [13] = 0x08104000,  // - 0x08107FFF |  16 KiB
-    [14] = 0x08108000,  // - 0x0810BFFF |  16 KiB
-    [15] = 0x0810C000,  // - 0x0810FFFF |  16 KiB
-    [16] = 0x08110000,  // - 0x0811FFFF |  64 KiB
-    [17] = 0x08120000,  // - 0x0813FFFF | 128 KiB
-    [18] = 0x08140000,  // - 0x0815FFFF | 128 KiB
-    [19] = 0x08160000,  // - 0x0817FFFF | 128 KiB
-    [20] = 0x08180000,  // - 0x0819FFFF | 128 KiB
-    [21] = 0x081A0000,  // - 0x081BFFFF | 128 KiB
-    [22] = 0x081C0000,  // - 0x081DFFFF | 128 KiB
-    [23] = 0x081E0000,  // - 0x081FFFFF | 128 KiB
-    [24] = 0x08200000,  // last element - not a valid sector
-#elif defined TREZOR_MODEL_1
-    [12] = 0x08100000,  // last element - not a valid sector
-#else
-#error Unknown Trezor model
-#endif
+static const uint32_t FLASH_SECTOR_TABLE[FLASH_SECTOR_COUNT + 2] = {
+    [0] = 0x08000000,   // - 0x0801FFFF | 128 KiB
+    [1] = 0x08020000,   // - 0x08007FFF | 128 KiB
+    [2] = 0x08040000,   // - 0x0800BFFF | 128 KiB
+    [3] = 0x08060000,   // - 0x0800FFFF | 128 KiB
+    [4] = 0x08080000,   // - 0x0801FFFF | 128 KiB
+    [5] = 0x080A0000,   // - 0x0803FFFF | 128 KiB
+    [6] = 0x080C0000,   // - 0x0805FFFF | 128 KiB
+    [7] = 0x080E0000,   // - 0x0807FFFF | 128 KiB
+    [8] = 0x08100000,   // - 0x0809FFFF | 128 KiB
+    [9] = 0x08120000,   // - 0x080BFFFF | 128 KiB
+    [10] = 0x08140000,  // - 0x080DFFFF | 128 KiB
+    [11] = 0x08160000,  // - 0x080FFFFF | 128 KiB
+    [12] = 0x08180000,  // - 0x08103FFF | 128 KiB
+    [13] = 0x081A0000,  // - 0x08107FFF | 128 KiB
+    [14] = 0x081C0000,  // - 0x0810BFFF | 128 KiB
+    [15] = 0x081E0000,  // - 0x0810FFFF | 128 KiB
+    [16] = 0x08200000 + 0x20000,                   // 128 KiB
+    [17] = 0x08200000 + 0x40000,                   // 128 KiB
+    [18] = 0x08200000 + 0x60000,                   // 128 KiB
+    [19] = 0x08200000 + 0x80000,                   // 128 KiB
+    [20] = 0x08200000 + 0xA0000,                   // 128 KiB
+    [21] = 0x08200000 + 0xC0000,                   // 128 KiB
+    [22] = 0x08200000 + 0xE0000,                   // 128 KiB
+    [23] = 0x08200000 + 0x100000,                   // 128 KiB
+    [24] = 0x08200000 + 0x120000,                   // 128 KiB
+    [25] = 0x08200000 + 0x140000,                  // 128 KiB
+    [26] = 0x08200000 + 0x160000,                  // 128 KiB
+    [27] = 0x08200000 + 0x180000,                  // 128 KiB
+    [28] = 0x08200000 + 0x1A0000,                  // 128 KiB
+    [29] = 0x08200000 + 0x1C0000,                  // 128 KiB
+    [30] = 0x08200000 + 0x1E0000,                  // 128 KiB
+    [31] = 0x08200000 + 0x200000,                  // 128 KiB
+    [32] = 0x08200000 + 0x220000,                  // 128 KiB
+    [33] = 0x08200000 + 0x240000,                  // 128 KiB
 };
 
 const uint8_t FIRMWARE_SECTORS[FIRMWARE_SECTORS_COUNT] = {

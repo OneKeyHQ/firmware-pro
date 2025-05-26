@@ -654,6 +654,8 @@ STATIC const mp_rom_map_elem_t mp_module_trezorutils_globals_table[] = {
 #endif
 #if USE_THD89
     {MP_ROM_QSTR(MP_QSTR_USE_THD89), mp_const_true},
+#else
+    {MP_ROM_QSTR(MP_QSTR_USE_THD89), mp_const_false},
 #endif
     {MP_ROM_QSTR(MP_QSTR_BW_STANDARD), MP_ROM_INT(bw_standard)},
     {MP_ROM_QSTR(MP_QSTR_BW_URL), MP_ROM_INT(bw_uri)},
