@@ -38,8 +38,9 @@ bool I2C_1_INIT()
 
     // I2C1 Peripherals Configuration
     i2c_handles[I2C_1].Instance = I2C1;
-    // i2c_handles[I2C_1].Init.Timing = 0x70B03140; // ?
-    i2c_handles[I2C_1].Init.Timing = 0x10C0ECFF; // pclk 100M I2C 100K
+    //i2c_handles[I2C_1].Init.Timing = 0x70B03140; // ?
+    //i2c_handles[I2C_1].Init.Timing = 0x10C0ECFF; // pclk 100M I2C 100K
+    i2c_handles[I2C_1].Init.Timing = 0x009034B6; // pclk 100M I2C 400K?
     i2c_handles[I2C_1].Init.OwnAddress1 = 0;     // master
     i2c_handles[I2C_1].Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
     i2c_handles[I2C_1].Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;

@@ -6,7 +6,8 @@
 //#include "touch_task.h"
 #include "user_utils.h"
 #include "touch.h"
-
+#include "cmsis_os2.h"
+#include "timer.h"
 
 static void touchpad_init(void);
 static void touchpad_read(lv_indev_t * indev, lv_indev_data_t * data);
@@ -38,7 +39,11 @@ static void touchpad_init(void)
 static void touchpad_read(lv_indev_t *indev_drv, lv_indev_data_t *data)
 {
     UNUSED(indev_drv);
+    //uint32_t startTick = osKernelGetTickCount();
+    //TestTimerStart();
     int pos = touch_read();
+    //uint32_t elapsed = TestTimerGetValue(); 
+    //printf("took %lu us\n", elapsed);
     /* Save the pressed coordinates and the state */
     if (pos & TOUCH_START || pos & TOUCH_MOVE) {
       data->state = LV_INDEV_STATE_PR;
