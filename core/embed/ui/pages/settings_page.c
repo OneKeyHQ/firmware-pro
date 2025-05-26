@@ -16,7 +16,7 @@ Page_t g_settingsPage = {
 
 static void SettingsPageInit(void)
 {
-    UserMenuItem_t items[] = {
+    static UserMenuItem_t items[] = {
         {"Settings 1", NULL},
         {"Settings 2", NULL},
         {"Settings 3", NULL},
@@ -27,7 +27,7 @@ static void SettingsPageInit(void)
         {"Settings 8", NULL},
         {"Settings 9", NULL},
     };
-    CreateGeneralNavigationBar(GetPageBackground(), NULL);
+    //CreateGeneralNavigationBar(GetPageBackground(), NULL);
     CreateUserMenu(GetPageBackground(), items, 9);
 }
 

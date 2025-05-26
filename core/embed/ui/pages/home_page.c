@@ -12,7 +12,7 @@
 #define SLIDE_GRADIEMT      0
 #define SLIDE_TILEVIEW      1
 
-#define SLIDE_SELECT    SLIDE_GRADIEMT
+#define SLIDE_SELECT    SLIDE_TILEVIEW
 
 
 static void HomePageInit(void);

@@ -16,6 +16,7 @@ static const char* short_file_name(const char* path) {
 void show_assert(const char* msg, const char* file, int line) {
   char str1[64];
   sprintf(str1, "assert,file=%s,line=%u", short_file_name(file), line);
+  printf("%s\n", str1);
   error_shutdown(msg, str1, NULL, NULL);
 }
 

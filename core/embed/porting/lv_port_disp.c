@@ -69,7 +69,11 @@ void lv_port_disp_init(void)
     /* Example 1
      * One buffer for partial rendering*/
     /*full screen buffer*/
+#ifdef LVGL_DOUBLE_BUFFER
+    lv_display_set_buffers(disp, (void *)LVGL_GRAM_ADDRESS, (void *)(LVGL_GRAM_ADDRESS + MY_DISP_HOR_RES * MY_DISP_VER_RES * 2), MY_DISP_HOR_RES * MY_DISP_VER_RES * 2, LV_DISPLAY_RENDER_MODE_FULL);
+#else
     lv_display_set_buffers(disp, (void *)LVGL_GRAM_ADDRESS, NULL, MY_DISP_HOR_RES * MY_DISP_VER_RES * 2, LV_DISPLAY_RENDER_MODE_PARTIAL);
+#endif
 }
 
 /**********************
@@ -104,10 +108,14 @@ void disp_disable_update(void)
 static void disp_flush(lv_display_t * disp_drv, const lv_area_t * area, uint8_t * px_map)
 {
     if (disp_flush_enabled) {
+#ifdef LVGL_DOUBLE_BUFFER
+        lcd_set_src_addr((uint32_t)px_map);
+#else
         //lv_draw_sw_rgb565_swap(px_map, (area->y2 - area->y1 + 1) * (area->x2 - area->x1 + 1));
         dma2d_copy_buffer((uint32_t *)px_map, (uint32_t *)lcd_get_src_addr(),
                   area->x1, area->y1, area->x2 - area->x1 + 1,
                   area->y2 - area->y1 + 1);
+#endif
     }
 
     /*IMPORTANT!!!
