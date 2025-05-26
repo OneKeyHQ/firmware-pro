@@ -14,6 +14,7 @@
 #include "cmsis_os2.h"
 #include "sdram.h"
 #include "mipi_lcd.h"
+#include "stm32h7xx_hal.h"
 
 /*********************
  *      DEFINES
@@ -74,6 +75,12 @@ void lv_port_disp_init(void)
 #else
     lv_display_set_buffers(disp, (void *)LVGL_GRAM_ADDRESS, NULL, MY_DISP_HOR_RES * MY_DISP_VER_RES * 2, LV_DISPLAY_RENDER_MODE_PARTIAL);
 #endif
+    GPIO_InitTypeDef gpio_init_structure = {0};
+    gpio_init_structure.Mode = GPIO_MODE_INPUT;
+    gpio_init_structure.Pull = GPIO_NOPULL;
+    gpio_init_structure.Speed = GPIO_SPEED_FREQ_HIGH;
+    gpio_init_structure.Pin = GPIO_PIN_2;
+    HAL_GPIO_Init(GPIOJ, &gpio_init_structure);
 }
 
 /**********************
@@ -109,6 +116,8 @@ static void disp_flush(lv_display_t * disp_drv, const lv_area_t * area, uint8_t 
 {
     if (disp_flush_enabled) {
 #ifdef LVGL_DOUBLE_BUFFER
+        while (HAL_GPIO_ReadPin(GPIOJ, GPIO_PIN_2) == GPIO_PIN_RESET) {
+        }
         lcd_set_src_addr((uint32_t)px_map);
 #else
         //lv_draw_sw_rgb565_swap(px_map, (area->y2 - area->y1 + 1) * (area->x2 - area->x1 + 1));
