@@ -85,7 +85,7 @@ CPPPATH_MOD += [
 ]
 SOURCE_MOD += [
     #'embed/extmod/modtrezorconfig/modtrezorconfig.c'
-    'embed/extmod/modtrezorconfig/modtrezorconfig-unix.c',
+    'embed/extmod/modtrezorconfig/unix-modtrezorconfig.c',
     'vendor/trezor-storage/norcow.c',
     'vendor/trezor-storage/storage.c',
 ]

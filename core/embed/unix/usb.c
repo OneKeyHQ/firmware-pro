@@ -261,6 +261,4 @@ secbool usb_configured(void) {
   return sectrue;
 }
 
-bool usb_3320_host_connected(void) {
-  return 0;
-}
+bool usb_3320_host_connected(void) { return 0; }

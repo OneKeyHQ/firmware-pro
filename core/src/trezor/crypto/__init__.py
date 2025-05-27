@@ -1,4 +1,4 @@
-from trezorcrypto import (  # noqa: F401; se_thd89,
+from trezorcrypto import (  # noqa: F401
     aes,
     bip32,
     bip39,
@@ -13,7 +13,7 @@ from trezorcrypto import (  # noqa: F401; se_thd89,
 from trezor import utils
 
 if utils.USE_THD89:
-    from trezorcrypto import se_thd89
+    from trezorcrypto import se_thd89  # noqa: F401
 
 if not utils.BITCOIN_ONLY:
     from trezorcrypto import cardano, monero, nem  # noqa: F401

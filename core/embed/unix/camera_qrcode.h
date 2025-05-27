@@ -3,4 +3,4 @@
 
 #define camera_qr_decode(...) 0
 
-#endif // __CAMERA_QRCODE_H__
+#endif  // __CAMERA_QRCODE_H__

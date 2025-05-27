@@ -3,8 +3,8 @@
 
 #include <stdlib.h>
 
-#define pvPortMalloc    malloc
-#define pvPortReMalloc  realloc
-#define vPortFree       free
+#define pvPortMalloc malloc
+#define pvPortReMalloc realloc
+#define vPortFree free
 
 #endif /* __UNIX_HEAP_PORT_H__ */

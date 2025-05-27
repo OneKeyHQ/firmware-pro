@@ -2,13 +2,13 @@
 #define _HARDWARE_VERSION_H_
 
 typedef enum {
-    // force compiler use at least 16bit number type
-    HW_VER_INVALID = 65535,
-    HW_VER_UNKNOWN = 0,
-    HW_VER_LEGACY = 300,
-    HW_VER_1P3A = 1055,
-    HW_VER_3P0 = 1487,
-    HW_VER_3P0A = 1964,
+  // force compiler use at least 16bit number type
+  HW_VER_INVALID = 65535,
+  HW_VER_UNKNOWN = 0,
+  HW_VER_LEGACY = 300,
+  HW_VER_1P3A = 1055,
+  HW_VER_3P0 = 1487,
+  HW_VER_3P0A = 1964,
 } HW_VER_t;
 
 #define get_hw_ver() 0

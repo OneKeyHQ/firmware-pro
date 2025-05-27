@@ -70,7 +70,7 @@ FP_RESULT fingerprint_enroll(uint8_t counter)
     {
         return FP_NO_FP;
     }
-  #if SYSTEM_VIEW
+#if SYSTEM_VIEW
     uint8_t image_data[88 * 112 + 2];
     if ( FpsGetImageData(image_data) != 0 )
     {
@@ -78,7 +78,7 @@ FP_RESULT fingerprint_enroll(uint8_t counter)
     }
 
     display_fp(300, 600, 88, 112, image_data);
-  #endif
+#endif
     if ( FpsGetImage() != 0 )
     {
         return FP_GET_IMAGE_FAIL;
@@ -133,7 +133,7 @@ FP_RESULT fingerprint_match(uint8_t* match_id)
         enable_irq(irq);
         return FP_NO_FP;
     }
-  #if SYSTEM_VIEW
+#if SYSTEM_VIEW
     uint8_t image_data[88 * 112 + 2];
     if ( FpsGetImageData(image_data) != 0 )
     {
@@ -144,7 +144,7 @@ FP_RESULT fingerprint_match(uint8_t* match_id)
     {
         display_fp(300, 600, 88, 112, image_data);
     }
-  #endif
+#endif
     if ( FpsGetImage() != 0 )
     {
         enable_irq(irq);

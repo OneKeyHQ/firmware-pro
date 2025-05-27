@@ -51,7 +51,7 @@ let
   };
   llvmPackages = nixpkgs.llvmPackages_15;
   # see pyright/README.md for update procedure
-  pyright = nixpkgs.callPackage ./pyright {};
+  pyright = nixpkgs.callPackage ./ci/pyright {};
 in
 with nixpkgs;
 stdenvNoCC.mkDerivation ({
