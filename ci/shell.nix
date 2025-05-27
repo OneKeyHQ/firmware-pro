@@ -14,10 +14,10 @@ let
     sha256 = "18pna0yinvdprhhcmhyanlgrmgf81nwpc0j2z9fy9mc8cqkx3937";
   }) { overlays = [ rustOverlay ]; };
   # commit emulator works fine
-  sdlnixpkgs = import (builtins.fetchTarball {
-    url = "https://github.com/NixOS/nixpkgs/archive/1882c6b7368fd284ad01b0a5b5601ef136321292.tar.gz";
-    sha256 = "0zg7ak2mcmwzi2kg29g4v9fvbvs0viykjsg2pwaphm1fi13s7s0i";
-  }) { };
+  # sdlnixpkgs = import (builtins.fetchTarball {
+  #   url = "https://github.com/NixOS/nixpkgs/archive/1882c6b7368fd284ad01b0a5b5601ef136321292.tar.gz";
+  #   sha256 = "0zg7ak2mcmwzi2kg29g4v9fvbvs0viykjsg2pwaphm1fi13s7s0i";
+  # }) { };
   moneroTests = nixpkgs.fetchurl {
     url = "https://github.com/ph4r05/monero/releases/download/v0.18.1.1-dev-tests-u18.04-02/trezor_tests";
     sha256 = "81424cfc3965abdc24de573274bf631337b52fd25cefc895513214c613fe05c9";
@@ -63,8 +63,8 @@ stdenvNoCC.mkDerivation ({
     #       and poetry uses the default version (currently 3.10)
     python310
   ] ++ [
-    sdlnixpkgs.SDL2
-    sdlnixpkgs.SDL2_image
+    SDL2
+    SDL2_image
     bash
     check
     curl  # for connect tests
