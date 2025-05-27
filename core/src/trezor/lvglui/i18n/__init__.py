@@ -29,6 +29,10 @@ i18n_refresh("en" if not device.is_initialized() else None)
 
 
 def gettext(key):
+    if not isinstance(key, int) or key < 0:
+        print(f"Invalid key {key}: must be non-negative integer")
+        return ""
+
     if len(TRANSLATIONS) > key:
         return TRANSLATIONS[key]
     print(f"key {key} out of range")

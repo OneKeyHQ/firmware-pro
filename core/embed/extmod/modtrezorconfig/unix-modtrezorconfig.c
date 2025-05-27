@@ -422,12 +422,12 @@ STATIC mp_obj_t mod_trezorconfig_wipe(void) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorconfig_wipe_obj,
                                  mod_trezorconfig_wipe);
 
-STATIC mp_obj_t mod_trezorcrypto_se_fingerprint_is_unlocked(void) {
+STATIC mp_obj_t mod_trezorconfig_se_fingerprint_is_unlocked(void) {
   return mp_const_true;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(
-    mod_trezorcrypto_se_fingerprint_is_unlocked_obj,
-    mod_trezorcrypto_se_fingerprint_is_unlocked);
+    mod_trezorconfig_se_fingerprint_is_unlocked_obj,
+    mod_trezorconfig_se_fingerprint_is_unlocked);
 
 STATIC const mp_rom_map_elem_t mp_module_trezorconfig_globals_table[] = {
     {MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_trezorconfig)},
@@ -458,7 +458,7 @@ STATIC const mp_rom_map_elem_t mp_module_trezorconfig_globals_table[] = {
      MP_ROM_PTR(&mod_trezorconfig_next_counter_obj)},
     {MP_ROM_QSTR(MP_QSTR_wipe), MP_ROM_PTR(&mod_trezorconfig_wipe_obj)},
     {MP_ROM_QSTR(MP_QSTR_fingerprint_is_unlocked),
-     MP_ROM_PTR(&mod_trezorcrypto_se_fingerprint_is_unlocked_obj)},
+     MP_ROM_PTR(&mod_trezorconfig_se_fingerprint_is_unlocked_obj)},
 };
 STATIC MP_DEFINE_CONST_DICT(mp_module_trezorconfig_globals,
                             mp_module_trezorconfig_globals_table);

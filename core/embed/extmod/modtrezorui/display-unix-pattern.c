@@ -907,10 +907,6 @@ int display_text_height(int font) {
     case FONT_PJKS_BOLD_38:
       return FONT_PJKS_BOLD38_HEIGHT;
 #endif
-#ifdef TREZOR_FONT_ROBOT_REGULAR_ENABLE
-    case FONT_ROBOT_REGULAR_24:
-      return FONT_ROBOT_REGULAR_24_HEIGHT;
-#endif
 #ifdef TREZOR_FONT_PJKS_REGULAR_20_ENABLE
     case FONT_PJKS_REGULAR_20:
       return FONT_PJKS_REGULAR20_HEIGHT;

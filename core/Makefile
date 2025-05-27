@@ -188,7 +188,7 @@ build_firmware: templates build_cross ## build firmware with frozen modules
 	$(SCONS) CFLAGS="$(CFLAGS)" PRODUCTION="$(PRODUCTION)" TREZOR_MODEL="$(TREZOR_MODEL)" PRODUCTION_MODEL="$(PRODUCTION_MODEL)" PYOPT="$(PYOPT)" BITCOIN_ONLY="$(BITCOIN_ONLY)" UI2="$(UI2)" USE_THD89="$(USE_THD89)" $(FIRMWARE_BUILD_DIR)/firmware.bin
 	cp $(FIRMWARE_BUILD_DIR)/firmware.bin $(FIRMWARE_BUILD_DIR)/$(FIRMWARE_BUILD_NAME).bin
 
-build_unix: CFLAGS += -DBUILD_ID='\"emu-$(DBUILD_ID)\"'
+build_unix: CFLAGS += -DBUILD_ID='\"emu-$(BUILD_ID)\"'
 build_unix: CFLAGS += -DSCM_REVISION='\"$(SCM_REVISION)\"'
 build_unix: templates ## build unix port
 	$(SCONS) CFLAGS="$(CFLAGS)" $(UNIX_BUILD_DIR)/trezor-emu-core $(UNIX_PORT_OPTS) TREZOR_MODEL="$(TREZOR_MODEL)" BITCOIN_ONLY="$(BITCOIN_ONLY)" TREZOR_EMULATOR_ASAN="$(ADDRESS_SANITIZER)" UI2="$(UI2)" UNAME_S="$(UNAME_S)" CURRENT_DIR="$(CURRENT_DIR)"
