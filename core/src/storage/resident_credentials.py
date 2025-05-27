@@ -3,6 +3,7 @@ from trezor import utils
 
 if utils.USE_THD89:
     from trezor.crypto import se_thd89
+
     MAX_RESIDENT_CREDENTIALS = se_thd89.FIDO2_CRED_COUNT_MAX
     _RESIDENT_CREDENTIAL_START_KEY = 0
 else:

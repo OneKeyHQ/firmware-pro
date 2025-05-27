@@ -1,4 +1,4 @@
-from trezorcrypto import (  # noqa: F401
+from trezorcrypto import (  # noqa: F401; se_thd89,
     aes,
     bip32,
     bip39,
@@ -7,7 +7,6 @@ from trezorcrypto import (  # noqa: F401
     hmac,
     pbkdf2,
     random,
-    #se_thd89,
     sha512_256,
 )
 

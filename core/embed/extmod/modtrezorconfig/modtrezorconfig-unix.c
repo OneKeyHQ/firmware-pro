@@ -63,12 +63,6 @@ static secbool wrapped_ui_wait_callback(uint32_t wait, uint32_t progress,
 ///     called from this module!
 ///     """
 STATIC mp_obj_t mod_trezorconfig_init(size_t n_args, const mp_obj_t *args) {
-#ifndef TREZOR_EMULATOR
-  if (se_is_wiping()) {
-    storage_wipe();
-  }
-#endif
-
   if (n_args > 0) {
     MP_STATE_VM(trezorconfig_ui_wait_callback) = args[0];
     storage_init(wrapped_ui_wait_callback, HW_ENTROPY_DATA, HW_ENTROPY_LEN);
@@ -76,9 +70,7 @@ STATIC mp_obj_t mod_trezorconfig_init(size_t n_args, const mp_obj_t *args) {
     storage_init(NULL, HW_ENTROPY_DATA, HW_ENTROPY_LEN);
   }
   memzero(HW_ENTROPY_DATA, sizeof(HW_ENTROPY_DATA));
-#ifndef TREZOR_EMULATOR
-  se_get_status();
-#endif
+
   return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_trezorconfig_init_obj, 0, 1,
@@ -101,33 +93,9 @@ STATIC mp_obj_t mod_trezorconfig_unlock(mp_obj_t pin, mp_obj_t ext_salt) {
       mp_raise_msg(&mp_type_ValueError, "Invalid length of external salt.");
   }
 
-#ifdef TREZOR_EMULATOR
   if (sectrue != storage_unlock(pin_b.buf, pin_b.len, ext_salt_b.buf)) {
     return mp_const_false;
   }
-#else
-  display_clear();
-  display_loader_ex(0, false, 0, 0xFFFF, 0x0000, NULL, 0, 0);
-  secbool ret = secfalse;
-  // verify se pin first when not in emulator
-  bool verified = se_verifyPin(pin_b.buf);
-  ret = storage_unlock(pin_b.buf, pin_b.len, ext_salt_b.buf);
-  if (ret != sectrue) {
-    return mp_const_false;
-  } else {
-    if (!verified) {
-      if (se_hasPin()) {
-        se_reset_pin();
-      }
-      if (sectrue == storage_has_pin()) {
-        if (!se_changePin((char *)PIN_EMPTY, pin_b.buf)) {
-          return mp_const_false;
-        }
-      }
-    }
-  }
-
-#endif
 
   return mp_const_true;
 }
@@ -188,19 +156,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorconfig_has_pin_obj,
 ///     Returns the number of remaining PIN entry attempts.
 ///     """
 STATIC mp_obj_t mod_trezorconfig_get_pin_rem(void) {
-#ifdef TREZOR_EMULATOR
   return mp_obj_new_int_from_uint(storage_get_pin_rem());
-#else
-  int remain = storage_get_pin_rem();
-  int fail_count = se_pinFailedCounter();
-  int remain_se = 0;
-  if (fail_count < PIN_MAX_TRIES) {
-    remain_se = PIN_MAX_TRIES - fail_count;
-  } else {
-    remain_se = 0;
-  }
-  return mp_obj_new_int_from_uint(remain < remain_se ? remain : remain_se);
-#endif
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorconfig_get_pin_rem_obj,
                                  mod_trezorconfig_get_pin_rem);
@@ -237,23 +193,12 @@ STATIC mp_obj_t mod_trezorconfig_change_pin(size_t n_args,
       mp_raise_msg(&mp_type_ValueError, "Invalid length of external salt.");
     new_ext_salt = ext_salt_b.buf;
   }
-#ifdef TREZOR_EMULATOR
+
   if (sectrue != storage_change_pin(oldpin.buf, oldpin.len, newpin.buf,
                                     newpin.len, old_ext_salt, new_ext_salt)) {
     return mp_const_false;
   }
-#else
-  display_clear();
-  display_loader_ex(0, false, 0, 0xFFFF, 0x0000, NULL, 0, 0);
-  if (sectrue != storage_change_pin(oldpin.buf, oldpin.len, newpin.buf,
-                                    newpin.len, old_ext_salt, new_ext_salt)) {
-    return mp_const_false;
-  }
-  display_loader_ex(1000, false, 0, 0xFFFF, 0x0000, NULL, 0, 0);
-  if (!se_setPin(newpin.buf)) {
-    return mp_const_false;
-  }
-#endif
+
   return mp_const_true;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_trezorconfig_change_pin_obj, 4,
@@ -477,106 +422,12 @@ STATIC mp_obj_t mod_trezorconfig_wipe(void) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorconfig_wipe_obj,
                                  mod_trezorconfig_wipe);
 
-#ifndef TREZOR_EMULATOR
-STATIC mp_obj_t mod_trezorconfig_se_import_mnemonic(mp_obj_t mnemonic) {
-  mp_buffer_info_t mnemo = {0};
-  mp_get_buffer_raise(mnemonic, &mnemo, MP_BUFFER_READ);
-  const char *pmnemonic = mnemo.len > 0 ? mnemo.buf : "";
-
-  uint8_t mnemonic_bits[64] = {0};
-  int mnemonic_bits_len = mnemonic_to_bits(pmnemonic, mnemonic_bits);
-  if (mnemonic_bits_len == 0 || mnemonic_bits_len % 33 != 0) {
-    mp_raise_ValueError("Invalid mnemonic");
-  }
-  int strength = (mnemonic_bits_len / 11) * 8 * 4 / 3;
-  se_setSeedStrength(strength);
-  if (!se_importSeed(mnemonic_bits)) {
-    return mp_const_false;
-  }
-  return mp_const_true;
-}
-
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorconfig_se_import_mnemonic_obj,
-                                 mod_trezorconfig_se_import_mnemonic);
-
-STATIC mp_obj_t mod_trezorconfig_se_export_mnemonic(void) {
-  uint8_t seed[64] = {0};
-  uint32_t strength = 0;
-
-  if (!se_isInitialized()) {
-    // mp_raise_ValueError("Device not initialized");
-    return mp_const_none;
-  }
-  if (!se_getSeedStrength(&strength)) {
-    mp_raise_ValueError("Get mnemonic strength");
-  }
-
-  if (!se_export_seed(seed)) {
-    mp_raise_ValueError("Get mnemonic seed");
-  }
-  const char *mnemonic = mnemonic_from_data(seed, strength / 8);
-  mp_obj_t res = mp_obj_new_str_copy(&mp_type_bytes, (const uint8_t *)mnemonic,
-                                     strlen(mnemonic));
-  mnemonic_clear();
-  return res;
-}
-
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorconfig_se_export_mnemonic_obj,
-                                 mod_trezorconfig_se_export_mnemonic);
-
-/// def get_serial() -> str:
-///     """
-///     get device serial
-///     """
-STATIC mp_obj_t mod_trezorconfig_get_serial(void) {
-  mp_obj_t res;
-
-  char *dev_serial;
-  if (device_get_serial(&dev_serial)) {
-    res = mp_obj_new_str_copy(&mp_type_bytes, (const uint8_t *)dev_serial,
-                              strlen(dev_serial));
-  } else {
-    res = mp_obj_new_str_copy(&mp_type_bytes, (const uint8_t *)"NULL",
-                              strlen("NULL"));
-  }
-
-  return res;
-}
-
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorconfig_get_serial_obj,
-                                 mod_trezorconfig_get_serial);
-
-/// def get_capacity() -> str:
-///     """
-///     get emmc capacity
-///     """
-STATIC mp_obj_t mod_trezorconfig_get_capacity(void) {
-  char cap_info[32] = {0};
-  uint64_t cap = emmc_get_capacity_in_bytes();
-
-  if (cap > (1024 * 1024 * 1024)) {
-    mini_snprintf(cap_info, sizeof(cap_info), "%d GB",
-                  (unsigned int)(cap >> 30));
-  } else if (cap > (1024 * 1024)) {
-    mini_snprintf(cap_info, sizeof(cap_info), "%d MB",
-                  (unsigned int)(cap >> 20));
-  } else {
-    mini_snprintf(cap_info, sizeof(cap_info), "%d Bytes", (unsigned int)cap);
-  }
-  return mp_obj_new_str_copy(&mp_type_bytes, (const uint8_t *)cap_info,
-                             strlen(cap_info));
-}
-
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorconfig_get_capacity_obj,
-                                 mod_trezorconfig_get_capacity);
-#else
 STATIC mp_obj_t mod_trezorcrypto_se_fingerprint_is_unlocked(void) {
   return mp_const_true;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(
     mod_trezorcrypto_se_fingerprint_is_unlocked_obj,
     mod_trezorcrypto_se_fingerprint_is_unlocked);
-#endif
 
 STATIC const mp_rom_map_elem_t mp_module_trezorconfig_globals_table[] = {
     {MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_trezorconfig)},
@@ -606,19 +457,8 @@ STATIC const mp_rom_map_elem_t mp_module_trezorconfig_globals_table[] = {
     {MP_ROM_QSTR(MP_QSTR_next_counter),
      MP_ROM_PTR(&mod_trezorconfig_next_counter_obj)},
     {MP_ROM_QSTR(MP_QSTR_wipe), MP_ROM_PTR(&mod_trezorconfig_wipe_obj)},
-#ifndef TREZOR_EMULATOR
-    {MP_ROM_QSTR(MP_QSTR_se_import_mnemonic),
-     MP_ROM_PTR(&mod_trezorconfig_se_import_mnemonic_obj)},
-    {MP_ROM_QSTR(MP_QSTR_se_export_mnemonic),
-     MP_ROM_PTR(&mod_trezorconfig_se_export_mnemonic_obj)},
-    {MP_ROM_QSTR(MP_QSTR_get_serial),
-     MP_ROM_PTR(&mod_trezorconfig_get_serial_obj)},
-    {MP_ROM_QSTR(MP_QSTR_get_capacity),
-     MP_ROM_PTR(&mod_trezorconfig_get_capacity_obj)},
-#else
     {MP_ROM_QSTR(MP_QSTR_fingerprint_is_unlocked),
      MP_ROM_PTR(&mod_trezorcrypto_se_fingerprint_is_unlocked_obj)},
-#endif
 };
 STATIC MP_DEFINE_CONST_DICT(mp_module_trezorconfig_globals,
                             mp_module_trezorconfig_globals_table);
