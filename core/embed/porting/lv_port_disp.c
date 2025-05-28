@@ -15,6 +15,7 @@
 #include "sdram.h"
 #include "mipi_lcd.h"
 #include "stm32h7xx_hal.h"
+#include "stdio.h"
 
 /*********************
  *      DEFINES
@@ -108,6 +109,21 @@ void disp_disable_update(void)
     disp_flush_enabled = false;
 }
 
+static uint32_t frameCount = 0;
+static uint32_t lastTime = 0;
+
+static void FrameMonitorTask(void)
+{
+    frameCount++;
+
+    uint32_t now = lv_tick_get();
+    if (now - lastTime >= 1000) {
+        printf("FPS: %lu\n", frameCount);
+        frameCount = 0;
+        lastTime = now;
+    }
+}
+
 /*Flush the content of the internal buffer the specific area on the display.
  *`px_map` contains the rendered image as raw pixel map and it should be copied to `area` on the display.
  *You can use DMA or any hardware acceleration to do this operation in the background but
@@ -125,6 +141,7 @@ static void disp_flush(lv_display_t * disp_drv, const lv_area_t * area, uint8_t 
                   area->x1, area->y1, area->x2 - area->x1 + 1,
                   area->y2 - area->y1 + 1);
 #endif
+        FrameMonitorTask();
     }
 
     /*IMPORTANT!!!
