@@ -13,11 +13,8 @@
 
 
 osThreadId_t g_uiTaskHandle;
-osTimerId_t g_lvglTickTimer;
 
 static void UiTask(void *argument);
-static void LvglTickTimerFunc(void *argument);
-
 
 void CreateUiTask(void)
 {
@@ -27,8 +24,6 @@ void CreateUiTask(void)
         .priority = (osPriority_t) osPriorityHigh,
     };
     g_uiTaskHandle = osThreadNew(UiTask, NULL, &testtTask_attributes);
-    g_lvglTickTimer = osTimerNew(LvglTickTimerFunc, osTimerPeriodic, NULL, NULL);
-    osTimerStart(g_lvglTickTimer, LVGL_TICK);
 }
 
 static void UiTask(void *argument)
@@ -46,12 +41,5 @@ static void UiTask(void *argument)
         lv_timer_handler();
         osDelay(1);
     }
-}
-
-
-static void LvglTickTimerFunc(void *argument)
-{
-    UNUSED(argument);
-    lv_tick_inc(LVGL_TICK);
 }
 

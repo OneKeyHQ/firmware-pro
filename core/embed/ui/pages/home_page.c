@@ -180,9 +180,11 @@ static void ImgBtnEventHandler(lv_event_t *e)
         if (item->page != NULL) {
             EnterNewPage(item->page);
         } else if (item->text != NULL && strcmp(item->text, "auto scroll") == 0) {
-            g_autoScrollEnabled = !g_autoScrollEnabled;
+            g_autoScrollEnabled = true;
             g_col = 0;
             lv_tileview_set_tile_by_index(g_mainTileView, g_col, 0, LV_ANIM_ON);
+        } else {
+            g_autoScrollEnabled = false;
         }
     }
 }
