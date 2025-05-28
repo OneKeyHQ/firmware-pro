@@ -19,6 +19,7 @@ static void HomePageInit(void);
 static void HomePageDeinit(void);
 static void HomePageMsgHandler(uint32_t code, void *data, uint32_t dataLen);
 static void ImgBtnEventHandler(lv_event_t *e);
+static void TileviewEventHandler(lv_event_t *e);
 #if (SLIDE_SELECT == SLIDE_GRADIEMT)
 static void WallpaperSlideEventHandler(lv_event_t *e);
 static void MainTileViewSlideEventHandler(lv_event_t *e);
@@ -48,13 +49,17 @@ static const HomePageIconItem_t homePageIconList[] = {
     {&img_app_keys, "keys", NULL},
     {&img_app_backup, "backup", NULL},
     {&img_app_nft, "nft", NULL},
-    {&img_app_tips, "tips", NULL},
+    {&img_app_tips, "auto scroll", NULL},
 };
 
-lv_obj_t *g_wallpaper = NULL;
-lv_obj_t *g_mainTileView = NULL;
+
+static lv_obj_t *g_mainTileView = NULL;
+static bool g_autoScrollEnabled = false;
+static uint32_t g_col = 0;
 
 #if (SLIDE_SELECT == SLIDE_GRADIEMT)
+
+static lv_obj_t *g_wallpaper = NULL;
 
 static void HomePageInit(void)
 {
@@ -72,6 +77,8 @@ static void HomePageInit(void)
     lv_obj_set_style_bg_color(g_mainTileView, lv_color_black(), 0);
     lv_obj_set_style_border_width(g_mainTileView, 0, 0);
     lv_obj_set_scrollbar_mode(g_mainTileView, LV_SCROLLBAR_MODE_OFF);
+    g_autoScrollEnabled = false;
+    lv_obj_add_event_cb(g_mainTileView, TileviewEventHandler, LV_EVENT_SCROLL_END, NULL);
 
     tile = NULL;
 
@@ -86,7 +93,7 @@ static void HomePageInit(void)
         lv_obj_align(img, LV_ALIGN_CENTER, (i % 2 == 0 ? -116 : 116), ((i % 4) < 2 ? -136 : 136));
         lv_obj_set_style_image_opa(img, LV_OPA_30, LV_STATE_PRESSED);
         lv_obj_add_flag(img, LV_OBJ_FLAG_CLICKABLE);
-        lv_obj_add_event_cb(img, ImgBtnEventHandler, LV_EVENT_CLICKED, homePageIconList[i].page);
+        lv_obj_add_event_cb(img, ImgBtnEventHandler, LV_EVENT_CLICKED, (void *)&homePageIconList[i]);
         label = lv_label_create(tile);
         lv_obj_set_style_text_font(label, &lv_font_montserrat_26, 0);
         lv_label_set_text(label, homePageIconList[i].text);
@@ -101,7 +108,7 @@ static void HomePageInit(void)
 
 static void HomePageInit(void)
 {
-    lv_obj_t *mainTileView, *outerTileView, *tile;
+    lv_obj_t *outerTileView, *tile;
     lv_obj_t *img, *label;
 
     //outer tile
@@ -120,23 +127,25 @@ static void HomePageInit(void)
 
     //add main tile
     tile = lv_tileview_add_tile(outerTileView, 0, 1, LV_DIR_TOP);
-    mainTileView = lv_tileview_create(tile);
-    lv_obj_set_style_bg_color(mainTileView, lv_color_black(), 0);
-    lv_obj_set_style_border_width(mainTileView, 0, 0);
-    lv_obj_set_scrollbar_mode(mainTileView, LV_SCROLLBAR_MODE_OFF);
+    g_mainTileView = lv_tileview_create(tile);
+    lv_obj_set_style_bg_color(g_mainTileView, lv_color_black(), 0);
+    lv_obj_set_style_border_width(g_mainTileView, 0, 0);
+    lv_obj_set_scrollbar_mode(g_mainTileView, LV_SCROLLBAR_MODE_OFF);
+    g_autoScrollEnabled = false;
+    lv_obj_add_event_cb(g_mainTileView, TileviewEventHandler, LV_EVENT_SCROLL_END, NULL);
 
     tile = NULL;
 
     for (uint32_t i = 0; i < sizeof(homePageIconList) / sizeof(HomePageIconItem_t); i++) {
         if (i % 4 == 0) {
-            tile = lv_tileview_add_tile(mainTileView, i / 4, 0, LV_DIR_HOR);
+            tile = lv_tileview_add_tile(g_mainTileView, i / 4, 0, LV_DIR_HOR);
         }
         img = lv_image_create(tile);
         lv_image_set_src(img, homePageIconList[i].imgSrc);
         lv_obj_align(img, LV_ALIGN_CENTER, (i % 2 == 0 ? -116 : 116), ((i % 4) < 2 ? -136 : 136));
         lv_obj_set_style_image_opa(img, LV_OPA_30, LV_STATE_PRESSED);
         lv_obj_add_flag(img, LV_OBJ_FLAG_CLICKABLE);
-        lv_obj_add_event_cb(img, ImgBtnEventHandler, LV_EVENT_CLICKED, homePageIconList[i].page);
+        lv_obj_add_event_cb(img, ImgBtnEventHandler, LV_EVENT_CLICKED, (void *)&homePageIconList[i]);
         label = lv_label_create(tile);
         lv_obj_set_style_text_font(label, &lv_font_montserrat_26, 0);
         lv_label_set_text(label, homePageIconList[i].text);
@@ -163,9 +172,32 @@ static void ImgBtnEventHandler(lv_event_t *e)
     lv_event_code_t code = lv_event_get_code(e);
     if (code == LV_EVENT_CLICKED) {
         printf("clinked\n");
-        Page_t *page = lv_event_get_user_data(e);
-        if (page != NULL) {
-            EnterNewPage(page);
+        //Page_t *page = lv_event_get_user_data(e);
+        HomePageIconItem_t *item = (HomePageIconItem_t *)lv_event_get_user_data(e);
+        if (item == NULL) {
+            return;
+        }
+        if (item->page != NULL) {
+            EnterNewPage(item->page);
+        } else if (item->text != NULL && strcmp(item->text, "auto scroll") == 0) {
+            g_autoScrollEnabled = !g_autoScrollEnabled;
+            g_col = 0;
+            lv_tileview_set_tile_by_index(g_mainTileView, g_col, 0, LV_ANIM_ON);
+        }
+    }
+}
+
+static void TileviewEventHandler(lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    if (code == LV_EVENT_SCROLL_END) {
+        if (g_autoScrollEnabled) {
+            // Auto scroll to the first tile
+            g_col++;
+            if (g_col >= (sizeof(homePageIconList) / sizeof(HomePageIconItem_t) + 3) / 4) {
+                g_col = 0; // Reset to the first tile
+            }
+            lv_tileview_set_tile_by_index(g_mainTileView, g_col, 0, LV_ANIM_ON);
         }
     }
 }
