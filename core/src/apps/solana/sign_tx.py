@@ -112,14 +112,16 @@ async def sign_tx(
                 elif program_id == SPL_MEMO_PROGRAM_ID:
                     from .spl.memo.memo_program import parse
 
-                await parse(ctx, accounts if len(accounts) > 0 else [fee_payer], i.data)
+                    await parse(
+                        ctx, accounts if len(accounts) > 0 else [fee_payer], i.data
+                    )
             # # elif program_id == STAKE_PROGRAM_ID:
             # #     raise wire.ProcessError("Stake program not support for now")
             # # elif program_id == VOTE_PROGRAM_ID:
             # #     raise wire.ProcessError("Vote program not support for now")
             # else:
             #     print("Unknown instruction detached")
-    from trezor.ui.layouts import confirm_final
+        from trezor.ui.layouts import confirm_final
 
         await confirm_final(ctx, "SOL")
     signature = ed25519.sign(node.private_key(), msg.raw_tx)
