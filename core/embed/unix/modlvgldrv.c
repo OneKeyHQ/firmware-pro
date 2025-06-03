@@ -43,29 +43,25 @@ static bool mp_ts_read(struct _lv_indev_drv_t *indev_drv,
                        lv_indev_data_t *data) {
   static lv_coord_t last_x = 0;
   static lv_coord_t last_y = 0;
+  static lv_indev_state_t last_state = 0; 
 
   int pos;
   pos = touch_read();
   /*Save the pressed coordinates and the state*/
-  if (pos & TOUCH_START) {
+  if (pos & TOUCH_START || pos & TOUCH_MOVE) {
     last_x = (pos >> 12) & 0xfff;
     last_y = pos & 0xfff;
-    data->state = LV_INDEV_STATE_PR;
+    last_state = LV_INDEV_STATE_PR;
   } else if (pos & TOUCH_END) {
     last_x = (pos >> 12) & 0xfff;
     last_y = pos & 0xfff;
-    data->state = LV_INDEV_STATE_REL;
-  } else if (pos & TOUCH_MOVE) {
-    last_x = (pos >> 12) & 0xfff;
-    last_y = pos & 0xfff;
-    data->state = LV_INDEV_STATE_PR;
-  } else {
-    data->state = LV_INDEV_STATE_REL;
+    last_state = LV_INDEV_STATE_REL;
   }
 
   /*Set the last pressed coordinates*/
   data->point.x = last_x;
   data->point.y = last_y;
+  data->state = last_state;
   return false;
 }
 
