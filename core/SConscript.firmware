@@ -264,7 +264,7 @@ SOURCE_MICROPYTHON = [
     'vendor/micropython/shared/runtime/stdout_helpers.c',
     'vendor/micropython/shared/timeutils/timeutils.c',
     'vendor/micropython/ports/stm32/gccollect.c',
-    'vendor/micropython/ports/stm32/pendsv.c',
+    #'vendor/micropython/ports/stm32/pendsv.c',
     'vendor/micropython/ports/stm32/softtimer.c',
     'vendor/micropython/py/argcheck.c',
     'vendor/micropython/py/asmarm.c',

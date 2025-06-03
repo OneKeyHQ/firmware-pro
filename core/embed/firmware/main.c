@@ -163,8 +163,9 @@ int main(void) {
 
   timer_init();
   display_clear();
+#ifndef FREERTOS_ENABLE
   pendsv_init();
-
+#endif
   device_test(false);
   device_burnin_test(false);
 
