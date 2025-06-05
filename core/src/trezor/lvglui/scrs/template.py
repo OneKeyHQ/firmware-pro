@@ -4987,10 +4987,8 @@ class Turbo(FullSizeWindow):
             None,
         )
 
-        # Initialize state flags
         self.gif_done_triggered = False
 
-        # Setup content area
         self.content_area.set_style_max_height(800, 0)
         self.content_area.set_size(480, 800)
         self.content_area.align(lv.ALIGN.TOP_MID, 0, 0)
@@ -4999,19 +4997,16 @@ class Turbo(FullSizeWindow):
             0,
         )
 
-        # Setup navigation
         from .components.navigation import GeneralNavigation
 
         self.nav_back = GeneralNavigation(self.content_area, img="A:/res/cancel.png")
         self.nav_back.align(lv.ALIGN.TOP_RIGHT, 0, 44)
         self.add_event_cb(self.eventhandler, lv.EVENT.CLICKED, None)
 
-        # Setup header
         self.title = lv.img(self.content_area)
         self.title.set_src("A:/res/turbo-header.png")
         self.title.align(lv.ALIGN.TOP_MID, 0, 130)
 
-        # Setup info item
         from .components.listitem import ShortInfoItem
 
         self.info_item = ShortInfoItem(
@@ -5020,13 +5015,11 @@ class Turbo(FullSizeWindow):
             title_text=message_text,
             subtitle_text=chain_name,
             bg_color=lv_colors.WHITE,
-            # bg_color=lv_colors.ONEKEY_GRAY_3,
             border_color=lv_colors.WHITE,
             icon_boarder_color=primary_color,
         )
         self.info_item.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, 50)
 
-        # Setup GIF animation
         self.gif_loop = lv.gif(self.content_area)
         self.gif_loop.set_src("A:/res/turbo-loop.gif")
         self.gif_loop.align_to(self.info_item, lv.ALIGN.OUT_BOTTOM_MID, 0, 60)
@@ -5034,7 +5027,6 @@ class Turbo(FullSizeWindow):
         self.gif_loop.add_event_cb(self._on_gif_loop_complete, lv.EVENT.READY, None)
         gc.collect()
 
-        # Setup click mask
         click_style = (
             StyleWrapper()
             .bg_opa(lv.OPA._30)
@@ -5046,24 +5038,20 @@ class Turbo(FullSizeWindow):
         self.gif_mask.set_size(200, 200)
         self.gif_mask.align_to(self.gif_loop, lv.ALIGN.CENTER, 0, 0)
 
-        # Default transparent style
         self.gif_mask.add_style(
             StyleWrapper().bg_opa(lv.OPA.TRANSP).radius(100).border_opa(lv.OPA.TRANSP),
             0,
         )
 
-        # Pressed state style and shadow effect
         self.gif_mask.add_style(click_style, lv.PART.MAIN | lv.STATE.PRESSED)
         self.gif_mask.set_style_shadow_width(60, lv.STATE.PRESSED)
         self.gif_mask.set_style_shadow_color(lv_colors.BLACK, lv.STATE.PRESSED)
         self.gif_mask.set_style_shadow_opa(lv.OPA._30, lv.STATE.PRESSED)
 
-        # Set clickable and add event
         self.gif_mask.add_flag(lv.obj.FLAG.CLICKABLE)
         self.gif_mask.add_event_cb(self.eventhandler, lv.EVENT.CLICKED, None)
         self.gif_mask.add_event_cb(self.eventhandler, lv.EVENT.PRESSED, None)
 
-        # Setup tip text
         self.tip_text = lv.label(self.content_area)
         self.tip_text.set_text(_(i18n_keys.ITEM__TAP_TO_SEND))
         self.tip_text.add_style(
@@ -5077,36 +5065,23 @@ class Turbo(FullSizeWindow):
         self.tip_text.align_to(self.gif_loop, lv.ALIGN.OUT_BOTTOM_MID, 0, -10)
 
     def _on_gif_loop_complete(self, event_obj=None):
-        """Handle GIF loop completion - exit directly"""
-        print("\n# gif loop completed - exiting")
         self.destroy()
         self.channel.publish(1)
 
     def _on_gif_click(self, event_obj=None):
-        """Handle GIF click - trigger completion animation"""
-        # Prevent duplicate clicks
         if self.gif_done_triggered:
-            print("# completion animation already triggered, ignoring")
             return
 
-        print("\n# gif clicked (manual)")
         self.gif_done_triggered = True
 
-        # Disable further clicks
         self.gif_mask.clear_flag(lv.obj.FLAG.CLICKABLE)
 
-        # Stop loop GIF
         if hasattr(self, "gif_loop"):
-            print("# stopping loop animation")
             self.gif_loop.del_delayed(0)
 
-        # Start completion animation
         self._start_completion_animation()
 
     def _start_completion_animation(self):
-        """Start completion animation"""
-        print("\n# starting completion animation")
-
         self.gif_done = lv.gif(self.content_area)
         self.gif_done.set_src("A:/res/turbo-done.gif")
         self.gif_done.align_to(self.info_item, lv.ALIGN.OUT_BOTTOM_MID, 0, 60)
@@ -5114,19 +5089,15 @@ class Turbo(FullSizeWindow):
         self.gif_done.add_event_cb(self._on_completion_finished, lv.EVENT.READY, None)
 
     def _on_completion_finished(self, event_obj=None):
-        """Handle completion animation finished"""
-        print("\n# completion animation finished")
         self.destroy()
         self.channel.publish(1)
 
     def eventhandler(self, event_obj):
-        """Unified event handler"""
         code = event_obj.code
         target = event_obj.get_target()
 
         if code == lv.EVENT.PRESSED:
             if target == self.gif_mask:
-                print("# vibrate 1")
                 motor.vibrate(weak=True)
                 gc.collect()
         if code == lv.EVENT.CLICKED:
@@ -5134,11 +5105,8 @@ class Turbo(FullSizeWindow):
                 return
 
             if target == self.nav_back.select_btn:
-                print("# navigation back clicked")
                 self.destroy(200)
                 self.channel.publish(0)
             elif target == self.gif_mask:
-                # Add haptic feedback
-                print("# vibrate 2")
                 motor.vibrate()
                 self._on_gif_click(event_obj)
