@@ -31,25 +31,27 @@ def get_address( client: "TrezorClient",
     n: "Address",
     show_display: bool = False,
     prefix: str = "kaspa",
-    address_schema: str = "schnorr"
+    address_schema: str = "schnorr",
+    use_tweak: bool = True,
     ):
     return client.call(messages.KaspaGetAddress(
         address_n=n,
         show_display=show_display,
         prefix=prefix,
         scheme=address_schema,
+        use_tweak=use_tweak,
         )
     )
 
 
-def sign_tx(client: "TrezorClient", addresses: Sequence["Address"], raw_message: str, prefix: str = "kaspa", schema: str = "schnorr") -> Sequence[bytes]:
+def sign_tx(client: "TrezorClient", addresses: Sequence["Address"], raw_message: str, prefix: str = "kaspa", schema: str = "schnorr", use_tweak: bool = True) -> Sequence[bytes]:
     inputs = raw_message.split("-")
     assert len(inputs) >= 1, "Invalid raw message"
     if len(addresses) != len(inputs) and len(addresses) != 1:
         raise ValueError("Number of addresses must match number of inputs")
     signatures = []
 
-    resp = client.call(messages.KaspaSignTx(address_n=addresses[0], raw_message=bytes.fromhex(inputs[0]), prefix=prefix, scheme=schema, input_count=len(inputs)))
+    resp = client.call(messages.KaspaSignTx(address_n=addresses[0], raw_message=bytes.fromhex(inputs[0]), prefix=prefix, scheme=schema, input_count=len(inputs), use_tweak=use_tweak))
 
     while isinstance(resp, messages.KaspaTxInputRequest):
         signatures.append(resp.signature)

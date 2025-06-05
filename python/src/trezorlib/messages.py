@@ -7639,6 +7639,7 @@ class KaspaGetAddress(protobuf.MessageType):
         2: protobuf.Field("show_display", "bool", repeated=False, required=False),
         3: protobuf.Field("prefix", "string", repeated=False, required=False),
         4: protobuf.Field("scheme", "string", repeated=False, required=False),
+        5: protobuf.Field("use_tweak", "bool", repeated=False, required=False),
     }
 
     def __init__(
@@ -7648,11 +7649,13 @@ class KaspaGetAddress(protobuf.MessageType):
         show_display: Optional["bool"] = None,
         prefix: Optional["str"] = 'kaspa',
         scheme: Optional["str"] = 'schnorr',
+        use_tweak: Optional["bool"] = True,
     ) -> None:
         self.address_n: Sequence["int"] = address_n if address_n is not None else []
         self.show_display = show_display
         self.prefix = prefix
         self.scheme = scheme
+        self.use_tweak = use_tweak
 
 
 class KaspaAddress(protobuf.MessageType):
@@ -7677,6 +7680,7 @@ class KaspaSignTx(protobuf.MessageType):
         3: protobuf.Field("scheme", "string", repeated=False, required=False),
         4: protobuf.Field("prefix", "string", repeated=False, required=False),
         5: protobuf.Field("input_count", "uint32", repeated=False, required=False),
+        6: protobuf.Field("use_tweak", "bool", repeated=False, required=False),
     }
 
     def __init__(
@@ -7687,12 +7691,14 @@ class KaspaSignTx(protobuf.MessageType):
         scheme: Optional["str"] = 'schnorr',
         prefix: Optional["str"] = 'kaspa',
         input_count: Optional["int"] = 1,
+        use_tweak: Optional["bool"] = True,
     ) -> None:
         self.address_n: Sequence["int"] = address_n if address_n is not None else []
         self.raw_message = raw_message
         self.scheme = scheme
         self.prefix = prefix
         self.input_count = input_count
+        self.use_tweak = use_tweak
 
 
 class KaspaTxInputRequest(protobuf.MessageType):

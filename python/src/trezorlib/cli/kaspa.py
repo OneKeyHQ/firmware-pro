@@ -39,6 +39,7 @@ def cli() -> None:
 @click.option("-p", "--prefix", help="Address prefix", default="kaspa")
 @click.option("-d", "--show-display", is_flag=True)
 @click.option("-s", "--schema", type=str, help="address schema (options: schnorr, ecdsa)", default="schnorr")
+@click.option("-t", "--use-tweak", is_flag=True, help="use tweak for schnorr signature")
 @with_client
 def get_address(
     client: "TrezorClient",
@@ -46,6 +47,7 @@ def get_address(
     show_display: bool,
     prefix: str,
     schema: str,
+    use_tweak: bool,
 ) -> str:
     """Get address for specified path.
     """
@@ -57,6 +59,7 @@ def get_address(
         show_display,
         prefix=prefix,
         address_schema=schema,
+        use_tweak=use_tweak,
     )
 
 #
@@ -66,16 +69,17 @@ def get_address(
 @click.option("-n", "--address", required=True, help=PATH_HELP, default="m/44'/111111'/0'/0/0")
 @click.option("-p", "--prefix", help="Address prefix", default="kaspa")
 @click.option("-s", "--schema", type=str, help="signature schema (options: schnorr, ecdsa)", default="schnorr")
+@click.option("-t", "--use-tweak", is_flag=True, help="use tweak for schnorr signature")
 @click.argument("message")
 @with_client
-def sign_tx(client: "TrezorClient", address: str, message:str, prefix:str, schema:str):
+def sign_tx(client: "TrezorClient", address: str, message:str, prefix:str, schema:str, use_tweak:bool):
     """Sign a hex-encoded raw message which is the data used to calculate the bip143-like sig-hash.
 
     If more than one input is needed, the message should be separated by a dash (-).
     If more than one address is needed. the address should be separated by a dash (-).
     """
     addresses = [tools.parse_path(addr) for addr in address.split("-")]
-    resp = kaspa.sign_tx(client, addresses, message, prefix=prefix, schema=schema)
+    resp = kaspa.sign_tx(client, addresses, message, prefix=prefix, schema=schema, use_tweak=use_tweak)
 
     signatures_str = ""
     for i, sig in enumerate(resp):

@@ -5838,6 +5838,7 @@ if TYPE_CHECKING:
         show_display: "bool | None"
         prefix: "str"
         scheme: "str"
+        use_tweak: "bool"
 
         def __init__(
             self,
@@ -5846,6 +5847,7 @@ if TYPE_CHECKING:
             show_display: "bool | None" = None,
             prefix: "str | None" = None,
             scheme: "str | None" = None,
+            use_tweak: "bool | None" = None,
         ) -> None:
             pass
 
@@ -5873,6 +5875,7 @@ if TYPE_CHECKING:
         scheme: "str"
         prefix: "str"
         input_count: "int"
+        use_tweak: "bool"
 
         def __init__(
             self,
@@ -5882,6 +5885,7 @@ if TYPE_CHECKING:
             scheme: "str | None" = None,
             prefix: "str | None" = None,
             input_count: "int | None" = None,
+            use_tweak: "bool | None" = None,
         ) -> None:
             pass
 
