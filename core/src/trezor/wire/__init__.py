@@ -318,6 +318,12 @@ class Context:
         # If we got a message with unexpected type, raise the message via
         # `UnexpectedMessageError` and let the session handler deal with it.
         if msg.type not in expected_wire_types:
+            if __debug__:
+                log.debug(
+                    __name__,
+                    "Unexpected message type: %s",
+                    msg.type,
+                )
             raise UnexpectedMessageError(msg)
 
         # find the protobuf type

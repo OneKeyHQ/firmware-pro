@@ -16,6 +16,8 @@ class QRCode(lv.qrcode):
     def __init__(
         self, parent, data: str, icon_path=None, size: int = 380, scale: bool = False
     ):
+        if size > 440:
+            raise ValueError("QR code size must be less than 440")
         bg_color = lv.color_hex(0xFFFFFF)
         fg_color = lv.color_hex(0x000000)
         super().__init__(parent, size, fg_color, bg_color)

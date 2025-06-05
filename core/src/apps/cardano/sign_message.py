@@ -22,7 +22,7 @@ async def sign_message(
     from trezor.messages import CardanoMessageSignature, CardanoAddressParametersType
     from trezor.enums import CardanoAddressType
     from apps.common import paths
-    from .helpers.paths import SCHEMA_MINT, SCHEMA_PUBKEY
+    from .helpers.paths import SCHEMA_MINT, SCHEMA_PAYMENT
     from trezor.crypto.curve import ed25519
     from trezor import wire
     from .helpers import network_ids, protocol_magics
@@ -38,14 +38,14 @@ async def sign_message(
         msg.address_n,
         True,
         # path must match the PUBKEY schema
-        (SCHEMA_PUBKEY.match(msg.address_n) or SCHEMA_MINT.match(msg.address_n)),
+        (SCHEMA_PAYMENT.match(msg.address_n) or SCHEMA_MINT.match(msg.address_n)),
     )
     if msg.network_id != network_ids.MAINNET:
         raise wire.ProcessError("Invalid Networ ID")
 
     address_type = msg.address_type if msg.address_type else CardanoAddressType.BASE
     address_n = msg.address_n
-    staking_path = None
+    staking_path = []
     if address_type == CardanoAddressType.BYRON:
         raise wire.ProcessError("Byron addresses are not supported")
     elif address_type in (CardanoAddressType.BASE, CardanoAddressType.REWARD):
@@ -54,7 +54,7 @@ async def sign_message(
         staking_path.extend([2, 0])
         assert_params_cond(SCHEMA_STAKING_ANY_ACCOUNT.match(staking_path))
         if address_type == CardanoAddressType.REWARD:
-            address_n = None
+            address_n = []
     elif address_type in (CardanoAddressType.ENTERPRISE,):
         pass
     else:
@@ -79,7 +79,7 @@ async def sign_message(
     )
 
     # verification_key
-    node = keychain.derive(msg.address_n)
+    node = keychain.derive(address_n or staking_path)
     verification_key = remove_ed25519_prefix(node.public_key())
     # Sign1Message
     # msg = Sign1Message(

@@ -59,6 +59,11 @@ SECTIONS {
     . = ALIGN(512);
   } >FW_RAM AT>FLASH2
 
+  .qrcode_buf (NOLOAD): ALIGN(4) {
+    KEEP(*(.qrcode_buf));
+    . = 25K;
+  } >EXRAM
+
   .flash : ALIGN(512) {
     _stext = .;
     KEEP(*(.vector_table_ex));

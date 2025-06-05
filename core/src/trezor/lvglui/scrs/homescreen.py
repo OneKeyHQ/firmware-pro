@@ -2050,7 +2050,7 @@ class ConnectWallet(FullSizeWindow):
         self.add_nav_back()
 
         gc.collect()
-        gc.threshold(int(18248 * 1.5))  # type: ignore["threshold" is not a known member of module]
+
         from trezor.lvglui.scrs.components.qrcode import QRCode
 
         self.encoder = encoder
@@ -2129,8 +2129,8 @@ class ConnectWallet(FullSizeWindow):
             if _dir == lv.DIR.RIGHT:
                 lv.event_send(self.nav_back.nav_btn, lv.EVENT.CLICKED, None)
 
-    def destroy(self, delay_ms=200):
-        self.delete()
+    def destroy(self, delay_ms=10):
+        self.del_delayed(delay_ms)
 
     async def update_qr(self):
         while True:

@@ -35,6 +35,7 @@ The layout is:
     7 8 9        e r t
     4 5 6  -or-  d f g
     1 2 3        c v b
+      0            x
 """.strip()
 
 RECOVERY_MATRIX_DESCRIPTION = """
@@ -122,16 +123,17 @@ class ClickUI:
         while True:
             try:
                 pin = prompt(f"Please enter {desc}", hide_input=True)
+                echo(pin)
             except click.Abort:
                 raise Cancelled from None
 
             # translate letters to numbers if letters were used
-            if all(d in "cvbdfgert" for d in pin):
-                pin = pin.translate(str.maketrans("cvbdfgert", "123456789"))
+            if all(d in "cvbdfgertx" for d in pin):
+                pin = pin.translate(str.maketrans("cvbdfgertx", "1234567890"))
 
-            if any(d not in "123456789" for d in pin):
+            if any(d not in "1234567890" for d in pin):
                 echo(
-                    "The value may only consist of digits 1 to 9 or letters cvbdfgert."
+                    "The value may only consist of digits 0 to 9 or letters cvbdfgertx."
                 )
             elif len(pin) > MAX_PIN_LENGTH:
                 echo(f"The value must be at most {MAX_PIN_LENGTH} digits in length.")
@@ -270,5 +272,5 @@ def matrix_words(type: WordRequestType) -> str:
             return device.RECOVERY_BACK
         if type == WordRequestType.Matrix6 and ch in "147369":
             return ch
-        if type == WordRequestType.Matrix9 and ch in "123456789":
+        if type == WordRequestType.Matrix9 and ch in "1234567890":
             return ch

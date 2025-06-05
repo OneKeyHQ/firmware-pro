@@ -287,12 +287,14 @@ async def gen_hd_key(callback=None):
     global qr_task
     if qr_task.hd_key is not None:
         return
+    mods = utils.unimport_begin()
     from apps.base import handle_Initialize
     from apps.ur_registry.crypto_hd_key import genCryptoHDKeyForETHStandard
 
     # pyright: off
     await handle_Initialize(wire.QR_CONTEXT, messages.Initialize())
     ur = await genCryptoHDKeyForETHStandard(wire.QR_CONTEXT)
+    utils.unimport_end(mods)
     # pyright: on
     qr_task.set_hd_key(ur)
     if callback is not None:
@@ -300,6 +302,7 @@ async def gen_hd_key(callback=None):
 
 
 async def gen_multi_accounts(callback=None):
+    mods = utils.unimport_begin()
     from apps.base import handle_Initialize
     from apps.ur_registry.crypto_multi_accounts import generate_crypto_multi_accounts
 
@@ -310,6 +313,7 @@ async def gen_multi_accounts(callback=None):
     # pyright: off
     await handle_Initialize(wire.QR_CONTEXT, messages.Initialize())
     ur = await generate_crypto_multi_accounts(wire.QR_CONTEXT)
+    utils.unimport_end(mods)
     # pyright: on
     qr_task.set_encoder(ur)
     if callback is not None:

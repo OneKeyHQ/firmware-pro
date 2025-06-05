@@ -230,6 +230,8 @@ typedef long mp_off_t;
     DISP_DRV_ROOTS; \
     void *mp_lv_user_data; \
     mp_obj_t trezorconfig_ui_wait_callback; \
+    void *mp_lv_gif_cache; \
+    void *mp_fp; \
 
 extern const struct _mp_obj_module_t mp_module_lvgl;
 extern const struct _mp_obj_module_t mp_module_lvgldrv;
