@@ -152,7 +152,7 @@ TITLE__ENTER_OLD_PIN = 67
 BUTTON__CLOSE = 68
 # The PIN you entered is incorrect.
 SUBTITLE__SET_PIN_WRONG_PIN = 69
-# Wrong PIN
+# Incorrect PIN
 TITLE__WRONG_PIN = 70
 # PIN Changed
 TITLE__PIN_CHANGED = 71
@@ -184,6 +184,7 @@ SUBTITLE__SET_PASSPHRASE_ENABLED_NO_FORCE_ON_DEVICE = 83
 # Enter Passphrase
 TITLE__ENTER_PASSPHRASE = 84
 CONTENT__ENTER_PASSPHRASE_COLON = 84
+BUTTON__ENTER_PASSPHRASE = 84
 # Please type your passphrase on the connected device.
 SUBTITLE__ENTER_PASSPHRASE_ON_SOFTWARE = 85
 # Verify PIN
@@ -244,6 +245,7 @@ TITLE__SIGN_STR_TRANSACTION = 110
 BUTTON__HOLD_TO_SIGN = 111
 # Amount
 LIST_KEY__AMOUNT__COLON = 112
+LIST_KEY__AMOUNT = 112
 # Gas Price
 LIST_KEY__GAS_PRICE__COLON = 113
 # Maximum Fee
@@ -682,7 +684,7 @@ CONTENT__PASSPHRASE_DISABLED__HINT = 308
 SUBTITLE__ENABLE_PASSPHRASE = 309
 # Disable
 BUTTON__DISABLE = 310
-# Check the phrase you entered and make sure it is correct.
+# Remember your passphrase: Irrecoverable if lost.
 SUBTITLE__USE_THIS_PASSPHRASE = 311
 # {} Transfer
 TITLE__STR_TRANSFER = 312
@@ -1760,8 +1762,7 @@ TITLE__UNSUPPORTED_RECOVERY_PHRASE = 800
 # The current hardware wallet only supports 12, 18, and 24-word recovery phras
 # es.\nThis Lite backup cannot be restored.
 TITLE__UNSUPPORTED_RECOVERY_PHRASE_DESC = 801
-# Open OneKey App and scan the QR Code, supports BTC, SOL, ETH, and EVM networ
-# ks.
+# Open OneKey App and scan the QR Code.
 CONTENT__OPEN_ONEKEY_SCAN_THE_QRCODE = 802
 # Wallet Mismatch
 CONTENT__WALLET_MISMATCH = 803
@@ -1960,113 +1961,130 @@ PASSPHRASE__ADVANCE = 891
 PASSPHRASE__ATTACH_TO_PIN = 892
 # Unlock your hidden wallet using PIN
 PASSPHRASE__ATTACH_TO_PIN_DESC = 893
-# Set Passphrase PIN
+# Set Hidden Wallet PIN
 PASSPHRASE__SET_PASSPHRASE_PIN = 894
-# Re-enter to confirm
-PASSPHRASE__RE_ENTER_PIN = 895
 # Fingerprint Upgrade
-TITLE__FINGERPRINT_UPGRADE = 896
+TITLE__FINGERPRINT_UPGRADE = 895
 # Set up now
-BUTTON__SET_UP_NOW = 897
+BUTTON__SET_UP_NOW = 896
 # Put your finger on the power button and lift it afterwards, Move your finger
 # as guided by the light dot, repeating this step.
-TITLE__GET_STARTED_DESC = 898
-# PIN is not be attached
-PASSPHRASE__PIN_NOT_ATTACHED = 899
+TITLE__GET_STARTED_DESC = 897
+# No Passphrase Linked to This PIN
+PASSPHRASE__PIN_NOT_ATTACHED = 898
 # Attach Passphrase
-PASSPHRASE__PIN_ATTACHED_ONE = 900
+PASSPHRASE__PIN_ATTACHED_ONE = 899
 # PIN has attached one Passphrase
-PASSPHRASE__PIN_ATTACHED = 901
-# Do you want to attach a Passphrase to this PIN
-PASSPHRASE__PIN_NOT_ATTACHED_DESC = 902
-# You can remove this PIN or attach a new Passphrase
-PASSPHRASE__PIN_ATTACHED_DESC = 903
-# PIN already used
-PASSPHRASE__PIN_USED = 904
+PASSPHRASE__PIN_ATTACHED = 900
+# You can attach a passphrase to this PIN.
+PASSPHRASE__PIN_NOT_ATTACHED_DESC = 901
+# You can remove this PIN or attach a new Passphrase.
+PASSPHRASE__PIN_ATTACHED_DESC = 902
+# PIN Already Used
+PASSPHRASE__PIN_USED = 903
 # This PIN has already been used. Please try a different one.
-PASSPHRASE__PIN_USED_DESC = 905
-# Hit the limit
-PASSPHRASE__PIN_HIT_LIMIT = 906
+PASSPHRASE__PIN_USED_DESC = 904
+# Hit the Limit
+PASSPHRASE__PIN_HIT_LIMIT = 905
 # You’ve reached the maximum of 30 PINs. Please remove some before adding new
 # ones.
-PASSPHRASE__PIN_HIT_LIMIT_DESC = 907
+PASSPHRASE__PIN_HIT_LIMIT_DESC = 906
 # Put your finger on the power button and lift it afterwards.
-MSG__PUT_YOUR_FINGER_ON_THE_POWER_BUTTON_AND_LIFT_IT_AFTERWARDS = 908
+MSG__PUT_YOUR_FINGER_ON_THE_POWER_BUTTON_AND_LIFT_IT_AFTERWARDS = 907
 # Follow the on-screen guidance to fine-tune finger position.
-MSG__FOLLOW_THE_ON_SCREEN_GUIDANCE_TO_FINE_TUNE_FINGER_POSITION = 909
+MSG__FOLLOW_THE_ON_SCREEN_GUIDANCE_TO_FINE_TUNE_FINGER_POSITION = 908
 # Enrolling fingerprint...
-MSG__ENROLLING_FINGERPRINT = 910
-# Attach one Passphrase
-PASSPHRASE__ATTACH_ONE_PASSPHRASE = 911
+MSG__ENROLLING_FINGERPRINT = 909
+# Attach One Passphrase
+PASSPHRASE__ATTACH_ONE_PASSPHRASE = 910
 # I understand the Passphrase PIN is an alternative login for hidden wallet.
-PASSPHRASE__ATTACH_ONE_PASSPHRASE_DESC1 = 912
+PASSPHRASE__ATTACH_ONE_PASSPHRASE_DESC1 = 911
 # I know that if I forget the word, I might lose my assets.
-PASSPHRASE__ATTACH_ONE_PASSPHRASE_DESC2 = 913
+PASSPHRASE__ATTACH_ONE_PASSPHRASE_DESC2 = 912
 # Keep going to capture the edges of your print.
-TITLE__ADJUST_YOUR_GRIP_DESC = 914
+TITLE__ADJUST_YOUR_GRIP_DESC = 913
 # Adjust Your Grip
-TITLE__ADJUST_YOUR_GRIP = 915
-# Save your Passphrase
-PASSPHRASE__SAVE = 916
+TITLE__ADJUST_YOUR_GRIP = 914
+# Save Your Passphrase
+PASSPHRASE__SAVE = 915
 # Forget your Passphrase will lose access to funds linked to your hidden walle
-# t
-PASSPHRASE__SAVE_DESC = 917
+# t.
+PASSPHRASE__SAVE_DESC = 916
 # I undersand
-PASSPHRASE__UNDERSTAND = 918
-# Enter main PIN
-PASSPHRASE_ENTER_MAIN_PIN = 919
+PASSPHRASE__UNDERSTAND = 917
 # Passphrase set and attached to PIN
-PASSPHRASE__SET = 920
+PASSPHRASE__SET = 918
 # This PIN is only used to unlock the hidden wallet. All security-related oper
 # ations require the main PIN.
-PASSPHRASE__SET_DESC = 921
+PASSPHRASE__SET_DESC = 919
 # Fingerprint data is protected by security chips.
-CONTENT__FINGERPRINT_DATA_IS_PROTECTED_BY_SECURITY_CHIPS = 922
+CONTENT__FINGERPRINT_DATA_IS_PROTECTED_BY_SECURITY_CHIPS = 920
 # Once removed, you won’t be able to unlock the device with this PIN.
-PASSPHRASE__REMOVE_DESC = 923
+PASSPHRASE__REMOVE_DESC = 921
 # Remove PIN successful
-PASSPHRASE__REMOVE_SUCCESSFUL = 924
+PASSPHRASE__REMOVE_SUCCESSFUL = 922
 # Fingerprint Enrollment Timeout
-TITLE__FINGERPRINT_ENROLLMENT_TIMEOUT = 925
+TITLE__FINGERPRINT_ENROLLMENT_TIMEOUT = 923
 # Re-enrolling your fingerprint will remove current fingerprint data and enhan
 # ce your unlocking accuracy. Set up now?
-TITLE__FINGERPRINT_UPGRADE_DESC = 926
+TITLE__FINGERPRINT_UPGRADE_DESC = 924
 # Wallet information is protected with a security chip. You should back up you
 # r new wallet right now.
-TITLE__WALLET_CREATED_DESC = 927
+TITLE__WALLET_CREATED_DESC = 925
 # Your PIN is protected by security chips.
-TITLE__PIN_CHANGED_DESC = 928
+TITLE__PIN_CHANGED_DESC = 926
 # The security key is protected by security chips.
-TITLE__FIDO_KEY_REGISTERED_DESC = 929
+TITLE__FIDO_KEY_REGISTERED_DESC = 927
 # Confirm remove PIN
-PASSPHRASE__REMOVE = 930
+PASSPHRASE__REMOVE = 928
 # Scanning... Hold still
-CONTENT__SCANNING_HOLD_STILL = 931
+CONTENT__SCANNING_HOLD_STILL = 929
 # By setting up different PIN codes linked to different passphrases, you can e
-# asily access different wallets. Just enter a specific PIN, and you’ll open t
-# he wallet that’s tied to it.
-ITEM__ATTACH_TO_PIN_DESC = 932
-# Turbo mode
-ACTION__TURBO_MODE = 933
-TITLE__TURBO_MODE = 933
+# asily access different wallets. Just enter a specific PIN, and you'll open t
+# he wallet that's tied to it.
+ITEM__ATTACH_TO_PIN_DESC = 930
+# Turbo Mode
+ACTION__TURBO_MODE = 931
+TITLE__TURBO_MODE = 931
 # Sign transactions with one click. (only EVM Network and Solana)
-CONTENT__SIGN_TRANSACTIONS_WITH_ONE_CLICK_ONLY_EVM_NETWORK_AND_SOLANA = 934
+CONTENT__SIGN_TRANSACTIONS_WITH_ONE_CLICK_ONLY_EVM_NETWORK_AND_SOLANA = 932
 # Enable Turbo Mode?
-TITLE__ENABLE_TURBO_MODE = 935
+TITLE__ENABLE_TURBO_MODE = 933
 # Sign transactions with one click.
-CONTENT__SIGN_TRANSACTIONS_WITH_ONE_CLICK = 936
-# Once enabled, the device will omit details when reviewing transactions.  I k
-# now the risks.
-ACTION__ONCE_ENABLED_THE_DEVICE_WILL_OMIT_DETAILS_WHEN_REVIEWING_TRANSACTIONS_I_KNOW_THE_RISKS = 937
+CONTENT__SIGN_TRANSACTIONS_WITH_ONE_CLICK = 934
+# Once enabled, the device will omit details when reviewing transactions. I kn
+# ow the risks.
+ACTION__ONCE_ENABLED_THE_DEVICE_WILL_OMIT_DETAILS_WHEN_REVIEWING_TRANSACTIONS_I_KNOW_THE_RISKS = 935
 # Slide to Enable
-ACTION__SLIDE_TO_ENABLE = 938
+ACTION__SLIDE_TO_ENABLE = 936
 # Send {num} {token} to {addr}
-MSG__SEND_TURBO = 939
+MSG__SEND_TURBO = 937
 # Sign Message
-MSG__SIGN_MESSAGE = 940
+MSG__SIGN_MESSAGE = 938
 # Sign Transaction
-MSG__SIGN_TRANSACTION = 941
-# Your Fingerprint SE needs an update. Please visit https://firmware.onekey.so
-# / to update it and try again.
-CONTENT__YOUR_FINGERPRINT_SE_VERSION_IS_OUTDATED = 942
+MSG__SIGN_TRANSACTION = 939
+# Your Fingerprint (SE) needs an update. Please visit https://firmware.onekey.
+# so/ to update it and try again.
+CONTENT__YOUR_FINGERPRINT_SE_VERSION_IS_OUTDATED = 940
+# OP_RETURN
+TITLE__OP_RETURN = 941
+# This transaction contains a non-zero OP_RETURN value. Once confirmed, your f
+# unds will be permanently locked.
+TITLE__OP_RETURN_DESC = 942
+# PIN for standard wallet
+CONTENT__PIN_FOR_STANDARD_WALLET = 943
+# Enter Hidden Wallet PIN
+TITLE__ENTER_HIDDEN_WALLET_PIN = 944
+# Standard Wallet
+TITLE__STANDARD_WALLET = 945
+# Hidden Wallet
+TITLE__HIDDEN_WALLET = 946
+# Tap to send
+ITEM__TAP_TO_SEND = 947
+# Unknown Message
+MSG__UNKNOWN_MESSAGE = 948
+# Unknown Network
+MSG__UNKNOWN_NETWORK = 949
+# 3 failed tries. Slide to continue
+CONTENT__STR_FAILED_TRIES_SLIDE_TO_CONTINUE = 950
 # fmt: on
