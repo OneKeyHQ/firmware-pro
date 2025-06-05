@@ -19,7 +19,7 @@ import ujson as json
 from apps.common import paths
 from apps.common.keychain import Keychain, auto_keychain
 
-from .networks import formatAmont, getChainHrp, getChainName, retrieve_theme_by_hrp
+from .networks import formatAmont, getChainHrp, retrieve_theme_by_hrp
 from .transaction import DelegateTxn, SendTxn, Transaction
 
 
@@ -37,9 +37,10 @@ async def sign_tx(
     try:
         tx = Transaction.deserialize(msg.raw_tx)
     except BaseException as e:
-        raise wire.DataError(f"Invalid message {e}")
+        raise wire.DataError(f"Invalid message: {e}")
 
     hrp = getChainHrp(tx.chain_id)
+    chain_name = tx.chain_name
     if hrp is None:
         signer = None
     else:
@@ -47,7 +48,7 @@ async def sign_tx(
         convertedbits = bech32.convertbits(h, 8, 5)
         assert convertedbits is not None, "Unsuccessful bech32.convertbits call"
         signer = bech32.bech32_encode(hrp, convertedbits, bech32.Encoding.BECH32)
-    primary_color, ctx.icon_path = retrieve_theme_by_hrp(hrp)
+    _chain_name, primary_color, ctx.icon_path = retrieve_theme_by_hrp(hrp)
     ctx.primary_color = lv.color_hex(primary_color)
     if tx.amount is not None and tx.denom is not None:
         fee = formatAmont(tx.chain_id, tx.amount, tx.denom)
@@ -61,13 +62,15 @@ async def sign_tx(
             to = tx.tx.to if type(tx.tx) is SendTxn else ""
             from_addr = tx.tx.from_address if type(tx.tx) is SendTxn else ""
             amount = tx.tx.amount if type(tx.tx) is SendTxn else ""
-            if await cosmos_require_show_more(ctx, None, None, to, amount):
+            if await cosmos_require_show_more(
+                ctx, None, None, to, amount, chain_name=chain_name
+            ):
                 await confirm_cosmos_send(
                     ctx,
                     fee,
                     tx.chain_id,
                     amount,
-                    tx.chain_name,
+                    chain_name,
                     from_addr,
                     to,
                     tx.memo,
@@ -77,13 +80,18 @@ async def sign_tx(
             validator = tx.tx.validator if type(tx.tx) is DelegateTxn else ""
             amount = tx.tx.amount if type(tx.tx) is DelegateTxn else ""
             if await cosmos_require_show_more(
-                ctx, tx.tx.i18n_title, tx.tx.i18n_value, None, None
+                ctx,
+                tx.tx.i18n_title,
+                tx.tx.i18n_value,
+                None,
+                None,
+                chain_name=chain_name,
             ):
                 await confirm_cosmos_delegate(
                     ctx,
                     fee,
                     tx.chain_id,
-                    tx.chain_name,
+                    chain_name,
                     delegator,
                     validator,
                     amount,
@@ -91,12 +99,17 @@ async def sign_tx(
                 )
         else:
             if await cosmos_require_show_more(
-                ctx, tx.tx.i18n_title, tx.tx.i18n_value, None, None
+                ctx,
+                tx.tx.i18n_title,
+                tx.tx.i18n_value,
+                None,
+                None,
+                chain_name=chain_name,
             ):
                 await confirm_cosmos_sign_common(
                     ctx,
                     tx.chain_id,
-                    tx.chain_name,
+                    chain_name,
                     signer,
                     fee,
                     tx.msgs_item,
@@ -109,7 +122,7 @@ async def sign_tx(
             ctx, tx.chain_id, signer, fee, json.dumps(tx.msgs)
         )
 
-    await confirm_final(ctx, getChainName(tx.chain_id) or "Cosmos")
+    await confirm_final(ctx, chain_name or "Cosmos")
 
     data_hash = sha256(msg.raw_tx).digest()
     signature = secp256k1.sign(privkey, data_hash, False)[1:]

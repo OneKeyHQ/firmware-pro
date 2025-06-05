@@ -1900,6 +1900,7 @@ async def cosmos_require_show_more(
     value: str | None,
     address: str | None,
     amount: str | None,
+    chain_name: str | None = None,
     br_code: ButtonRequestType = ButtonRequestType.ConfirmOutput,
 ) -> bool:
     from trezor.lvglui.scrs.template import CosmosTransactionOverview
@@ -1911,7 +1912,7 @@ async def cosmos_require_show_more(
         striped_amount, striped = strip_amount(amount)
         title = _(i18n_keys.TITLE__SEND_MULTILINE).format(striped_amount)
     else:
-        title = _(i18n_keys.TITLE__SIGN_STR_TRANSACTION).format("Cosmos")
+        title = _(i18n_keys.TITLE__SIGN_STR_TRANSACTION).format(chain_name or "Cosmos")
     res = await interact(
         ctx,
         CosmosTransactionOverview(
@@ -2027,8 +2028,8 @@ async def confirm_cosmos_sign_common(
     )
 
     for key, value in msgs_item.items():
-        if len(value) > 80:
-            screen = CosmosLongValue(key, value, ctx.primary_color)
+        if len(str(value)) > 80:
+            screen = CosmosLongValue(key, str(value), ctx.primary_color)
             await raise_if_cancelled(
                 interact(
                     ctx, screen, "cosmos_sign_common", ButtonRequestType.ProtectCall

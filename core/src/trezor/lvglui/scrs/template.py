@@ -4016,8 +4016,8 @@ class CosmosSignContent(FullSizeWindow):
         )
         self.container.add_dummy()
         for key, value in msgs_item.items():
-            if len(value) <= 80:
-                self.item = DisplayItem(self.container, key, value)
+            if len(str(value)) <= 80:
+                self.item = DisplayItem(self.container, key, str(value))
         self.container.add_dummy()
 
 
