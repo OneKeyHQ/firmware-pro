@@ -11,11 +11,11 @@ from ..lv_colors import lv_colors
 from ..lv_symbols import LV_SYMBOLS
 from . import (
     font_GeistMono28,
+    font_GeistMono38,
     font_GeistRegular20,
     font_GeistRegular30,
     font_GeistSemiBold26,
     font_GeistSemiBold38,
-    font_GeistSemiBold48,
 )
 from .common import FullSizeWindow, lv
 from .components.banner import LEVEL, Banner
@@ -81,11 +81,14 @@ class Address(FullSizeWindow):
             del self.subtitle
         self.btn_no.label.set_text(_(i18n_keys.BUTTON__QRCODE))
 
-        self.item_addr = DisplayItem(self.content_area, None, self.address, radius=40)
+        self.item_addr = DisplayItem(
+            self.content_area, None, self.format_address(self.address), radius=40
+        )
         self.item_addr.add_style(StyleWrapper().pad_ver(24), 0)
         self.item_addr.label.add_style(
             StyleWrapper()
-            .text_font(font_GeistSemiBold48)
+            # .text_font(font_GeistSemiBold48)
+            .text_font(font_GeistMono38)
             .text_line_space(-2)
             .text_color(lv_colors.LIGHT_GRAY),
             0,
@@ -126,6 +129,15 @@ class Address(FullSizeWindow):
                 xpub,
                 "A:/res/group-icon-more.png",
             )
+
+    def format_address(self, address: str) -> str:
+        address = address.replace(" ", "")
+        groups = [address[i : i + 4] for i in range(0, len(address), 4)]
+
+        lines = [" ".join(groups[i : i + 4]) for i in range(0, len(groups), 4)]
+        formatted_address = "\n".join(lines)
+
+        return formatted_address
 
     def show_qr_code(self, has_tips: bool = False):
         self.current = self.SHOW_TYPE.QRCODE
@@ -427,8 +439,8 @@ class AddressOffline(FullSizeWindow):
         self.item_group_body = DisplayItem(
             self.group_address,
             None,
-            content=self.address,
-            font=font_GeistSemiBold48,
+            self.format_address(self.address),
+            font=font_GeistMono38,
         )
         self.group_address.add_dummy()
 
@@ -443,6 +455,15 @@ class AddressOffline(FullSizeWindow):
                 StyleWrapper().bg_color(lv_colors.ONEKEY_GRAY_3),
                 0,
             )
+
+    def format_address(self, address: str) -> str:
+        address = address.replace(" ", "")
+        groups = [address[i : i + 4] for i in range(0, len(address), 4)]
+
+        lines = [" ".join(groups[i : i + 4]) for i in range(0, len(groups), 4)]
+        formatted_address = "\n".join(lines)
+
+        return formatted_address
 
     def show_qr_code(self, has_tips: bool = False):
         self.current = self.SHOW_TYPE.QRCODE

@@ -154,7 +154,7 @@ class DisplayItem(lv.obj):
             StyleWrapper()
             .text_color(lv_colors.WHITE)
             .text_line_space(6)
-            .text_letter_space(-1),
+            .text_letter_space(-2),
             0,
         )
         if title:

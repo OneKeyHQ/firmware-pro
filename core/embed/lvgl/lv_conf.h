@@ -385,6 +385,7 @@
     LV_FONT_DECLARE(lv_font_geist_regular_30) \
     LV_FONT_DECLARE(lv_font_geist_regular_26) \
     LV_FONT_DECLARE(lv_font_geist_regular_20) \
+    LV_FONT_DECLARE(lv_font_geist_mono_38) \
     LV_FONT_DECLARE(lv_font_geist_mono_28)
 
 /*Always set a default font*/

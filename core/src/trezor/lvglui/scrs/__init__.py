@@ -27,4 +27,5 @@ else:
     font_GeistRegular30 = lv.font_geist_regular_30
     font_GeistRegular26 = lv.font_geist_regular_26
     font_GeistRegular20 = lv.font_geist_regular_20
+    font_GeistMono38 = lv.font_geist_mono_38
     font_GeistMono28 = lv.font_geist_mono_28
