@@ -78,7 +78,9 @@ async def sign_typed_data(
         from trezor.ui.layouts.lvgl import confirm_turbo
 
         await confirm_turbo(
-            ctx, "Sign Message", network.name if network else "Unknown Network"
+            ctx,
+            _(i18n_keys.MSG__SIGN_MESSAGE),
+            network.name if network else _(i18n_keys.MSG__UNKNOWN_NETWORK),
         )
 
     signature = secp256k1.sign(

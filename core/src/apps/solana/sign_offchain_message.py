@@ -72,9 +72,10 @@ async def sign_offchain_message(
     address = str(PublicKey(signer_pub_key_bytes))
 
     if device.is_turbomode_enabled():
+        from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
         from trezor.ui.layouts.lvgl import confirm_turbo
 
-        await confirm_turbo(ctx, "Sign Message", "Solana")
+        await confirm_turbo(ctx, _(i18n_keys.MSG__SIGN_MESSAGE), "Solana")
     else:
         # display the message to confirm
         await confirm_sol_message(ctx, address, app_domain_fd, message)

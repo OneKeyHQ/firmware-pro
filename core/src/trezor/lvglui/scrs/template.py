@@ -4956,8 +4956,8 @@ class GnosisSafeTxDetails(FullSizeWindow):
 class Turbo(FullSizeWindow):
     def __init__(
         self,
-        message_text="Unknown Message",
-        chain_name="Unknown Network",
+        message_text=_(i18n_keys.MSG__UNKNOWN_MESSAGE),
+        chain_name=_(i18n_keys.MSG__UNKNOWN_NETWORK),
         primary_color=lv_colors.ONEKEY_GREEN,
         icon_path="A:/res/turbo-send.png",
     ):
@@ -4998,7 +4998,8 @@ class Turbo(FullSizeWindow):
             img_src=icon_path,
             title_text=message_text,
             subtitle_text=chain_name,
-            bg_color=lv_colors.ONEKEY_GRAY_3,
+            bg_color=lv_colors.WHITE,
+            # bg_color=lv_colors.ONEKEY_GRAY_3,
             border_color=lv_colors.WHITE,
             icon_boarder_color=primary_color,
         )
@@ -5043,7 +5044,7 @@ class Turbo(FullSizeWindow):
 
         # Setup tip text
         self.tip_text = lv.label(self.content_area)
-        self.tip_text.set_text("Tap to send")
+        self.tip_text.set_text(_(i18n_keys.ITEM__TAP_TO_SEND))
         self.tip_text.add_style(
             StyleWrapper()
             .text_font(font_GeistRegular20)
@@ -5052,7 +5053,7 @@ class Turbo(FullSizeWindow):
             .pad_ver(16),
             0,
         )
-        self.tip_text.align_to(self.gif_loop, lv.ALIGN.OUT_BOTTOM_MID, 0, 5)
+        self.tip_text.align_to(self.gif_loop, lv.ALIGN.OUT_BOTTOM_MID, 0, -10)
 
     def _on_gif_loop_complete(self, event_obj=None):
         """Handle GIF loop completion - exit directly"""

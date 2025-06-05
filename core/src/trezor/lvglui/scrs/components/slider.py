@@ -108,7 +108,7 @@ class Slider(lv.slider):
     def change_knob_style(self, level):
         if level == 1:
             self.add_style(
-                StyleWrapper().bg_color(lv_colors.ONEKEY_YELLOW),
+                StyleWrapper().bg_color(lv_colors.WHITE),
                 lv.PART.KNOB | lv.STATE.DEFAULT,
             )
             # self.arrow_img_src = "A:/res/slide-arrow-black.png"

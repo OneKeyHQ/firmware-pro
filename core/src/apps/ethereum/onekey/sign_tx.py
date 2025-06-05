@@ -73,16 +73,22 @@ async def sign_tx(
             from_addr, recipient, token_id, value = res
 
     if device.is_turbomode_enabled():
+        from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
+
         if is_nft_transfer:
             suffix = f"{value} NFT"
         elif token:
-            suffix = token.symbol if token.symbol != "Wei UNKN" else "unknown token"
+            suffix = (
+                token.symbol
+                if token.symbol != "Wei UNKN"
+                else _(i18n_keys.TITLE__UNKNOWN_TOKEN)
+            )
         else:
             suffix = networks.shortcut_by_chain_id(msg.chain_id)
 
         from trezor.ui.layouts.lvgl import confirm_turbo
 
-        await confirm_turbo(ctx, "Send " + suffix, network.name)
+        await confirm_turbo(ctx, (_(i18n_keys.LIST_VALUE__SEND) + suffix), network.name)
     else:
         show_details = await require_show_overview(
             ctx,

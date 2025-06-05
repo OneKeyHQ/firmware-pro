@@ -81,9 +81,10 @@ async def sign_tx(
     ctx.primary_color, ctx.icon_path = lv.color_hex(PRIMARY_COLOR), ICON
 
     if device.is_turbomode_enabled():
+        from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
         from trezor.ui.layouts.lvgl import confirm_turbo
 
-        await confirm_turbo(ctx, "Sign Transaction", "Solana")
+        await confirm_turbo(ctx, _(i18n_keys.MSG__SIGN_TRANSACTION), "Solana")
     else:
 
         if should_blind_sign:

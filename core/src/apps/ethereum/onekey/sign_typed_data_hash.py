@@ -42,10 +42,13 @@ async def sign_typed_data_hash(
     message_hash = msg.message_hash or b""
 
     if device.is_turbomode_enabled():
+        from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
         from trezor.ui.layouts.lvgl import confirm_turbo
 
         await confirm_turbo(
-            ctx, "Sign Message", network.name if network else "Unknown Network"
+            ctx,
+            _(i18n_keys.MSG__SIGN_MESSAGE),
+            network.name if network else _(i18n_keys.MSG__UNKNOWN_NETWORK),
         )
     else:
         await confirm_typed_hash(

@@ -389,11 +389,11 @@ class ShortInfoItem(lv.obj):
         self.add_style(
             StyleWrapper()
             .bg_color(bg_color)
-            .bg_opa(lv.OPA._60)
+            .bg_opa(lv.OPA._10)
             .radius(40)
-            .border_width(2)
+            .border_width(1)
             .border_color(border_color)
-            .border_opa(lv.OPA._20),
+            .border_opa(lv.OPA._10),
             0,
         )
         self.clear_flag(lv.obj.FLAG.SCROLLABLE)
@@ -445,7 +445,7 @@ class ShortInfoItem(lv.obj):
         self.title.add_style(
             StyleWrapper()
             .text_color(title_color)
-            .text_font(font_GeistRegular26)
+            .text_font(font_GeistSemiBold26)
             .text_letter_space(0),
             0,
         )

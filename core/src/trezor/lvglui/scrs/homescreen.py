@@ -5149,7 +5149,7 @@ class WalletScreen(AnimScreen):
             self.container, _(i18n_keys.ITEM__CHECK_RECOVERY_PHRASE)
         )
         self.passphrase = ListItemBtn(self.container, _(i18n_keys.ITEM__PASSPHRASE))
-        self.turbo_mode = ListItemBtn(self.container, "Turbo mode")
+        self.turbo_mode = ListItemBtn(self.container, _(i18n_keys.TITLE__TURBO_MODE))
         self.trezor_mode = ListItemBtnWithSwitch(
             self.container, _(i18n_keys.ITEM__COMPATIBLE_WITH_TREZOR)
         )
@@ -5436,11 +5436,13 @@ class TurboModeScreen(AnimScreen):
             self._init = True
         else:
             return
-        super().__init__(prev_scr, title="Turbo mode", nav_back=True)
+        super().__init__(prev_scr, title=_(i18n_keys.TITLE__TURBO_MODE), nav_back=True)
 
         self.container = ContainerFlexCol(self.content_area, self.title, padding_row=2)
 
-        self.turbo_mode = ListItemBtnWithSwitch(self.container, "Turbo mode")
+        self.turbo_mode = ListItemBtnWithSwitch(
+            self.container, _(i18n_keys.TITLE__TURBO_MODE)
+        )
         self.turbo_mode.add_style(
             StyleWrapper().bg_color(lv_colors.ONEKEY_BLACK_3).bg_opa(lv.OPA.COVER), 0
         )
@@ -5459,7 +5461,9 @@ class TurboModeScreen(AnimScreen):
             0,
         )
         self.tips.set_text(
-            "Sign transactions with one click.(only EVM Network and Solana)"
+            _(
+                i18n_keys.CONTENT__SIGN_TRANSACTIONS_WITH_ONE_CLICK_ONLY_EVM_NETWORK_AND_SOLANA
+            )
         )
 
         self.container.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
@@ -5490,10 +5494,10 @@ class TurboModeConfirm(FullSizeWindow):
     def __init__(self, callback_obj, enable=False):
         if enable:
             super().__init__(
-                title="Enable turbo mode",
-                subtitle="Sign transactions with one click",
-                confirm_text="Slide to enable",
-                cancel_text="Cancel",
+                title=_(i18n_keys.TITLE__ENABLE_TURBO_MODE),
+                subtitle=_(i18n_keys.CONTENT__SIGN_TRANSACTIONS_WITH_ONE_CLICK),
+                confirm_text=_(i18n_keys.ACTION__SLIDE_TO_ENABLE),
+                cancel_text=_(i18n_keys.BUTTON__CANCEL),
                 hold_confirm=True,
             )
             self.container = ContainerFlexCol(
@@ -5501,7 +5505,9 @@ class TurboModeConfirm(FullSizeWindow):
             )
             self.item1 = ListItemWithLeadingCheckbox(
                 self.container,
-                "Once enabled, the device will omit details when reviewing transactions.I know the risks.",
+                _(
+                    i18n_keys.ACTION__ONCE_ENABLED_THE_DEVICE_WILL_OMIT_DETAILS_WHEN_REVIEWING_TRANSACTIONS_I_KNOW_THE_RISKS
+                ),
                 radius=40,
             )
 
@@ -5541,6 +5547,9 @@ class TurboModeConfirm(FullSizeWindow):
         if enable:
             self.slider.add_flag(lv.obj.FLAG.CLICKABLE)
             self.slider.enable()
+            self.slider.set_style_bg_color(
+                lv_colors.WHITE, lv.PART.KNOB | lv.STATE.DEFAULT
+            )
         else:
             self.slider.clear_flag(lv.obj.FLAG.CLICKABLE)
             self.slider.enable(False)
