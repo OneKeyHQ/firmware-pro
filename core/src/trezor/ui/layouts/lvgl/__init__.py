@@ -719,6 +719,9 @@ async def confirm_blob(
     icon: str | None = "A:/res/warning.png",  # TODO cleanup @ redesign
     icon_color: int = ui.GREEN,  # TODO cleanup @ redesign
     ask_pagination: bool = False,
+    subtitle: str | None = None,
+    item_key: str | None = None,
+    item_value: str | None = None,
 ) -> None:
     """Confirm data blob.
 
@@ -744,6 +747,9 @@ async def confirm_blob(
         data_str,
         icon_path=icon,
         primary_color=ctx.primary_color,
+        subtitle=subtitle,
+        item_key=item_key,
+        item_value=item_value,
     )
     return await raise_if_cancelled(interact(ctx, blob, br_type, br_code))
 
@@ -935,10 +941,8 @@ async def confirm_metadata(
     description: str | None = None,
     hide_continue: bool = False,
     hold: bool = False,
-    param_font: int = ui.BOLD,
-    icon: str = ui.ICON_SEND,  # TODO cleanup @ redesign
-    icon_color: int = ui.GREEN,  # TODO cleanup @ redesign
-    larger_vspace: bool = False,  # TODO cleanup @ redesign
+    icon: str | None = None,
+    icon_color: int | None = None,
 ) -> None:
     from trezor.lvglui.scrs.template import ConfirmMetaData
 
