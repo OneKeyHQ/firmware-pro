@@ -138,7 +138,7 @@ class FingerprintAddedSuccess(FullSizeWindow):
         self.img.add_flag(lv.obj.FLAG.HIDDEN)
 
         self.gif = lv.gif(self.content_area)
-        self.gif.set_src("A:/res/gif/fp_done.gif")
+        self.gif.set_src("A:/res/fp_done.gif")
         self.gif.align(lv.ALIGN.TOP_MID, 0, 131)
         self.gif.set_loop_count(1)
         self.gif.pause()
