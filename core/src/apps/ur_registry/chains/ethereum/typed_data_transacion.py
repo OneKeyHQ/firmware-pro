@@ -2,7 +2,7 @@ import re
 from typing import Any, Optional
 
 from trezor import messages
-from trezor.enums import EthereumDataType
+from trezor.enums import EthereumDataType, FailureType
 from trezor.wire import QR_CONTEXT
 
 from .eth_sign_request import EthSignRequest
@@ -274,7 +274,7 @@ class EthereumTypedDataTransacion:
                     )
                 else:
                     response = messages.Failure(
-                        code=messages.FailureType.UnexpectedMessage,
+                        code=FailureType.UnexpectedMessage,
                         message=f"Unknown message {response.MESSAGE_NAME}",
                     )
                     if __debug__:
@@ -283,7 +283,7 @@ class EthereumTypedDataTransacion:
                 if __debug__:
                     print(f"Data error: {e}")
                 response = messages.Failure(
-                    code=messages.FailureType.DataError, message=f"Error: {e}"
+                    code=FailureType.DataError, message=f"Error: {e}"
                 )
             finally:
                 await QR_CONTEXT.qr_send(response)
