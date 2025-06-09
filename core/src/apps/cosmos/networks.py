@@ -388,7 +388,7 @@ def _networks_iterator() -> Iterator[NetworkInfoTuple]:
     )
     yield (
         "bbn-1",
-        "BABYLON",
+        "Babylon",
         "BABY",
         "ubbn",
         6,
@@ -398,9 +398,9 @@ def _networks_iterator() -> Iterator[NetworkInfoTuple]:
     )
     yield (
         "noble-1",
-        "NOBLE",
-        "NOBLE",
-        "ustake",
+        "Noble",
+        "USDC",
+        "uusdc",
         6,
         "noble",
         "A:/res/chain-noble.png",
