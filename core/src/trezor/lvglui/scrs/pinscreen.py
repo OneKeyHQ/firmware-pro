@@ -161,7 +161,7 @@ class InputNum(FullSizeWindow):
             self.channel.publish(0)
 
         self.clean()
-        self.destroy(200)
+        self.destroy(250)
 
 
 class InputPin(FullSizeWindow):
@@ -306,7 +306,7 @@ class InputPin(FullSizeWindow):
             self.channel.publish(0)
 
         self.clean()
-        self.destroy(500)
+        self.destroy(250)
 
 
 class InputLitePin(FullSizeWindow):
