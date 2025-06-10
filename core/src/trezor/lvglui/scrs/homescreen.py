@@ -30,12 +30,7 @@ from .common import AnimScreen, FullSizeWindow, Screen, lv  # noqa: F401, F403, 
 from .components.anim import Anim
 from .components.banner import LEVEL, Banner
 from .components.button import ListItemBtn, ListItemBtnWithSwitch, NormalButton
-from .components.container import (
-    ContainerFlex,
-    ContainerFlexCol,
-    ContainerFlexRow,
-    ContainerGrid,
-)
+from .components.container import ContainerFlexCol, ContainerFlexRow, ContainerGrid
 from .components.listitem import (
     DisplayItemWithFont_30,
     DisplayItemWithFont_TextPairs,
@@ -249,19 +244,14 @@ class MainScreen(Screen):
             self.clear_flag(lv.obj.FLAG.GESTURE_BUBBLE)
             self.add_event_cb(self.on_gesture, lv.EVENT.GESTURE, None)
 
-            self.main_cont = ContainerFlex(
-                self,
-                None,
-                padding_col=0,
-                flex_flow=lv.FLEX_FLOW.ROW_WRAP,
-                main_align=lv.FLEX_ALIGN.START,
-                cross_align=lv.FLEX_ALIGN.CENTER,
-                track_align=lv.FLEX_ALIGN.SPACE_BETWEEN,
-            )
-            self.main_cont.set_size(448, 575)
+            self.main_cont = lv.obj(self)
+            self.main_cont.set_size(448, 600)
             self.main_cont.set_pos(16, 200)
-            self.main_cont.set_style_pad_column(16, 0)
             self.main_cont.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
+            self.main_cont.set_style_pad_all(0, 0)
+            self.main_cont.set_style_border_width(0, 0)
+            self.main_cont.set_style_bg_opa(lv.OPA.TRANSP, 0)
+
             self.current_page = 0
             self.page_items = [[] for _ in range(2)]
 
@@ -288,14 +278,28 @@ class MainScreen(Screen):
                     ("guide", "app-tips", i18n_keys.APP__TIPS),
                 ]
 
+            items_per_page = 4
+            cols = 2
+            rows = 2
+            item_width = 216
+            item_height = 280
+            col_gap = 16
+            row_gap = 16
+
             for idx, (name, img, text) in enumerate(items):
-                page = 0 if idx < 4 else 1
-                item = self.create_item(name, img, text)
+                page = idx // items_per_page
+                page_idx = idx % items_per_page
+                row = page_idx // rows
+                col = page_idx % cols
+                x = col * (item_width + col_gap)
+                y = row * (item_height + row_gap)
+
+                item = self.create_item(name, img, text, x, y)
                 self.page_items[page].append(item)
                 if page != 0:
                     item.add_flag(lv.obj.FLAG.HIDDEN)
 
-        def create_item(self, name, img_src, text_key):
+        def create_item(self, name, img_src, text_key, x, y):
             cont = lv.obj(self.main_cont)
             cont.add_style(
                 StyleWrapper()
@@ -307,6 +311,7 @@ class MainScreen(Screen):
                 0,
             )
             cont.set_size(216, 280)
+            cont.set_pos(x, y)
             cont.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
 
             btn = lv.imgbtn(cont)
