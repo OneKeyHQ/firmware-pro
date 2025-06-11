@@ -71,7 +71,7 @@ async def sign_offchain_message(
     message = decode_message(msg.message)
     address = str(PublicKey(signer_pub_key_bytes))
 
-    if device.is_turbomode_enabled():
+    if device.is_turbomode_enabled() and not isinstance(ctx, wire.QRContext):
         from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
         from trezor.ui.layouts.lvgl import confirm_turbo
 

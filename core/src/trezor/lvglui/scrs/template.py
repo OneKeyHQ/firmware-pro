@@ -4987,6 +4987,9 @@ class Turbo(FullSizeWindow):
             None,
         )
 
+        gc.threshold(int(18248 * 1.5))  # type: ignore["threshold" is not a known member of module]
+        gc.collect()
+
         self.gif_done_triggered = False
 
         self.content_area.set_style_max_height(800, 0)
@@ -5023,7 +5026,7 @@ class Turbo(FullSizeWindow):
         self.gif_loop = lv.gif(self.content_area)
         self.gif_loop.set_src("A:/res/turbo-loop.gif")
         self.gif_loop.align_to(self.info_item, lv.ALIGN.OUT_BOTTOM_MID, 0, 60)
-        self.gif_loop.set_loop_count(50)
+        self.gif_loop.set_loop_count(15)
         self.gif_loop.add_event_cb(self._on_gif_loop_complete, lv.EVENT.READY, None)
         gc.collect()
 
@@ -5032,6 +5035,7 @@ class Turbo(FullSizeWindow):
             .bg_opa(lv.OPA._30)
             .bg_color(lv_colors.BLACK)
             .border_opa(lv.OPA.TRANSP)
+            .radius(100)
         )
 
         self.gif_mask = lv.obj(self.content_area)
@@ -5043,10 +5047,7 @@ class Turbo(FullSizeWindow):
             0,
         )
 
-        self.gif_mask.add_style(click_style, lv.PART.MAIN | lv.STATE.PRESSED)
-        self.gif_mask.set_style_shadow_width(60, lv.STATE.PRESSED)
-        self.gif_mask.set_style_shadow_color(lv_colors.BLACK, lv.STATE.PRESSED)
-        self.gif_mask.set_style_shadow_opa(lv.OPA._30, lv.STATE.PRESSED)
+        self.gif_mask.add_style(click_style, lv.STATE.PRESSED)
 
         self.gif_mask.add_flag(lv.obj.FLAG.CLICKABLE)
         self.gif_mask.add_event_cb(self.eventhandler, lv.EVENT.CLICKED, None)
@@ -5066,7 +5067,7 @@ class Turbo(FullSizeWindow):
 
     def _on_gif_loop_complete(self, event_obj=None):
         self.destroy()
-        self.channel.publish(1)
+        self.channel.publish(0)
 
     def _on_gif_click(self, event_obj=None):
         if self.gif_done_triggered:
@@ -5097,9 +5098,9 @@ class Turbo(FullSizeWindow):
         target = event_obj.get_target()
 
         if code == lv.EVENT.PRESSED:
+            gc.collect()
             if target == self.gif_mask:
                 motor.vibrate(weak=True)
-                gc.collect()
         if code == lv.EVENT.CLICKED:
             if utils.lcd_resume():
                 return

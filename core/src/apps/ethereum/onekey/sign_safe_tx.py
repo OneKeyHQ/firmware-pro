@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+from storage import device
 from trezor.crypto.curve import secp256k1
 from trezor.messages import (
     EthereumGnosisSafeTxAck,
@@ -32,19 +33,33 @@ async def sign_safe_tx(
     ctx: Context, msg: EthereumGnosisSafeTxAck, keychain: Keychain, address_n: list[int]
 ) -> EthereumTypedDataSignature:
 
-    if msg.operation == 1:
+    if msg.operation == 1 and not device.is_turbomode_enabled():
         from trezor.lvglui.scrs import lv_colors
 
         ctx.primary_color = lv_colors.ONEKEY_RED_1
     node = keychain.derive(address_n, force_strict=False)
     from_address = address_from_bytes(node.ethereum_pubkeyhash())
 
-    await require_confirm_safe_tx(ctx, from_address, msg)
+    if device.is_turbomode_enabled():
+        from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
+        from trezor.ui.layouts.lvgl import confirm_turbo
+        from .. import networks
+
+        network = networks.by_chain_id(msg.chain_id)
+        await confirm_turbo(
+            ctx,
+            _(i18n_keys.MSG__SIGN_MESSAGE),
+            network.name if network else _(i18n_keys.MSG__UNKNOWN_NETWORK),
+        )
+    else:
+        await require_confirm_safe_tx(ctx, from_address, msg)
+
     domain_hash = get_domain_separator_hash(msg.chain_id, msg.verifyingContract)
     safe_tx_hash = get_safe_tx_hash(msg)
     data_hash = keccak256(b"\x19\x01" + domain_hash + safe_tx_hash)
 
-    await confirm_final(ctx, "Gnosis Safe", 2 if msg.operation == 1 else 0)
+    if not device.is_turbomode_enabled():
+        await confirm_final(ctx, "Gnosis Safe", 2 if msg.operation == 1 else 0)
     signature = secp256k1.sign(
         node.private_key(), data_hash, False, secp256k1.CANONICAL_SIG_ETHEREUM
     )
