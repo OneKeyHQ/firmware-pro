@@ -10,11 +10,11 @@ if not utils.EMULATOR:
         if weak:
             if __debug__:
                 print("vibrate weak")
-            MOTOR_CTL.tock()
+            MOTOR_CTL.play_medium()
         else:
             if __debug__:
                 print("vibrate strong")
-            MOTOR_CTL.tick()
+            MOTOR_CTL.play_heavy()
 
 else:
 
