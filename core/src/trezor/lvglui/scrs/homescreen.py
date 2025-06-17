@@ -1665,6 +1665,7 @@ class ConnectWalletWays(Screen):
             elif target == self.by_usb:
                 ConnectWalletGuide("usb", self)
             elif target == self.by_qrcode:
+                gc.collect()
                 WalletList(self)
             else:
                 return
@@ -1898,49 +1899,11 @@ class WalletList(Screen):
         if code == lv.EVENT.CLICKED:
             if target not in [self.onekey, self.mm, self.okx]:
                 return
+            gc.collect()
             if target == self.onekey:
-                from trezor.qr import gen_multi_accounts, get_encoder
-
-                if passphrase.is_enabled():
-                    encoder = retrieval_encoder()
-                else:
-                    encoder = get_encoder()
-                if encoder is None:
-                    workflow.spawn(
-                        gen_multi_accounts(
-                            lambda: lv.event_send(target, lv.EVENT.CLICKED, None)
-                        )
-                    )
-                    return
-                ConnectWallet(
-                    None,
-                    None,
-                    None,
-                    encoder=encoder,
-                    subtitle=_(i18n_keys.CONTENT__OPEN_ONEKEY_SCAN_THE_QRCODE),
-                )
-
+                self.connect_onekey(target)
             elif target == self.mm:
-                qr_data = (
-                    retrieval_hd_key()
-                    if device.is_passphrase_enabled()
-                    else get_hd_key()
-                )
-                if qr_data is None:
-                    from trezor.qr import gen_hd_key
-
-                    workflow.spawn(
-                        gen_hd_key(
-                            lambda: lv.event_send(target, lv.EVENT.CLICKED, None)
-                        )
-                    )
-                    return
-                ConnectWallet(
-                    _(i18n_keys.ITEM__METAMASK_WALLET),
-                    _(i18n_keys.CONTENT__ETH_AND_EVM_POWERED_NETWORK),
-                    qr_data,
-                    "A:/res/mm-logo-96.png",
-                )
+                self.connect_mm(target)
             elif target == self.okx:
                 qr_data = b""
                 ConnectWallet(
@@ -1952,6 +1915,46 @@ class WalletList(Screen):
 
     def _load_scr(self, scr: "Screen", back: bool = False) -> None:
         lv.scr_load(scr)
+
+    def connect_onekey(self, target):
+        from trezor.qr import get_encoder
+
+        if passphrase.is_enabled():
+            encoder = retrieval_encoder()
+        else:
+            encoder = get_encoder()
+        if encoder is None:
+            from trezor.qr import gen_multi_accounts
+
+            workflow.spawn(
+                gen_multi_accounts(
+                    lambda: lv.event_send(target, lv.EVENT.CLICKED, None)
+                )
+            )
+            return
+        ConnectWallet(
+            None,
+            None,
+            None,
+            encoder=encoder,
+            subtitle=_(i18n_keys.CONTENT__OPEN_ONEKEY_SCAN_THE_QRCODE),
+        )
+
+    def connect_mm(self, target):
+        qr_data = retrieval_hd_key() if device.is_passphrase_enabled() else get_hd_key()
+        if qr_data is None:
+            from trezor.qr import gen_hd_key
+
+            workflow.spawn(
+                gen_hd_key(lambda: lv.event_send(target, lv.EVENT.CLICKED, None))
+            )
+            return
+        ConnectWallet(
+            _(i18n_keys.ITEM__METAMASK_WALLET),
+            _(i18n_keys.CONTENT__ETH_AND_EVM_POWERED_NETWORK),
+            qr_data,
+            "A:/res/mm-logo-96.png",
+        )
 
 
 class BackupWallet(Screen):
@@ -2061,8 +2064,6 @@ class ConnectWallet(FullSizeWindow):
         )
         self.content_area.set_style_max_height(684, 0)
         self.add_nav_back()
-
-        gc.collect()
 
         from trezor.lvglui.scrs.components.qrcode import QRCode
 

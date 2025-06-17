@@ -336,7 +336,9 @@ class Screen(lv.obj):
             del self.__class__._instance
             del self
             gc.collect()
-            gc.threshold(int(18248 * 3))  # type: ignore["threshold" is not a known member of module]
+            # pyright: off
+            gc.threshold(gc.mem_free() // 4 + gc.mem_alloc())
+            # pyright: on
         else:
             self._load_scr(scr)
 

@@ -2478,7 +2478,7 @@ class PassphraseDisplayConfirm(FullSizeWindow):
 
     def show_unload_anim(self):
         self.clean()
-        self.destroy(10)
+        self.destroy(200)
 
 
 class SolBlindingSign(FullSizeWindow):
@@ -4601,7 +4601,6 @@ class UrResponse(FullSizeWindow):
         self.btn_yes.enable(lv_colors.ONEKEY_GRAY_3, text_color=lv_colors.WHITE)
 
         gc.collect()
-        gc.threshold(int(18248 * 1.5))  # type: ignore["threshold" is not a known member of module]
         self.qr_code = qr_code
         self.encoder = encoder
         self.qr = QRCode(
@@ -4774,7 +4773,6 @@ class ConnectWalletTutorial(FullSizeWindow):
             )
 
             gc.collect()
-            gc.threshold(int(18248 * 1.5))  # type: ignore["threshold" is not a known member of module]
             self.qr = QRCode(self.content_area, qr_content, logo_path)
             self.qr.align_to(self.content_area, lv.ALIGN.TOP_MID, 0, 16)
 
