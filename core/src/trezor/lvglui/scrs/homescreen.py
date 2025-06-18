@@ -1854,10 +1854,6 @@ class WalletList(Screen):
             _(i18n_keys.CONTENT__BTC_SOL_ETH_N_EVM_NETWORKS),
             left_img_src="A:/res/ok-logo-48.png",
         )
-        self.onekey.add_style(
-            StyleWrapper().bg_color(lv_colors.ONEKEY_GRAY_3),
-            0,
-        )
         self.onekey.text_layout_vertical()
 
         self.mm = ListItemBtn(
@@ -1865,10 +1861,6 @@ class WalletList(Screen):
             _(i18n_keys.ITEM__METAMASK_WALLET),
             _(i18n_keys.CONTENT__ETH_AND_EVM_POWERED_NETWORK),
             left_img_src="A:/res/mm-logo-48.png",
-        )
-        self.mm.add_style(
-            StyleWrapper().bg_color(lv_colors.ONEKEY_GRAY_3),
-            0,
         )
         self.mm.text_layout_vertical(pad_top=17, pad_ver=20)
 
@@ -1879,7 +1871,12 @@ class WalletList(Screen):
             _(i18n_keys.CONTENT__COMING_SOON),
             left_img_src="A:/res/okx-logo-48.png",
         )
+        self.okx.add_style(
+            StyleWrapper().bg_color(lv_colors.ONEKEY_BLACK_5),
+            0,
+        )
         self.okx.text_layout_vertical(pad_top=17, pad_ver=20)
+
         self.okx.label_left.set_style_text_color(lv_colors.WHITE_2, 0)
         self.okx.label_right.set_style_text_color(lv_colors.ONEKEY_GRAY_1, 0)
 
