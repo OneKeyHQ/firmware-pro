@@ -1195,7 +1195,7 @@ void device_burnin_test(bool force) {
     }
 
     if (index == 3) {
-      motor_tick();
+      motor_play_medium();
       camera_capture_start();
       if (camera_capture_done()) {
         dma2d_copy_buffer((uint32_t *)CAM_BUF_ADDRESS,
