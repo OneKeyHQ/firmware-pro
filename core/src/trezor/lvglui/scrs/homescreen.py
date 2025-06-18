@@ -1854,6 +1854,10 @@ class WalletList(Screen):
             _(i18n_keys.CONTENT__BTC_SOL_ETH_N_EVM_NETWORKS),
             left_img_src="A:/res/ok-logo-48.png",
         )
+        self.onekey.add_style(
+            StyleWrapper().bg_color(lv_colors.ONEKEY_GRAY_3),
+            0,
+        )
         self.onekey.text_layout_vertical()
 
         self.mm = ListItemBtn(
@@ -1861,6 +1865,10 @@ class WalletList(Screen):
             _(i18n_keys.ITEM__METAMASK_WALLET),
             _(i18n_keys.CONTENT__ETH_AND_EVM_POWERED_NETWORK),
             left_img_src="A:/res/mm-logo-48.png",
+        )
+        self.mm.add_style(
+            StyleWrapper().bg_color(lv_colors.ONEKEY_GRAY_3),
+            0,
         )
         self.mm.text_layout_vertical(pad_top=17, pad_ver=20)
 
@@ -1872,9 +1880,11 @@ class WalletList(Screen):
             left_img_src="A:/res/okx-logo-48.png",
         )
         self.okx.text_layout_vertical(pad_top=17, pad_ver=20)
-        self.okx.disable()
+        self.okx.label_left.set_style_text_color(lv_colors.WHITE_2, 0)
+        self.okx.label_right.set_style_text_color(lv_colors.ONEKEY_GRAY_1, 0)
 
         self.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
+        self.okx.clear_flag(lv.obj.FLAG.CLICKABLE)
 
         if not device.is_passphrase_enabled():
             from trezor.qr import gen_hd_key
