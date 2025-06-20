@@ -43,6 +43,24 @@ BUTTON_PRESSING = False
 BLE_PAIR_ABORT = False
 
 
+async def handle_fingerprint_data_init():
+    from trezor.lvglui.scrs import lv
+
+    while True:
+        if (
+            config.fingerprint_is_unlocked()
+            and not config.fingerprint_data_inited()
+            and lv.disp_get_default().inv_p == 0
+        ):
+            config.fingerprint_data_read()
+        if config.fingerprint_data_inited():
+            break
+        if display.backlight() == 0:
+            await loop.sleep(20)
+        else:
+            await loop.sleep(50)
+
+
 async def handle_fingerprint():
     from trezorio import fingerprint
 

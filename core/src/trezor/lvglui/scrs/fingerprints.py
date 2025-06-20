@@ -162,6 +162,8 @@ class CollectFingerprintStart(FullSizeWindow):
             anim_dir=0,
         )
 
+        self.content_area.set_scroll_dir(lv.DIR.NONE)
+
         self.title.align_to(self.content_area, lv.ALIGN.TOP_LEFT, 12, 84)
         self.subtitle.align_to(self.title, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 16)
         self.subtitle.set_style_text_letter_space(-2, 0)

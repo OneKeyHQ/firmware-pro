@@ -4794,6 +4794,9 @@ class FingerprintSetting(AnimScreen):
             self._init = True
         else:
             return
+        from trezor import config
+
+        config.fingerprint_data_read_remaining()
         super().__init__(
             prev_scr=prev_scr, title=_(i18n_keys.TITLE__FINGERPRINT), nav_back=True
         )

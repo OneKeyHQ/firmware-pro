@@ -61,7 +61,11 @@ static secbool wrapped_ui_wait_callback(uint32_t wait, uint32_t progress,
     mp_obj_t args[3] = {0};
     args[0] = mp_obj_new_int(wait);
     args[1] = mp_obj_new_int(progress);
-    args[2] = mp_obj_new_str(message, strlen(message));
+    if (message != NULL) {
+      args[2] = mp_obj_new_str(message, strlen(message));
+    } else {
+      args[2] = mp_const_none;
+    }
     if (mp_call_function_n_kw(MP_STATE_VM(trezorconfig_ui_wait_callback), 3, 0,
                               args) == mp_const_true) {
       return sectrue;
@@ -137,7 +141,8 @@ STATIC mp_obj_t mod_trezorconfig_unlock(mp_obj_t pin, mp_obj_t ext_salt) {
     return mp_const_false;
   }
 
-  fpsensor_data_init();
+  // fpsensor_data_init();
+  fpsensor_data_init_start();
   pin_state.pin_unlocked = true;
   pin_state.pin_unlocked_initialized = true;
   pin_state.fp_unlocked = true;
@@ -656,6 +661,39 @@ STATIC mp_obj_t mod_trezorcrypto_se_fingerprint_unlock(void) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorcrypto_se_fingerprint_unlock_obj,
                                  mod_trezorcrypto_se_fingerprint_unlock);
 
+/// def fingerprint_data_read() -> None:
+///     """
+///     fingerprint data read.
+///     """
+STATIC mp_obj_t mod_trezorcrypto_fingerprint_data_read(void) {
+  fpsensor_data_init_read();
+  return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorcrypto_fingerprint_data_read_obj,
+                                 mod_trezorcrypto_fingerprint_data_read);
+
+/// def fingerprint_data_inited() -> bool:
+///     """
+///     Returns True if fingerprint data is inited, False otherwise.
+///     """
+STATIC mp_obj_t mod_trezorcrypto_fingerprint_data_inited(void) {
+  return mp_obj_new_bool(fpsensor_data_inited());
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorcrypto_fingerprint_data_inited_obj,
+                                 mod_trezorcrypto_fingerprint_data_inited);
+
+/// def fingerprint_data_read_remaining() -> None:
+///     """
+///     fingerprint data read remaining.
+///     """
+STATIC mp_obj_t mod_trezorcrypto_fingerprint_data_read_remaining(void) {
+  fpsensor_data_init_read_remaining();
+  return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(
+    mod_trezorcrypto_fingerprint_data_read_remaining_obj,
+    mod_trezorcrypto_fingerprint_data_read_remaining);
+
 #endif
 
 #ifndef TREZOR_EMULATOR
@@ -755,6 +793,12 @@ STATIC const mp_rom_map_elem_t mp_module_trezorconfig_globals_table[] = {
      MP_ROM_PTR(&mod_trezorcrypto_se_fingerprint_lock_obj)},
     {MP_ROM_QSTR(MP_QSTR_fingerprint_unlock),
      MP_ROM_PTR(&mod_trezorcrypto_se_fingerprint_unlock_obj)},
+    {MP_ROM_QSTR(MP_QSTR_fingerprint_data_inited),
+     MP_ROM_PTR(&mod_trezorcrypto_fingerprint_data_inited_obj)},
+    {MP_ROM_QSTR(MP_QSTR_fingerprint_data_read),
+     MP_ROM_PTR(&mod_trezorcrypto_fingerprint_data_read_obj)},
+    {MP_ROM_QSTR(MP_QSTR_fingerprint_data_read_remaining),
+     MP_ROM_PTR(&mod_trezorcrypto_fingerprint_data_read_remaining_obj)},
 #endif
 #if USE_THD89
     {MP_ROM_QSTR(MP_QSTR_is_initialized),

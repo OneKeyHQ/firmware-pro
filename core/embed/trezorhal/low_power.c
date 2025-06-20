@@ -6,6 +6,7 @@
 #include "fpsensor_platform.h"
 #include "mipi_lcd.h"
 #include "sdram.h"
+#include "se_thd89.h"
 #include "systick.h"
 #include "touch.h"
 #include "usart.h"
@@ -154,9 +155,15 @@ void enter_stop_mode(bool restart, uint32_t shutdown_seconds, bool wake_up) {
   static uint32_t seconds = 0;
   static uint32_t rtc_period = 0;
   bool power_off = false;
+
+  if (se_fingerprint_state() && !fpsensor_data_inited()) {
+    return;
+  }
+
   if (is_usb_connected()) {
     return;
   }
+
   if (restart && shutdown_seconds) {
     seconds = shutdown_seconds;
     rtc_disable();

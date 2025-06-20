@@ -1945,7 +1945,7 @@ SECURITY__DISABLE_FIDO_KEYS = 883
 INVALID_PHRASES__TITLE = 884
 # You can edit a single word or start over.
 INVALID_PHRASES__DESC = 885
-# Start over
+# Start Over
 GLOBAL__START_OVER = 886
 # Forgetting your passphrase will lose access to funds
 PASSPHRASE_FORGETTING_WARNING_TEXT = 887
@@ -2021,7 +2021,7 @@ PASSPHRASE__SET_DESC = 919
 CONTENT__FINGERPRINT_DATA_IS_PROTECTED_BY_SECURITY_CHIPS = 920
 # Once removed, you won’t be able to unlock the device with this PIN.
 PASSPHRASE__REMOVE_DESC = 921
-# Remove PIN successful
+# PIN Removed
 PASSPHRASE__REMOVE_SUCCESSFUL = 922
 # Fingerprint Enrollment Timeout
 TITLE__FINGERPRINT_ENROLLMENT_TIMEOUT = 923
@@ -2087,4 +2087,136 @@ MSG__UNKNOWN_MESSAGE = 948
 MSG__UNKNOWN_NETWORK = 949
 # 3 failed tries. Slide to continue
 CONTENT__STR_FAILED_TRIES_SLIDE_TO_CONTINUE = 950
+# Recovery Phrase Types
+TITLE__RECOVERY_PHRASE_TYPES = 951
+# Choose the wallet backup type that fits your needs.
+TITLE__RECOVERY_PHRASE_TYPES_DESC = 952
+# Legacy Backup Types (BIP 39)
+TITLE__LEGACY_BACKUP_TYPES_BIP39 = 953
+# Advanced Backup Types (SLIP 39)
+TITLE__ADVANCED_BACKUP_TYPES_SLIP_39 = 954
+# Single-share Backup
+BUTTON__SINGLE_SHARE_BACKUP = 955
+# Multi-share Backup
+BUTTON__MULTI_SHARE_BACKUP = 956
+TITLE__MULTI_SHARE_BACKUP = 956
+# Generates a single 20-word recovery phrase or multiple 20-word shares (wordl
+# ists) to recover your wallet.
+CONTENT__GENERATES_A_SINGLE_20_WORD_RECOVERY_PHRASE_OR_MULTIPLE_20_WORD_SHARES_WORDLISTS_TO_RECOVER_YOUR_WALLET = 957
+# Number of Share
+TITLE__NUMBER_OF_SHARE = 958
+# Threshould
+TITLE__THRESHOLD = 959
+# You have completed verification of Share {num} of {total} Recovery Phrase.
+CONTENT__YOU_HAVE_COMPLETED_VERIFICATION_OF_SHARE_STR_OF_STR_RECOVERY_PHRASE = 960
+# {num} of {total} Shares Entered
+TITLE__STR_OF_STR_SHARES_ENTERED = 961
+# {num} more share needed.
+TITLE__STR_OF_STR_SHARES_ENTERED_DESC = 962
+# Enter a Different Share
+TITLE__ENTER_A_DIFFERENT_SHARE = 963
+# The Recovery Phrase you entered is duplicated. Please enter a different Shar
+# e.
+TITLE__ENTER_A_DIFFERENT_SHARE_DESC = 964
+# Create Multi-share Backup
+BUTTON__CREATE_MULTI_SHARE_BACKUP = 965
+TITLE__CREATE_MULTI_SHARE_BACKUP = 965
+# Upgrading to a Multi-share Backup adds more backup shares for the same walle
+# t. Your original Single-share Backup still works, so keep it safe.
+TITLE__CREATE_MULTI_SHARE_BACKUP_DESC = 966
+# Next, verify wallet ownership by entering your backup phrase. Here’s what yo
+# u need to know:
+CONTENT__NEXT_VERIFY_WALLET_OWNERSHIP_BY_ENTERING_YOUR_BACKUP_PHRASE_HERE_IS_WHAT_YOU_NEED_TO_KNOW = 967
+# This is an advanced feature, and you accept the increased responsibility.
+CHECK__CREATE_MULTI_SHARE_BACKUP_PHRASE_1 = 968
+# Your current wallet backup is still able to recover your wallet.
+CHECK__CREATE_MULTI_SHARE_BACKUP_PHRASE_2 = 969
+# Create additional backups？
+TITLE__CREATE_ADDITIONAL_BACKUP = 970
+# Your wallet backup contains multiple lists of words in a specific order (sha
+# res).
+TITLE__CREATE_ADDITIONAL_BACKUP_DESC = 971
+# Wallpaper
+BUTTON__WALLPAPER = 972
+TITLE__WALLPAPER = 972
+# Display
+BUTTON__DISPLAY = 973
+TITLE__DISPLAY = 973
+# Customize
+BUTTON__CUSTOMIZE = 974
+# Change Wallpaper
+BUTTON__CHANGE_WALLPAPER = 975
+TITLE__CHANGE_WALLPAPER = 975
+# Album
+BUTTON__ALBUM = 976
+# Select Items
+TITLE__SELECT_ITEMS = 977
+# {num} Selected
+TITLE__STR_SELECTED = 978
+# No Wallpapers Available for Deletion
+TITLE__NO_WALLPAPERS_AVAILABLE_FOR_DELETION = 979
+# Open your OneKey App and choose any wallpaper image for your lock screen or
+# home screen.
+TITLE__NO_WALLPAPERS_AVAILABLE_FOR_DELETION_DESC = 980
+# Pair
+BUTTON__PAIR = 981
+# Blur
+BUTTON__BLUR = 982
+# Set as Wallpaper Pair
+BUTTON__SET_AS_WALLPAPER_PAIR = 983
+TITLE__SET_AS_WALLPAPER_PAIR = 983
+# Customize Home Screen
+BUTTON__CUSTOMIZE_HOME_SCREEN = 984
+# Do you want to change the wallpaper pair?
+TITLE__SET_AS_WALLPAPER_PAIR_DESC = 985
+# Set custom home screen
+TLTLE__SET_CUSTOM_HOME_SCREEN = 986
+# Do you want to customize your home screen?
+TLTLE__SET_CUSTOM_HOME_SCREEN_DESC = 987
+# Model Name & Bluetooth ID
+BUTTON__MODEL_NAME_BLUETOOTH_ID = 988
+# Displays the device model and Bluetooth ID on the lock screen.
+BUTTON__MODEL_NAME_BLUETOOTH_ID_DESC = 989
+# Approve {token} for {name}
+APPROVE_TOKEN_AMOUNT = 990
+# Overview
+OVERVIEW = 991
+# Contract address
+CONTRACT_ADDRESS = 992
+# Token address
+TOKEN_ADDRESS = 993
+# Approve to
+APPROVE_PROVIDER = 994
+# Approve unlimited {token} for {name}
+APPROVE_UNLIMITED_TOKEN = 995
+# This action grants the contract unlimited access to this asset. Trust the dA
+# pp before proceeding.
+APPROVE_UNLIMITED_WARNING = 996
+# Revoke {token} for {name}
+REVOKE_TOKEN = 997
+# Approve {name}
+TITLE_APPROVE = 998
+# Approve unlimited {name}
+TITLE_UNLIMITED = 999
+# Revoke {name}
+TITLE_REVOKE = 1000
+# Secure chip reading…
+MSG__READING_FINGERPRINT_FROM_SECURITY_CHIP = 1001
+# Energy Rental
+TITLE_ENERGY_RENTAL = 1002
+# To (Provider)
+TO_PROVIDER = 1003
+# Single-share
+BUTTON__SINGLE_SHARE = 1004
+# Multi-share
+BUTTON__MULTI_SHARE = 1005
+# Enter a Valid Share
+TITLE__ENTER_A_VALID_SHARE = 1006
+# The Recovery Phrase Share you entered is incorrect. Please enter the correct
+# Share.
+TITLE__ENTER_A_VALID_SHARE_DESC = 1007
+# You Have Entered Share {num1} From Group {num2}
+TITLE__YOU_HAVE_ENTERED_SHARE_STR_FROM_GROUP_STR = 1008
+# You need to enter more shares.
+TITLE__YOU_HAVE_ENTERED_SHARE_STR_FROM_GROUP_STR_DESC = 1009
 # fmt: on

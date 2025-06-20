@@ -202,6 +202,27 @@ def fingerprint_unlock() -> bool:
 
 
 # extmod/modtrezorconfig/modtrezorconfig.c
+def fingerprint_data_read() -> None:
+    """
+    fingerprint data read.
+    """
+
+
+# extmod/modtrezorconfig/modtrezorconfig.c
+def fingerprint_data_inited() -> bool:
+    """
+    Returns True if fingerprint data is inited, False otherwise.
+    """
+
+
+# extmod/modtrezorconfig/modtrezorconfig.c
+def fingerprint_data_read_remaining() -> None:
+    """
+    fingerprint data read remaining.
+    """
+
+
+# extmod/modtrezorconfig/modtrezorconfig.c
 def get_serial() -> str:
     """
     get device serial

@@ -1147,12 +1147,14 @@ secbool se_setPin(const char *pin) {
 static secbool se_verifyPin_ex(uint8_t addr, uint8_t *session_key,
                                const char *pin) {
   uint8_t pin_buf[50 + 1] = {0};
+  uint8_t recv[4] = {0};
+  uint16_t recv_len = sizeof(recv);
 
   pin_buf[0] = strlen(pin);
   memcpy(pin_buf + 1, pin, strlen(pin));
 
   if (!se_transmit_mac_ex(addr, session_key, SE_INS_PIN, 0x00, 0x03, pin_buf,
-                          pin_buf[0] + 1, NULL, NULL)) {
+                          pin_buf[0] + 1, recv, &recv_len)) {
     memset(pin_buf, 0, sizeof(pin_buf));
     if (0x6f80 == thd89_last_error()) {
       error_reset("You have entered the", "wipe code. All private",
@@ -1287,8 +1289,8 @@ static secbool se_clearSecsta_ex(uint8_t addr, uint8_t *session_key) {
 secbool se_clearSecsta(void) {
   ensure(se_clearSecsta_ex(THD89_MASTER_ADDRESS, se_session_key),
          "clear master secsta failed");
-  ensure(se_clearSecsta_ex(THD89_FINGER_ADDRESS, se_fp_session_key),
-         "clear fp secsta failed");
+  // ensure(se_clearSecsta_ex(THD89_FINGER_ADDRESS, se_fp_session_key),
+  //        "clear fp secsta failed");
   return sectrue;
 }
 
@@ -2154,7 +2156,7 @@ secbool se_fp_read(uint32_t offset, void *val_dest, uint32_t len, uint8_t index,
   if (len > SE_DATA_MAX_LEN && ui_callback != NULL) {
     show_progress = true;
     if (index == 0) {
-      ui_callback(0, 0, NULL);
+      ui_callback(0, 0, "read fp data");
     }
   }
 
@@ -2193,7 +2195,7 @@ secbool se_fp_read(uint32_t offset, void *val_dest, uint32_t len, uint8_t index,
     if (show_progress && ui_callback != NULL) {
       percent =
           (packet_offset * 100) / (len_bak * total) + (index * 100) / total;
-      ui_callback(0, percent * 10, NULL);
+      ui_callback(0, percent * 10, "read fp data");
     }
   }
   return sectrue;

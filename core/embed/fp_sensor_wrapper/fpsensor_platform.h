@@ -67,6 +67,10 @@ int fpsensor_detect(void);
 void fpsensor_state_set(bool state);
 
 bool fpsensor_data_init(void);
+bool fpsensor_data_init_start(void);
+bool fpsensor_data_init_read(void);
+bool fpsensor_data_init_read_remaining(void);
+bool fpsensor_data_inited(void);
 bool fpsensor_data_save(uint8_t index);
 bool fpsensor_data_delete(bool all, uint8_t id);
 bool fpsensor_data_delete_group(uint8_t group_id[4]);

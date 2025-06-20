@@ -11,6 +11,8 @@ static int fp_max_template_count = MAX_FINGERPRINT_COUNT;
 
 static uint32_t fp_data_version = FINGER_DATA_VERSION_NEW;
 
+static bool fp_data_inited = false;
+
 typedef struct
 {
     bool list_data_valid;
@@ -399,10 +401,9 @@ static uint32_t fp_crc32(uint8_t* buf, uint32_t len)
 
 bool fpsensor_data_init(void)
 {
-    static bool data_inited = false;
     uint32_t offset, crc;
 
-    if ( data_inited )
+    if ( fp_data_inited )
     {
         return true;
     }
@@ -461,8 +462,229 @@ bool fpsensor_data_init(void)
         }
     }
 
-    data_inited = true;
+    fp_data_inited = true;
     return true;
+}
+
+typedef struct
+{
+    uint8_t counter;
+    uint8_t list[MAX_FINGERPRINT_COUNT];
+    uint8_t index;
+    uint32_t offset;
+} fp_data_init_t;
+
+fp_data_init_t fp_data_init_data = {0};
+
+bool fpsensor_data_init_start(void)
+{
+    static uint32_t offset, crc;
+    static bool fp_data_init_flag = false;
+
+    if ( fp_data_init_flag || fp_data_inited )
+    {
+        return true;
+    }
+
+    ensure(se_fp_read(0, &fp_data_version, 4, 0, 0), "se_fp_read failed");
+
+    if ( fp_data_version != FINGER_DATA_VERSION_NEW )
+    {
+        fp_data_version = FINGER_DATA_VERSION_OLD;
+    }
+
+    char* se_version = se04_get_version();
+
+    if ( compare_str_version(se_version, "1.1.6") >= 0 )
+    {
+        fp_max_template_count = 6;
+    }
+    else
+    {
+        fp_max_template_count = 5;
+    }
+
+    uint8_t* p_data;
+    uint8_t counter = 0;
+    uint8_t list[MAX_FINGERPRINT_COUNT] = {0};
+
+    for ( uint8_t i = 0; i < fp_max_template_count; i++ )
+    {
+        p_data = fp_data_cache + TEMPLATE_ADDR_OFFSET + i * TEMPLATE_LENGTH;
+        offset = TEMPLATE_ADDR_OFFSET + i * TEMPLATE_TOTAL_LENGTH;
+        ensure(se_fp_read(offset, p_data, 2, 0, 0), "se_fp_read failed");
+        if ( p_data[0] == 0x32 && p_data[1] == 0x34 )
+        {
+            list[counter++] = i;
+        }
+    }
+
+    if ( counter == 0 && fp_data_version == FINGER_DATA_VERSION_OLD )
+    {
+        fp_data_version = FINGER_DATA_VERSION_NEW;
+        fp_data_inited = true;
+        return true;
+    }
+
+    if ( fp_data_version == FINGER_DATA_VERSION_NEW )
+    {
+        uint8_t group[8] = {0};
+        ensure(se_fp_read(4, group, 8, 0, 0), "se_fp_read failed");
+        uint8_t index1 = 0xff, index2 = 0xff, temp_counter = 0, new_counter = 0;
+        uint8_t temp_list[2] = {0};
+        if ( group[0] < 2 )
+        {
+            index1 = group[1];
+            temp_list[temp_counter++] = index1;
+        }
+
+        if ( group[4] < 2 )
+        {
+            index2 = group[5];
+            temp_list[temp_counter++] = index2;
+        }
+
+        for ( uint8_t i = 0; i < counter; i++ )
+        {
+            if ( list[i] != index1 && list[i] != index2 )
+            {
+                list[new_counter++] = list[i];
+            }
+        }
+        counter = new_counter;
+
+        for ( uint8_t i = 0; i < temp_counter; i++ )
+        {
+            p_data = fp_data_cache + TEMPLATE_ADDR_OFFSET + temp_list[i] * TEMPLATE_LENGTH;
+            offset = TEMPLATE_ADDR_OFFSET + temp_list[i] * TEMPLATE_TOTAL_LENGTH;
+            ensure(se_fp_read(offset, p_data, TEMPLATE_LENGTH, i, temp_counter), "se_fp_read failed");
+            ensure(
+                se_fp_read(offset + TEMPLATE_LENGTH, (uint8_t*)&crc, TEMPLATE_DATA_CRC_LEN, 0, 0),
+                "se_fp_read failed"
+            );
+            if ( crc != fp_crc32(p_data, TEMPLATE_LENGTH) )
+            {
+                memset(p_data, 0, TEMPLATE_LENGTH);
+                ensure(se_fp_write(offset, "\xff\xff\xff\xff", 4, 0, 0), "se_fp_write failed");
+            }
+        }
+
+        if ( counter == 0 )
+        {
+            fp_data_inited = true;
+            return true;
+        }
+        fp_data_init_data.counter = counter;
+        memcpy(fp_data_init_data.list, list, counter);
+        fp_data_init_data.index = 0;
+        fp_data_init_data.offset = 0;
+
+        fp_data_init_flag = true;
+    }
+    else
+    {
+        for ( uint8_t i = 0; i < counter; i++ )
+        {
+            p_data = fp_data_cache + TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_LENGTH;
+            offset = TEMPLATE_ADDR_OFFSET + list[i] * TEMPLATE_TOTAL_LENGTH;
+            ensure(se_fp_read(offset, p_data, TEMPLATE_LENGTH, i, counter), "se_fp_read failed");
+            ensure(
+                se_fp_read(offset + TEMPLATE_LENGTH, (uint8_t*)&crc, TEMPLATE_DATA_CRC_LEN, 0, 0),
+                "se_fp_read failed"
+            );
+            if ( crc != fp_crc32(p_data, TEMPLATE_LENGTH) )
+            {
+                memset(p_data, 0, TEMPLATE_LENGTH);
+                ensure(se_fp_write(offset, "\xff\xff\xff\xff", 4, 0, 0), "se_fp_write failed");
+            }
+        }
+        fp_data_inited = true;
+        return true;
+    }
+
+    return true;
+}
+
+#define FP_DATA_INIT_READ_LEN 256
+
+bool fpsensor_data_init_read(void)
+{
+    uint8_t* p_data;
+
+    uint32_t offset, crc, len;
+
+    if ( fp_data_inited )
+    {
+        return true;
+    }
+
+    offset = TEMPLATE_ADDR_OFFSET + fp_data_init_data.list[fp_data_init_data.index] * TEMPLATE_TOTAL_LENGTH +
+             fp_data_init_data.offset;
+    p_data = fp_data_cache + TEMPLATE_ADDR_OFFSET +
+             fp_data_init_data.list[fp_data_init_data.index] * TEMPLATE_LENGTH + fp_data_init_data.offset;
+
+    len = FP_DATA_INIT_READ_LEN;
+    ensure(se_fp_read(offset, p_data, len, 0, 0), "se_fp_read failed");
+    fp_data_init_data.offset += len;
+    if ( fp_data_init_data.offset == TEMPLATE_LENGTH )
+    {
+        uint8_t* p_crc = fp_data_cache + TEMPLATE_ADDR_OFFSET +
+                         fp_data_init_data.list[fp_data_init_data.index] * TEMPLATE_LENGTH;
+        ensure(se_fp_read(offset + len, (uint8_t*)&crc, TEMPLATE_DATA_CRC_LEN, 0, 0), "se_fp_read failed");
+        if ( crc != fp_crc32(p_crc, TEMPLATE_LENGTH) )
+        {
+            memset(p_crc, 0, TEMPLATE_LENGTH);
+            uint32_t temp_offset = TEMPLATE_ADDR_OFFSET +
+                                   fp_data_init_data.list[fp_data_init_data.index] * TEMPLATE_TOTAL_LENGTH;
+            ensure(se_fp_write(temp_offset, "\xff\xff\xff\xff", 4, 0, 0), "se_fp_write failed");
+        }
+
+        fp_data_init_data.offset = 0;
+        fp_data_init_data.index++;
+        if ( fp_data_init_data.index >= fp_data_init_data.counter )
+        {
+            fp_data_inited = true;
+        }
+    }
+    return true;
+}
+
+bool fpsensor_data_init_read_remaining(void)
+{
+    uint8_t* p_data;
+
+    uint32_t offset, crc, len;
+
+    if ( fp_data_inited )
+    {
+        return true;
+    }
+
+    for ( uint8_t i = fp_data_init_data.index; i < fp_data_init_data.counter; i++ )
+    {
+        offset = TEMPLATE_ADDR_OFFSET + fp_data_init_data.list[i] * TEMPLATE_TOTAL_LENGTH +
+                 fp_data_init_data.offset;
+        p_data = fp_data_cache + TEMPLATE_ADDR_OFFSET + fp_data_init_data.list[i] * TEMPLATE_LENGTH +
+                 fp_data_init_data.offset;
+        len = TEMPLATE_LENGTH - fp_data_init_data.offset;
+        ensure(se_fp_read(offset, p_data, len, i, fp_data_init_data.counter), "se_fp_read failed");
+        fp_data_init_data.offset = 0;
+        ensure(se_fp_read(offset + len, (uint8_t*)&crc, TEMPLATE_DATA_CRC_LEN, 0, 0), "se_fp_read failed");
+        uint8_t* p_crc = fp_data_cache + TEMPLATE_ADDR_OFFSET + fp_data_init_data.list[i] * TEMPLATE_LENGTH;
+        if ( crc != fp_crc32(p_crc, TEMPLATE_LENGTH) )
+        {
+            memset(p_crc, 0, TEMPLATE_LENGTH);
+            uint32_t temp_offset = TEMPLATE_ADDR_OFFSET + fp_data_init_data.list[i] * TEMPLATE_TOTAL_LENGTH;
+            ensure(se_fp_write(temp_offset, "\xff\xff\xff\xff", 4, 0, 0), "se_fp_write failed");
+        }
+    }
+    fp_data_inited = true;
+    return true;
+}
+
+bool fpsensor_data_inited(void)
+{
+    return fp_data_inited;
 }
 
 bool fpsensor_data_save(uint8_t index)

@@ -5,6 +5,7 @@ from trezor.uart import (
     fetch_all,
     handle_ble_info,
     handle_fingerprint,
+    handle_fingerprint_data_init,
     handle_uart,
     handle_usb_state,
     stop_mode,
@@ -54,6 +55,7 @@ async def handle_stop_mode():
 # run main event loop and specify which screen is the default
 apps.base.set_homescreen()
 
+loop.schedule(handle_fingerprint_data_init())
 loop.schedule(handle_fingerprint())
 loop.schedule(fetch_all())
 loop.schedule(handle_uart())
