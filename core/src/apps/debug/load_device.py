@@ -6,7 +6,7 @@ from trezor.enums import BackupType
 from trezor.messages import LoadDevice, Success
 from trezor.ui.layouts import confirm_action
 
-from apps.management import backup_types
+from apps.common import backup_types
 
 
 async def load_device(ctx: wire.Context, msg: LoadDevice) -> Success:
@@ -18,22 +18,21 @@ async def load_device(ctx: wire.Context, msg: LoadDevice) -> Success:
 
     await _warn(ctx)
 
+    identifier = None
+    iteration_exponent = None
     if not is_slip39:  # BIP-39
         secret = msg.mnemonics[0].encode()
         backup_type = BackupType.Bip39
     else:
-        identifier, iteration_exponent, secret = slip39.recover_ems(msg.mnemonics)
+        identifier, extendable, iteration_exponent, secret = slip39.recover_ems(
+            msg.mnemonics
+        )
 
         # this must succeed if the recover_ems call succeeded
         share = slip39.decode_mnemonic(msg.mnemonics[0])
-        if share.group_count == 1:
-            backup_type = BackupType.Slip39_Basic
-        elif share.group_count > 1:
-            backup_type = BackupType.Slip39_Advanced
-        else:
-            raise wire.ProcessError("Invalid group count")
-
-        storage.device.set_slip39_identifier(identifier)
+        backup_type = backup_types.infer_backup_type(is_slip39, share)
+        if not extendable:
+            storage.device.set_slip39_identifier(identifier)
         storage.device.set_slip39_iteration_exponent(iteration_exponent)
 
     storage.device.store_mnemonic_secret(
@@ -41,6 +40,8 @@ async def load_device(ctx: wire.Context, msg: LoadDevice) -> Success:
         backup_type,
         needs_backup=msg.needs_backup is True,
         no_backup=msg.no_backup is True,
+        identifier=identifier,
+        iteration_exponent=iteration_exponent,
     )
     storage.device.set_passphrase_enabled(bool(msg.passphrase_protection))
     storage.device.set_label(msg.label or "")

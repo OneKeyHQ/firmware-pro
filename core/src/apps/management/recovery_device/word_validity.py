@@ -1,7 +1,7 @@
-import storage.recovery
-from trezor.enums import BackupType
+from typing import TYPE_CHECKING
 
-from . import recover
+if TYPE_CHECKING:
+    from trezor.enums import BackupType
 
 
 class WordValidityResult(Exception):
@@ -21,6 +21,12 @@ class ThresholdReached(WordValidityResult):
 
 
 def check(backup_type: BackupType | None, partial_mnemonic: list[str]) -> None:
+    from trezor.enums import BackupType
+
+    from apps.common import backup_types
+
+    from . import recover
+
     # we can't perform any checks if the backup type was not yet decided
     if backup_type is None:
         return
@@ -33,16 +39,17 @@ def check(backup_type: BackupType | None, partial_mnemonic: list[str]) -> None:
         # this should not happen if backup_type is set
         raise RuntimeError
 
-    if backup_type == BackupType.Slip39_Basic:
-        check_slip39_basic(partial_mnemonic, previous_mnemonics)
-    elif backup_type == BackupType.Slip39_Advanced:
-        check_slip39_advanced(partial_mnemonic, previous_mnemonics)
+    if backup_types.is_slip39_backup_type(backup_type):
+        if backup_types.is_slip39_advanced_backup_type(backup_type):
+            _check_slip39_advanced(partial_mnemonic, previous_mnemonics)
+        else:
+            _check_slip39_basic(partial_mnemonic, previous_mnemonics)
     else:
         # there are no other backup types
         raise RuntimeError
 
 
-def check_slip39_basic(
+def _check_slip39_basic(
     partial_mnemonic: list[str], previous_mnemonics: list[list[str]]
 ) -> None:
     # check if first 3 words of mnemonic match
@@ -61,9 +68,11 @@ def check_slip39_basic(
                 raise AlreadyAdded
 
 
-def check_slip39_advanced(
+def _check_slip39_advanced(
     partial_mnemonic: list[str], previous_mnemonics: list[list[str]]
 ) -> None:
+    import storage.recovery
+
     current_index = len(partial_mnemonic) - 1
     current_word = partial_mnemonic[-1]
 

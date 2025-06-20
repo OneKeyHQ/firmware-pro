@@ -1,20 +1,13 @@
 from typing import Sequence
 
-from trezor import ui, wire
+from trezor import ui, utils, wire
 from trezor.enums import ButtonRequestType
 from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
 from trezor.lvglui.lv_colors import lv_colors
 from trezor.ui.layouts import confirm_blob, show_success, show_warning
 from trezor.ui.layouts.lvgl.common import interact
-from trezor.ui.layouts.lvgl.reset import (  # noqa: F401
-    confirm_word,
-    show_share_words,
-    slip39_advanced_prompt_group_threshold,
-    slip39_advanced_prompt_number_of_groups,
-    slip39_prompt_number_of_shares,
-    slip39_prompt_threshold,
-    slip39_show_checklist,
-)
+from trezor.ui.layouts.lvgl.reset import confirm_word, show_share_words
+from trezor.utils import chunks
 
 
 async def show_internal_entropy(ctx: wire.GenericContext, entropy: bytes) -> None:
@@ -35,16 +28,16 @@ async def _confirm_share_words(
     share_words: Sequence[str],
     group_index: int | None = None,
 ) -> bool:
-    # # divide list into thirds, rounding up, so that chunking by `third` always yields
-    # # three parts (the last one might be shorter)
-    # third = (len(share_words) + 2) // 3
 
+    chunk_step = (len(share_words) + 2) // 3
+    group_offset = 0
     count = len(share_words)
-    for index in range(count):
+    for part in chunks(share_words, chunk_step):
         if not await confirm_word(
-            ctx, share_index, share_words, index, count, group_index
+            ctx, share_index, part, group_offset, count, group_index
         ):
             return False
+        group_offset += len(part)
 
     return True
 
@@ -59,17 +52,20 @@ async def _show_confirmation_success(
         subheader = _(i18n_keys.SUBTITLE__DEVICE_BACKUP_VERIFIED_SUCCESS)
         text = _(i18n_keys.TITLE__VERIFIED)
 
-    elif share_index == num_of_shares - 1:
-        if group_index is None:
-            subheader = "You have finished\nverifying your\nrecovery shares."
-        else:
-            subheader = f"You have finished\nverifying your\nrecovery shares\nfor group {group_index + 1}."
-        text = ""
-
+    # elif share_index == num_of_shares - 1:
+    #     if group_index is None:
+    #         subheader = "You have finished\nverifying your\nrecovery shares."
+    #     else:
+    #         subheader = f"You have finished\nverifying your\nrecovery shares\nfor group {group_index + 1}."
+    #     text = ""
     else:
         if group_index is None:
-            subheader = f"Recovery share #{share_index + 1}\nchecked successfully."
-            text = f"Continue with share #{share_index + 2}."
+            # subheader = f"Recovery share #{share_index + 1}\nchecked successfully."
+            # text = f"Continue with share #{share_index + 2}."
+            text = _(i18n_keys.TITLE__VERIFIED)
+            subheader = _(
+                i18n_keys.CONTENT__YOU_HAVE_COMPLETED_VERIFICATION_OF_SHARE_STR_OF_STR_RECOVERY_PHRASE
+            ).format(num=share_index + 1, total=num_of_shares)
         else:
             subheader = f"Group {group_index + 1} - Share {share_index + 1}\nchecked successfully."
             text = "Continue with the next\nshare."
@@ -86,10 +82,11 @@ async def _show_confirmation_success(
 async def _show_confirmation_failure(
     ctx: wire.GenericContext, share_index: int | None
 ) -> None:
-    if share_index is None:
-        header = _(i18n_keys.TITLE__INCORRECT_WORD)
-    else:
-        header = f"Recovery share #{share_index + 1}"
+    header = _(i18n_keys.TITLE__INCORRECT_WORD)
+    # if share_index is None:
+    #     header = _(i18n_keys.TITLE__INCORRECT_WORD)
+    # else:
+    #     header = f"Recovery share #{share_index + 1}"
     await show_warning(
         ctx,
         "warning_backup_check",
@@ -104,26 +101,6 @@ async def _show_confirmation_failure(
 
 
 async def show_backup_warning(ctx: wire.GenericContext, slip39: bool = False) -> None:
-    # if slip39:
-    #     description = "Never make a digital copy of your recovery shares and never upload them online!"
-    # else:
-    #     description = "Never make a digital copy of your recovery seed and never upload\nit online!"
-    # if utils.LVGL_UI:
-    #     icon = "A:/res/warning.png"
-    #     description = "Never make a digital copy of your recovery seed and never upload it online!"
-    # else:
-    #     icon = ui.ICON_NOCOPY
-    # await confirm_action(
-    #     ctx,
-    #     "backup_warning",
-    #     "Caution",
-    #     description=description,
-    #     verb="I understand",
-    #     verb_cancel=None,
-    #     icon=icon,
-    #     br_code=ButtonRequestType.ResetDevice,
-    # )
-    # TODO: support slip39
     from trezor.lvglui.scrs.reset_device import BackupTips
 
     screen = BackupTips()
@@ -163,15 +140,18 @@ async def show_check_word_tips(ctx):
 
 
 async def bip39_show_and_confirm_mnemonic(
-    ctx: wire.GenericContext, mnemonic: str
-) -> None:
+    ctx: wire.GenericContext, mnemonic: str, skip_backup_warning: bool = False
+) -> tuple[int, int] | None:
     # warn user about mnemonic safety
-    await show_backup_warning(ctx)
+    if not skip_backup_warning:
+        await show_backup_warning(ctx)
     words = mnemonic.split()
 
     while True:
         # display paginated mnemonic on the screen
-        await show_share_words(ctx, share_words=words)
+        result = await show_share_words(ctx, share_words=words)
+        if result is not None and isinstance(result, tuple):
+            return result
         try:
             await show_check_word_tips(ctx)
         except wire.ActionCancelled:
@@ -189,31 +169,43 @@ async def bip39_show_and_confirm_mnemonic(
 
 
 async def slip39_basic_show_and_confirm_shares(
-    ctx: wire.GenericContext, shares: Sequence[str]
-) -> None:
+    ctx: wire.GenericContext,
+    shares: Sequence[str],
+    skip_backup_warning: bool = False,
+) -> tuple[int, int] | None:
     # warn user about mnemonic safety
-    await show_backup_warning(ctx, slip39=True)
-
+    if not skip_backup_warning:
+        await show_backup_warning(ctx, slip39=True)
+    share_count = len(shares)
     for index, share in enumerate(shares):
+        mods = utils.unimport_begin()
         share_words = share.split(" ")
         while True:
             # display paginated share on the screen
-            await show_share_words(ctx, share_words, index)
+            result = await show_share_words(
+                ctx, share_words, index, share_count=share_count
+            )
+            if result is not None and isinstance(result, tuple):
+                return result
             # description before check word
-            await show_check_word_tips(ctx)
+            try:
+                await show_check_word_tips(ctx)
+            except wire.ActionCancelled:
+                continue
             # make the user confirm words from the share
             if await _confirm_share_words(ctx, index, share_words):
                 await _show_confirmation_success(
-                    ctx, share_index=index, num_of_shares=len(shares)
+                    ctx, share_index=index, num_of_shares=share_count
                 )
                 break  # this share is confirmed, go to next one
             else:
                 await _show_confirmation_failure(ctx, index)
+        utils.unimport_end(mods)
 
 
 async def slip39_advanced_show_and_confirm_shares(
     ctx: wire.GenericContext, shares: Sequence[Sequence[str]]
-) -> None:
+) -> tuple[int, int] | None:
     # warn user about mnemonic safety
     await show_backup_warning(ctx, slip39=True)
 
@@ -222,8 +214,15 @@ async def slip39_advanced_show_and_confirm_shares(
             share_words = share.split(" ")
             while True:
                 # display paginated share on the screen
-                await show_share_words(ctx, share_words, share_index, group_index)
-
+                result = await show_share_words(
+                    ctx,
+                    share_words,
+                    share_index,
+                    share_count=len(group),
+                    group_index=group_index,
+                )
+                if result is not None and isinstance(result, tuple):
+                    return result
                 # make the user confirm words from the share
                 if await _confirm_share_words(
                     ctx, share_index, share_words, group_index

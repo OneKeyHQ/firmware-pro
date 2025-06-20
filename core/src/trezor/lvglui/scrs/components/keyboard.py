@@ -1,6 +1,6 @@
 from storage import device
 from trezor import motor, utils
-from trezor.crypto import bip39, random
+from trezor.crypto import bip39, random, slip39
 from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
 
 from .. import (
@@ -58,12 +58,13 @@ def change_key_bg(
                 )
 
 
-class BIP39Keyboard(lv.keyboard):
+class MnemonicKeyboard(lv.keyboard):
     """character keyboard with textarea."""
 
-    def __init__(self, parent):
+    def __init__(self, parent, is_slip39: bool = False):
         super().__init__(parent)
         self.parent = parent
+        self.is_slip39 = is_slip39
         self.ta = lv.textarea(parent)
         self.ta.align(lv.ALIGN.TOP_LEFT, 12, 177)
         self.ta.set_size(456, lv.SIZE.CONTENT)
@@ -336,8 +337,16 @@ class BIP39Keyboard(lv.keyboard):
             self.mnemonic_prompt.clean()
             txt_input = self.ta.get_text()
             if len(txt_input) > 0:
-                words = bip39.complete_word(txt_input) or ""
-                mask = bip39.word_completion_mask(txt_input)
+                words = (
+                    bip39.complete_word(txt_input)
+                    if not self.is_slip39
+                    else slip39.complete_word(txt_input)
+                ) or ""
+                mask = (
+                    bip39.word_completion_mask(txt_input)
+                    if not self.is_slip39
+                    else slip39.word_completion_mask(txt_input)
+                )
                 candidates = words.rstrip().split() if words else []
                 btn_style_default = (
                     StyleWrapper()

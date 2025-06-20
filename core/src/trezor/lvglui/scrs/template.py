@@ -5676,10 +5676,14 @@ class Turbo(FullSizeWindow):
             0,
         )
 
-        from .components.navigation import GeneralNavigation
+        from .components.navigation import Navigation
 
-        self.nav_back = GeneralNavigation(self.content_area, img="A:/res/cancel.png")
-        self.nav_back.align(lv.ALIGN.TOP_RIGHT, 0, 44)
+        self.nav_back = Navigation(
+            self.content_area,
+            btn_bg_img="A:/res/cancel.png",
+            nav_btn_align=lv.ALIGN.RIGHT_MID,
+            align=lv.ALIGN.TOP_RIGHT,
+        )
         self.add_event_cb(self.eventhandler, lv.EVENT.CLICKED, None)
 
         self.title = lv.img(self.content_area)

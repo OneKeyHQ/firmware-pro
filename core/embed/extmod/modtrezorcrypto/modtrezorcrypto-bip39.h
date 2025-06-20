@@ -35,7 +35,7 @@ STATIC mp_obj_t mod_trezorcrypto_bip39_complete_word(mp_obj_t prefix) {
   if (pfx.len == 0) {
     return mp_const_none;
   }
-  const char *word = mnemonic_complete_word(pfx.buf, pfx.len);
+  const char *word = mnemonic_complete_word(pfx.buf, pfx.len, false);
   if (word) {
     return mp_obj_new_str(word, strlen(word));
   } else {
@@ -54,7 +54,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorcrypto_bip39_complete_word_obj,
 STATIC mp_obj_t mod_trezorcrypto_bip39_word_completion_mask(mp_obj_t prefix) {
   mp_buffer_info_t pfx = {0};
   mp_get_buffer_raise(prefix, &pfx, MP_BUFFER_READ);
-  return mp_obj_new_int(mnemonic_word_completion_mask(pfx.buf, pfx.len));
+  return mp_obj_new_int(mnemonic_word_completion_mask(pfx.buf, pfx.len, false));
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(
     mod_trezorcrypto_bip39_word_completion_mask_obj,

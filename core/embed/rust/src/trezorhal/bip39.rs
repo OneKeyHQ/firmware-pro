@@ -41,7 +41,7 @@ pub fn complete_word(prefix: &str) -> Option<&'static str> {
 pub fn word_completion_mask(prefix: &str) -> u32 {
     // SAFETY: `mnemonic_word_completion_mask` shouldn't retain nor modify the
     // passed byte string, making the call safe.
-    unsafe { ffi::mnemonic_word_completion_mask(prefix.as_ptr() as _, prefix.len() as _) }
+    unsafe { ffi::mnemonic_word_completion_mask(prefix.as_ptr() as _, prefix.len() as _, false) }
 }
 
 pub struct Wordlist(&'static [*const cty::c_char]);

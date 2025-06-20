@@ -16,11 +16,40 @@ from .common import button_request, interact, raise_if_cancelled
 async def request_word_count(ctx: wire.GenericContext, dry_run: bool) -> int:
     await button_request(ctx, "word_count", code=ButtonRequestType.MnemonicWordCount)
 
+    optional_str = (
+        _(i18n_keys.OPTION__STR_WRODS).format(12)
+        + "\n"
+        + _(i18n_keys.OPTION__STR_WRODS).format(18)
+        + "\n"
+        + _(i18n_keys.OPTION__STR_WRODS).format(20)
+        + "\n"
+        + _(i18n_keys.OPTION__STR_WRODS).format(24)
+        + "\n"
+        + _(i18n_keys.OPTION__STR_WRODS).format(33)
+    )
     if dry_run:
         title = _(i18n_keys.TITLE__READY_TO_CHECK)
+        import storage.device as storage_device
+        from trezor.enums import BackupType
+
+        backup_type = storage_device.get_backup_type()
+        if backup_type == BackupType.Bip39:
+            optional_str = (
+                _(i18n_keys.OPTION__STR_WRODS).format(12)
+                + "\n"
+                + _(i18n_keys.OPTION__STR_WRODS).format(18)
+                + "\n"
+                + _(i18n_keys.OPTION__STR_WRODS).format(24)
+            )
+        else:
+            optional_str = (
+                _(i18n_keys.OPTION__STR_WRODS).format(20)
+                + "\n"
+                + _(i18n_keys.OPTION__STR_WRODS).format(33)
+            )
     else:
         title = _(i18n_keys.TITLE__READY_TO_IMPORT)
-    screen = SelectWordCounter(title)
+    screen = SelectWordCounter(title, optional_str)
     count = await raise_if_cancelled(screen.request())
     # WordSelector can return int, or string if the value came from debuglink
     # ctx.wait has a return type Any
@@ -31,9 +60,9 @@ async def request_word_count(ctx: wire.GenericContext, dry_run: bool) -> int:
 async def request_word(
     ctx: wire.GenericContext, word_index: int, word_count: int, is_slip39: bool
 ) -> str:
-    assert is_slip39 is False
+    # assert is_slip39 is False
     title = _(i18n_keys.TITLE__ENTER_WORD_STR).format(word_index + 1) + ":"
-    screen = WordEnter(title)
+    screen = WordEnter(title, is_slip39)
     word: str = await raise_if_cancelled(screen.request())
     await loop.sleep(240)
     screen.show_tips()
@@ -110,9 +139,9 @@ async def continue_recovery(
         text,
         _(i18n_keys.SUBTITLE__ENTER_RECOVERY_PHRASE),
         confirm_text=button_label,
-        cancel_text=_(i18n_keys.BUTTON__CANCEL),
         anim_dir=0,
     )
+    screen.add_nav_back_right()
     return await interact(
         ctx,
         screen,
