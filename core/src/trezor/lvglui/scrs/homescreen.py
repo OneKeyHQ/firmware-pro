@@ -25,7 +25,7 @@ from apps.common import passphrase, safety_checks
 
 from ..lv_symbols import LV_SYMBOLS
 from . import font_GeistRegular26, font_GeistRegular30, font_GeistSemiBold26
-from .address import AddressManager, chain_list
+from .address import AddressManager, chains_brief_info
 from .common import AnimScreen, FullSizeWindow, Screen, lv  # noqa: F401, F403, F405
 from .components.anim import Anim
 from .components.banner import LEVEL, Banner
@@ -828,7 +828,7 @@ class ShowAddress(AnimScreen):
         self.container.set_style_bg_opa(255, 0)
 
         # Initialize variables
-        self.chains = chain_list
+        self.chains = chains_brief_info()
         self.visible_chains_count = 8
 
         self.is_expanded = False
@@ -899,20 +899,21 @@ class ShowAddress(AnimScreen):
             # btn.set_style_opa(0, 0)
             if i < (end_idx - start_idx):
                 chain = self.chains[start_idx + i]
-                btn.label_left.set_text(chain["name"])
-                btn.img_left.set_src(chain["icon_48"])
+                chain_name, chain_icon = chain
+                btn.label_left.set_text(chain_name)
+                btn.img_left.set_src(chain_icon)
                 btn.add_event_cb(
-                    lambda e, name=chain["name"]: self.on_chain_click(e, name),
+                    lambda e, name=chain_name: self.on_chain_click(e, name),
                     lv.EVENT.CLICKED,
                     None,
                 )
                 btn.clear_flag(lv.obj.FLAG.HIDDEN)
 
-                if chain["name"] == "Ethereum" and not hasattr(btn, "img_right"):
+                if chain_name == "Ethereum" and not hasattr(btn, "img_right"):
                     btn.img_right = lv.img(btn)
                     btn.img_right.set_src("A:/res/stacked-chains.png")
                     btn.img_right.set_align(lv.ALIGN.RIGHT_MID)
-                elif chain["name"] == "Ethereum" and hasattr(btn, "img_right"):
+                elif chain_name == "Ethereum" and hasattr(btn, "img_right"):
                     btn.img_right.set_style_img_opa(255, 0)
                 elif i == 1 and hasattr(btn, "img_right"):
                     btn.img_right.set_style_img_opa(0, 0)

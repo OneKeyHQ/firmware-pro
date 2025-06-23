@@ -83,7 +83,7 @@ class Address(FullSizeWindow):
         self.btn_no.label.set_text(_(i18n_keys.BUTTON__QRCODE))
 
         self.item_addr = DisplayItem(
-            self.content_area, None, self.format_address(self.address), radius=40
+            self.content_area, None, utils.addr_chunkify(self.address), radius=40
         )
         self.item_addr.add_style(StyleWrapper().pad_ver(24), 0)
         self.item_addr.label.add_style(
@@ -130,15 +130,6 @@ class Address(FullSizeWindow):
                 xpub,
                 "A:/res/group-icon-more.png",
             )
-
-    def format_address(self, address: str) -> str:
-        address = address.replace(" ", "")
-        groups = [address[i : i + 4] for i in range(0, len(address), 4)]
-
-        lines = [" ".join(groups[i : i + 4]) for i in range(0, len(groups), 4)]
-        formatted_address = "\n".join(lines)
-
-        return formatted_address
 
     def show_qr_code(self, has_tips: bool = False):
         self.current = self.SHOW_TYPE.QRCODE
@@ -190,104 +181,20 @@ class Address(FullSizeWindow):
                 self.channel.publish(1)
 
 
-class BTCDeriveSelectionScreen(FullSizeWindow):
-    def __init__(self, prev_scr=None, addr_type=None, net_scr=None, has_taproot=True):
+class DeriveConfigScreen(FullSizeWindow):
+    def __init__(self, parent, addr_type, derive_options, *, title):
         super().__init__(
-            _(i18n_keys.TITLE__SELECT_DERIVATION_PATH),
+            title,
             None,
             confirm_text="",
             cancel_text="",
             anim_dir=2,
         )
-        self.prev_scr = prev_scr
-        self.net_scr = net_scr
+        self.parent = parent
 
         self.add_nav_back()
 
-        # Create derivation option buttons
-        if has_taproot:
-            self.derive_options = [
-                ("Nested Segwit", InputScriptType.SPENDP2SHWITNESS),
-                ("Taproot", InputScriptType.SPENDTAPROOT),
-                ("Native Segwit", InputScriptType.SPENDWITNESS),
-                ("Legacy", InputScriptType.SPENDADDRESS),
-            ]
-        else:
-            self.derive_options = [
-                ("Nested Segwit", InputScriptType.SPENDP2SHWITNESS),
-                ("Native Segwit", InputScriptType.SPENDWITNESS),
-                ("Legacy", InputScriptType.SPENDADDRESS),
-            ]
-
-        self.container = ContainerFlexCol(self.content_area, self.title, padding_row=2)
-
-        # Create buttons and set checked state
-        self.option_btns = []
-        for text, type_value in self.derive_options:
-            btn = ListItemBtn(
-                self.container,
-                text,
-                has_next=False,
-                use_transition=False,
-            )
-            btn.add_check_img()
-            if text == addr_type:
-                btn.set_checked()
-                self.selected_type = type_value
-                self.origin_type = type_value
-            self.option_btns.append(btn)
-
-        self.add_event_cb(self.on_nav_back, lv.EVENT.GESTURE, None)
-
-    def on_nav_back(self, event_obj):
-        code = event_obj.code
-        if code == lv.EVENT.GESTURE:
-            _dir = lv.indev_get_act().get_gesture_dir()
-            if _dir == lv.DIR.RIGHT:
-                lv.event_send(self.nav_back.nav_btn, lv.EVENT.CLICKED, None)
-
-    def eventhandler(self, event_obj):
-        code = event_obj.code
-        target = event_obj.get_target()
-
-        if code == lv.EVENT.CLICKED:
-            if utils.lcd_resume():
-                return
-
-            if isinstance(target, lv.imgbtn):
-                if target == self.nav_back.nav_btn:
-                    if self.prev_scr is not None:
-                        self.prev_scr.btc_derive_changed(self.selected_type)
-                        self.destroy(50)
-
-            else:
-                for i, btn in enumerate(self.option_btns):
-                    if target == btn:
-                        for other_btn in self.option_btns:
-                            other_btn.set_uncheck()
-
-                        btn.set_checked()
-                        self.selected_type = self.derive_options[i][1]
-
-
-class ETHDeriveSelectionScreen(FullSizeWindow):
-    def __init__(self, prev_scr=None, addr_type=None):
-        super().__init__(
-            _(i18n_keys.TITLE__SELECT_DERIVATION_PATH),
-            None,
-            confirm_text="",
-            cancel_text="",
-            anim_dir=2,
-        )
-        self.prev_scr = prev_scr
-
-        self.add_nav_back()
-
-        # Create derivation option buttons
-        self.derive_options = [
-            ("BIP44 Standard", False),
-            ("Ledger Live", True),
-        ]
+        self.derive_options = derive_options
 
         self.container = ContainerFlexCol(self.content_area, self.title, padding_row=2)
 
@@ -325,8 +232,8 @@ class ETHDeriveSelectionScreen(FullSizeWindow):
 
             if isinstance(target, lv.imgbtn):
                 if target == self.nav_back.nav_btn:
-                    if self.prev_scr is not None:
-                        self.prev_scr.eth_derive_changed(self.selected_type)
+                    if self.parent is not None:
+                        self.parent.on_derive_config_changed(self.selected_type)
                         self.destroy(50)
 
             else:
@@ -341,8 +248,8 @@ class ETHDeriveSelectionScreen(FullSizeWindow):
 
 class ADDRESS_OFFLINE_RETURN_TYPE:
     DONE = 0
-    ETH_LEDGER_PATH = 1
-    BTC_DERIVE_SCRIPTS = 2
+    COMMON_DRI_CONFIG_CHANGED = 1
+    BTC_DRI_CONFIG_CHANGED = 2
 
 
 class AddressOffline(FullSizeWindow):
@@ -405,7 +312,7 @@ class AddressOffline(FullSizeWindow):
         self.btn_no.label.set_text(_(i18n_keys.BUTTON__QRCODE))
 
         # derive btn
-        if self.network in ("Bitcoin", "Ethereum", "Solana", "Litecoin"):
+        if self.network in ("Bitcoin", "Ethereum", "Solana", "Litecoin", "Kaspa"):
             self.derive_btn = ListItemBtn(
                 self.content_area,
                 self.addr_type,
@@ -440,7 +347,7 @@ class AddressOffline(FullSizeWindow):
         self.item_group_body = DisplayItem(
             self.group_address,
             None,
-            self.format_address(self.address),
+            utils.addr_chunkify(self.address),
             font=font_GeistMono38,
         )
         self.group_address.add_dummy()
@@ -456,15 +363,6 @@ class AddressOffline(FullSizeWindow):
                 StyleWrapper().bg_color(lv_colors.ONEKEY_GRAY_3),
                 0,
             )
-
-    def format_address(self, address: str) -> str:
-        address = address.replace(" ", "")
-        groups = [address[i : i + 4] for i in range(0, len(address), 4)]
-
-        lines = [" ".join(groups[i : i + 4]) for i in range(0, len(groups), 4)]
-        formatted_address = "\n".join(lines)
-
-        return formatted_address
 
     def show_qr_code(self, has_tips: bool = False):
         self.current = self.SHOW_TYPE.QRCODE
@@ -501,12 +399,24 @@ class AddressOffline(FullSizeWindow):
             30,
         )
 
-    def btc_derive_changed(self, new_type):
-        self.channel.publish((ADDRESS_OFFLINE_RETURN_TYPE.BTC_DERIVE_SCRIPTS, new_type))
-        self.destroy(50)
-
-    def eth_derive_changed(self, new_type):
-        self.channel.publish((ADDRESS_OFFLINE_RETURN_TYPE.ETH_LEDGER_PATH, new_type))
+    def on_derive_config_changed(self, new_type):
+        if self.network in (
+            "Bitcoin",
+            "Litecoin",
+        ):
+            self.channel.publish(
+                (ADDRESS_OFFLINE_RETURN_TYPE.BTC_DRI_CONFIG_CHANGED, new_type)
+            )
+        elif self.network in (
+            "Ethereum",
+            "Solana",
+            "Kaspa",
+        ):
+            self.channel.publish(
+                (ADDRESS_OFFLINE_RETURN_TYPE.COMMON_DRI_CONFIG_CHANGED, new_type)
+            )
+        else:
+            raise ValueError(f"Unsupported network: {self.network}")
         self.destroy(50)
 
     def eventhandler(self, event_obj):
@@ -523,18 +433,34 @@ class AddressOffline(FullSizeWindow):
                 self.destroy(50)
                 self.channel.publish(ADDRESS_OFFLINE_RETURN_TYPE.DONE)
             elif hasattr(self, "derive_btn") and target == self.derive_btn:
+                title = _(i18n_keys.TITLE__SELECT_DERIVATION_PATH)
                 if self.network == "Bitcoin":
-                    BTCDeriveSelectionScreen(
-                        self, self.addr_type, self.prev_scr, has_taproot=True
-                    )
+                    options = [
+                        ("Nested Segwit", InputScriptType.SPENDP2SHWITNESS),
+                        ("Taproot", InputScriptType.SPENDTAPROOT),
+                        ("Native Segwit", InputScriptType.SPENDWITNESS),
+                        ("Legacy", InputScriptType.SPENDADDRESS),
+                    ]
                 elif self.network == "Litecoin":
-                    BTCDeriveSelectionScreen(
-                        self, self.addr_type, self.prev_scr, has_taproot=False
-                    )
+                    options = [
+                        ("Nested Segwit", InputScriptType.SPENDP2SHWITNESS),
+                        ("Native Segwit", InputScriptType.SPENDWITNESS),
+                        ("Legacy", InputScriptType.SPENDADDRESS),
+                    ]
                 elif self.network in ("Ethereum", "Solana"):
-                    ETHDeriveSelectionScreen(self, self.addr_type)
+                    options = [
+                        ("BIP44 Standard", True),
+                        ("Ledger Live", False),
+                    ]
+                elif self.network == "Kaspa":
+                    options = [
+                        ("OneKey Format", True),
+                        ("Official Format", False),
+                    ]
+                    title = "Select Drive Format"
                 else:
-                    pass
+                    raise ValueError(f"Unsupported network: {self.network}")
+                DeriveConfigScreen(self, self.addr_type, options, title=title)
 
 
 class XpubOrPub(FullSizeWindow):
