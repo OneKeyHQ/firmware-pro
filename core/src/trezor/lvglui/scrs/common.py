@@ -162,6 +162,7 @@ class AnimScreen(lv.obj):
 
     def _load_scr(self, scr: "Screen", back: bool = False) -> None:
         """Load a screen with container animation."""
+        scr.invalidate()
         if device.is_animation_enabled() and isinstance(scr, AnimScreen):
             targets = scr.collect_animation_targets()
             exclude_types = (
