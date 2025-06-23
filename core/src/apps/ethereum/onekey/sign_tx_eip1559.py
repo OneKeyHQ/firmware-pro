@@ -110,7 +110,9 @@ async def sign_tx_eip1559(
 
         from trezor.ui.layouts.lvgl import confirm_turbo
 
-        await confirm_turbo(ctx, (_(i18n_keys.LIST_VALUE__SEND) + suffix), network.name)
+        await confirm_turbo(
+            ctx, (_(i18n_keys.LIST_VALUE__SEND) + " " + suffix), network.name
+        )
     else:
         show_details = await require_show_overview(
             ctx,
