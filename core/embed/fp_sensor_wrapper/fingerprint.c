@@ -73,7 +73,7 @@ void fingerprint_init(void)
     ensure_ex(fpsensor_hard_reset(), FPSENSOR_OK, "fpsensor_hard_reset failed");
     ensure_ex(fpsensor_init(), FPSENSOR_OK, "fpsensor_init failed");
     ensure_ex(fpsensor_adc_init(18, 13, 4, 3), FPSENSOR_OK, "fpsensor_adc_init failed");
-    ensure_ex(fpsensor_set_config_param(0xC0, 8), FPSENSOR_OK, "fpsensor_set_config_param failed");
+    ensure_ex(fpsensor_set_config_param(0x3c, 10), FPSENSOR_OK, "fpsensor_set_config_param failed");
     if ( FpAlgorithmInit(TEMPLATE_ADDR_START) == FPSENSOR_OK )
     {
         fingerprint_module_status = true;
