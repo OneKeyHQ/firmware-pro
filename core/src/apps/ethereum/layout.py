@@ -70,24 +70,41 @@ def require_show_overview(
     ctx: Context,
     to_bytes: bytes,
     value: int,
+    gas_price: int,
+    gas_limit: int,
     chain_id: int,
     token: tokens.EthereumTokenInfo | None = None,
+    token_address: str | None = None,
     is_nft: bool = False,
 ) -> Awaitable[bool]:
     if to_bytes:
         to_str = address_from_bytes(to_bytes, networks.by_chain_id(chain_id))
     else:
         to_str = _(i18n_keys.LIST_VALUE__NEW_CONTRACT)
-
-    return should_show_details(
+    fee_max = gas_price * gas_limit
+    
+    from trezor.ui.layouts.lvgl import should_show_details_new
+    print("\n# token", token)
+    return should_show_details_new(
         ctx,
         title=_(i18n_keys.TITLE__SEND_MULTILINE).format(
             strip_amount(format_ethereum_amount(value, token, chain_id, is_nft))[0]
         ),
-        address=to_str,
         br_code=ButtonRequestType.SignTx,
+        to_address=to_str,
+        max_fee=format_ethereum_amount(fee_max, None, chain_id),
+        token_address=token_address,
+        banner_key="_(i18n_keys.UNKNOWN_TOKEN_TIP)" if token is tokens.UNKNOWN_TOKEN else None
     )
 
+    # return should_show_details(
+    #     ctx,
+    #     title=_(i18n_keys.TITLE__SEND_MULTILINE).format(
+    #         strip_amount(format_ethereum_amount(value, token, chain_id, is_nft))[0]
+    #     ),
+    #     address=to_str,
+    #     br_code=ButtonRequestType.SignTx,
+    # )
 
 def require_confirm_fee(
     ctx: Context,
@@ -102,6 +119,7 @@ def require_confirm_fee(
     token_id: int | None = None,
     evm_chain_id: int | None = None,
     raw_data: bytes | None = None,
+    token_address: str | None = None,
 ) -> Awaitable[None]:
     fee_max = gas_price * gas_limit
     return confirm_total_ethereum(
@@ -120,6 +138,7 @@ def require_confirm_fee(
         token_id,
         evm_chain_id=evm_chain_id,
         raw_data=raw_data,
+        token_address=token_address,
     )
 
 
@@ -137,6 +156,7 @@ async def require_confirm_eip1559_fee(
     token_id: int | None = None,
     evm_chain_id: int | None = None,
     raw_data: bytes | None = None,
+    token_address: str | None = None,
 ) -> None:
 
     fee_max = max_gas_fee * gas_limit
@@ -157,6 +177,7 @@ async def require_confirm_eip1559_fee(
         token_id,
         evm_chain_id=evm_chain_id,
         raw_data=raw_data,
+        token_address=token_address,
     )
 
 

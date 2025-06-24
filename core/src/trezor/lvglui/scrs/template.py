@@ -726,6 +726,87 @@ class TransactionOverview(FullSizeWindow):
                 + [self.layout_address or ""]
             )
 
+class TransactionOverviewNew(FullSizeWindow):
+    def __init__(
+        self, 
+        title: str,
+        primary_color,
+        icon_path: str,
+        has_details = None,
+        banner_key = None,
+        banner_level = 2,
+        **overview_kwargs  # 动态接收 OverviewComponent 支持的参数
+    ):
+        super().__init__(
+            title,
+            None,
+            _(i18n_keys.BUTTON__CONTINUE),
+            _(i18n_keys.BUTTON__REJECT),
+            anim_dir=2,
+            primary_color=primary_color,
+            icon_path="A:/res/icon-send.png",
+            sub_icon_path=icon_path,
+            # sub_icon_path=icon_path or "A:/res/evm-eth.png",
+        )
+
+        from .components.signatureinfo import OverviewComponent
+        from .components.banner import Banner
+
+        # Banner 处理保持不变
+        if banner_key:
+            self.banner = Banner(
+                self.content_area,
+                level=banner_level,
+                text=banner_key,
+            )
+            self.banner.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, 30)
+            self.container = ContainerFlexCol(
+                self.content_area, self.banner, pos=(0, 8), padding_row=8
+            )
+        else:
+            self.container = ContainerFlexCol(
+                self.content_area, self.title, pos=(0, 40)
+            )
+
+        # 动态传递参数给 OverviewComponent
+        self.overview = OverviewComponent(
+            self.container,
+            **self._filter_overview_params(overview_kwargs)
+        )
+
+        # Details 按钮处理保持不变
+        if has_details:
+            self.view_btn = NormalButton(
+                self.content_area,
+                f"{LV_SYMBOLS.LV_SYMBOL_ANGLE_DOUBLE_DOWN}  {_(i18n_keys.BUTTON__DETAILS)}",
+            )
+            self.view_btn.set_size(456, 82)
+            self.view_btn.add_style(StyleWrapper().text_font(font_GeistSemiBold26), 0)
+            self.view_btn.enable()
+            self.view_btn.align_to(self.container, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
+            self.view_btn.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
+
+    def _filter_overview_params(self, kwargs: dict) -> dict:
+        """过滤出 OverviewComponent 支持的参数"""
+        # OverviewComponent 当前支持的参数
+        supported_params = {
+            'title', 'icon', 'to_address', 'approve_spender', 
+            'max_fee', 'token_address'
+        }
+        
+        return {
+            key: value for key, value in kwargs.items() 
+            if key in supported_params and value is not None
+        }
+
+    def on_click(self, event_obj):
+        code = event_obj.code
+        target = event_obj.get_target()
+        if code == lv.EVENT.CLICKED:
+            if target == self.view_btn:
+                self.destroy(400)
+                self.channel.publish(2)
+
 
 class TransactionDetailsETH(FullSizeWindow):
     def __init__(
@@ -905,6 +986,146 @@ class TransactionDetailsETH(FullSizeWindow):
                     font=font_GeistMono28,
                     confirm_text=None,
                     cancel_text=None,
+                )
+
+
+class TransactionDetailsETHNew(FullSizeWindow):
+    def __init__(
+        self,
+        title,
+        address_from,
+        address_to,
+        amount,
+        fee_max,
+        is_eip1559=False,
+        gas_price=None,
+        max_priority_fee_per_gas=None,
+        max_fee_per_gas=None,
+        total_amount=None,
+        primary_color=lv_colors.ONEKEY_GREEN,
+        contract_addr=None,
+        token_id=None,
+        evm_chain_id=None,
+        raw_data=None,
+        sub_icon_path=None,
+        striped=False,
+        token_address=None,
+    ):
+        print("\nTransactionDetailsETHNew", 
+              "\ntitle", title,
+              "\naddress_from", address_from,
+              "\naddress_to", address_to,
+              "\namount", amount,
+              "\nfee_max", fee_max,
+              "\nis_eip1559", is_eip1559,
+              "\ngas_price", gas_price,
+              "\nmax_priority_fee_per_gas", max_priority_fee_per_gas,
+              "\nmax_fee_per_gas", max_fee_per_gas,
+              "\ntotal_amount", total_amount,
+              "\ncontract_addr", contract_addr,
+              "\ntoken_id", token_id,
+              "\nevm_chain_id", evm_chain_id,
+              "\nraw_data", raw_data,
+              "\nsub_icon_path", sub_icon_path,
+              "\nstriped", striped,
+              "\ntoken_address", token_address,
+        )
+        super().__init__(
+            title,
+            None,
+            _(i18n_keys.BUTTON__CONTINUE),
+            _(i18n_keys.BUTTON__REJECT),
+            primary_color=primary_color,
+            icon_path="A:/res/icon-send.png",
+            sub_icon_path=sub_icon_path,
+        )
+        self.primary_color = primary_color
+        self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
+        
+        # 导入所需组件
+        from .components.signatureinfo import (
+            AmountComponent, 
+            DirectionComponent, 
+            FeeComponent, 
+            MoreInfoComponent,
+            DataComponent
+        )
+        
+        # 1. Amount Component (可选)
+        if striped and amount:
+            self.amount_component = AmountComponent(
+                self.container,
+                amount=amount
+            )
+
+        # 2. Direction Component
+        self.direction_component = DirectionComponent(
+            self.container,
+            to_address=address_to,
+            from_address=address_from
+        )
+        
+        # 3. Fee Component
+        # 计算 total_amount（保持原逻辑）
+        # if total_amount is None:
+        #     if not contract_addr:  # token transfer
+        #         total_amount = f"{amount}\n{fee_max}"
+        #     else:  # nft transfer
+        #         total_amount = f"{fee_max}"
+        
+        # 构建 fee 参数
+        fee_params = {
+            'maximum_fee': fee_max,
+            # 'total_amount': total_amount
+        }
+        
+        # 根据交易类型添加相应参数
+        if is_eip1559:
+            if max_priority_fee_per_gas:
+                fee_params['priority_fee_per_gas'] = max_priority_fee_per_gas
+            if max_fee_per_gas:
+                fee_params['max_fee_per_gas'] = max_fee_per_gas
+        else:
+            if gas_price:
+                fee_params['gas_price'] = gas_price
+        
+        self.fee_component = FeeComponent(
+            self.container,
+            **fee_params
+        )
+        
+        # 4. More Info Component (可选)
+        more_info_params = {}
+        if evm_chain_id:
+            more_info_params['chain_id'] = evm_chain_id
+        if contract_addr:
+            more_info_params['contract_address'] = contract_addr
+        if token_id:
+            more_info_params['token_id'] = token_id
+        if token_address:
+            more_info_params['token_address'] = token_address
+        print(f"DEBUG: more_info_params = {more_info_params}")
+        print(f"DEBUG: bool(more_info_params) = {bool(more_info_params)}")
+        
+        if more_info_params:
+            print("DEBUG: Creating MoreInfoComponent")
+            self.more_info_component = MoreInfoComponent(
+                self.container,
+                **more_info_params
+            )
+        else:
+            print("DEBUG: NOT creating MoreInfoComponent")
+        
+        # 5. Data Component (可选)
+        if raw_data:
+            from trezor import strings
+            data_str = strings.format_customer_data(raw_data)
+            if data_str:
+                self.data_component = DataComponent(
+                    self.container,
+                    data=data_str,
+                    max_length=225,
+                    primary_color=self.primary_color,
                 )
 
 

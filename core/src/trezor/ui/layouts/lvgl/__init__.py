@@ -74,6 +74,7 @@ __all__ = (
     "confirm_sign_typed_hash",
     "confirm_polkadot_balances",
     "should_show_details",
+    "should_show_details_new",
     "should_show_approve_details",
     "show_ur_response",
     "enable_airgap_mode",
@@ -636,7 +637,7 @@ async def should_show_details(
         ctx,
         TransactionOverview(
             title,
-            address,
+            address=address,
             primary_color=ctx.primary_color,
             icon_path=ctx.icon_path,
             has_details=True,
@@ -654,6 +655,35 @@ async def should_show_details(
     else:  # confirm
         return False
 
+async def should_show_details_new(
+    ctx: wire.GenericContext,
+    title: str,
+    br_code: ButtonRequestType = ButtonRequestType.ConfirmOutput,
+    **kwargs
+) -> bool:
+    from trezor.lvglui.scrs.template import TransactionOverviewNew
+
+    res = await interact(
+        ctx,
+        TransactionOverviewNew(
+            title,
+            primary_color=ctx.primary_color,
+            icon_path=ctx.icon_path,
+            has_details=True,
+            **kwargs
+        ),
+        "confirm_output",
+        br_code,
+    )
+    if not res:
+        from trezor import loop
+
+        await loop.sleep(300)
+        raise wire.ActionCancelled()
+    elif res == 2:  # show more
+        return True
+    else:  # confirm
+        return False
 
 async def should_show_approve_details(
     ctx: wire.GenericContext,

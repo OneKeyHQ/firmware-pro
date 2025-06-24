@@ -20,11 +20,12 @@ async def confirm_total_ethereum(
     token_id: int | None = None,
     evm_chain_id: int | None = None,
     raw_data: bytes | None = None,
+    token_address: str | None = None,
 ) -> None:
-    from trezor.lvglui.scrs.template import TransactionDetailsETH
+    from trezor.lvglui.scrs.template import TransactionDetailsETHNew
 
     short_amount, striped = strip_amount(amount)
-    screen = TransactionDetailsETH(
+    screen = TransactionDetailsETHNew(
         _(i18n_keys.TITLE__SEND_MULTILINE).format(short_amount),
         from_address,
         to_address,
@@ -34,11 +35,12 @@ async def confirm_total_ethereum(
         total_amount=total_amount,
         primary_color=ctx.primary_color,
         contract_addr=contract_addr,
-        token_id=str(token_id),
+        token_id=str(token_id) if token_id else None,
         evm_chain_id=evm_chain_id,
         raw_data=raw_data,
         sub_icon_path=ctx.icon_path,
         striped=striped,
+        token_address=token_address,
     )
     await raise_if_cancelled(
         interact(ctx, screen, "confirm_total", ButtonRequestType.SignTx)
@@ -145,12 +147,13 @@ async def confirm_total_ethereum_eip1559(
     contract_addr: str | None,
     token_id: int | None,
     evm_chain_id: int | None,
-    raw_data: bytes | None,
+    raw_data: bytes | None, 
+    token_address: str | None = None,
 ) -> None:
-    from trezor.lvglui.scrs.template import TransactionDetailsETH
+    from trezor.lvglui.scrs.template import TransactionDetailsETHNew
 
     short_amount, striped = strip_amount(amount)
-    screen = TransactionDetailsETH(
+    screen = TransactionDetailsETHNew(
         _(i18n_keys.TITLE__SEND_MULTILINE).format(short_amount),
         from_address,
         to_address,
@@ -162,11 +165,12 @@ async def confirm_total_ethereum_eip1559(
         total_amount=total_amount,
         primary_color=ctx.primary_color,
         contract_addr=contract_addr,
-        token_id=str(token_id),
+        token_id=str(token_id) if token_id else None,
         evm_chain_id=evm_chain_id,
         raw_data=raw_data,
         sub_icon_path=ctx.icon_path,
         striped=striped,
+        token_address=token_address,
     )
     await raise_if_cancelled(
         interact(ctx, screen, "confirm_total", ButtonRequestType.SignTx)
