@@ -16,6 +16,7 @@ from . import (
     font_GeistRegular30,
     font_GeistSemiBold26,
     font_GeistSemiBold38,
+    font_GeistSemiBold48,
 )
 from .common import FullSizeWindow, lv
 from .components.banner import LEVEL, Banner
@@ -905,6 +906,159 @@ class TransactionDetailsETH(FullSizeWindow):
                     confirm_text=None,
                     cancel_text=None,
                 )
+
+
+class ApproveErc20ETHOverview(FullSizeWindow):
+    def __init__(
+        self,
+        title,
+        approve_spender,
+        max_fee,
+        token_address,
+        primary_color=lv_colors.ONEKEY_GREEN,
+        icon_path="A:/res/icon-send.png",
+        sub_icon_path=None,
+        has_details=None,
+        is_unlimited=False,
+    ):
+        super().__init__(
+            title,
+            None,
+            _(i18n_keys.BUTTON__CONTINUE),
+            _(i18n_keys.BUTTON__REJECT),
+            primary_color=primary_color,
+            icon_path=icon_path,
+            sub_icon_path=sub_icon_path,
+        )
+        self.title.set_style_text_font(font_GeistSemiBold48, 0)
+        self.primary_color = primary_color
+
+        from .components.signatureinfo import OverviewComponent
+        from .components.banner import Banner
+
+        if is_unlimited:
+            self.banner = Banner(
+                self.content_area,
+                level=2,
+                text=_(i18n_keys.APPROVE_UNLIMITED_WARNING),
+            )
+            self.banner.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, 30)
+            self.container = ContainerFlexCol(
+                self.content_area, self.banner, pos=(0, 8), padding_row=8
+            )
+
+        else:
+            self.container = ContainerFlexCol(
+                self.content_area, self.title, pos=(0, 40)
+            )
+
+        self.overview = OverviewComponent(
+            self.container,
+            approve_spender=approve_spender,
+            max_fee=max_fee,
+            token_address=token_address,
+        )
+
+        if has_details:
+            self.view_btn = NormalButton(
+                self.content_area,
+                f"{LV_SYMBOLS.LV_SYMBOL_ANGLE_DOUBLE_DOWN}  {_(i18n_keys.BUTTON__DETAILS)}",
+            )
+            self.view_btn.set_size(456, 82)
+            self.view_btn.add_style(StyleWrapper().text_font(font_GeistSemiBold26), 0)
+            self.view_btn.enable()
+            self.view_btn.align_to(self.overview.group, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
+            self.view_btn.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
+
+    def on_click(self, event_obj):
+        code = event_obj.code
+        target = event_obj.get_target()
+        if code == lv.EVENT.CLICKED:
+            if target == self.view_btn:
+                self.destroy(400)
+                self.channel.publish(2)
+
+
+class ApproveErc20ETH(FullSizeWindow):
+    def __init__(
+        self,
+        title,
+        address_from,
+        address_to,
+        amount,
+        fee_max,
+        is_eip1559=False,
+        gas_price=None,
+        max_priority_fee_per_gas=None,
+        max_fee_per_gas=None,
+        total_amount=None,
+        primary_color=lv_colors.ONEKEY_GREEN,
+        token_address: str | None = None,
+        token_id=None,
+        evm_chain_id=None,
+        raw_data=None,
+        icon_path="A:/res/icon-send.png",
+        sub_icon_path=None,
+        striped=False,
+        is_unlimited=False,
+    ):
+        super().__init__(
+            title,
+            None,
+            _(i18n_keys.BUTTON__CONTINUE),
+            _(i18n_keys.BUTTON__REJECT),
+            primary_color=primary_color,
+            icon_path=icon_path,
+            sub_icon_path=sub_icon_path,
+        )
+        self.title.set_style_text_font(font_GeistSemiBold48, 0)
+        print(f"# ApproveErc20ETH: {title}")
+        self.primary_color = primary_color
+
+        from .components.signatureinfo import (
+            DirectionComponent,
+            FeeComponent,
+            MoreInfoComponent,
+        )
+        from .components.banner import Banner
+
+        if is_unlimited:
+            self.banner = Banner(
+                self.content_area,
+                level=2,
+                text=_(i18n_keys.APPROVE_UNLIMITED_WARNING),
+            )
+            self.banner.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, 30)
+            self.container = ContainerFlexCol(
+                self.content_area, self.banner, pos=(0, 8), padding_row=8
+            )
+
+        else:
+            self.container = ContainerFlexCol(
+                self.content_area, self.title, pos=(0, 40)
+            )
+
+        self.direction = DirectionComponent(
+            self.container,
+            approve_spender=address_to,
+            from_address=address_from,
+        )
+
+        self.fee = FeeComponent(
+            self.container,
+            maximum_fee=fee_max,
+            gas_price=gas_price if not is_eip1559 else None,  # Legacy 显示 gas_price
+            priority_fee_per_gas=max_priority_fee_per_gas
+            if is_eip1559
+            else None,  # EIP1559 显示
+            max_fee_per_gas=max_fee_per_gas if is_eip1559 else None,  # EIP1559 显示
+        )
+
+        self.more = MoreInfoComponent(
+            self.container,
+            token_address=token_address,
+            chain_id=evm_chain_id,
+        )
 
 
 class TransactionDetailsBenFen(FullSizeWindow):
