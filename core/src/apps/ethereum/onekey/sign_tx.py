@@ -144,12 +144,17 @@ async def sign_tx(
             )
 
     else:
+        print("# gas_price", msg.gas_price, int.from_bytes(msg.gas_price, "big"))
+        print("# gas_limit", msg.gas_limit, int.from_bytes(msg.gas_limit, "big"))
         show_details = await require_show_overview(
             ctx,
             recipient,
             value,
+            int.from_bytes(msg.gas_price, "big"),
+            int.from_bytes(msg.gas_limit, "big"),
             msg.chain_id,
             token,
+            address_from_bytes(address_bytes, network) if token else None,
             is_nft_transfer,
         )
 
@@ -180,6 +185,7 @@ async def sign_tx(
                 if network is not networks.UNKNOWN_NETWORK
                 else msg.chain_id,
                 raw_data=msg.data_initial_chunk if has_raw_data else None,
+                token_address=address_from_bytes(address_bytes, network) if token else None,
             )
 
     data = bytearray()
@@ -238,8 +244,8 @@ async def handle_erc20(
         recipient = msg.data_initial_chunk[16:36]
         value = int.from_bytes(msg.data_initial_chunk[36:68], "big")
 
-        if token is tokens.UNKNOWN_TOKEN and not device.is_turbomode_enabled():
-            await require_confirm_unknown_token(ctx, address_bytes)
+        # if token is tokens.UNKNOWN_TOKEN and not device.is_turbomode_enabled():
+        #     await require_confirm_unknown_token(ctx, address_bytes)
 
     return token, address_bytes, recipient, value
 

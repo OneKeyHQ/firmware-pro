@@ -1,6 +1,6 @@
 from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
 
-from .. import font_GeistSemiBold26, lv_colors
+from .. import font_GeistSemiBold26, font_GeistMono28, lv, lv_colors
 from ..widgets.style import StyleWrapper
 from .button import NormalButton
 from .container import ContainerFlexCol
@@ -158,7 +158,7 @@ class AmountComponent:
             )
 
         # Add dummy for spacing
-        self.container.add_dummy()
+        # self.container.add_dummy()
 
 
 class FeeComponent:
@@ -393,23 +393,24 @@ class DataComponent:
         self.view_button.add_style(
             StyleWrapper().text_font(font_GeistSemiBold26).pad_hor(24), 0
         )
-        self.view_button.align(0, 0, 0)  # lv.ALIGN.CENTER equivalent
+        self.view_button.align(lv.ALIGN.CENTER, 0, 0)  # 修复：使用正确的对齐方式
         # Note: remove_style method has type issues, skipping for now
         self.view_button.add_event_cb(
-            self._on_view_data, 13, None
-        )  # lv.EVENT.CLICKED = 13
+            self._on_view_data, lv.EVENT.CLICKED, None  # 修复：使用lv.EVENT.CLICKED而不是硬编码13
+        )
 
     def _on_view_data(self, event_obj):
         """Handle view full data button click"""
         code = event_obj.code
         target = event_obj.get_target()
-        if code == 13:  # lv.EVENT.CLICKED
+        if code == lv.EVENT.CLICKED:  # 修复：使用lv.EVENT.CLICKED而不是硬编码13
             if target == self.view_button:
                 PageAbleMessage(
                     _(i18n_keys.TITLE__VIEW_DATA),
                     self.data,
                     None,
                     primary_color=self.primary_color,
+                    font=font_GeistMono28,  # 添加字体参数，与其他实现保持一致
                     confirm_text=None,
                     cancel_text=None,
                 )
@@ -444,6 +445,7 @@ class OverviewComponent:
         title: str | None = None,
         icon: str | None = None,
         # Overview fields
+        to_address: str | None = None,
         approve_spender: str | None = None,
         max_fee: str | None = None,
         token_address: str | None = None,
@@ -453,7 +455,7 @@ class OverviewComponent:
         self.icon = icon or "A:/res/group-icon-more.png"
 
         # 检查是否有任何字段需要显示
-        has_content = any([approve_spender, token_address, max_fee])
+        has_content = any([to_address, approve_spender, token_address, max_fee])
 
         if not has_content:
             return
@@ -463,6 +465,13 @@ class OverviewComponent:
         self.group_header = CardHeader(self.group, self.title, self.icon)
 
         # 根据字段值动态添加显示项
+        if to_address:
+            DisplayItem(
+                self.group,
+                _(i18n_keys.LIST_KEY__TO__COLON),
+                AddressFormatter().format_address(to_address),
+            )
+
         if approve_spender:
             DisplayItem(
                 self.group,
