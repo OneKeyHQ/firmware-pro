@@ -75,6 +75,7 @@ class MainScreen(Screen):
         homescreen = device.get_homescreen()
         if not hasattr(self, "_init"):
             self._init = True
+            self._cached_homescreen = homescreen
             super().__init__(
                 title=device_name, subtitle=ble_name or uart.get_ble_name()
             )
@@ -83,10 +84,15 @@ class MainScreen(Screen):
                 StyleWrapper().text_align_center().text_color(lv_colors.WHITE), 0
             )
         else:
-            self.add_style(
-                StyleWrapper().bg_img_src(homescreen),
-                0,
-            )
+            if (
+                not hasattr(self, "_cached_homescreen")
+                or self._cached_homescreen != homescreen
+            ):
+                self._cached_homescreen = homescreen
+                self.add_style(
+                    StyleWrapper().bg_img_src(homescreen),
+                    0,
+                )
             if hasattr(self, "dev_state"):
                 from apps.base import get_state
 
