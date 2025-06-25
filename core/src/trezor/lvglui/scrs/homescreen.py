@@ -3490,7 +3490,7 @@ class KeyboardHapticSetting(AnimScreen):
         )
 
         self.keyboard = ListItemBtnWithSwitch(
-            self.container, _(i18n_keys.ITEM__KEYBOARD_HAPTIC)
+            self.container, _(i18n_keys.ITEM__KEYBOARD_HAPTIC), is_haptic_feedback=True
         )
         self.tips = lv.label(self.content_area)
         self.tips.align_to(self.container, lv.ALIGN.OUT_BOTTOM_LEFT, 8, 16)

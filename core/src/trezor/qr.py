@@ -238,7 +238,7 @@ def scan_qr(callback_obj):
                         decoder.estimated_percent_complete()
                     )
                     if decoder.is_complete():
-                        motor.vibrate()
+                        motor.vibrate(motor.SUCCESS)
                         if type(decoder.result) is UR:
                             if __debug__:
                                 utils.mem_trace(__name__, 4)

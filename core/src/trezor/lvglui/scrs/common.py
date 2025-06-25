@@ -415,6 +415,7 @@ class FullSizeWindow(lv.obj):
             lv.PART.SCROLLBAR | lv.STATE.DEFAULT,
         )
         self.content_area.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
+        self.icon_path = icon_path
         if icon_path:
             self.icon = lv.img(self.content_area)
             self.icon.remove_style_all()
@@ -479,13 +480,49 @@ class FullSizeWindow(lv.obj):
                 self.slider.add_event_cb(self.eventhandler, lv.EVENT.READY, None)
             else:
                 self.btn_yes.enable(primary_color, text_color=lv_colors.BLACK)
+        if self.vibrate_necessary():
+            self.vibrated = False
+            self.add_event_cb(self.on_win_visible, lv.EVENT.DRAW_POST_END, None)
         self.add_event_cb(self.eventhandler, lv.EVENT.CLICKED, None)
         self.clear_flag(lv.obj.FLAG.GESTURE_BUBBLE)
         if auto_close_ms:
             self.destroy(delay_ms=auto_close_ms)
-
         if __debug__:
             self.notify_change()
+
+    def on_win_visible(self, _event_obj):
+        from trezor import motor
+
+        if __debug__:
+            print("on_draw_post_end called.")
+        if self.vibrated:
+            self.remove_event_cb(None)
+            return
+        self.vibrated = True
+        self.remove_event_cb(None)
+        if __debug__:
+            print("vibrate start...")
+        if self.icon_path == "A:/res/success.png":
+            motor.vibrate(motor.SUCCESS)
+        elif self.icon_path == "A:/res/warning.png":
+            motor.vibrate(motor.WARNING)
+        elif self.icon_path == "A:/res/danger.png":
+            motor.vibrate(motor.ERROR)
+
+    def vibrate_necessary(self) -> bool:
+        if not hasattr(self, "icon"):
+            return False
+        if __debug__:
+            print(f"vibrate necessary ? {self.icon_path}")
+        if self.icon_path in [
+            "A:/res/success.png",
+            "A:/res/warning.png",
+            "A:/res/danger.png",
+        ]:
+            if __debug__:
+                print("vibrate necessary: true")
+            return True
+        return False
 
     def btn_layout_ver(self):
         if not all([hasattr(self, "btn_no"), hasattr(self, "btn_yes")]):

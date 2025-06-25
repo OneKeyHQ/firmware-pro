@@ -1253,6 +1253,10 @@ async def request_pin_on_device(
     pinscreen = InputPin(
         title=prompt, subtitle=subprompt, allow_fingerprint=allow_fingerprint
     )
+    if subprompt:
+        from trezor import motor
+
+        motor.vibrate(motor.ERROR)
     result = await ctx.wait(pinscreen.request())
     if not result:
         if not allow_cancel:

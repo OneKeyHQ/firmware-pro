@@ -5776,7 +5776,7 @@ class Turbo(FullSizeWindow):
         if code == lv.EVENT.PRESSED:
             gc.collect()
             if target == self.gif_mask:
-                motor.vibrate(weak=True)
+                motor.vibrate(motor.WHISPER)
         if code == lv.EVENT.CLICKED:
             if utils.lcd_resume():
                 return
@@ -5785,5 +5785,5 @@ class Turbo(FullSizeWindow):
                 self.destroy(200)
                 self.channel.publish(0)
             elif target == self.gif_mask:
-                motor.vibrate()
+                motor.vibrate(motor.SUCCESS)
                 self._on_gif_click(event_obj)

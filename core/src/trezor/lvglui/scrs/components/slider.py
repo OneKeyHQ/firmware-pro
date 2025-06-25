@@ -71,6 +71,7 @@ class Slider(lv.slider):
         self.tips.add_flag(lv.obj.FLAG.HIDDEN)
 
         self.add_event_cb(self.on_event, lv.EVENT.PRESSING, None)
+        self.add_event_cb(self.on_event, lv.EVENT.PRESSED, None)
         self.add_event_cb(self.on_event, lv.EVENT.RELEASED, None)
         self.add_event_cb(self.on_event, lv.EVENT.DRAW_PART_BEGIN, None)
         self.add_event_cb(self.on_event, lv.EVENT.DRAW_PART_END, None)
@@ -123,13 +124,16 @@ class Slider(lv.slider):
         code = event.code
         target = event.get_target()
         current_value = target.get_value()
-        if code == lv.EVENT.PRESSING:
+        if code == lv.EVENT.PRESSED:
+            motor.vibrate(motor.WHISPER)
+        elif code == lv.EVENT.PRESSING:
             if current_value > MAX_VISIBLE_VALUE:
                 self.set_value(MAX_VISIBLE_VALUE, lv.ANIM.OFF)
             elif current_value < MIN_VISIBLE_VALUE:
                 self.set_value(MIN_VISIBLE_VALUE, lv.ANIM.OFF)
         elif code == lv.EVENT.RELEASED:
             if current_value < MAX_VISIBLE_VALUE:
+                motor.vibrate(motor.ERROR)
                 self.set_value(MIN_VISIBLE_VALUE, lv.ANIM.ON)
         elif code == lv.EVENT.DRAW_PART_BEGIN:
             dsc = lv.obj_draw_part_dsc_t.__cast__(event.get_param())
@@ -149,7 +153,7 @@ class Slider(lv.slider):
                             self.clear_flag(lv.obj.FLAG.CLICKABLE)
                         else:
                             return
-                        motor.vibrate()
+                        motor.vibrate(motor.SUCCESS)
                         lv.event_send(self, lv.EVENT.READY, None)
         elif code == lv.EVENT.DRAW_PART_END:
             dsc = lv.obj_draw_part_dsc_t.__cast__(event.get_param())
