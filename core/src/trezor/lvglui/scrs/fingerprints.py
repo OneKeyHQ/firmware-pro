@@ -162,7 +162,8 @@ class CollectFingerprintStart(FullSizeWindow):
             anim_dir=0,
         )
 
-        self.content_area.set_scroll_dir(lv.DIR.NONE)
+        self.content_area.clear_flag(lv.obj.FLAG.SCROLL_ELASTIC)
+        self.content_area.clear_flag(lv.obj.FLAG.SCROLL_MOMENTUM)
 
         self.title.align_to(self.content_area, lv.ALIGN.TOP_LEFT, 12, 84)
         self.subtitle.align_to(self.title, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 16)
@@ -173,12 +174,12 @@ class CollectFingerprintStart(FullSizeWindow):
         self.img = lv.img(self.content_area)
         self.img.remove_style_all()
         self.img.set_src(img_path)
-        self.img.align(lv.ALIGN.TOP_LEFT, 12, 320)
+        self.img.align_to(self.subtitle, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 24)
 
         self.arrow = lv.img(self.content_area)
         self.arrow.remove_style_all()
         self.arrow.set_src("A:/res/finger-start-arrow.png")
-        self.arrow.align(lv.ALIGN.TOP_LEFT, 12, 454)
+        self.arrow.align_to(self.img, lv.ALIGN.TOP_RIGHT, 0, 134)
 
         self.icon_cancel = lv.obj(self.content_area)
         self.icon_cancel.remove_style_all()
@@ -204,6 +205,12 @@ class CollectFingerprintStart(FullSizeWindow):
         self.anim.set_path_cb(lv.anim_t.path_ease_in_out)
         self.anim.set_custom_exec_cb(lambda _a, val: self.anim_set_x(val))
         self.anim_r = lv.anim_t.start(self.anim)
+
+        self.spacer = lv.obj(self.content_area)
+        self.spacer.set_size(lv.pct(100), 60)
+        self.spacer.align_to(self.img, lv.ALIGN.OUT_BOTTOM_MID, 0, 0)
+        self.spacer.set_style_bg_opa(lv.OPA.TRANSP, 0)
+        self.spacer.set_style_border_width(0, 0)
 
     def on_close(self, event_obj):
         code = event_obj.code
