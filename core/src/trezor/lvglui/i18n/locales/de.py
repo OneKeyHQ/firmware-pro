@@ -821,7 +821,7 @@ translations = [
     "Zum Konto gehen",
     "Fehler bei der Eingabeformatierung",
     "Ihre Adresse ist eine EVM-Netzwerkadresse. Sie können sie verwenden, um Ihre Vermögenswerte über andere EVM-kompatible Netzwerke (wie Ethereum, BNB Chain, Polygon, Arbitrum One, Avalanche usw.) zu verwalten.",
-    "Sicherheitsschlüssel",
+    "Sicherheit-Key",
     "Einrichtung des Wallets erforderlich",
     "Um Ihr Gerät über Bluetooth zu koppeln, erstellen Sie bitte zuerst eine Wallet auf Ihrem Hardware-Gerät. Dies ist notwendig für eine sichere Verbindung.",
     "Bluetooth-Kopplung im Boot-Modus nicht verfügbar",

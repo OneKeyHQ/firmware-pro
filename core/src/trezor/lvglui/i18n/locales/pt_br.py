@@ -821,7 +821,7 @@ translations = [
     "Ir para a Conta",
     "Erro de formatação de entrada",
     "Seu endereço é um endereço de rede EVM. Você pode usá-lo para gerenciar seus ativos em outras redes compatíveis com EVM (como Ethereum, BNB Chain, Polygon, Arbitrum One, Avalanche, etc.).",
-    "Chaves de segurança",
+    "Chaves seguras",
     "Configuração da Carteira Necessária",
     "Para emparelhar seu dispositivo via Bluetooth, por favor, crie uma carteira no seu dispositivo de hardware primeiro. Isso é necessário para uma conexão segura.",
     "Emparelhamento Bluetooth indisponível enquanto estiver no modo Boot",
@@ -1010,5 +1010,10 @@ translations = [
     "A Frase de Recuperação que você inseriu está incorreta. Por favor, insira a Frase correta.",
     "Você Entrou na Ação {num1} Do Grupo {num2}",
     "Você precisa inserir mais ações.",
+    "OneKey Extended",
+    "Kaspa Oficial",
+    "Selecionar Tipo de Conta",
+    "Hash de transação",
+    "Este token não é reconhecido pela carteira física. Por favor, verifique cuidadosamente.",
 ]
 # fmt: on

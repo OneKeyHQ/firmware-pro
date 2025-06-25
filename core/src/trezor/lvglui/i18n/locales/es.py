@@ -821,7 +821,7 @@ translations = [
     "Ir a la cuenta",
     "Error de formato de entrada",
     "Tu dirección es una dirección de red EVM. Puedes usarla para gestionar tus activos a través de otras redes compatibles con EVM (como Ethereum, BNB Chain, Polygon, Arbitrum One, Avalanche, etc.).",
-    "Llaves de seguridad",
+    "Llaves seguras",
     "Configuración de la billetera requerida",
     "Para emparejar tu dispositivo a través de Bluetooth, primero crea una billetera en tu dispositivo de hardware. Esto es necesario para una conexión segura.",
     "Emparejamiento Bluetooth no disponible mientras está en modo Boot",
