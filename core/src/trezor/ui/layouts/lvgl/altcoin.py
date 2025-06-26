@@ -222,6 +222,30 @@ async def confirm_decred_sstx_submission(
     )
 
 
+async def confirm_total_tron_new(
+    ctx: wire.GenericContext,
+    title,
+    from_address: str | None,
+    to_address: str | None,
+    banner_key: str | None,
+    banner_level: int,
+) -> None:
+    from trezor.lvglui.scrs.template import TransactionTronNew
+
+    screen = TransactionTronNew(
+        title,
+        from_address,
+        to_address,
+        banner_key=banner_key,
+        banner_level=banner_level,
+        primary_color=ctx.primary_color,
+        icon_path=ctx.icon_path,
+    )
+    await raise_if_cancelled(
+        interact(ctx, screen, "confirm_total", ButtonRequestType.SignTx)
+    )
+
+
 async def confirm_total_tron(
     ctx: wire.GenericContext,
     title,

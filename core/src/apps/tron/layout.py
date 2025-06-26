@@ -29,19 +29,28 @@ def require_confirm_data(ctx: Context, data: bytes, data_total: int) -> Awaitabl
 
 def require_confirm_tx(
     ctx: Context,
+    from_address: str,
     to: str,
     value: int,
     token: tokens.TokenInfo | None = None,
 ) -> Awaitable[None]:
-    return confirm_output(
+    from trezor.ui.layouts.lvgl.altcoin import confirm_total_tron_new
+    return confirm_total_tron_new(
         ctx,
-        address=to,
-        amount=format_amount_trx(value, token),
-        font_amount=ui.BOLD,
-        color_to=ui.GREY,
-        br_code=ButtonRequestType.SignTx,
+        title=format_amount_trx(value, token),
+        from_address=from_address,
+        to_address=to,
+        banner_key=_(i18n_keys.BANNER_ENERGY_RENTAL) if check_provider(ctx, to) else None,
+        banner_level=0,
     )
 
+def check_provider(ctx: Context, to: str) -> bool:
+    from apps.tron.providers import provider_by_address
+    provider = provider_by_address(to)
+    if provider:
+        return True
+    else:
+        return False
 
 async def require_confirm_unknown_token(ctx: Context, contract_address: str) -> None:
     await confirm_address(
