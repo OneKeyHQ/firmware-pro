@@ -949,6 +949,8 @@ apps.tron.get_address
 import apps.tron.get_address
 apps.tron.layout
 import apps.tron.layout
+apps.tron.providers
+import apps.tron.providers
 apps.tron.serialize
 import apps.tron.serialize
 apps.tron.sign_message

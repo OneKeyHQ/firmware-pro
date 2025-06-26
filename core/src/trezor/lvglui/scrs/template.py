@@ -1281,6 +1281,49 @@ class ApproveErc20ETH(FullSizeWindow):
             chain_id=evm_chain_id,
         )
 
+class TransactionTronNew(FullSizeWindow):
+    def __init__(
+        self,
+        title,
+        address_from,
+        address_to,
+        banner_key,
+        banner_level,
+        primary_color=lv_colors.ONEKEY_GREEN,
+        icon_path="A:/res/icon-send.png",
+    ):
+        super().__init__(
+            title,
+            None,
+            _(i18n_keys.BUTTON__CONTINUE),
+            _(i18n_keys.BUTTON__REJECT),
+            anim_dir=2,
+            primary_color=primary_color,
+            icon_path="A:/res/icon-send.png",
+            sub_icon_path=icon_path,
+        )
+        self.primary_color = primary_color
+        if banner_key:
+            self.banner = Banner(
+                self.content_area,
+                level=banner_level,
+                text=banner_key,
+            )
+            self.banner.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, 30)
+            self.container = ContainerFlexCol(
+                self.content_area, self.banner, pos=(0, 8), padding_row=8
+            )
+        else:
+            self.container = ContainerFlexCol(
+                self.content_area, self.title, pos=(0, 40)
+            )
+            
+        from .components.signatureinfo import DirectionComponent
+        self.direction = DirectionComponent(
+            self.container,
+            to_address=address_to,
+            from_address=address_from,
+        )
 
 class TransactionDetailsBenFen(FullSizeWindow):
     def __init__(
@@ -3058,7 +3101,23 @@ class SolTokenTransfer(FullSizeWindow):
             icon_path="A:/res/icon-send.png",
             sub_icon_path=icon_path,
         )
-        self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
+
+        if token_mint:
+            self.banner = Banner(
+                self.content_area,
+                level=LEVEL.WARNING,
+                text=_(i18n_keys.WARNING_UNRECOGNIZED_TOKEN),
+            )
+            self.banner.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, 30)
+            self.container = ContainerFlexCol(
+                self.content_area, self.banner, pos=(0, 8), padding_row=8
+            )
+
+        else:
+            self.container = ContainerFlexCol(
+                self.content_area, self.title, pos=(0, 40)
+            )
+
         if striped:
             self.group_amounts = ContainerFlexCol(
                 self.container, None, padding_row=0, no_align=True
