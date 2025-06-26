@@ -185,7 +185,6 @@ static lv_res_t decoder_open(lv_img_decoder_t *decoder,
       /*Check the extension*/
       jpeg_decode_init(FMC_SDRAM_JPEG_OUTPUT_DATA_BUFFER_ADDRESS);
 
-      SCB_DisableDCache();
       /* Start JPEG decoding with DMA method */
       if (jpeg_decode_start(fn) != 0) {
         return LV_RES_INV;
@@ -207,7 +206,6 @@ static lv_res_t decoder_open(lv_img_decoder_t *decoder,
           (uint32_t *)img_data, width, height, subsampling);
 
       dsc->img_data = img_data;
-      SCB_EnableDCache();
       return LV_RES_OK; /*The image is fully decoded. Return with its pointer*/
     }
   }
