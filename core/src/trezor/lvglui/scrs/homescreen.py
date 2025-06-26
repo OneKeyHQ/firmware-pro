@@ -224,9 +224,19 @@ class MainScreen(Screen):
     class AppDrawer(lv.obj):
         PAGE_SIZE = 2
 
-        def __init__(self, parent) -> None:
+        def __init__(self, parent):
             super().__init__(parent)
             self.parent = parent
+            self.visible = False
+            self.slide = False
+            self.text_label = {}
+            self.init_ui()
+            self.init_items()
+            self.create_down_arrow()
+            self.init_indicators()
+            self.init_anim()
+
+        def init_ui(self):
             self.remove_style_all()
             self.set_pos(0, 0)
             self.set_size(lv.pct(100), lv.pct(100))
@@ -234,151 +244,137 @@ class MainScreen(Screen):
                 StyleWrapper().bg_color(lv_colors.BLACK).bg_opa().border_width(0),
                 0,
             )
-            self.img_down = lv.imgbtn(self)
-            self.img_down.set_size(40, 40)
-            self.img_down.set_style_bg_img_src("A:/res/slide-down.jpg", 0)
-            self.img_down.align(lv.ALIGN.TOP_MID, 0, 64)
-            self.img_down.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
-            self.img_down.set_ext_click_area(100)
 
-            # buttons
-            click_style = (
+            self.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
+
+            self.clear_flag(lv.obj.FLAG.GESTURE_BUBBLE)
+            self.add_event_cb(self.on_gesture, lv.EVENT.GESTURE, None)
+
+            self.main_cont = lv.obj(self)
+            self.main_cont.set_size(448, 600)
+            self.main_cont.set_pos(16, 200)
+            self.main_cont.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
+            self.main_cont.set_style_pad_all(0, 0)
+            self.main_cont.set_style_border_width(0, 0)
+            self.main_cont.set_style_bg_opa(lv.OPA.TRANSP, 0)
+
+            self.current_page = 0
+            self.page_items = [[] for _ in range(2)]
+
+        def init_items(self):
+            if utils.BITCOIN_ONLY:
+                items = [
+                    ("connect", "app-connect", i18n_keys.APP__CONNECT_WALLET),
+                    ("scan", "app-scan", i18n_keys.APP__SCAN),
+                    ("my_address", "app-address", i18n_keys.APP__ADDRESS),
+                    ("settings", "app-settings", i18n_keys.APP__SETTINGS),
+                    ("backup", "app-backup", i18n_keys.APP__BACK_UP),
+                    ("nft", "app-nft", i18n_keys.APP__NFT_GALLERY),
+                    ("guide", "app-tips", i18n_keys.APP__TIPS),
+                ]
+            else:
+                items = [
+                    ("connect", "app-connect", i18n_keys.APP__CONNECT_WALLET),
+                    ("scan", "app-scan", i18n_keys.APP__SCAN),
+                    ("my_address", "app-address", i18n_keys.APP__ADDRESS),
+                    ("settings", "app-settings", i18n_keys.APP__SETTINGS),
+                    ("passkey", "app-keys", i18n_keys.FIDO_FIDO_KEYS_LABEL),
+                    ("backup", "app-backup", i18n_keys.APP__BACK_UP),
+                    ("nft", "app-nft", i18n_keys.APP__NFT_GALLERY),
+                    ("guide", "app-tips", i18n_keys.APP__TIPS),
+                ]
+
+            items_per_page = 4
+            cols = 2
+            rows = 2
+            item_width = 216
+            item_height = 280
+            col_gap = 16
+            row_gap = 16
+
+            for idx, (name, img, text) in enumerate(items):
+                page = idx // items_per_page
+                page_idx = idx % items_per_page
+                row = page_idx // rows
+                col = page_idx % cols
+                x = col * (item_width + col_gap)
+                y = row * (item_height + row_gap)
+
+                item = self.create_item(name, img, text, x, y)
+                self.page_items[page].append(item)
+                if page != 0:
+                    item.add_flag(lv.obj.FLAG.HIDDEN)
+
+        def create_item(self, name, img_src, text_key, x, y):
+            cont = lv.obj(self.main_cont)
+            cont.add_style(
+                StyleWrapper()
+                .bg_color(lv_colors.BLACK)
+                .bg_opa(lv.OPA.TRANSP)
+                .radius(0)
+                .border_width(0)
+                .pad_all(0),
+                0,
+            )
+            cont.set_size(216, 280)
+            cont.set_pos(x, y)
+            cont.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
+
+            btn = lv.imgbtn(cont)
+            btn.set_size(216, 216)
+            btn.set_style_bg_img_src(f"A:/res/{img_src}.jpg", 0)
+            btn.add_style(
                 StyleWrapper()
                 .bg_img_recolor_opa(lv.OPA._30)
-                .bg_img_recolor(lv_colors.BLACK)
+                .bg_img_recolor(lv_colors.BLACK),
+                lv.PART.MAIN | lv.STATE.PRESSED,
             )
-            default_desc_style = (
+            btn.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
+            btn.align(lv.ALIGN.TOP_MID, 0, 0)
+
+            label = lv.label(cont)
+            label.set_text(_(text_key))
+            label.add_style(
                 StyleWrapper()
                 .width(170)
                 .text_font(font_GeistSemiBold26)
                 .text_color(lv_colors.WHITE)
-                .text_align_center()
+                .text_align_center(),
+                0,
             )
-            pressed_desc_style = StyleWrapper().text_opa(lv.OPA._70)
-
-            self.connect = lv.imgbtn(self)
-            self.connect.set_size(216, 216)
-            self.connect.set_pos(16, 200)
-            self.connect.set_style_bg_img_src("A:/res/app-connect.jpg", 0)
-            self.connect.add_style(click_style, lv.PART.MAIN | lv.STATE.PRESSED)
-            self.connect.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
-            self.connect_desc = lv.label(self)
-            self.connect_desc.set_text(_(i18n_keys.APP__CONNECT_WALLET))
-            self.connect_desc.add_style(default_desc_style, 0)
-            self.connect_desc.add_style(
-                pressed_desc_style, lv.PART.MAIN | lv.STATE.PRESSED
-            )
-            self.connect_desc.align_to(self.connect, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
-
-            self.scan = lv.imgbtn(self)
-            self.scan.set_size(216, 216)
-            self.scan.align_to(self.connect, lv.ALIGN.OUT_RIGHT_MID, 16, 0)
-            self.scan.set_style_bg_img_src("A:/res/app-scan.jpg", 0)
-            self.scan.add_style(click_style, lv.PART.MAIN | lv.STATE.PRESSED)
-            self.scan.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
-            self.scan_desc = lv.label(self)
-            self.scan_desc.set_text(_(i18n_keys.APP__SCAN))
-            self.scan_desc.add_style(default_desc_style, 0)
-            self.scan_desc.add_style(
-                pressed_desc_style, lv.PART.MAIN | lv.STATE.PRESSED
-            )
-            self.scan_desc.align_to(self.scan, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
-
-            self.my_address = lv.imgbtn(self)
-            self.my_address.set_size(216, 216)
-            self.my_address.align_to(self.connect, lv.ALIGN.OUT_BOTTOM_MID, 0, 77)
-            self.my_address.set_style_bg_img_src("A:/res/app-address.jpg", 0)
-            self.my_address.add_style(click_style, lv.PART.MAIN | lv.STATE.PRESSED)
-            self.my_address.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
-            self.my_address_desc = lv.label(self)
-            self.my_address_desc.set_text(_(i18n_keys.APP__ADDRESS))
-            self.my_address_desc.add_style(default_desc_style, 0)
-            self.my_address_desc.add_style(
-                pressed_desc_style, lv.PART.MAIN | lv.STATE.PRESSED
-            )
-            self.my_address_desc.align_to(
-                self.my_address, lv.ALIGN.OUT_BOTTOM_MID, 0, 8
+            label.add_style(
+                StyleWrapper().text_opa(lv.OPA._70), lv.PART.MAIN | lv.STATE.PRESSED
             )
 
-            self.settings = lv.imgbtn(self)
-            self.settings.set_size(216, 216)
-            self.settings.align_to(self.scan, lv.ALIGN.OUT_BOTTOM_MID, 0, 77)
-            self.settings.set_style_bg_img_src("A:/res/app-settings.jpg", 0)
-            self.settings.add_style(click_style, lv.PART.MAIN | lv.STATE.PRESSED)
-            self.settings.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
-            self.settings_desc = lv.label(self)
-            self.settings_desc.set_text(_(i18n_keys.APP__SETTINGS))
-            self.settings_desc.add_style(default_desc_style, 0)
-            self.settings_desc.add_style(
-                pressed_desc_style, lv.PART.MAIN | lv.STATE.PRESSED
+            label.align_to(btn, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
+
+            self.text_label[text_key] = label
+
+            btn.add_event_cb(
+                lambda e: self.on_pressed(text_key), lv.EVENT.PRESSED, None
             )
-            self.settings_desc.align_to(self.settings, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
-
-            self.passkey = lv.imgbtn(self)
-            self.passkey.set_size(216, 216)
-            self.passkey.set_pos(16, 148)
-            self.passkey.set_style_bg_img_src("A:/res/app-keys.jpg", 0)
-            self.passkey.add_style(click_style, lv.PART.MAIN | lv.STATE.PRESSED)
-            self.passkey.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
-            self.passkey_desc = lv.label(self)
-            self.passkey_desc.set_text(_(i18n_keys.FIDO_FIDO_KEYS_LABEL))
-            self.passkey_desc.add_style(default_desc_style, 0)
-            self.passkey_desc.add_style(
-                pressed_desc_style, lv.PART.MAIN | lv.STATE.PRESSED
+            btn.add_event_cb(
+                lambda e: self.on_released(text_key), lv.EVENT.RELEASED, None
             )
-            self.passkey_desc.align_to(self.passkey, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
-            self.passkey.add_flag(lv.obj.FLAG.HIDDEN)
-            self.passkey_desc.add_flag(lv.obj.FLAG.HIDDEN)
+            btn.add_event_cb(lambda e: self.on_item_click(name), lv.EVENT.CLICKED, None)
+            return cont
 
-            self.backup = lv.imgbtn(self)
-            self.backup.set_size(216, 216)
-            self.backup.set_style_bg_img_src("A:/res/app-backup.jpg", 0)
-            self.backup.add_style(click_style, lv.PART.MAIN | lv.STATE.PRESSED)
-            self.backup.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
-            self.backup.align_to(self.passkey, lv.ALIGN.OUT_RIGHT_MID, 16, 0)
-            self.backup_desc = lv.label(self)
-            self.backup_desc.set_text(_(i18n_keys.APP__BACK_UP))
-            self.backup_desc.add_style(default_desc_style, 0)
-            self.backup_desc.add_style(
-                pressed_desc_style, lv.PART.MAIN | lv.STATE.PRESSED
-            )
-            self.backup_desc.align_to(self.backup, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
-            self.backup.add_flag(lv.obj.FLAG.HIDDEN)
-            self.backup_desc.add_flag(lv.obj.FLAG.HIDDEN)
+        def create_down_arrow(self):
+            img_down = lv.imgbtn(self)
+            img_down.set_size(40, 40)
+            img_down.set_style_bg_img_src("A:/res/slide-down.jpg", 0)
+            img_down.align(lv.ALIGN.TOP_MID, 0, 64)
+            img_down.add_event_cb(lambda e: self.dismiss(), lv.EVENT.CLICKED, None)
+            img_down.set_ext_click_area(100)
 
-            self.nft = lv.imgbtn(self)
-            self.nft.set_size(216, 216)
-            self.nft.align_to(self.passkey, lv.ALIGN.OUT_BOTTOM_MID, 0, 77)
-            self.nft.set_style_bg_img_src("A:/res/app-nft.jpg", 0)
-            self.nft.add_style(click_style, lv.PART.MAIN | lv.STATE.PRESSED)
-            self.nft.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
-            self.nft_desc = lv.label(self)
-            self.nft_desc.set_text(_(i18n_keys.APP__NFT_GALLERY))
-            self.nft_desc.add_style(default_desc_style, 0)
-            self.nft_desc.add_style(pressed_desc_style, lv.PART.MAIN | lv.STATE.PRESSED)
-            self.nft_desc.align_to(self.nft, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
-            self.nft.add_flag(lv.obj.FLAG.HIDDEN)
-            self.nft_desc.add_flag(lv.obj.FLAG.HIDDEN)
+        def init_indicators(self):
+            self.container = ContainerFlexRow(self, None, padding_col=0)
+            self.container.align(lv.ALIGN.BOTTOM_MID, 0, -32)
+            self.indicators = [
+                Indicator(self.container, i) for i in range(self.PAGE_SIZE)
+            ]
 
-            self.guide = lv.imgbtn(self)
-            self.guide.set_size(216, 216)
-            self.guide.align_to(self.backup, lv.ALIGN.OUT_BOTTOM_MID, 0, 77)
-            self.guide.set_style_bg_img_src("A:/res/app-tips.jpg", 0)
-            self.guide.add_style(click_style, lv.PART.MAIN | lv.STATE.PRESSED)
-            self.guide.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
-            self.guide_desc = lv.label(self)
-            self.guide_desc.set_text(_(i18n_keys.APP__TIPS))
-            self.guide_desc.add_style(default_desc_style, 0)
-            self.guide_desc.add_style(
-                pressed_desc_style, lv.PART.MAIN | lv.STATE.PRESSED
-            )
-            self.guide_desc.align_to(self.guide, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
-            self.guide.add_flag(lv.obj.FLAG.HIDDEN)
-            self.guide_desc.add_flag(lv.obj.FLAG.HIDDEN)
-
-            self.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
-            self.add_event_cb(self.on_pressed, lv.EVENT.PRESSED, None)
-            self.add_event_cb(self.on_released, lv.EVENT.RELEASED, None)
+        def init_anim(self):
             self.show_anim = Anim(
                 200,
                 148,
@@ -403,44 +399,6 @@ class MainScreen(Screen):
                 del_cb=self.dismiss_anim_del_cb,
                 delay=0 if not __debug__ else APP_DRAWER_DOWN_DELAY,
             )
-            self.slide = False
-            self.visible = False
-            # page indicator
-            self.container = ContainerFlexRow(self, None, padding_col=0)
-            self.container.align(lv.ALIGN.BOTTOM_MID, 0, -32)
-            # indicator dots
-            self.select_page_index = 0
-            self.indicators = []
-            for i in range(self.PAGE_SIZE):
-                self.indicators.append(Indicator(self.container, i))
-            self.clear_flag(lv.obj.FLAG.GESTURE_BUBBLE)
-            self.add_event_cb(self.on_gesture, lv.EVENT.GESTURE, None)
-            self.group_1 = [
-                self.container,
-                self.settings,
-                self.settings_desc,
-                self.my_address,
-                self.my_address_desc,
-                self.scan,
-                self.scan_desc,
-                self.connect,
-                self.connect_desc,
-                self.img_down,
-            ]
-            self.group_2 = [
-                self.container,
-                self.passkey,
-                self.passkey_desc,
-                self.guide,
-                self.guide_desc,
-                self.nft,
-                self.nft_desc,
-                self.backup,
-                self.backup_desc,
-                self.guide,
-                self.guide_desc,
-                self.img_down,
-            ]
 
         def set_position(self, val):
             if not hasattr(self, "_last_position"):
@@ -448,14 +406,8 @@ class MainScreen(Screen):
             y_offset = val - self._last_position
             position_threshold = 2
             if abs(y_offset) >= position_threshold:
-                current_group = (
-                    self.group_1 if self.select_page_index == 0 else self.group_2
-                )
-                for obj in current_group:
-                    if obj in (self.container, self.img_down):
-                        continue
-                    current_y = obj.get_y()
-                    obj.set_y(current_y + y_offset)
+                current_y = self.main_cont.get_y()
+                self.main_cont.set_y(current_y + y_offset)
                 self._last_position = val
 
         def on_gesture(self, event_obj):
@@ -469,52 +421,38 @@ class MainScreen(Screen):
                     return
                 if _dir not in [lv.DIR.RIGHT, lv.DIR.LEFT]:
                     return
-                self.indicators[self.select_page_index].set_active(False)
+                self.indicators[self.current_page].set_active(False)
+                page_idx = self.current_page
                 if _dir == lv.DIR.LEFT:
-                    self.select_page_index = (
-                        self.select_page_index + 1
-                    ) % self.PAGE_SIZE
+                    page_idx = (self.current_page + 1) % self.PAGE_SIZE
 
                 elif _dir == lv.DIR.RIGHT:
-                    self.select_page_index = (
-                        self.select_page_index - 1 + self.PAGE_SIZE
-                    ) % self.PAGE_SIZE
-                self.indicators[self.select_page_index].set_active(True)
-                self.show_page(self.select_page_index)
+                    page_idx = (self.current_page - 1 + self.PAGE_SIZE) % self.PAGE_SIZE
+                self.indicators[page_idx].set_active(True)
+                self.show_page(page_idx)
 
         def show_page(self, index: int):
-            if index == 0:
-                for obj in self.group_2:
-                    obj.add_flag(lv.obj.FLAG.HIDDEN)
-                for obj in self.group_1:
-                    obj.clear_flag(lv.obj.FLAG.HIDDEN)
-            elif index == 1:
-                for obj in self.group_1:
-                    obj.add_flag(lv.obj.FLAG.HIDDEN)
-                for obj in self.group_2:
-                    obj.clear_flag(lv.obj.FLAG.HIDDEN)
+            if index == self.current_page:
+                return
+            for item in self.page_items[index]:
+                item.clear_flag(lv.obj.FLAG.HIDDEN)
+            for item in self.page_items[self.current_page]:
+                item.add_flag(lv.obj.FLAG.HIDDEN)
+            self.current_page = index
 
         def hidden_page(self, index: int):
-            # if index == 0:
-            #     for obj in self.group_1:
-            #         # obj.add_flag(lv.obj.FLAG.HIDDEN)
-            #         pass
-            # elif index == 1:
-            #     for obj in self.group_2:
-            #         # obj.add_flag(lv.obj.FLAG.HIDDEN)
-            #         pass
             pass
 
         def show_anim_start_cb(self, _anim):
             self.parent.hidden_others()
-            self.hidden_page(self.select_page_index)
+            self.hidden_page(self.current_page)
             self.parent.clear_state(lv.STATE.USER_1)
 
         def show_anim_del_cb(self, _anim):
-            self.show_page(self.select_page_index)
+            self.show_page(self.current_page)
 
         def dismiss_anim_start_cb(self, _anim):
-            self.hidden_page(self.select_page_index)
+            self.hidden_page(self.current_page)
 
         def dismiss_anim_del_cb(self, _anim):
             self.parent.hidden_others(False)
@@ -540,88 +478,39 @@ class MainScreen(Screen):
             self.dismiss_anim.start()
             self.visible = False
 
+        def on_pressed(self, text_key):
+            label = self.text_label[text_key]
+            label.add_state(lv.STATE.PRESSED)
+
+        def on_released(self, text_key):
+            label = self.text_label[text_key]
+            label.clear_state(lv.STATE.PRESSED)
+
+        def on_item_click(self, name):
+            handlers = {
+                "settings": lambda: SettingsScreen(self.parent),
+                "guide": lambda: UserGuide(self.parent),
+                "nft": lambda: NftGallery(self.parent),
+                "backup": lambda: BackupWallet(self.parent),
+                "scan": lambda: ScanScreen(self.parent),
+                "connect": lambda: ConnectWalletWays(self.parent),
+                "my_address": lambda: ShowAddress(self.parent),
+                "passkey": lambda: PasskeysManager(self.parent),
+            }
+            if name in handlers:
+                handlers[name]()
+
         def on_click(self, event_obj):
             code = event_obj.code
-            target = event_obj.get_target()
             if code == lv.EVENT.CLICKED:
                 if utils.lcd_resume():
                     return
                 if self.slide:
                     return
-                if target == self.settings:
-                    SettingsScreen(self.parent)
-                elif target == self.guide:
-                    UserGuide(self.parent)
-                elif target == self.nft:
-                    NftGallery(self.parent)
-                elif target == self.backup:
-                    BackupWallet(self.parent)
-                elif target == self.scan:
-                    ScanScreen(self.parent)
-                elif target == self.connect:
-                    ConnectWalletWays(self.parent)
-                elif target == self.my_address:
-                    ShowAddress(self.parent)
-                elif target == self.passkey:
-                    PasskeysManager(self.parent)
-                elif target == self.img_down:
-                    self.dismiss()
-
-        def on_pressed(self, event_obj):
-            code = event_obj.code
-            target = event_obj.get_target()
-            if code == lv.EVENT.PRESSED:
-                if utils.lcd_resume():
-                    return
-                if target == self.settings:
-                    self.settings_desc.add_state(lv.STATE.PRESSED)
-                elif target == self.guide:
-                    self.guide_desc.add_state(lv.STATE.PRESSED)
-                elif target == self.nft:
-                    self.nft_desc.add_state(lv.STATE.PRESSED)
-                elif target == self.backup:
-                    self.backup_desc.add_state(lv.STATE.PRESSED)
-                elif target == self.scan:
-                    self.scan_desc.add_state(lv.STATE.PRESSED)
-                elif target == self.connect:
-                    self.connect_desc.add_state(lv.STATE.PRESSED)
-                elif target == self.my_address:
-                    self.my_address_desc.add_state(lv.STATE.PRESSED)
-                elif target == self.passkey:
-                    self.passkey_desc.add_state(lv.STATE.PRESSED)
-
-        def on_released(self, event_obj):
-            code = event_obj.code
-            target = event_obj.get_target()
-            if code == lv.EVENT.RELEASED:
-                if utils.lcd_resume():
-                    return
-                if target == self.settings:
-                    self.settings_desc.clear_state(lv.STATE.PRESSED)
-                elif target == self.guide:
-                    self.guide_desc.clear_state(lv.STATE.PRESSED)
-                elif target == self.nft:
-                    self.nft_desc.clear_state(lv.STATE.PRESSED)
-                elif target == self.backup:
-                    self.backup_desc.clear_state(lv.STATE.PRESSED)
-                elif target == self.scan:
-                    self.scan_desc.clear_state(lv.STATE.PRESSED)
-                elif target == self.connect:
-                    self.connect_desc.clear_state(lv.STATE.PRESSED)
-                elif target == self.my_address:
-                    self.my_address_desc.clear_state(lv.STATE.PRESSED)
-                elif target == self.passkey:
-                    self.passkey_desc.clear_state(lv.STATE.PRESSED)
 
         def refresh_text(self):
-            self.settings_desc.set_text(_(i18n_keys.APP__SETTINGS))
-            self.guide_desc.set_text(_(i18n_keys.APP__TIPS))
-            self.nft_desc.set_text(_(i18n_keys.APP__NFT_GALLERY))
-            self.backup_desc.set_text(_(i18n_keys.APP__BACK_UP))
-            self.scan_desc.set_text(_(i18n_keys.APP__SCAN))
-            self.connect_desc.set_text(_(i18n_keys.APP__CONNECT_WALLET))
-            self.my_address_desc.set_text(_(i18n_keys.APP__ADDRESS))
-            self.passkey_desc.set_text(_(i18n_keys.FIDO_FIDO_KEYS_LABEL))
+            for text_key, label in self.text_label.items():
+                label.set_text(_(text_key))
 
 
 class PasskeysManager(AnimScreen):
