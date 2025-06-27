@@ -507,6 +507,7 @@ bool fpsensor_data_init_start(void)
     uint8_t* p_data;
     uint8_t counter = 0;
     uint8_t list[MAX_FINGERPRINT_COUNT] = {0};
+    uint8_t group[8] = {0};
 
     for ( uint8_t i = 0; i < fp_max_template_count; i++ )
     {
@@ -519,6 +520,20 @@ bool fpsensor_data_init_start(void)
         }
     }
 
+    if ( counter > 0 && fp_data_version == FINGER_DATA_VERSION_NEW )
+    {
+        ensure(se_fp_read(4, group, 8, 0, 0), "se_fp_read failed");
+        if ( memcmp(group, "\xff\xff\xff\xff\xff\xff\xff\xff", 8) == 0 )
+        {
+            fp_data_version = FINGER_DATA_VERSION_OLD;
+        }
+        // invalid state, force to old version
+        if ( counter == 2 || counter == 5 )
+        {
+            fp_data_version = FINGER_DATA_VERSION_OLD;
+        }
+    }
+
     if ( counter == 0 && fp_data_version == FINGER_DATA_VERSION_OLD )
     {
         fp_data_version = FINGER_DATA_VERSION_NEW;
@@ -528,7 +543,6 @@ bool fpsensor_data_init_start(void)
 
     if ( fp_data_version == FINGER_DATA_VERSION_NEW )
     {
-        uint8_t group[8] = {0};
         ensure(se_fp_read(4, group, 8, 0, 0), "se_fp_read failed");
         uint8_t index1 = 0xff, index2 = 0xff, temp_counter = 0, new_counter = 0;
         uint8_t temp_list[2] = {0};
@@ -710,17 +724,6 @@ bool fpsensor_data_save(uint8_t index)
         }
     }
 
-    if ( counter )
-    {
-        ensure(se_fp_read(0, &fp_data_version, 4, 0, 0), "se_fp_read failed");
-
-        if ( fp_data_version != FINGER_DATA_VERSION_NEW )
-        {
-            fp_data_version = FINGER_DATA_VERSION_NEW;
-            ensure(se_fp_write(0, &fp_data_version, 4, 0, 0), "se_fp_write failed");
-        }
-    }
-
     ensure(se_fp_write(4 + index * sizeof(id_group), id_group, sizeof(id_group), 0, 0), "se_fp_write failed");
 
     for ( uint8_t i = 0; i < counter; i++ )
@@ -733,6 +736,17 @@ bool fpsensor_data_save(uint8_t index)
             se_fp_write(offset + TEMPLATE_LENGTH, (uint8_t*)&crc, TEMPLATE_DATA_CRC_LEN, 0, 0),
             "se_fp_write failed"
         );
+    }
+
+    if ( counter )
+    {
+        ensure(se_fp_read(0, &fp_data_version, 4, 0, 0), "se_fp_read failed");
+
+        if ( fp_data_version != FINGER_DATA_VERSION_NEW )
+        {
+            fp_data_version = FINGER_DATA_VERSION_NEW;
+            ensure(se_fp_write(0, &fp_data_version, 4, 0, 0), "se_fp_write failed");
+        }
     }
 
     return true;
