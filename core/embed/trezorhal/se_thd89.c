@@ -2198,6 +2198,11 @@ secbool se_fp_read(uint32_t offset, void *val_dest, uint32_t len, uint8_t index,
       ui_callback(0, percent * 10, "read fp data");
     }
   }
+
+  if (ui_callback && show_progress && index == total - 1 && percent != 100) {
+    ui_callback(0, 100 * 10, NULL);
+  }
+
   return sectrue;
 }
 

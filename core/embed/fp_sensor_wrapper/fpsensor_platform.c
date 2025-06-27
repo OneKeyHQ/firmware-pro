@@ -520,20 +520,6 @@ bool fpsensor_data_init_start(void)
         }
     }
 
-    if ( counter > 0 && fp_data_version == FINGER_DATA_VERSION_NEW )
-    {
-        ensure(se_fp_read(4, group, 8, 0, 0), "se_fp_read failed");
-        if ( memcmp(group, "\xff\xff\xff\xff\xff\xff\xff\xff", 8) == 0 )
-        {
-            fp_data_version = FINGER_DATA_VERSION_OLD;
-        }
-        // invalid state, force to old version
-        if ( counter == 2 || counter == 5 )
-        {
-            fp_data_version = FINGER_DATA_VERSION_OLD;
-        }
-    }
-
     if ( counter == 0 && fp_data_version == FINGER_DATA_VERSION_OLD )
     {
         fp_data_version = FINGER_DATA_VERSION_NEW;
@@ -541,21 +527,35 @@ bool fpsensor_data_init_start(void)
         return true;
     }
 
-    if ( fp_data_version == FINGER_DATA_VERSION_NEW )
+    if ( fp_data_version == FINGER_DATA_VERSION_NEW && counter > 0 )
     {
         ensure(se_fp_read(4, group, 8, 0, 0), "se_fp_read failed");
         uint8_t index1 = 0xff, index2 = 0xff, temp_counter = 0, new_counter = 0;
         uint8_t temp_list[2] = {0};
-        if ( group[0] < 2 )
+        if ( group[0] < 2 && group[1] < fp_max_template_count )
         {
             index1 = group[1];
-            temp_list[temp_counter++] = index1;
+            for ( uint8_t i = 0; i < counter; i++ )
+            {
+                if ( list[i] == index1 )
+                {
+                    temp_list[temp_counter++] = index1;
+                    break;
+                }
+            }
         }
 
-        if ( group[4] < 2 )
+        if ( group[4] < 2 && group[5] < fp_max_template_count )
         {
             index2 = group[5];
-            temp_list[temp_counter++] = index2;
+            for ( uint8_t i = 0; i < counter; i++ )
+            {
+                if ( list[i] == index2 )
+                {
+                    temp_list[temp_counter++] = index2;
+                    break;
+                }
+            }
         }
 
         for ( uint8_t i = 0; i < counter; i++ )
@@ -724,6 +724,17 @@ bool fpsensor_data_save(uint8_t index)
         }
     }
 
+    if ( counter )
+    {
+        ensure(se_fp_read(0, &fp_data_version, 4, 0, 0), "se_fp_read failed");
+
+        if ( fp_data_version != FINGER_DATA_VERSION_NEW )
+        {
+            fp_data_version = FINGER_DATA_VERSION_NEW;
+            ensure(se_fp_write(0, &fp_data_version, 4, 0, 0), "se_fp_write failed");
+        }
+    }
+
     ensure(se_fp_write(4 + index * sizeof(id_group), id_group, sizeof(id_group), 0, 0), "se_fp_write failed");
 
     for ( uint8_t i = 0; i < counter; i++ )
@@ -736,17 +747,6 @@ bool fpsensor_data_save(uint8_t index)
             se_fp_write(offset + TEMPLATE_LENGTH, (uint8_t*)&crc, TEMPLATE_DATA_CRC_LEN, 0, 0),
             "se_fp_write failed"
         );
-    }
-
-    if ( counter )
-    {
-        ensure(se_fp_read(0, &fp_data_version, 4, 0, 0), "se_fp_read failed");
-
-        if ( fp_data_version != FINGER_DATA_VERSION_NEW )
-        {
-            fp_data_version = FINGER_DATA_VERSION_NEW;
-            ensure(se_fp_write(0, &fp_data_version, 4, 0, 0), "se_fp_write failed");
-        }
     }
 
     return true;

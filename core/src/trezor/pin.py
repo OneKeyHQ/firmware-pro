@@ -36,6 +36,14 @@ def show_pin_timeout(seconds: int, progress: int, message: str) -> bool:
             if progress != 0:
                 lv.refr_now(None)
 
+    else:
+        if _scr is not None:
+            try:
+                _scr.delete()
+                _scr = None
+            except Exception:
+                _scr = None
+
     if progress == 0:
         if progress != _previous_progress:
             # avoid overdraw in case of repeated progress calls
@@ -44,8 +52,12 @@ def show_pin_timeout(seconds: int, progress: int, message: str) -> bool:
             _previous_seconds = None
         # ui.display.text_center(ui.WIDTH // 2, 37, message, ui.BOLD, ui.FG, ui.BG)
         if _scr is not None:
-            _scr.invalidate()
-            lv.refr_now(None)
+            try:
+                _scr.invalidate()
+                lv.refr_now(None)
+            except Exception:
+                _scr = None
+
     # if not utils.DISABLE_ANIMATION:
     else:
         ui.display.loader(progress, False, 0, ui.FG, ui.BG)
@@ -67,8 +79,11 @@ def show_pin_timeout(seconds: int, progress: int, message: str) -> bool:
     if progress == 1000:
         ui.display.clear()
         if _scr is not None:
-            _scr.delete()
-            _scr = None
+            try:
+                _scr.delete()
+                _scr = None
+            except Exception:
+                _scr = None
 
     ui.refresh()
     _previous_progress = progress
