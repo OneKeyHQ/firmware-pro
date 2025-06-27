@@ -198,6 +198,9 @@ def pack_contract(contract, owner_address):
         if contract.delegate_resource_contract.lock is not None:
             add_field(cmessage, 5, TYPE_VARINT)
             write_varint(cmessage, contract.delegate_resource_contract.lock)
+        if contract.delegate_resource_contract.lock_period is not None:
+            add_field(cmessage, 6, TYPE_VARINT)
+            write_varint(cmessage, contract.delegate_resource_contract.lock_period)
 
     elif contract.undelegate_resource_contract:
         write_varint(retc, 58)
