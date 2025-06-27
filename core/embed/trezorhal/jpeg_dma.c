@@ -216,7 +216,9 @@ void HAL_JPEG_InfoReadyCallback(JPEG_HandleTypeDef *hjpeg,
                                 JPEG_ConfTypeDef *pInfo) {
   JPEG_ConfTypeDef info;
   HAL_JPEG_GetInfo(hjpeg, &info);
-  if (info.ImageWidth > DISPLAY_RESX || info.ImageHeight > DISPLAY_RESY) {
+  // compatible with IOS image crop
+  if (info.ImageWidth > (DISPLAY_RESX + 10) ||
+      info.ImageHeight > (DISPLAY_RESY + 10)) {
     Jpeg_HWDecodingError = 1;
     HAL_JPEG_Abort(hjpeg);
   }
