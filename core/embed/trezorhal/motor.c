@@ -1,47 +1,33 @@
 #include "motor.h"
 
-#define ExecuteCheck_ADV(func_call, expected_result, on_false) \
-  {                                                            \
-    if ((func_call) != (expected_result)) {                    \
-      on_false                                                 \
-    }                                                          \
-  }
+#include "systick.h"
+
+#include "debug_utils.h"
+#include "util_macros.h"
 
 #define ExecuteCheck_HAL_OK(func_call) \
   ExecuteCheck_ADV(func_call, HAL_OK, { return false; })
 
-// example patterns
-MOTOR_ACTION MAL_single[] = {
-    {.state = MOTOR_FORWARD, .durnation_us = 2080},  // 0b10
-    {.state = MOTOR_REVERSE, .durnation_us = 2080},  // 0b01
-    {.state = MOTOR_BRAKE, .durnation_us = 2080},    // 0b11
-    {.state = MOTOR_COAST, .durnation_us = 1500},    // 0b00
-};
-MOTOR_ACTION MAL_tick[] = {
-    {.state = MOTOR_FORWARD, .durnation_us = 2080},  // 0b10
-    {.state = MOTOR_REVERSE, .durnation_us = 2080},  // 0b01
-    {.state = MOTOR_FORWARD, .durnation_us = 2080},  // 0b10
-    {.state = MOTOR_REVERSE, .durnation_us = 2080},  // 0b01
-    {.state = MOTOR_BRAKE, .durnation_us = 1000},    // 0b11
-    {.state = MOTOR_COAST, .durnation_us = 1500},    // 0b00
-};
-MOTOR_ACTION MAL_tock[] = {
-    {.state = MOTOR_FORWARD, .durnation_us = 2080},  // 0b10
-    {.state = MOTOR_BRAKE, .durnation_us = 2080},    // 0b01
-    {.state = MOTOR_COAST, .durnation_us = 1500},    // 0b00
-};
-MOTOR_ACTION MAL_relax[] = {
-    {.state = MOTOR_COAST, .durnation_us = 1500},  // 0b00
-};
+// cc flag tweaks
+#pragma GCC diagnostic ignored "-Wunused-function"
+#pragma GCC diagnostic ignored "-Wunused-variable"
+
+// do not include this file anywhere else
+#include "motor_patterns.h"
 
 // control status
-static TIM_HandleTypeDef TIM7_Handle;
 static bool motor_busy = false;
-static MOTOR_ACTION* _act_list;
-static size_t _act_list_len = 0;
-static MOTOR_ACTION* _act_list_index = NULL;
-static MOTOR_ACTION* _act_list_index_max = NULL;
+static bool builtin_seq_cpu_play = false;
 
+// motor action list
+static MOTOR_ACTION* act_list_index_p = NULL;
+static MOTOR_ACTION* act_list_index_p_max = NULL;
+static MOTOR_ACTION act_list_combine[128] = {0};
+
+// timer related
+static TIM_HandleTypeDef TIM7_Handle;
+
+// private function
 static void motor_io_init(void) {
   GPIO_InitTypeDef gpio;
   __HAL_RCC_GPIOK_CLK_ENABLE();
@@ -54,15 +40,12 @@ static void motor_io_init(void) {
   gpio.Alternate = 0;
   HAL_GPIO_Init(GPIOK, &gpio);
 }
-
-inline void motor_ctrl(MOTOR_ACTION* act) {
-  // as HAL_GPIO_WritePin only cares if PinState == GPIO_PIN_RESET
-  // we don't have to filter non zero values
-  HAL_GPIO_WritePin(GPIOK, GPIO_PIN_2, (act->state & 0b0000001));
-  HAL_GPIO_WritePin(GPIOK, GPIO_PIN_3, (act->state & 0b0000010));
+static void motor_io_deinit(void) {
+  // dont disable clock, as it may used by other peripherals
+  // __HAL_RCC_GPIOK_CLK_DISABLE();
+  HAL_GPIO_DeInit(GPIOK, (GPIO_PIN_2 | GPIO_PIN_3));
 }
-
-static bool motor_timer_init() {
+static bool motor_timer_init(void) {
   // 1000000hz = 1us period
   // 200 000 000hz clock
   // timer max 65535
@@ -92,96 +75,154 @@ static bool motor_timer_init() {
 
   return true;
 }
-// static bool motor_timer_deinit()
-// {
-//     // tim7
-//     __HAL_RCC_TIM7_CLK_DISABLE();
-//     __HAL_TIM_DISABLE_IT(&TIM7_Handle, TIM_IT_UPDATE);
-//     HAL_NVIC_DisableIRQ(TIM7_IRQn);
-//     return true;
-// }
-
-void motor_cpu_play(MOTOR_ACTION* act_list, size_t act_list_len) {
-  MOTOR_ACTION* act_list_index = act_list;
-  while (act_list_index < (act_list + act_list_len)) {
-    motor_ctrl(act_list_index);
-    HAL_Delay(act_list_index->durnation_us / 1000);
-    act_list_index++;
-  }
+static void motor_timer_deinit(void) {
+  // tim7
+  __HAL_RCC_TIM7_CLK_DISABLE();
+  __HAL_TIM_DISABLE_IT(&TIM7_Handle, TIM_IT_UPDATE);
+  HAL_NVIC_DisableIRQ(TIM7_IRQn);
 }
-
-void TIM7_IRQHandler() {
+void TIM7_IRQHandler(void) {
   if (__HAL_TIM_GET_FLAG(&TIM7_Handle, TIM_FLAG_UPDATE) != RESET) {
     if (__HAL_TIM_GET_IT_SOURCE(&TIM7_Handle, TIM_IT_UPDATE) != RESET) {
       __HAL_TIM_CLEAR_IT(&TIM7_Handle, TIM_IT_UPDATE);
 
-      if (_act_list_index < _act_list_index_max) {
-        motor_ctrl(_act_list_index);
-        _act_list_index++;
+      if (act_list_index_p < act_list_index_p_max) {
+        motor_ctrl(act_list_index_p);
         __HAL_TIM_SET_AUTORELOAD(&TIM7_Handle,
-                                 _act_list_index->durnation_us - 1);
+                                 act_list_index_p->duration_us - 1);
+        act_list_index_p++;
         __HAL_TIM_ENABLE(&TIM7_Handle);
       } else {
         motor_reset();
-        return;
       }
     }
   }
 }
 
-void motor_timer_play(MOTOR_ACTION* act_list, size_t act_list_len) {
-  if (motor_busy) return;
-
-  __HAL_TIM_DISABLE(&TIM7_Handle);
-  _act_list = act_list;
-  _act_list_len = act_list_len;
-  _act_list_index =
-      &act_list[0];  // explicitly point to first element in the array
-  _act_list_index_max = act_list + act_list_len;
-
-  __HAL_TIM_SET_AUTORELOAD(&TIM7_Handle, _act_list_index->durnation_us - 1);
-  __HAL_TIM_ENABLE(&TIM7_Handle);
-}
-
-void motor_timer_reset(void) {
-  _act_list_len = 0;
-  _act_list = NULL;
-  _act_list_index = NULL;
-  _act_list_index_max = NULL;
-}
-
+// public function
 void motor_init(void) {
   motor_io_init();
   motor_timer_init();
   motor_reset();
 }
 
+void motor_deinit(void) {
+  motor_reset();
+  motor_timer_deinit();
+  motor_io_deinit();
+}
+
+inline void motor_ctrl(MOTOR_ACTION* act) {
+  // as HAL_GPIO_WritePin only cares if PinState == GPIO_PIN_RESET
+  // we don't have to filter non zero values
+  HAL_GPIO_WritePin(GPIOK, GPIO_PIN_2, (act->state & 0b0000001));
+  HAL_GPIO_WritePin(GPIOK, GPIO_PIN_3, (act->state & 0b0000010));
+}
+
+bool motor_is_busy(void) { return motor_busy; }
+
+bool motor_play(MOTOR_ACTION* act_list, size_t act_list_len, bool by_cpu) {
+  // sanity check
+  if (act_list == NULL || act_list_len == 0) {
+    return false;
+  }
+
+  if (motor_busy) {
+    // already running
+    return false;
+  }
+
+  motor_busy = true;
+
+  // load action list
+  act_list_index_p = act_list;
+  act_list_index_p_max = act_list + act_list_len;
+
+  if (by_cpu) {
+    // block playing
+    while (act_list_index_p < act_list_index_p_max) {
+      motor_ctrl(act_list_index_p);
+      dwt_delay_us(act_list_index_p->duration_us);
+      act_list_index_p++;
+    }
+    motor_reset();
+  } else {
+    // timer interrupt playing
+    __HAL_TIM_DISABLE(&TIM7_Handle);
+    __HAL_TIM_SET_AUTORELOAD(&TIM7_Handle, act_list_index_p->duration_us - 1);
+    __HAL_TIM_ENABLE(&TIM7_Handle);
+  }
+
+  return true;
+}
+
 void motor_reset(void) {
   motor_ctrl(MAL_relax);
-  motor_timer_reset();
+  act_list_index_p = NULL;
+  act_list_index_p_max = NULL;
   __HAL_TIM_DISABLE(&TIM7_Handle);
   motor_busy = false;
 }
 
-void motor_tick(void) {
-  motor_timer_play(MAL_tick, sizeof(MAL_tick) / sizeof(MOTOR_ACTION));
-}
-
-void motor_tock(void) {
-  motor_timer_play(MAL_tock, sizeof(MAL_tock) / sizeof(MOTOR_ACTION));
-}
-
-void motor_test(void) {
-  motor_timer_play(MAL_single, sizeof(MAL_single) / sizeof(MOTOR_ACTION));
-}
-
+// debug functions
 void motor_resonant_finder(uint16_t dur_f, uint16_t dur_r, uint16_t dur_b) {
   MOTOR_ACTION MAL_single_shot[] = {
-      {.state = MOTOR_FORWARD, .durnation_us = dur_f},
-      {.state = MOTOR_COAST, .durnation_us = dur_b},
-      {.state = MOTOR_REVERSE, .durnation_us = dur_r},
-      {.state = MOTOR_COAST, .durnation_us = dur_b},
+      {.state = MOTOR_FORWARD, .duration_us = dur_f},
+      {.state = MOTOR_COAST, .duration_us = dur_b},
+      {.state = MOTOR_REVERSE, .duration_us = dur_r},
+      {.state = MOTOR_COAST, .duration_us = dur_b},
   };
-  motor_cpu_play(MAL_single_shot,
-                 sizeof(MAL_single_shot) / sizeof(MOTOR_ACTION));
+  motor_play(MAL_single_shot, sizeof(MAL_single_shot) / sizeof(MOTOR_ACTION),
+             false);
+}
+
+// builtin
+void motor_set_builtin_play_method(bool by_cpu) {
+  builtin_seq_cpu_play = by_cpu;
+}
+
+// builtin patterns
+void motor_play_whisper(void) {
+  motor_play(MAL_Whisper, sizeof(MAL_Whisper) / sizeof(MOTOR_ACTION),
+             builtin_seq_cpu_play);
+}
+
+void motor_play_light(void) {
+  motor_play(MAL_Light, sizeof(MAL_Light) / sizeof(MOTOR_ACTION),
+             builtin_seq_cpu_play);
+}
+
+void motor_play_medium(void) {
+  motor_play(MAL_Medium, sizeof(MAL_Medium) / sizeof(MOTOR_ACTION),
+             builtin_seq_cpu_play);
+}
+
+void motor_play_heavy(void) {
+  motor_play(MAL_Heavy, sizeof(MAL_Heavy) / sizeof(MOTOR_ACTION),
+             builtin_seq_cpu_play);
+}
+
+// builtin sequences
+void motor_play_success(void) {
+  size_t len = 0;
+  seq_Success(act_list_combine, &len);
+  motor_play(act_list_combine, len, builtin_seq_cpu_play);
+}
+
+void motor_play_warning(void) {
+  size_t len = 0;
+  seq_Warning(act_list_combine, &len);
+  motor_play(act_list_combine, len, builtin_seq_cpu_play);
+}
+
+void motor_play_error(void) {
+  size_t len = 0;
+  seq_Error(act_list_combine, &len);
+  motor_play(act_list_combine, len, builtin_seq_cpu_play);
+}
+
+void motor_play_slide(void) {
+  size_t len = 0;
+  seq_Slide(act_list_combine, &len);
+  motor_play(act_list_combine, len, builtin_seq_cpu_play);
 }

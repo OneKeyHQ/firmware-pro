@@ -56,61 +56,113 @@ STATIC mp_obj_t mod_trezorio_MOTOR_reset(mp_obj_t self) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorio_MOTOR_reset_obj,
                                  mod_trezorio_MOTOR_reset);
 
-/// def tick(self) -> None:
+/// def play_whisper(self) -> None:
 ///     """
-///     Strong vibrate
+///     Play builtin whisper pattern
 ///     """
-STATIC mp_obj_t mod_trezorio_MOTOR_tick(mp_obj_t self) {
-  motor_tick();
+STATIC mp_obj_t mod_trezorio_MOTOR_play_whisper(mp_obj_t self) {
+  motor_play_whisper();
   return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorio_MOTOR_tick_obj,
-                                 mod_trezorio_MOTOR_tick);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorio_MOTOR_play_whisper_obj,
+                                 mod_trezorio_MOTOR_play_whisper);
 
-/// def tock(self) -> None:
+/// def play_light(self) -> None:
 ///     """
-///     Weak vibrate
+///     Play builtin light pattern
 ///     """
-STATIC mp_obj_t mod_trezorio_MOTOR_tock(mp_obj_t self) {
-  motor_tock();
+STATIC mp_obj_t mod_trezorio_MOTOR_play_light(mp_obj_t self) {
+  motor_play_light();
   return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorio_MOTOR_tock_obj,
-                                 mod_trezorio_MOTOR_tock);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorio_MOTOR_play_light_obj,
+                                 mod_trezorio_MOTOR_play_light);
 
-// /// def play(self, pattern) -> None:
+/// def play_medium(self) -> None:
+///     """
+///     Play builtin medium pattern
+///     """
+STATIC mp_obj_t mod_trezorio_MOTOR_play_medium(mp_obj_t self) {
+  motor_play_medium();
+  return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorio_MOTOR_play_medium_obj,
+                                 mod_trezorio_MOTOR_play_medium);
+
+/// def play_heavy(self) -> None:
+///     """
+///     Play builtin heavy pattern
+///     """
+STATIC mp_obj_t mod_trezorio_MOTOR_play_heavy(mp_obj_t self) {
+  motor_play_heavy();
+  return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorio_MOTOR_play_heavy_obj,
+                                 mod_trezorio_MOTOR_play_heavy);
+
+/// def play_success(self) -> None:
+///     """
+///     Play builtin success sequence
+///     """
+STATIC mp_obj_t mod_trezorio_MOTOR_play_success(mp_obj_t self) {
+  motor_play_success();
+  return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorio_MOTOR_play_success_obj,
+                                 mod_trezorio_MOTOR_play_success);
+
+/// def play_warning(self) -> None:
+///     """
+///     Play builtin warning sequence
+///     """
+STATIC mp_obj_t mod_trezorio_MOTOR_play_warning(mp_obj_t self) {
+  motor_play_warning();
+  return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorio_MOTOR_play_warning_obj,
+                                 mod_trezorio_MOTOR_play_warning);
+
+/// def play_error(self) -> None:
+///     """
+///     Play builtin error sequence
+///     """
+STATIC mp_obj_t mod_trezorio_MOTOR_play_error(mp_obj_t self) {
+  motor_play_error();
+  return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorio_MOTOR_play_error_obj,
+                                 mod_trezorio_MOTOR_play_error);
+
+// /// def play_slide(self) -> None:
 // ///     """
-// ///     Play custom pattern
-// ///
-// ///     Pattern is expacted to be a List that contains multiple Pair of
-// ///     MOTOR_STATE and durnation
+// ///     Play builtin slide sequence
 // ///     """
-// STATIC mp_obj_t mod_trezorio_MOTOR_play(mp_obj_t self, mp_obj_t pattern)
-// {
-//     // WIP, DO NOT USE!
-
-//     // get pattern
-//     mp_obj_list_t* pattern_list_p = MP_OBJ_TO_PTR(pattern);
-
-//     // translate pattern
-//     MOTOR_ACTION MAL_pattern[pattern_list_p->len];
-//     for ( size_t index = 0; index < pattern_list_p->len; index++ )
-//     {
-//         mp_obj_t* item = pattern_list_p->items[index];
-//     }
-
-//     motor_timer_play(MAL_pattern, len);
-
+// STATIC mp_obj_t mod_trezorio_MOTOR_play_slide(mp_obj_t self) {
+// motor_play_slide();
 //     return mp_const_none;
 // }
-// STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_trezorio_MOTOR_play_obj,
-// mod_trezorio_MOTOR_play);
+// STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorio_MOTOR_play_slide_obj,
+//                                  mod_trezorio_MOTOR_play_slide);
 
 STATIC const mp_rom_map_elem_t mod_trezorio_MOTOR_locals_dict_table[] = {
     {MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_MOTOR)},
-    {MP_ROM_QSTR(MP_QSTR_tick), MP_ROM_PTR(&mod_trezorio_MOTOR_tick_obj)},
-    {MP_ROM_QSTR(MP_QSTR_tock), MP_ROM_PTR(&mod_trezorio_MOTOR_tock_obj)},
-    // {MP_ROM_QSTR(MP_QSTR_play), MP_ROM_PTR(&mod_trezorio_MOTOR_play_obj)},
+    {MP_ROM_QSTR(MP_QSTR_reset), MP_ROM_PTR(&mod_trezorio_MOTOR_reset_obj)},
+    {MP_ROM_QSTR(MP_QSTR_play_whisper),
+     MP_ROM_PTR(&mod_trezorio_MOTOR_play_whisper_obj)},
+    {MP_ROM_QSTR(MP_QSTR_play_light),
+     MP_ROM_PTR(&mod_trezorio_MOTOR_play_light_obj)},
+    {MP_ROM_QSTR(MP_QSTR_play_medium),
+     MP_ROM_PTR(&mod_trezorio_MOTOR_play_medium_obj)},
+    {MP_ROM_QSTR(MP_QSTR_play_heavy),
+     MP_ROM_PTR(&mod_trezorio_MOTOR_play_heavy_obj)},
+    {MP_ROM_QSTR(MP_QSTR_play_success),
+     MP_ROM_PTR(&mod_trezorio_MOTOR_play_success_obj)},
+    {MP_ROM_QSTR(MP_QSTR_play_warning),
+     MP_ROM_PTR(&mod_trezorio_MOTOR_play_warning_obj)},
+    {MP_ROM_QSTR(MP_QSTR_play_error),
+     MP_ROM_PTR(&mod_trezorio_MOTOR_play_error_obj)},
+    // {MP_ROM_QSTR(MP_QSTR_play_slide),
+    // MP_ROM_PTR(&mod_trezorio_MOTOR_play_slide_obj)},
 };
 
 STATIC MP_DEFINE_CONST_DICT(mod_trezorio_MOTOR_locals_dict,
