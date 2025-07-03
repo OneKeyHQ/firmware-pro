@@ -19,7 +19,7 @@ from typing import Iterator
 from trezor.messages import EthereumTokenInfo
 
 UNKNOWN_TOKEN = EthereumTokenInfo(
-    symbol="Wei UNKN",
+    symbol="Token",
     decimals=0,
     address=b"",
     chain_id=0,

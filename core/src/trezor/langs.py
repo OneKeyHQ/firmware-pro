@@ -7,8 +7,8 @@ langs = [
     ("ko", "한국어"),
     ("fr", "Français"),
     ("de", "Deutsch"),
-    ("ru", "Русский"),
-    ("es", "Español"),
+    ("ru", "Russian"),
+    ("es", "Spanish"),
     ("it", "Italiano"),
     ("pt_br", "Portuguese (Brazil)"),
 ]

@@ -237,6 +237,8 @@ trezor.lvglui.scrs.components.radio
 import trezor.lvglui.scrs.components.radio
 trezor.lvglui.scrs.components.roller
 import trezor.lvglui.scrs.components.roller
+trezor.lvglui.scrs.components.signatureinfo
+import trezor.lvglui.scrs.components.signatureinfo
 trezor.lvglui.scrs.components.slider
 import trezor.lvglui.scrs.components.slider
 trezor.lvglui.scrs.components.theme
@@ -947,6 +949,8 @@ apps.tron.get_address
 import apps.tron.get_address
 apps.tron.layout
 import apps.tron.layout
+apps.tron.providers
+import apps.tron.providers
 apps.tron.serialize
 import apps.tron.serialize
 apps.tron.sign_message
@@ -1233,6 +1237,8 @@ if not utils.BITCOIN_ONLY:
     import apps.ethereum.onekey.get_public_key
     apps.ethereum.onekey.keychain
     import apps.ethereum.onekey.keychain
+    apps.ethereum.onekey.providers
+    import apps.ethereum.onekey.providers
     apps.ethereum.onekey.sign_message
     import apps.ethereum.onekey.sign_message
     apps.ethereum.onekey.sign_safe_tx

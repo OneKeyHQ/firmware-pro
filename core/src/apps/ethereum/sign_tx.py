@@ -66,8 +66,11 @@ async def sign_tx(
         ctx,
         recipient,
         value,
+        int.from_bytes(msg.gas_price, "big"),
+        int.from_bytes(msg.gas_limit, "big"),
         msg.chain_id,
         token,
+        address_from_bytes(address_bytes, network) if token else None,
         is_nft_transfer,
     )
 

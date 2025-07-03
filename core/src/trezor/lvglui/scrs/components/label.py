@@ -1,7 +1,7 @@
 from .. import (
     font_GeistRegular30,
     font_GeistSemiBold30,
-    font_GeistSemiBold64,
+    font_GeistSemiBold48,
     lv,
     lv_colors,
 )
@@ -50,7 +50,7 @@ class Title(lv.label):
             self.align(lv.ALIGN.TOP_LEFT, 12, pos_y)
         self.add_style(
             StyleWrapper()
-            .text_font(font_GeistSemiBold64)
+            .text_font(font_GeistSemiBold48)
             .text_color(lv_colors.WHITE)
             .text_align_left()
             .pad_all(0)

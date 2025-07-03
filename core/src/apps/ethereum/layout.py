@@ -18,10 +18,12 @@ from trezor.ui.layouts import (
     confirm_output,
     confirm_sign_typed_hash,
     confirm_text,
-    should_show_details,
+    should_show_approve_details,
     should_show_more,
 )
 from trezor.ui.layouts.lvgl.altcoin import (
+    confirm_approve,
+    confirm_approve_eip1559,
     confirm_total_ethereum,
     confirm_total_ethereum_eip1559,
 )
@@ -67,23 +69,43 @@ def require_show_overview(
     ctx: Context,
     to_bytes: bytes,
     value: int,
+    gas_price: int,
+    gas_limit: int,
     chain_id: int,
     token: tokens.EthereumTokenInfo | None = None,
+    token_address: str | None = None,
     is_nft: bool = False,
 ) -> Awaitable[bool]:
     if to_bytes:
         to_str = address_from_bytes(to_bytes, networks.by_chain_id(chain_id))
     else:
         to_str = _(i18n_keys.LIST_VALUE__NEW_CONTRACT)
+    fee_max = gas_price * gas_limit
 
-    return should_show_details(
+    from trezor.ui.layouts.lvgl import should_show_details_new
+
+    return should_show_details_new(
         ctx,
         title=_(i18n_keys.TITLE__SEND_MULTILINE).format(
             strip_amount(format_ethereum_amount(value, token, chain_id, is_nft))[0]
         ),
-        address=to_str,
         br_code=ButtonRequestType.SignTx,
+        to_address=to_str,
+        max_fee=format_ethereum_amount(fee_max, None, chain_id),
+        token_address=token_address,
+        banner_key=_(i18n_keys.WARNING_UNRECOGNIZED_TOKEN)
+        if token is tokens.UNKNOWN_TOKEN
+        else None,
     )
+
+    # return should_show_details(
+    #     ctx,
+    #     title=_(i18n_keys.TITLE__SEND_MULTILINE).format(
+    #         strip_amount(format_ethereum_amount(value, token, chain_id, is_nft))[0]
+    #     ),
+    #     address=to_str,
+    #     br_code=ButtonRequestType.SignTx,
+    # )
 
 
 def require_confirm_fee(
@@ -99,6 +121,7 @@ def require_confirm_fee(
     token_id: int | None = None,
     evm_chain_id: int | None = None,
     raw_data: bytes | None = None,
+    token_address: str | None = None,
 ) -> Awaitable[None]:
     fee_max = gas_price * gas_limit
     return confirm_total_ethereum(
@@ -117,6 +140,7 @@ def require_confirm_fee(
         token_id,
         evm_chain_id=evm_chain_id,
         raw_data=raw_data,
+        token_address=token_address,
     )
 
 
@@ -134,6 +158,7 @@ async def require_confirm_eip1559_fee(
     token_id: int | None = None,
     evm_chain_id: int | None = None,
     raw_data: bytes | None = None,
+    token_address: str | None = None,
 ) -> None:
 
     fee_max = max_gas_fee * gas_limit
@@ -154,6 +179,134 @@ async def require_confirm_eip1559_fee(
         token_id,
         evm_chain_id=evm_chain_id,
         raw_data=raw_data,
+        token_address=token_address,
+    )
+
+
+def require_show_approve_overview(
+    ctx: Context,
+    approve_spender: bytes,
+    approve_value: int,
+    approve_token: tokens.EthereumTokenInfo,
+    approve_token_address: bytes,
+    max_gas_fee: int,
+    gas_limit: int,
+    chain_id: int,
+    provider_name: str | None = None,
+    provider_icon_path: str | None = None,
+) -> Awaitable[bool]:
+
+    title = format_approve_title(approve_token, approve_value, chain_id, provider_name)
+
+    fee_max = max_gas_fee * gas_limit
+    is_unlimited = approve_value == 2**256 - 1
+
+    approve_spender_str = address_from_bytes(
+        approve_spender, networks.by_chain_id(chain_id)
+    )
+    approve_token_address_str = address_from_bytes(
+        approve_token_address, networks.by_chain_id(chain_id)
+    )
+
+    return should_show_approve_details(
+        ctx,
+        approve_spender=approve_spender_str,
+        max_fee=format_ethereum_amount(fee_max, None, chain_id),
+        token_address=approve_token_address_str,
+        provider_icon_path=provider_icon_path or "A:/res/provider-default.png",
+        title=title,
+        is_unlimited=is_unlimited,
+        br_code=ButtonRequestType.SignTx,
+    )
+
+
+async def require_confirm_eip1559_erc20_approve(
+    ctx: Context,
+    approve_value: int,
+    max_priority_fee: int,
+    max_gas_fee: int,
+    gas_limit: int,
+    chain_id: int,
+    token: tokens.EthereumTokenInfo,
+    from_address: str | None = None,
+    to_address: str | None = None,
+    token_address: str | None = None,
+    token_id: int | None = None,
+    evm_chain_id: int | None = None,
+    raw_data: bytes | None = None,
+    provider_name: str | None = None,
+    provider_icon: str | None = None,
+    is_nft: bool = False,
+) -> None:
+    fee_max = max_gas_fee * gas_limit
+    title = format_approve_title(token, approve_value, chain_id, provider_name)
+    is_unlimited = approve_value == 2**256 - 1
+
+    await confirm_approve_eip1559(
+        ctx,
+        title,
+        format_ethereum_amount(
+            approve_value, token, chain_id, is_nft=True if token_id else False
+        ),
+        format_ethereum_amount(max_priority_fee, None, chain_id),
+        format_ethereum_amount(max_gas_fee, None, chain_id),
+        format_ethereum_amount(fee_max, None, chain_id),
+        from_address,
+        to_address,
+        format_ethereum_amount(approve_value + fee_max, None, chain_id)
+        if (token is None and token_address is None)
+        else None,
+        token_address,
+        token_id,
+        evm_chain_id=evm_chain_id,
+        raw_data=raw_data,
+        provider_name=provider_name,
+        provider_icon=provider_icon,
+        is_unlimited=is_unlimited,
+    )
+
+
+async def require_confirm_legacy_erc20_approve(
+    ctx: Context,
+    approve_value: int,
+    gas_price: int,
+    gas_limit: int,
+    chain_id: int,
+    token: tokens.EthereumTokenInfo,
+    from_address: str | None = None,
+    to_address: str | None = None,
+    token_address: str | None = None,
+    token_id: int | None = None,
+    evm_chain_id: int | None = None,
+    raw_data: bytes | None = None,
+    provider_name: str | None = None,
+    provider_icon: str | None = None,
+    is_nft: bool = False,
+) -> None:
+    fee_max = gas_price * gas_limit
+    title = format_approve_title(token, approve_value, chain_id, provider_name)
+    is_unlimited = approve_value == 2**256 - 1
+
+    await confirm_approve(
+        ctx,
+        title,
+        format_ethereum_amount(
+            approve_value, token, chain_id, is_nft=True if token_id else False
+        ),
+        format_ethereum_amount(gas_price, None, chain_id),
+        format_ethereum_amount(fee_max, None, chain_id),
+        from_address,
+        to_address,
+        format_ethereum_amount(approve_value + fee_max, None, chain_id)
+        if (token is None and token_address is None)
+        else None,
+        token_address,
+        token_id,
+        evm_chain_id=evm_chain_id,
+        raw_data=raw_data,
+        provider_name=provider_name,
+        provider_icon=provider_icon,
+        is_unlimited=is_unlimited,
     )
 
 
@@ -465,3 +618,84 @@ def is_native_token(token_address: str) -> bool:
         "0x0000000000000000000000000000000000000000",
         "0000000000000000000000000000000000000000",
     )
+
+
+def format_approve_title(
+    approve_token: tokens.EthereumTokenInfo,
+    value: int,
+    chain_id: int,
+    provider_name: str | None = None,
+) -> str:
+
+    if value == 0:
+        action_type = "REVOKE"
+    elif value == 2**256 - 1:
+        action_type = "APPROVE_UNLIMITED"
+    else:
+        action_type = "APPROVE_LIMITED"
+
+    token_status = "UNKNOWN" if approve_token == tokens.UNKNOWN_TOKEN else "KNOWN"
+
+    provider_status = "KNOWN" if provider_name is not None else "UNKNOWN"
+
+    combination_key = f"{action_type}_{token_status}_{provider_status}"
+
+    if token_status == "UNKNOWN":
+        token_name = "UNKN"
+    else:
+        token_name = approve_token.symbol
+
+    amount_display = ""
+    if action_type == "APPROVE_LIMITED":
+        amount_display = strip_amount(
+            format_ethereum_amount(value, approve_token, chain_id)
+        )[0]
+
+    title_map = {
+        # Example: "Revoke UNKN for 1inch"
+        "REVOKE_UNKNOWN_KNOWN": _(i18n_keys.REVOKE_TOKEN).format(
+            token=token_name, name=provider_name
+        ),
+        # Example: "Revoke UNKN"
+        "REVOKE_UNKNOWN_UNKNOWN": _(i18n_keys.TITLE_REVOKE).format(name=token_name),
+        # Example: "Revoke USDT for 1inch"
+        "REVOKE_KNOWN_KNOWN": _(i18n_keys.REVOKE_TOKEN).format(
+            token=token_name, name=provider_name
+        ),
+        # Example: "Revoke USDT"
+        "REVOKE_KNOWN_UNKNOWN": _(i18n_keys.TITLE_REVOKE).format(name=token_name),
+        # Example: "Approve Unlimited UNKN for 1inch"
+        "APPROVE_UNLIMITED_UNKNOWN_KNOWN": _(i18n_keys.APPROVE_UNLIMITED_TOKEN).format(
+            token=token_name, name=provider_name
+        ),
+        # Example: "Approve Unlimited UNKN"
+        "APPROVE_UNLIMITED_UNKNOWN_UNKNOWN": _(i18n_keys.TITLE_UNLIMITED).format(
+            name=token_name
+        ),
+        # Example: "Approve unlimited USDT for 1inch"
+        "APPROVE_UNLIMITED_KNOWN_KNOWN": _(i18n_keys.APPROVE_UNLIMITED_TOKEN).format(
+            token=token_name, name=provider_name
+        ),
+        # Example: "Approve unlimited USDT"
+        "APPROVE_UNLIMITED_KNOWN_UNKNOWN": _(i18n_keys.TITLE_UNLIMITED).format(
+            name=token_name
+        ),
+        # Example: "Approve 10.678 UNKN for 1inch"
+        "APPROVE_LIMITED_UNKNOWN_KNOWN": _(i18n_keys.APPROVE_TOKEN_AMOUNT).format(
+            token=amount_display, name=provider_name
+        ),
+        # Example: "Approve 10.678 UNKN"
+        "APPROVE_LIMITED_UNKNOWN_UNKNOWN": _(i18n_keys.TITLE_APPROVE).format(
+            name=amount_display
+        ),
+        # Example: "Approve 10.678 USDT for 1inch"
+        "APPROVE_LIMITED_KNOWN_KNOWN": _(i18n_keys.APPROVE_TOKEN_AMOUNT).format(
+            token=amount_display, name=provider_name
+        ),
+        # Example: "Approve 10.678 USDT"
+        "APPROVE_LIMITED_KNOWN_UNKNOWN": _(i18n_keys.TITLE_APPROVE).format(
+            name=amount_display
+        ),
+    }
+
+    return title_map[combination_key]

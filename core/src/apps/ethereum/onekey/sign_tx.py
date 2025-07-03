@@ -25,7 +25,8 @@ from ..helpers import (
 from ..layout import (
     require_confirm_data,
     require_confirm_fee,
-    require_confirm_unknown_token,
+    require_confirm_legacy_erc20_approve,
+    require_show_approve_overview,
     require_show_overview,
 )
 from .keychain import with_keychain_from_chain_id
@@ -34,7 +35,6 @@ if TYPE_CHECKING:
     from apps.common.keychain import Keychain
 
     from .keychain import EthereumSignTxAny
-
 
 # Maximum chain_id which returns the full signature_v (which must fit into an uint32).
 # chain_ids larger than this will only return one bit and the caller must recalculate
@@ -49,8 +49,14 @@ async def sign_tx(
     check(msg)
     await paths.validate_path(ctx, keychain, msg.address_n, force_strict=False)
 
-    # Handle ERC20s
-    token, address_bytes, recipient, value = await handle_erc20(ctx, msg)
+    approve_info = await handle_approve(ctx, msg)
+
+    if approve_info:
+        token = None
+        recipient = address_bytes = bytes_from_address(msg.to)
+        value = 0
+    else:
+        token, address_bytes, recipient, value = await handle_erc20(ctx, msg)
 
     data_total = msg.data_length
     if msg.chain_id:
@@ -60,9 +66,11 @@ async def sign_tx(
             network = networks.by_slip44(msg.address_n[1] & 0x7FFF_FFFF)
         else:
             network = networks.UNKNOWN_NETWORK
+
     ctx.primary_color, ctx.icon_path = get_color_and_icon(
         network.chain_id if network else None
     )
+
     is_nft_transfer = False
     token_id = None
     from_addr = None
@@ -88,16 +96,62 @@ async def sign_tx(
 
         from trezor.ui.layouts.lvgl import confirm_turbo
 
-        await confirm_turbo(
-            ctx, (_(i18n_keys.LIST_VALUE__SEND) + " " + suffix), network.name
+        await confirm_turbo(ctx, (_(i18n_keys.LIST_VALUE__SEND) + suffix), network.name)
+
+    elif approve_info:
+        from .providers import provider_by_chain_address
+
+        provider = provider_by_chain_address(
+            msg.chain_id, address_from_bytes(approve_info.spender, network)
         )
+
+        show_details = await require_show_approve_overview(
+            ctx,
+            approve_info.spender,
+            approve_info.value,
+            approve_info.token,
+            approve_info.token_address,
+            int.from_bytes(msg.gas_price, "big"),
+            int.from_bytes(msg.gas_limit, "big"),
+            msg.chain_id,
+            provider_name=provider.name,
+            provider_icon_path=provider.icon_path,
+        )
+
+        if show_details:
+            node = keychain.derive(msg.address_n, force_strict=False)
+            from_str = address_from_bytes(
+                from_addr or node.ethereum_pubkeyhash(), network
+            )
+
+            await require_confirm_legacy_erc20_approve(
+                ctx,
+                approve_info.value,
+                int.from_bytes(msg.gas_price, "big"),
+                int.from_bytes(msg.gas_limit, "big"),
+                msg.chain_id,
+                approve_info.token,
+                from_address=from_str,
+                to_address=address_from_bytes(approve_info.spender, network),
+                token_id=None,
+                evm_chain_id=None
+                if network is not networks.UNKNOWN_NETWORK
+                else msg.chain_id,
+                raw_data=None,
+                provider_name=provider.name,
+                provider_icon=provider.icon_path,
+            )
+
     else:
         show_details = await require_show_overview(
             ctx,
             recipient,
             value,
+            int.from_bytes(msg.gas_price, "big"),
+            int.from_bytes(msg.gas_limit, "big"),
             msg.chain_id,
             token,
+            address_from_bytes(address_bytes, network) if token else None,
             is_nft_transfer,
         )
 
@@ -128,6 +182,9 @@ async def sign_tx(
                 if network is not networks.UNKNOWN_NETWORK
                 else msg.chain_id,
                 raw_data=msg.data_initial_chunk if has_raw_data else None,
+                token_address=address_from_bytes(address_bytes, network)
+                if token
+                else None,
             )
 
     data = bytearray()
@@ -186,9 +243,6 @@ async def handle_erc20(
         recipient = msg.data_initial_chunk[16:36]
         value = int.from_bytes(msg.data_initial_chunk[36:68], "big")
 
-        if token is tokens.UNKNOWN_TOKEN and not device.is_turbomode_enabled():
-            await require_confirm_unknown_token(ctx, address_bytes)
-
     return token, address_bytes, recipient, value
 
 
@@ -237,6 +291,42 @@ async def handle_erc_721_or_1155(
         return from_addr, recipient, token_id, value
     else:
         return None
+
+
+class ApproveInfo:
+    def __init__(
+        self,
+        spender: bytes,
+        value: int,
+        token: tokens.EthereumTokenInfo,
+        token_address: bytes,
+    ):
+        self.spender = spender
+        self.value = value
+        self.token = token
+        self.token_address = token_address
+
+
+async def handle_approve(
+    ctx: wire.Context, msg: EthereumSignTxAny
+) -> ApproveInfo | None:
+    if (
+        len(msg.to) in (40, 42)
+        and len(msg.value) == 0
+        and msg.data_length == 68
+        and len(msg.data_initial_chunk) == 68
+        and msg.data_initial_chunk[:16]
+        == b"\x09\x5e\xa7\xb3\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    ):
+
+        token_address = bytes_from_address(msg.to)
+        spender = msg.data_initial_chunk[16:36]
+        value = int.from_bytes(msg.data_initial_chunk[36:68], "big")
+        token = tokens.token_by_chain_address(msg.chain_id, token_address)
+        if token is None:
+            token = tokens.UNKNOWN_TOKEN
+        return ApproveInfo(spender, value, token, token_address)
+    return None
 
 
 def get_total_length(msg: EthereumSignTx, data_total: int) -> int:

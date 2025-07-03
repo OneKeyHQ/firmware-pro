@@ -21,10 +21,16 @@ from ..helpers import (
     get_color_and_icon,
     get_display_network_name,
 )
-from ..layout import require_confirm_eip1559_fee, require_show_overview
+from ..layout import (
+    require_confirm_eip1559_erc20_approve,
+    require_confirm_eip1559_fee,
+    require_show_approve_overview,
+    require_show_overview,
+)
 from .keychain import with_keychain_from_chain_id
 from .sign_tx import (
     check_common_fields,
+    handle_approve,
     handle_erc20,
     handle_erc_721_or_1155,
     send_request_chunk,
@@ -71,8 +77,14 @@ async def sign_tx_eip1559(
 
     await paths.validate_path(ctx, keychain, msg.address_n, force_strict=False)
 
-    # Handle ERC20s
-    token, address_bytes, recipient, value = await handle_erc20(ctx, msg)
+    approve_info = await handle_approve(ctx, msg)
+
+    if approve_info:
+        token = None
+        recipient = address_bytes = bytes_from_address(msg.to)
+        value = 0
+    else:
+        token, address_bytes, recipient, value = await handle_erc20(ctx, msg)
 
     data_total = msg.data_length
     if msg.chain_id:
@@ -82,9 +94,11 @@ async def sign_tx_eip1559(
             network = networks.by_slip44(msg.address_n[1] & 0x7FFF_FFFF)
         else:
             network = networks.UNKNOWN_NETWORK
+
     ctx.primary_color, ctx.icon_path = get_color_and_icon(
         network.chain_id if network else None
     )
+
     is_nft_transfer = False
     token_id = None
     from_addr = None
@@ -110,25 +124,72 @@ async def sign_tx_eip1559(
 
         from trezor.ui.layouts.lvgl import confirm_turbo
 
-        await confirm_turbo(
-            ctx, (_(i18n_keys.LIST_VALUE__SEND) + " " + suffix), network.name
+        await confirm_turbo(ctx, (_(i18n_keys.LIST_VALUE__SEND) + suffix), network.name)
+
+    elif approve_info:
+        from .providers import provider_by_chain_address
+
+        provider = provider_by_chain_address(
+            msg.chain_id, address_from_bytes(approve_info.spender, network)
         )
+
+        show_details = await require_show_approve_overview(
+            ctx,
+            approve_info.spender,
+            approve_info.value,
+            approve_info.token,
+            approve_info.token_address,
+            int.from_bytes(msg.max_gas_fee, "big"),
+            int.from_bytes(msg.gas_limit, "big"),
+            msg.chain_id,
+            provider_name=provider.name if provider else None,
+            provider_icon_path=provider.icon_path if provider else None,
+        )
+
+        if show_details:
+            node = keychain.derive(msg.address_n, force_strict=False)
+            from_str = address_from_bytes(
+                from_addr or node.ethereum_pubkeyhash(), network
+            )
+
+            await require_confirm_eip1559_erc20_approve(
+                ctx,
+                approve_info.value,
+                int.from_bytes(msg.max_priority_fee, "big"),
+                int.from_bytes(msg.max_gas_fee, "big"),
+                int.from_bytes(msg.gas_limit, "big"),
+                msg.chain_id,
+                approve_info.token,
+                from_address=from_str,
+                to_address=address_from_bytes(approve_info.spender, network),
+                token_address=address_from_bytes(approve_info.token_address, network),
+                token_id=None,
+                evm_chain_id=None
+                if network is not networks.UNKNOWN_NETWORK
+                else msg.chain_id,
+                raw_data=None,
+                provider_name=provider.name if provider else None,
+                provider_icon=provider.icon_path if provider else None,
+            )
+
     else:
         show_details = await require_show_overview(
             ctx,
             recipient,
             value,
+            int.from_bytes(msg.max_gas_fee, "big"),
+            int.from_bytes(msg.gas_limit, "big"),
             msg.chain_id,
             token,
+            address_from_bytes(address_bytes, network) if token else None,
             is_nft_transfer,
         )
+
         if show_details:
             has_raw_data = False
             if token is None and token_id is None and msg.data_length > 0:
                 has_raw_data = True
-                # await require_confirm_data(ctx, msg.data_initial_chunk, data_total)
             node = keychain.derive(msg.address_n, force_strict=False)
-
             recipient_str = address_from_bytes(recipient, network)
             from_str = address_from_bytes(
                 from_addr or node.ethereum_pubkeyhash(), network
@@ -151,6 +212,9 @@ async def sign_tx_eip1559(
                 if network is not networks.UNKNOWN_NETWORK
                 else msg.chain_id,
                 raw_data=msg.data_initial_chunk if has_raw_data else None,
+                token_address=address_from_bytes(address_bytes, network)
+                if token
+                else None,
             )
 
     data = bytearray()

@@ -2014,8 +2014,8 @@ PASSPHRASE__SAVE_DESC = 916
 PASSPHRASE__UNDERSTAND = 917
 # Passphrase set and attached to PIN
 PASSPHRASE__SET = 918
-# This PIN is only used to unlock the hidden wallet. All security-related oper
-# ations require the main PIN.
+# This PIN unlocks only the hidden wallet. For any security-related operation,
+# you’ll need the PIN of the standard wallet.
 PASSPHRASE__SET_DESC = 919
 # Fingerprint data is protected by security chips.
 CONTENT__FINGERPRINT_DATA_IS_PROTECTED_BY_SECURITY_CHIPS = 920
@@ -2091,9 +2091,9 @@ CONTENT__STR_FAILED_TRIES_SLIDE_TO_CONTINUE = 950
 TITLE__RECOVERY_PHRASE_TYPES = 951
 # Choose the wallet backup type that fits your needs.
 TITLE__RECOVERY_PHRASE_TYPES_DESC = 952
-# Legacy Backup Types (BIP 39)
+# Legacy Backup Types (BIP39)
 TITLE__LEGACY_BACKUP_TYPES_BIP39 = 953
-# Advanced Backup Types (SLIP 39)
+# Advanced Backup Types (SLIP39)
 TITLE__ADVANCED_BACKUP_TYPES_SLIP_39 = 954
 # Single-share Backup
 BUTTON__SINGLE_SHARE_BACKUP = 955
@@ -2202,21 +2202,30 @@ TITLE_UNLIMITED = 999
 TITLE_REVOKE = 1000
 # Secure chip reading…
 MSG__READING_FINGERPRINT_FROM_SECURITY_CHIP = 1001
-# Energy Rental
-TITLE_ENERGY_RENTAL = 1002
-# To (Provider)
-TO_PROVIDER = 1003
 # Single-share
-BUTTON__SINGLE_SHARE = 1004
+BUTTON__SINGLE_SHARE = 1002
 # Multi-share
-BUTTON__MULTI_SHARE = 1005
+BUTTON__MULTI_SHARE = 1003
 # Enter a Valid Share
-TITLE__ENTER_A_VALID_SHARE = 1006
+TITLE__ENTER_A_VALID_SHARE = 1004
 # The Recovery Phrase Share you entered is incorrect. Please enter the correct
 # Share.
-TITLE__ENTER_A_VALID_SHARE_DESC = 1007
+TITLE__ENTER_A_VALID_SHARE_DESC = 1005
 # You Have Entered Share {num1} From Group {num2}
-TITLE__YOU_HAVE_ENTERED_SHARE_STR_FROM_GROUP_STR = 1008
+TITLE__YOU_HAVE_ENTERED_SHARE_STR_FROM_GROUP_STR = 1006
 # You need to enter more shares.
-TITLE__YOU_HAVE_ENTERED_SHARE_STR_FROM_GROUP_STR_DESC = 1009
+TITLE__YOU_HAVE_ENTERED_SHARE_STR_FROM_GROUP_STR_DESC = 1007
+# OneKey Extended
+BUTTON_ONEKEY_EXTENDED = 1008
+# Kaspa Official
+BUTTON_KASPA_OFFICIAL = 1009
+# Select Account Type
+TITLE__SELECT_ACCOUNT_TYPE = 1010
+# Transaction Hash
+LIST_MORE_TXHASH = 1011
+# This token is not recognized by the hardware wallet. Please verify carefully
+# .
+WARNING_UNRECOGNIZED_TOKEN = 1012
+# Recipient is a known energy rental service provider address.
+BANNER_ENERGY_RENTAL = 1013
 # fmt: on
