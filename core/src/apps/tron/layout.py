@@ -4,7 +4,7 @@ from trezor import ui
 from trezor.enums import ButtonRequestType, TronResourceCode
 from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
 from trezor.strings import format_amount
-from trezor.ui.layouts import confirm_address, confirm_output, should_show_details
+from trezor.ui.layouts import confirm_address, should_show_details
 from trezor.ui.layouts.lvgl.altcoin import confirm_total_tron
 
 from . import tokens
@@ -35,22 +35,25 @@ def require_confirm_tx(
     token: tokens.TokenInfo | None = None,
 ) -> Awaitable[None]:
     from trezor.ui.layouts.lvgl.altcoin import confirm_total_tron_new
+
     return confirm_total_tron_new(
         ctx,
         title=format_amount_trx(value, token),
         from_address=from_address,
         to_address=to,
-        banner_key=_(i18n_keys.BANNER_ENERGY_RENTAL) if check_provider(ctx, to) else None,
-        banner_level=0,
+        banner_key=_(i18n_keys.BANNER_ENERGY_RENTAL)
+        if check_provider(ctx, to)
+        else None,
+        banner_level=4,
     )
+
 
 def check_provider(ctx: Context, to: str) -> bool:
     from apps.tron.providers import provider_by_address
+
     provider = provider_by_address(to)
-    if provider:
-        return True
-    else:
-        return False
+    return bool(provider)
+
 
 async def require_confirm_unknown_token(ctx: Context, contract_address: str) -> None:
     await confirm_address(
@@ -106,6 +109,10 @@ def require_confirm_fee(
         fee_max,
         total_amount,
         striped=striped,
+        banner_key=_(i18n_keys.BANNER_ENERGY_RENTAL)
+        if to_address and check_provider(ctx, to_address)
+        else None,
+        banner_level=4 if to_address and check_provider(ctx, to_address) else 0,
     )
 
 

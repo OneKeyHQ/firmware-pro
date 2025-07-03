@@ -113,6 +113,7 @@ async def _require_confirm_by_type(ctx, transaction, owner_address):
             else:
                 await layout.require_confirm_tx(
                     ctx,
+                    owner_address,
                     recipient,
                     value,
                     token,

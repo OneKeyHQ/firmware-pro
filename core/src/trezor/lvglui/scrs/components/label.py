@@ -1,7 +1,6 @@
 from .. import (
     font_GeistRegular30,
     font_GeistSemiBold30,
-    font_GeistSemiBold64,
     font_GeistSemiBold48,
     lv,
     lv_colors,

@@ -1,31 +1,11 @@
 from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
 
-from .. import font_GeistSemiBold26, font_GeistMono28, lv, lv_colors
+from .. import font_GeistMono28, font_GeistSemiBold26, lv, lv_colors
 from ..widgets.style import StyleWrapper
 from .button import NormalButton
 from .container import ContainerFlexCol
 from .listitem import CardHeader, CardItem, DisplayItem
 from .pageable import PageAbleMessage
-
-
-class AddressFormatter:
-    """Component for handling address display and formatting"""
-
-    def __init__(self):
-        pass
-
-    def format_address(self, address: str) -> str:
-        """Format address for display - placeholder for future address preprocessing"""
-        # TODO: Add chain-specific address formatting logic
-        return address
-
-    def truncate_address(
-        self, address: str, start_chars: int = 6, end_chars: int = 4
-    ) -> str:
-        """Truncate address for compact display"""
-        if len(address) <= start_chars + end_chars + 2:
-            return address
-        return address[:start_chars] + "..." + address[-end_chars:]
 
 
 class DirectionComponent:
@@ -49,76 +29,71 @@ class DirectionComponent:
         self.parent = parent
         self.title = title or _(i18n_keys.FORM__DIRECTIONS)
         self.icon = icon or "A:/res/group-icon-directions.png"
-        self.address_helper = AddressFormatter()
 
-        # Create container
         self.container = ContainerFlexCol(parent, None, padding_row=0, no_align=True)
 
-        # Create header
         self.header = CardHeader(
             self.container,
             self.title,
             self.icon,
         )
 
-        # Add fields directly if they have values
         if approve_spender:
             DisplayItem(
                 self.container,
                 _(i18n_keys.APPROVE_PROVIDER),
-                self.address_helper.format_address(approve_spender),
+                approve_spender,
             )
 
         if to_address:
             DisplayItem(
                 self.container,
                 _(i18n_keys.LIST_KEY__TO__COLON),
-                self.address_helper.format_address(to_address),
+                to_address,
             )
 
         if from_address:
             DisplayItem(
                 self.container,
                 _(i18n_keys.LIST_KEY__FROM__COLON),
-                self.address_helper.format_address(from_address),
+                from_address,
             )
 
         if signer:
             DisplayItem(
                 self.container,
                 _(i18n_keys.LIST_KEY__SIGNER__COLON),
-                self.address_helper.format_address(signer),
+                signer,
             )
 
         if fee_payer:
             DisplayItem(
                 self.container,
                 _(i18n_keys.LIST_KEY__FEE_PAYER__COLON),
-                self.address_helper.format_address(fee_payer),
+                fee_payer,
             )
 
         if voter:
             DisplayItem(
                 self.container,
                 _(i18n_keys.LIST_KEY__VOTER__COLON),
-                self.address_helper.format_address(voter),
+                voter,
             )
 
         if delegator:
             DisplayItem(
                 self.container,
                 _(i18n_keys.LIST_KEY__DELEGATOR__COLON),
-                self.address_helper.format_address(delegator),
+                delegator,
             )
 
         if validator:
             DisplayItem(
                 self.container,
                 _(i18n_keys.LIST_KEY__VALIDATOR__COLON),
-                self.address_helper.format_address(validator),
+                validator,
             )
 
-        # Add dummy for spacing
         self.container.add_dummy()
 
 
@@ -138,17 +113,14 @@ class AmountComponent:
         self.title = title or _(i18n_keys.LIST_KEY__AMOUNT__COLON)
         self.icon = icon or "A:/res/group-icon-amount.png"
 
-        # Create container
         self.container = ContainerFlexCol(parent, None, padding_row=0, no_align=True)
 
-        # Create header
         self.header = CardHeader(
             self.container,
             self.title,
             self.icon,
         )
 
-        # Add fields directly if they have values
         if amount:
             DisplayItem(self.container, None, amount)
 
@@ -157,8 +129,7 @@ class AmountComponent:
                 self.container, _(i18n_keys.LIST_KEY__TOKEN_AMOUNT__COLON), token_amount
             )
 
-        # Add dummy for spacing
-        # self.container.add_dummy()
+        self.container.add_dummy()
 
 
 class FeeComponent:
@@ -185,17 +156,14 @@ class FeeComponent:
         self.title = title or _(i18n_keys.FORM__FEES)
         self.icon = icon or "A:/res/group-icon-fees.png"
 
-        # Create container
         self.container = ContainerFlexCol(parent, None, padding_row=0, no_align=True)
 
-        # Create header
         self.header = CardHeader(
             self.container,
             self.title,
             self.icon,
         )
 
-        # Add fields directly if they have values
         if fee:
             DisplayItem(self.container, _(i18n_keys.LIST_KEY__FEE__COLON), fee)
 
@@ -246,7 +214,6 @@ class FeeComponent:
                 self.container, _(i18n_keys.LIST_KEY__TOTAL_AMOUNT__COLON), total_amount
             )
 
-        # Add dummy for spacing
         self.container.add_dummy()
 
 
@@ -276,17 +243,14 @@ class MoreInfoComponent:
         self.title = title or _(i18n_keys.FORM__MORE)
         self.icon = icon or "A:/res/group-icon-more.png"
 
-        # Create container
         self.container = ContainerFlexCol(parent, None, padding_row=0, no_align=True)
 
-        # Create header
         self.header = CardHeader(
             self.container,
             self.title,
             self.icon,
         )
 
-        # Add fields directly if they have values
         if chain_id is not None:
             DisplayItem(
                 self.container, _(i18n_keys.LIST_KEY__CHAIN_ID__COLON), str(chain_id)
@@ -341,7 +305,6 @@ class MoreInfoComponent:
                 str(destination_tag),
             )
 
-        # Add dummy for spacing
         self.container.add_dummy()
 
 
@@ -365,14 +328,12 @@ class DataComponent:
         self.primary_color = primary_color or lv_colors.ONEKEY_GREEN
         self.long_data = False
 
-        # Determine if data is too long
         if len(data) > max_length:
             self.long_data = True
             self.display_data = data[: max_length - 3] + "..."
         else:
             self.display_data = data
 
-        # Create card item
         self.card_item = CardItem(
             parent,
             self.label,
@@ -380,7 +341,6 @@ class DataComponent:
             self.icon,
         )
 
-        # Add "View Full Data" button if needed
         if self.long_data:
             self._add_view_button()
 
@@ -389,28 +349,25 @@ class DataComponent:
         self.view_button = NormalButton(
             self.card_item.content, _(i18n_keys.BUTTON__VIEW_DATA)
         )
-        self.view_button.set_size(185, 77)  # lv.SIZE.CONTENT not available
+        self.view_button.set_size(185, 77)
         self.view_button.add_style(
             StyleWrapper().text_font(font_GeistSemiBold26).pad_hor(24), 0
         )
-        self.view_button.align(lv.ALIGN.CENTER, 0, 0)  # 修复：使用正确的对齐方式
-        # Note: remove_style method has type issues, skipping for now
-        self.view_button.add_event_cb(
-            self._on_view_data, lv.EVENT.CLICKED, None  # 修复：使用lv.EVENT.CLICKED而不是硬编码13
-        )
+        self.view_button.align(lv.ALIGN.CENTER, 0, 0)
+        self.view_button.add_event_cb(self._on_view_data, lv.EVENT.CLICKED, None)
 
     def _on_view_data(self, event_obj):
         """Handle view full data button click"""
         code = event_obj.code
         target = event_obj.get_target()
-        if code == lv.EVENT.CLICKED:  # 修复：使用lv.EVENT.CLICKED而不是硬编码13
+        if code == lv.EVENT.CLICKED:
             if target == self.view_button:
                 PageAbleMessage(
                     _(i18n_keys.TITLE__VIEW_DATA),
                     self.data,
                     None,
                     primary_color=self.primary_color,
-                    font=font_GeistMono28,  # 添加字体参数，与其他实现保持一致
+                    font=font_GeistMono28,
                     confirm_text=None,
                     cancel_text=None,
                 )
@@ -427,7 +384,6 @@ class MemoComponent:
         self.label = label or _(i18n_keys.LIST_KEY__MEMO__COLON)
         self.icon = icon or "A:/res/group-icon-more.png"
 
-        # Create card item for memo
         self.card_item = CardItem(
             parent,
             self.label,
@@ -454,29 +410,26 @@ class OverviewComponent:
         self.title = title or _(i18n_keys.OVERVIEW)
         self.icon = icon or "A:/res/group-icon-more.png"
 
-        # 检查是否有任何字段需要显示
         has_content = any([to_address, approve_spender, token_address, max_fee])
 
         if not has_content:
             return
 
-        # 创建组容器
         self.group = ContainerFlexCol(parent, None, padding_row=0, no_align=True)
         self.group_header = CardHeader(self.group, self.title, self.icon)
 
-        # 根据字段值动态添加显示项
         if to_address:
             DisplayItem(
                 self.group,
                 _(i18n_keys.LIST_KEY__TO__COLON),
-                AddressFormatter().format_address(to_address),
+                to_address,
             )
 
         if approve_spender:
             DisplayItem(
                 self.group,
                 _(i18n_keys.APPROVE_PROVIDER),
-                AddressFormatter().format_address(approve_spender),
+                approve_spender,
             )
 
         if max_fee:
@@ -486,8 +439,7 @@ class OverviewComponent:
             DisplayItem(
                 self.group,
                 _(i18n_keys.TOKEN_ADDRESS),
-                AddressFormatter().format_address(token_address),
+                token_address,
             )
 
-        # 添加底部间距
         self.group.add_dummy()
