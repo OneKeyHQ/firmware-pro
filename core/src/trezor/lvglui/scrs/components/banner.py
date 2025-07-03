@@ -7,6 +7,7 @@ class LEVEL:
     HIGHLIGHT = 1
     WARNING = 2
     DANGER = 3
+    DEFAULT_LIGHT = 4
 
 
 class Banner(lv.obj):
@@ -71,6 +72,12 @@ def get_style(level: int):
             lv.color_hex(0x640E00),
             lv.color_hex(0xFF1100),
             "A:/res/banner-icon-red.png",
+        )
+    elif level == LEVEL.DEFAULT_LIGHT:
+        return (
+            lv_colors.ONEKEY_GRAY_3,
+            lv_colors.LIGHT_GRAY,
+            "A:/res/banner-icon-gray.png",
         )
     else:
         return (

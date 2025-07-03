@@ -655,11 +655,12 @@ async def should_show_details(
     else:  # confirm
         return False
 
+
 async def should_show_details_new(
     ctx: wire.GenericContext,
     title: str,
     br_code: ButtonRequestType = ButtonRequestType.ConfirmOutput,
-    **kwargs
+    **kwargs,
 ) -> bool:
     from trezor.lvglui.scrs.template import TransactionOverviewNew
 
@@ -670,7 +671,7 @@ async def should_show_details_new(
             primary_color=ctx.primary_color,
             icon_path=ctx.icon_path,
             has_details=True,
-            **kwargs
+            **kwargs,
         ),
         "confirm_output",
         br_code,
@@ -684,6 +685,7 @@ async def should_show_details_new(
         return True
     else:  # confirm
         return False
+
 
 async def should_show_approve_details(
     ctx: wire.GenericContext,

@@ -147,7 +147,7 @@ async def confirm_total_ethereum_eip1559(
     contract_addr: str | None,
     token_id: int | None,
     evm_chain_id: int | None,
-    raw_data: bytes | None, 
+    raw_data: bytes | None,
     token_address: str | None = None,
 ) -> None:
     from trezor.lvglui.scrs.template import TransactionDetailsETHNew
@@ -255,6 +255,8 @@ async def confirm_total_tron(
     fee_max: str,
     total_amount: str | None,
     striped: bool = False,
+    banner_key: str | None = None,
+    banner_level: int = 0,
 ) -> None:
     from trezor.lvglui.scrs.template import TransactionDetailsTRON
 
@@ -268,6 +270,8 @@ async def confirm_total_tron(
         icon_path=ctx.icon_path,
         total_amount=total_amount,
         striped=striped,
+        banner_key=banner_key,
+        banner_level=banner_level,
     )
     await raise_if_cancelled(
         interact(ctx, screen, "confirm_total", ButtonRequestType.SignTx)

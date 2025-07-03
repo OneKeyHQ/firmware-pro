@@ -2,8 +2,6 @@ from typing import Iterator
 
 
 class ProviderInfo:
-    """Swap provider information"""
-
     def __init__(
         self,
         name: str | None,
@@ -35,10 +33,8 @@ UNKNOWN_PROVIDER = ProviderInfo(
 
 
 def provider_by_chain_address(chain_id: int, address: str) -> ProviderInfo:
-    """Find provider by chain ID and address"""
     for approve_addr, name, swap_addr in _provider_iterator(chain_id):
         if address.lower() == approve_addr.lower():
-            # Get icon path from mapping table
             icon_path = PROVIDER_META.get(name)
             return ProviderInfo(
                 name=name,
@@ -50,13 +46,10 @@ def provider_by_chain_address(chain_id: int, address: str) -> ProviderInfo:
 
 
 def get_provider_icon(provider_name: str) -> str | None:
-    """Get provider icon path"""
     return PROVIDER_META.get(provider_name)
 
 
 def _provider_iterator(chain_id: int) -> Iterator[tuple[str, str, str | None]]:
-    """Return provider information iterator for specified chain: (approve_address, name, swap_address)"""
-
     if chain_id == 1:  # Ethereum Mainnet
         yield (
             "0x111111125421cA6dc452d289314280a0f8842A65",
@@ -372,10 +365,3 @@ def _provider_iterator(chain_id: int) -> Iterator[tuple[str, str, str | None]]:
             "Socket",
             None,
         )
-
-    # Note: The following chain IDs correspond to networks not found in evm_tokens, but supported by providers
-    # if chain_id == 1030:  # Conflux eSpace - OKX: 0x68D6B739D2020067D1e2F713b999dA97E4d54812
-    # if chain_id == 169:   # Manta - OKX: 0x57df6092665eb6058DE53939612413ff4B09114E
-    # if chain_id == 4200:  # Merlin - OKX: 0x8b773D83bc66Be128c60e07E17C8901f7a64F000
-    # if chain_id == 196:   # X Layer - OKX: 0x8b773D83bc66Be128c60e07E17C8901f7a64F000
-    # if chain_id == 11155111:  # Sepolia - CoW: 0xC92E8bdf79f0507f65a392b0ab4667716BFE0110

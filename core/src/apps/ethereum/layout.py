@@ -19,7 +19,6 @@ from trezor.ui.layouts import (
     confirm_sign_typed_hash,
     confirm_text,
     should_show_approve_details,
-    should_show_details,
     should_show_more,
 )
 from trezor.ui.layouts.lvgl.altcoin import (
@@ -82,9 +81,9 @@ def require_show_overview(
     else:
         to_str = _(i18n_keys.LIST_VALUE__NEW_CONTRACT)
     fee_max = gas_price * gas_limit
-    
+
     from trezor.ui.layouts.lvgl import should_show_details_new
-    print("\n# token", token)
+
     return should_show_details_new(
         ctx,
         title=_(i18n_keys.TITLE__SEND_MULTILINE).format(
@@ -94,7 +93,9 @@ def require_show_overview(
         to_address=to_str,
         max_fee=format_ethereum_amount(fee_max, None, chain_id),
         token_address=token_address,
-        banner_key=_(i18n_keys.WARNING_UNRECOGNIZED_TOKEN) if token is tokens.UNKNOWN_TOKEN else None
+        banner_key=_(i18n_keys.WARNING_UNRECOGNIZED_TOKEN)
+        if token is tokens.UNKNOWN_TOKEN
+        else None,
     )
 
     # return should_show_details(
@@ -105,6 +106,7 @@ def require_show_overview(
     #     address=to_str,
     #     br_code=ButtonRequestType.SignTx,
     # )
+
 
 def require_confirm_fee(
     ctx: Context,
@@ -228,6 +230,7 @@ async def require_confirm_eip1559_erc20_approve(
     token: tokens.EthereumTokenInfo,
     from_address: str | None = None,
     to_address: str | None = None,
+    token_address: str | None = None,
     token_id: int | None = None,
     evm_chain_id: int | None = None,
     raw_data: bytes | None = None,
@@ -238,13 +241,6 @@ async def require_confirm_eip1559_erc20_approve(
     fee_max = max_gas_fee * gas_limit
     title = format_approve_title(token, approve_value, chain_id, provider_name)
     is_unlimited = approve_value == 2**256 - 1
-
-    if token and token.address:
-        approve_token_address_str = address_from_bytes(
-            token.address, networks.by_chain_id(chain_id)
-        )
-    else:
-        approve_token_address_str = None
 
     await confirm_approve_eip1559(
         ctx,
@@ -258,9 +254,9 @@ async def require_confirm_eip1559_erc20_approve(
         from_address,
         to_address,
         format_ethereum_amount(approve_value + fee_max, None, chain_id)
-        if (token is None and approve_token_address_str is None)
+        if (token is None and token_address is None)
         else None,
-        approve_token_address_str,
+        token_address,
         token_id,
         evm_chain_id=evm_chain_id,
         raw_data=raw_data,
@@ -279,6 +275,7 @@ async def require_confirm_legacy_erc20_approve(
     token: tokens.EthereumTokenInfo,
     from_address: str | None = None,
     to_address: str | None = None,
+    token_address: str | None = None,
     token_id: int | None = None,
     evm_chain_id: int | None = None,
     raw_data: bytes | None = None,
@@ -289,13 +286,6 @@ async def require_confirm_legacy_erc20_approve(
     fee_max = gas_price * gas_limit
     title = format_approve_title(token, approve_value, chain_id, provider_name)
     is_unlimited = approve_value == 2**256 - 1
-
-    if token and token.address:
-        approve_token_address_str = address_from_bytes(
-            token.address, networks.by_chain_id(chain_id)
-        )
-    else:
-        approve_token_address_str = None
 
     await confirm_approve(
         ctx,
@@ -308,9 +298,9 @@ async def require_confirm_legacy_erc20_approve(
         from_address,
         to_address,
         format_ethereum_amount(approve_value + fee_max, None, chain_id)
-        if (token is None and approve_token_address_str is None)
+        if (token is None and token_address is None)
         else None,
-        approve_token_address_str,
+        token_address,
         token_id,
         evm_chain_id=evm_chain_id,
         raw_data=raw_data,
@@ -636,109 +626,76 @@ def format_approve_title(
     chain_id: int,
     provider_name: str | None = None,
 ) -> str:
-    
-    # Determine action type
+
     if value == 0:
         action_type = "REVOKE"
     elif value == 2**256 - 1:
         action_type = "APPROVE_UNLIMITED"
     else:
         action_type = "APPROVE_LIMITED"
-    
-    # Determine token status
+
     token_status = "UNKNOWN" if approve_token == tokens.UNKNOWN_TOKEN else "KNOWN"
-    
-    # Determine provider status
+
     provider_status = "KNOWN" if provider_name is not None else "UNKNOWN"
-    
-    # Create combination key for lookup
+
     combination_key = f"{action_type}_{token_status}_{provider_status}"
-    
-    # Token display name
+
     if token_status == "UNKNOWN":
         token_name = "UNKN"
     else:
         token_name = approve_token.symbol
-    
-    # Amount display for limited approval
+
+    amount_display = ""
     if action_type == "APPROVE_LIMITED":
         amount_display = strip_amount(
             format_ethereum_amount(value, approve_token, chain_id)
         )[0]
-    
-    # Title mapping for all 12 combinations
+
     title_map = {
-        # REVOKE + UNKNOWN_TOKEN + KNOWN_PROVIDER
         # Example: "Revoke UNKN for 1inch"
         "REVOKE_UNKNOWN_KNOWN": _(i18n_keys.REVOKE_TOKEN).format(
             token=token_name, name=provider_name
         ),
-        
-        # REVOKE + UNKNOWN_TOKEN + UNKNOWN_PROVIDER
         # Example: "Revoke UNKN"
-        "REVOKE_UNKNOWN_UNKNOWN": _(i18n_keys.TITLE_REVOKE).format(
-            name=token_name
-        ),
-        
-        # REVOKE + KNOWN_TOKEN + KNOWN_PROVIDER
+        "REVOKE_UNKNOWN_UNKNOWN": _(i18n_keys.TITLE_REVOKE).format(name=token_name),
         # Example: "Revoke USDT for 1inch"
         "REVOKE_KNOWN_KNOWN": _(i18n_keys.REVOKE_TOKEN).format(
             token=token_name, name=provider_name
         ),
-        
-        # REVOKE + KNOWN_TOKEN + UNKNOWN_PROVIDER
         # Example: "Revoke USDT"
-        "REVOKE_KNOWN_UNKNOWN": _(i18n_keys.TITLE_REVOKE).format(
-            name=token_name
-        ),
-        
-        # APPROVE_UNLIMITED + UNKNOWN_TOKEN + KNOWN_PROVIDER
-        # Example: "Approve UNKN for 1inch"
-        "APPROVE_UNLIMITED_UNKNOWN_KNOWN": _(i18n_keys.APPROVE_TOKEN_AMOUNT).format(
+        "REVOKE_KNOWN_UNKNOWN": _(i18n_keys.TITLE_REVOKE).format(name=token_name),
+        # Example: "Approve Unlimited UNKN for 1inch"
+        "APPROVE_UNLIMITED_UNKNOWN_KNOWN": _(i18n_keys.APPROVE_UNLIMITED_TOKEN).format(
             token=token_name, name=provider_name
         ),
-        
-        # APPROVE_UNLIMITED + UNKNOWN_TOKEN + UNKNOWN_PROVIDER
-        # Example: "Approve UNKN"
-        "APPROVE_UNLIMITED_UNKNOWN_UNKNOWN": _(i18n_keys.TITLE_APPROVE).format(
+        # Example: "Approve Unlimited UNKN"
+        "APPROVE_UNLIMITED_UNKNOWN_UNKNOWN": _(i18n_keys.TITLE_UNLIMITED).format(
             name=token_name
         ),
-        
-        # APPROVE_UNLIMITED + KNOWN_TOKEN + KNOWN_PROVIDER
         # Example: "Approve unlimited USDT for 1inch"
         "APPROVE_UNLIMITED_KNOWN_KNOWN": _(i18n_keys.APPROVE_UNLIMITED_TOKEN).format(
             token=token_name, name=provider_name
         ),
-        
-        # APPROVE_UNLIMITED + KNOWN_TOKEN + UNKNOWN_PROVIDER
         # Example: "Approve unlimited USDT"
         "APPROVE_UNLIMITED_KNOWN_UNKNOWN": _(i18n_keys.TITLE_UNLIMITED).format(
             name=token_name
         ),
-        
-        # APPROVE_LIMITED + UNKNOWN_TOKEN + KNOWN_PROVIDER
-        # Example: "Approve UNKN for 1inch"
+        # Example: "Approve 10.678 UNKN for 1inch"
         "APPROVE_LIMITED_UNKNOWN_KNOWN": _(i18n_keys.APPROVE_TOKEN_AMOUNT).format(
-            token=token_name, name=provider_name
+            token=amount_display, name=provider_name
         ),
-        
-        # APPROVE_LIMITED + UNKNOWN_TOKEN + UNKNOWN_PROVIDER
-        # Example: "Approve UNKN"
+        # Example: "Approve 10.678 UNKN"
         "APPROVE_LIMITED_UNKNOWN_UNKNOWN": _(i18n_keys.TITLE_APPROVE).format(
-            name=token_name
+            name=amount_display
         ),
-        
-        # APPROVE_LIMITED + KNOWN_TOKEN + KNOWN_PROVIDER
         # Example: "Approve 10.678 USDT for 1inch"
         "APPROVE_LIMITED_KNOWN_KNOWN": _(i18n_keys.APPROVE_TOKEN_AMOUNT).format(
             token=amount_display, name=provider_name
         ),
-        
-        # APPROVE_LIMITED + KNOWN_TOKEN + UNKNOWN_PROVIDER
         # Example: "Approve 10.678 USDT"
         "APPROVE_LIMITED_KNOWN_UNKNOWN": _(i18n_keys.TITLE_APPROVE).format(
             name=amount_display
         ),
     }
-    
+
     return title_map[combination_key]

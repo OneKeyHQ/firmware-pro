@@ -162,6 +162,7 @@ async def sign_tx_eip1559(
                 approve_info.token,
                 from_address=from_str,
                 to_address=address_from_bytes(approve_info.spender, network),
+                token_address=address_from_bytes(approve_info.token_address, network),
                 token_id=None,
                 evm_chain_id=None
                 if network is not networks.UNKNOWN_NETWORK
@@ -211,7 +212,9 @@ async def sign_tx_eip1559(
                 if network is not networks.UNKNOWN_NETWORK
                 else msg.chain_id,
                 raw_data=msg.data_initial_chunk if has_raw_data else None,
-                token_address=address_from_bytes(address_bytes, network) if token else None,
+                token_address=address_from_bytes(address_bytes, network)
+                if token
+                else None,
             )
 
     data = bytearray()
