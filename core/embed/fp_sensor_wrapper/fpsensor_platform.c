@@ -12,6 +12,7 @@ static int fp_max_template_count = MAX_FINGERPRINT_COUNT;
 static uint32_t fp_data_version = FINGER_DATA_VERSION_NEW;
 
 static bool fp_data_inited = false;
+static bool resident_list[MAX_FINGERPRINT_COUNT] = {false};
 
 typedef struct
 {
@@ -517,6 +518,7 @@ bool fpsensor_data_init_start(void)
         if ( p_data[0] == 0x32 && p_data[1] == 0x34 )
         {
             list[counter++] = i;
+            resident_list[i] = true;
         }
     }
 
@@ -629,6 +631,12 @@ bool fpsensor_data_init_read(void)
 
     if ( fp_data_inited )
     {
+        return true;
+    }
+
+    if ( fp_data_init_data.counter == 0 )
+    {
+        fp_data_inited = true;
         return true;
     }
 
@@ -747,6 +755,7 @@ bool fpsensor_data_save(uint8_t index)
             se_fp_write(offset + TEMPLATE_LENGTH, (uint8_t*)&crc, TEMPLATE_DATA_CRC_LEN, 0, 0),
             "se_fp_write failed"
         );
+        resident_list[list[i]] = true;
     }
 
     return true;
@@ -794,6 +803,7 @@ bool fpsensor_data_delete(bool all, uint8_t id)
         memset(p_data, 0, TEMPLATE_LENGTH);
 
         ensure(se_fp_write(offset, p_data, 4, 0, 0), "se_fp_write failed");
+        resident_list[list[i]] = false;
     }
     return true;
 }
@@ -816,6 +826,7 @@ bool fpsensor_data_delete_group(uint8_t group_id[4])
             memset(p_data, 0, TEMPLATE_LENGTH);
 
             ensure(se_fp_write(offset, p_data, 4, 0, 0), "se_fp_write failed");
+            resident_list[group_id[i]] = false;
         }
     }
     if ( group_id[0] <= 1 )
@@ -836,7 +847,7 @@ void fpsensor_template_cache_clear(bool clear_data)
         if ( fpsensor_cache.template_data_valid[i] )
         {
             fpsensor_cache.template_data_valid[i] = false;
-            if ( clear_data )
+            if ( clear_data && !resident_list[i] )
             {
                 memset(fp_data_cache + TEMPLATE_ADDR_OFFSET + i * TEMPLATE_LENGTH, 0, TEMPLATE_LENGTH);
             }

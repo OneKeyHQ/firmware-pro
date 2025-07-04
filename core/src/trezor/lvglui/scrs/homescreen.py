@@ -4914,6 +4914,11 @@ class FingerprintSetting(AnimScreen):
         from trezor import config
 
         config.fingerprint_data_read_remaining()
+
+        from trezorio import fingerprint
+
+        fingerprint.clear_template_cache(True)
+
         super().__init__(
             prev_scr=prev_scr, title=_(i18n_keys.TITLE__FINGERPRINT), nav_back=True
         )

@@ -98,6 +98,11 @@ def get_max_template_count() -> int:
     return fingerprint.get_max_template_count()
 
 
+def clean_register_cache():
+    utils.mark_collecting_fingerprint_done()
+    fingerprint.clear_template_cache(True)
+
+
 class RequestAddFingerprintScreen(FullSizeWindow):
     def __init__(self):
         super().__init__(
@@ -491,7 +496,6 @@ async def add_fingerprint(group_id, callback=None) -> bool:
             _(i18n_keys.BUTTON__START),
             "A:/res/finger-start.png",
         )
-
         if not await start_scr.request():
             return False
         start_scr.destroy(0)

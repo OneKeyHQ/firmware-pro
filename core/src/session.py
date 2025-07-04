@@ -1,5 +1,6 @@
 from trezor import log, loop, utils
 from trezor.lvglui import lvgl_tick
+from trezor.lvglui.scrs import fingerprints
 from trezor.qr import handle_qr_task
 from trezor.uart import (
     fetch_all,
@@ -75,6 +76,8 @@ if utils.show_app_guide():
     loop.schedule(show_onekey_app_guide())
 
 loop.run()
+
+fingerprints.clean_register_cache()
 
 if __debug__:
     log.debug(__name__, "Restarting main loop")
