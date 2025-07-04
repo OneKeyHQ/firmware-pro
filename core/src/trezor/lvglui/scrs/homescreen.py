@@ -4633,6 +4633,8 @@ class SecurityScreen(AnimScreen):
             self._init = True
         else:
             utils.mark_collecting_fingerprint_done()
+            if not self.is_visible():
+                self.load_screen(self)
             return
         super().__init__(prev_scr, title=_(i18n_keys.TITLE__SECURITY), nav_back=True)
 
