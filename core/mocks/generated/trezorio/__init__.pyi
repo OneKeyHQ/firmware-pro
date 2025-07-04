@@ -118,14 +118,39 @@ class MOTOR:
         Reset motor and stop any on going vibrate
         """
 
-    def tick(self) -> None:
+    def play_whisper(self) -> None:
         """
-        Strong vibrate
+        Play builtin whisper pattern
         """
 
-    def tock(self) -> None:
+    def play_light(self) -> None:
         """
-        Weak vibrate
+        Play builtin light pattern
+        """
+
+    def play_medium(self) -> None:
+        """
+        Play builtin medium pattern
+        """
+
+    def play_heavy(self) -> None:
+        """
+        Play builtin heavy pattern
+        """
+
+    def play_success(self) -> None:
+        """
+        Play builtin success sequence
+        """
+
+    def play_warning(self) -> None:
+        """
+        Play builtin warning sequence
+        """
+
+    def play_error(self) -> None:
+        """
+        Play builtin error sequence
         """
 
 
