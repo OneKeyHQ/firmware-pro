@@ -86,6 +86,9 @@ async def handle_fingerprint():
         if __debug__:
             print(f"state == {state}")
 
+        if fingerprints.is_unlocked():
+            return
+
         try:
             detected = fingerprint.detect()
             if detected:
