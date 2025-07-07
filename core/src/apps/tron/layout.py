@@ -4,7 +4,7 @@ from trezor import ui
 from trezor.enums import ButtonRequestType, TronResourceCode
 from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
 from trezor.strings import format_amount
-from trezor.ui.layouts import confirm_address, should_show_details
+from trezor.ui.layouts import confirm_address, should_show_details_new
 from trezor.ui.layouts.lvgl.altcoin import confirm_total_tron
 
 from . import tokens
@@ -75,10 +75,14 @@ async def require_confirm_show_more(
 ) -> bool:
     from trezor.strings import strip_amount
 
-    return await should_show_details(
+    return await should_show_details_new(
         ctx,
-        toAddress,
-        _(i18n_keys.TITLE__SEND_MULTILINE).format(strip_amount(amount)[0]),
+        title=_(i18n_keys.TITLE__SEND_MULTILINE).format(strip_amount(amount)[0]),
+        to_address=toAddress,
+        banner_key=_(i18n_keys.BANNER_ENERGY_RENTAL)
+        if toAddress and check_provider(ctx, toAddress)
+        else None,
+        banner_level=4 if toAddress and check_provider(ctx, toAddress) else 0,
     )
 
 
@@ -109,10 +113,6 @@ def require_confirm_fee(
         fee_max,
         total_amount,
         striped=striped,
-        banner_key=_(i18n_keys.BANNER_ENERGY_RENTAL)
-        if to_address and check_provider(ctx, to_address)
-        else None,
-        banner_level=4 if to_address and check_provider(ctx, to_address) else 0,
     )
 
 
