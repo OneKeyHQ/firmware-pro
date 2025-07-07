@@ -212,9 +212,10 @@ async def _finish_recovery(
 ) -> Success:
     if backup_type is None:
         raise RuntimeError
-    storage.device.store_mnemonic_secret(
-        secret, backup_type, needs_backup=False, no_backup=False
-    )
+
+    identifier = None
+    exponent = None
+
     if backup_type in (BackupType.Slip39_Basic, BackupType.Slip39_Advanced):
         identifier = storage.recovery.get_slip39_identifier()
         exponent = storage.recovery.get_slip39_iteration_exponent()
@@ -223,6 +224,15 @@ async def _finish_recovery(
             raise RuntimeError
         storage.device.set_slip39_identifier(identifier)
         storage.device.set_slip39_iteration_exponent(exponent)
+
+    storage.device.store_mnemonic_secret(
+        secret,
+        backup_type,
+        needs_backup=False,
+        no_backup=False,
+        identifier=identifier,
+        iteration_exponent=exponent,
+    )
 
     storage.recovery.end_progress()
 

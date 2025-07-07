@@ -59,9 +59,9 @@ def get_seed(passphrase: str = "", progress_bar: bool = True) -> bytes:
     else:
         from trezor.crypto import se_thd89
 
-        if is_bip39():
-            if not se_thd89.seed(passphrase, None):
-                raise RuntimeError
+        if not se_thd89.seed(passphrase, None):
+            raise RuntimeError
+            
         return b""
 
 

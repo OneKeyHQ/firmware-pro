@@ -21,6 +21,8 @@ async def load_device(ctx: wire.Context, msg: LoadDevice) -> Success:
     if not is_slip39:  # BIP-39
         secret = msg.mnemonics[0].encode()
         backup_type = BackupType.Bip39
+        identifier = None
+        iteration_exponent = None
     else:
         identifier, iteration_exponent, secret = slip39.recover_ems(msg.mnemonics)
 
@@ -41,6 +43,8 @@ async def load_device(ctx: wire.Context, msg: LoadDevice) -> Success:
         backup_type,
         needs_backup=msg.needs_backup is True,
         no_backup=msg.no_backup is True,
+        identifier=identifier,
+        iteration_exponent=iteration_exponent,
     )
     storage.device.set_passphrase_enabled(bool(msg.passphrase_protection))
     storage.device.set_label(msg.label or "")

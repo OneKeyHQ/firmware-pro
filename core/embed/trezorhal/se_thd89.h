@@ -87,6 +87,9 @@ secbool se_getSecsta(void);
 secbool se_set_u2f_counter(uint32_t u2fcounter);
 secbool se_get_u2f_counter(uint32_t *u2fcounter);
 secbool se_set_mnemonic(const char *mnemonic, uint16_t len);
+secbool se_import_slip39(const uint8_t *master_secret, uint8_t len,
+                         uint8_t backup_type, uint16_t identifier,
+                         uint8_t iteration_exponent);
 secbool se_sessionStart(uint8_t *session_id_bytes);
 secbool se_sessionOpen(uint8_t *session_id_bytes);
 

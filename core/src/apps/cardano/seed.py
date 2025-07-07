@@ -119,11 +119,10 @@ def is_minting_path(path: Bip32Path) -> bool:
 def derive_and_store_secrets(passphrase: str) -> None:
     assert device.is_initialized()
 
-    if not mnemonic.is_bip39():
-        # nothing to do for SLIP-39, where we can derive the root from the main seed
-        return
-
     if not utils.USE_THD89:
+        if not mnemonic.is_bip39():
+            # nothing to do for SLIP-39, where we can derive the root from the main seed
+            return
         assert cache.get(cache.APP_COMMON_DERIVE_CARDANO)
 
         icarus_secret = mnemonic.derive_cardano_icarus(
@@ -206,13 +205,15 @@ async def _get_keychain_bip39(
 async def _get_keychain(
     ctx: wire.Context, derivation_type: CardanoDerivationType
 ) -> Keychain:
-    if mnemonic.is_bip39():
-        return await _get_keychain_bip39(ctx, derivation_type)
+    if not utils.USE_THD89:
+        if mnemonic.is_bip39():
+            return await _get_keychain_bip39(ctx, derivation_type)
+        else:
+            # derive the root node via SLIP-0023 https://github.com/satoshilabs/slips/blob/master/slip-0022.md
+            seed = await get_seed(ctx)
+            return Keychain(cardano.from_seed_slip23(seed))
     else:
-        # derive the root node via SLIP-0023 https://github.com/satoshilabs/slips/blob/master/slip-0022.md
-        seed = await get_seed(ctx)
-        return Keychain(cardano.from_seed_slip23(seed))
-
+        return await _get_keychain_bip39(ctx, derivation_type)
 
 def with_keychain(func: HandlerWithKeychain[MsgIn, MsgOut]) -> Handler[MsgIn, MsgOut]:
     async def wrapper(ctx: wire.Context, msg: MsgIn) -> MsgOut:
