@@ -590,7 +590,12 @@ def limit_str(s: str, limit: int = 16) -> str:
 
 
 async def require_confirm_safe_tx(
-    ctx: Context, from_address: str, msg: EthereumGnosisSafeTxAck
+    ctx: Context,
+    from_address: str,
+    msg: EthereumGnosisSafeTxAck,
+    domain_hash: bytes,
+    message_hash: bytes,
+    safe_tx_hash: bytes,
 ) -> None:
 
     from trezor.ui.layouts import confirm_safe_tx
@@ -609,6 +614,9 @@ async def require_confirm_safe_tx(
         msg.refundReceiver,
         int.from_bytes(msg.nonce, "big"),
         msg.verifyingContract,
+        f"0x{hexlify(domain_hash).decode()}",
+        f"0x{hexlify(message_hash).decode()}",
+        f"0x{hexlify(safe_tx_hash).decode()}",
     )
 
 
@@ -699,3 +707,161 @@ def format_approve_title(
     }
 
     return title_map[combination_key]
+
+
+async def require_confirm_safe_approve_hash(
+    ctx: Context,
+    to_addr: str,
+    from_addr: str,
+    hash_to_approve: str,
+    nonce: int,
+    gas_price: int,
+    gas_limit: int,
+    chain_id: int,
+    is_unknown_network: bool = False,
+) -> None:
+    from trezor.ui.layouts import confirm_safe_approve_hash
+
+    fee_max = gas_price * gas_limit
+    await confirm_safe_approve_hash(
+        ctx,
+        "Safe transaction",
+        from_addr,
+        to_addr,
+        hash_to_approve,
+        str(nonce),
+        format_ethereum_amount(fee_max, None, chain_id),
+        is_eip1559=False,
+        gas_price=format_ethereum_amount(gas_price, None, chain_id),
+        chain_id=chain_id if is_unknown_network else None,
+    )
+
+
+async def require_confirm_safe_approve_hash_eip1559(
+    ctx: Context,
+    to_addr: str,
+    from_addr: str,
+    hash_to_approve: str,
+    nonce: int,
+    max_priority_fee: int,
+    max_gas_fee: int,
+    gas_limit: int,
+    chain_id: int,
+    is_unknown_network: bool = False,
+) -> None:
+    from trezor.ui.layouts import confirm_safe_approve_hash
+
+    fee_max = max_gas_fee * gas_limit
+    await confirm_safe_approve_hash(
+        ctx,
+        "Safe transaction",
+        from_addr,
+        to_addr,
+        hash_to_approve,
+        str(nonce),
+        format_ethereum_amount(fee_max, None, chain_id),
+        is_eip1559=True,
+        max_priority_fee_per_gas=format_ethereum_amount(
+            max_priority_fee, None, chain_id
+        ),
+        max_fee_per_gas=format_ethereum_amount(max_gas_fee, None, chain_id),
+        chain_id=chain_id if is_unknown_network else None,
+    )
+
+
+async def require_confirm_safe_exec_transaction(
+    ctx: Context,
+    from_addr: str,
+    to_addr: str,
+    to_address_safe: str,
+    value_safe: int,
+    operation: int,
+    safe_tx_gas: int,
+    base_gas: int,
+    gas_price_safe: int,
+    gas_token: str,
+    refund_receiver: str,
+    signatures: str,
+    gas_price: int,
+    gas_limit: int,
+    nonce: int,
+    chain_id: int,
+    call_data: str | dict[str, str] | None = None,
+    call_method: str | None = None,
+    is_unknown_network: bool = False,
+) -> None:
+    from trezor.ui.layouts import confirm_safe_exec_transaction
+
+    fee_max = gas_price * gas_limit
+    await confirm_safe_exec_transaction(
+        ctx,
+        from_addr,
+        to_addr,
+        to_address_safe,
+        format_ethereum_amount(value_safe, None, chain_id),
+        operation,
+        str(safe_tx_gas),
+        str(base_gas),
+        format_ethereum_amount(gas_price_safe, None, chain_id),
+        gas_token,
+        refund_receiver,
+        signatures,
+        format_ethereum_amount(fee_max, None, chain_id),
+        nonce,
+        is_eip1559=False,
+        chain_id=chain_id if is_unknown_network else None,
+        call_data=call_data,
+        call_method=call_method,
+        gas_price=format_ethereum_amount(gas_price, None, chain_id),
+    )
+
+
+async def require_confirm_safe_exec_transaction_eip1559(
+    ctx: Context,
+    from_addr: str,
+    to_addr: str,
+    to_address_safe: str,
+    value_safe: int,
+    operation: int,
+    safe_tx_gas: int,
+    base_gas: int,
+    gas_price_safe: int,
+    gas_token: str,
+    refund_receiver: str,
+    signatures: str,
+    nonce: int,
+    chain_id: int,
+    gas_limit: int,
+    max_priority_fee_per_gas: int,
+    max_fee_per_gas: int,
+    call_data: str | dict[str, str] | None = None,
+    call_method: str | None = None,
+    is_unknown_network: bool = False,
+) -> None:
+    from trezor.ui.layouts import confirm_safe_exec_transaction
+
+    fee_max = max_fee_per_gas * gas_limit
+    await confirm_safe_exec_transaction(
+        ctx,
+        from_addr,
+        to_addr,
+        to_address_safe,
+        format_ethereum_amount(value_safe, None, chain_id),
+        operation,
+        str(safe_tx_gas),
+        str(base_gas),
+        format_ethereum_amount(gas_price_safe, None, chain_id),
+        gas_token,
+        refund_receiver,
+        signatures,
+        format_ethereum_amount(fee_max, None, chain_id),
+        nonce,
+        is_eip1559=True,
+        chain_id=chain_id if is_unknown_network else None,
+        call_data=call_data,
+        call_method=call_method,
+        max_priority_fee_per_gas=format_ethereum_amount(
+            max_priority_fee_per_gas, None, chain_id
+        ),
+        max_fee_per_gas=format_ethereum_amount(max_fee_per_gas, None, chain_id),
+    )

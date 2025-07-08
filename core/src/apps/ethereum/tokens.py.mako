@@ -36,7 +36,7 @@ UNKNOWN_TOKEN = EthereumTokenInfo(
 )
 
 
-def token_by_chain_address(chain_id: int, address: bytes) -> EthereumTokenInfo | None:
+def token_by_chain_address(chain_id: int, address: bytes) -> EthereumTokenInfo:
     for addr, symbol, decimal, name in _token_iterator(chain_id):
         if address == addr:
             return EthereumTokenInfo(

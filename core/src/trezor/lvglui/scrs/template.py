@@ -914,6 +914,323 @@ class TransactionDetailsETH(FullSizeWindow):
                 )
 
 
+class SafeTxSafeApproveHash(FullSizeWindow):
+    def __init__(
+        self,
+        title: str,
+        address_from: str,
+        address_to: str,
+        hash_to_approve: str,
+        nonce_from: str,
+        fee_max: str,
+        is_eip1559=False,
+        gas_price=None,
+        max_priority_fee_per_gas=None,
+        max_fee_per_gas=None,
+        primary_color=lv_colors.ONEKEY_GREEN,
+        icon_path: str | None = None,
+        chain_id: int | None = None,
+    ):
+        super().__init__(
+            title,
+            None,
+            _(i18n_keys.BUTTON__CONTINUE),
+            _(i18n_keys.BUTTON__REJECT),
+            primary_color=primary_color,
+            icon_path=icon_path,
+        )
+        self.primary_color = primary_color
+        self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
+        self.group_directions = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_directions,
+            _(i18n_keys.FORM__DIRECTIONS),
+            "A:/res/group-icon-directions.png",
+        )
+        self.item_group_body_to_addr = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__TO__COLON),
+            address_to,
+        )
+        self.item_group_body_from_addr = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__FROM__COLON),
+            address_from,
+        )
+        self.group_directions.add_dummy()
+
+        self.group_fees = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_fees, _(i18n_keys.FORM__FEES), "A:/res/group-icon-fees.png"
+        )
+        self.item_group_body_fee_max = DisplayItem(
+            self.group_fees,
+            _(i18n_keys.LIST_KEY__MAXIMUM_FEE__COLON),
+            fee_max,
+        )
+        if not is_eip1559:
+            if gas_price:
+                self.item_group_body_gas_price = DisplayItem(
+                    self.group_fees,
+                    _(i18n_keys.LIST_KEY__GAS_PRICE__COLON),
+                    gas_price,
+                )
+        else:
+            self.item_group_body_priority_fee_per_gas = DisplayItem(
+                self.group_fees,
+                _(i18n_keys.LIST_KEY__PRIORITY_FEE_PER_GAS__COLON),
+                max_priority_fee_per_gas,
+            )
+            self.item_group_body_max_fee_per_gas = DisplayItem(
+                self.group_fees,
+                _(i18n_keys.LIST_KEY__MAXIMUM_FEE_PER_GAS__COLON),
+                max_fee_per_gas,
+            )
+        self.group_fees.add_dummy()
+
+        self.group_more = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_more, _(i18n_keys.FORM__MORE), "A:/res/group-icon-more.png"
+        )
+        self.item_group_body_hash_to_approve = DisplayItem(
+            self.group_more,
+            "SafeTxHash",
+            hash_to_approve,
+        )
+        self.item_group_body_nonce_from = DisplayItem(
+            self.group_more,
+            "Nonce",
+            nonce_from,
+        )
+        if chain_id:
+            self.item_group_body_chain_id = DisplayItem(
+                self.group_more,
+                _(i18n_keys.LIST_KEY__CHAIN_ID__COLON),
+                str(chain_id),
+            )
+        self.group_more.add_dummy()
+
+
+class SafeTxExecTransaction(FullSizeWindow):
+    def __init__(
+        self,
+        from_address: str,
+        to_address: str,
+        to_address_safe: str,
+        value_safe: str,
+        opeartion: int,
+        safe_tx_gas: str,
+        base_gas: str,
+        gas_price_safe: str,
+        gas_token: str,
+        refund_receiver: str,
+        signatures: str,
+        fee_max: str,
+        nonce: int,
+        is_eip1559: bool = True,
+        chain_id: int | None = None,
+        call_data: str | dict[str, str] | None = None,
+        call_method: str | None = None,
+        gas_price: str | None = None,
+        max_priority_fee_per_gas: str | None = None,
+        max_fee_per_gas: str | None = None,
+        icon_path: str | None = None,
+        primary_color: str | None = None,
+    ):
+        super().__init__(
+            _(i18n_keys.GNOSIS_SAFE_SIG_TITLE),
+            None,
+            _(i18n_keys.BUTTON__CONFIRM),
+            _(i18n_keys.BUTTON__REJECT),
+            icon_path=icon_path,
+            primary_color=primary_color,
+        )
+        from .components.listitem import RawDataOverviewWithTitle
+
+        self.primary_color = primary_color
+        is_delegate_call = opeartion == 1
+        if is_delegate_call:
+            self.warning_banner = Banner(
+                self.content_area,
+                3,
+                _(i18n_keys.GNOSIS_SAFE_SIG_DELEGATECALL_WARNING_TEXT),
+            )
+            self.warning_banner.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, 40)
+        self.container = ContainerFlexCol(
+            self.content_area,
+            self.title if not is_delegate_call else self.warning_banner,
+            pos=(0, 40 if not is_delegate_call else 8),
+        )
+        self.group_safe_tx = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_safe_tx,
+            "execTransaction",
+            "A:/res/group-icon-more.png",
+        )
+        self.group_body_to_addr = DisplayItem(
+            self.group_safe_tx,
+            "To",
+            to_address_safe,
+        )
+        self.item_group_body_value_safe = DisplayItem(
+            self.group_safe_tx,
+            "Value",
+            value_safe,
+        )
+        self.item_group_body_operation = DisplayItem(
+            self.group_safe_tx,
+            "Operation",
+            f'#FF1100 {opeartion} {"(CALL)" if opeartion == 0 else "(DELEGATECALL)"}#',
+        )
+        if call_method and isinstance(call_data, dict):
+            from .components.listitem import DisplayItemWithFlexColPanel
+
+            self.item_group_body_call_args = DisplayItemWithFlexColPanel(
+                self.group_safe_tx,
+                "Data",
+            )
+            item_group_body_call_args_panel = (
+                self.item_group_body_call_args.flex_col_panel
+            )
+            self.item_group_body_call_args_method = DisplayItem(
+                item_group_body_call_args_panel,
+                None,
+                call_method,
+                bg_color=lv_colors.ONEKEY_BLACK_3,
+                padding_hor=12,
+            )
+            for key, value in call_data.items():
+                self.item_group_body_call_args_value = DisplayItem(
+                    item_group_body_call_args_panel,
+                    key,
+                    value,
+                    bg_color=lv_colors.ONEKEY_BLACK_3,
+                    padding_hor=12,
+                )
+        elif call_data and isinstance(call_data, str):
+            self.item_group_body_call_data = RawDataOverviewWithTitle(
+                self.group_safe_tx,
+                "Data",
+                call_data,
+                brief_tip=_(i18n_keys.BUTTON__VIEW_DATA),
+                primary_color=self.primary_color,
+            )
+        self.item_group_body_safe_tx_gas = DisplayItem(
+            self.group_safe_tx,
+            "SafeTxGas",
+            str(safe_tx_gas),
+        )
+        self.item_group_body_base_gas = DisplayItem(
+            self.group_safe_tx,
+            "BaseGas",
+            str(base_gas),
+        )
+        self.item_group_body_gas_price_safe = DisplayItem(
+            self.group_safe_tx,
+            "GasPrice",
+            gas_price_safe,
+        )
+        self.item_group_body_gas_token = DisplayItem(
+            self.group_safe_tx,
+            "GasToken",
+            gas_token,
+        )
+        self.item_group_body_refund_receiver = DisplayItem(
+            self.group_safe_tx,
+            "RefundReceiver",
+            refund_receiver,
+        )
+        self.item_group_body_signatures = RawDataOverviewWithTitle(
+            self.group_safe_tx,
+            "Signatures",
+            signatures,
+            brief_tip=_(i18n_keys.BUTTON__VIEW_DATA),
+            primary_color=self.primary_color,
+        )
+        self.group_safe_tx.add_dummy()
+
+        self.group_directions = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_directions,
+            _(i18n_keys.FORM__DIRECTIONS),
+            "A:/res/group-icon-directions.png",
+        )
+        self.item_group_body_to_addr = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__TO__COLON),
+            to_address,
+        )
+        self.item_group_body_from_addr = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__FROM__COLON),
+            from_address,
+        )
+        self.group_directions.add_dummy()
+
+        self.group_fees = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_fees,
+            _(i18n_keys.FORM__FEES),
+            "A:/res/group-icon-fees.png",
+        )
+
+        self.item_group_body_fee_max = DisplayItem(
+            self.group_fees,
+            _(i18n_keys.LIST_KEY__MAXIMUM_FEE__COLON),
+            fee_max,
+        )
+        if not is_eip1559:
+            if gas_price:
+                self.item_group_body_gas_price = DisplayItem(
+                    self.group_fees,
+                    _(i18n_keys.LIST_KEY__GAS_PRICE__COLON),
+                    gas_price,
+                )
+        else:
+            self.item_group_body_priority_fee_per_gas = DisplayItem(
+                self.group_fees,
+                _(i18n_keys.LIST_KEY__PRIORITY_FEE_PER_GAS__COLON),
+                max_priority_fee_per_gas,
+            )
+            self.item_group_body_max_fee_per_gas = DisplayItem(
+                self.group_fees,
+                _(i18n_keys.LIST_KEY__MAXIMUM_FEE_PER_GAS__COLON),
+                max_fee_per_gas,
+            )
+        self.group_fees.add_dummy()
+
+        self.group_more = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_more, _(i18n_keys.FORM__MORE), "A:/res/group-icon-more.png"
+        )
+        self.item_group_body_nonce_safe = DisplayItem(
+            self.group_more,
+            "Nonce",
+            str(nonce),
+        )
+        if chain_id:
+            self.item_group_body_chain_id = DisplayItem(
+                self.group_more,
+                _(i18n_keys.LIST_KEY__CHAIN_ID__COLON),
+                str(chain_id),
+            )
+        self.group_more.add_dummy()
+
+
 class TransactionDetailsETHNew(FullSizeWindow):
     def __init__(
         self,
@@ -1049,19 +1366,16 @@ class ApproveErc20ETHOverview(FullSizeWindow):
             self.container = ContainerFlexCol(
                 self.content_area, self.banner, pos=(0, 8), padding_row=8
             )
-
         else:
             self.container = ContainerFlexCol(
                 self.content_area, self.title, pos=(0, 40)
             )
-
         self.overview = OverviewComponent(
             self.container,
             approve_spender=approve_spender,
             max_fee=max_fee,
             token_address=token_address,
         )
-
         if has_details:
             self.view_btn = NormalButton(
                 self.content_area,
@@ -5155,6 +5469,9 @@ class GnosisSafeTxDetails(FullSizeWindow):
         verifying_contract: str,
         icon_path: str,
         primary_color: str,
+        domain_hash: str,
+        message_hash: str,
+        safe_tx_hash: str,
     ):
         super().__init__(
             _(i18n_keys.GNOSIS_SAFE_SIG_TITLE),
@@ -5193,7 +5510,7 @@ class GnosisSafeTxDetails(FullSizeWindow):
         )
         self.item_group_body_to_addr = DisplayItem(
             self.group_directions,
-            _(i18n_keys.LIST_KEY__INTERACT_WITH),
+            _(i18n_keys.LIST_KEY__TO__COLON),
             to_address,
         )
         self.item_group_body_from_addr = DisplayItem(
@@ -5212,7 +5529,7 @@ class GnosisSafeTxDetails(FullSizeWindow):
         self.item_group_operation = DisplayItem(
             self.group_more,
             _(i18n_keys.GLOBAL_OPERATION),
-            "CALL" if opeartion == 0 else "#FF1100 DELEGATECALL#",
+            f'#FF1100 {opeartion} {"(CALL)" if opeartion == 0 else "(DELEGATECALL)"}#',
         )
         self.item_group_nonce = DisplayItem(
             self.group_more,
@@ -5225,6 +5542,31 @@ class GnosisSafeTxDetails(FullSizeWindow):
             verifying_contract,
         )
         self.group_more.add_dummy()
+
+        self.group_hash = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_hash,
+            "Hash",
+            "A:/res/group-icon-more.png",
+        )
+        self.item_group_domain_hash = DisplayItem(
+            self.group_hash,
+            "DomainHash",
+            domain_hash,
+        )
+        self.item_group_message_hash = DisplayItem(
+            self.group_hash,
+            "MessageHash",
+            message_hash,
+        )
+        self.item_group_safe_tx_hash = DisplayItem(
+            self.group_hash,
+            "SafeTxHash",
+            safe_tx_hash,
+        )
+        self.group_hash.add_dummy()
 
         self.group_fees = ContainerFlexCol(
             self.container, None, padding_row=0, no_align=True

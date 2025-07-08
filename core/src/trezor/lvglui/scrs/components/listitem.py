@@ -8,6 +8,8 @@ from .. import (
     lv_colors,
 )
 from ..widgets.style import StyleWrapper
+from .button import NormalButton
+from .container import ContainerFlexCol
 
 
 class ListItemWithLeadingCheckbox(lv.obj):
@@ -115,18 +117,20 @@ class DisplayItem(lv.obj):
         bg_color=lv_colors.ONEKEY_GRAY_3,
         radius: int = 0,
         font=font_GeistRegular26,
+        padding_hor: int = 24,
+        padding_ver: int = 12,
     ):
         super().__init__(parent)
         self.remove_style_all()
-        self.set_size(456, lv.SIZE.CONTENT)
+        self.set_size(lv.pct(100), lv.SIZE.CONTENT)
         self.add_style(
             StyleWrapper()
             .bg_color(bg_color)
             .bg_opa(lv.OPA.COVER)
-            .min_height(82)
+            .min_height(82 if title else 30)
             .border_width(0)
-            .pad_hor(24)
-            .pad_ver(12)
+            .pad_hor(padding_hor)
+            .pad_ver(padding_ver)
             .radius(radius)
             .text_font(font)
             .text_align_left(),
@@ -138,7 +142,7 @@ class DisplayItem(lv.obj):
             self.label_top.set_size(lv.pct(100), lv.SIZE.CONTENT)
             self.label_top.set_long_mode(lv.label.LONG.WRAP)
             self.label_top.set_text(title)
-            self.label_top.set_align(lv.ALIGN.TOP_LEFT)
+            self.label_top.align(lv.ALIGN.TOP_LEFT, 0, 0)
             self.label_top.add_style(
                 StyleWrapper()
                 .text_color(lv_colors.ONEKEY_GRAY_4)
@@ -468,3 +472,168 @@ class ShortInfoItem(lv.obj):
         self.subtitle.align_to(self.title, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 4)
 
         self.add_flag(lv.obj.FLAG.CLICKABLE)
+
+
+class RawDataOverviewWithTitle(lv.obj):
+    def __init__(
+        self,
+        parent,
+        title,
+        content,
+        brief_tip: str | None = None,
+        primary_color=lv_colors.ONEKEY_GREEN,
+        bg_color=lv_colors.ONEKEY_GRAY_3,
+        radius: int = 0,
+        font=font_GeistRegular26,
+    ):
+        super().__init__(parent)
+        self.remove_style_all()
+        self.set_size(456, lv.SIZE.CONTENT)
+        self.add_style(
+            StyleWrapper()
+            .bg_color(bg_color)
+            .bg_opa(lv.OPA.COVER)
+            .min_height(82)
+            .border_width(0)
+            .pad_hor(24)
+            .pad_ver(12)
+            .radius(radius)
+            .text_font(font)
+            .text_align_left(),
+            0,
+        )
+        if title:
+            self.title = lv.label(self)
+            self.title.set_recolor(True)
+            self.title.set_size(lv.pct(100), lv.SIZE.CONTENT)
+            self.title.set_long_mode(lv.label.LONG.WRAP)
+            self.title.set_text(title)
+            self.title.set_align(lv.ALIGN.TOP_LEFT)
+            self.title.add_style(
+                StyleWrapper()
+                .text_color(lv_colors.ONEKEY_GRAY_4)
+                .text_letter_space(-1),
+                0,
+            )
+        self.content = self.RawDataOverview(self, content, brief_tip, primary_color)
+        self.content.align_to(self.title, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 4)
+
+    class RawDataOverview(lv.obj):
+        def __init__(
+            self,
+            parent,
+            content,
+            brief_tip: str | None = None,
+            primary_color=lv_colors.ONEKEY_GREEN,
+        ):
+            super().__init__(parent)
+            self.remove_style_all()
+            self.set_size(408, lv.SIZE.CONTENT)
+            self.add_style(
+                StyleWrapper()
+                .pad_all(12)
+                .bg_color(lv_colors.ONEKEY_BLACK_3)
+                .bg_opa()
+                .radius(24)
+                .text_color(lv_colors.LIGHT_GRAY)
+                .text_font(font_GeistMono28)
+                .border_width(0)
+                .max_height(364)
+                .text_align_left(),
+                0,
+            )
+            self.long_message = False
+            self.full_message = content
+            self.primary_color = primary_color
+            if len(content) > 150:
+                self.message = content[:147] + "..."
+                self.long_message = True
+            else:
+                self.message = content
+            self.content_label = lv.label(self)
+            self.content_label.set_size(384, lv.SIZE.CONTENT)
+            self.content_label.set_long_mode(lv.label.LONG.WRAP)
+            self.content_label.set_text(self.message)
+            self.content_label.add_style(
+                StyleWrapper().text_letter_space(-2).max_height(320), 0
+            )
+            self.content_label.set_align(lv.ALIGN.CENTER)
+            if self.long_message:
+                self.show_full_message = NormalButton(self.content_label, brief_tip)
+                self.show_full_message.set_size(lv.SIZE.CONTENT, 77)
+                self.show_full_message.add_style(
+                    StyleWrapper().text_font(font_GeistSemiBold26).pad_hor(24), 0
+                )
+                self.show_full_message.align(lv.ALIGN.CENTER, 0, 0)
+                self.show_full_message.remove_style(
+                    None, lv.PART.MAIN | lv.STATE.PRESSED
+                )
+                self.show_full_message.add_event_cb(
+                    self.on_click, lv.EVENT.CLICKED, None
+                )
+
+        def on_click(self, event_obj):
+            code = event_obj.code
+            target = event_obj.get_target()
+            if code == lv.EVENT.CLICKED:
+                from trezor.lvglui.scrs.components.pageable import PageAbleMessage
+                from trezor.lvglui.i18n import gettext as _
+                from trezor.lvglui.i18n import keys as i18n_keys
+
+                if target == self.show_full_message:
+                    PageAbleMessage(
+                        _(i18n_keys.TITLE__MESSAGE),
+                        self.full_message,
+                        None,
+                        primary_color=self.primary_color,
+                        font=font_GeistMono28,
+                        confirm_text=None,
+                        cancel_text=None,
+                    )
+
+
+class DisplayItemWithFlexColPanel(lv.obj):
+    def __init__(
+        self,
+        parent,
+        title,
+        bg_color=lv_colors.ONEKEY_GRAY_3,
+        radius: int = 0,
+        font=font_GeistRegular26,
+    ):
+        super().__init__(parent)
+        self.remove_style_all()
+        self.set_size(456, lv.SIZE.CONTENT)
+        self.add_style(
+            StyleWrapper()
+            .bg_color(bg_color)
+            .bg_opa(lv.OPA.COVER)
+            .min_height(82)
+            .border_width(0)
+            .pad_hor(24)
+            .pad_ver(12)
+            .radius(radius)
+            .text_font(font)
+            .text_align_left(),
+            0,
+        )
+        self.title = lv.label(self)
+        self.title.set_recolor(True)
+        self.title.set_size(lv.pct(100), lv.SIZE.CONTENT)
+        self.title.set_long_mode(lv.label.LONG.WRAP)
+        self.title.set_text(title)
+        self.title.align(lv.ALIGN.TOP_LEFT, 0, 0)
+        self.title.add_style(
+            StyleWrapper().text_color(lv_colors.ONEKEY_GRAY_4).text_letter_space(-1),
+            0,
+        )
+        self.flex_col_panel = ContainerFlexCol(self, None, padding_row=0, no_align=True)
+        self.flex_col_panel.set_size(408, lv.SIZE.CONTENT)
+        self.flex_col_panel.add_style(
+            StyleWrapper()
+            .bg_color(lv_colors.ONEKEY_BLACK_3)
+            .bg_opa(lv.OPA.COVER)
+            .radius(24),
+            0,
+        )
+        self.flex_col_panel.align_to(self.title, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 4)
