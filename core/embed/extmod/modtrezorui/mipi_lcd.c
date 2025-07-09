@@ -707,7 +707,7 @@ void display_fp(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
 int lcd_ltdc_busy(void) {
   hlcd_ltdc.Instance = LTDC;
   // low is busy
-  return hlcd_ltdc.Instance->CDSR & 0x01 ? 0 : 1;
+  return hlcd_ltdc.Instance->CDSR & LTDC_CDSR_VSYNCS ? 0 : 1;
 }
 
 void lcd_ltdc_dsi_disable(void) {

@@ -276,6 +276,8 @@ int jpeg_decode_start(const char *path) {
   if (indata_len > CHUNK_SIZE_IN) {
     indata_len = CHUNK_SIZE_IN;
   }
+
+  SCB_CleanDCache_by_Addr((uint32_t *)g_inputJpegBuffer, MAX_JPEG_SIZE);
   HAL_JPEG_Decode_DMA(&JPEG_Handle, g_inputJpegBuffer, indata_len,
                       g_outputBuffer, CHUNK_SIZE_OUT);
 

@@ -184,8 +184,6 @@ static lv_res_t decoder_open(lv_img_decoder_t *decoder,
         strncmp(lv_fs_get_ext(fn), "jpeg", strlen("jpeg")) == 0) {
       /*Check the extension*/
       jpeg_decode_init(FMC_SDRAM_JPEG_OUTPUT_DATA_BUFFER_ADDRESS);
-
-      SCB_DisableDCache();
       /* Start JPEG decoding with DMA method */
       if (jpeg_decode_start(fn) != 0) {
         return LV_RES_INV;
@@ -206,8 +204,18 @@ static lv_res_t decoder_open(lv_img_decoder_t *decoder,
           (uint32_t *)FMC_SDRAM_JPEG_OUTPUT_DATA_BUFFER_ADDRESS,
           (uint32_t *)img_data, width, height, subsampling);
 
+      // uint32_t addr = (uint32_t)img_data;
+      // uint32_t end = addr + width * height * 2;
+
+      // #define L1C_LINE_SIZE 32
+
+      // uint32_t aligned_addr = addr & ~(L1C_LINE_SIZE - 1U);
+      // uint32_t aligned_end = (end + L1C_LINE_SIZE - 1U) & ~(L1C_LINE_SIZE -
+      // 1U); uint32_t aligned_size = aligned_end - aligned_addr;
+
+      // SCB_InvalidateDCache_by_Addr((uint32_t *)aligned_addr, aligned_size);
+
       dsc->img_data = img_data;
-      SCB_EnableDCache();
       return LV_RES_OK; /*The image is fully decoded. Return with its pointer*/
     }
   }
