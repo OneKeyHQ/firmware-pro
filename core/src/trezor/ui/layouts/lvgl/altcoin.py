@@ -67,6 +67,7 @@ async def confirm_approve_eip1559(
 ) -> None:
     from trezor.lvglui.scrs.template import ApproveErc20ETH
 
+    _, striped = strip_amount(amount)
     screen = ApproveErc20ETH(
         title,
         from_address,
@@ -82,8 +83,9 @@ async def confirm_approve_eip1559(
         token_id=str(token_id),
         evm_chain_id=evm_chain_id,
         raw_data=raw_data,
-        icon_path=provider_icon,
+        icon_path=provider_icon or "A:/res/provider-default.png",
         sub_icon_path=ctx.icon_path,
+        striped=striped,
         is_unlimited=is_unlimited,
     )
     await raise_if_cancelled(
@@ -110,6 +112,7 @@ async def confirm_approve(
 ) -> None:
     from trezor.lvglui.scrs.template import ApproveErc20ETH
 
+    _, striped = strip_amount(amount)
     screen = ApproveErc20ETH(
         title,
         from_address,
@@ -126,8 +129,9 @@ async def confirm_approve(
         token_id=str(token_id) if token_id else None,
         evm_chain_id=evm_chain_id,
         raw_data=raw_data,
-        icon_path=provider_icon or "A:/res/icon-send.png",
+        icon_path=provider_icon or "A:/res/provider-default.png",
         sub_icon_path=ctx.icon_path,
+        striped=striped,
         is_unlimited=is_unlimited,
     )
     await raise_if_cancelled(

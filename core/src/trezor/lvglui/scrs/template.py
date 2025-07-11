@@ -1192,6 +1192,7 @@ class ApproveErc20ETH(FullSizeWindow):
         self.primary_color = primary_color
 
         from .components.signatureinfo import (
+            AmountComponent,
             DirectionComponent,
             FeeComponent,
             MoreInfoComponent,
@@ -1213,6 +1214,9 @@ class ApproveErc20ETH(FullSizeWindow):
             self.container = ContainerFlexCol(
                 self.content_area, self.title, pos=(0, 40)
             )
+
+        if striped and amount:
+            self.amount_component = AmountComponent(self.container, amount=amount)
 
         self.direction = DirectionComponent(
             self.container,

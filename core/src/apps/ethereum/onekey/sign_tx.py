@@ -114,8 +114,8 @@ async def sign_tx(
             int.from_bytes(msg.gas_price, "big"),
             int.from_bytes(msg.gas_limit, "big"),
             msg.chain_id,
-            provider_name=provider.name,
-            provider_icon_path=provider.icon_path,
+            provider_name=provider.name if provider else None,
+            provider_icon_path=provider.icon_path if provider else None,
         )
 
         if show_details:
@@ -133,13 +133,14 @@ async def sign_tx(
                 approve_info.token,
                 from_address=from_str,
                 to_address=address_from_bytes(approve_info.spender, network),
+                token_address=address_from_bytes(approve_info.token_address, network),
                 token_id=None,
                 evm_chain_id=None
                 if network is not networks.UNKNOWN_NETWORK
                 else msg.chain_id,
                 raw_data=None,
-                provider_name=provider.name,
-                provider_icon=provider.icon_path,
+                provider_name=provider.name if provider else None,
+                provider_icon=provider.icon_path if provider else None,
             )
 
     else:
