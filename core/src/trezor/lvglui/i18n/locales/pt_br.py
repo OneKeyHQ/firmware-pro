@@ -1014,5 +1014,6 @@ translations = [
     "Hash de transação",
     "Este token não é reconhecido pela carteira física. Por favor, verifique cuidadosamente.",
     "O destinatário é um endereço conhecido de provedor de serviços de aluguel de energia.",
+    "Solicitar Confirmação",
 ]
 # fmt: on

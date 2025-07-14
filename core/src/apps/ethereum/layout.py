@@ -75,6 +75,7 @@ def require_show_overview(
     token: tokens.EthereumTokenInfo | None = None,
     token_address: str | None = None,
     is_nft: bool = False,
+    has_raw_data: bool = True,
 ) -> Awaitable[bool]:
     if to_bytes:
         to_str = address_from_bytes(to_bytes, networks.by_chain_id(chain_id))
@@ -82,13 +83,17 @@ def require_show_overview(
         to_str = _(i18n_keys.LIST_VALUE__NEW_CONTRACT)
     fee_max = gas_price * gas_limit
 
+    if value == 0 and has_raw_data:
+        title = _(i18n_keys.TITLE_REQUEST_CONFIRMATION)
+    else:
+        title = _(i18n_keys.TITLE__SEND_MULTILINE).format(
+            strip_amount(format_ethereum_amount(value, token, chain_id, is_nft))[0]
+        )
     from trezor.ui.layouts.lvgl import should_show_details_new
 
     return should_show_details_new(
         ctx,
-        title=_(i18n_keys.TITLE__SEND_MULTILINE).format(
-            strip_amount(format_ethereum_amount(value, token, chain_id, is_nft))[0]
-        ),
+        title=title,
         br_code=ButtonRequestType.SignTx,
         to_address=to_str,
         max_fee=format_ethereum_amount(fee_max, None, chain_id),

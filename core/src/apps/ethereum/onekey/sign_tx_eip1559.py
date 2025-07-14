@@ -186,6 +186,7 @@ async def sign_tx_eip1559(
             from_str = address_from_bytes(node.ethereum_pubkeyhash(), network)
             await handle_safe_tx(ctx, msg, from_str, True)
         else:
+            has_raw_data = token is None and token_id is None and msg.data_length > 0
             show_details = await require_show_overview(
                 ctx,
                 recipient,
@@ -196,12 +197,10 @@ async def sign_tx_eip1559(
                 token,
                 address_from_bytes(address_bytes, network) if token else None,
                 is_nft_transfer,
+                has_raw_data,
             )
 
             if show_details:
-                has_raw_data = False
-                if token is None and token_id is None and msg.data_length > 0:
-                    has_raw_data = True
                 node = keychain.derive(msg.address_n, force_strict=False)
                 recipient_str = address_from_bytes(recipient, network)
                 from_str = address_from_bytes(

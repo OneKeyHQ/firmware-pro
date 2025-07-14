@@ -1014,5 +1014,6 @@ translations = [
     "Transaction Hash",
     "Ce jeton n'est pas reconnu par le portefeuille matériel. Veuillez vérifier attentivement.",
     "Le destinataire est une adresse connue de fournisseur de services de location d'énergie.",
+    "Demande de confirmation",
 ]
 # fmt: on

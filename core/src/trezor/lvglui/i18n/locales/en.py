@@ -1014,5 +1014,6 @@ translations = [
     "Transaction Hash",
     "This token is not recognized by the hardware wallet. Please verify carefully.",
     "Recipient is a known energy rental service provider address.",
+    "Request Confirmation",
 ]
 # fmt: on
