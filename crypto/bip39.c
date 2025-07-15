@@ -252,17 +252,21 @@ int mnemonic_find_word(const char *word) {
   return -1;
 }
 
-static int mnemonic_find_first_match_index(const char *prefix, int len, bool is_slip39) {
+static int mnemonic_find_first_match_index(const char *prefix, int len,
+                                           bool is_slip39) {
   int lo = 0, hi = is_slip39 ? SLIP39_WORD_COUNT - 1 : BIP39_WORD_COUNT - 1;
   while (lo <= hi) {
     int mid = lo + (hi - lo) / 2;
-    int cmp = strncmp(is_slip39 ? SLIP39_WORDLIST[mid] : BIP39_WORDLIST_ENGLISH[mid], prefix, len);
+    int cmp =
+        strncmp(is_slip39 ? SLIP39_WORDLIST[mid] : BIP39_WORDLIST_ENGLISH[mid],
+                prefix, len);
     // find match
     if (cmp == 0) {
       for (;;) {
         // find the first match
-        if (mid == 0 ||
-            strncmp(is_slip39 ? SLIP39_WORDLIST[mid - 1] : BIP39_WORDLIST_ENGLISH[mid - 1], prefix, len) != 0) {
+        if (mid == 0 || strncmp(is_slip39 ? SLIP39_WORDLIST[mid - 1]
+                                          : BIP39_WORDLIST_ENGLISH[mid - 1],
+                                prefix, len) != 0) {
           return mid;
         }
         mid--;
@@ -277,7 +281,8 @@ static int mnemonic_find_first_match_index(const char *prefix, int len, bool is_
   return -1;
 }
 
-const char *mnemonic_complete_word(const char *prefix, int len, bool is_slip39) {
+const char *mnemonic_complete_word(const char *prefix, int len,
+                                   bool is_slip39) {
   // we need to perform linear search,
   // because we want to return the first match
   memzero(result, sizeof(result));
@@ -289,8 +294,10 @@ const char *mnemonic_complete_word(const char *prefix, int len, bool is_slip39) 
   if (offset < 0) {
     return NULL;
   }
-  for (; offset < (is_slip39 ? SLIP39_WORD_COUNT : BIP39_WORD_COUNT); offset++) {
-    const char *const w = is_slip39 ? SLIP39_WORDLIST[offset] : BIP39_WORDLIST_ENGLISH[offset];
+  for (; offset < (is_slip39 ? SLIP39_WORD_COUNT : BIP39_WORD_COUNT);
+       offset++) {
+    const char *const w =
+        is_slip39 ? SLIP39_WORDLIST[offset] : BIP39_WORDLIST_ENGLISH[offset];
     if (strncmp(w, prefix, len) == 0) {
       if (strlen(result) + strlen(w) < sizeof(result) - 1) {
         strcat(result, w);
@@ -317,13 +324,15 @@ const char *mnemonic_get_word(int index) {
   }
 }
 
-uint32_t mnemonic_word_completion_mask(const char *prefix, int len, bool is_slip39) {
+uint32_t mnemonic_word_completion_mask(const char *prefix, int len,
+                                       bool is_slip39) {
   if (len <= 0) {
     return 0x3ffffff;  // all letters (bits 1-26 set)
   }
   uint32_t res = 0;
   for (int i = 0; i < (is_slip39 ? SLIP39_WORD_COUNT : BIP39_WORD_COUNT); i++) {
-    const char *word = is_slip39 ? SLIP39_WORDLIST[i] : BIP39_WORDLIST_ENGLISH[i];
+    const char *word =
+        is_slip39 ? SLIP39_WORDLIST[i] : BIP39_WORDLIST_ENGLISH[i];
     if (strncmp(word, prefix, len) == 0 && word[len] >= 'a' &&
         word[len] <= 'z') {
       res |= 1 << (word[len] - 'a');

@@ -596,13 +596,13 @@ STATIC mp_obj_t mod_trezorconfig_se_import_mnemonic(mp_obj_t mnemonic) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorconfig_se_import_mnemonic_obj,
                                  mod_trezorconfig_se_import_mnemonic);
 
-/// def se_import_slip39(mnemonic: bytes, backup_type: int, identifier: int | None,
-/// iteration_exponent: int | None) -> bool:
+/// def se_import_slip39(mnemonic: bytes, backup_type: int, identifier: int |
+/// None, iteration_exponent: int | None) -> bool:
 ///     """
 ///     Import slip39 to SE.
 ///     """
 STATIC mp_obj_t mod_trezorconfig_se_import_slip39(size_t n_args,
-                                            const mp_obj_t *args) {
+                                                  const mp_obj_t *args) {
   mp_buffer_info_t master_secret_info = {0};
   mp_get_buffer_raise(args[0], &master_secret_info, MP_BUFFER_READ);
 
@@ -810,7 +810,7 @@ STATIC const mp_rom_map_elem_t mp_module_trezorconfig_globals_table[] = {
 #ifndef TREZOR_EMULATOR
     {MP_ROM_QSTR(MP_QSTR_se_import_mnemonic),
      MP_ROM_PTR(&mod_trezorconfig_se_import_mnemonic_obj)},
-     {MP_ROM_QSTR(MP_QSTR_se_import_slip39),
+    {MP_ROM_QSTR(MP_QSTR_se_import_slip39),
      MP_ROM_PTR(&mod_trezorconfig_se_import_slip39_obj)},
     {MP_ROM_QSTR(MP_QSTR_se_export_mnemonic),
      MP_ROM_PTR(&mod_trezorconfig_se_export_mnemonic_obj)},

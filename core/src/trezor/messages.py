@@ -9460,6 +9460,7 @@ if TYPE_CHECKING:
         balance: "int | None"
         receiver_address: "str | None"
         lock: "bool | None"
+        lock_period: "int | None"
 
         def __init__(
             self,
@@ -9468,6 +9469,7 @@ if TYPE_CHECKING:
             balance: "int | None" = None,
             receiver_address: "str | None" = None,
             lock: "bool | None" = None,
+            lock_period: "int | None" = None,
         ) -> None:
             pass
 

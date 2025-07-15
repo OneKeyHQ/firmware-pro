@@ -951,9 +951,9 @@ def store_mnemonic_secret(
         common.set_bool(_NAMESPACE, INITIALIZED, True, public=True)
     else:
         if backup_type == BackupType.Bip39:
-            config.se_import_mnemonic(secret)  # type: ignore["se_import_mnemonic" is not a known member of module]
+            config.se_import_mnemonic(secret)
         else:
-            config.se_import_slip39(secret, backup_type, identifier, iteration_exponent)  # type: ignore["se_import_slip39" is not a known member of module]
+            config.se_import_slip39(secret, backup_type, identifier, iteration_exponent)
     common.set_uint8(_NAMESPACE, _BACKUP_TYPE, backup_type)
     common.set_true_or_delete(_NAMESPACE, _NO_BACKUP, no_backup)
     if not no_backup:
