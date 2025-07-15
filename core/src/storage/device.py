@@ -682,7 +682,7 @@ def set_animation_enable(enable: bool) -> None:
 def is_turbomode_enabled() -> bool:
     global _TURBOMODE_VALUE
     if _TURBOMODE_VALUE is None:
-        return False
+        _TURBOMODE_VALUE = common.get_bool(_NAMESPACE, _TURBOMODE, public=True)
     return _TURBOMODE_VALUE
 
 
