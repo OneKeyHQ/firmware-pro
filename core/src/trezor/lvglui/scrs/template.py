@@ -454,10 +454,10 @@ class AddressOffline(FullSizeWindow):
                     ]
                 elif self.network == "Kaspa":
                     options = [
-                        ("OneKey Format", True),
-                        ("Official Format", False),
+                        (_(i18n_keys.BUTTON_ONEKEY_EXTENDED), True),
+                        (_(i18n_keys.BUTTON_KASPA_OFFICIAL), False),
                     ]
-                    title = "Select Drive Format"
+                    title = _(i18n_keys.TITLE__SELECT_ACCOUNT_TYPE)
                 else:
                     raise ValueError(f"Unsupported network: {self.network}")
                 DeriveConfigScreen(self, self.addr_type, options, title=title)

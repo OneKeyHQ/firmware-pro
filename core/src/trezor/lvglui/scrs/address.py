@@ -261,11 +261,12 @@ class AddressManager:
         """Prepare Kaspa message"""
         if self.current_chain_info is None:
             raise wire.DataError("Chain info is None")
+        from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
 
         path = self.current_chain_info["base_path"][:]
         pos = self.current_chain_info["index_pos"]
         path[pos] += self.current_index
-        self.addr_type = "OneKey Format"
+        self.addr_type = _(i18n_keys.BUTTON_ONEKEY_EXTENDED)
         msg_class = getattr(messages, self.current_chain_info["msg_class"])
         return msg_class(
             address_n=path, show_display=False, use_tweak=self.use_standard_derivation
