@@ -70,7 +70,7 @@ async def sign_tx(
     ctx.primary_color, ctx.icon_path = get_color_and_icon(
         network.chain_id if network else None
     )
-
+    _is_safe_tx = False
     is_nft_transfer = False
     token_id = None
     from_addr = None
@@ -79,7 +79,8 @@ async def sign_tx(
         if res is not None:
             is_nft_transfer = True
             from_addr, recipient, token_id, value = res
-
+        else:
+            _is_safe_tx = is_safe_tx(msg)
     if device.is_turbomode_enabled():
         from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
 
@@ -144,49 +145,52 @@ async def sign_tx(
             )
 
     else:
-        show_details = await require_show_overview(
-            ctx,
-            recipient,
-            value,
-            int.from_bytes(msg.gas_price, "big"),
-            int.from_bytes(msg.gas_limit, "big"),
-            msg.chain_id,
-            token,
-            address_from_bytes(address_bytes, network) if token else None,
-            is_nft_transfer,
-        )
-
-        if show_details:
-            has_raw_data = False
-            if token is None and token_id is None and msg.data_length > 0:
-                has_raw_data = True
-                # await require_confirm_data(ctx, msg.data_initial_chunk, data_total)
+        if _is_safe_tx:
             node = keychain.derive(msg.address_n, force_strict=False)
-            recipient_str = address_from_bytes(recipient, network)
-            from_str = address_from_bytes(
-                from_addr or node.ethereum_pubkeyhash(), network
-            )
-            await require_confirm_fee(
+
+            from_str = address_from_bytes(node.ethereum_pubkeyhash(), network)
+            await handle_safe_tx(ctx, msg, from_str, False)
+        else:
+            has_raw_data = token is None and token_id is None and msg.data_length > 0
+            show_details = await require_show_overview(
                 ctx,
+                recipient,
                 value,
                 int.from_bytes(msg.gas_price, "big"),
                 int.from_bytes(msg.gas_limit, "big"),
                 msg.chain_id,
                 token,
-                from_address=from_str,
-                to_address=recipient_str,
-                contract_addr=address_from_bytes(address_bytes, network)
-                if token_id is not None
-                else None,
-                token_id=token_id,
-                evm_chain_id=None
-                if network is not networks.UNKNOWN_NETWORK
-                else msg.chain_id,
-                raw_data=msg.data_initial_chunk if has_raw_data else None,
-                token_address=address_from_bytes(address_bytes, network)
-                if token
-                else None,
+                address_from_bytes(address_bytes, network) if token else None,
+                is_nft_transfer,
+                has_raw_data,
             )
+            if show_details:
+                node = keychain.derive(msg.address_n, force_strict=False)
+                recipient_str = address_from_bytes(recipient, network)
+                from_str = address_from_bytes(
+                    from_addr or node.ethereum_pubkeyhash(), network
+                )
+                await require_confirm_fee(
+                    ctx,
+                    value,
+                    int.from_bytes(msg.gas_price, "big"),
+                    int.from_bytes(msg.gas_limit, "big"),
+                    msg.chain_id,
+                    token,
+                    from_address=from_str,
+                    to_address=recipient_str,
+                    contract_addr=address_from_bytes(address_bytes, network)
+                    if token_id is not None
+                    else None,
+                    token_id=token_id,
+                    evm_chain_id=None
+                    if network is not networks.UNKNOWN_NETWORK
+                    else msg.chain_id,
+                    raw_data=msg.data_initial_chunk if has_raw_data else None,
+                    token_address=address_from_bytes(address_bytes, network)
+                    if token
+                    else None,
+                )
 
     data = bytearray()
     data += msg.data_initial_chunk
@@ -258,8 +262,8 @@ async def handle_erc_721_or_1155(
         len(msg.to) in (40, 42)
         and len(msg.value) == 0
         and msg.data_length
-        == 228  # assume data is 00 aka the recipient is not a contract
-        and len(msg.data_initial_chunk) == 228
+        in (196, 228)  # assume data is 00 aka the recipient is not a contract
+        and len(msg.data_initial_chunk) in (196, 228)
         and msg.data_initial_chunk[:16]
         == b"\xf2\x42\x43\x2a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"  # erc1155 f242432a == keccak("safeTransferFrom(address,address,uint256,uint256,bytes)")[:4].hex()
     ):
@@ -272,9 +276,10 @@ async def handle_erc_721_or_1155(
             int.from_bytes(msg.data_initial_chunk[132:164], "big") == 0xA0
         )  # dyn data position
         data_len = int.from_bytes(msg.data_initial_chunk[164:196], "big")
-        data = msg.data_initial_chunk[-data_len:]
-        if not (data_len == 1 and data == b"\x00"):
-            await require_confirm_data(ctx, data, data_len)
+        if data_len > 0:
+            data = msg.data_initial_chunk[-data_len:]
+            if not (data_len == 1 and data == b"\x00"):
+                await require_confirm_data(ctx, data, data_len)
     elif (
         len(msg.to) in (40, 42)
         and len(msg.value) == 0
@@ -317,17 +322,232 @@ async def handle_approve(
         and msg.data_length == 68
         and len(msg.data_initial_chunk) == 68
         and msg.data_initial_chunk[:16]
-        == b"\x09\x5e\xa7\xb3\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+        in (
+            b"\x09\x5e\xa7\xb3\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+            b"\x39\x50\x93\x51\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+        )
     ):
 
         token_address = bytes_from_address(msg.to)
         spender = msg.data_initial_chunk[16:36]
         value = int.from_bytes(msg.data_initial_chunk[36:68], "big")
         token = tokens.token_by_chain_address(msg.chain_id, token_address)
-        if token is None:
-            token = tokens.UNKNOWN_TOKEN
         return ApproveInfo(spender, value, token, token_address)
     return None
+
+
+def is_safe_tx(msg: EthereumSignTxAny) -> bool:
+    return is_safe_approve_hash(msg) or is_safe_exec_transaction(msg)
+
+
+def is_safe_approve_hash(msg: EthereumSignTxAny) -> bool:
+    if (
+        len(msg.to) in (40, 42)
+        and len(msg.value) == 0
+        and msg.data_length == 36
+        and msg.data_initial_chunk[:4] == b"\xd4\xd9\xbd\xcd"
+        # approveHash(bytes32 hashToApprove) 0xd4d9bdcd
+    ):
+        return True
+    return False
+
+
+def is_safe_exec_transaction(msg: EthereumSignTxAny) -> bool:
+    if (
+        len(msg.to) in (40, 42)
+        and len(msg.value) == 0
+        and 437 <= msg.data_length <= 1024
+        and msg.data_initial_chunk[:16]
+        == b"\x6a\x76\x12\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+        # 0x6a761202 == keccak("execTransaction(address,uint256,bytes,uint8,uint256,uint256,uint256,address,address,bytes)")[:4].hex()
+    ):
+        return True
+    return False
+
+
+async def handle_safe_tx(
+    ctx: wire.Context, msg: EthereumSignTxAny, from_addr: str, is_eip1559: bool = True
+) -> None:
+    from binascii import hexlify
+
+    network = networks.by_chain_id(msg.chain_id)
+    is_unknown_network = network is networks.UNKNOWN_NETWORK
+    if is_safe_exec_transaction(msg):
+
+        data = msg.data_initial_chunk[16:]
+        to_addr = data[0:20]
+        value = int.from_bytes(data[20:52], "big")
+        operation = int.from_bytes(data[84:116], "big")
+        safe_tx_gas = int.from_bytes(data[116:148], "big")
+        base_gas = int.from_bytes(data[148:180], "big")
+        gas_price = int.from_bytes(data[180:212], "big")
+        gas_token = data[224:244]
+        refund_receiver = data[256:276]
+        signature_pos = int.from_bytes(data[276:308], "big")
+        data_len = int.from_bytes(data[308:340], "big")
+        call_data = None
+        call_method = None
+        if data_len > 0:
+            nest_data = data[340 : 340 + data_len]
+            if (
+                len(nest_data) == 68
+                and nest_data[:16]
+                == b"\xa9\x05\x9c\xbb\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+            ):  # erc20 transfer
+                from ..layout import format_ethereum_amount
+
+                token = tokens.token_by_chain_address(msg.chain_id, to_addr)
+                recipient = nest_data[16:36]
+                safe_value = int.from_bytes(nest_data[36:68], "big")
+                call_data = {
+                    "Recipient": address_from_bytes(recipient, network),
+                    "Amount": format_ethereum_amount(safe_value, token, msg.chain_id),
+                }
+                call_method = "[Transfer]"
+            elif (
+                len(nest_data) in (196, 228)
+                and nest_data[:16]
+                == b"\xf2\x42\x43\x2a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+            ):  # erc1155 safeTransferFrom
+                addr_from = nest_data[16:36]
+                recipient = nest_data[48:68]
+                token_id = int.from_bytes(nest_data[68:100], "big")
+                safe_value = int.from_bytes(nest_data[100:132], "big")
+                call_data = {
+                    "From": address_from_bytes(addr_from, network),
+                    "Recipient": address_from_bytes(recipient, network),
+                    "Token ID": str(token_id),
+                    "Amount": str(safe_value),
+                }
+                call_method = "[Transfer]"
+            elif (
+                len(nest_data) >= 100
+                and nest_data[:16]
+                == b"\x42\x84\x2e\x0e\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+                # or nest_data[:16]
+                # == b"\xb8\x8d\x4f\xde\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+            ):  # erc721 safeTransferFrom
+                addr_from = nest_data[16:36]
+                recipient = nest_data[48:68]
+                token_id = int.from_bytes(nest_data[68:100], "big")
+                call_data = {
+                    "From": address_from_bytes(addr_from, network),
+                    "Recipient": address_from_bytes(recipient, network),
+                    "Token ID": str(token_id),
+                }
+                call_method = "[Transfer]"
+            elif (
+                len(nest_data) == 68
+                and nest_data[:16]
+                == b"\x09\x5e\xa7\xb3\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+            ):  # erc20/erc721 approve 0x095ea7b3
+                spender = nest_data[16:36]
+                safe_value = int.from_bytes(nest_data[36:68], "big")
+                call_data = {
+                    "Spender": address_from_bytes(spender, network),
+                    "Amount/ID": str(safe_value),
+                }
+                call_method = "[Approve]"
+            else:
+                call_data = hexlify(nest_data).decode()
+                call_method = None
+        assert signature_pos >= 340 + data_len
+        signatures_len = int.from_bytes(data[signature_pos : signature_pos + 20], "big")
+        signatures = data[signature_pos + 20 : signature_pos + 20 + signatures_len]
+        if not is_eip1559:
+            from ..layout import require_confirm_safe_exec_transaction
+
+            # pyright: off
+            await require_confirm_safe_exec_transaction(
+                ctx,
+                from_addr,
+                address_from_bytes(bytes_from_address(msg.to), network),
+                address_from_bytes(to_addr, network),
+                value,
+                operation,
+                safe_tx_gas,
+                base_gas,
+                gas_price,
+                f"0x{hexlify(gas_token).decode()}",
+                f"0x{hexlify(refund_receiver).decode()}",
+                f"0x{hexlify(signatures).decode()}",
+                int.from_bytes(msg.gas_price, "big"),
+                int.from_bytes(msg.gas_limit, "big"),
+                int.from_bytes(msg.nonce, "big"),
+                msg.chain_id,
+                call_data,
+                call_method,
+                is_unknown_network=is_unknown_network,
+            )
+            # pyright: on
+        else:
+            from ..layout import require_confirm_safe_exec_transaction_eip1559
+
+            # pyright: off
+            await require_confirm_safe_exec_transaction_eip1559(
+                ctx,
+                from_addr,
+                address_from_bytes(bytes_from_address(msg.to), network),
+                address_from_bytes(to_addr, network),
+                value,
+                operation,
+                safe_tx_gas,
+                base_gas,
+                gas_price,
+                f"0x{hexlify(gas_token).decode()}",
+                f"0x{hexlify(refund_receiver).decode()}",
+                f"0x{hexlify(signatures).decode()}",
+                int.from_bytes(msg.nonce, "big"),
+                msg.chain_id,
+                int.from_bytes(msg.gas_limit, "big"),
+                int.from_bytes(msg.max_priority_fee, "big"),
+                int.from_bytes(msg.max_gas_fee, "big"),
+                call_data,
+                call_method,
+                is_unknown_network=is_unknown_network,
+            )
+            # pyright: on
+    elif is_safe_approve_hash(msg):
+        data = msg.data_initial_chunk[4:]
+        hash_to_approve = data[0:32]
+        from trezor.ui.layouts import should_show_details
+
+        show_details = await should_show_details(ctx, msg.to, "Safe transaction")
+        if show_details:
+            if is_eip1559:
+                from ..layout import require_confirm_safe_approve_hash_eip1559
+
+                # pyright: off
+                await require_confirm_safe_approve_hash_eip1559(
+                    ctx,
+                    address_from_bytes(bytes_from_address(msg.to), network),
+                    from_addr,
+                    f"0x{hexlify(hash_to_approve).decode()}",
+                    int.from_bytes(msg.nonce, "big"),
+                    int.from_bytes(msg.max_priority_fee, "big"),
+                    int.from_bytes(msg.max_gas_fee, "big"),
+                    int.from_bytes(msg.gas_limit, "big"),
+                    msg.chain_id,
+                    is_unknown_network=is_unknown_network,
+                )
+                # pyright: on
+            else:
+                from ..layout import require_confirm_safe_approve_hash
+
+                # pyright: off
+                await require_confirm_safe_approve_hash(
+                    ctx,
+                    address_from_bytes(bytes_from_address(msg.to), network),
+                    from_addr,
+                    f"0x{hexlify(hash_to_approve).decode()}",
+                    int.from_bytes(msg.nonce, "big"),
+                    int.from_bytes(msg.gas_price, "big"),
+                    int.from_bytes(msg.gas_limit, "big"),
+                    msg.chain_id,
+                    is_unknown_network=is_unknown_network,
+                )
+                # pyright: on
+    return
 
 
 def get_total_length(msg: EthereumSignTx, data_total: int) -> int:

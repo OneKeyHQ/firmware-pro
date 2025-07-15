@@ -2091,9 +2091,9 @@ CONTENT__STR_FAILED_TRIES_SLIDE_TO_CONTINUE = 950
 TITLE__RECOVERY_PHRASE_TYPES = 951
 # Choose the wallet backup type that fits your needs.
 TITLE__RECOVERY_PHRASE_TYPES_DESC = 952
-# Legacy Backup Types (BIP39)
+# Legacy Backup Types
 TITLE__LEGACY_BACKUP_TYPES_BIP39 = 953
-# Advanced Backup Types (SLIP39)
+# 20-word backup types
 TITLE__ADVANCED_BACKUP_TYPES_SLIP_39 = 954
 # Single-share Backup
 BUTTON__SINGLE_SHARE_BACKUP = 955
@@ -2208,8 +2208,8 @@ BUTTON__SINGLE_SHARE = 1002
 BUTTON__MULTI_SHARE = 1003
 # Enter a Valid Share
 TITLE__ENTER_A_VALID_SHARE = 1004
-# The Recovery Phrase Share you entered is incorrect. Please enter the correct
-# Share.
+# You have entered a share from a different backup. Please check and try again
+# .
 TITLE__ENTER_A_VALID_SHARE_DESC = 1005
 # You Have Entered Share {num1} From Group {num2}
 TITLE__YOU_HAVE_ENTERED_SHARE_STR_FROM_GROUP_STR = 1006
@@ -2228,4 +2228,12 @@ LIST_MORE_TXHASH = 1011
 WARNING_UNRECOGNIZED_TOKEN = 1012
 # Recipient is a known energy rental service provider address.
 BANNER_ENERGY_RENTAL = 1013
+# Update to the latest version to use “Attach to PIN”.
+MSG__ATTACH_TO_PIN_TIPS = 1014
+# Request Confirmation
+TITLE_REQUEST_CONFIRMATION = 1015
+# Abort Recovery Phrase Creation?
+TITLE__ABORT_RECOVERY_PHRASE_CREATION = 1016
+# Write down the following {num} words in order for Share {num1} of {num2}.
+TITLE__WRITE_DOWN_THE_FOLLOWING_20_WORDS_IN_ORDER_FOR_SHARE_STR_OF_STR = 1017
 # fmt: on

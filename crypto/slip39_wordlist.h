@@ -26,10 +26,9 @@
 #define __SLIP39_WORDLIST_H__
 
 #include <stdint.h>
+#include "slip39.h"
 
-#define WORDS_COUNT 1024
-
-static const char* const slip39_wordlist[WORDS_COUNT] = {
+const char* const SLIP39_WORDLIST[SLIP39_WORD_COUNT] = {
     "academic", "acid",     "acne",     "acquire",  "acrobat",  "activity",
     "actress",  "adapt",    "adequate", "adjust",   "admit",    "adorn",
     "adult",    "advance",  "advocate", "afraid",   "again",    "agency",
@@ -216,7 +215,7 @@ static const char* const slip39_wordlist[WORDS_COUNT] = {
 static const struct {
   uint16_t sequence;
   uint16_t index;
-} words_button_seq[WORDS_COUNT] = {
+} words_button_seq[SLIP39_WORD_COUNT] = {
     {1212, 0},     // academic
     {1216, 7},     // adapt
     {1236, 8},     // adequate

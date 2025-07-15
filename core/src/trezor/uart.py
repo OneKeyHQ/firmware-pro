@@ -85,84 +85,91 @@ async def handle_fingerprint():
         state = await loop.wait(io.FINGERPRINT_STATE)
         if __debug__:
             print(f"state == {state}")
-
         if fingerprints.is_unlocked():
             return
-
-        try:
-            detected = fingerprint.detect()
-            if detected:
-                await loop.sleep(100)
-                if not fingerprint.detect():
-                    continue
-                if __debug__:
-                    print("finger detected ....")
-                try:
-                    match_id = fingerprint.match()
-                    fps = fingerprints.get_fingerprint_list()
-                    assert match_id in fps
-                except Exception as e:
+        should_vibrate = True
+        while True:
+            try:
+                detected = fingerprint.detect()
+                if detected:
+                    await loop.sleep(100)
+                    if not fingerprint.detect():
+                        continue
                     if __debug__:
-                        log.exception(__name__, e)
-                        print("fingerprint mismatch")
-                    warning_level = 0
-                    if isinstance(e, fingerprint.ExtractFeatureFail):
-                        warning_level = 4
-                    elif isinstance(e, (fingerprint.NoFp, fingerprint.GetImageFail)):
-                        warning_level = 3
-                    elif isinstance(e, fingerprint.NotMatch):
-                        # increase failed count
-                        device.finger_failed_count_incr()
-                        failed_count = device.finger_failed_count()
-                        if failed_count >= utils.MAX_FP_ATTEMPTS:
+                        print("finger detected ....")
+                    try:
+                        match_id = fingerprint.match()
+                        fps = fingerprints.get_fingerprint_list()
+                        assert match_id in fps
+                    except Exception as e:
+                        if __debug__:
+                            log.exception(__name__, e)
+                            print("fingerprint mismatch")
+                        warning_level = 0
+                        if isinstance(e, fingerprint.ExtractFeatureFail):
+                            warning_level = 4
+                        elif isinstance(
+                            e, (fingerprint.NoFp, fingerprint.GetImageFail)
+                        ):
+                            warning_level = 3
+                        elif isinstance(e, fingerprint.NotMatch):
+                            # increase failed count
+                            device.finger_failed_count_incr()
+                            failed_count = device.finger_failed_count()
+                            if failed_count >= utils.MAX_FP_ATTEMPTS:
+                                from trezor.lvglui.scrs.pinscreen import InputPin
+
+                                pin_wind = InputPin.get_window_if_visible()
+                                if pin_wind:
+                                    pin_wind.refresh_fingerprint_prompt()
+                                if config.is_unlocked():
+                                    config.lock()
+
+                            warning_level = (
+                                1 if failed_count < utils.MAX_FP_ATTEMPTS else 2
+                            )
+                        from trezor.lvglui.scrs.lockscreen import LockScreen
+
+                        # failed prompt
+                        visible, scr = LockScreen.retrieval()
+                        if visible and scr is not None:
                             from trezor.lvglui.scrs.pinscreen import InputPin
 
                             pin_wind = InputPin.get_window_if_visible()
                             if pin_wind:
-                                pin_wind.refresh_fingerprint_prompt()
-                            if config.is_unlocked():
-                                config.lock()
-
-                        warning_level = 1 if failed_count < utils.MAX_FP_ATTEMPTS else 2
-                    from trezor.lvglui.scrs.lockscreen import LockScreen
-
-                    # failed prompt
-                    visible, scr = LockScreen.retrieval()
-                    if visible and scr is not None:
-                        motor.vibrate()
-                        from trezor.lvglui.scrs.pinscreen import InputPin
-
-                        pin_wind = InputPin.get_window_if_visible()
-                        if pin_wind:
-                            pin_wind.show_fp_failed_prompt(warning_level)
-                        else:
-                            scr.show_finger_mismatch_anim()
-                        scr.show_tips(warning_level)
-                    await loop.sleep(500)
-                else:
-                    if __debug__:
-                        print(f"fingerprint match {match_id}")
-                    motor.vibrate(weak=True)
-                    # # 1. publish signal
-                    if fingerprints.has_takers():
-                        if __debug__:
-                            print("publish signal")
-                        fingerprints.signal_match()
+                                pin_wind.show_fp_failed_prompt(warning_level)
+                            else:
+                                scr.show_finger_mismatch_anim()
+                            scr.show_tips(warning_level)
+                        if should_vibrate:
+                            should_vibrate = False
+                            motor.vibrate(motor.ERROR)
+                        await loop.sleep(500)
                     else:
-                        # 2. unlock
-                        res = fingerprints.unlock()
                         if __debug__:
-                            print(f"uart unlock result {res}")
-                        await base.unlock_device()
-                    # await loop.sleep(2000)
-                    return
-            else:
-                await loop.sleep(200)
-        except Exception as e:
-            if __debug__:
-                log.exception(__name__, e)
-            loop.clear()
-            return  # pylint: disable=lost-exception
+                            print(f"fingerprint match {match_id}")
+                        # motor.vibrate(motor.SUCCESS)
+                        # # 1. publish signal
+                        if fingerprints.has_takers():
+                            if __debug__:
+                                print("publish signal")
+                            fingerprints.signal_match()
+                        else:
+                            # 2. unlock
+                            res = fingerprints.unlock()
+                            if __debug__:
+                                print(f"fingerprint unlock result {res}")
+                            await base.unlock_device()
+                        # await loop.sleep(2000)
+                        return
+                else:
+                    await loop.sleep(100)
+                    break
+            except Exception as e:
+                if __debug__:
+                    log.exception(__name__, e)
+                loop.clear()
+                return  # pylint: disable=lost-exception
 
 
 async def handle_usb_state():
@@ -188,7 +195,7 @@ async def handle_usb_state():
                 StatusBar.get_instance().show_charging(True)
                 if utils.BATTERY_CAP:
                     StatusBar.get_instance().set_battery_img(utils.BATTERY_CAP, True)
-                motor.vibrate()
+                motor.vibrate(motor.MEDIUM)
             else:
                 StatusBar.get_instance().show_usb(False)
                 # deal with charging state
@@ -418,6 +425,7 @@ async def _deal_charging_state(value: bytes) -> None:
                     loop.schedule(base.screen_off_delay())
                 return
             elif utils.CHARGE_WIRELESS_STATUS == utils.CHARGE_WIRELESS_CHARGE_STARTING:
+                motor.vibrate(motor.MEDIUM)
                 return
             elif utils.CHARGE_WIRELESS_STATUS == utils.CHARGE_WIRELESS_CHARGING:
                 return
@@ -453,14 +461,17 @@ async def _deal_pair_res(value: bytes) -> None:
     if res in [_BLE_PAIR_SUCCESS, _BLE_PAIR_FAILED]:
         if SCREEN is not None and not SCREEN.destroyed:
             SCREEN.destroy()
-    if res == _BLE_PAIR_FAILED:
-        global BLE_PAIR_ABORT
-        BLE_PAIR_ABORT = True
-        StatusBar.get_instance().show_ble(StatusBar.BLE_STATE_ENABLED)
-        if device.is_initialized():
-            from trezor.ui.layouts import show_pairing_error
+        if res == _BLE_PAIR_FAILED:
+            global BLE_PAIR_ABORT
+            BLE_PAIR_ABORT = True
+            motor.vibrate(motor.ERROR)
+            StatusBar.get_instance().show_ble(StatusBar.BLE_STATE_ENABLED)
+            if device.is_initialized():
+                from trezor.ui.layouts import show_pairing_error
 
-            await show_pairing_error()
+                await show_pairing_error()
+        else:
+            motor.vibrate(motor.SUCCESS)
 
 
 async def _deal_ble_status(value: bytes) -> None:

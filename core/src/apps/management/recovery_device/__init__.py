@@ -80,7 +80,8 @@ async def recovery_device(
                 storage.device.set_u2f_counter(msg.u2f_counter)
             if msg.label is not None:
                 storage.device.set_label(msg.label)
-
+        if msg.dry_run and storage.recovery.is_in_progress():
+            storage.recovery.end_progress()
         storage.recovery.set_in_progress(True)
         storage.recovery.set_dry_run(bool(msg.dry_run))
         # workflow.set_default(recovery_homescreen)

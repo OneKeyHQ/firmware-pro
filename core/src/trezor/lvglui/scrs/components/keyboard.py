@@ -1,6 +1,6 @@
 from storage import device
 from trezor import motor, utils
-from trezor.crypto import bip39, random
+from trezor.crypto import bip39, random, slip39
 from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
 
 from .. import (
@@ -58,12 +58,13 @@ def change_key_bg(
                 )
 
 
-class BIP39Keyboard(lv.keyboard):
+class MnemonicKeyboard(lv.keyboard):
     """character keyboard with textarea."""
 
-    def __init__(self, parent):
+    def __init__(self, parent, is_slip39: bool = False):
         super().__init__(parent)
         self.parent = parent
+        self.is_slip39 = is_slip39
         self.ta = lv.textarea(parent)
         self.ta.align(lv.ALIGN.TOP_LEFT, 12, 177)
         self.ta.set_size(456, lv.SIZE.CONTENT)
@@ -232,10 +233,12 @@ class BIP39Keyboard(lv.keyboard):
         self.align(lv.ALIGN.BOTTOM_MID, 0, 0)
         self.set_popovers(True)
         self.set_textarea(self.ta)
+        self.add_event_cb(self.event_cb, lv.EVENT.PRESSED, None)
         self.add_event_cb(self.event_cb, lv.EVENT.DRAW_PART_BEGIN, None)
         self.add_event_cb(self.event_cb, lv.EVENT.VALUE_CHANGED, None)
         self.mnemonic_prompt = lv.obj(parent)
         self.mnemonic_prompt.set_size(lv.pct(100), 74)
+        self.mnemonic_prompt.clear_flag(lv.obj.FLAG.CLICKABLE)
         self.mnemonic_prompt.align_to(self, lv.ALIGN.OUT_TOP_LEFT, 0, 0)
         self.mnemonic_prompt.add_style(
             StyleWrapper()
@@ -254,6 +257,7 @@ class BIP39Keyboard(lv.keyboard):
         )
         self.mnemonic_prompt.set_scrollbar_mode(lv.SCROLLBAR_MODE.ACTIVE)
         self.mnemonic_prompt.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
+        self.mnemonic_prompt.add_event_cb(self.on_click, lv.EVENT.PRESSED, None)
         self.move_foreground()
 
     def tip_submitted(self):
@@ -277,25 +281,43 @@ class BIP39Keyboard(lv.keyboard):
         self.tip.set_text(f"{_(i18n_keys.MSG__SUBMITTED)}")
 
     def on_click(self, event_obj):
+        code = event_obj.code
+        if code == lv.EVENT.PRESSED:
+            motor.vibrate()
+            return
         target = event_obj.get_target()
-        child = target.get_child(0)
-        if isinstance(child, lv.label):
-            text = child.get_text()
-            if text:
-                self.ta.set_text(text)
-            self.mnemonic_prompt.clean()
-            for i, key in enumerate(self.keys):
-                if key:
-                    self.dummy_ctl_map[i] |= lv.btnmatrix.CTRL.DISABLED
-            self.dummy_ctl_map[-1] &= (
-                self.dummy_ctl_map[-1] ^ lv.btnmatrix.CTRL.DISABLED
-            )
-            self.completed = True
-            self.set_map(lv.keyboard.MODE.TEXT_LOWER, self.btnm_map, self.dummy_ctl_map)
-            lv.event_send(self, lv.EVENT.READY, None)
+        if code == lv.EVENT.CLICKED:
+            child = target.get_child(0)
+            if isinstance(child, lv.label):
+                text = child.get_text()
+                if text:
+                    self.ta.set_text(text)
+                self.mnemonic_prompt.clean()
+                for i, key in enumerate(self.keys):
+                    if key:
+                        self.dummy_ctl_map[i] |= lv.btnmatrix.CTRL.DISABLED
+                self.dummy_ctl_map[-1] &= (
+                    self.dummy_ctl_map[-1] ^ lv.btnmatrix.CTRL.DISABLED
+                )
+                self.completed = True
+                self.set_map(
+                    lv.keyboard.MODE.TEXT_LOWER, self.btnm_map, self.dummy_ctl_map
+                )
+                lv.event_send(self, lv.EVENT.READY, None)
 
     def event_cb(self, event):
-        if event.code == lv.EVENT.DRAW_PART_BEGIN:
+        code = event.code
+        target = event.get_target()
+        if code == lv.EVENT.PRESSED:
+            if isinstance(target, lv.keyboard):
+                btn_id = target.get_selected_btn()
+                if btn_id == lv.BTNMATRIX_BTN.NONE or target.has_btn_ctrl(
+                    btn_id, lv.btnmatrix.CTRL.DISABLED
+                ):
+                    return
+                motor.vibrate()
+            return
+        if code == lv.EVENT.DRAW_PART_BEGIN:
             txt_input = self.ta.get_text()
             dsc = lv.obj_draw_part_dsc_t.__cast__(event.get_param())
             if len(txt_input) > 0:
@@ -304,7 +326,7 @@ class BIP39Keyboard(lv.keyboard):
                 change_key_bg(dsc, 21, 29, False)
             # if dsc.id in (10, 20):
             #     dsc.rect_dsc.bg_color = lv_colors.BLACK
-        elif event.code == lv.EVENT.VALUE_CHANGED:
+        elif code == lv.EVENT.VALUE_CHANGED:
             utils.lcd_resume()
             # btn_id = event.target.get_selected_btn()
             # text = event.target.get_btn_text(btn_id)
@@ -312,12 +334,19 @@ class BIP39Keyboard(lv.keyboard):
             #     if btn_id in (10, 21):
             #         event.target.set_selected_btn(btn_id + 1)
             #     return
-            motor.vibrate()
             self.mnemonic_prompt.clean()
             txt_input = self.ta.get_text()
             if len(txt_input) > 0:
-                words = bip39.complete_word(txt_input) or ""
-                mask = bip39.word_completion_mask(txt_input)
+                words = (
+                    bip39.complete_word(txt_input)
+                    if not self.is_slip39
+                    else slip39.complete_word(txt_input)
+                ) or ""
+                mask = (
+                    bip39.word_completion_mask(txt_input)
+                    if not self.is_slip39
+                    else slip39.word_completion_mask(txt_input)
+                )
                 candidates = words.rstrip().split() if words else []
                 btn_style_default = (
                     StyleWrapper()
@@ -490,6 +519,7 @@ class NumberKeyboard(lv.keyboard):
         )
         self.input_count_tips.add_flag(lv.obj.FLAG.HIDDEN)
 
+        self.add_event_cb(self.event_cb, lv.EVENT.PRESSED, None)
         self.add_event_cb(self.event_cb, lv.EVENT.DRAW_PART_BEGIN, None)
         self.add_event_cb(self.event_cb, lv.EVENT.VALUE_CHANGED, None)
         self.add_event_cb(self.event_cb, lv.EVENT.READY, None)
@@ -538,6 +568,16 @@ class NumberKeyboard(lv.keyboard):
 
     def event_cb(self, event):
         code = event.code
+        target = event.get_target()
+        if code == lv.EVENT.PRESSED:
+            if isinstance(target, lv.keyboard):
+                btn_id = target.get_selected_btn()
+                if btn_id == lv.BTNMATRIX_BTN.NONE or target.has_btn_ctrl(
+                    btn_id, lv.btnmatrix.CTRL.DISABLED
+                ):
+                    return
+                motor.vibrate()
+            return
         input_len = len(self.ta.get_text())
         self.input_len = input_len
         self.ta.clear_flag(lv.obj.FLAG.HIDDEN)
@@ -554,7 +594,6 @@ class NumberKeyboard(lv.keyboard):
                     # dsc.rect_dsc.bg_img_src = "A:/res/keyboard-close.png"
         elif code == lv.EVENT.VALUE_CHANGED:
             utils.lcd_resume()
-            motor.vibrate()
             # if input_len > 10:
             #     self.ta.set_cursor_pos(lv.TEXTAREA_CURSOR.LAST)
             if input_len >= self.max_len:
@@ -570,7 +609,8 @@ class NumberKeyboard(lv.keyboard):
             self.update_count_tips()
             self.previous_input_len = input_len
         elif code in (lv.EVENT.READY, lv.EVENT.CANCEL):
-            motor.vibrate()
+            # motor.vibrate()
+            pass
 
 
 class IndexKeyboard(lv.keyboard):
@@ -702,6 +742,7 @@ class IndexKeyboard(lv.keyboard):
         # )
         # self.input_count_tips.add_flag(lv.obj.FLAG.HIDDEN)
 
+        self.add_event_cb(self.event_cb, lv.EVENT.PRESSED, None)
         self.add_event_cb(self.event_cb, lv.EVENT.DRAW_PART_BEGIN, None)
         self.add_event_cb(self.event_cb, lv.EVENT.VALUE_CHANGED, None)
         self.add_event_cb(self.event_cb, lv.EVENT.READY, None)
@@ -762,7 +803,17 @@ class IndexKeyboard(lv.keyboard):
 
     def event_cb(self, event):
         code = event.code
+        target = event.get_target()
         text = self.ta.get_text()
+        if code == lv.EVENT.PRESSED:
+            if isinstance(target, lv.keyboard):
+                btn_id = target.get_selected_btn()
+                if btn_id == lv.BTNMATRIX_BTN.NONE or target.has_btn_ctrl(
+                    btn_id, lv.btnmatrix.CTRL.DISABLED
+                ):
+                    return
+                motor.vibrate()
+            return
         if not self.is_pin and text.startswith("#"):
             input_len = len(text) - 1
         else:
@@ -791,7 +842,6 @@ class IndexKeyboard(lv.keyboard):
 
         elif code == lv.EVENT.VALUE_CHANGED:
             utils.lcd_resume()
-            motor.vibrate()
 
             if not self.is_pin:
                 if text and not text.startswith("#"):
@@ -1074,7 +1124,7 @@ class PassphraseKeyboard(lv.btnmatrix):
         )
 
         self.update_count_tips()
-
+        self.add_event_cb(self.event_cb, lv.EVENT.PRESSED, None)
         self.add_event_cb(self.event_cb, lv.EVENT.DRAW_PART_BEGIN, None)
         self.add_event_cb(self.event_cb, lv.EVENT.VALUE_CHANGED, None)
         self.ta.add_event_cb(self.event_cb, lv.EVENT.FOCUSED, None)
@@ -1086,6 +1136,17 @@ class PassphraseKeyboard(lv.btnmatrix):
     def event_cb(self, event):
         code = event.code
         target = event.get_target()
+        if code == lv.EVENT.PRESSED:
+            if isinstance(target, lv.btnmatrix):
+                btn_id = target.get_selected_btn()
+                if btn_id == lv.BTNMATRIX_BTN.NONE or target.has_btn_ctrl(
+                    btn_id, lv.btnmatrix.CTRL.DISABLED
+                ):
+                    return
+                if btn_id == 31 and len(self.ta.get_text()) == 0:
+                    return
+                motor.vibrate()
+            return
         if code == lv.EVENT.DRAW_PART_BEGIN:
             txt_input = self.ta.get_text()
             dsc = lv.obj_draw_part_dsc_t.__cast__(event.get_param())
@@ -1115,7 +1176,6 @@ class PassphraseKeyboard(lv.btnmatrix):
                         # text = target.get_btn_text(btn_id - 1)
                         target.set_selected_btn(btn_id - 1)
                         return
-                motor.vibrate()
                 if text == "ABC":
                     self.set_map(self.btn_map_text_upper)
                     self.set_ctrl_map(self.ctrl_map)

@@ -83,7 +83,7 @@ class Address(FullSizeWindow):
         self.btn_no.label.set_text(_(i18n_keys.BUTTON__QRCODE))
 
         self.item_addr = DisplayItem(
-            self.content_area, None, self.format_address(self.address), radius=40
+            self.content_area, None, utils.addr_chunkify(self.address), radius=40
         )
         self.item_addr.add_style(StyleWrapper().pad_ver(24), 0)
         self.item_addr.label.add_style(
@@ -130,15 +130,6 @@ class Address(FullSizeWindow):
                 xpub,
                 "A:/res/group-icon-more.png",
             )
-
-    def format_address(self, address: str) -> str:
-        address = address.replace(" ", "")
-        groups = [address[i : i + 4] for i in range(0, len(address), 4)]
-
-        lines = [" ".join(groups[i : i + 4]) for i in range(0, len(groups), 4)]
-        formatted_address = "\n".join(lines)
-
-        return formatted_address
 
     def show_qr_code(self, has_tips: bool = False):
         self.current = self.SHOW_TYPE.QRCODE
@@ -190,104 +181,20 @@ class Address(FullSizeWindow):
                 self.channel.publish(1)
 
 
-class BTCDeriveSelectionScreen(FullSizeWindow):
-    def __init__(self, prev_scr=None, addr_type=None, net_scr=None, has_taproot=True):
+class DeriveConfigScreen(FullSizeWindow):
+    def __init__(self, parent, addr_type, derive_options, *, title):
         super().__init__(
-            _(i18n_keys.TITLE__SELECT_DERIVATION_PATH),
+            title,
             None,
             confirm_text="",
             cancel_text="",
             anim_dir=2,
         )
-        self.prev_scr = prev_scr
-        self.net_scr = net_scr
+        self.parent = parent
 
         self.add_nav_back()
 
-        # Create derivation option buttons
-        if has_taproot:
-            self.derive_options = [
-                ("Nested Segwit", InputScriptType.SPENDP2SHWITNESS),
-                ("Taproot", InputScriptType.SPENDTAPROOT),
-                ("Native Segwit", InputScriptType.SPENDWITNESS),
-                ("Legacy", InputScriptType.SPENDADDRESS),
-            ]
-        else:
-            self.derive_options = [
-                ("Nested Segwit", InputScriptType.SPENDP2SHWITNESS),
-                ("Native Segwit", InputScriptType.SPENDWITNESS),
-                ("Legacy", InputScriptType.SPENDADDRESS),
-            ]
-
-        self.container = ContainerFlexCol(self.content_area, self.title, padding_row=2)
-
-        # Create buttons and set checked state
-        self.option_btns = []
-        for text, type_value in self.derive_options:
-            btn = ListItemBtn(
-                self.container,
-                text,
-                has_next=False,
-                use_transition=False,
-            )
-            btn.add_check_img()
-            if text == addr_type:
-                btn.set_checked()
-                self.selected_type = type_value
-                self.origin_type = type_value
-            self.option_btns.append(btn)
-
-        self.add_event_cb(self.on_nav_back, lv.EVENT.GESTURE, None)
-
-    def on_nav_back(self, event_obj):
-        code = event_obj.code
-        if code == lv.EVENT.GESTURE:
-            _dir = lv.indev_get_act().get_gesture_dir()
-            if _dir == lv.DIR.RIGHT:
-                lv.event_send(self.nav_back.nav_btn, lv.EVENT.CLICKED, None)
-
-    def eventhandler(self, event_obj):
-        code = event_obj.code
-        target = event_obj.get_target()
-
-        if code == lv.EVENT.CLICKED:
-            if utils.lcd_resume():
-                return
-
-            if isinstance(target, lv.imgbtn):
-                if target == self.nav_back.nav_btn:
-                    if self.prev_scr is not None:
-                        self.prev_scr.btc_derive_changed(self.selected_type)
-                        self.destroy(50)
-
-            else:
-                for i, btn in enumerate(self.option_btns):
-                    if target == btn:
-                        for other_btn in self.option_btns:
-                            other_btn.set_uncheck()
-
-                        btn.set_checked()
-                        self.selected_type = self.derive_options[i][1]
-
-
-class ETHDeriveSelectionScreen(FullSizeWindow):
-    def __init__(self, prev_scr=None, addr_type=None):
-        super().__init__(
-            _(i18n_keys.TITLE__SELECT_DERIVATION_PATH),
-            None,
-            confirm_text="",
-            cancel_text="",
-            anim_dir=2,
-        )
-        self.prev_scr = prev_scr
-
-        self.add_nav_back()
-
-        # Create derivation option buttons
-        self.derive_options = [
-            ("BIP44 Standard", False),
-            ("Ledger Live", True),
-        ]
+        self.derive_options = derive_options
 
         self.container = ContainerFlexCol(self.content_area, self.title, padding_row=2)
 
@@ -325,8 +232,8 @@ class ETHDeriveSelectionScreen(FullSizeWindow):
 
             if isinstance(target, lv.imgbtn):
                 if target == self.nav_back.nav_btn:
-                    if self.prev_scr is not None:
-                        self.prev_scr.eth_derive_changed(self.selected_type)
+                    if self.parent is not None:
+                        self.parent.on_derive_config_changed(self.selected_type)
                         self.destroy(50)
 
             else:
@@ -341,8 +248,8 @@ class ETHDeriveSelectionScreen(FullSizeWindow):
 
 class ADDRESS_OFFLINE_RETURN_TYPE:
     DONE = 0
-    ETH_LEDGER_PATH = 1
-    BTC_DERIVE_SCRIPTS = 2
+    COMMON_DRI_CONFIG_CHANGED = 1
+    BTC_DRI_CONFIG_CHANGED = 2
 
 
 class AddressOffline(FullSizeWindow):
@@ -405,7 +312,7 @@ class AddressOffline(FullSizeWindow):
         self.btn_no.label.set_text(_(i18n_keys.BUTTON__QRCODE))
 
         # derive btn
-        if self.network in ("Bitcoin", "Ethereum", "Solana", "Litecoin"):
+        if self.network in ("Bitcoin", "Ethereum", "Solana", "Litecoin", "Kaspa"):
             self.derive_btn = ListItemBtn(
                 self.content_area,
                 self.addr_type,
@@ -440,7 +347,7 @@ class AddressOffline(FullSizeWindow):
         self.item_group_body = DisplayItem(
             self.group_address,
             None,
-            self.format_address(self.address),
+            utils.addr_chunkify(self.address),
             font=font_GeistMono38,
         )
         self.group_address.add_dummy()
@@ -456,15 +363,6 @@ class AddressOffline(FullSizeWindow):
                 StyleWrapper().bg_color(lv_colors.ONEKEY_GRAY_3),
                 0,
             )
-
-    def format_address(self, address: str) -> str:
-        address = address.replace(" ", "")
-        groups = [address[i : i + 4] for i in range(0, len(address), 4)]
-
-        lines = [" ".join(groups[i : i + 4]) for i in range(0, len(groups), 4)]
-        formatted_address = "\n".join(lines)
-
-        return formatted_address
 
     def show_qr_code(self, has_tips: bool = False):
         self.current = self.SHOW_TYPE.QRCODE
@@ -501,12 +399,24 @@ class AddressOffline(FullSizeWindow):
             30,
         )
 
-    def btc_derive_changed(self, new_type):
-        self.channel.publish((ADDRESS_OFFLINE_RETURN_TYPE.BTC_DERIVE_SCRIPTS, new_type))
-        self.destroy(50)
-
-    def eth_derive_changed(self, new_type):
-        self.channel.publish((ADDRESS_OFFLINE_RETURN_TYPE.ETH_LEDGER_PATH, new_type))
+    def on_derive_config_changed(self, new_type):
+        if self.network in (
+            "Bitcoin",
+            "Litecoin",
+        ):
+            self.channel.publish(
+                (ADDRESS_OFFLINE_RETURN_TYPE.BTC_DRI_CONFIG_CHANGED, new_type)
+            )
+        elif self.network in (
+            "Ethereum",
+            "Solana",
+            "Kaspa",
+        ):
+            self.channel.publish(
+                (ADDRESS_OFFLINE_RETURN_TYPE.COMMON_DRI_CONFIG_CHANGED, new_type)
+            )
+        else:
+            raise ValueError(f"Unsupported network: {self.network}")
         self.destroy(50)
 
     def eventhandler(self, event_obj):
@@ -523,18 +433,34 @@ class AddressOffline(FullSizeWindow):
                 self.destroy(50)
                 self.channel.publish(ADDRESS_OFFLINE_RETURN_TYPE.DONE)
             elif hasattr(self, "derive_btn") and target == self.derive_btn:
+                title = _(i18n_keys.TITLE__SELECT_DERIVATION_PATH)
                 if self.network == "Bitcoin":
-                    BTCDeriveSelectionScreen(
-                        self, self.addr_type, self.prev_scr, has_taproot=True
-                    )
+                    options = [
+                        ("Nested Segwit", InputScriptType.SPENDP2SHWITNESS),
+                        ("Taproot", InputScriptType.SPENDTAPROOT),
+                        ("Native Segwit", InputScriptType.SPENDWITNESS),
+                        ("Legacy", InputScriptType.SPENDADDRESS),
+                    ]
                 elif self.network == "Litecoin":
-                    BTCDeriveSelectionScreen(
-                        self, self.addr_type, self.prev_scr, has_taproot=False
-                    )
+                    options = [
+                        ("Nested Segwit", InputScriptType.SPENDP2SHWITNESS),
+                        ("Native Segwit", InputScriptType.SPENDWITNESS),
+                        ("Legacy", InputScriptType.SPENDADDRESS),
+                    ]
                 elif self.network in ("Ethereum", "Solana"):
-                    ETHDeriveSelectionScreen(self, self.addr_type)
+                    options = [
+                        ("BIP44 Standard", True),
+                        ("Ledger Live", False),
+                    ]
+                elif self.network == "Kaspa":
+                    options = [
+                        (_(i18n_keys.BUTTON_ONEKEY_EXTENDED), True),
+                        (_(i18n_keys.BUTTON_KASPA_OFFICIAL), False),
+                    ]
+                    title = _(i18n_keys.TITLE__SELECT_ACCOUNT_TYPE)
                 else:
-                    pass
+                    raise ValueError(f"Unsupported network: {self.network}")
+                DeriveConfigScreen(self, self.addr_type, options, title=title)
 
 
 class XpubOrPub(FullSizeWindow):
@@ -988,6 +914,323 @@ class TransactionDetailsETH(FullSizeWindow):
                 )
 
 
+class SafeTxSafeApproveHash(FullSizeWindow):
+    def __init__(
+        self,
+        title: str,
+        address_from: str,
+        address_to: str,
+        hash_to_approve: str,
+        nonce_from: str,
+        fee_max: str,
+        is_eip1559=False,
+        gas_price=None,
+        max_priority_fee_per_gas=None,
+        max_fee_per_gas=None,
+        primary_color=lv_colors.ONEKEY_GREEN,
+        icon_path: str | None = None,
+        chain_id: int | None = None,
+    ):
+        super().__init__(
+            title,
+            None,
+            _(i18n_keys.BUTTON__CONTINUE),
+            _(i18n_keys.BUTTON__REJECT),
+            primary_color=primary_color,
+            icon_path=icon_path,
+        )
+        self.primary_color = primary_color
+        self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
+        self.group_directions = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_directions,
+            _(i18n_keys.FORM__DIRECTIONS),
+            "A:/res/group-icon-directions.png",
+        )
+        self.item_group_body_to_addr = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__TO__COLON),
+            address_to,
+        )
+        self.item_group_body_from_addr = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__FROM__COLON),
+            address_from,
+        )
+        self.group_directions.add_dummy()
+
+        self.group_fees = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_fees, _(i18n_keys.FORM__FEES), "A:/res/group-icon-fees.png"
+        )
+        self.item_group_body_fee_max = DisplayItem(
+            self.group_fees,
+            _(i18n_keys.LIST_KEY__MAXIMUM_FEE__COLON),
+            fee_max,
+        )
+        if not is_eip1559:
+            if gas_price:
+                self.item_group_body_gas_price = DisplayItem(
+                    self.group_fees,
+                    _(i18n_keys.LIST_KEY__GAS_PRICE__COLON),
+                    gas_price,
+                )
+        else:
+            self.item_group_body_priority_fee_per_gas = DisplayItem(
+                self.group_fees,
+                _(i18n_keys.LIST_KEY__PRIORITY_FEE_PER_GAS__COLON),
+                max_priority_fee_per_gas,
+            )
+            self.item_group_body_max_fee_per_gas = DisplayItem(
+                self.group_fees,
+                _(i18n_keys.LIST_KEY__MAXIMUM_FEE_PER_GAS__COLON),
+                max_fee_per_gas,
+            )
+        self.group_fees.add_dummy()
+
+        self.group_more = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_more, _(i18n_keys.FORM__MORE), "A:/res/group-icon-more.png"
+        )
+        self.item_group_body_hash_to_approve = DisplayItem(
+            self.group_more,
+            "SafeTxHash",
+            hash_to_approve,
+        )
+        self.item_group_body_nonce_from = DisplayItem(
+            self.group_more,
+            "Nonce",
+            nonce_from,
+        )
+        if chain_id:
+            self.item_group_body_chain_id = DisplayItem(
+                self.group_more,
+                _(i18n_keys.LIST_KEY__CHAIN_ID__COLON),
+                str(chain_id),
+            )
+        self.group_more.add_dummy()
+
+
+class SafeTxExecTransaction(FullSizeWindow):
+    def __init__(
+        self,
+        from_address: str,
+        to_address: str,
+        to_address_safe: str,
+        value_safe: str,
+        opeartion: int,
+        safe_tx_gas: str,
+        base_gas: str,
+        gas_price_safe: str,
+        gas_token: str,
+        refund_receiver: str,
+        signatures: str,
+        fee_max: str,
+        nonce: int,
+        is_eip1559: bool = True,
+        chain_id: int | None = None,
+        call_data: str | dict[str, str] | None = None,
+        call_method: str | None = None,
+        gas_price: str | None = None,
+        max_priority_fee_per_gas: str | None = None,
+        max_fee_per_gas: str | None = None,
+        icon_path: str | None = None,
+        primary_color: str | None = None,
+    ):
+        super().__init__(
+            _(i18n_keys.GNOSIS_SAFE_SIG_TITLE),
+            None,
+            _(i18n_keys.BUTTON__CONFIRM),
+            _(i18n_keys.BUTTON__REJECT),
+            icon_path=icon_path,
+            primary_color=primary_color,
+        )
+        from .components.listitem import RawDataOverviewWithTitle
+
+        self.primary_color = primary_color
+        is_delegate_call = opeartion == 1
+        if is_delegate_call:
+            self.warning_banner = Banner(
+                self.content_area,
+                3,
+                _(i18n_keys.GNOSIS_SAFE_SIG_DELEGATECALL_WARNING_TEXT),
+            )
+            self.warning_banner.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, 40)
+        self.container = ContainerFlexCol(
+            self.content_area,
+            self.title if not is_delegate_call else self.warning_banner,
+            pos=(0, 40 if not is_delegate_call else 8),
+        )
+        self.group_safe_tx = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_safe_tx,
+            "execTransaction",
+            "A:/res/group-icon-more.png",
+        )
+        self.group_body_to_addr = DisplayItem(
+            self.group_safe_tx,
+            "To",
+            to_address_safe,
+        )
+        self.item_group_body_value_safe = DisplayItem(
+            self.group_safe_tx,
+            "Value",
+            value_safe,
+        )
+        self.item_group_body_operation = DisplayItem(
+            self.group_safe_tx,
+            "Operation",
+            f'#FF1100 {opeartion} {"(CALL)" if opeartion == 0 else "(DELEGATECALL)"}#',
+        )
+        if call_method and isinstance(call_data, dict):
+            from .components.listitem import DisplayItemWithFlexColPanel
+
+            self.item_group_body_call_args = DisplayItemWithFlexColPanel(
+                self.group_safe_tx,
+                "Data",
+            )
+            item_group_body_call_args_panel = (
+                self.item_group_body_call_args.flex_col_panel
+            )
+            self.item_group_body_call_args_method = DisplayItem(
+                item_group_body_call_args_panel,
+                None,
+                call_method,
+                bg_color=lv_colors.ONEKEY_BLACK_3,
+                padding_hor=12,
+            )
+            for key, value in call_data.items():
+                self.item_group_body_call_args_value = DisplayItem(
+                    item_group_body_call_args_panel,
+                    key,
+                    value,
+                    bg_color=lv_colors.ONEKEY_BLACK_3,
+                    padding_hor=12,
+                )
+        elif call_data and isinstance(call_data, str):
+            self.item_group_body_call_data = RawDataOverviewWithTitle(
+                self.group_safe_tx,
+                "Data",
+                call_data,
+                brief_tip=_(i18n_keys.BUTTON__VIEW_DATA),
+                primary_color=self.primary_color,
+            )
+        self.item_group_body_safe_tx_gas = DisplayItem(
+            self.group_safe_tx,
+            "SafeTxGas",
+            str(safe_tx_gas),
+        )
+        self.item_group_body_base_gas = DisplayItem(
+            self.group_safe_tx,
+            "BaseGas",
+            str(base_gas),
+        )
+        self.item_group_body_gas_price_safe = DisplayItem(
+            self.group_safe_tx,
+            "GasPrice",
+            gas_price_safe,
+        )
+        self.item_group_body_gas_token = DisplayItem(
+            self.group_safe_tx,
+            "GasToken",
+            gas_token,
+        )
+        self.item_group_body_refund_receiver = DisplayItem(
+            self.group_safe_tx,
+            "RefundReceiver",
+            refund_receiver,
+        )
+        self.item_group_body_signatures = RawDataOverviewWithTitle(
+            self.group_safe_tx,
+            "Signatures",
+            signatures,
+            brief_tip=_(i18n_keys.BUTTON__VIEW_DATA),
+            primary_color=self.primary_color,
+        )
+        self.group_safe_tx.add_dummy()
+
+        self.group_directions = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_directions,
+            _(i18n_keys.FORM__DIRECTIONS),
+            "A:/res/group-icon-directions.png",
+        )
+        self.item_group_body_to_addr = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__TO__COLON),
+            to_address,
+        )
+        self.item_group_body_from_addr = DisplayItem(
+            self.group_directions,
+            _(i18n_keys.LIST_KEY__FROM__COLON),
+            from_address,
+        )
+        self.group_directions.add_dummy()
+
+        self.group_fees = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_fees,
+            _(i18n_keys.FORM__FEES),
+            "A:/res/group-icon-fees.png",
+        )
+
+        self.item_group_body_fee_max = DisplayItem(
+            self.group_fees,
+            _(i18n_keys.LIST_KEY__MAXIMUM_FEE__COLON),
+            fee_max,
+        )
+        if not is_eip1559:
+            if gas_price:
+                self.item_group_body_gas_price = DisplayItem(
+                    self.group_fees,
+                    _(i18n_keys.LIST_KEY__GAS_PRICE__COLON),
+                    gas_price,
+                )
+        else:
+            self.item_group_body_priority_fee_per_gas = DisplayItem(
+                self.group_fees,
+                _(i18n_keys.LIST_KEY__PRIORITY_FEE_PER_GAS__COLON),
+                max_priority_fee_per_gas,
+            )
+            self.item_group_body_max_fee_per_gas = DisplayItem(
+                self.group_fees,
+                _(i18n_keys.LIST_KEY__MAXIMUM_FEE_PER_GAS__COLON),
+                max_fee_per_gas,
+            )
+        self.group_fees.add_dummy()
+
+        self.group_more = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_more, _(i18n_keys.FORM__MORE), "A:/res/group-icon-more.png"
+        )
+        self.item_group_body_nonce_safe = DisplayItem(
+            self.group_more,
+            "Nonce",
+            str(nonce),
+        )
+        if chain_id:
+            self.item_group_body_chain_id = DisplayItem(
+                self.group_more,
+                _(i18n_keys.LIST_KEY__CHAIN_ID__COLON),
+                str(chain_id),
+            )
+        self.group_more.add_dummy()
+
+
 class TransactionDetailsETHNew(FullSizeWindow):
     def __init__(
         self,
@@ -1123,19 +1366,16 @@ class ApproveErc20ETHOverview(FullSizeWindow):
             self.container = ContainerFlexCol(
                 self.content_area, self.banner, pos=(0, 8), padding_row=8
             )
-
         else:
             self.container = ContainerFlexCol(
                 self.content_area, self.title, pos=(0, 40)
             )
-
         self.overview = OverviewComponent(
             self.container,
             approve_spender=approve_spender,
             max_fee=max_fee,
             token_address=token_address,
         )
-
         if has_details:
             self.view_btn = NormalButton(
                 self.content_area,
@@ -5229,6 +5469,9 @@ class GnosisSafeTxDetails(FullSizeWindow):
         verifying_contract: str,
         icon_path: str,
         primary_color: str,
+        domain_hash: str,
+        message_hash: str,
+        safe_tx_hash: str,
     ):
         super().__init__(
             _(i18n_keys.GNOSIS_SAFE_SIG_TITLE),
@@ -5267,7 +5510,7 @@ class GnosisSafeTxDetails(FullSizeWindow):
         )
         self.item_group_body_to_addr = DisplayItem(
             self.group_directions,
-            _(i18n_keys.LIST_KEY__INTERACT_WITH),
+            _(i18n_keys.LIST_KEY__TO__COLON),
             to_address,
         )
         self.item_group_body_from_addr = DisplayItem(
@@ -5286,7 +5529,7 @@ class GnosisSafeTxDetails(FullSizeWindow):
         self.item_group_operation = DisplayItem(
             self.group_more,
             _(i18n_keys.GLOBAL_OPERATION),
-            "CALL" if opeartion == 0 else "#FF1100 DELEGATECALL#",
+            f'#FF1100 {opeartion} {"(CALL)" if opeartion == 0 else "(DELEGATECALL)"}#',
         )
         self.item_group_nonce = DisplayItem(
             self.group_more,
@@ -5299,6 +5542,31 @@ class GnosisSafeTxDetails(FullSizeWindow):
             verifying_contract,
         )
         self.group_more.add_dummy()
+
+        self.group_hash = ContainerFlexCol(
+            self.container, None, padding_row=0, no_align=True
+        )
+        self.item_group_header = CardHeader(
+            self.group_hash,
+            "Hash",
+            "A:/res/group-icon-more.png",
+        )
+        self.item_group_domain_hash = DisplayItem(
+            self.group_hash,
+            "DomainHash",
+            domain_hash,
+        )
+        self.item_group_message_hash = DisplayItem(
+            self.group_hash,
+            "MessageHash",
+            message_hash,
+        )
+        self.item_group_safe_tx_hash = DisplayItem(
+            self.group_hash,
+            "SafeTxHash",
+            safe_tx_hash,
+        )
+        self.group_hash.add_dummy()
 
         self.group_fees = ContainerFlexCol(
             self.container, None, padding_row=0, no_align=True
@@ -5408,10 +5676,14 @@ class Turbo(FullSizeWindow):
             0,
         )
 
-        from .components.navigation import GeneralNavigation
+        from .components.navigation import Navigation
 
-        self.nav_back = GeneralNavigation(self.content_area, img="A:/res/cancel.png")
-        self.nav_back.align(lv.ALIGN.TOP_RIGHT, 0, 44)
+        self.nav_back = Navigation(
+            self.content_area,
+            btn_bg_img="A:/res/cancel.png",
+            nav_btn_align=lv.ALIGN.RIGHT_MID,
+            align=lv.ALIGN.TOP_RIGHT,
+        )
         self.add_event_cb(self.eventhandler, lv.EVENT.CLICKED, None)
 
         self.title = lv.img(self.content_area)
@@ -5508,7 +5780,7 @@ class Turbo(FullSizeWindow):
         if code == lv.EVENT.PRESSED:
             gc.collect()
             if target == self.gif_mask:
-                motor.vibrate(weak=True)
+                motor.vibrate(motor.WHISPER)
         if code == lv.EVENT.CLICKED:
             if utils.lcd_resume():
                 return
@@ -5517,5 +5789,5 @@ class Turbo(FullSizeWindow):
                 self.destroy(200)
                 self.channel.publish(0)
             elif target == self.gif_mask:
-                motor.vibrate()
+                motor.vibrate(motor.SUCCESS)
                 self._on_gif_click(event_obj)

@@ -886,6 +886,9 @@ def get_backup_type() -> BackupType:
             BackupType.Bip39,
             BackupType.Slip39_Basic,
             BackupType.Slip39_Advanced,
+            BackupType.Slip39_Single_Extendable,
+            BackupType.Slip39_Basic_Extendable,
+            BackupType.Slip39_Advanced_Extendable,
         ):
             # Invalid backup type
             raise RuntimeError
@@ -931,10 +934,14 @@ def set_homescreen(full_path: str) -> None:
 
 def store_mnemonic_secret(
     secret: bytes,
-    backup_type: BackupType,
+    backup_type: BackupType | int,
     needs_backup: bool = False,
     no_backup: bool = False,
+    identifier: int | None = None,
+    iteration_exponent: int | None = None,
 ) -> None:
+    from trezor.enums import BackupType
+
     global _NO_BACKUP_VALUE
     global _NEEDS_BACKUP_VALUE
     global _INITIALIZED_VALUE
@@ -943,7 +950,10 @@ def store_mnemonic_secret(
         common.set(_NAMESPACE, _MNEMONIC_SECRET, secret)
         common.set_bool(_NAMESPACE, INITIALIZED, True, public=True)
     else:
-        config.se_import_mnemonic(secret)  # type: ignore["se_import_mnemonic" is not a known member of module]
+        if backup_type == BackupType.Bip39:
+            config.se_import_mnemonic(secret)
+        else:
+            config.se_import_slip39(secret, backup_type, identifier, iteration_exponent)
     common.set_uint8(_NAMESPACE, _BACKUP_TYPE, backup_type)
     common.set_true_or_delete(_NAMESPACE, _NO_BACKUP, no_backup)
     if not no_backup:

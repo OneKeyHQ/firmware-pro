@@ -642,6 +642,9 @@ class BackupType(IntEnum):
     Bip39 = 0
     Slip39_Basic = 1
     Slip39_Advanced = 2
+    Slip39_Single_Extendable = 3
+    Slip39_Basic_Extendable = 4
+    Slip39_Advanced_Extendable = 5
 
 
 class SafetyCheckLevel(IntEnum):
@@ -11706,6 +11709,7 @@ class TronDelegateResourceContract(protobuf.MessageType):
         3: protobuf.Field("balance", "uint64", repeated=False, required=False),
         4: protobuf.Field("receiver_address", "string", repeated=False, required=False),
         5: protobuf.Field("lock", "bool", repeated=False, required=False),
+        6: protobuf.Field("lock_period", "uint64", repeated=False, required=False),
     }
 
     def __init__(
@@ -11715,11 +11719,13 @@ class TronDelegateResourceContract(protobuf.MessageType):
         balance: Optional["int"] = None,
         receiver_address: Optional["str"] = None,
         lock: Optional["bool"] = None,
+        lock_period: Optional["int"] = None,
     ) -> None:
         self.resource = resource
         self.balance = balance
         self.receiver_address = receiver_address
         self.lock = lock
+        self.lock_period = lock_period
 
 
 class TronUnDelegateResourceContract(protobuf.MessageType):

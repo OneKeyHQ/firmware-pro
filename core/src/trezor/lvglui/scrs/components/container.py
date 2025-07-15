@@ -135,8 +135,9 @@ class ContainerGrid(lv.obj):
             .radius(0)
             .bg_opa(lv.OPA.TRANSP)
             .pad_hor(10)
-            .pad_ver(0)
+            .pad_top(0)
             .pad_gap(pad_gap)
+            .pad_bottom(24)
             .border_width(0)
             .grid_column_dsc_array(col_dsc)
             .grid_row_dsc_array(row_dsc),

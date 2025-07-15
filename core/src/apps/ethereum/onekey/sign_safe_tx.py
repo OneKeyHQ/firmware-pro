@@ -40,6 +40,10 @@ async def sign_safe_tx(
     node = keychain.derive(address_n, force_strict=False)
     from_address = address_from_bytes(node.ethereum_pubkeyhash())
 
+    domain_hash = get_domain_separator_hash(msg.chain_id, msg.verifyingContract)
+    message_hash = get_safe_message_hash(msg)
+    safe_tx_hash = keccak256(b"\x19\x01" + domain_hash + message_hash)
+
     if device.is_turbomode_enabled():
         from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
         from trezor.ui.layouts.lvgl import confirm_turbo
@@ -52,16 +56,14 @@ async def sign_safe_tx(
             network.name if network else _(i18n_keys.MSG__UNKNOWN_NETWORK),
         )
     else:
-        await require_confirm_safe_tx(ctx, from_address, msg)
-
-    domain_hash = get_domain_separator_hash(msg.chain_id, msg.verifyingContract)
-    safe_tx_hash = get_safe_tx_hash(msg)
-    data_hash = keccak256(b"\x19\x01" + domain_hash + safe_tx_hash)
+        await require_confirm_safe_tx(
+            ctx, from_address, msg, domain_hash, message_hash, safe_tx_hash
+        )
 
     if not device.is_turbomode_enabled():
         await confirm_final(ctx, "Gnosis Safe", 2 if msg.operation == 1 else 0)
     signature = secp256k1.sign(
-        node.private_key(), data_hash, False, secp256k1.CANONICAL_SIG_ETHEREUM
+        node.private_key(), safe_tx_hash, False, secp256k1.CANONICAL_SIG_ETHEREUM
     )
 
     return EthereumTypedDataSignature(
@@ -78,7 +80,7 @@ def get_domain_separator_hash(chain_id: int, verifying_contract: str) -> bytes:
     return h_w.get_digest()
 
 
-def get_safe_tx_hash(msg: EthereumGnosisSafeTxAck) -> bytes:
+def get_safe_message_hash(msg: EthereumGnosisSafeTxAck) -> bytes:
     calldata_hash = keccak256(msg.data if msg.data else b"")
     h_w = get_hash_writer()
     h_w.extend(SAFE_TX_TYPEHASH)

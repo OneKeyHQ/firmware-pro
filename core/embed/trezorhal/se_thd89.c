@@ -1344,6 +1344,21 @@ secbool se_set_mnemonic(const char *mnemonic, uint16_t len) {
                          NULL);
 }
 
+secbool se_import_slip39(const uint8_t *master_secret, uint8_t len,
+                         uint8_t backup_type, uint16_t identifier,
+                         uint8_t iteration_exponent) {
+  uint8_t data[64] = {0};
+
+  data[0] = backup_type;
+  data[1] = (identifier >> 8) & 0xFF;
+  data[2] = identifier & 0xFF;
+  data[3] = iteration_exponent;
+
+  memcpy(data + 4, master_secret, len);
+
+  return se_transmit_mac(0xE2, 0x00, 0x05, data, len + 4, NULL, NULL);
+}
+
 secbool se_sessionStart(uint8_t *session_id_bytes) {
   uint16_t recv_len = 32;
 

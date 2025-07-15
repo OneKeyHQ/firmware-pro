@@ -174,6 +174,21 @@ def wipe() -> None:
 
 
 # extmod/modtrezorconfig/modtrezorconfig.c
+def se_import_mnemonic(mnemonic: bytes) -> bool:
+    """
+    Import mnemonic to SE.
+    """
+
+
+# extmod/modtrezorconfig/modtrezorconfig.c
+def se_import_slip39(mnemonic: bytes, backup_type: int, identifier: int |
+None, iteration_exponent: int | None) -> bool:
+    """
+    Import slip39 to SE.
+    """
+
+
+# extmod/modtrezorconfig/modtrezorconfig.c
 def se_export_mnemonic() -> bytes:
     """
     Export mnemonic from SE.

@@ -53,8 +53,9 @@ void mnemonic_to_seed(const char *mnemonic, const char *passphrase,
                                                 uint32_t total));
 
 int mnemonic_find_word(const char *word);
-const char *mnemonic_complete_word(const char *prefix, int len);
+const char *mnemonic_complete_word(const char *prefix, int len, bool is_slip39);
 const char *mnemonic_get_word(int index);
-uint32_t mnemonic_word_completion_mask(const char *prefix, int len);
+uint32_t mnemonic_word_completion_mask(const char *prefix, int len,
+                                       bool is_slip39);
 
 #endif

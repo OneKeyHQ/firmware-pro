@@ -1,3 +1,4 @@
+from trezor import motor
 from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
 
 from .. import (
@@ -206,10 +207,10 @@ class ListItemBtn(lv.btn):
 
 
 class ListItemBtnWithSwitch(lv.btn):
-    def __init__(self, parent, text: str) -> None:
+    def __init__(self, parent, text: str, is_haptic_feedback: bool = False) -> None:
         super().__init__(parent)
         self.remove_style_all()
-
+        self.is_haptic_feedback = is_haptic_feedback
         self.set_size(456, 94)
         self.add_style(
             StyleWrapper()
@@ -254,6 +255,7 @@ class ListItemBtnWithSwitch(lv.btn):
         self.switch.add_state(lv.STATE.CHECKED)
         self.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
         self.add_event_cb(self.eventhandler, lv.EVENT.CLICKED, None)
+        self.add_event_cb(self.eventhandler, lv.EVENT.PRESSED, None)
 
     def eventhandler(self, event) -> None:
         code = event.code
@@ -264,6 +266,13 @@ class ListItemBtnWithSwitch(lv.btn):
             else:
                 self.add_state()
             lv.event_send(self.switch, lv.EVENT.VALUE_CHANGED, None)
+        elif code == lv.EVENT.PRESSED:
+            if not self.is_haptic_feedback:
+                motor.vibrate(motor.WHISPER)
+            else:
+                # if self.switch.get_state() != lv.STATE.CHECKED:
+                #     motor.vibrate(motor.WHISPER, force=True)
+                motor.vibrate(motor.WHISPER, force=True)
 
     def clear_state(self) -> None:
         self.switch.clear_state(lv.STATE.CHECKED)

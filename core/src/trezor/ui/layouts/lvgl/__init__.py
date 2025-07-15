@@ -88,6 +88,8 @@ __all__ = (
     "confirm_neo_token_transfer",
     "confirm_neo_vote",
     "confirm_safe_tx",
+    "confirm_safe_approve_hash",
+    "confirm_safe_exec_transaction",
 )
 
 
@@ -1251,6 +1253,10 @@ async def request_pin_on_device(
     pinscreen = InputPin(
         title=prompt, subtitle=subprompt, allow_fingerprint=allow_fingerprint
     )
+    if subprompt:
+        from trezor import motor
+
+        motor.vibrate(motor.ERROR)
     result = await ctx.wait(pinscreen.request())
     if not result:
         if not allow_cancel:
@@ -2570,6 +2576,9 @@ async def confirm_safe_tx(
     refund_receiver: str,
     nonce: int,
     verifying_contract: str,
+    domain_hash: str,
+    message_hash: str,
+    safe_tx_hash: str,
 ) -> None:
     from trezor.lvglui.scrs.template import GnosisSafeTxDetails
 
@@ -2588,7 +2597,104 @@ async def confirm_safe_tx(
         verifying_contract,
         ctx.icon_path,
         ctx.primary_color,
+        domain_hash,
+        message_hash,
+        safe_tx_hash,
     )
     await raise_if_cancelled(
         interact(ctx, screen, "confirm_safe_tx", ButtonRequestType.ProtectCall)
+    )
+
+
+async def confirm_safe_approve_hash(
+    ctx: wire.GenericContext,
+    title: str,
+    from_address: str,
+    to_address: str,
+    hash_to_approve: str,
+    nonce: str,
+    fee_max: str,
+    is_eip1559: bool,
+    gas_price: str | None = None,
+    max_priority_fee_per_gas: str | None = None,
+    max_fee_per_gas: str | None = None,
+    chain_id: int | None = None,
+) -> None:
+    from trezor.lvglui.scrs.template import SafeTxSafeApproveHash
+
+    screen = SafeTxSafeApproveHash(
+        title,
+        from_address,
+        to_address,
+        hash_to_approve,
+        nonce,
+        fee_max,
+        is_eip1559,
+        gas_price,
+        max_priority_fee_per_gas,
+        max_fee_per_gas,
+        ctx.primary_color,
+        ctx.icon_path,
+        chain_id=chain_id,
+    )
+    await raise_if_cancelled(
+        interact(
+            ctx, screen, "confirm_safe_approve_hash", ButtonRequestType.ProtectCall
+        )
+    )
+
+
+async def confirm_safe_exec_transaction(
+    ctx: wire.GenericContext,
+    from_address: str,
+    to_address: str,
+    to_address_safe: str,
+    value_safe: str,
+    opeartion: int,
+    safe_tx_gas: str,
+    base_gas: str,
+    gas_price_safe: str,
+    gas_token: str,
+    refund_receiver: str,
+    signatures: str,
+    fee_max: str,
+    nonce: int,
+    is_eip1559: bool = True,
+    chain_id: int | None = None,
+    call_data: str | dict[str, str] | None = None,
+    call_method: str | None = None,
+    gas_price: str | None = None,
+    max_priority_fee_per_gas: str | None = None,
+    max_fee_per_gas: str | None = None,
+) -> None:
+    from trezor.lvglui.scrs.template import SafeTxExecTransaction
+
+    screen = SafeTxExecTransaction(
+        from_address=from_address,
+        to_address=to_address,
+        to_address_safe=to_address_safe,
+        value_safe=value_safe,
+        opeartion=opeartion,
+        safe_tx_gas=safe_tx_gas,
+        base_gas=base_gas,
+        gas_price_safe=gas_price_safe,
+        gas_token=gas_token,
+        refund_receiver=refund_receiver,
+        signatures=signatures,
+        fee_max=fee_max,
+        nonce=nonce,
+        chain_id=chain_id,
+        is_eip1559=is_eip1559,
+        call_data=call_data,
+        call_method=call_method,
+        gas_price=gas_price,
+        max_priority_fee_per_gas=max_priority_fee_per_gas,
+        max_fee_per_gas=max_fee_per_gas,
+        icon_path=ctx.icon_path,
+        primary_color=ctx.primary_color,
+    )
+    await raise_if_cancelled(
+        interact(
+            ctx, screen, "confirm_safe_exec_transaction", ButtonRequestType.ProtectCall
+        )
     )

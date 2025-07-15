@@ -561,6 +561,10 @@ apps.common.address_type
 import apps.common.address_type
 apps.common.authorization
 import apps.common.authorization
+apps.common.backup
+import apps.common.backup
+apps.common.backup_types
+import apps.common.backup_types
 apps.common.cbor
 import apps.common.cbor
 apps.common.coininfo
@@ -665,8 +669,6 @@ apps.management.apply_settings
 import apps.management.apply_settings
 apps.management.backup_device
 import apps.management.backup_device
-apps.management.backup_types
-import apps.management.backup_types
 apps.management.change_pin
 import apps.management.change_pin
 apps.management.change_wipe_code
@@ -683,6 +685,8 @@ apps.management.reboot_to_bootloader
 import apps.management.reboot_to_bootloader
 apps.management.recovery_device
 import apps.management.recovery_device
+apps.management.recovery_device.create_mul_shares
+import apps.management.recovery_device.create_mul_shares
 apps.management.recovery_device.homescreen
 import apps.management.recovery_device.homescreen
 apps.management.recovery_device.layout

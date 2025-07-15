@@ -84,7 +84,6 @@ class AnimScreen(lv.obj):
 
         if kwargs.get("nav_back", False):
             self.nav_back = Navigation(self.content_area)
-            self.nav_back.align(lv.ALIGN.TOP_LEFT, 0, 44)
             self.add_event_cb(self.on_nav_back, lv.EVENT.GESTURE, None)
         if "title" in kwargs:
             self.title = ScreenTitle(self.content_area, None, (), kwargs["title"])
@@ -415,6 +414,7 @@ class FullSizeWindow(lv.obj):
             lv.PART.SCROLLBAR | lv.STATE.DEFAULT,
         )
         self.content_area.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
+        self.icon_path = icon_path
         if icon_path:
             self.icon = lv.img(self.content_area)
             self.icon.remove_style_all()
@@ -479,13 +479,49 @@ class FullSizeWindow(lv.obj):
                 self.slider.add_event_cb(self.eventhandler, lv.EVENT.READY, None)
             else:
                 self.btn_yes.enable(primary_color, text_color=lv_colors.BLACK)
+        if self.vibrate_necessary():
+            self.vibrated = False
+            self.add_event_cb(self.on_win_visible, lv.EVENT.DRAW_POST_END, None)
         self.add_event_cb(self.eventhandler, lv.EVENT.CLICKED, None)
         self.clear_flag(lv.obj.FLAG.GESTURE_BUBBLE)
         if auto_close_ms:
             self.destroy(delay_ms=auto_close_ms)
-
         if __debug__:
             self.notify_change()
+
+    def on_win_visible(self, _event_obj):
+        from trezor import motor
+
+        if __debug__:
+            print("on_draw_post_end called.")
+        if self.vibrated:
+            self.remove_event_cb(None)
+            return
+        self.vibrated = True
+        self.remove_event_cb(None)
+        if __debug__:
+            print("vibrate start...")
+        if self.icon_path == "A:/res/success.png":
+            motor.vibrate(motor.SUCCESS)
+        elif self.icon_path == "A:/res/warning.png":
+            motor.vibrate(motor.WARNING)
+        elif self.icon_path == "A:/res/danger.png":
+            motor.vibrate(motor.ERROR)
+
+    def vibrate_necessary(self) -> bool:
+        if not hasattr(self, "icon"):
+            return False
+        if __debug__:
+            print(f"vibrate necessary ? {self.icon_path}")
+        if self.icon_path in [
+            "A:/res/success.png",
+            "A:/res/warning.png",
+            "A:/res/danger.png",
+        ]:
+            if __debug__:
+                print("vibrate necessary: true")
+            return True
+        return False
 
     def btn_layout_ver(self):
         if not all([hasattr(self, "btn_no"), hasattr(self, "btn_yes")]):
@@ -497,8 +533,29 @@ class FullSizeWindow(lv.obj):
         self.btn_yes.align_to(self.btn_no, lv.ALIGN.OUT_TOP_MID, 0, -8)
 
     def add_nav_back(self):
+        """
+        Add a navigation back button to the screen. The nav_back button is aligned to the left of the screen.
+        If added, add a event handler called <on_nav_back> or override the method <eventhandler>
+        when you need to handle the back event specifically.
+        """
         self.nav_back = Navigation(self)
+        self.content_area.set_style_max_height(574, 0)
         self.content_area.align_to(self.nav_back, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 0)
+
+    def add_nav_back_right(self):
+        """
+        Add a navigation back button to the screen. The nav_back button is aligned to the right of the screen.
+        If added, add a event handler called <on_nav_back> or override the method <eventhandler>
+        when you need to handle the back event specifically.
+        """
+        self.nav_back = Navigation(
+            self,
+            btn_bg_img="A:/res/cancel.png",
+            nav_btn_align=lv.ALIGN.RIGHT_MID,
+            align=lv.ALIGN.TOP_RIGHT,
+        )
+        self.content_area.set_style_max_height(574, 0)
+        self.content_area.align_to(self.nav_back, lv.ALIGN.OUT_BOTTOM_RIGHT, 0, 0)
 
     def eventhandler(self, event_obj):
         code = event_obj.code
@@ -520,6 +577,10 @@ class FullSizeWindow(lv.obj):
                 else:
                     if not self.hold_confirm:
                         self.channel.publish(1)
+            elif hasattr(self, "nav_back") and target == self.nav_back.nav_btn:
+                if not hasattr(self, "on_nav_back"):
+                    self.show_dismiss_anim()
+                    self.channel.publish(0)
         elif code == lv.EVENT.READY and self.hold_confirm:
             if target == self.slider:
                 self.show_dismiss_anim()

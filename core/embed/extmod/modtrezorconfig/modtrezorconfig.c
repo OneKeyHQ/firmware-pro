@@ -578,6 +578,10 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorconfig_wipe_obj,
                                  mod_trezorconfig_wipe);
 
 #ifndef TREZOR_EMULATOR
+/// def se_import_mnemonic(mnemonic: bytes) -> bool:
+///     """
+///     Import mnemonic to SE.
+///     """
 STATIC mp_obj_t mod_trezorconfig_se_import_mnemonic(mp_obj_t mnemonic) {
   mp_buffer_info_t mnemo = {0};
   mp_get_buffer_raise(mnemonic, &mnemo, MP_BUFFER_READ);
@@ -591,6 +595,35 @@ STATIC mp_obj_t mod_trezorconfig_se_import_mnemonic(mp_obj_t mnemonic) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorconfig_se_import_mnemonic_obj,
                                  mod_trezorconfig_se_import_mnemonic);
+
+/// def se_import_slip39(mnemonic: bytes, backup_type: int, identifier: int |
+/// None, iteration_exponent: int | None) -> bool:
+///     """
+///     Import slip39 to SE.
+///     """
+STATIC mp_obj_t mod_trezorconfig_se_import_slip39(size_t n_args,
+                                                  const mp_obj_t *args) {
+  mp_buffer_info_t master_secret_info = {0};
+  mp_get_buffer_raise(args[0], &master_secret_info, MP_BUFFER_READ);
+
+  uint8_t backup_type = trezor_obj_get_uint8(args[1]);
+  uint16_t identifier = 0;
+  if (args[2] != mp_const_none) {
+    identifier = trezor_obj_get_uint(args[2]);
+  }
+  uint8_t iteration_exponent = trezor_obj_get_uint8(args[3]);
+
+  if (sectrue != se_import_slip39(master_secret_info.buf,
+                                  master_secret_info.len, backup_type,
+                                  identifier, iteration_exponent)) {
+    return mp_const_false;
+  }
+  return mp_const_true;
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(
+    mod_trezorconfig_se_import_slip39_obj, 4, 4,
+    mod_trezorconfig_se_import_slip39);
 
 /// def se_export_mnemonic() -> bytes:
 ///     """
@@ -777,6 +810,8 @@ STATIC const mp_rom_map_elem_t mp_module_trezorconfig_globals_table[] = {
 #ifndef TREZOR_EMULATOR
     {MP_ROM_QSTR(MP_QSTR_se_import_mnemonic),
      MP_ROM_PTR(&mod_trezorconfig_se_import_mnemonic_obj)},
+    {MP_ROM_QSTR(MP_QSTR_se_import_slip39),
+     MP_ROM_PTR(&mod_trezorconfig_se_import_slip39_obj)},
     {MP_ROM_QSTR(MP_QSTR_se_export_mnemonic),
      MP_ROM_PTR(&mod_trezorconfig_se_export_mnemonic_obj)},
     {MP_ROM_QSTR(MP_QSTR_get_serial),

@@ -24,9 +24,14 @@ async def confirm_total_ethereum(
 ) -> None:
     from trezor.lvglui.scrs.template import TransactionDetailsETHNew
 
-    short_amount, striped = strip_amount(amount)
+    if amount.split(" ")[0] == "0" and raw_data is not None:
+        title = _(i18n_keys.TITLE_REQUEST_CONFIRMATION)
+        striped = False
+    else:
+        short_amount, striped = strip_amount(amount)
+        title = _(i18n_keys.TITLE__SEND_MULTILINE).format(short_amount)
     screen = TransactionDetailsETHNew(
-        _(i18n_keys.TITLE__SEND_MULTILINE).format(short_amount),
+        title,
         from_address,
         to_address,
         amount,
@@ -156,9 +161,14 @@ async def confirm_total_ethereum_eip1559(
 ) -> None:
     from trezor.lvglui.scrs.template import TransactionDetailsETHNew
 
-    short_amount, striped = strip_amount(amount)
+    if amount.split(" ")[0] == "0" and raw_data is not None:
+        title = _(i18n_keys.TITLE_REQUEST_CONFIRMATION)
+        striped = False
+    else:
+        short_amount, striped = strip_amount(amount)
+        title = _(i18n_keys.TITLE__SEND_MULTILINE).format(short_amount)
     screen = TransactionDetailsETHNew(
-        _(i18n_keys.TITLE__SEND_MULTILINE).format(short_amount),
+        title,
         from_address,
         to_address,
         amount,
