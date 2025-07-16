@@ -2611,9 +2611,6 @@ async def confirm_safe_tx(
     domain_hash: str,
     message_hash: str,
     safe_tx_hash: str,
-    domain_hash: str,
-    message_hash: str,
-    safe_tx_hash: str,
 ) -> None:
     from trezor.lvglui.scrs.template import GnosisSafeTxDetails
 
