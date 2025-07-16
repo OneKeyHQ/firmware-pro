@@ -551,7 +551,6 @@ class PasskeysManager(AnimScreen):
         from .app_passkeys import PasskeysListItemBtn
 
         BATCH_SIZE = 5
-        stored_credentials = []
         # pyright: off
         stored_credentials = [None] * self.count
         for i, credential in enumerate(self.credentials):
@@ -1299,6 +1298,7 @@ class NftGallery(Screen):
             row_dsc.append(lv.GRID_TEMPLATE.LAST)
             # 2 columns
             col_dsc = [
+                238,
                 238,
                 lv.GRID_TEMPLATE.LAST,
             ]
@@ -3364,7 +3364,6 @@ class AutoLockSetting(AnimScreen):
                         self.checked_index = index
                         if index == 6:
                             auto_lock_time = storage_device.AUTOLOCK_DELAY_MAXIMUM
-                            auto_lock_time = storage_device.AUTOLOCK_DELAY_MAXIMUM
                         elif index == 7:
                             auto_lock_time = self.custom
                         else:
@@ -3779,9 +3778,6 @@ class AutoShutDownSetting(AnimScreen):
                         self.btns[self.checked_index].set_uncheck()
                         self.checked_index = index
                         if index == 4:
-                            auto_shutdown_time = (
-                                storage_device.AUTOSHUTDOWN_DELAY_MAXIMUM
-                            )
                             auto_shutdown_time = (
                                 storage_device.AUTOSHUTDOWN_DELAY_MAXIMUM
                             )
@@ -4523,8 +4519,6 @@ class WallPaperManage(Screen):
     def del_callback(self):
         io.fatfs.unlink(self.img_path[2:])
         io.fatfs.unlink(self.zoom_path[2:])
-        if storage_device.get_homescreen() == self.img_path:
-            storage_device.set_homescreen(utils.get_default_wallpaper())
         if storage_device.get_homescreen() == self.img_path:
             storage_device.set_homescreen(utils.get_default_wallpaper())
         self.load_screen(self.prev_scr, destroy_self=True)
@@ -5280,12 +5274,6 @@ class WalletScreen(AnimScreen):
                     )
                 )
                 # pyright: on
-            elif hasattr(self, "mul_share_bk") and target == self.mul_share_bk:
-                from apps.management.recovery_device.create_mul_shares import (
-                    create_multi_share_backup,
-                )
-
-                workflow.spawn(create_multi_share_backup())
             elif hasattr(self, "mul_share_bk") and target == self.mul_share_bk:
                 from apps.management.recovery_device.create_mul_shares import (
                     create_multi_share_backup,
