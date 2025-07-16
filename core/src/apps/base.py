@@ -59,6 +59,9 @@ def get_vendor():
     return "trezor.io" if storage.device.is_trezor_compatible() else "onekey.so"
 
 
+FW_VENDOR_BTC_ONLY = "OneKey Bitcoin-only"
+
+
 def busy_expiry_ms() -> int:
     """
     Returns the time left until the busy state expires or 0 if the device is not in the busy state.
@@ -131,6 +134,7 @@ def get_features() -> Features:
             Capability.Shamir,
             Capability.ShamirGroups,
         ]
+        f.fw_vendor = FW_VENDOR_BTC_ONLY
     else:
         f.capabilities = [
             Capability.Bitcoin,

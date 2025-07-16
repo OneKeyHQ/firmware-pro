@@ -43,6 +43,7 @@ class MnemonicDisplay(FullSizeWindow):
             _(i18n_keys.BUTTON__CONTINUE),
             anim_dir=0,
         )
+        self.subtitle.set_recolor(True)
         if indicator_text:
             self.add_indicator(indicator_text)
         else:

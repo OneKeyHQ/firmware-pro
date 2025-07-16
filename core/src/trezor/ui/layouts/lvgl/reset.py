@@ -47,9 +47,7 @@ async def show_share_words(
         # header_title = f"Recovery share #{share_index + 1}"
         assert share_count is not None
         indicator_text = _(i18n_keys.BUTTON__MULTI_SHARE)
-        subtitle = _(
-            i18n_keys.TITLE__WRITE_DOWN_THE_FOLLOWING_20_WORDS_IN_ORDER_FOR_SHARE_STR_OF_STR
-        ).format(num=word_cnt, num1=share_index + 1, num2=share_count)
+        subtitle = f"{_(i18n_keys.SUBTITLE__DEVICE_BACKUP_MANUAL_BACKUP).format(word_cnt)}\n#00FF33 {_(i18n_keys.SUBTITLE__THIS_IS_SHARE_STR_OF_STR).format(num1=share_index + 1, num2=share_count)}#"
     else:
         # header_title = f"Group {group_index + 1} - Share {share_index + 1}"
         subtitle = f"Write down the following {word_cnt} words in order for Group {group_index + 1} - Share {share_index + 1} of {share_count}."

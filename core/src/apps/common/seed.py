@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
-from storage import cache, device
+import storage.cache as cache
+import storage.device as device
 from trezor import utils, wire
 from trezor.crypto import bip32, hmac
 
@@ -112,6 +113,10 @@ if not utils.BITCOIN_ONLY:
                 else:
                     passphrase_str = ""
 
+                from trezor.ui.layouts import show_popup
+                from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
+
+                await show_popup(_(i18n_keys.TITLE__PLEASE_WAIT), None, timeout_ms=1000)
                 mnemonic.get_seed(passphrase_str, progress_bar=False)
 
                 if cache.SESSION_DIRIVE_CARDANO:

@@ -4,6 +4,7 @@ from micropython import const
 
 import storage.cache
 import storage.device as storage_device
+import storage.device as storage_device
 from trezor import io, loop, uart, utils, wire, workflow
 from trezor.enums import SafetyCheckLevel
 from trezor.langs import langs, langs_keys
@@ -25,6 +26,7 @@ from apps.common import passphrase, safety_checks
 
 from ..lv_symbols import LV_SYMBOLS
 from . import font_GeistRegular26, font_GeistRegular30, font_GeistSemiBold26
+from .address import AddressManager, chains_brief_info
 from .address import AddressManager, chains_brief_info
 from .common import AnimScreen, FullSizeWindow, Screen, lv  # noqa: F401, F403, F405
 from .components.anim import Anim
@@ -74,6 +76,7 @@ def change_state(is_busy: bool = False):
 
 class MainScreen(Screen):
     def __init__(self, device_name=None, ble_name=None, dev_state=None):
+        homescreen = storage_device.get_homescreen()
         homescreen = storage_device.get_homescreen()
         if not hasattr(self, "_init"):
             self._init = True
@@ -153,6 +156,7 @@ class MainScreen(Screen):
             if hasattr(self, "subtitle"):
                 self.subtitle.add_flag(lv.obj.FLAG.HIDDEN)
         else:
+            homescreen = storage_device.get_homescreen()
             homescreen = storage_device.get_homescreen()
             self.set_style_bg_img_src(homescreen, 0)
             if hasattr(self, "title"):
@@ -551,29 +555,30 @@ class PasskeysManager(AnimScreen):
         from .app_passkeys import PasskeysListItemBtn
 
         BATCH_SIZE = 5
-        stored_credentials = []
+        # pyright: off
+        stored_credentials = [None] * self.count
         for i, credential in enumerate(self.credentials):
-            stored_credentials.append(
-                (
-                    credential.app_name(),
-                    credential.account_name(),
-                    credential.index,
-                    credential.creation_time,
-                )
+            stored_credentials[i] = (
+                credential.app_name(),
+                credential.account_name(),
+                credential.index,
+                credential.creation_time,
             )
             self.overlay.set_value(i + 1)
             if (i < BATCH_SIZE) or ((i + 1) % BATCH_SIZE == 0):
+                gc.collect()
                 await loop.sleep(10)
         stored_credentials.sort(key=lambda x: x[3])
         for i, credential in enumerate(stored_credentials):
-            self.listed_credentials.append(
-                PasskeysListItemBtn(
-                    self.container,
-                    credential[0],
-                    credential[1] or "",
-                    credential[2],
-                )
+            self.listed_credentials[i] = PasskeysListItemBtn(
+                self.container,
+                credential[0],
+                credential[1] or "",
+                credential[2],
             )
+            if (i < BATCH_SIZE) or ((i + 1) % BATCH_SIZE == 0):
+                gc.collect()
+        # pyright: on
         self.container.refresh_self_size()
         del stored_credentials
         self.overlay.del_delayed(10)
@@ -590,8 +595,9 @@ class PasskeysManager(AnimScreen):
         else:
             self.count = get_registered_credentials_count()
             self.credentials = get_registered_credentials()
-            self.listed_credentials = []
+            self.listed_credentials = [None] * self.count
 
+        fido_enabled = storage_device.is_fido_enabled()
         fido_enabled = storage_device.is_fido_enabled()
         if not hasattr(self, "banner") and not fido_enabled:
             self.banner = Banner(
@@ -636,12 +642,14 @@ class PasskeysManager(AnimScreen):
             )
 
     async def on_remove(self, i):
+        # pyright: off
         credential = self.listed_credentials.pop(i)
         from .app_passkeys import delete_credential
 
         delete_credential(credential.credential_index)
         item_height = credential.get_height()
         credential.delete()
+        # pyright: on
         self.fresh_show()
         self.auto_adjust_scroll(item_height)
 
@@ -658,6 +666,7 @@ class PasskeysManager(AnimScreen):
             elif target in self.listed_credentials:
                 for i, credential in enumerate(self.listed_credentials):
                     if target == credential:
+                        # pyright: off
                         workflow.spawn(
                             app_passkeys.request_credential_details(
                                 credential.app_name,
@@ -665,6 +674,7 @@ class PasskeysManager(AnimScreen):
                                 on_remove=lambda index=i: self.on_remove(index),
                             )
                         )
+                        # pyright: on
             elif hasattr(self, "rti_btn") and target == self.rti_btn:
                 FidoKeysSetting(self)
 
@@ -806,6 +816,12 @@ class ShowAddress(AnimScreen):
                 nav_btn_align=lv.ALIGN.RIGHT_MID,
                 align=lv.ALIGN.TOP_RIGHT,
             )
+            self.nav_passphrase = Navigation(
+                self.content_area,
+                btn_bg_img="A:/res/repeat.png",
+                nav_btn_align=lv.ALIGN.RIGHT_MID,
+                align=lv.ALIGN.TOP_RIGHT,
+            )
 
         # Account button
         self.index_btn = ListItemBtn(
@@ -828,6 +844,7 @@ class ShowAddress(AnimScreen):
         self.container.set_style_bg_opa(255, 0)
 
         # Initialize variables
+        self.chains = chains_brief_info()
         self.chains = chains_brief_info()
         self.visible_chains_count = 8
 
@@ -888,6 +905,7 @@ class ShowAddress(AnimScreen):
         self.list_items = self.chain_buttons
 
         if storage_device.is_animation_enabled():
+        if storage_device.is_animation_enabled():
             self.animate_list_items()
 
     def _create_visible_chain_buttons(self):
@@ -902,7 +920,11 @@ class ShowAddress(AnimScreen):
                 chain_name, chain_icon = chain
                 btn.label_left.set_text(chain_name)
                 btn.img_left.set_src(chain_icon)
+                chain_name, chain_icon = chain
+                btn.label_left.set_text(chain_name)
+                btn.img_left.set_src(chain_icon)
                 btn.add_event_cb(
+                    lambda e, name=chain_name: self.on_chain_click(e, name),
                     lambda e, name=chain_name: self.on_chain_click(e, name),
                     lv.EVENT.CLICKED,
                     None,
@@ -910,9 +932,11 @@ class ShowAddress(AnimScreen):
                 btn.clear_flag(lv.obj.FLAG.HIDDEN)
 
                 if chain_name == "Ethereum" and not hasattr(btn, "img_right"):
+                if chain_name == "Ethereum" and not hasattr(btn, "img_right"):
                     btn.img_right = lv.img(btn)
                     btn.img_right.set_src("A:/res/stacked-chains.png")
                     btn.img_right.set_align(lv.ALIGN.RIGHT_MID)
+                elif chain_name == "Ethereum" and hasattr(btn, "img_right"):
                 elif chain_name == "Ethereum" and hasattr(btn, "img_right"):
                     btn.img_right.set_style_img_opa(255, 0)
                 elif i == 1 and hasattr(btn, "img_right"):
@@ -997,6 +1021,7 @@ class ShowAddress(AnimScreen):
                         self.load_screen(self.prev_scr, destroy_self=True)
 
                 elif passphrase.is_enabled() and target == self.nav_passphrase.nav_btn:
+                elif passphrase.is_enabled() and target == self.nav_passphrase.nav_btn:
                     # enter new passphrase
                     # device.set_passphrase_auto_status(False)
                     storage.cache.end_current_session()
@@ -1024,8 +1049,15 @@ class IndexSelectionScreen(AnimScreen):
         )
 
         from .components.navigation import Navigation
+        from .components.navigation import Navigation
 
         # # navi
+        self.nav_opt = Navigation(
+            self.content_area,
+            nav_btn_align=lv.ALIGN.RIGHT_MID,
+            btn_bg_img="A:/res/general.png",
+            align=lv.ALIGN.TOP_RIGHT,
+        )
         self.nav_opt = Navigation(
             self.content_area,
             nav_btn_align=lv.ALIGN.RIGHT_MID,
@@ -1080,6 +1112,7 @@ class IndexSelectionScreen(AnimScreen):
 
         self.animations_next = []
         self.animations_prev = []
+        if storage_device.is_animation_enabled():
         if storage_device.is_animation_enabled():
             self.animate_list_items()
 
@@ -1204,6 +1237,7 @@ class IndexSelectionScreen(AnimScreen):
                 if target == self.nav_back.nav_btn:
                     if self.prev_scr is not None:
                         self.load_screen(self.prev_scr, destroy_self=True)
+                elif target == self.nav_opt.nav_btn:
                 elif target == self.nav_opt.nav_btn:
                     workflow.spawn(self.type_account_index())
             else:
@@ -1449,6 +1483,8 @@ class NftManager(Screen):
         io.fatfs.unlink("1:/res/nfts/desc/" + self.file_name.split(".")[0] + ".json")
         if storage_device.get_homescreen() == self.img_path:
             storage_device.set_homescreen(utils.get_default_wallpaper())
+        if storage_device.get_homescreen() == self.img_path:
+            storage_device.set_homescreen(utils.get_default_wallpaper())
         self.load_screen(self.prev_scr, destroy_self=True)
 
     def _load_scr(self, scr: "Screen", back: bool = False) -> None:
@@ -1497,6 +1533,7 @@ class NftManager(Screen):
                 if utils.lcd_resume():
                     return
                 if target == self.btn_yes:
+                    storage_device.set_homescreen(self.homescreen)
                     storage_device.set_homescreen(self.homescreen)
                     self.destroy(0)
                     workflow.spawn(utils.internal_reloop())
@@ -1629,6 +1666,7 @@ class ConnectWalletWays(Screen):
             if not self.is_visible():
                 self._load_scr(self)
             return
+        airgap_enabled = storage_device.is_airgap_mode()
         airgap_enabled = storage_device.is_airgap_mode()
         if airgap_enabled:
             self.waring_bar = Banner(
@@ -1959,6 +1997,11 @@ class WalletList(Screen):
             if storage_device.is_passphrase_enabled()
             else get_hd_key()
         )
+        qr_data = (
+            retrieval_hd_key()
+            if storage_device.is_passphrase_enabled()
+            else get_hd_key()
+        )
         if qr_data is None:
             from trezor.qr import gen_hd_key
 
@@ -1994,7 +2037,9 @@ class BackupWallet(Screen):
             self.content_area, self.subtitle, padding_row=2
         )
         from trezor.enums import BackupType
+        from trezor.enums import BackupType
 
+        is_bip39 = storage_device.get_backup_type() == BackupType.Bip39
         is_bip39 = storage_device.get_backup_type() == BackupType.Bip39
         self.lite = ListItemBtn(
             self.container,
@@ -2013,6 +2058,10 @@ class BackupWallet(Screen):
             self.lite.disable()
             self.keytag.disable()
 
+        if not is_bip39:
+            self.lite.disable()
+            self.keytag.disable()
+
         self.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
 
     def on_click(self, event_obj):
@@ -2025,6 +2074,7 @@ class BackupWallet(Screen):
                 from trezor.messages import RecoveryDevice
 
                 if target == self.lite:
+                    airgap_enabled = storage_device.is_airgap_mode()
                     airgap_enabled = storage_device.is_airgap_mode()
                     if airgap_enabled:
                         screen = FullSizeWindow(
@@ -3009,6 +3059,7 @@ class GeneralScreen(AnimScreen):
                 self.language.label_right.set_text(self.cur_language)
             self.backlight.label_right.set_text(
                 brightness2_percent_str(storage_device.get_brightness())
+                brightness2_percent_str(storage_device.get_brightness())
             )
             self.refresh_text()
             return
@@ -3023,12 +3074,16 @@ class GeneralScreen(AnimScreen):
         GeneralScreen.cur_language = langs[
             langs_keys.index(storage_device.get_language())
         ][1]
+        GeneralScreen.cur_language = langs[
+            langs_keys.index(storage_device.get_language())
+        ][1]
         self.language = ListItemBtn(
             self.container, _(i18n_keys.ITEM__LANGUAGE), GeneralScreen.cur_language
         )
         self.backlight = ListItemBtn(
             self.container,
             _(i18n_keys.ITEM__BRIGHTNESS),
+            brightness2_percent_str(storage_device.get_brightness()),
             brightness2_percent_str(storage_device.get_brightness()),
         )
         self.home_scr = ListItemBtn(self.container, _(i18n_keys.ITEM__HOMESCREEN))
@@ -3111,6 +3166,9 @@ class Animations(AnimScreen):
         GeneralScreen.cur_language = langs[
             langs_keys.index(storage_device.get_language())
         ][1]
+        GeneralScreen.cur_language = langs[
+            langs_keys.index(storage_device.get_language())
+        ][1]
         self.keyboard_haptic = ListItemBtn(
             self.container,
             _(i18n_keys.ITEM__VIBRATION_AND_HAPTIC),
@@ -3155,7 +3213,11 @@ class Autolock_and_ShutingDown(AnimScreen):
         Autolock_and_ShutingDown.cur_auto_lock_ms = (
             storage_device.get_autolock_delay_ms()
         )
+        Autolock_and_ShutingDown.cur_auto_lock_ms = (
+            storage_device.get_autolock_delay_ms()
+        )
         Autolock_and_ShutingDown.cur_auto_shutdown_ms = (
+            storage_device.get_autoshutdown_delay_ms()
             storage_device.get_autoshutdown_delay_ms()
         )
         Autolock_and_ShutingDown.cur_auto_lock = self.get_str_from_ms(
@@ -3201,6 +3263,7 @@ class Autolock_and_ShutingDown(AnimScreen):
         self.auto_shutdown.label_left.set_text(_(i18n_keys.ITEM__SHUTDOWN))
 
     def get_str_from_ms(self, time_ms) -> str:
+        if time_ms == storage_device.AUTOLOCK_DELAY_MAXIMUM:
         if time_ms == storage_device.AUTOLOCK_DELAY_MAXIMUM:
             return _(i18n_keys.ITEM__STATUS__NEVER)
         auto_lock_time = time_ms / 1000 // 60
@@ -3290,6 +3353,7 @@ class AutoLockSetting(AnimScreen):
 
         if has_custom:
             self.custom = storage_device.get_autolock_delay_ms()
+            self.custom = storage_device.get_autolock_delay_ms()
             self.btns[-1] = ListItemBtn(
                 self.container,
                 f"{Autolock_and_ShutingDown.cur_auto_lock}({_(i18n_keys.OPTION__CUSTOM__INSERT)})",
@@ -3349,10 +3413,12 @@ class AutoLockSetting(AnimScreen):
                         self.checked_index = index
                         if index == 6:
                             auto_lock_time = storage_device.AUTOLOCK_DELAY_MAXIMUM
+                            auto_lock_time = storage_device.AUTOLOCK_DELAY_MAXIMUM
                         elif index == 7:
                             auto_lock_time = self.custom
                         else:
                             auto_lock_time = self.setting_items[index] * 60 * 1000
+                        storage_device.set_autolock_delay_ms(int(auto_lock_time))
                         storage_device.set_autolock_delay_ms(int(auto_lock_time))
                         Autolock_and_ShutingDown.cur_auto_lock_ms = auto_lock_time
                         self.fresh_tips()
@@ -3408,6 +3474,7 @@ class LanguageSetting(AnimScreen):
                     button.set_uncheck()
                 if target == button and idx != last_checked:
                     storage_device.set_language(langs_keys[idx])
+                    storage_device.set_language(langs_keys[idx])
                     GeneralScreen.cur_language = langs[idx][1]
                     i18n_refresh()
                     self.title.set_text(_(i18n_keys.TITLE__LANGUAGE))
@@ -3434,6 +3501,7 @@ class BacklightSetting(AnimScreen):
             prev_scr=prev_scr, title=_(i18n_keys.TITLE__BRIGHTNESS), nav_back=True
         )
 
+        self.current_brightness = storage_device.get_brightness()
         self.current_brightness = storage_device.get_brightness()
         self.temp_brightness = self.current_brightness
         self.container = ContainerFlexCol(self.content_area, self.title)
@@ -3483,6 +3551,7 @@ class BacklightSetting(AnimScreen):
                 if target == self.nav_back.nav_btn:
                     if self.temp_brightness != self.current_brightness:
                         storage_device.set_brightness(self.temp_brightness)
+                        storage_device.set_brightness(self.temp_brightness)
             super().eventhandler(event_obj)
 
 
@@ -3512,6 +3581,7 @@ class KeyboardHapticSetting(AnimScreen):
 
         self.keyboard = ListItemBtnWithSwitch(
             self.container, _(i18n_keys.ITEM__KEYBOARD_HAPTIC), is_haptic_feedback=True
+            self.container, _(i18n_keys.ITEM__KEYBOARD_HAPTIC), is_haptic_feedback=True
         )
         self.tips = lv.label(self.content_area)
         self.tips.align_to(self.container, lv.ALIGN.OUT_BOTTOM_LEFT, 8, 16)
@@ -3525,6 +3595,7 @@ class KeyboardHapticSetting(AnimScreen):
             0,
         )
         self.tips.set_text(_(i18n_keys.CONTENT__VIBRATION_HAPTIC__HINT))
+        if storage_device.keyboard_haptic_enabled():
         if storage_device.keyboard_haptic_enabled():
             self.keyboard.add_state()
         else:
@@ -3541,7 +3612,9 @@ class KeyboardHapticSetting(AnimScreen):
             if target == self.keyboard.switch:
                 if target.has_state(lv.STATE.CHECKED):
                     storage_device.toggle_keyboard_haptic(True)
+                    storage_device.toggle_keyboard_haptic(True)
                 else:
+                    storage_device.toggle_keyboard_haptic(False)
                     storage_device.toggle_keyboard_haptic(False)
 
 
@@ -3579,6 +3652,7 @@ class AnimationSetting(AnimScreen):
             0,
         )
         if storage_device.is_animation_enabled():
+        if storage_device.is_animation_enabled():
             self.item.add_state()
             self.tips.set_text(_(i18n_keys.CONTENT__ANIMATIONS__ENABLED_HINT))
         else:
@@ -3596,8 +3670,10 @@ class AnimationSetting(AnimScreen):
             if target == self.item.switch:
                 if target.has_state(lv.STATE.CHECKED):
                     storage_device.set_animation_enable(True)
+                    storage_device.set_animation_enable(True)
                     self.tips.set_text(_(i18n_keys.CONTENT__ANIMATIONS__ENABLED_HINT))
                 else:
+                    storage_device.set_animation_enable(False)
                     storage_device.set_animation_enable(False)
                     self.tips.set_text(_(i18n_keys.CONTENT__ANIMATIONS__DISABLED_HINT))
 
@@ -3633,6 +3709,7 @@ class TapAwakeSetting(AnimScreen):
         self.description.align_to(self.container, lv.ALIGN.OUT_BOTTOM_LEFT, 8, 16)
 
         if storage_device.is_tap_awake_enabled():
+        if storage_device.is_tap_awake_enabled():
             self.tap_awake.add_state()
             self.description.set_text(_(i18n_keys.CONTENT__TAP_TO_WAKE_ENABLED__HINT))
         else:
@@ -3652,10 +3729,12 @@ class TapAwakeSetting(AnimScreen):
                         _(i18n_keys.CONTENT__TAP_TO_WAKE_ENABLED__HINT)
                     )
                     storage_device.set_tap_awake_enable(True)
+                    storage_device.set_tap_awake_enable(True)
                 else:
                     self.description.set_text(
                         _(i18n_keys.CONTENT__TAP_TO_WAKE_DISABLED__HINT)
                     )
+                    storage_device.set_tap_awake_enable(False)
                     storage_device.set_tap_awake_enable(False)
 
 
@@ -3707,6 +3786,7 @@ class AutoShutDownSetting(AnimScreen):
                 self.checked_index = index
 
         if has_custom:
+            self.custom = storage_device.get_autoshutdown_delay_ms()
             self.custom = storage_device.get_autoshutdown_delay_ms()
             self.btns[-1] = ListItemBtn(
                 self.container,
@@ -3766,10 +3846,14 @@ class AutoShutDownSetting(AnimScreen):
                             auto_shutdown_time = (
                                 storage_device.AUTOSHUTDOWN_DELAY_MAXIMUM
                             )
+                            auto_shutdown_time = (
+                                storage_device.AUTOSHUTDOWN_DELAY_MAXIMUM
+                            )
                         elif index == 5:
                             auto_shutdown_time = self.custom
                         else:
                             auto_shutdown_time = self.setting_items[index] * 60 * 1000
+                        storage_device.set_autoshutdown_delay_ms(auto_shutdown_time)
                         storage_device.set_autoshutdown_delay_ms(auto_shutdown_time)
                         GeneralScreen.cur_auto_shutdown_ms = auto_shutdown_time
                         self.fresh_tips()
@@ -3832,6 +3916,7 @@ class PinMapSetting(AnimScreen):
 
     def fresh_tips(self):
         if storage_device.is_random_pin_map_enabled():
+        if storage_device.is_random_pin_map_enabled():
             self.random.set_checked()
             self.tips.set_text(
                 _(i18n_keys.CONTENT__SECURITY_PIN_KEYPAD_LAYOUT_RANDOMIZED__HINT)
@@ -3853,9 +3938,13 @@ class PinMapSetting(AnimScreen):
                 self.order.set_uncheck()
                 if not storage_device.is_random_pin_map_enabled():
                     storage_device.set_random_pin_map_enable(True)
+                if not storage_device.is_random_pin_map_enabled():
+                    storage_device.set_random_pin_map_enable(True)
             elif target == self.order:
                 self.random.set_uncheck()
                 self.order.set_checked()
+                if storage_device.is_random_pin_map_enabled():
+                    storage_device.set_random_pin_map_enable(False)
                 if storage_device.is_random_pin_map_enabled():
                     storage_device.set_random_pin_map_enable(False)
             else:
@@ -3889,6 +3978,7 @@ class ConnectSetting(Screen):
             self.description.set_text(
                 _(i18n_keys.CONTENT__CONNECT_BLUETOOTH_ENABLED__HINT).format(
                     storage_device.get_ble_name()
+                    storage_device.get_ble_name()
                 )
             )
         else:
@@ -3910,6 +4000,7 @@ class ConnectSetting(Screen):
                         self.description.set_text(
                             _(
                                 i18n_keys.CONTENT__CONNECT_BLUETOOTH_ENABLED__HINT
+                            ).format(storage_device.get_ble_name())
                             ).format(storage_device.get_ble_name())
                         )
                     )
@@ -3940,6 +4031,7 @@ class AirGapSetting(AnimScreen):
             self._init = True
         else:
             air_gap_enabled = storage_device.is_airgap_mode()
+            air_gap_enabled = storage_device.is_airgap_mode()
             if air_gap_enabled:
                 self.air_gap.add_state()
                 self.description.set_text(
@@ -3969,6 +4061,7 @@ class AirGapSetting(AnimScreen):
         self.description.set_style_text_font(font_GeistRegular26, lv.STATE.DEFAULT)
         self.description.set_style_text_line_space(3, 0)
         self.description.align_to(self.container, lv.ALIGN.OUT_BOTTOM_LEFT, 8, 16)
+        air_gap_enabled = storage_device.is_airgap_mode()
         air_gap_enabled = storage_device.is_airgap_mode()
         if air_gap_enabled:
             self.air_gap.add_state()
@@ -4010,6 +4103,7 @@ class AirGapSetting(AnimScreen):
                     )
         elif code == lv.EVENT.READY:
             if not storage_device.is_airgap_mode():
+            if not storage_device.is_airgap_mode():
                 self.description.set_text(
                     _(
                         i18n_keys.CONTENT__BLUETOOTH_USB_AND_NFT_TRANSFER_FUNCTIONS_HAVE_BEEN_DISABLED
@@ -4024,6 +4118,7 @@ class AirGapSetting(AnimScreen):
                 )
                 utils.disable_airgap_mode()
         elif code == lv.EVENT.CANCEL:
+            if storage_device.is_airgap_mode():
             if storage_device.is_airgap_mode():
                 self.air_gap.add_state()
             else:
@@ -4199,6 +4294,7 @@ class TrezorModeToggle(FullSizeWindow):
                     utils.reset()
 
                 storage_device.enable_trezor_compatible(self.enable)
+                storage_device.enable_trezor_compatible(self.enable)
                 workflow.spawn(restart_delay())
 
 
@@ -4273,6 +4369,7 @@ class PowerOff(FullSizeWindow):
 
         self.has_pin = config.has_pin()
         if self.has_pin and storage_device.is_initialized():
+        if self.has_pin and storage_device.is_initialized():
             # from trezor.lvglui.scrs import fingerprints
 
             # if fingerprints.is_available() and fingerprints.is_unlocked():
@@ -4300,6 +4397,7 @@ class PowerOff(FullSizeWindow):
                 if (
                     not utils.is_initialization_processing()
                     and self.has_pin
+                    and storage_device.is_initialized()
                     and storage_device.is_initialized()
                 ):
                     from apps.common.request_pin import verify_user_pin
@@ -4341,6 +4439,7 @@ class HomeScreenSetting(AnimScreen):
         return targets
 
     def __init__(self, prev_scr=None):
+        homescreen = storage_device.get_homescreen()
         homescreen = storage_device.get_homescreen()
         if not hasattr(self, "_init"):
             self._init = True
@@ -4506,6 +4605,8 @@ class WallPaperManage(Screen):
         io.fatfs.unlink(self.zoom_path[2:])
         if storage_device.get_homescreen() == self.img_path:
             storage_device.set_homescreen(utils.get_default_wallpaper())
+        if storage_device.get_homescreen() == self.img_path:
+            storage_device.set_homescreen(utils.get_default_wallpaper())
         self.load_screen(self.prev_scr, destroy_self=True)
 
     # def cancel_callback(self):
@@ -4525,6 +4626,7 @@ class WallPaperManage(Screen):
                         self.prev_scr.from_wallpaper = False
             else:
                 if target == self.btn_yes:
+                    storage_device.set_homescreen(self.img_path)
                     storage_device.set_homescreen(self.img_path)
                     self.prev_scr.from_wallpaper = True
                     self.load_screen(self.prev_scr, destroy_self=True)
@@ -4654,6 +4756,7 @@ class DeviceAuthScreen(AnimScreen):
             nav_back=True,
         )
         firmware_version = storage_device.get_firmware_version()
+        firmware_version = storage_device.get_firmware_version()
         firmware_build_id = utils.BUILD_ID[-7:].decode()
         firmware_hash_str = hexlify(utils.onekey_firmware_hash()).decode()[:7]
         version_str = f"{firmware_version} ({firmware_build_id}-{firmware_hash_str})"
@@ -4673,6 +4776,7 @@ class DeviceAuthScreen(AnimScreen):
         self.ser_num = DisplayItemWithFont_30(
             self.container,
             _(i18n_keys.ITEM__SERIAL_NUMBER),
+            storage_device.get_serial(),
             storage_device.get_serial(),
         )
         self.version = DisplayItemWithFont_30(
@@ -4799,6 +4903,7 @@ class UsbLockSetting(AnimScreen):
         self.description.align_to(self.container, lv.ALIGN.OUT_BOTTOM_LEFT, 8, 16)
 
         if storage_device.is_usb_lock_enabled():
+        if storage_device.is_usb_lock_enabled():
             self.usb_lock.add_state()
             self.description.set_text(_(i18n_keys.CONTENT__USB_LOCK_ENABLED__HINT))
         else:
@@ -4818,10 +4923,12 @@ class UsbLockSetting(AnimScreen):
                         _(i18n_keys.CONTENT__USB_LOCK_ENABLED__HINT)
                     )
                     storage_device.set_usb_lock_enable(True)
+                    storage_device.set_usb_lock_enable(True)
                 else:
                     self.description.set_text(
                         _(i18n_keys.CONTENT__USB_LOCK_DISABLED__HINT)
                     )
+                    storage_device.set_usb_lock_enable(False)
                     storage_device.set_usb_lock_enable(False)
 
 
@@ -4957,6 +5064,7 @@ class FingerprintSetting(AnimScreen):
         )
 
         if not storage_device.is_fingerprint_unlock_enabled():
+        if not storage_device.is_fingerprint_unlock_enabled():
             self.unlock.clear_state()
 
     def _parse_group_data(self, data):
@@ -5030,7 +5138,9 @@ class FingerprintSetting(AnimScreen):
 
                 if target.has_state(lv.STATE.CHECKED):
                     storage_device.enable_fingerprint_unlock(True)
+                    storage_device.enable_fingerprint_unlock(True)
                 else:
+                    storage_device.enable_fingerprint_unlock(False)
                     storage_device.enable_fingerprint_unlock(False)
 
 
@@ -5214,6 +5324,13 @@ class WalletScreen(AnimScreen):
             self.mul_share_bk = ListItemBtn(
                 self.container, _(i18n_keys.BUTTON__CREATE_MULTI_SHARE_BACKUP)
             )
+        )
+        from apps.common import backup_types
+
+        if backup_types.is_extendable_backup_type(storage_device.get_backup_type()):
+            self.mul_share_bk = ListItemBtn(
+                self.container, _(i18n_keys.BUTTON__CREATE_MULTI_SHARE_BACKUP)
+            )
         self.passphrase = ListItemBtn(self.container, _(i18n_keys.ITEM__PASSPHRASE))
         self.turbo_mode = ListItemBtn(self.container, _(i18n_keys.TITLE__TURBO_MODE))
         self.trezor_mode = ListItemBtnWithSwitch(
@@ -5222,6 +5339,7 @@ class WalletScreen(AnimScreen):
         self.trezor_mode.add_style(
             StyleWrapper().bg_color(lv_colors.ONEKEY_BLACK_3).bg_opa(lv.OPA.COVER), 0
         )
+        if not storage_device.is_trezor_compatible():
         if not storage_device.is_trezor_compatible():
             self.trezor_mode.clear_state()
         self.container.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
@@ -5265,6 +5383,12 @@ class WalletScreen(AnimScreen):
                 )
 
                 workflow.spawn(create_multi_share_backup())
+            elif hasattr(self, "mul_share_bk") and target == self.mul_share_bk:
+                from apps.management.recovery_device.create_mul_shares import (
+                    create_multi_share_backup,
+                )
+
+                workflow.spawn(create_multi_share_backup())
             elif target == self.passphrase:
                 PassphraseScreen(self)
             elif target == self.turbo_mode:
@@ -5281,8 +5405,10 @@ class WalletScreen(AnimScreen):
         if code == lv.EVENT.VALUE_CHANGED:
             if target == self.trezor_mode.switch:
                 TrezorModeToggle(self, not storage_device.is_trezor_compatible())
+                TrezorModeToggle(self, not storage_device.is_trezor_compatible())
 
     def reset_switch(self):
+        if storage_device.is_trezor_compatible():
         if storage_device.is_trezor_compatible():
             self.trezor_mode.add_state()
         else:
@@ -5327,6 +5453,7 @@ class FidoKeysSetting(AnimScreen):
 
     def reset_state(self):
         if storage_device.is_fido_enabled():
+        if storage_device.is_fido_enabled():
             self.fido.add_state()
             self.description.set_text(_(i18n_keys.SECURITY__ENABLE_FIDO_KEYS_DESC))
         else:
@@ -5338,6 +5465,7 @@ class FidoKeysSetting(AnimScreen):
         target = event_obj.get_target()
         if code == lv.EVENT.VALUE_CHANGED:
             if target == self.fido.switch:
+                FidoKeysToggle(self, not storage_device.is_fido_enabled())
                 FidoKeysToggle(self, not storage_device.is_fido_enabled())
 
 
@@ -5370,6 +5498,7 @@ class FidoKeysToggle(FullSizeWindow):
                     utils.reset()
 
                 loop.pop_tasks_on_iface(io.UART | io.POLL_READ)
+                storage_device.set_fido_enable(self.enable)
                 storage_device.set_fido_enable(self.enable)
                 workflow.spawn(restart_delay())
 
@@ -5673,6 +5802,7 @@ class TurboModeScreen(AnimScreen):
             StyleWrapper().bg_color(lv_colors.ONEKEY_BLACK_3).bg_opa(lv.OPA.COVER), 0
         )
         if not storage_device.is_turbomode_enabled():
+        if not storage_device.is_turbomode_enabled():
             self.turbo_mode.clear_state()
 
         self.tips = lv.label(self.content_area)
@@ -5706,10 +5836,12 @@ class TurboModeScreen(AnimScreen):
         if code == lv.EVENT.VALUE_CHANGED:
             if target == self.turbo_mode.switch:
                 if not storage_device.is_turbomode_enabled():
+                if not storage_device.is_turbomode_enabled():
                     TurboModeConfirm(self, True)
                     self.turbo_mode.add_state()
                 else:
                     self.turbo_mode.clear_state()
+                    storage_device.set_turbomode_enable(False)
                     storage_device.set_turbomode_enable(False)
 
     def reset_switch(self):
@@ -5754,6 +5886,7 @@ class TurboModeConfirm(FullSizeWindow):
                 self.destroy(200)
         elif code == lv.EVENT.READY and self.hold_confirm:
             if target == self.slider:
+                storage_device.set_turbomode_enable(self.enable)
                 storage_device.set_turbomode_enable(self.enable)
                 self.destroy(200)
 

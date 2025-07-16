@@ -90,6 +90,8 @@ __all__ = (
     "confirm_safe_tx",
     "confirm_safe_approve_hash",
     "confirm_safe_exec_transaction",
+    "confirm_safe_approve_hash",
+    "confirm_safe_exec_transaction",
 )
 
 
@@ -2609,6 +2611,9 @@ async def confirm_safe_tx(
     domain_hash: str,
     message_hash: str,
     safe_tx_hash: str,
+    domain_hash: str,
+    message_hash: str,
+    safe_tx_hash: str,
 ) -> None:
     from trezor.lvglui.scrs.template import GnosisSafeTxDetails
 
@@ -2627,6 +2632,9 @@ async def confirm_safe_tx(
         verifying_contract,
         ctx.icon_path,
         ctx.primary_color,
+        domain_hash,
+        message_hash,
+        safe_tx_hash,
         domain_hash,
         message_hash,
         safe_tx_hash,
