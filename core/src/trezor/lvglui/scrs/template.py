@@ -1024,7 +1024,7 @@ class SafeTxExecTransaction(FullSizeWindow):
         to_address: str,
         to_address_safe: str,
         value_safe: str,
-        opeartion: int,
+        operation: int,
         safe_tx_gas: str,
         base_gas: str,
         gas_price_safe: str,
@@ -1054,7 +1054,7 @@ class SafeTxExecTransaction(FullSizeWindow):
         from .components.listitem import RawDataOverviewWithTitle
 
         self.primary_color = primary_color
-        is_delegate_call = opeartion == 1
+        is_delegate_call = operation == 1
         if is_delegate_call:
             self.warning_banner = Banner(
                 self.content_area,
@@ -1088,7 +1088,7 @@ class SafeTxExecTransaction(FullSizeWindow):
         self.item_group_body_operation = DisplayItem(
             self.group_safe_tx,
             "Operation",
-            f'#FF1100 {opeartion} {"(CALL)" if opeartion == 0 else "(DELEGATECALL)"}#',
+            f'#FF1100 {operation} {"(CALL)" if operation == 0 else "(DELEGATECALL)"}#',
         )
         if call_method and isinstance(call_data, dict):
             from .components.listitem import DisplayItemWithFlexColPanel
@@ -3433,14 +3433,14 @@ class Modal(FullSizeWindow):
         confirm_text: str = "",
         cancel_text: str = "",
         icon_path: str | None = None,
-        anim_dir: int = 1,
+        anim_dir: int = 0,
     ):
         super().__init__(
             title, subtitle, confirm_text, cancel_text, icon_path, anim_dir=anim_dir
         )
 
     def show_unload_anim(self):
-        self.destroy(200)
+        self.destroy(300)
 
 
 class AlgoCommon(FullSizeWindow):
@@ -5459,7 +5459,7 @@ class GnosisSafeTxDetails(FullSizeWindow):
         to_address: str,
         value: str,
         call_data: bytes | None,
-        opeartion: int,
+        operation: int,
         safe_tx_gas: int,
         base_gas: int,
         gas_price: str,
@@ -5482,7 +5482,7 @@ class GnosisSafeTxDetails(FullSizeWindow):
             primary_color=primary_color,
         )
         self.primary_color = primary_color
-        is_delegate_call = opeartion == 1
+        is_delegate_call = operation == 1
         if is_delegate_call:
             self.warning_banner = Banner(
                 self.content_area,
@@ -5529,7 +5529,7 @@ class GnosisSafeTxDetails(FullSizeWindow):
         self.item_group_operation = DisplayItem(
             self.group_more,
             _(i18n_keys.GLOBAL_OPERATION),
-            f'#FF1100 {opeartion} {"(CALL)" if opeartion == 0 else "(DELEGATECALL)"}#',
+            f'#FF1100 {operation} {"(CALL)" if operation == 0 else "(DELEGATECALL)"}#',
         )
         self.item_group_nonce = DisplayItem(
             self.group_more,

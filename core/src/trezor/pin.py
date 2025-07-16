@@ -1,10 +1,8 @@
 from typing import Any
 
 _previous_progress: int | None = None
-_previous_seconds: int | None = None
 keepalive_callback: Any = None
 
-_pre_scr: Any = None
 _scr: Any = None
 _timer: Any = None
 
@@ -25,10 +23,9 @@ def _timer_callback(timer: Any) -> None:
             _timer = None
 
 
-def show_pin_timeout(seconds: int, progress: int, message: str) -> bool:
+def show_pin_timeout(_seconds: int, progress: int, message: str) -> bool:
     from trezor.lvglui.scrs import lv
     from trezor.lvglui.scrs.common import FullSizeWindow
-    from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
     from trezor.lvglui.lv_colors import lv_colors
 
     global _previous_progress
@@ -47,9 +44,8 @@ def show_pin_timeout(seconds: int, progress: int, message: str) -> bool:
 
     if _scr_need_create:
         if message is not None:
-            text = ""
             if message == "read fp data":
-                text = _(i18n_keys.MSG__READING_FINGERPRINT_FROM_SECURITY_CHIP)
+                text = ""
             else:
                 text = message
         else:

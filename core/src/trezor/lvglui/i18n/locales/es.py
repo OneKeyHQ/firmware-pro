@@ -1017,6 +1017,6 @@ translations = [
     "Actualiza a la última versión para usar \"Adjuntar al PIN\".",
     "Confirmación de solicitud",
     "¿Abortar la creación de la frase de recuperación?",
-    "Escribe las siguientes {num} palabras en orden para la Parte {num1} de {num2}.",
+    "Esta es la parte {num1} de {num2}.",
 ]
 # fmt: on

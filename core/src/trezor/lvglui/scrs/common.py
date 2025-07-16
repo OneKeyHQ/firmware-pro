@@ -539,7 +539,8 @@ class FullSizeWindow(lv.obj):
         when you need to handle the back event specifically.
         """
         self.nav_back = Navigation(self)
-        self.content_area.set_style_max_height(574, 0)
+        if any([hasattr(self, "btn_no"), hasattr(self, "btn_yes")]):
+            self.content_area.set_style_max_height(574, 0)
         self.content_area.align_to(self.nav_back, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 0)
 
     def add_nav_back_right(self):
@@ -554,7 +555,8 @@ class FullSizeWindow(lv.obj):
             nav_btn_align=lv.ALIGN.RIGHT_MID,
             align=lv.ALIGN.TOP_RIGHT,
         )
-        self.content_area.set_style_max_height(574, 0)
+        if any([hasattr(self, "btn_no"), hasattr(self, "btn_yes")]):
+            self.content_area.set_style_max_height(574, 0)
         self.content_area.align_to(self.nav_back, lv.ALIGN.OUT_BOTTOM_RIGHT, 0, 0)
 
     def eventhandler(self, event_obj):

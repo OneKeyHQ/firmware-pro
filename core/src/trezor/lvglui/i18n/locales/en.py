@@ -1017,6 +1017,6 @@ translations = [
     "Update to the latest version to use “Attach to PIN”.",
     "Request Confirmation",
     "Abort Recovery Phrase Creation?",
-    "Write down the following {num} words in order for Share {num1} of {num2}.",
+    "This is Share {num1} of {num2}.",
 ]
 # fmt: on

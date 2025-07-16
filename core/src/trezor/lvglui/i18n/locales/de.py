@@ -1017,6 +1017,6 @@ translations = [
     "Aktualisieren Sie auf die neueste Version, um „An PIN anheften“ zu verwenden.",
     "Anfragebestätigung",
     "Wiederherstellungsphrase-Erstellung abbrechen?",
-    "Schreiben Sie die folgenden {num} Wörter der Reihe nach für Anteil {num1} von {num2} auf.",
+    "Dies ist Anteil {num1} von {num2}.",
 ]
 # fmt: on

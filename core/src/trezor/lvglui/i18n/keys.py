@@ -2234,6 +2234,6 @@ MSG__ATTACH_TO_PIN_TIPS = 1014
 TITLE_REQUEST_CONFIRMATION = 1015
 # Abort Recovery Phrase Creation?
 TITLE__ABORT_RECOVERY_PHRASE_CREATION = 1016
-# Write down the following {num} words in order for Share {num1} of {num2}.
-TITLE__WRITE_DOWN_THE_FOLLOWING_20_WORDS_IN_ORDER_FOR_SHARE_STR_OF_STR = 1017
+# This is Share {num1} of {num2}.
+SUBTITLE__THIS_IS_SHARE_STR_OF_STR = 1017
 # fmt: on

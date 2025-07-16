@@ -1017,6 +1017,6 @@ translations = [
     "Mettez à jour vers la dernière version pour utiliser « Épingler ».",
     "Demande de confirmation",
     "Abandonner la création de la phrase de récupération ?",
-    "Écrivez les {num} mots suivants dans l'ordre pour la Part {num1} sur {num2}.",
+    "Ceci est la part {num1} sur {num2}.",
 ]
 # fmt: on

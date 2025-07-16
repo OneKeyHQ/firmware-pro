@@ -1,4 +1,4 @@
-from storage import device
+import storage.device as storage_device
 from trezor import ui, utils
 from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
 
@@ -23,7 +23,7 @@ class LockScreen(Screen):
         return False, None
 
     def __init__(self, device_name, ble_name="", dev_state=None):
-        lockscreen = device.get_homescreen()
+        lockscreen = storage_device.get_homescreen()
         self.double_click = DoubleClickDetector(click_timeout=800, click_dist=50)
         if not hasattr(self, "_init"):
             self._init = True
@@ -141,14 +141,14 @@ class LockScreen(Screen):
             pass
 
     def _show_fingerprint_prompt_if_necessary(self):
-        if device.has_prompted_fingerprint():
+        if storage_device.has_prompted_fingerprint():
             if hasattr(self, "fingerprint_prompt"):
                 self.fingerprint_prompt.delete()
             return
         self.fingerprint_prompt = lv.img(self.content_area)
         self.fingerprint_prompt.set_src("A:/res/fingerprint-prompt.png")
         self.fingerprint_prompt.set_pos(424, 28)
-        device.set_fingerprint_prompted()
+        storage_device.set_fingerprint_prompted()
 
     def eventhandler(self, event_obj: lv.event_t):
         code = event_obj.code
@@ -157,7 +157,7 @@ class LockScreen(Screen):
                 self.channel.publish("clicked")
             else:
                 if not ui.display.backlight():
-                    if not device.is_tap_awake_enabled():
+                    if not storage_device.is_tap_awake_enabled():
                         return
                     else:
                         indev = lv.indev_get_act()

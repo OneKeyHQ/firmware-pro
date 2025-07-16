@@ -549,29 +549,30 @@ class PasskeysManager(AnimScreen):
         from .app_passkeys import PasskeysListItemBtn
 
         BATCH_SIZE = 5
-        stored_credentials = []
+        # pyright: off
+        stored_credentials = [None] * self.count
         for i, credential in enumerate(self.credentials):
-            stored_credentials.append(
-                (
-                    credential.app_name(),
-                    credential.account_name(),
-                    credential.index,
-                    credential.creation_time,
-                )
+            stored_credentials[i] = (
+                credential.app_name(),
+                credential.account_name(),
+                credential.index,
+                credential.creation_time,
             )
             self.overlay.set_value(i + 1)
             if (i < BATCH_SIZE) or ((i + 1) % BATCH_SIZE == 0):
+                gc.collect()
                 await loop.sleep(10)
         stored_credentials.sort(key=lambda x: x[3])
         for i, credential in enumerate(stored_credentials):
-            self.listed_credentials.append(
-                PasskeysListItemBtn(
-                    self.container,
-                    credential[0],
-                    credential[1] or "",
-                    credential[2],
-                )
+            self.listed_credentials[i] = PasskeysListItemBtn(
+                self.container,
+                credential[0],
+                credential[1] or "",
+                credential[2],
             )
+            if (i < BATCH_SIZE) or ((i + 1) % BATCH_SIZE == 0):
+                gc.collect()
+        # pyright: on
         self.container.refresh_self_size()
         del stored_credentials
         self.overlay.del_delayed(10)
@@ -588,7 +589,7 @@ class PasskeysManager(AnimScreen):
         else:
             self.count = get_registered_credentials_count()
             self.credentials = get_registered_credentials()
-            self.listed_credentials = []
+            self.listed_credentials = [None] * self.count
 
         fido_enabled = storage_device.is_fido_enabled()
         if not hasattr(self, "banner") and not fido_enabled:
@@ -634,12 +635,14 @@ class PasskeysManager(AnimScreen):
             )
 
     async def on_remove(self, i):
+        # pyright: off
         credential = self.listed_credentials.pop(i)
         from .app_passkeys import delete_credential
 
         delete_credential(credential.credential_index)
         item_height = credential.get_height()
         credential.delete()
+        # pyright: on
         self.fresh_show()
         self.auto_adjust_scroll(item_height)
 
@@ -656,6 +659,7 @@ class PasskeysManager(AnimScreen):
             elif target in self.listed_credentials:
                 for i, credential in enumerate(self.listed_credentials):
                     if target == credential:
+                        # pyright: off
                         workflow.spawn(
                             app_passkeys.request_credential_details(
                                 credential.app_name,
@@ -663,6 +667,7 @@ class PasskeysManager(AnimScreen):
                                 on_remove=lambda index=i: self.on_remove(index),
                             )
                         )
+                        # pyright: on
             elif hasattr(self, "rti_btn") and target == self.rti_btn:
                 FidoKeysSetting(self)
 
