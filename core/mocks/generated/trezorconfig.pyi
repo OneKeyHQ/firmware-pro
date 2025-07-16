@@ -19,7 +19,8 @@ def is_initialized() -> bool:
 
 
 # extmod/modtrezorconfig/modtrezorconfig.c
-def unlock(pin: str, ext_salt: bytes | None) -> bool:
+def unlock(pin: str, ext_salt: bytes | None, pin_use_type: int = 0)
+-> tuple[bool, int]:
     """
     Attempts to unlock the storage with the given PIN and external salt.
     Returns True on success, False on failure.
@@ -27,7 +28,8 @@ def unlock(pin: str, ext_salt: bytes | None) -> bool:
 
 
 # extmod/modtrezorconfig/modtrezorconfig.c
-def check_pin(pin: str, ext_salt: bytes | None) -> bool:
+def check_pin(pin: str, ext_salt: bytes | None, pin_use_type: int = 0) ->
+bool:
     """
     Check the given PIN with the given external salt.
     Returns True on success, False on failure.
@@ -170,6 +172,21 @@ def next_counter(
 def wipe() -> None:
     """
     Erases the whole config. Use with caution!
+    """
+
+
+# extmod/modtrezorconfig/modtrezorconfig.c
+def se_import_mnemonic(mnemonic: bytes) -> bool:
+    """
+    Import mnemonic to SE.
+    """
+
+
+# extmod/modtrezorconfig/modtrezorconfig.c
+def se_import_slip39(mnemonic: bytes, backup_type: int, identifier: int |
+None, iteration_exponent: int | None) -> bool:
+    """
+    Import slip39 to SE.
     """
 
 

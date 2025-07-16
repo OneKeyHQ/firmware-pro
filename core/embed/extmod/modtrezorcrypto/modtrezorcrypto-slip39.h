@@ -24,24 +24,36 @@
 
 /// package: trezorcrypto.slip39
 
-/// def word_completion_mask(prefix: int) -> int:
+/// def complete_word(prefix: str) -> str | None:
 ///     """
-///     Calculates which buttons still can be pressed after some already were.
-///     Returns a 9-bit bitmask, where each bit specifies which buttons
-///     can be further pressed (there are still words in this combination).
-///     LSB denotes first button.
-///
-///     Example: 110000110 - second, third, eighth and ninth button still can be
-///     pressed.
+///     Return the first word from the wordlist starting with prefix.
 ///     """
-STATIC mp_obj_t mod_trezorcrypto_slip39_word_completion_mask(mp_obj_t _prefix) {
-  uint16_t prefix = mp_obj_get_int(_prefix);
-
-  if (prefix < 1 || prefix > 9999) {
-    mp_raise_ValueError(
-        "Invalid button prefix (range between 1 and 9999 is allowed)");
+STATIC mp_obj_t mod_trezorcrypto_slip39_complete_word(mp_obj_t prefix) {
+  mp_buffer_info_t pfx = {0};
+  mp_get_buffer_raise(prefix, &pfx, MP_BUFFER_READ);
+  if (pfx.len == 0) {
+    return mp_const_none;
   }
-  return mp_obj_new_int_from_uint(slip39_word_completion_mask(prefix));
+  const char *word = mnemonic_complete_word(pfx.buf, pfx.len, true);
+  if (word) {
+    return mp_obj_new_str(word, strlen(word));
+  } else {
+    return mp_const_none;
+  }
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorcrypto_slip39_complete_word_obj,
+                                 mod_trezorcrypto_slip39_complete_word);
+
+/// def word_completion_mask(prefix: str) -> int:
+///     """
+///     Return possible 1-letter suffixes for given word prefix.
+///     Result is a bitmask, with 'a' on the lowest bit, 'b' on the second
+///     lowest, etc.
+///     """
+STATIC mp_obj_t mod_trezorcrypto_slip39_word_completion_mask(mp_obj_t prefix) {
+  mp_buffer_info_t pfx = {0};
+  mp_get_buffer_raise(prefix, &pfx, MP_BUFFER_READ);
+  return mp_obj_new_int(mnemonic_word_completion_mask(pfx.buf, pfx.len, true));
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(
     mod_trezorcrypto_slip39_word_completion_mask_obj,
@@ -77,7 +89,7 @@ STATIC mp_obj_t mod_trezorcrypto_slip39_word_index(mp_obj_t _word) {
 
   uint16_t result = 0;
   if (word_index(&result, word.buf, word.len) == false) {
-    mp_raise_ValueError("Invalid mnemonic word");
+    mp_raise_ValueError(MP_ERROR_TEXT("Invalid mnemonic word"));
   }
   return mp_obj_new_int_from_uint(result);
 }
@@ -93,8 +105,8 @@ STATIC mp_obj_t mod_trezorcrypto_slip39_get_word(mp_obj_t _index) {
 
   const char *word = get_word(index);
   if (word == NULL) {
-    mp_raise_ValueError(
-        "Invalid wordlist index (range between 0 and 1023 is allowed)");
+    mp_raise_ValueError(MP_ERROR_TEXT(
+        "Invalid wordlist index (range between 0 and 1023 is allowed)"));
   }
 
   return mp_obj_new_str_copy(&mp_type_str, (const uint8_t *)word, strlen(word));
@@ -104,6 +116,8 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorcrypto_slip39_get_word_obj,
 
 STATIC const mp_rom_map_elem_t mod_trezorcrypto_slip39_globals_table[] = {
     {MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_slip39)},
+    {MP_ROM_QSTR(MP_QSTR_complete_word),
+     MP_ROM_PTR(&mod_trezorcrypto_slip39_complete_word_obj)},
     {MP_ROM_QSTR(MP_QSTR_word_completion_mask),
      MP_ROM_PTR(&mod_trezorcrypto_slip39_word_completion_mask_obj)},
     {MP_ROM_QSTR(MP_QSTR_button_sequence_to_word),

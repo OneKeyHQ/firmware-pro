@@ -75,12 +75,9 @@ class HardwareCall:
         assert resp.root_fingerprint is not None, "Root fingerprint should not be None"
         xfp = hexlify(int.to_bytes(resp.root_fingerprint, 4, "big")).decode()
         if xfp != expected_fingerprint:
-            if __debug__:
-                print(f"Fingerprint mismatch: {xfp} != {expected_fingerprint}")
-            else:
-                raise MismatchError(
-                    f"Fingerprint mismatch: got {resp.root_fingerprint} expected {expected_fingerprint}"
-                )
+            raise MismatchError(
+                f"Fingerprint mismatch: got {xfp} expected {expected_fingerprint}"
+            )
 
     @staticmethod
     async def gen_request(ur):

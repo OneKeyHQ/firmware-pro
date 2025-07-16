@@ -77,7 +77,7 @@ enum MessageType {
     option (has_bitcoin_only_values) = true;
     option allow_alias = true;
     // Management
-    MessageType_Initialize = 0 [(bitcoin_only) = true, (wire_in) = true, (wire_tiny) = true];
+    MessageType_Initialize = 0 [(bitcoin_only) = true, (wire_in) = true];
     MessageType_Ping = 1 [(bitcoin_only) = true, (wire_in) = true];
     MessageType_Success = 2 [(bitcoin_only) = true, (wire_out) = true, (wire_debug_out) = true];
     MessageType_Failure = 3 [(bitcoin_only) = true, (wire_out) = true, (wire_debug_out) = true];
@@ -121,6 +121,7 @@ enum MessageType {
     MessageType_UnlockPath = 93 [(bitcoin_only) = true, (wire_in) = true];
     MessageType_UnlockedPathRequest = 94 [(bitcoin_only) = true, (wire_out) = true];
 
+    
     MessageType_SetU2FCounter = 63 [(wire_in) = true];
     MessageType_GetNextU2FCounter = 80 [(wire_in) = true];
     MessageType_NextU2FCounter = 81 [(wire_out) = true];
@@ -605,4 +606,8 @@ enum MessageType {
     MessageType_OnekeyGetFeatures = 10025 [(bitcoin_only) = true,(wire_in) = true];
     MessageType_OnekeyFeatures = 10026 [(bitcoin_only) = true,(wire_out) = true];
     MessageType_WriteSEPrivateKey = 10027 [(wire_in) = true, (wire_bootloader) = true];
-}
+    MessageType_GetPassphraseState = 10028 [(wire_in) = true];
+    MessageType_PassphraseState = 10029 [(wire_out) = true];
+    MessageType_UnLockDevice = 10030 [(bitcoin_only) = true, (wire_in) = true];
+    MessageType_UnLockDeviceResponse = 10031 [(bitcoin_only) = true, (wire_out) = true];
+ }

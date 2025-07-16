@@ -33,6 +33,8 @@ from .sign_tx import (
     handle_approve,
     handle_erc20,
     handle_erc_721_or_1155,
+    handle_safe_tx,
+    is_safe_tx,
     send_request_chunk,
 )
 
@@ -100,6 +102,7 @@ async def sign_tx_eip1559(
     )
 
     is_nft_transfer = False
+    _is_safe_tx = False
     token_id = None
     from_addr = None
     if token is None:
@@ -107,6 +110,8 @@ async def sign_tx_eip1559(
         if res is not None:
             is_nft_transfer = True
             from_addr, recipient, token_id, value = res
+        else:
+            _is_safe_tx = is_safe_tx(msg)
 
     if device.is_turbomode_enabled():
         from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
@@ -173,49 +178,56 @@ async def sign_tx_eip1559(
             )
 
     else:
-        show_details = await require_show_overview(
-            ctx,
-            recipient,
-            value,
-            int.from_bytes(msg.max_gas_fee, "big"),
-            int.from_bytes(msg.gas_limit, "big"),
-            msg.chain_id,
-            token,
-            address_from_bytes(address_bytes, network) if token else None,
-            is_nft_transfer,
-        )
-
-        if show_details:
-            has_raw_data = False
-            if token is None and token_id is None and msg.data_length > 0:
-                has_raw_data = True
+        if __debug__:
+            print("is_safe_tx", _is_safe_tx)
+        if _is_safe_tx:
             node = keychain.derive(msg.address_n, force_strict=False)
-            recipient_str = address_from_bytes(recipient, network)
-            from_str = address_from_bytes(
-                from_addr or node.ethereum_pubkeyhash(), network
-            )
-            await require_confirm_eip1559_fee(
+
+            from_str = address_from_bytes(node.ethereum_pubkeyhash(), network)
+            await handle_safe_tx(ctx, msg, from_str, True)
+        else:
+            has_raw_data = token is None and token_id is None and msg.data_length > 0
+            show_details = await require_show_overview(
                 ctx,
+                recipient,
                 value,
-                int.from_bytes(msg.max_priority_fee, "big"),
                 int.from_bytes(msg.max_gas_fee, "big"),
                 int.from_bytes(msg.gas_limit, "big"),
                 msg.chain_id,
                 token,
-                from_address=from_str,
-                to_address=recipient_str,
-                contract_addr=address_from_bytes(address_bytes, network)
-                if token_id is not None
-                else None,
-                token_id=token_id,
-                evm_chain_id=None
-                if network is not networks.UNKNOWN_NETWORK
-                else msg.chain_id,
-                raw_data=msg.data_initial_chunk if has_raw_data else None,
-                token_address=address_from_bytes(address_bytes, network)
-                if token
-                else None,
+                address_from_bytes(address_bytes, network) if token else None,
+                is_nft_transfer,
+                has_raw_data,
             )
+
+            if show_details:
+                node = keychain.derive(msg.address_n, force_strict=False)
+                recipient_str = address_from_bytes(recipient, network)
+                from_str = address_from_bytes(
+                    from_addr or node.ethereum_pubkeyhash(), network
+                )
+                await require_confirm_eip1559_fee(
+                    ctx,
+                    value,
+                    int.from_bytes(msg.max_priority_fee, "big"),
+                    int.from_bytes(msg.max_gas_fee, "big"),
+                    int.from_bytes(msg.gas_limit, "big"),
+                    msg.chain_id,
+                    token,
+                    from_address=from_str,
+                    to_address=recipient_str,
+                    contract_addr=address_from_bytes(address_bytes, network)
+                    if token_id is not None
+                    else None,
+                    token_id=token_id,
+                    evm_chain_id=None
+                    if network is not networks.UNKNOWN_NETWORK
+                    else msg.chain_id,
+                    raw_data=msg.data_initial_chunk if has_raw_data else None,
+                    token_address=address_from_bytes(address_bytes, network)
+                    if token
+                    else None,
+                )
 
     data = bytearray()
     data += msg.data_initial_chunk

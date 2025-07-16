@@ -110,21 +110,28 @@ STATIC mp_obj_t mod_trezorconfig_is_initialized(void) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorconfig_is_initialized_obj,
                                  mod_trezorconfig_is_initialized);
 
-/// def unlock(pin: str, ext_salt: bytes | None) -> bool:
+/// def unlock(pin: str, ext_salt: bytes | None, pin_use_type: int = 0)
+/// -> tuple[bool, int]:
 ///     """
 ///     Attempts to unlock the storage with the given PIN and external salt.
 ///     Returns True on success, False on failure.
 ///     """
-STATIC mp_obj_t mod_trezorconfig_unlock(mp_obj_t pin, mp_obj_t ext_salt) {
+STATIC mp_obj_t mod_trezorconfig_unlock(size_t n_args, const mp_obj_t *args) {
   mp_buffer_info_t pin_b = {0};
-  mp_get_buffer_raise(pin, &pin_b, MP_BUFFER_READ);
+  mp_get_buffer_raise(args[0], &pin_b, MP_BUFFER_READ);
 
   mp_buffer_info_t ext_salt_b = {0};
   ext_salt_b.buf = NULL;
-  if (ext_salt != mp_const_none) {
-    mp_get_buffer_raise(ext_salt, &ext_salt_b, MP_BUFFER_READ);
+  if (n_args > 1 && args[1] != mp_const_none) {
+    mp_get_buffer_raise(args[1], &ext_salt_b, MP_BUFFER_READ);
     if (ext_salt_b.len != EXTERNAL_SALT_SIZE)
       mp_raise_msg(&mp_type_ValueError, "Invalid length of external salt.");
+  }
+
+  pin_type_t pin_use_type = PIN_TYPE_USER;
+
+  if (n_args > 2) {
+    pin_use_type = mp_obj_get_int(args[2]);
   }
 
   // display_clear();
@@ -132,14 +139,17 @@ STATIC mp_obj_t mod_trezorconfig_unlock(mp_obj_t pin, mp_obj_t ext_salt) {
   secbool ret = secfalse;
 
   // verify se pin first when not in emulator
-  ret = se_verifyPin(pin_b.buf);
+  ret = se_verifyPin(pin_b.buf, pin_use_type);
   if (ret != sectrue) {
     if (!pin_state.pin_unlocked_initialized) {
       pin_state.pin_unlocked = false;
       pin_state.pin_unlocked_initialized = true;
     }
-    return mp_const_false;
+    mp_obj_t tuple[2] = {mp_const_false, mp_obj_new_int(0)};
+    return mp_obj_new_tuple(2, tuple);
   }
+
+  pin_result_t pin_type = se_get_pin_result_type();
 
   // fpsensor_data_init();
   fpsensor_data_init_start();
@@ -147,21 +157,27 @@ STATIC mp_obj_t mod_trezorconfig_unlock(mp_obj_t pin, mp_obj_t ext_salt) {
   pin_state.pin_unlocked_initialized = true;
   pin_state.fp_unlocked = true;
   pin_state.fp_unlocked_initialized = true;
-  return mp_const_true;
-}
-STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_trezorconfig_unlock_obj,
-                                 mod_trezorconfig_unlock);
 
-/// def check_pin(pin: str, ext_salt: bytes | None) -> bool:
+  mp_obj_tuple_t *tuple = MP_OBJ_TO_PTR(mp_obj_new_tuple(2, NULL));
+  tuple->items[0] = mp_const_true;
+  tuple->items[1] = mp_obj_new_int(pin_type);
+  return MP_OBJ_FROM_PTR(tuple);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_trezorconfig_unlock_obj, 2, 3,
+                                           mod_trezorconfig_unlock);
+
+/// def check_pin(pin: str, ext_salt: bytes | None, pin_use_type: int = 0) ->
+/// bool:
 ///     """
 ///     Check the given PIN with the given external salt.
 ///     Returns True on success, False on failure.
 ///     """
-STATIC mp_obj_t mod_trezorconfig_check_pin(mp_obj_t pin, mp_obj_t ext_salt) {
-  return mod_trezorconfig_unlock(pin, ext_salt);
+STATIC mp_obj_t mod_trezorconfig_check_pin(size_t n_args,
+                                           const mp_obj_t *args) {
+  return mod_trezorconfig_unlock(n_args, args);
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_trezorconfig_check_pin_obj,
-                                 mod_trezorconfig_check_pin);
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_trezorconfig_check_pin_obj, 2, 3,
+                                           mod_trezorconfig_check_pin);
 
 /// def lock() -> None:
 ///     """
@@ -578,6 +594,10 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorconfig_wipe_obj,
                                  mod_trezorconfig_wipe);
 
 #ifndef TREZOR_EMULATOR
+/// def se_import_mnemonic(mnemonic: bytes) -> bool:
+///     """
+///     Import mnemonic to SE.
+///     """
 STATIC mp_obj_t mod_trezorconfig_se_import_mnemonic(mp_obj_t mnemonic) {
   mp_buffer_info_t mnemo = {0};
   mp_get_buffer_raise(mnemonic, &mnemo, MP_BUFFER_READ);
@@ -591,6 +611,35 @@ STATIC mp_obj_t mod_trezorconfig_se_import_mnemonic(mp_obj_t mnemonic) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorconfig_se_import_mnemonic_obj,
                                  mod_trezorconfig_se_import_mnemonic);
+
+/// def se_import_slip39(mnemonic: bytes, backup_type: int, identifier: int |
+/// None, iteration_exponent: int | None) -> bool:
+///     """
+///     Import slip39 to SE.
+///     """
+STATIC mp_obj_t mod_trezorconfig_se_import_slip39(size_t n_args,
+                                                  const mp_obj_t *args) {
+  mp_buffer_info_t master_secret_info = {0};
+  mp_get_buffer_raise(args[0], &master_secret_info, MP_BUFFER_READ);
+
+  uint8_t backup_type = trezor_obj_get_uint8(args[1]);
+  uint16_t identifier = 0;
+  if (args[2] != mp_const_none) {
+    identifier = trezor_obj_get_uint(args[2]);
+  }
+  uint8_t iteration_exponent = trezor_obj_get_uint8(args[3]);
+
+  if (sectrue != se_import_slip39(master_secret_info.buf,
+                                  master_secret_info.len, backup_type,
+                                  identifier, iteration_exponent)) {
+    return mp_const_false;
+  }
+  return mp_const_true;
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(
+    mod_trezorconfig_se_import_slip39_obj, 4, 4,
+    mod_trezorconfig_se_import_slip39);
 
 /// def se_export_mnemonic() -> bytes:
 ///     """
@@ -777,6 +826,8 @@ STATIC const mp_rom_map_elem_t mp_module_trezorconfig_globals_table[] = {
 #ifndef TREZOR_EMULATOR
     {MP_ROM_QSTR(MP_QSTR_se_import_mnemonic),
      MP_ROM_PTR(&mod_trezorconfig_se_import_mnemonic_obj)},
+    {MP_ROM_QSTR(MP_QSTR_se_import_slip39),
+     MP_ROM_PTR(&mod_trezorconfig_se_import_slip39_obj)},
     {MP_ROM_QSTR(MP_QSTR_se_export_mnemonic),
      MP_ROM_PTR(&mod_trezorconfig_se_export_mnemonic_obj)},
     {MP_ROM_QSTR(MP_QSTR_get_serial),

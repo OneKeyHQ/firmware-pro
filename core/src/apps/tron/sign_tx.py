@@ -94,30 +94,13 @@ async def _require_confirm_by_type(ctx, transaction, owner_address):
                     ctx, contract.trigger_smart_contract.contract_address
                 )
 
-            if transaction.fee_limit and transaction.fee_limit > 300000000:
-                from .layout import format_amount_trx
-
-                if await layout.require_confirm_show_more(
-                    ctx, format_amount_trx(value, token), recipient
-                ):
-                    await layout.require_confirm_fee(
-                        ctx,
-                        token,
-                        from_address=owner_address,
-                        to_address=recipient,
-                        value=value,
-                        fee_limit=transaction.fee_limit,
-                    )
-                else:
-                    skip_view_data = True
-            else:
-                await layout.require_confirm_tx(
-                    ctx,
-                    owner_address,
-                    recipient,
-                    value,
-                    token,
-                )
+            await layout.require_confirm_tx(
+                ctx,
+                owner_address,
+                recipient,
+                value,
+                token,
+            )
         else:
             from trezor.ui.layouts.lvgl import confirm_blind_sign_common
 

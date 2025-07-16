@@ -222,7 +222,6 @@ class CollectFingerprintStart(FullSizeWindow):
         target = event_obj.get_target()
         if code == lv.EVENT.CLICKED:
             if target == self.icon_cancel:
-                print("icon cancel")
                 self.destroy(0)
                 self.channel.publish(0)
 
@@ -231,6 +230,9 @@ class CollectFingerprintStart(FullSizeWindow):
             self.arrow.set_x(x)
         except Exception:
             lv.anim_del(self.anim_r.var, None)
+
+    def show_unload_anim(self):
+        self.destroy(10)
 
 
 class CollectFingerprintProgress(FullSizeWindow):
@@ -409,7 +411,6 @@ async def request_enroll(i) -> None:
     while fingerprint.detect():
         if __debug__:
             print("move finger away")
-        # motor.vibrate(weak=True)
         CollectFingerprintProgress.get_instance().prompt_tips(
             _(
                 i18n_keys.MSG__LIFT_AND_FINE_TUNE_THE_POSITION_THEN_TOUCH_POWER_BUTTON_AGAIN
@@ -422,8 +423,10 @@ async def request_enroll(i) -> None:
         _(i18n_keys.MSG__FOLLOW_THE_ON_SCREEN_GUIDANCE_TO_FINE_TUNE_FINGER_POSITION),
         lv_colors.WHITE,
     )
+    should_vibrate = True
     while True:
         if not fingerprint.detect():
+            should_vibrate = True
             await loop.sleep(10)
             continue
         try:
@@ -436,7 +439,9 @@ async def request_enroll(i) -> None:
                 from trezor import log
 
                 log.exception(__name__, e)
-            motor.vibrate()
+            if should_vibrate:
+                should_vibrate = False
+                motor.vibrate(motor.WARNING, force=True)
             if isinstance(e, fingerprint.EnrollDuplicate):
                 prompt_text = _(
                     i18n_keys.MSG__LIFT_AND_FINE_TUNE_THE_POSITION_THEN_TOUCH_POWER_BUTTON_AGAIN
@@ -449,7 +454,7 @@ async def request_enroll(i) -> None:
                 CollectFingerprintProgress.get_instance().prompt_tips(prompt_text)
             await loop.sleep(10)
         else:
-            motor.vibrate(weak=True)
+            motor.vibrate(motor.SUCCESS, force=True)
             break
 
 
@@ -485,21 +490,19 @@ async def add_fingerprint(group_id, callback=None) -> bool:
     ][:FP_TEMPLATE_GROUP_COUNT]
 
     utils.mark_collecting_fingerprint()
+    start_scr = CollectFingerprintStart(
+        _(i18n_keys.TITLE__GET_STARTED),
+        _(i18n_keys.TITLE__GET_STARTED_DESC),
+        _(i18n_keys.BUTTON__START),
+        "A:/res/finger-start.png",
+    )
+
+    if not await start_scr.request():
+        return False
 
     progress = None
     success = False
     try:
-
-        start_scr = CollectFingerprintStart(
-            _(i18n_keys.TITLE__GET_STARTED),
-            _(i18n_keys.TITLE__GET_STARTED_DESC),
-            _(i18n_keys.BUTTON__START),
-            "A:/res/finger-start.png",
-        )
-        if not await start_scr.request():
-            return False
-        start_scr.destroy(0)
-
         progress = CollectFingerprintProgress.get_instance()
         fingerprint.clear_template_cache(False)
         register_count = 0
@@ -562,6 +565,8 @@ async def add_fingerprint(group_id, callback=None) -> bool:
             CollectFingerprintProgress.reset()
         if not success:
             fingerprint.clear_template_cache(True)
+        else:
+            motor.vibrate(motor.SUCCESS, force=True)
         utils.mark_collecting_fingerprint_done()
 
 

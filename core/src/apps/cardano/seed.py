@@ -206,12 +206,15 @@ async def _get_keychain_bip39(
 async def _get_keychain(
     ctx: wire.Context, derivation_type: CardanoDerivationType
 ) -> Keychain:
-    if mnemonic.is_bip39():
+    if utils.USE_THD89:
         return await _get_keychain_bip39(ctx, derivation_type)
     else:
-        # derive the root node via SLIP-0023 https://github.com/satoshilabs/slips/blob/master/slip-0022.md
-        seed = await get_seed(ctx)
-        return Keychain(cardano.from_seed_slip23(seed))
+        if mnemonic.is_bip39():
+            return await _get_keychain_bip39(ctx, derivation_type)
+        else:
+            # derive the root node via SLIP-0023 https://github.com/satoshilabs/slips/blob/master/slip-0022.md
+            seed = await get_seed(ctx)
+            return Keychain(cardano.from_seed_slip23(seed))
 
 
 def with_keychain(func: HandlerWithKeychain[MsgIn, MsgOut]) -> Handler[MsgIn, MsgOut]:

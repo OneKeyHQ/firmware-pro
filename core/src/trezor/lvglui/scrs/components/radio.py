@@ -101,6 +101,7 @@ class RadioTrigger:
         self.container = ContainerFlexCol(parent, None, padding_row=2)
         self.items: list[RadioTrigger.RadioItem] = []
         self.check_index = 0
+        self.changed = False
         self.choices = options.split("\n")
         for _idx, choice in enumerate(self.choices):
             item = RadioTrigger.RadioItem(self.container, choice)
@@ -118,6 +119,7 @@ class RadioTrigger:
             for idx, item in enumerate(self.items):
                 if target == item:
                     self.check_index = idx
+                    self.changed = True
                     lv.event_send(self.parent, lv.EVENT.READY, None)
 
     def get_selected_index(self):

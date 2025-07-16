@@ -5,13 +5,13 @@ from . import font_GeistMono28, font_GeistSemiBold26
 from .common import FullSizeWindow, lv, lv_colors
 from .components.button import NormalButton
 from .components.container import ContainerGrid
-from .components.keyboard import BIP39Keyboard
+from .components.keyboard import MnemonicKeyboard
 from .components.radio import RadioTrigger
 from .widgets.style import StyleWrapper
 
 
 class WordEnter(FullSizeWindow):
-    def __init__(self, title: str):
+    def __init__(self, title: str, is_slip39: bool = False):
         super().__init__(title, None, anim_dir=0)
         self.add_nav_back()
         self.title.add_style(
@@ -22,9 +22,9 @@ class WordEnter(FullSizeWindow):
             .text_letter_space(-1),
             0,
         )
-        self.keyboard = BIP39Keyboard(self)
+        self.keyboard = MnemonicKeyboard(self, is_slip39)
         self.keyboard.add_event_cb(self.on_ready, lv.EVENT.READY, None)
-        self.add_event_cb(self.on_back, lv.EVENT.CLICKED, None)
+        self.add_event_cb(self.on_nav_back, lv.EVENT.CLICKED, None)
         self.submitted = False
 
     #     self.add_event_cb(self.on_nav_back, lv.EVENT.GESTURE, None)
@@ -52,26 +52,19 @@ class WordEnter(FullSizeWindow):
     def show_tips(self):
         self.keyboard.tip_submitted()
 
-    def on_back(self, event_obj):
+    def on_nav_back(self, event_obj):
         target = event_obj.get_target()
         if target == self.nav_back.nav_btn:
             self.channel.publish(0)
-            self.show_dismiss_anim()
+            self.destroy(400)
 
 
 class SelectWordCounter(FullSizeWindow):
-    def __init__(self, title: str):
+    def __init__(self, title: str, optional_str: str):
         super().__init__(
             title, _(i18n_keys.SUBTITLE__DEVICE_RECOVER_READY_TO_RESTORE), anim_dir=0
         )
-        self.add_nav_back()
-        optional_str = (
-            _(i18n_keys.OPTION__STR_WRODS).format(12)
-            + "\n"
-            + _(i18n_keys.OPTION__STR_WRODS).format(18)
-            + "\n"
-            + _(i18n_keys.OPTION__STR_WRODS).format(24)
-        )
+        self.add_nav_back_right()
         self.choices = RadioTrigger(self, optional_str)
         self.add_event_cb(self.on_ready, lv.EVENT.READY, None)
         self.add_event_cb(self.on_back, lv.EVENT.CLICKED, None)
@@ -105,7 +98,7 @@ class InvalidMnemonic(FullSizeWindow):
             anim_dir=0,
         )
         self.content_area.set_style_max_height(756, 0)
-        row_dsc = [66] * (int(word_count / 2))
+        row_dsc = [66] * (int((word_count + 1) // 2))
         row_dsc.append(lv.GRID_TEMPLATE.LAST)
         # 3 columns
         col_dsc = [
@@ -137,7 +130,9 @@ class InvalidMnemonic(FullSizeWindow):
         )
         self.clear_flag(lv.obj.FLAG.SCROLLABLE)
         self.content_area.set_scroll_dir(lv.DIR.VER)
-        half = word_count // 2
+        self.content_area.clear_flag(lv.obj.FLAG.SCROLL_ELASTIC)
+        self.content_area.clear_flag(lv.obj.FLAG.SCROLL_MOMENTUM)
+        half = (word_count + 1) // 2
         self.words = []
         for i in range(word_count):
             col = 0 if i < half else 1
@@ -154,7 +149,7 @@ class InvalidMnemonic(FullSizeWindow):
             word.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
             self.words.append(word)
         self.btn_no = NormalButton(self.content_area, _(i18n_keys.GLOBAL__START_OVER))
-        self.btn_no.enable_no_bg_mode()
+        # self.btn_no.enable_no_bg_mode()
         self.btn_no.align_to(self.container, lv.ALIGN.OUT_BOTTOM_MID, 0, 10)
 
         self.container.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
@@ -173,6 +168,6 @@ class InvalidMnemonic(FullSizeWindow):
         if code == lv.EVENT.CLICKED:
             if lcd_resume():
                 return
-            if target == self.btn_no.click_mask:
+            if target == self.btn_no:
                 self.show_dismiss_anim()
                 self.channel.publish(None)

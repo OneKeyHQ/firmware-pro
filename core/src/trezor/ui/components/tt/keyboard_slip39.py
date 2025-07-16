@@ -123,7 +123,9 @@ class Slip39Keyboard(ui.Layout):
         self.pending_button: Button | None = None
         self.pending_index = 0
         self.button_sequence = ""
+        # pyright: off
         self.mask = slip39.KEYBOARD_FULL_MASK
+        # pyright: on
 
     def dispatch(self, event: int, x: int, y: int) -> None:
         for btn in self.keys:
@@ -175,7 +177,9 @@ class Slip39Keyboard(ui.Layout):
         word = ""
         self.mask = slip39.word_completion_mask(self.button_sequence)
         if self.is_input_final():
+            # pyright: off
             word = slip39.button_sequence_to_word(self.button_sequence)
+            # pyright: on
 
         # modify the input state
         self.input.edit(

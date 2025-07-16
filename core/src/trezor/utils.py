@@ -437,6 +437,12 @@ if TYPE_CHECKING:
     Chunkable = TypeVar("Chunkable", str, Sequence[Any])
 
 
+def addr_chunkify(address: str, per_line: int = 16, per_group: int = 4) -> str:
+    lines = chunks(address, per_line)
+    formatted_lines = (" ".join(chunks(line, per_group)) for line in lines)
+    return "\n".join(formatted_lines)
+
+
 def chunks(items: Chunkable, size: int) -> Iterator[Chunkable]:
     for i in range(0, len(items), size):
         yield items[i : i + size]

@@ -134,6 +134,36 @@ def fetch_slip39_remaining_shares() -> list[int] | None:
     return list(remaining[:group_count])
 
 
+SECRET_CHECKED: bytes | None = None
+EXTEND_SHARE_FLAG: bool = False
+
+
+def set_extend_share() -> None:
+    global EXTEND_SHARE_FLAG
+    EXTEND_SHARE_FLAG = True
+
+
+def is_extend_share() -> bool:
+    return EXTEND_SHARE_FLAG
+
+
+def get_slip39_checked_secret() -> bytes:
+    if SECRET_CHECKED is None:
+        raise RuntimeError
+    return SECRET_CHECKED
+
+
+def set_slip39_checked_secret(secret: bytes) -> None:
+    global SECRET_CHECKED
+    SECRET_CHECKED = secret
+
+
+def clear_slip39_extend_share_state() -> None:
+    global SECRET_CHECKED, EXTEND_SHARE_FLAG
+    SECRET_CHECKED = None
+    EXTEND_SHARE_FLAG = False
+
+
 def end_progress() -> None:
     from . import recovery_shares
 

@@ -2,14 +2,18 @@ from typing import *
 
 
 # extmod/modtrezorcrypto/modtrezorcrypto-slip39.h
-def word_completion_mask(prefix: int) -> int:
+def complete_word(prefix: str) -> str | None:
     """
-    Calculates which buttons still can be pressed after some already were.
-    Returns a 9-bit bitmask, where each bit specifies which buttons
-    can be further pressed (there are still words in this combination).
-    LSB denotes first button.
-    Example: 110000110 - second, third, eighth and ninth button still can be
-    pressed.
+    Return the first word from the wordlist starting with prefix.
+    """
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-slip39.h
+def word_completion_mask(prefix: str) -> int:
+    """
+    Return possible 1-letter suffixes for given word prefix.
+    Result is a bitmask, with 'a' on the lowest bit, 'b' on the second
+    lowest, etc.
     """
 
 

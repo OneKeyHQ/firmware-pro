@@ -6,7 +6,7 @@ from .widgets.style import StyleWrapper
 
 
 class PassphraseRequest(FullSizeWindow):
-    def __init__(self, max_len: int, result: str | None = None):
+    def __init__(self, max_len: int, result: str | None = None, min_len: int = 0):
         super().__init__(_(i18n_keys.CONTENT__ENTER_PASSPHRASE_COLON), None, anim_dir=0)
         self.add_nav_back()
         self.title.add_style(
@@ -18,10 +18,12 @@ class PassphraseRequest(FullSizeWindow):
             .text_line_space(0),
             0,
         )
-        self.keyboard = PassphraseKeyboard(self, max_len)
+        self.keyboard = PassphraseKeyboard(self, max_len, min_len)
         if result is not None:
             self.keyboard.ta.set_text(result)
             self.keyboard.ta.set_cursor_pos(lv.TEXTAREA_CURSOR.LAST)
+            self.keyboard.update_ok_button_state()
+            self.keyboard.update_count_tips()
         self.keyboard.add_event_cb(self.on_ready, lv.EVENT.READY, None)
 
         self.nav_back.add_event_cb(self.on_cancel, lv.EVENT.CLICKED, None)

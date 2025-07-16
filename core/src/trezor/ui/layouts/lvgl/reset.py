@@ -27,15 +27,32 @@ async def show_share_words(
     ctx: wire.GenericContext,
     share_words: Sequence[str],
     share_index: int | None = None,
+    share_count: int | None = None,
     group_index: int | None = None,
-) -> None:
+    show_indicator: bool = True,
+) -> tuple[int, int] | None:
 
+    word_cnt = len(share_words)
+    header_title = _(i18n_keys.TITLE__RECOVERY_PHRASE)
+    indicator_text = _(i18n_keys.OPTION__STR_WRODS).format(word_cnt)
     if share_index is None:
-        header_title = _(i18n_keys.TITLE__RECOVERY_PHRASE)
+        from apps.common.backup_types import is_slip39_word_count
+
+        if is_slip39_word_count(word_cnt):
+            indicator_text = _(i18n_keys.BUTTON__SINGLE_SHARE)
+        # header_title = _(i18n_keys.TITLE__RECOVERY_PHRASE)
+        subtitle = _(i18n_keys.SUBTITLE__DEVICE_BACKUP_MANUAL_BACKUP).format(word_cnt)
+
     elif group_index is None:
-        header_title = f"Recovery share #{share_index + 1}"
+        # header_title = f"Recovery share #{share_index + 1}"
+        assert share_count is not None
+        indicator_text = _(i18n_keys.BUTTON__MULTI_SHARE)
+        subtitle = _(
+            i18n_keys.TITLE__WRITE_DOWN_THE_FOLLOWING_20_WORDS_IN_ORDER_FOR_SHARE_STR_OF_STR
+        ).format(num=word_cnt, num1=share_index + 1, num2=share_count)
     else:
-        header_title = f"Group {group_index + 1} - Share {share_index + 1}"
+        # header_title = f"Group {group_index + 1} - Share {share_index + 1}"
+        subtitle = f"Write down the following {word_cnt} words in order for Group {group_index + 1} - Share {share_index + 1} of {share_count}."
 
     if __debug__:
         from apps import debug
@@ -49,19 +66,28 @@ async def show_share_words(
     # shares_words_check = []  # check we display correct data
     from trezor.lvglui.scrs.reset_device import MnemonicDisplay
 
-    screen = MnemonicDisplay(header_title, share_words)
-    # make sure we display correct data
-    # utils.ensure(share_words == shares_words_check)
+    while True:
+        screen = MnemonicDisplay(
+            header_title,
+            subtitle,
+            share_words,
+            indicator_text if show_indicator else None,
+        )
+        # make sure we display correct data
+        # utils.ensure(share_words == shares_words_check)
 
-    # confirm the share
-    await raise_if_cancelled(
-        interact(
+        # confirm the share
+        result = await interact(
             ctx,
             screen,
             "backup_words",
             ButtonRequestType.ResetDevice,
         )
-    )
+        if __debug__:
+            print(f"mnemonic display result: {result}")
+        if result is None:
+            continue
+        return result
 
 
 async def confirm_word(
@@ -74,12 +100,13 @@ async def confirm_word(
 ) -> bool:
     # remove duplicates
     non_duplicates = list(set(share_words))
-    # remove current checked words
-    non_duplicates.remove(share_words[offset])
+    # # remove current checked words
+    # non_duplicates.remove(share_words[offset])
     # shuffle list
     random.shuffle(non_duplicates)
+    checked_word = non_duplicates[0]
     # take 3 words as choices
-    choices = [non_duplicates[-1], non_duplicates[0], share_words[offset]]
+    choices = [non_duplicates[-1], non_duplicates[1], checked_word]
     # shuffle again so the confirmed word is not always the first choice
     random.shuffle(choices)
 
@@ -89,12 +116,13 @@ async def confirm_word(
         debug.reset_word_index.publish(offset)
 
     # let the user pick a word
-    title = _(i18n_keys.TITLE__WORD_STR).format(offset + 1)
+    checked_index = share_words.index(checked_word) + offset
+    title = _(i18n_keys.TITLE__WORD_STR).format(checked_index + 1)
     options = f"{choices[0]}\n{choices[1]}\n{choices[2]}"
     selector = CheckWord(title, options=options)
     selected_word: str = await ctx.wait(selector.request())
     # confirm it is the correct one
-    is_correct = selected_word == share_words[offset]
+    is_correct = selected_word == checked_word
     await loop.sleep(240)
     if is_correct:
         selector.tip_correct()

@@ -202,6 +202,10 @@ def recover(
     )
 
 
+
+
+
+
 @cli.command()
 @click.option("-e", "--show-entropy", is_flag=True)
 @click.option("-t", "--strength", type=click.Choice(["128", "192", "256"]))
@@ -727,3 +731,46 @@ def emmc_dir_make(client: "TrezorClient", path: str) -> None:
 @with_client
 def emmc_dir_remove(client: "TrezorClient", path: str) -> None:
     device.emmc_dir_remove(client, path)
+
+@cli.command()
+@click.option("-s", "--session-id", help="Session ID for initialization", type=str)
+@click.option("-c", "--derive-cardano", help="Whether to derive Cardano Icarus root keys", type=bool)
+@click.option("-t", "--btc-test", help="Bitcoin test address", type=str)
+@with_client
+def initialize(
+    client: "TrezorClient",
+    session_id: Optional[str] = None,
+    derive_cardano: Optional[bool] = None,
+    btc_test: Optional[str] = None,
+) -> None:
+    """Initialize the device with given parameters.
+    
+    Initializes device session with optional parameters:
+    - session_id: Session ID for the initialization
+    - derive_cardano: Whether to derive Cardano Icarus root keys
+    - btc_test: Bitcoin test address
+    """
+    print(f"Session ID: {session_id}")
+    print(f"Derive Cardano: {derive_cardano}")
+    print(f"BTC test address: {btc_test}")
+
+    return device.initialize(
+        client,
+        session_id=session_id,
+        derive_cardano=derive_cardano,
+        btc_test=btc_test
+    )
+
+
+@cli.command()
+@with_client
+def unlock(client: "TrezorClient") -> None:
+    """Unlock the device if it is locked.
+    
+    This command will unlock the device using PIN or fingerprint authentication
+    if the device is currently locked.
+    """
+    result = device.unlock_device(client)
+    click.echo(f"Device unlocked: {result.unlocked}")
+    click.echo(f"Attach to PIN enabled: {result.unlocked_attach_pin}")
+    click.echo(f"Passphrase protection: {result.passphrase_protection}")
