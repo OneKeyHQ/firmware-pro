@@ -1014,7 +1014,7 @@ translations = [
     "Transaktions-Hash",
     "Dieses Token wird von der Hardware-Wallet nicht erkannt. Bitte überprüfen Sie dies sorgfältig.",
     "Der Empfänger ist eine bekannte Adresse eines Energie-Mietdienstleisters.",
-    "Aktualisieren Sie auf die neueste Version, um „An PIN anheften“ zu verwenden.",
+    "Verwenden Sie die neueste Version der OneKey App, um „An PIN anheften“ zu nutzen.",
     "Anfragebestätigung",
     "Wiederherstellungsphrase-Erstellung abbrechen?",
     "Dies ist Anteil {num1} von {num2}.",

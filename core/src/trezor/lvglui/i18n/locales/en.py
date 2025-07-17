@@ -1014,7 +1014,7 @@ translations = [
     "Transaction Hash",
     "This token is not recognized by the hardware wallet. Please verify carefully.",
     "Recipient is a known energy rental service provider address.",
-    "Update to the latest version to use “Attach to PIN”.",
+    "Use the latest version of the OneKey App to use “Attach to PIN”.",
     "Request Confirmation",
     "Abort Recovery Phrase Creation?",
     "This is Share {num1} of {num2}.",
