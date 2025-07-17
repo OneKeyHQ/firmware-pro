@@ -76,7 +76,98 @@ uint32_t touch_read(void) {
     return TOUCH_END | last_xy;
   }
   return 0;
-  ;
+}
+
+static touch_state_t tstate = {0};
+
+static swipe_direction_t detect_swipe(int dx, int dy) {
+  int ads_dx = abs(dx);
+  int ads_dy = abs(dy);
+  if (ads_dx < SWIPE_THRESHOLD_PIXELS && ads_dy < SWIPE_THRESHOLD_PIXELS)
+    return SWIPE_NONE;
+  if (ads_dx > ads_dy)
+    return dx > 0 ? SWIPE_RIGHT : SWIPE_LEFT;
+  else
+    return dy > 0 ? SWIPE_DOWN : SWIPE_UP;
+}
+
+gesture_result_t touch_gesture_detect(void) {
+  gesture_result_t res = {0};
+  uint32_t v = touch_read();
+  if (!v) {
+    res.gesture = GESTURE_NONE;
+    return res;
+  }
+
+  uint16_t x = touch_unpack_x(v);
+  uint16_t y = touch_unpack_y(v);
+  uint32_t now = HAL_GetTick();
+
+  if (v & TOUCH_START) {
+    tstate.touching = true;
+    tstate.start_x = tstate.last_x = x;
+    tstate.start_y = tstate.last_y = y;
+    tstate.start_time = now;
+    tstate.moved = false;
+    tstate.swipe_dir = SWIPE_NONE;
+    tstate.smoothed_dx = 0;
+    tstate.smoothed_dy = 0;
+    tstate.scroll_delta = 0;
+    res.gesture = GESTURE_NONE;
+    res.scroll_delta = 0;
+  } else if ((v & TOUCH_MOVE) && tstate.touching) {
+    int dx = x - tstate.last_x;
+    int dy = y - tstate.last_y;
+
+    if (!tstate.moved) {
+      tstate.swipe_dir = detect_swipe(dx, dy);
+      if (tstate.swipe_dir != SWIPE_NONE) {
+        tstate.moved = true;
+      }
+    }
+
+    if (tstate.moved) {
+      tstate.swipe_dir = detect_swipe(dx, dy);
+      switch (tstate.swipe_dir) {
+        case SWIPE_UP:
+          res.gesture = GESTURE_SWIPE_UP;
+          break;
+        case SWIPE_DOWN:
+          res.gesture = GESTURE_SWIPE_DOWN;
+          break;
+        case SWIPE_LEFT:
+          res.gesture = GESTURE_SWIPE_LEFT;
+          break;
+        case SWIPE_RIGHT:
+          res.gesture = GESTURE_SWIPE_RIGHT;
+          break;
+        default:
+          res.gesture = GESTURE_NONE;
+          break;
+      }
+      if (tstate.swipe_dir == SWIPE_UP || tstate.swipe_dir == SWIPE_DOWN) {
+        tstate.smoothed_dy =
+            SMOOTH_ALPHA * dy + (1 - SMOOTH_ALPHA) * tstate.smoothed_dy;
+
+        tstate.scroll_delta = (int)tstate.smoothed_dy;
+        res.scroll_delta = tstate.scroll_delta;
+      }
+    }
+    tstate.last_x = x;
+    tstate.last_y = y;
+  } else if ((v & TOUCH_END) && tstate.touching) {
+    uint32_t duration = now - tstate.start_time;
+    if (!tstate.moved && duration < CLICK_THRESHOLD_TIME_MS) {
+      res.gesture = GESTURE_CLICK;
+      res.end_pos = v;
+    } else {
+      res.gesture = GESTURE_NONE;
+    }
+
+    tstate.touching = false;
+    tstate.moved = false;
+  }
+  return res;
 }
 
 uint32_t touch_is_detected(void) {

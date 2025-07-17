@@ -87,6 +87,7 @@ void ui_fadeout(void);
 void ui_statusbar_update(void);
 int ui_user_input(int zones);
 int ui_input_poll(int zones, bool poll);
+int ui_input_match(int zones, uint32_t evt);
 void ui_bootloader_simple(void);
 void ui_bootloader_first(const image_header* const hdr);
 void ui_bootloader_view_details(const image_header* const hdr);
@@ -98,6 +99,7 @@ void ui_install_confirm(image_header* current_hdr,
 void ui_install_ble_confirm(void);
 void ui_install_thd89_confirm(const char* old_ver, const char* boot_ver);
 void ui_update_info_show(update_info_t update_info);
+void ui_update_info_show_update(update_info_t update_info, int* offset_view);
 void ui_install_progress(image_header* current_hdr,
                          const image_header* const new_hdr);
 void ui_bootloader_page_switch(const image_header* const hdr);

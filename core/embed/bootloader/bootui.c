@@ -136,16 +136,6 @@ char* format_progress_value(char* prefix) {
 
 int get_ui_bootloader_page_current(void) { return ui_bootloader_page_current; }
 
-// Helper function to display raw RGB565 pixel data
-static void display_raw_rgb565(int x, int y, int w, int h,
-                               const uint16_t* data) {
-  for (int j = 0; j < h; j++) {
-    for (int i = 0; i < w; i++) {
-      fb_write_pixel(x + i, y + j, data[j * w + i]);
-    }
-  }
-}
-
 void ui_logo_onekey(void) {
   display_image(LOGO_OFFSET_X, LOGO_OFFSET_Y, LOGO_SIZE, LOGO_SIZE,
                 toi_icon_onekey + 12, sizeof(toi_icon_onekey) - 12);
@@ -544,84 +534,95 @@ int ui_user_input(int zones) {
   }
 }
 
+static int _ui_input_match(int zones, uint32_t evt) {
+  uint16_t x = touch_unpack_x(evt);
+  uint16_t y = touch_unpack_y(evt);
+  // clicked on Cancel button
+  if ((zones & INPUT_CANCEL) && x >= BUTTON_LEFT_OFFSET_X &&
+      x < BUTTON_LEFT_OFFSET_X + BUTTON_HALF_WIDTH && y > BUTTON_OFFSET_Y &&
+      y < BUTTON_OFFSET_Y + BUTTON_HEIGHT) {
+    return INPUT_CANCEL;
+  }
+  // clicked on Confirm button
+  if ((zones & INPUT_CONFIRM) && x >= BUTTON_RIGHT_OFFSET_X &&
+      x < BUTTON_RIGHT_OFFSET_X + BUTTON_HALF_WIDTH && y > BUTTON_OFFSET_Y &&
+      y < BUTTON_OFFSET_Y + BUTTON_HEIGHT) {
+    return INPUT_CONFIRM;
+  }
+  // clicked on Info icon
+  if ((zones & INPUT_INFO) && x >= INFO_ICON_OFFSET_X - CLOCK_AREA_EXPAND &&
+      x < INFO_ICON_OFFSET_X + INFO_ICON_SIZE + CLOCK_AREA_EXPAND &&
+      y > INFO_ICON_OFFSET_Y - CLOCK_AREA_EXPAND &&
+      y < INFO_ICON_OFFSET_Y + INFO_ICON_SIZE + CLOCK_AREA_EXPAND) {
+    return INPUT_INFO;
+  }
+  // clicked on next button
+  if ((zones & INPUT_NEXT) && x >= BUTTON_LEFT_OFFSET_X &&
+      x < BUTTON_LEFT_OFFSET_X + BUTTON_FULL_WIDTH && y > BUTTON_OFFSET_Y &&
+      y < BUTTON_OFFSET_Y + BUTTON_HEIGHT) {
+    return (zones & INPUT_NEXT);
+  }
+  // clicked on previous button
+  if ((zones & INPUT_PREVIOUS) && x >= BUTTON_LEFT_OFFSET_X &&
+      x < BUTTON_LEFT_OFFSET_X + BUTTON_FULL_WIDTH && y > BUTTON_OFFSET_Y &&
+      y < BUTTON_OFFSET_Y + BUTTON_HEIGHT) {
+    return (zones & INPUT_PREVIOUS);
+  }
+  // clicked on restart button
+  if ((zones & INPUT_RESTART) && x >= BUTTON_RIGHT_OFFSET_X &&
+      x < BUTTON_RIGHT_OFFSET_X + BUTTON_HALF_WIDTH && y > BUTTON_OFFSET_Y &&
+      y < BUTTON_OFFSET_Y + BUTTON_HEIGHT) {
+    return (zones & INPUT_RESTART);
+  }
+  // bootloader version
+  if ((zones & INPUT_BOOT_VERSION_TEXT) && x >= 0 && x <= 480 && y > 520 &&
+      y < 580) {
+    return (zones & INPUT_BOOT_VERSION_TEXT);
+  }
+  // build id
+  if ((zones & INPUT_BUILD_ID_TEXT) && x >= 0 && x <= 480 && y > 580 &&
+      y < 640) {
+    return (zones & INPUT_BUILD_ID_TEXT);
+  }
+  // Menu items detection
+  // Device Info menu item (y=90 + line height 30)
+  if ((zones & INPUT_MENU_DEVICE_INFO) && x >= BOARD_OFFSET_X &&
+      x < BOARD_OFFSET_X + BUTTON_FULL_WIDTH && y >= 90 && y < 150) {
+    return INPUT_MENU_DEVICE_INFO;
+  }
+  // Reboot Device menu item (now second)
+  if ((zones & INPUT_MENU_REBOOT) && x >= BOARD_OFFSET_X &&
+      x < BOARD_OFFSET_X + BUTTON_FULL_WIDTH && y >= 183 && y < 243) {
+    return INPUT_MENU_REBOOT;
+  }
+  // Generate TRNG menu item (now third)
+  if ((zones & INPUT_MENU_GENERATE_TRNG) && x >= BOARD_OFFSET_X &&
+      x < BOARD_OFFSET_X + BUTTON_FULL_WIDTH && y >= 276 && y < 336) {
+    return INPUT_MENU_GENERATE_TRNG;
+  }
+  // Factory Reset menu item
+  if ((zones & INPUT_MENU_FACTORY_RESET) && x >= BOARD_OFFSET_X &&
+      x < BOARD_OFFSET_X + BUTTON_FULL_WIDTH && y >= 369 && y < 429) {
+    return INPUT_MENU_FACTORY_RESET;
+  }
+  return 0;
+}
+
 int ui_input_poll(int zones, bool poll) {
   do {
     uint32_t evt = touch_click();
     if (evt) {
-      hal_delay(50);
-      uint16_t x = touch_unpack_x(evt);
-      uint16_t y = touch_unpack_y(evt);
-      // clicked on Cancel button
-      if ((zones & INPUT_CANCEL) && x >= BUTTON_LEFT_OFFSET_X &&
-          x < BUTTON_LEFT_OFFSET_X + BUTTON_HALF_WIDTH && y > BUTTON_OFFSET_Y &&
-          y < BUTTON_OFFSET_Y + BUTTON_HEIGHT) {
-        return INPUT_CANCEL;
-      }
-      // clicked on Confirm button
-      if ((zones & INPUT_CONFIRM) && x >= BUTTON_RIGHT_OFFSET_X &&
-          x < BUTTON_RIGHT_OFFSET_X + BUTTON_HALF_WIDTH &&
-          y > BUTTON_OFFSET_Y && y < BUTTON_OFFSET_Y + BUTTON_HEIGHT) {
-        return INPUT_CONFIRM;
-      }
-      // clicked on Info icon
-      if ((zones & INPUT_INFO) && x >= INFO_ICON_OFFSET_X - CLOCK_AREA_EXPAND &&
-          x < INFO_ICON_OFFSET_X + INFO_ICON_SIZE + CLOCK_AREA_EXPAND &&
-          y > INFO_ICON_OFFSET_Y - CLOCK_AREA_EXPAND &&
-          y < INFO_ICON_OFFSET_Y + INFO_ICON_SIZE + CLOCK_AREA_EXPAND) {
-        return INPUT_INFO;
-      }
-      // clicked on next button
-      if ((zones & INPUT_NEXT) && x >= BUTTON_LEFT_OFFSET_X &&
-          x < BUTTON_LEFT_OFFSET_X + BUTTON_FULL_WIDTH && y > BUTTON_OFFSET_Y &&
-          y < BUTTON_OFFSET_Y + BUTTON_HEIGHT) {
-        return (zones & INPUT_NEXT);
-      }
-      // clicked on previous button
-      if ((zones & INPUT_PREVIOUS) && x >= BUTTON_LEFT_OFFSET_X &&
-          x < BUTTON_LEFT_OFFSET_X + BUTTON_FULL_WIDTH && y > BUTTON_OFFSET_Y &&
-          y < BUTTON_OFFSET_Y + BUTTON_HEIGHT) {
-        return (zones & INPUT_PREVIOUS);
-      }
-      // clicked on restart button
-      if ((zones & INPUT_RESTART) && x >= BUTTON_RIGHT_OFFSET_X &&
-          x < BUTTON_RIGHT_OFFSET_X + BUTTON_HALF_WIDTH &&
-          y > BUTTON_OFFSET_Y && y < BUTTON_OFFSET_Y + BUTTON_HEIGHT) {
-        return (zones & INPUT_RESTART);
-      }
-      // bootloader version
-      if ((zones & INPUT_BOOT_VERSION_TEXT) && x >= 0 && x <= 480 && y > 520 &&
-          y < 580) {
-        return (zones & INPUT_BOOT_VERSION_TEXT);
-      }
-      // build id
-      if ((zones & INPUT_BUILD_ID_TEXT) && x >= 0 && x <= 480 && y > 580 &&
-          y < 640) {
-        return (zones & INPUT_BUILD_ID_TEXT);
-      }
-      // Menu items detection
-      // Device Info menu item (y=90 + line height 30)
-      if ((zones & INPUT_MENU_DEVICE_INFO) && x >= BOARD_OFFSET_X &&
-          x < BOARD_OFFSET_X + BUTTON_FULL_WIDTH && y >= 90 && y < 150) {
-        return INPUT_MENU_DEVICE_INFO;
-      }
-      // Reboot Device menu item (now second)
-      if ((zones & INPUT_MENU_REBOOT) && x >= BOARD_OFFSET_X &&
-          x < BOARD_OFFSET_X + BUTTON_FULL_WIDTH && y >= 183 && y < 243) {
-        return INPUT_MENU_REBOOT;
-      }
-      // Generate TRNG menu item (now third)
-      if ((zones & INPUT_MENU_GENERATE_TRNG) && x >= BOARD_OFFSET_X &&
-          x < BOARD_OFFSET_X + BUTTON_FULL_WIDTH && y >= 276 && y < 336) {
-        return INPUT_MENU_GENERATE_TRNG;
-      }
-      // Factory Reset menu item
-      if ((zones & INPUT_MENU_FACTORY_RESET) && x >= BOARD_OFFSET_X &&
-          x < BOARD_OFFSET_X + BUTTON_FULL_WIDTH && y >= 369 && y < 429) {
-        return INPUT_MENU_FACTORY_RESET;
+      int res = _ui_input_match(zones, evt);
+      if (res != 0) {
+        return res;
       }
     }
   } while (poll);
   return 0;
+}
+
+int ui_input_match(int zones, uint32_t evt) {
+  return _ui_input_match(zones, evt);
 }
 
 void ui_statusbar_update(void) {
@@ -792,26 +793,23 @@ void ui_install_thd89_confirm(const char* old_ver, const char* boot_ver) {
   ui_confirm_cancel_buttons("Cancel", "Install", COLOR_BL_DARK, COLOR_BL_DONE);
 }
 
-void ui_update_info_show(update_info_t update_info) {
-  int offset_y = SUBTITLE_OFFSET_Y;
+#define UPDATE_SECTION_HEIGHT 340
+static int update_section_height = 0;
+
+static void draw_update_section(update_info_t update_info, int offset_y,
+                                int bar_height, int font_offset) {
   int offset_x = 32;
-  int bar_height = 66;
-  int font_offset = 8;
+  int offset_y_start = offset_y;
 
-  ui_statusbar_update();
-  ui_logo_onekey();
-
-  display_text_center(DISPLAY_RESX / 2, TITLE_OFFSET_Y, "Update Firmware", -1,
-                      FONT_PJKS_BOLD_38, COLOR_BL_FG, COLOR_BL_BG);
+  lcd_set_window(0, SUBTITLE_OFFSET_Y - bar_height / 2, MAX_DISPLAY_RESX,
+                 UPDATE_SECTION_HEIGHT);
 
   if (update_info.boot.type == UPDATE_BOOTLOADER) {
-    display_bar_radius_ex(BUTTON_LEFT_OFFSET_X, offset_y - bar_height / 2,
-                          BUTTON_FULL_WIDTH, bar_height, COLOR_BL_PANEL,
-                          COLOR_BL_BG, bar_height / 2);
-
+    display_bar_radius_ex(BUTTON_LEFT_OFFSET_X, offset_y, BUTTON_FULL_WIDTH,
+                          bar_height, COLOR_BL_PANEL, COLOR_BL_BG,
+                          bar_height / 2);
     display_text(offset_x, offset_y + font_offset, "Bootloader", -1,
                  FONT_NORMAL, COLOR_BL_FG, COLOR_BL_BG);
-
     ui_show_version_info(offset_y + font_offset,
                          update_info.boot.current_version,
                          update_info.boot.new_version);
@@ -819,13 +817,11 @@ void ui_update_info_show(update_info_t update_info) {
   }
 
   if (update_info.mcu_location) {
-    display_bar_radius_ex(BUTTON_LEFT_OFFSET_X, offset_y - bar_height / 2,
-                          BUTTON_FULL_WIDTH, bar_height, COLOR_BL_PANEL,
-                          COLOR_BL_BG, bar_height / 2);
-
+    display_bar_radius_ex(BUTTON_LEFT_OFFSET_X, offset_y, BUTTON_FULL_WIDTH,
+                          bar_height, COLOR_BL_PANEL, COLOR_BL_BG,
+                          bar_height / 2);
     display_text(offset_x, offset_y + font_offset, "System", -1, FONT_NORMAL,
                  COLOR_BL_FG, COLOR_BL_BG);
-
     ui_show_version_info(
         offset_y + font_offset,
         update_info.items[update_info.mcu_location - 1].current_version,
@@ -833,25 +829,42 @@ void ui_update_info_show(update_info_t update_info) {
     offset_y += 80;
   }
 
-  if (update_info.se_count) {
-    display_bar_radius_ex(BUTTON_LEFT_OFFSET_X, offset_y - bar_height / 2,
-                          BUTTON_FULL_WIDTH, bar_height, COLOR_BL_PANEL,
-                          COLOR_BL_BG, bar_height / 2);
+  for (int i = 0; i < sizeof(update_info.se_location); i++) {
+    if (update_info.se_address[i] == 0) continue;
 
-    display_text(offset_x, offset_y + font_offset, "SE", -1, FONT_NORMAL,
+    display_bar_radius_ex(BUTTON_LEFT_OFFSET_X, offset_y, BUTTON_FULL_WIDTH,
+                          bar_height, COLOR_BL_PANEL, COLOR_BL_BG,
+                          bar_height / 2);
+
+    const char* se_name = NULL;
+    switch (i) {
+      case 0:
+        se_name = "SE1";
+        break;
+      case 1:
+        se_name = "SE2";
+        break;
+      case 2:
+        se_name = "SE3";
+        break;
+      case 3:
+        se_name = "SE4";
+        break;
+    }
+
+    display_text(offset_x, offset_y + font_offset, se_name, -1, FONT_NORMAL,
                  COLOR_BL_FG, COLOR_BL_BG);
     ui_show_version_info(
         offset_y + font_offset,
-        update_info.items[update_info.se_location[0] - 1].current_version,
-        update_info.items[update_info.se_location[0] - 1].new_version);
+        update_info.items[update_info.se_location[i] - 1].current_version,
+        update_info.items[update_info.se_location[i] - 1].new_version);
     offset_y += 80;
   }
 
   if (update_info.ble_location) {
-    display_bar_radius_ex(BUTTON_LEFT_OFFSET_X, offset_y - bar_height / 2,
-                          BUTTON_FULL_WIDTH, bar_height, COLOR_BL_PANEL,
-                          COLOR_BL_BG, bar_height / 2);
-
+    display_bar_radius_ex(BUTTON_LEFT_OFFSET_X, offset_y, BUTTON_FULL_WIDTH,
+                          bar_height, COLOR_BL_PANEL, COLOR_BL_BG,
+                          bar_height / 2);
     display_text(offset_x, offset_y + font_offset, "Bluetooth", -1, FONT_NORMAL,
                  COLOR_BL_FG, COLOR_BL_BG);
     ui_show_version_info(
@@ -860,8 +873,52 @@ void ui_update_info_show(update_info_t update_info) {
         update_info.items[update_info.ble_location - 1].new_version);
     offset_y += 80;
   }
+  update_section_height = offset_y - offset_y_start;
 
+  lcd_set_window(0, 0, MAX_DISPLAY_RESX, MAX_DISPLAY_RESY);
+}
+
+void ui_update_info_show(update_info_t update_info) {
+  int bar_height = 66;
+  int offset_y = SUBTITLE_OFFSET_Y - bar_height / 2;
+
+  ui_statusbar_update();
+  ui_logo_onekey();
+  display_text_center(DISPLAY_RESX / 2, TITLE_OFFSET_Y, "Update Firmware", -1,
+                      FONT_PJKS_BOLD_38, COLOR_BL_FG, COLOR_BL_BG);
   ui_confirm_cancel_buttons("Cancel", "Install", COLOR_BL_DARK, COLOR_BL_DONE);
+
+  draw_update_section(update_info, offset_y, bar_height, 40);
+}
+
+void ui_update_info_show_update(update_info_t update_info, int* offset_view) {
+  if (update_section_height < UPDATE_SECTION_HEIGHT) {
+    return;
+  }
+
+  static int offset_y_last = 0;
+  if (*offset_view >= 0) {
+    *offset_view = 0;
+  }
+
+  int space_ex = abs(*offset_view);
+
+  if (UPDATE_SECTION_HEIGHT + space_ex >= update_section_height) {
+    *offset_view = UPDATE_SECTION_HEIGHT - update_section_height;
+  }
+
+  int bar_height = 66;
+  int offset_y = SUBTITLE_OFFSET_Y + *offset_view - bar_height / 2;
+
+  if (offset_y_last != offset_y) {
+    offset_y_last = offset_y;
+  } else {
+    return;
+  }
+
+  display_bar(0, SUBTITLE_OFFSET_Y - bar_height / 2, MAX_DISPLAY_RESX,
+              UPDATE_SECTION_HEIGHT, COLOR_BL_BG);
+  draw_update_section(update_info, offset_y, bar_height, 40);
 }
 
 void ui_bootloader_first(const image_header* const hdr) {
@@ -876,13 +933,11 @@ void ui_bootloader_first(const image_header* const hdr) {
   }
 
   ui_statusbar_update();
-  display_raw_rgb565(INFO_ICON_OFFSET_X, INFO_ICON_OFFSET_Y, 48, 48,
-                     (const uint16_t*)toi_msg_smooth_circle);
-
-  // display_icon(DISPLAY_RESX - offset_x, offset_y, 24, 32,
-  //                toi_icon_charging + 12, sizeof(toi_icon_charging) - 12,
-  //                COLOR_BL_FG, boot_background);
-
+  // info icon 48 * 48 - the entry point of the bootloader details
+  display_icon(INFO_ICON_OFFSET_X, INFO_ICON_OFFSET_Y, INFO_ICON_SIZE,
+               INFO_ICON_SIZE, toi_ok_icon_info + 12,
+               sizeof(toi_ok_icon_info) - 12, COLOR_BL_FG_INFO_ICON,
+               COLOR_BL_BG);
   ui_logo_onekey();
   display_text_center(DISPLAY_RESX / 2, TITLE_OFFSET_Y, "Update Mode", -1,
                       FONT_PJKS_BOLD_38, COLOR_BL_FG, COLOR_BL_BG);

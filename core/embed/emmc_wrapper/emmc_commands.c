@@ -714,8 +714,33 @@ static int check_file_contents(uint8_t iface_num, const uint8_t* buffer, uint32_
                 send_failure(iface_num, FailureType_Failure_ProcessError, "SE firmware length error!");
                 return -1;
             }
+            char* se_version = NULL;
+            uint8_t index = 0;
+            switch ( thd89_hdr.i2c_address << 1 )
+            {
+            case THD89_1ST_ADDRESS:
+                se_version = se01_get_version();
+                index = 0;
+                break;
+            case THD89_2ND_ADDRESS:
+                se_version = se02_get_version();
+                index = 1;
+                break;
+            case THD89_3RD_ADDRESS:
+                se_version = se03_get_version();
+                index = 2;
+                break;
+            case THD89_4TH_ADDRESS:
+                se_version = se04_get_version();
+                index = 3;
+                break;
+            default:
+                send_failure(iface_num, FailureType_Failure_ProcessError, "SE i2c address error!");
+                return -1;
+            }
+
             strncpy(
-                update_info.items[update_info.item_count].current_version, se01_get_version(),
+                update_info.items[update_info.item_count].current_version, se_version,
                 sizeof(update_info.items[update_info.item_count].current_version)
             );
             strncpy(
@@ -724,12 +749,16 @@ static int check_file_contents(uint8_t iface_num, const uint8_t* buffer, uint32_
                 sizeof(update_info.items[update_info.item_count].new_version)
             );
 
-            update_info.items[update_info.item_count].type = UPDATE_SE;
-            update_info.items[update_info.item_count].offset = p_data - buffer;
-            update_info.items[update_info.item_count].length = thd89_hdr.codelen + IMAGE_HEADER_SIZE;
-            update_info.item_count++;
-            update_info.se_location[update_info.se_count] = update_info.item_count;
-            update_info.se_count++;
+            if ( update_info.se_address[index] == 0 )
+            {
+                update_info.items[update_info.item_count].type = UPDATE_SE;
+                update_info.items[update_info.item_count].offset = p_data - buffer;
+                update_info.items[update_info.item_count].length = thd89_hdr.codelen + IMAGE_HEADER_SIZE;
+                update_info.item_count++;
+                update_info.se_location[index] = update_info.item_count;
+                update_info.se_address[index] = thd89_hdr.i2c_address << 1;
+                update_info.se_count++;
+            }
             p_data += thd89_hdr.codelen + IMAGE_HEADER_SIZE;
             buffer_len -= thd89_hdr.codelen + IMAGE_HEADER_SIZE;
             continue;
@@ -865,6 +894,36 @@ int check_bootloader_update(image_header* file_hdr)
 
 extern void enable_usb_tiny_task(bool init_usb);
 extern void disable_usb_tiny_task(void);
+
+static secbool firmware_install_confirm(void)
+{
+    ui_fadeout();
+    ui_update_info_show(update_info);
+    ui_fadein();
+    int offset_view = 0;
+    while ( 1 )
+    {
+        gesture_result_t gesture = touch_gesture_detect();
+        if ( gesture.gesture == GESTURE_SWIPE_UP || gesture.gesture == GESTURE_SWIPE_DOWN )
+        {
+            offset_view += gesture.scroll_delta;
+            ui_update_info_show_update(update_info, &offset_view);
+        }
+        else if ( gesture.gesture == GESTURE_CLICK )
+        {
+            if ( ui_input_match(INPUT_CANCEL, gesture.end_pos) )
+            {
+                return secfalse;
+            }
+            else if ( ui_input_match(INPUT_CONFIRM, gesture.end_pos) )
+            {
+                return sectrue;
+            }
+        }
+        hal_delay(10);
+    }
+    return secfalse;
+}
 
 static int update_firmware_from_file(uint8_t iface_num, const char* path, bool check_only)
 {
@@ -1050,16 +1109,13 @@ static int update_firmware_from_file(uint8_t iface_num, const char* path, bool c
     }
 
     if ( check_only )
+    {
         return 0;
+    }
 
     if ( iface_num != USB_IFACE_NULL )
     {
-        ui_fadeout();
-        ui_update_info_show(update_info);
-        ui_fadein();
-
-        int response = ui_input_poll(INPUT_CONFIRM | INPUT_CANCEL, true);
-        if ( INPUT_CONFIRM != response )
+        if ( !firmware_install_confirm() )
         {
             send_user_abort_nocheck(iface_num, "Firmware install cancelled");
             return -1;
@@ -1150,8 +1206,13 @@ static int update_firmware_from_file(uint8_t iface_num, const char* path, bool c
     if ( update_info.se_count )
     {
         uint8_t se_weights = 100 / update_info.item_count;
-        for ( int i = 0; i < update_info.se_count; i++ )
+        for ( int i = 0; i < sizeof(update_info.se_location); i++ )
         {
+            if ( update_info.se_address[i] == 0 )
+            {
+                continue;
+            }
+
             p_data = bl_buffer->misc_buff + update_info.items[update_info.se_location[i] - 1].offset;
 
             image_header_th89 thd89_hdr;
@@ -1370,12 +1431,7 @@ int process_msg_FirmwareUpdateEmmc(uint8_t iface_num, uint32_t msg_size, uint8_t
             sizeof(update_info.boot.new_version)
         );
 
-        ui_fadeout();
-        ui_update_info_show(update_info);
-        ui_fadein();
-
-        int response = ui_input_poll(INPUT_CONFIRM | INPUT_CANCEL, true);
-        if ( INPUT_CONFIRM != response )
+        if ( !firmware_install_confirm() )
         {
             delete_bootloader_update();
             send_user_abort_nocheck(iface_num, "Firmware install cancelled");
@@ -1705,6 +1761,8 @@ int process_msg_EmmcFileWrite(uint8_t iface_num, uint32_t msg_size, uint8_t* buf
     {
         char ui_progress_title[] = "Transferring Data";
 
+        static uint32_t ui_percentage_last = 0xff;
+
         // sanity check
         if ( (msg_recv.ui_percentage < 0) || (msg_recv.ui_percentage > 100) )
         {
@@ -1713,37 +1771,47 @@ int process_msg_EmmcFileWrite(uint8_t iface_num, uint32_t msg_size, uint8_t* buf
         }
         else if ( msg_recv.ui_percentage < 100 )
         {
-            if ( !ui_progress_bar_visible )
+            if ( ui_percentage_last != msg_recv.ui_percentage )
             {
-                ui_fadeout();
-                ui_screen_progress_bar_prepare(ui_progress_title, NULL);
-                ui_fadein();
-                ui_screen_progress_bar_update(NULL, NULL, msg_recv.ui_percentage);
-                ui_progress_bar_visible = true;
+                ui_percentage_last = msg_recv.ui_percentage;
+                if ( !ui_progress_bar_visible )
+                {
+                    ui_fadeout();
+                    ui_screen_progress_bar_prepare(ui_progress_title, NULL);
+                    ui_fadein();
+                    ui_screen_progress_bar_update(NULL, NULL, msg_recv.ui_percentage);
+                    ui_progress_bar_visible = true;
+                }
+                else
+                {
+                    ui_screen_progress_bar_update(NULL, NULL, msg_recv.ui_percentage);
+                }
             }
-            else
-                ui_screen_progress_bar_update(NULL, NULL, msg_recv.ui_percentage);
         }
         else if ( msg_recv.ui_percentage == 100 )
         {
-            if ( !ui_progress_bar_visible )
+            if ( ui_percentage_last != msg_recv.ui_percentage )
             {
-                // this is for the instant 100% case, which happens if the file is too
-                // small
+                ui_percentage_last = msg_recv.ui_percentage;
+                if ( !ui_progress_bar_visible )
+                {
+                    // this is for the instant 100% case, which happens if the file is too
+                    // small
+                    ui_fadeout();
+                    ui_screen_progress_bar_prepare(ui_progress_title, NULL);
+                    ui_screen_progress_bar_update(NULL, NULL, msg_recv.ui_percentage);
+                    ui_fadein();
+                }
+                else
+                {
+                    // normal path
+                    ui_screen_progress_bar_update(NULL, NULL, msg_recv.ui_percentage);
+                    ui_progress_bar_visible = false;
+                }
                 ui_fadeout();
-                ui_screen_progress_bar_prepare(ui_progress_title, NULL);
-                ui_screen_progress_bar_update(NULL, NULL, msg_recv.ui_percentage);
+                ui_bootloader_first(NULL);
                 ui_fadein();
             }
-            else
-            {
-                // normal path
-                ui_screen_progress_bar_update(NULL, NULL, msg_recv.ui_percentage);
-                ui_progress_bar_visible = false;
-            }
-            ui_fadeout();
-            ui_bootloader_first(NULL);
-            ui_fadein();
         }
     }
     else

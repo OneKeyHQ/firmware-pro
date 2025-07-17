@@ -123,6 +123,7 @@ typedef struct {
   uint32_t se_count;
   uint8_t mcu_location;
   uint8_t se_location[4];
+  uint8_t se_address[4];
   uint8_t ble_location;
   mcu_update_info_t mcu_update_info;
 } update_info_t;

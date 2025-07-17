@@ -92,6 +92,7 @@ void dma2d_copy_ycbcr_to_rgb(uint32_t *pSrc, uint32_t *pDst, uint16_t xsize,
 
 void lcd_set_src_addr(uint32_t addr);
 uint32_t lcd_get_src_addr(void);
+void lcd_set_window(uint16_t x0, uint16_t y0, uint16_t w, uint16_t h);
 
 // #ifdef __cplusplus
 // }

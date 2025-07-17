@@ -49,6 +49,56 @@
 #define TOUCH_MOVE (1U << 25)
 #define TOUCH_END (1U << 26)
 
+typedef enum {
+  GESTURE_NONE = 0,
+  GESTURE_CLICK,
+  GESTURE_SWIPE_UP,
+  GESTURE_SWIPE_DOWN,
+  GESTURE_SWIPE_LEFT,
+  GESTURE_SWIPE_RIGHT
+} touch_gesture_t;
+
+typedef enum {
+  SWIPE_NONE = 0,
+  SWIPE_UP,
+  SWIPE_DOWN,
+  SWIPE_LEFT,
+  SWIPE_RIGHT
+} swipe_direction_t;
+
+typedef struct {
+  bool touching;
+  uint16_t start_x;
+  uint16_t start_y;
+  uint16_t last_x;
+  uint16_t last_y;
+  uint32_t start_time;
+  uint32_t last_time;
+  bool moved;
+  float smoothed_dx;
+  float smoothed_dy;
+  swipe_direction_t swipe_dir;
+  int scroll_delta;
+} touch_state_t;
+
+typedef struct {
+  touch_gesture_t gesture;
+  uint16_t start_x;
+  uint16_t start_y;
+  uint16_t end_x;
+  uint16_t end_y;
+  uint32_t end_pos;
+  uint16_t distance;
+  uint32_t duration;
+  uint16_t velocity;
+  int scroll_delta;
+} gesture_result_t;
+
+#define CLICK_THRESHOLD_PIXELS 10
+#define CLICK_THRESHOLD_TIME_MS 300
+#define SWIPE_THRESHOLD_PIXELS 5
+#define SMOOTH_ALPHA 0.5f
+
 void touch_test(void);
 
 bool touch_is_inited();
@@ -64,6 +114,7 @@ uint32_t boot_touch_detect(uint32_t timeout);
 void touch_enter_sleep_mode(void);
 void touch_enable_irq(void);
 void touch_disable_irq(void);
+gesture_result_t touch_gesture_detect(void);
 static inline uint16_t touch_unpack_x(uint32_t evt) {
   return (evt >> 12) & 0xFFF;
 }
