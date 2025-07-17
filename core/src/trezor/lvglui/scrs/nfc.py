@@ -45,11 +45,6 @@ async def handle_sw1sw2_connect_error(self):
     self.destroy()
 
 
-def perform_ticks(motor_ctl, num_ticks):
-    for _ticks in range(num_ticks):
-        motor_ctl.play_medium()
-
-
 async def handle_cleanup(self, data):
     self.channel.publish(data)
     await loop.sleep(180)
@@ -62,7 +57,7 @@ async def run_card_search(self):
         await loop.sleep(1000)
         if nfc.poll_card():
             MOTOR_CTL = io.MOTOR()
-            perform_ticks(MOTOR_CTL, 80)
+            MOTOR_CTL.play_heavy()
             self.searching = False
             self.channel.publish(LITE_CARD_FIND)
             self.clean()
