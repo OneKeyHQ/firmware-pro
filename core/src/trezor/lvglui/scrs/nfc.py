@@ -1,6 +1,6 @@
 from trezorio import nfc
 
-from trezor import io, loop
+from trezor import loop
 from trezor.crypto import bip39
 
 from ..i18n import gettext as _, keys as i18n_keys
@@ -53,11 +53,12 @@ async def handle_cleanup(self, data):
 
 
 async def run_card_search(self):
+    from trezor import motor
+
     while self.searching:
         await loop.sleep(1000)
         if nfc.poll_card():
-            MOTOR_CTL = io.MOTOR()
-            MOTOR_CTL.play_heavy()
+            motor.vibrate(motor.HEAVY)
             self.searching = False
             self.channel.publish(LITE_CARD_FIND)
             self.clean()
