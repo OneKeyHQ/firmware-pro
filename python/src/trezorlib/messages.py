@@ -454,6 +454,10 @@ class MessageType(IntEnum):
     OnekeyGetFeatures = 10025
     OnekeyFeatures = 10026
     WriteSEPrivateKey = 10027
+    GetPassphraseState = 10028
+    PassphraseState = 10029
+    UnLockDevice = 10030
+    UnLockDeviceResponse = 10031
 
 
 class FailureType(IntEnum):
@@ -495,6 +499,7 @@ class ButtonRequestType(IntEnum):
     Warning = 18
     PassphraseEntry = 19
     PinEntry = 20
+    AttachPin = 8000
 
 
 class PinMatrixRequestType(IntEnum):
@@ -689,6 +694,7 @@ class Capability(IntEnum):
     Shamir = 15
     ShamirGroups = 16
     PassphraseEntry = 17
+    AttachToPin = 18
 
 
 class SdProtectOperationType(IntEnum):
@@ -1662,14 +1668,17 @@ class PassphraseRequest(protobuf.MessageType):
     MESSAGE_WIRE_TYPE = 41
     FIELDS = {
         1: protobuf.Field("_on_device", "bool", repeated=False, required=False),
+        8000: protobuf.Field("exists_attach_pin_user", "bool", repeated=False, required=False),
     }
 
     def __init__(
         self,
         *,
         _on_device: Optional["bool"] = None,
+        exists_attach_pin_user: Optional["bool"] = None,
     ) -> None:
         self._on_device = _on_device
+        self.exists_attach_pin_user = exists_attach_pin_user
 
 
 class PassphraseAck(protobuf.MessageType):
@@ -1678,6 +1687,7 @@ class PassphraseAck(protobuf.MessageType):
         1: protobuf.Field("passphrase", "string", repeated=False, required=False),
         2: protobuf.Field("_state", "bytes", repeated=False, required=False),
         3: protobuf.Field("on_device", "bool", repeated=False, required=False),
+        8000: protobuf.Field("on_device_attach_pin", "bool", repeated=False, required=False),
     }
 
     def __init__(
@@ -1686,10 +1696,12 @@ class PassphraseAck(protobuf.MessageType):
         passphrase: Optional["str"] = None,
         _state: Optional["bytes"] = None,
         on_device: Optional["bool"] = None,
+        on_device_attach_pin: Optional["bool"] = None,
     ) -> None:
         self.passphrase = passphrase
         self._state = _state
         self.on_device = on_device
+        self.on_device_attach_pin = on_device_attach_pin
 
 
 class Deprecated_PassphraseStateRequest(protobuf.MessageType):
@@ -4326,6 +4338,8 @@ class Initialize(protobuf.MessageType):
         1: protobuf.Field("session_id", "bytes", repeated=False, required=False),
         2: protobuf.Field("_skip_passphrase", "bool", repeated=False, required=False),
         3: protobuf.Field("derive_cardano", "bool", repeated=False, required=False),
+        8000: protobuf.Field("passphrase_state", "string", repeated=False, required=False),
+        8001: protobuf.Field("is_contains_attach", "bool", repeated=False, required=False),
     }
 
     def __init__(
@@ -4334,10 +4348,14 @@ class Initialize(protobuf.MessageType):
         session_id: Optional["bytes"] = None,
         _skip_passphrase: Optional["bool"] = None,
         derive_cardano: Optional["bool"] = None,
+        passphrase_state: Optional["str"] = None,
+        is_contains_attach: Optional["bool"] = None,
     ) -> None:
         self.session_id = session_id
         self._skip_passphrase = _skip_passphrase
         self.derive_cardano = derive_cardano
+        self.passphrase_state = passphrase_state
+        self.is_contains_attach = is_contains_attach
 
 
 class GetFeatures(protobuf.MessageType):
@@ -4434,6 +4452,8 @@ class Features(protobuf.MessageType):
         622: protobuf.Field("onekey_se02_state", "OneKeySEState", repeated=False, required=False),
         623: protobuf.Field("onekey_se03_state", "OneKeySEState", repeated=False, required=False),
         624: protobuf.Field("onekey_se04_state", "OneKeySEState", repeated=False, required=False),
+        625: protobuf.Field("attach_to_pin_user", "bool", repeated=False, required=False),
+        626: protobuf.Field("unlocked_attach_pin", "bool", repeated=False, required=False),
     }
 
     def __init__(
@@ -4522,6 +4542,8 @@ class Features(protobuf.MessageType):
         onekey_se02_state: Optional["OneKeySEState"] = None,
         onekey_se03_state: Optional["OneKeySEState"] = None,
         onekey_se04_state: Optional["OneKeySEState"] = None,
+        attach_to_pin_user: Optional["bool"] = None,
+        unlocked_attach_pin: Optional["bool"] = None,
     ) -> None:
         self.capabilities: Sequence["Capability"] = capabilities if capabilities is not None else []
         self.major_version = major_version
@@ -4606,6 +4628,8 @@ class Features(protobuf.MessageType):
         self.onekey_se02_state = onekey_se02_state
         self.onekey_se03_state = onekey_se03_state
         self.onekey_se04_state = onekey_se04_state
+        self.attach_to_pin_user = attach_to_pin_user
+        self.unlocked_attach_pin = unlocked_attach_pin
 
 
 class OnekeyFeatures(protobuf.MessageType):
@@ -5497,6 +5521,70 @@ class UnlockedPathRequest(protobuf.MessageType):
         mac: Optional["bytes"] = None,
     ) -> None:
         self.mac = mac
+
+
+class GetPassphraseState(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 10028
+    FIELDS = {
+        1: protobuf.Field("passphrase_state", "string", repeated=False, required=False),
+        2: protobuf.Field("_only_main_pin", "bool", repeated=False, required=False),
+        3: protobuf.Field("allow_create_attach_pin", "bool", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        passphrase_state: Optional["str"] = None,
+        _only_main_pin: Optional["bool"] = None,
+        allow_create_attach_pin: Optional["bool"] = None,
+    ) -> None:
+        self.passphrase_state = passphrase_state
+        self._only_main_pin = _only_main_pin
+        self.allow_create_attach_pin = allow_create_attach_pin
+
+
+class PassphraseState(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 10029
+    FIELDS = {
+        1: protobuf.Field("passphrase_state", "string", repeated=False, required=False),
+        2: protobuf.Field("session_id", "bytes", repeated=False, required=False),
+        3: protobuf.Field("unlocked_attach_pin", "bool", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        passphrase_state: Optional["str"] = None,
+        session_id: Optional["bytes"] = None,
+        unlocked_attach_pin: Optional["bool"] = None,
+    ) -> None:
+        self.passphrase_state = passphrase_state
+        self.session_id = session_id
+        self.unlocked_attach_pin = unlocked_attach_pin
+
+
+class UnLockDevice(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 10030
+
+
+class UnLockDeviceResponse(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 10031
+    FIELDS = {
+        1: protobuf.Field("unlocked", "bool", repeated=False, required=False),
+        2: protobuf.Field("unlocked_attach_pin", "bool", repeated=False, required=False),
+        3: protobuf.Field("passphrase_protection", "bool", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        unlocked: Optional["bool"] = None,
+        unlocked_attach_pin: Optional["bool"] = None,
+        passphrase_protection: Optional["bool"] = None,
+    ) -> None:
+        self.unlocked = unlocked
+        self.unlocked_attach_pin = unlocked_attach_pin
+        self.passphrase_protection = passphrase_protection
 
 
 class FileInfo(protobuf.MessageType):

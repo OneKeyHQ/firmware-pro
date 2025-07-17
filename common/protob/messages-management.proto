@@ -39,6 +39,8 @@ message Initialize {
     optional bytes session_id = 1;     // assumed device session id; Trezor clears caches if it is different or empty
     optional bool _skip_passphrase = 2 [deprecated=true]; // removed as part of passphrase redesign
     optional bool derive_cardano = 3;  // whether to derive Cardano Icarus root keys in this session
+    optional string passphrase_state = 8000;
+    optional bool is_contains_attach = 8001;   
 }
 
 /**
@@ -129,6 +131,7 @@ message Features {
         Capability_Shamir = 15 [(bitcoin_only) = true];
         Capability_ShamirGroups = 16 [(bitcoin_only) = true];
         Capability_PassphraseEntry = 17 [(bitcoin_only) = true];  // the device is capable of passphrase entry directly on the device
+        Capability_AttachToPin = 18 [(bitcoin_only) = true];  // OneKey: Attach passphrase to PIN feature
     }
     optional BackupType backup_type = 31;       // type of device backup (BIP-39 / SLIP-39 basic / SLIP-39 advanced)
     optional bool sd_card_present = 32;         // is SD card present
@@ -189,6 +192,8 @@ message Features {
     optional OneKeySEState onekey_se02_state = 622;
     optional OneKeySEState onekey_se03_state = 623;
     optional OneKeySEState onekey_se04_state = 624;
+    optional bool attach_to_pin_user = 625;     
+    optional bool unlocked_attach_pin = 626;
 }
 
 /**
@@ -808,5 +813,44 @@ message UnlockPath {
  * @next GetAddress
  */
 message UnlockedPathRequest {
-    optional bytes mac = 1;            // authentication code for future UnlockPath calls
+    optional bytes mac = 1;   
+}
+
+/**
+ * Request: Get current passphrase state
+ * @start
+ * @next PassphraseState
+ */
+message GetPassphraseState {
+    optional string passphrase_state = 1;
+    optional bool _only_main_pin = 2; 
+    optional bool allow_create_attach_pin = 3; 
+}
+
+/**
+ * Response: Current passphrase state
+ * @end
+ */
+message PassphraseState {
+    optional string passphrase_state  = 1;  
+    optional bytes session_id = 2;      
+    optional bool unlocked_attach_pin  = 3;                   
+}
+
+/**
+ * Request: Unlock device
+ * @start
+ * @next UnLockDeviceResponse
+ */
+message UnLockDevice {
+}
+
+/**
+ * Response: Device unlock status
+ * @end
+ */
+message UnLockDeviceResponse {
+    optional bool unlocked = 1;
+    optional bool unlocked_attach_pin = 2;
+    optional bool passphrase_protection = 3;
 }

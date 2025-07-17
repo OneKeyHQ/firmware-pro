@@ -15,6 +15,8 @@
 #include "secp256k1.h"
 #include "thd89.h"
 
+#define PIN_MAX_LEN (50)
+
 #define CURVE_NIST256P1 (0x00)
 #define CURVE_SECP256K1 (0x01)
 
@@ -59,6 +61,9 @@ static uint8_t se_session_key[SESSION_KEYLEN];
 static uint8_t se_fp_session_key[SESSION_KEYLEN];
 static bool se_session_init = false;
 static bool se_fp_session_init = false;
+
+static pin_result_t pin_result_type = PIN_FAILED;
+static pin_result_t pin_passphrase_ret = PIN_FAILED;
 
 static uint8_t se_send_buffer[SE_BUF_MAX_LEN];
 static uint8_t se_recv_buffer[SE_BUF_MAX_LEN];
@@ -246,6 +251,10 @@ static secbool se_transmit_mac_ex(uint8_t addr, uint8_t *session_key,
     *recv_len = se_recv_len;
     if (recv) {
       memcpy(recv, APDU, *recv_len);
+    }
+  } else {
+    if (recv_len != NULL) {
+      *recv_len = 0;
     }
   }
   memset(APDU, 0x00, sizeof(APDU));
@@ -1113,6 +1122,10 @@ static secbool se_setPin_ex(uint8_t addr, uint8_t *session_key,
                             const char *pin) {
   uint8_t pin_buf[64] = {0};
 
+  if (strlen(pin) > PIN_MAX_LEN) {
+    return secfalse;
+  }
+
   pin_buf[0] = strlen(pin);
   memcpy(pin_buf + 1, pin, strlen(pin));
 
@@ -1145,16 +1158,30 @@ secbool se_setPin(const char *pin) {
 }
 
 static secbool se_verifyPin_ex(uint8_t addr, uint8_t *session_key,
-                               const char *pin) {
-  uint8_t pin_buf[50 + 1] = {0};
-  uint8_t recv[4] = {0};
-  uint16_t recv_len = sizeof(recv);
+                               const char *pin, pin_type_t pin_type) {
+  uint8_t pin_buf[50 + 2] = {0};
+  uint8_t resp[1] = {0};
+  uint16_t resp_len = 1;
+  uint8_t data_len = 0;
+
+  if (strlen(pin) > PIN_MAX_LEN) {
+    return secfalse;
+  }
+
+  if (pin_type >= PIN_TYPE_MAX) {
+    return secfalse;
+  }
 
   pin_buf[0] = strlen(pin);
   memcpy(pin_buf + 1, pin, strlen(pin));
 
+  data_len = pin_buf[0] + 1;
+
+  pin_buf[pin_buf[0] + 1] = pin_type;
+  data_len++;
+
   if (!se_transmit_mac_ex(addr, session_key, SE_INS_PIN, 0x00, 0x03, pin_buf,
-                          pin_buf[0] + 1, recv, &recv_len)) {
+                          data_len, resp, &resp_len)) {
     memset(pin_buf, 0, sizeof(pin_buf));
     if (0x6f80 == thd89_last_error()) {
       error_reset("You have entered the", "wipe code. All private",
@@ -1163,12 +1190,21 @@ static secbool se_verifyPin_ex(uint8_t addr, uint8_t *session_key,
 
     return secfalse;
   }
+
+  pin_result_type = resp[0];
   memset(pin_buf, 0, sizeof(pin_buf));
+
+  if (pin_type == PIN_TYPE_PASSPHRASE_PIN &&
+      pin_result_type != PASSPHRASE_PIN_ENTERED) {
+    return secfalse;
+  }
+
   return sectrue;
 }
 
 static secbool se_fp_verifyPin(const char *pin) {
-  return se_verifyPin_ex(THD89_FINGER_ADDRESS, se_fp_session_key, pin);
+  return se_verifyPin_ex(THD89_FINGER_ADDRESS, se_fp_session_key, pin,
+                         PIN_TYPE_USER);
 }
 static void reset_storage_and_restart(void) {
   error_pin_max_prompt();
@@ -1178,19 +1214,26 @@ static void reset_storage_and_restart(void) {
   hal_delay(5000);
   restart();
 }
-secbool se_verifyPin(const char *pin) {
-  secbool result = se_verifyPin_ex(THD89_MASTER_ADDRESS, se_session_key, pin);
+secbool se_verifyPin(const char *pin, pin_type_t pin_type) {
+  secbool result =
+      se_verifyPin_ex(THD89_MASTER_ADDRESS, se_session_key, pin, pin_type);
   if (result == sectrue) {
-    secbool fp_result =
-        se_verifyPin_ex(THD89_FINGER_ADDRESS, se_fp_session_key, pin);
-    if (fp_result == sectrue) {
-      return sectrue;
-    } else {
-      if (se_fp_hasPin()) {
-        ensure(se_fp_reset_storage(), "reset fp storage failed");
+    if (pin_type != PIN_TYPE_PASSPHRASE_PIN_CHECK) {
+      secbool fp_result = se_verifyPin_ex(THD89_FINGER_ADDRESS,
+                                          se_fp_session_key, pin, pin_type);
+      if (fp_result == sectrue) {
+        return sectrue;
       }
-      ensure(se_fp_setPin(pin), "set fp pin failed");
-      ensure(se_fp_verifyPin(pin), "verify fp pin failed");
+      // else {
+      //   if (se_fp_hasPin()) {
+      //     ensure(se_fp_reset_storage(), "reset fp storage failed");
+      //   }
+      //   ensure(se_fp_setPin(pin), "set fp pin failed");
+      //   ensure(se_fp_verifyPin(pin), "verify fp pin failed");
+      //   return sectrue;
+      // }
+      return secfalse;
+    } else {
       return sectrue;
     }
   } else {
@@ -1222,6 +1265,9 @@ static secbool se_changePin_ex(uint8_t addr, uint8_t *session_key,
 }
 
 secbool se_changePin(const char *oldpin, const char *newpin) {
+  if (strlen(oldpin) > PIN_MAX_LEN || strlen(newpin) > PIN_MAX_LEN) {
+    return secfalse;
+  }
   secbool result =
       se_changePin_ex(THD89_MASTER_ADDRESS, se_session_key, oldpin, newpin);
   if (result == sectrue) {
@@ -1285,6 +1331,155 @@ static secbool se_clearSecsta_ex(uint8_t addr, uint8_t *session_key) {
 
   return sectrue;
 }
+
+static secbool se_set_pin_passphrase_ex(uint8_t addr, uint8_t *session_key,
+                                        const char *pin,
+                                        const char *passphrase_pin,
+                                        const char *passphrase,
+                                        bool *override) {
+  uint8_t percent;
+  if (strlen(pin) == 0 || strlen(pin) > PIN_MAX_LENGTH) {
+    return secfalse;
+  }
+  if (strlen(passphrase_pin) < 6 || strlen(passphrase_pin) > PIN_MAX_LENGTH) {
+    return secfalse;
+  }
+  if (strlen(passphrase) == 0 || strlen(passphrase) > PASSPHRASE_MAX_LENGTH) {
+    return secfalse;
+  }
+
+  uint8_t buf[2 * PIN_MAX_LENGTH + PASSPHRASE_MAX_LENGTH + 3];
+  uint8_t resp[2];
+  uint16_t resp_len = 2;
+  uint32_t offset = 0;
+
+  buf[offset++] = strlen(pin);
+  memcpy(buf + offset, (uint8_t *)pin, strlen(pin));
+  offset += strlen(pin);
+  buf[offset++] = strlen(passphrase_pin);
+  memcpy(buf + offset, (uint8_t *)passphrase_pin, strlen(passphrase_pin));
+  offset += strlen(passphrase_pin);
+  buf[offset++] = strlen(passphrase);
+  memcpy(buf + offset, (uint8_t *)passphrase, strlen(passphrase));
+  offset += strlen(passphrase);
+
+  if (!se_transmit_mac_ex(addr, session_key, SE_INS_PIN, 0x00, 0x09, buf,
+                          offset, resp, &resp_len)) {
+    if (thd89_last_error() == 0x6c00) {
+      percent = 0;
+      resp[0] = PIN_SUCCESS;
+    } else {
+      return secfalse;
+    }
+  }
+  if (resp[0] != PIN_SUCCESS) {
+    pin_passphrase_ret = resp[0];
+    return secfalse;
+  }
+
+  while (percent < 100) {
+    if (ui_callback) {
+      ui_callback(0, percent * 10, NULL);
+    }
+    if (!session_generate_seed_percent(&percent)) {
+      return secfalse;
+    }
+    hal_delay(100);
+  }
+  resp_len = 1;
+  *override = true;
+  if (se_transmit_mac(SE_INS_PIN, 0x00, 0x0D, NULL, 0, resp, &resp_len)) {
+    *override = resp[0] ? true : false;
+  }
+  return sectrue;
+}
+
+secbool se_set_pin_passphrase(const char *pin, const char *passphrase_pin,
+                              const char *passphrase, bool *override) {
+  secbool result =
+      se_set_pin_passphrase_ex(THD89_MASTER_ADDRESS, se_session_key, pin,
+                               passphrase_pin, passphrase, override);
+  if (result == sectrue) {
+    secbool fp_result =
+        se_set_pin_passphrase_ex(THD89_FINGER_ADDRESS, se_fp_session_key, pin,
+                                 passphrase_pin, passphrase, override);
+    if (fp_result == sectrue) {
+      return sectrue;
+    }
+    return secfalse;
+  }
+  return secfalse;
+}
+
+static secbool se_delete_pin_passphrase_ex(uint8_t addr, uint8_t *session_key,
+                                           const char *passphrase_pin,
+                                           bool *current) {
+  if (strlen(passphrase_pin) < 6 || strlen(passphrase_pin) > PIN_MAX_LENGTH) {
+    return secfalse;
+  }
+  uint8_t buf[PASSPHRASE_MAX_LENGTH + 1];
+  uint8_t resp[2];
+  uint16_t resp_len = 2;
+
+  buf[0] = strlen(passphrase_pin);
+  memcpy(buf + 1, (uint8_t *)passphrase_pin, strlen(passphrase_pin));
+
+  if (!se_transmit_mac_ex(addr, session_key, SE_INS_PIN, 0x00, 0x0A, buf,
+                          strlen(passphrase_pin) + 1, resp, &resp_len)) {
+    return secfalse;
+  }
+  if (resp[0] == PIN_SUCCESS) {
+    *current = resp[1] == 0x55;
+    return sectrue;
+  }
+  return secfalse;
+}
+
+secbool se_delete_pin_passphrase(const char *passphrase_pin, bool *current) {
+  secbool result = se_delete_pin_passphrase_ex(
+      THD89_MASTER_ADDRESS, se_session_key, passphrase_pin, current);
+  if (result == sectrue) {
+    secbool fp_result = se_delete_pin_passphrase_ex(
+        THD89_FINGER_ADDRESS, se_fp_session_key, passphrase_pin, current);
+    if (fp_result == sectrue) {
+      return sectrue;
+    }
+    return secfalse;
+  }
+  return secfalse;
+}
+
+secbool se_check_passphrase_btc_test_address(const char *address) {
+  if (strlen(address) == 0 || strlen(address) > 64) {
+    return secfalse;
+  }
+  uint8_t buf[128];
+  uint8_t resp[1];
+  uint16_t resp_len = 1;
+
+  buf[0] = strlen(address);
+  memcpy(buf + 1, (uint8_t *)address, strlen(address));
+
+  if (!se_transmit_mac(SE_INS_PIN, 0x00, 0x0B, buf, strlen(address) + 1, resp,
+                       &resp_len)) {
+    return secfalse;
+  }
+  if (resp[0] == 0x55) {
+    return sectrue;
+  }
+  return secfalse;
+}
+
+secbool se_get_pin_passphrase_space(uint8_t *space) {
+  uint16_t resp_len = 1;
+  if (!se_transmit_mac(SE_INS_PIN, 0x00, 0x0C, NULL, 0, space, &resp_len)) {
+    return secfalse;
+  }
+  return sectrue;
+}
+
+pin_result_t se_get_pin_result_type(void) { return pin_result_type; }
+pin_result_t se_get_pin_passphrase_ret(void) { return pin_passphrase_ret; }
 
 secbool se_clearSecsta(void) {
   ensure(se_clearSecsta_ex(THD89_MASTER_ADDRESS, se_session_key),
@@ -1754,6 +1949,14 @@ uint8_t *se_session_startSession(const uint8_t *received_session_id) {
   }
 
   return act_session_id;
+}
+
+secbool se_session_get_type(uint8_t *type) {
+  uint16_t recv_len = 1;
+  if (!se_transmit_mac(SE_INS_SESSION, 0x00, 0x09, NULL, 0, type, &recv_len)) {
+    return secfalse;
+  }
+  return sectrue;
 }
 
 secbool se_node_sign_digest(const uint8_t *hash, uint8_t *sig, uint8_t *by) {

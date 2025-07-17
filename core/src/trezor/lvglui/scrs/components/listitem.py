@@ -29,7 +29,7 @@ class ListItemWithLeadingCheckbox(lv.obj):
             .pad_ver(20)
             .text_color(lv_colors.WHITE_1)
             .text_font(font_GeistRegular30)
-            .text_letter_space(-1),
+            .text_letter_space(-2),
             0,
         )
         self.checkbox = lv.checkbox(self)

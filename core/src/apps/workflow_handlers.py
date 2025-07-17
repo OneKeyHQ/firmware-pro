@@ -12,7 +12,6 @@ workflow_handlers: dict[int, Handler] = {}
 
 
 def register(wire_type: int, handler: Handler[Msg]) -> None:
-    """Register `handler` to get scheduled after `wire_type` message is received."""
     workflow_handlers[wire_type] = handler
 
 
@@ -108,10 +107,8 @@ def find_message_handler_module(msg_type: int) -> str:
         return "apps.misc.get_firmware_hash"
 
     if not utils.BITCOIN_ONLY:
-
         if msg_type == MessageType.BatchGetPublickeys:
             return "apps.misc.batch_get_pubkeys"
-
         if msg_type == MessageType.SetU2FCounter:
             return "apps.management.set_u2f_counter"
         if msg_type == MessageType.GetNextU2FCounter:
@@ -387,13 +384,73 @@ def find_message_handler_module(msg_type: int) -> str:
 
 def find_registered_handler(iface: WireInterface, msg_type: int) -> Handler | None:
     if msg_type in workflow_handlers:
-        # Message has a handler available, return it directly.
         return workflow_handlers[msg_type]
 
     try:
         modname = find_message_handler_module(msg_type)
         handler_name = modname[modname.rfind(".") + 1 :]
         module = __import__(modname, None, None, (handler_name,), 0)
-        return getattr(module, handler_name)
+        handler = getattr(module, handler_name)
+
+        if iface is not None and _is_address_derivation_message(msg_type):
+            return _wrap_with_version_check(handler)
+
+        return handler
     except ValueError:
         return None
+
+
+def _is_address_derivation_message(msg_type: int) -> bool:
+    return msg_type in (
+        MessageType.GetAddress,
+        MessageType.GetPublicKey,
+        MessageType.EthereumGetAddress,
+        MessageType.EthereumGetAddressOneKey,
+        MessageType.MoneroGetAddress,
+        MessageType.NEMGetAddress,
+        MessageType.NeoGetAddress,
+        MessageType.StellarGetAddress,
+        MessageType.RippleGetAddress,
+        MessageType.CardanoGetAddress,
+        MessageType.TezosGetAddress,
+        MessageType.BinanceGetAddress,
+        MessageType.ConfluxGetAddress,
+        MessageType.TonGetAddress,
+        MessageType.TronGetAddress,
+        MessageType.SolanaGetAddress,
+        MessageType.StarcoinGetAddress,
+        MessageType.NearGetAddress,
+        MessageType.AptosGetAddress,
+        MessageType.AlgorandGetAddress,
+        MessageType.PolkadotGetAddress,
+        MessageType.SuiGetAddress,
+        MessageType.FilecoinGetAddress,
+        MessageType.CosmosGetAddress,
+        MessageType.KaspaGetAddress,
+        MessageType.NexaGetAddress,
+        MessageType.NervosGetAddress,
+        MessageType.ScdoGetAddress,
+        MessageType.AlephiumGetAddress,
+        MessageType.BenfenGetAddress,
+        # Add other GetPublicKey variants
+        MessageType.BinanceGetPublicKey,
+        MessageType.CardanoGetPublicKey,
+        MessageType.EthereumGetPublicKey,
+        MessageType.EthereumGetPublicKeyOneKey,
+        MessageType.TezosGetPublicKey,
+        MessageType.StarcoinGetPublicKey,
+        # MessageType.EOSGetPublicKey,
+        MessageType.NostrGetPublicKey,
+    )
+
+
+def _wrap_with_version_check(handler):
+    async def wrapper(ctx, msg):
+        # Execute the original handler
+        result = await handler(ctx, msg)
+        from apps.base import check_version_compatibility
+
+        check_version_compatibility()
+        return result
+
+    return wrapper

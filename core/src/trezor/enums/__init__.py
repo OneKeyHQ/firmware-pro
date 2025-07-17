@@ -445,6 +445,10 @@ if TYPE_CHECKING:
         OnekeyGetFeatures = 10025
         OnekeyFeatures = 10026
         WriteSEPrivateKey = 10027
+        GetPassphraseState = 10028
+        PassphraseState = 10029
+        UnLockDevice = 10030
+        UnLockDeviceResponse = 10031
 
     class FailureType(IntEnum):
         UnexpectedMessage = 1
@@ -484,6 +488,7 @@ if TYPE_CHECKING:
         Warning = 18
         PassphraseEntry = 19
         PinEntry = 20
+        AttachPin = 8000
 
     class PinMatrixRequestType(IntEnum):
         Current = 1
@@ -648,6 +653,7 @@ if TYPE_CHECKING:
         Shamir = 15
         ShamirGroups = 16
         PassphraseEntry = 17
+        AttachToPin = 18
 
     class SdProtectOperationType(IntEnum):
         DISABLE = 0

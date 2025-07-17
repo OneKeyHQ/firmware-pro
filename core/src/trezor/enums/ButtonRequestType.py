@@ -21,3 +21,4 @@ Success = 17
 Warning = 18
 PassphraseEntry = 19
 PinEntry = 20
+AttachPin = 8000

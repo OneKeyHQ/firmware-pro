@@ -123,6 +123,7 @@ class AddressManager:
         derivation_type = CardanoDerivationType.ICARUS
 
         storage.cache.end_current_session()
+        self.prev_session_id = storage.cache.get_session_id()
         self.curr_session_id = storage.cache.start_session()
         storage.cache.SESSION_DIRIVE_CARDANO = True
 

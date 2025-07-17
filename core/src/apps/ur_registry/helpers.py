@@ -72,7 +72,9 @@ def reveal_name(ctx, root_fingerprint: int, eth_only: bool = False) -> str:
         name_components.append(serial_no)
 
     name = ":".join(name_components)
-    if passphrase.is_enabled() and ctx.passphrase:
+    if (passphrase.is_enabled() and ctx.passphrase) or (
+        passphrase.is_passphrase_pin_enabled()
+    ):
         from binascii import hexlify
         from trezor.crypto.hashlib import blake2b
 

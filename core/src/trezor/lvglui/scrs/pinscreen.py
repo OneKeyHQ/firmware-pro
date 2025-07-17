@@ -186,6 +186,8 @@ class InputPin(FullSizeWindow):
         )
         self.__class__._instance = self
         self.allow_fingerprint = kwargs.get("allow_fingerprint", True)
+        self.standy_wall_only = kwargs.get("standy_wall_only", False)
+        self.min_len = kwargs.get("min_len", 4)
         self.title.add_style(
             StyleWrapper()
             .text_font(font_GeistSemiBold48)
@@ -195,12 +197,18 @@ class InputPin(FullSizeWindow):
         )
         self.title.align(lv.ALIGN.TOP_MID, 0, 24)
 
+        standard_wallet_text = _(i18n_keys.CONTENT__PIN_FOR_STANDARD_WALLET)
+        is_standard_wallet = subtitle == standard_wallet_text
         self.subtitle.add_style(
             StyleWrapper()
             .text_font(font_GeistRegular26)
             .max_width(368)
-            .text_color(lv_colors.WHITE)
-            .bg_color(lv_colors.ONEKEY_RED_2 if subtitle else lv_colors.BLACK)
+            .text_color(lv_colors.LIGHT_GRAY)
+            .bg_color(
+                lv_colors.BLACK
+                if is_standard_wallet
+                else (lv_colors.ONEKEY_RED_2 if subtitle else lv_colors.BLACK)
+            )
             .bg_opa(lv.OPA.COVER)
             .pad_hor(8)
             .pad_ver(16)
@@ -208,14 +216,14 @@ class InputPin(FullSizeWindow):
             .text_align_center(),
             0,
         )
-
+        self.subtitle.set_text(subtitle)
         title_height = self.title.get_height()
-        subtitle_y = 40 if title_height > 60 else 70
+        subtitle_y = (16 if is_standard_wallet else 24) if title_height > 60 else 70
         self.subtitle.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, subtitle_y)
-
+        self.subtitle.set_text(subtitle)
         self._show_fingerprint_prompt_if_necessary()
         self.clear_flag(lv.obj.FLAG.SCROLLABLE)
-        self.keyboard = NumberKeyboard(self)
+        self.keyboard = NumberKeyboard(self, min_len=self.min_len)
         self.keyboard.add_event_cb(self.on_event, lv.EVENT.READY, None)
         self.keyboard.add_event_cb(self.on_event, lv.EVENT.CANCEL, None)
         self.keyboard.add_event_cb(self.on_event, lv.EVENT.VALUE_CHANGED, None)
@@ -226,9 +234,21 @@ class InputPin(FullSizeWindow):
         )
 
     def change_subtitle(self, subtitle: str):
-        self.subtitle.set_style_bg_color(
-            lv_colors.ONEKEY_RED_2 if subtitle else lv_colors.BLACK, 0
-        )
+        from apps.common import passphrase
+
+        # if standy_wall_only :
+        if (
+            subtitle == _(i18n_keys.CONTENT__PIN_FOR_STANDARD_WALLET)
+            and passphrase.is_passphrase_pin_enabled()
+        ):
+            self.subtitle.set_style_bg_color(lv_colors.BLACK, 0)
+            self.subtitle.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, 16)
+        else:
+            self.subtitle.set_style_bg_color(
+                lv_colors.ONEKEY_RED_2 if subtitle else lv_colors.BLACK, 0
+            )
+            self.subtitle.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, 24)
+
         self.subtitle.set_text(subtitle)
         keyboard_text = self.keyboard.ta.get_text()
         if keyboard_text:
@@ -295,11 +315,17 @@ class InputPin(FullSizeWindow):
         if code == lv.EVENT.VALUE_CHANGED:
             utils.lcd_resume()
             if self.keyboard.ta.get_text() != "":
-                self.change_subtitle("")
+                from apps.common import passphrase
+
+                if self.standy_wall_only and passphrase.is_passphrase_pin_enabled():
+
+                    self.change_subtitle(_(i18n_keys.CONTENT__PIN_FOR_STANDARD_WALLET))
+                else:
+                    self.change_subtitle("")
             return
         elif code == lv.EVENT.READY:
             input_text = self.keyboard.ta.get_text()
-            if len(input_text) < 4:
+            if len(input_text) < self.min_len:
                 return
             self.channel.publish(input_text)
         elif code == lv.EVENT.CANCEL:
@@ -442,3 +468,113 @@ class SetupComplete(FullSizeWindow):
                 from apps.base import set_homescreen
 
                 set_homescreen()
+
+
+class InputPassphrasePinConfirm(FullSizeWindow):
+    def __init__(self, title, original_input=None):
+        super().__init__(
+            title=title,
+            subtitle=None,
+            anim_dir=0,
+        )
+        self.title.add_style(
+            StyleWrapper().text_font(font_GeistSemiBold48).text_align_center(),
+            0,
+        )
+        self.title.align(lv.ALIGN.TOP_MID, 0, 24)
+        self.clear_flag(lv.obj.FLAG.SCROLLABLE)
+        self.keyboard = NumberKeyboard(self, max_len=50, min_len=6)
+        self.keyboard.add_event_cb(self.on_event, lv.EVENT.READY, None)
+        self.keyboard.add_event_cb(self.on_event, lv.EVENT.CANCEL, None)
+        self.keyboard.add_event_cb(self.on_event, lv.EVENT.VALUE_CHANGED, None)
+        self.input_result = None
+
+    def on_event(self, event_obj):
+        code = event_obj.code
+        if code == lv.EVENT.VALUE_CHANGED:
+            utils.lcd_resume()
+            return
+        elif code == lv.EVENT.READY:
+            input = self.keyboard.ta.get_text()
+            if len(input) < 6:
+                return
+            self.input_result = input
+            self.channel.publish(self.input_result)
+        elif code == lv.EVENT.CANCEL:
+            self.channel.publish(0)
+
+        self.clean()
+        self.destroy()
+
+
+async def request_passphrase_pin(ctx, prompt: str) -> str:
+    pin_screen = InputPassphrasePinConfirm(prompt)
+    pin = await ctx.wait(pin_screen.request())
+    return pin
+
+
+async def request_passphrase_pin_confirm(ctx) -> str:
+    while True:
+        pin1 = await request_passphrase_pin(
+            ctx, _(i18n_keys.PASSPHRASE__SET_PASSPHRASE_PIN)
+        )
+        if pin1 == 0:
+            return pin1
+
+        pin2 = await request_passphrase_pin(ctx, _(i18n_keys.TITLE__ENTER_PIN_AGAIN))
+        if pin2 == 0:
+            return pin2
+        if pin1 == pin2:
+            return pin1
+        await passphrase_pin_mismatch(ctx)
+
+
+async def passphrase_pin_mismatch(ctx) -> None:
+    from trezor.ui.layouts import show_warning
+
+    await show_warning(
+        ctx=ctx,
+        br_type="pin_not_match",
+        header=_(i18n_keys.TITLE__NOT_MATCH),
+        content=_(i18n_keys.SUBTITLE__SETUP_SET_PIN_PIN_NOT_MATCH),
+        icon="A:/res/danger.png",
+        btn_yes_bg_color=lv_colors.ONEKEY_BLACK,
+    )
+
+
+class InputMainPin(FullSizeWindow):
+    def __init__(self):
+        super().__init__(
+            title=_(i18n_keys.TITLE__ENTER_PIN),
+            subtitle=_(i18n_keys.CONTENT__PIN_FOR_STANDARD_WALLET),
+            anim_dir=0,
+        )
+        self.title.add_style(
+            StyleWrapper()
+            .text_font(font_GeistSemiBold48)
+            .text_align_center()
+            .text_letter_space(0),
+            0,
+        )
+        self.title.align(lv.ALIGN.TOP_MID, 0, 24)
+        self.clear_flag(lv.obj.FLAG.SCROLLABLE)
+        self.keyboard = NumberKeyboard(self, max_len=50, min_len=4)
+        self.keyboard.add_event_cb(self.on_event, lv.EVENT.READY, None)
+        self.keyboard.add_event_cb(self.on_event, lv.EVENT.CANCEL, None)
+        self.keyboard.add_event_cb(self.on_event, lv.EVENT.VALUE_CHANGED, None)
+
+    def on_event(self, event_obj):
+        code = event_obj.code
+        if code == lv.EVENT.VALUE_CHANGED:
+            utils.lcd_resume()
+            return
+        elif code == lv.EVENT.READY:
+            input = self.keyboard.ta.get_text()
+            if len(input) < 6:
+                return
+            self.channel.publish(input)
+        elif code == lv.EVENT.CANCEL:
+            self.channel.publish(0)
+
+        self.clean()
+        self.destroy()

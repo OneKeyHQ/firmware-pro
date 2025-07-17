@@ -1,4 +1,6 @@
 from typing import *
+USER_PIN_ENTERED: int
+PASSPHRASE_PIN_ENTERED: int
 
 
 # extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
@@ -55,6 +57,13 @@ def get_session_state() -> bytes:
 def session_is_open() -> bool:
     """
     get current session secret state.
+    """
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
+def get_session_type() -> int:
+    """
+    get the type of current session.
     """
 
 
@@ -287,5 +296,39 @@ def fido_att_sign_digest(
 def fido_delete_all_credentials() -> None:
     """
     Delete all FIDO2 credentials.
+    """
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
+def get_pin_passphrase_space() -> int:
+    """
+    get the number of available pin-passphrase slots.
+    """
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
+def save_pin_passphrase(pin: str, passphrase_pin: str, passphrase: str) ->
+tuple[bool, bool]:
+    """
+    Save the pin and passphrase to the list.
+    Returns True on success, False on failure.
+    second return is whether to cover the old pin-passphrase
+    """
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
+def delete_pin_passphrase(passphrase_pin: str) ->
+tuple[bool,bool]:
+    """
+    Delete the pin and passphrase pin from the list.
+    Returns True on success, False on failure.
+    second return is whether the deleted is the current pin-passphrase
+    """
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
+def check_passphrase_btc_test_address(address: str) -> bool:
+    """
+    Check if the passphrase is a valid Bitcoin test address.
     """
 FIDO2_CRED_COUNT_MAX: int

@@ -367,6 +367,8 @@ trezor.ui.layouts.lvgl
 import trezor.ui.layouts.lvgl
 trezor.ui.layouts.lvgl.altcoin
 import trezor.ui.layouts.lvgl.altcoin
+trezor.ui.layouts.lvgl.attach_to_pin
+import trezor.ui.layouts.lvgl.attach_to_pin
 trezor.ui.layouts.lvgl.common
 import trezor.ui.layouts.lvgl.common
 trezor.ui.layouts.lvgl.lite
@@ -579,6 +581,8 @@ apps.common.passphrase
 import apps.common.passphrase
 apps.common.paths
 import apps.common.paths
+apps.common.pin_constants
+import apps.common.pin_constants
 apps.common.readers
 import apps.common.readers
 apps.common.request_pin

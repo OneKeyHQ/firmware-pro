@@ -24,6 +24,9 @@
 
 /// package: trezorcrypto.se_thd89
 
+/// USER_PIN_ENTERED: int
+/// PASSPHRASE_PIN_ENTERED: int
+
 /// def check(mnemonic: bytes) -> bool:
 ///     """
 ///     Check whether given mnemonic is valid.
@@ -159,6 +162,20 @@ STATIC mp_obj_t mod_trezorcrypto_se_thd89_session_is_open(void) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorcrypto_se_thd89_session_is_open_obj,
                                  mod_trezorcrypto_se_thd89_session_is_open);
+
+/// def get_session_type() -> int:
+///     """
+///     get the type of current session.
+///     """
+STATIC mp_obj_t mod_trezorcrypto_se_thd89_get_session_type(void) {
+  uint8_t session_type = 0;
+  if (!se_session_get_type(&session_type)) {
+    mp_raise_ValueError("Failed to get session type");
+  }
+  return mp_obj_new_int(session_type);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorcrypto_se_thd89_get_session_type_obj,
+                                 mod_trezorcrypto_se_thd89_get_session_type);
 
 /// def nist256p1_sign(
 ///     secret_key: bytes, digest: bytes, compressed: bool = True
@@ -939,9 +956,133 @@ STATIC mp_obj_t mod_trezorcrypto_se_thd89_fido_delete_all_credentials(void) {
   se_delete_all_fido2_credentials();
   return mp_const_none;
 }
+
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(
     mod_trezorcrypto_se_thd89_fido_delete_all_credentials_obj,
     mod_trezorcrypto_se_thd89_fido_delete_all_credentials);
+
+/// def get_pin_passphrase_space() -> int:
+///     """
+///     get the number of available pin-passphrase slots.
+///     """
+STATIC mp_obj_t mod_trezorcrypto_se_thd89_get_pin_passphrase_space(void) {
+  uint8_t space = 0;
+  if (!se_get_pin_passphrase_space(&space)) {
+    mp_raise_ValueError("Failed to get pin-passphrase space");
+  }
+  return mp_obj_new_int(space);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(
+    mod_trezorcrypto_se_thd89_get_pin_passphrase_space_obj,
+    mod_trezorcrypto_se_thd89_get_pin_passphrase_space);
+
+/// def save_pin_passphrase(pin: str, passphrase_pin: str, passphrase: str) ->
+/// tuple[bool, bool]:
+///     """
+///     Save the pin and passphrase to the list.
+///     Returns True on success, False on failure.
+///     second return is whether to cover the old pin-passphrase
+///     """
+STATIC mp_obj_t mod_trezorcrypto_se_thd89_save_pin_passphrase(
+    mp_obj_t pin, mp_obj_t passphrase_pin, mp_obj_t passphrase) {
+  mp_buffer_info_t pin_buf = {0};
+  mp_get_buffer_raise(pin, &pin_buf, MP_BUFFER_READ);
+
+  mp_buffer_info_t passphrase_pin_buf = {0};
+  mp_get_buffer_raise(passphrase_pin, &passphrase_pin_buf, MP_BUFFER_READ);
+
+  mp_buffer_info_t passphrase_buf = {0};
+  mp_get_buffer_raise(passphrase, &passphrase_buf, MP_BUFFER_READ);
+
+  if (pin_buf.len == 0 || passphrase_pin_buf.len == 0) {
+    mp_raise_ValueError("Pin or passphrase pin cannot be empty");
+  }
+
+  if (passphrase_pin_buf.len < 6) {
+    mp_raise_ValueError("Passphrase pin length not valid");
+  }
+
+  if (pin_buf.len == passphrase_pin_buf.len) {
+    if (memcmp(pin_buf.buf, passphrase_pin_buf.buf, pin_buf.len) == 0) {
+      mp_raise_ValueError("Passphrase pin cannot be the same as pin");
+    }
+  }
+
+  if (passphrase_buf.len == 0) {
+    mp_raise_ValueError("Passphrase cannot be empty");
+  }
+  bool override = false;
+  secbool ret = se_set_pin_passphrase(
+      (const char *)pin_buf.buf, (const char *)passphrase_pin_buf.buf,
+      (const char *)passphrase_buf.buf, &override);
+
+  if (!ret) {
+    pin_result_t pin_passphrase_ret = se_get_pin_passphrase_ret();
+    if (pin_passphrase_ret == PIN_PASSPHRASE_MAX_ITEMS_REACHED) {
+      mp_raise_ValueError("No space for new passphrase");
+    }
+  }
+
+  mp_obj_tuple_t *tuple = MP_OBJ_TO_PTR(mp_obj_new_tuple(2, NULL));
+  tuple->items[0] = ret ? mp_const_true : mp_const_false;
+  tuple->items[1] = override ? mp_const_true : mp_const_false;
+
+  return MP_OBJ_FROM_PTR(tuple);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_3(
+    mod_trezorcrypto_se_thd89_save_pin_passphrase_obj,
+    mod_trezorcrypto_se_thd89_save_pin_passphrase);
+
+/// def delete_pin_passphrase(passphrase_pin: str) ->
+/// tuple[bool,bool]:
+///     """
+///     Delete the pin and passphrase pin from the list.
+///     Returns True on success, False on failure.
+///     second return is whether the deleted is the current pin-passphrase
+///     """
+STATIC mp_obj_t
+mod_trezorcrypto_se_thd89_delete_pin_passphrase(mp_obj_t passphrase_pin) {
+  mp_buffer_info_t passphrase_pin_buf = {0};
+  mp_get_buffer_raise(passphrase_pin, &passphrase_pin_buf, MP_BUFFER_READ);
+
+  if (passphrase_pin_buf.len == 0) {
+    mp_raise_ValueError("Passphrase pin cannot be empty");
+  }
+
+  bool current = false;
+  secbool ret =
+      se_delete_pin_passphrase((const char *)passphrase_pin_buf.buf, &current);
+  mp_obj_tuple_t *tuple = MP_OBJ_TO_PTR(mp_obj_new_tuple(2, NULL));
+  tuple->items[0] = ret ? mp_const_true : mp_const_false;
+  tuple->items[1] = current ? mp_const_true : mp_const_false;
+
+  return MP_OBJ_FROM_PTR(tuple);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(
+    mod_trezorcrypto_se_thd89_delete_pin_passphrase_obj,
+    mod_trezorcrypto_se_thd89_delete_pin_passphrase);
+
+/// def check_passphrase_btc_test_address(address: str) -> bool:
+///     """
+///     Check if the passphrase is a valid Bitcoin test address.
+///     """
+STATIC mp_obj_t
+mod_trezorcrypto_se_thd89_check_passphrase_btc_test_address(mp_obj_t address) {
+  mp_buffer_info_t address_buf = {0};
+  mp_get_buffer_raise(address, &address_buf, MP_BUFFER_READ);
+
+  if (address_buf.len == 0 || address_buf.len > 64) {
+    mp_raise_ValueError("Address cannot be empty or too long");
+  }
+
+  if (!se_check_passphrase_btc_test_address((const char *)address_buf.buf)) {
+    return mp_const_false;
+  }
+  return mp_const_true;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(
+    mod_trezorcrypto_se_thd89_check_passphrase_btc_test_address_obj,
+    mod_trezorcrypto_se_thd89_check_passphrase_btc_test_address);
 
 /// FIDO2_CRED_COUNT_MAX: int
 
@@ -961,6 +1102,8 @@ STATIC const mp_rom_map_elem_t mod_trezorcrypto_se_thd89_globals_table[] = {
      MP_ROM_PTR(&mod_trezorcrypto_se_thd89_get_session_state_obj)},
     {MP_ROM_QSTR(MP_QSTR_session_is_open),
      MP_ROM_PTR(&mod_trezorcrypto_se_thd89_session_is_open_obj)},
+    {MP_ROM_QSTR(MP_QSTR_get_session_type),
+     MP_ROM_PTR(&mod_trezorcrypto_se_thd89_get_session_type_obj)},
     {MP_ROM_QSTR(MP_QSTR_nist256p1_sign),
      MP_ROM_PTR(&mod_trezorcrypto_se_thd89_nist256p1_sign_obj)},
     {MP_ROM_QSTR(MP_QSTR_secp256k1_sign_digest),
@@ -1017,6 +1160,19 @@ STATIC const mp_rom_map_elem_t mod_trezorcrypto_se_thd89_globals_table[] = {
      MP_ROM_PTR(&mod_trezorcrypto_se_thd89_fido_delete_all_credentials_obj)},
     {MP_ROM_QSTR(MP_QSTR_FIDO2_CRED_COUNT_MAX),
      MP_ROM_INT(FIDO2_RESIDENT_CREDENTIALS_COUNT)},
+    {MP_ROM_QSTR(MP_QSTR_get_pin_passphrase_space),
+     MP_ROM_PTR(&mod_trezorcrypto_se_thd89_get_pin_passphrase_space_obj)},
+    {MP_ROM_QSTR(MP_QSTR_save_pin_passphrase),
+     MP_ROM_PTR(&mod_trezorcrypto_se_thd89_save_pin_passphrase_obj)},
+    {MP_ROM_QSTR(MP_QSTR_delete_pin_passphrase),
+     MP_ROM_PTR(&mod_trezorcrypto_se_thd89_delete_pin_passphrase_obj)},
+    {MP_ROM_QSTR(MP_QSTR_check_passphrase_btc_test_address),
+     MP_ROM_PTR(
+         &mod_trezorcrypto_se_thd89_check_passphrase_btc_test_address_obj)},
+    {MP_ROM_QSTR(MP_QSTR_USER_PIN_ENTERED), MP_ROM_INT(USER_PIN_ENTERED)},
+    {MP_ROM_QSTR(MP_QSTR_PASSPHRASE_PIN_ENTERED),
+     MP_ROM_INT(PASSPHRASE_PIN_ENTERED)},
+
 };
 STATIC MP_DEFINE_CONST_DICT(mod_trezorcrypto_se_thd89_globals,
                             mod_trezorcrypto_se_thd89_globals_table);

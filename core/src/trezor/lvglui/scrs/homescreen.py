@@ -40,6 +40,8 @@ from .components.listitem import (
 from .deviceinfo import DeviceInfoManager
 from .widgets.style import StyleWrapper
 
+_attach_to_pin_task_running = False
+
 
 def brightness2_percent_str(brightness: int) -> str:
     return f"{int(brightness / style.BACKLIGHT_MAX * 100)}%"
@@ -685,25 +687,23 @@ class ShowAddress(AnimScreen):
     def __init__(self, prev_scr=None):
         if not hasattr(self, "_init"):
             self.prev_session_id = storage.cache.get_session_id()
-            self.curr_session_id = storage.cache.start_session()
-
-            if passphrase.is_enabled():
-                workflow.spawn(
-                    self._get_passphrase_from_user(init=True, prev_scr=prev_scr)
-                )
+            if not self.prev_session_id:
+                self.curr_session_id = storage.cache.start_session()
+                self.prev_session_id = self.curr_session_id
             else:
-                self._init = True
-                self.current_index = 0
-                kwargs = {
-                    "prev_scr": prev_scr,
-                    "title": _(i18n_keys.TITLE__SELECT_NETWORK),
-                    "nav_back": True,
-                }
-                super().__init__(**kwargs)
+                self.curr_session_id = storage.cache.start_session()
+            self._init = True
+            self.current_index = 0
+            kwargs = {
+                "prev_scr": prev_scr,
+                "title": _(i18n_keys.TITLE__SELECT_NETWORK),
+                "nav_back": True,
+            }
+            super().__init__(**kwargs)
 
-                self.addr_manager = AddressManager()
+            self.addr_manager = AddressManager()
 
-                self.init_ui()
+            self.init_ui()
 
         else:
             if not self.is_visible():
@@ -802,7 +802,7 @@ class ShowAddress(AnimScreen):
     def init_ui(self):
         """Initialize UI components"""
 
-        if passphrase.is_enabled():
+        if passphrase.is_enabled() and not passphrase.is_passphrase_pin_enabled():
             from .components.navigation import Navigation
 
             self.nav_passphrase = Navigation(
@@ -1002,6 +1002,7 @@ class ShowAddress(AnimScreen):
 
                 elif passphrase.is_enabled() and target == self.nav_passphrase.nav_btn:
                     # enter new passphrase
+                    # device.set_passphrase_auto_status(False)
                     storage.cache.end_current_session()
                     self.curr_session_id = storage.cache.start_session()
                     workflow.spawn(self._get_passphrase_from_user(init=False))
@@ -1897,7 +1898,10 @@ class WalletList(Screen):
         self.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
         self.okx.clear_flag(lv.obj.FLAG.CLICKABLE)
 
-        if not storage_device.is_passphrase_enabled():
+        if (
+            not storage_device.is_passphrase_enabled()
+            and not passphrase.is_passphrase_pin_enabled()
+        ):
             from trezor.qr import gen_hd_key
 
             if not get_hd_key():
@@ -2009,6 +2013,7 @@ class BackupWallet(Screen):
             "OneKey Keytag",
             left_img_src="A:/res/icon-dot-48.png",
         )
+
         if not is_bip39:
             self.lite.disable()
             self.keytag.disable()
@@ -2332,6 +2337,7 @@ class ScanScreen(Screen):
             self.desc.set_text(
                 _(i18n_keys.CONTENT__SCAN_THE_QR_CODE_DISPLAYED_ON_THE_APP)
             )
+            self.desc.clear_flag(lv.obj.FLAG.HIDDEN)
             self.desc.align_to(self.camera_bg, lv.ALIGN.OUT_BOTTOM_MID, 0, 14)
 
         elif state == ScanScreen.SCAN_STATE_SCANNING:
@@ -2620,10 +2626,6 @@ if __debug__:
                 "修改主页上滑动画类型",
             )
             self.path_up.enable_bg_color(False)
-            self.path_down = ListItemWithLeadingCheckbox(
-                self.container,
-                "修改主页下滑动画类型",
-            )
             self.path_down.enable_bg_color(False)
             self.path_liner = ListItemBtn(
                 self.container,
@@ -4282,6 +4284,9 @@ class PowerOff(FullSizeWindow):
             #     config.lock()
             config.lock()
 
+            if passphrase.is_passphrase_pin_enabled():
+                storage.cache.end_current_session()
+
     def back(self):
         PowerOff.IS_ACTIVE = False
         self.destroy(100)
@@ -4308,6 +4313,7 @@ class PowerOff(FullSizeWindow):
                             allow_cancel=False,
                             callback=self.back,
                             allow_fingerprint=False,
+                            pin_use_type=1,
                         )
                     )
                 else:
@@ -4609,6 +4615,8 @@ class SecurityScreen(AnimScreen):
                         allow_cancel=True,
                         callback=lambda: FingerprintSetting(self),
                         allow_fingerprint=False,
+                        standy_wall_only=True,
+                        pin_use_type=1,
                     )
                 )
                 # else:
@@ -5377,21 +5385,32 @@ class PassphraseScreen(AnimScreen):
             targets.append(self.container)
         if hasattr(self, "description") and self.description:
             targets.append(self.description)
+        if hasattr(self, "advance_label") and self.advance_label:
+            targets.append(self.advance_label)
+        if hasattr(self, "attach_to_pin") and self.attach_to_pin:
+            targets.append(self.attach_to_pin)
+        if hasattr(self, "pin_description") and self.pin_description:
+            targets.append(self.pin_description)
         return targets
 
     def __init__(self, prev_scr=None):
         if not hasattr(self, "_init"):
             self._init = True
         else:
+            if not self.is_visible():
+                self._load_scr(self, lv.scr_act() != self)
             return
         super().__init__(
-            prev_scr=prev_scr, title=_(i18n_keys.TITLE__PASSPHRASE), nav_back=True
+            prev_scr=prev_scr,
+            title=_(i18n_keys.TITLE__PASSPHRASE),
+            nav_back=True,
         )
 
         self.container = ContainerFlexCol(self.content_area, self.title)
         self.passphrase = ListItemBtnWithSwitch(
             self.container, _(i18n_keys.ITEM__PASSPHRASE)
         )
+
         self.description = lv.label(self.content_area)
         self.description.set_size(456, lv.SIZE.CONTENT)
         self.description.set_long_mode(lv.label.LONG.WRAP)
@@ -5400,18 +5419,71 @@ class PassphraseScreen(AnimScreen):
         self.description.set_style_text_line_space(3, 0)
         self.description.align_to(self.container, lv.ALIGN.OUT_BOTTOM_LEFT, 8, 16)
 
+        self.advance_label = lv.label(self.content_area)
+        self.advance_label.set_text(_(i18n_keys.PASSPHRASE__ADVANCE))
+        self.advance_label.set_style_text_color(lv_colors.WHITE, lv.STATE.DEFAULT)
+        self.advance_label.set_style_text_font(font_GeistRegular26, lv.STATE.DEFAULT)
+
+        self.attach_to_pin = ListItemBtn(
+            self.content_area,
+            _(i18n_keys.PASSPHRASE__ATTACH_TO_PIN),
+            left_img_src="A:/res/icon-attach-to-pin.png",
+        )
+        self.attach_to_pin.add_style(
+            StyleWrapper().bg_color(lv_colors.ONEKEY_GRAY_3).bg_opa(lv.OPA.COVER), 0
+        )
+        self.attach_to_pin.set_style_radius(40, 0)
+
+        self.pin_description = lv.label(self.content_area)
+        self.pin_description.set_text(_(i18n_keys.PASSPHRASE__ATTACH_TO_PIN_DESC))
+        self.pin_description.set_size(456, lv.SIZE.CONTENT)
+        self.pin_description.set_long_mode(lv.label.LONG.WRAP)
+        self.pin_description.set_style_text_color(
+            lv_colors.ONEKEY_GRAY, lv.STATE.DEFAULT
+        )
+        self.pin_description.set_style_text_font(font_GeistRegular26, lv.STATE.DEFAULT)
+
         passphrase_enable = storage_device.is_passphrase_enabled()
         if passphrase_enable:
             self.passphrase.add_state()
-            self.description.set_text(_(i18n_keys.CONTENT__PASSPHRASE_ENABLED__HINT))
+            self.description.set_text(_(i18n_keys.PASSPHRASE__ENABLE_DESC))
+            self.advance_label.clear_flag(lv.obj.FLAG.HIDDEN)
+            self.attach_to_pin.clear_flag(lv.obj.FLAG.HIDDEN)
+            self.pin_description.clear_flag(lv.obj.FLAG.HIDDEN)
         else:
             self.passphrase.clear_state()
             self.description.set_text(_(i18n_keys.CONTENT__PASSPHRASE_DISABLED__HINT))
+            self.advance_label.add_flag(lv.obj.FLAG.HIDDEN)
+            self.attach_to_pin.add_flag(lv.obj.FLAG.HIDDEN)
+            self.pin_description.add_flag(lv.obj.FLAG.HIDDEN)
+
+        self._update_layout()
+
         self.container.add_event_cb(self.on_value_changed, lv.EVENT.VALUE_CHANGED, None)
+        self.attach_to_pin.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
         self.add_event_cb(self.on_value_changed, lv.EVENT.READY, None)
         self.add_event_cb(self.on_value_changed, lv.EVENT.CANCEL, None)
         self.load_screen(self)
         gc.collect()
+
+    def _update_layout(self):
+        self.description.refresh_self_size()
+
+        lv.timer_handler()
+
+        advance_y_offset = 40
+
+        self.advance_label.align_to(
+            self.description, lv.ALIGN.OUT_BOTTOM_LEFT, 0, advance_y_offset
+        )
+
+        self.attach_to_pin.align_to(
+            self.advance_label, lv.ALIGN.OUT_BOTTOM_LEFT, -8, 12
+        )
+
+        self.pin_description.align_to(
+            self.attach_to_pin, lv.ALIGN.OUT_BOTTOM_LEFT, 8, 8
+        )
 
     def on_value_changed(self, event_obj):
         code = event_obj.code
@@ -5435,23 +5507,84 @@ class PassphraseScreen(AnimScreen):
                         self,
                         icon_path="",
                     )
+            elif target == self.attach_to_pin.switch:
+
+                storage_device.set_passphrase_always_on_device(
+                    target.has_state(lv.STATE.CHECKED)
+                )
+
         elif code == lv.EVENT.READY:
             if self.passphrase.switch.has_state(lv.STATE.CHECKED):
-                self.description.set_text(
-                    _(i18n_keys.CONTENT__PASSPHRASE_ENABLED__HINT)
-                )
+                self.description.set_text(_(i18n_keys.PASSPHRASE__ENABLE_DESC))
                 storage_device.set_passphrase_enabled(True)
                 storage_device.set_passphrase_always_on_device(False)
+                self.advance_label.clear_flag(lv.obj.FLAG.HIDDEN)
+                self.attach_to_pin.clear_flag(lv.obj.FLAG.HIDDEN)
+                self.pin_description.clear_flag(lv.obj.FLAG.HIDDEN)
+                self._update_layout()
             else:
                 self.description.set_text(
                     _(i18n_keys.CONTENT__PASSPHRASE_DISABLED__HINT)
                 )
                 storage_device.set_passphrase_enabled(False)
+                if storage_device.is_passphrase_pin_enabled():
+                    from apps.base import lock_device_if_unlocked
+
+                    storage_device.set_passphrase_pin_enabled(False)
+                    lock_device_if_unlocked()
+                    return
+
+                self.advance_label.add_flag(lv.obj.FLAG.HIDDEN)
+                self.attach_to_pin.add_flag(lv.obj.FLAG.HIDDEN)
+                self.pin_description.add_flag(lv.obj.FLAG.HIDDEN)
+
+                self._update_layout()
+
         elif code == lv.EVENT.CANCEL:
             if self.passphrase.switch.has_state(lv.STATE.CHECKED):
                 self.passphrase.clear_state()
+                self.advance_label.add_flag(lv.obj.FLAG.HIDDEN)
+                self.attach_to_pin.add_flag(lv.obj.FLAG.HIDDEN)
+                self.pin_description.add_flag(lv.obj.FLAG.HIDDEN)
+                self._update_layout()
             else:
                 self.passphrase.add_state()
+                self.attach_to_pin.clear_flag(lv.obj.FLAG.HIDDEN)
+                self.advance_label.clear_flag(lv.obj.FLAG.HIDDEN)
+                self.attach_to_pin.clear_flag(lv.obj.FLAG.HIDDEN)
+                self.pin_description.clear_flag(lv.obj.FLAG.HIDDEN)
+                self._update_layout()
+
+    def on_click(self, event_obj):
+        code = event_obj.code
+        target = event_obj.get_target()
+        if code == lv.EVENT.CLICKED:
+            if target == self.attach_to_pin:
+                global _attach_to_pin_task_running
+
+                _attach_to_pin_task_running = True
+
+                async def handle_attach_to_pin():
+                    try:
+                        from trezor.ui.layouts.lvgl.attach_to_pin import (
+                            show_attach_to_pin_window,
+                        )
+
+                        ctx = wire.DUMMY_CONTEXT
+                        result = await show_attach_to_pin_window(ctx)
+
+                        if result:
+                            self.load_screen(self)
+
+                        return result
+                    except Exception:
+                        self.load_screen(self)
+                        return False
+                    finally:
+                        global _attach_to_pin_task_running
+                        _attach_to_pin_task_running = False
+
+                workflow.spawn(handle_attach_to_pin())
 
 
 class PassphraseTipsConfirm(FullSizeWindow):
@@ -5488,6 +5621,29 @@ class PassphraseTipsConfirm(FullSizeWindow):
             else:
                 return
             self.show_dismiss_anim()
+
+
+class CryptoScreen(Screen):
+    def __init__(self, prev_scr=None):
+        if not hasattr(self, "_init"):
+            self._init = True
+        else:
+            return
+        super().__init__(prev_scr, title=_(i18n_keys.TITLE__CRYPTO), nav_back=True)
+
+        self.container = ContainerFlexCol(self, self.title, padding_row=2)
+        self.ethereum = ListItemBtn(self.container, _(i18n_keys.TITLE__ETHEREUM))
+        self.solana = ListItemBtn(self.container, _(i18n_keys.TITLE__SOLANA))
+        self.container.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
+
+    def on_click(self, event_obj):
+        code = event_obj.code
+        target = event_obj.get_target()
+        if code == lv.EVENT.CLICKED:
+            if target == self.ethereum:
+                EthereumSetting(self)
+            elif target == self.solana:
+                SolanaSetting(self)
 
 
 class TurboModeScreen(AnimScreen):
@@ -5621,29 +5777,6 @@ class TurboModeConfirm(FullSizeWindow):
         else:
             self.slider.clear_flag(lv.obj.FLAG.CLICKABLE)
             self.slider.enable(False)
-
-
-class CryptoScreen(Screen):
-    def __init__(self, prev_scr=None):
-        if not hasattr(self, "_init"):
-            self._init = True
-        else:
-            return
-        super().__init__(prev_scr, title=_(i18n_keys.TITLE__CRYPTO), nav_back=True)
-
-        self.container = ContainerFlexCol(self, self.title, padding_row=2)
-        self.ethereum = ListItemBtn(self.container, _(i18n_keys.TITLE__ETHEREUM))
-        self.solana = ListItemBtn(self.container, _(i18n_keys.TITLE__SOLANA))
-        self.container.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
-
-    def on_click(self, event_obj):
-        code = event_obj.code
-        target = event_obj.get_target()
-        if code == lv.EVENT.CLICKED:
-            if target == self.ethereum:
-                EthereumSetting(self)
-            elif target == self.solana:
-                SolanaSetting(self)
 
 
 class EthereumSetting(Screen):
@@ -5908,6 +6041,9 @@ class SecurityProtection(AnimScreen):
             self.container,
             _(i18n_keys.ITEM__PASSPHRASE_ACCESS_HIDDEN_WALLETS),
         )
+        self.attach_to_pin = ListItemBtn(
+            self.container, _(i18n_keys.PASSPHRASE__ATTACH_TO_PIN)
+        )
         self.passkeys = ListItemBtn(
             self.container,
             _(i18n_keys.FIDO_FIDO_KEYS_LABEL),
@@ -5927,6 +6063,7 @@ class SecurityProtection(AnimScreen):
         self.passphrase.label_left.set_text(
             _(i18n_keys.ITEM__PASSPHRASE_ACCESS_HIDDEN_WALLETS)
         )
+        self.attach_to_pin.label_left.set_text(_(i18n_keys.PASSPHRASE__ATTACH_TO_PIN))
         self.passkeys.label_left.set_text(_(i18n_keys.FIDO_FIDO_KEYS_LABEL))
 
     def on_click(self, event_obj):
@@ -5943,6 +6080,8 @@ class SecurityProtection(AnimScreen):
                 PassphraseDetails()
             elif target == self.fingerprint:
                 FingerprintDetails()
+            elif target == self.attach_to_pin:
+                AttachToPinDetails()
             elif target == self.passkeys:
                 from .app_passkeys import PasskeysRegister
 
@@ -5950,6 +6089,26 @@ class SecurityProtection(AnimScreen):
             else:
                 if __debug__:
                     print("Unknown")
+
+
+class AttachToPinDetails(FullSizeWindow):
+    def __init__(self):
+        super().__init__(
+            None,
+            None,
+            cancel_text=_(i18n_keys.BUTTON__CLOSE),
+            icon_path="A:/res/attach-to-pin-guide.png",
+        )
+        self.container = ContainerFlexCol(self.content_area, self.icon, pos=(0, 24))
+        self.item = DisplayItemWithFont_30(
+            self.container,
+            _(i18n_keys.PASSPHRASE__ATTACH_TO_PIN),
+            _(i18n_keys.ITEM__ATTACH_TO_PIN_DESC),
+        )
+        self.item.label_top.set_style_text_color(lv_colors.WHITE, 0)
+        self.item.label.set_style_text_color(lv_colors.WHITE_2, 0)
+        self.item.label.align_to(self.item.label_top, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 16)
+        self.item.label.set_long_mode(lv.label.LONG.WRAP)
 
 
 class PowerOnOffDetails(FullSizeWindow):

@@ -10,6 +10,7 @@ from trezor.ui.layouts import confirm_action, show_success
 from apps.common.request_pin import (
     error_pin_invalid,
     error_pin_matches_wipe_code,
+    error_pin_used,
     request_pin_and_sd_salt,
     request_pin_confirm,
 )
@@ -23,18 +24,26 @@ if TYPE_CHECKING:
 async def change_pin(ctx: wire.Context, msg: ChangePin) -> Success:
     if not is_initialized():
         raise wire.NotInitialized("Device is not initialized")
-
     # confirm that user wants to change the pin
     await require_confirm_change_pin(ctx, msg)
-
     # get old pin
     curpin, salt = await request_pin_and_sd_salt(
-        ctx, _(i18n_keys.TITLE__ENTER_OLD_PIN), allow_fingerprint=False
+        ctx,
+        _(i18n_keys.TITLE__ENTER_OLD_PIN),
+        allow_fingerprint=False,
+        standy_wall_only=True,
     )
-
     # if changing pin, pre-check the entered pin before getting new pin
+    from apps.common.pin_constants import PinType, PinResult
+
     if curpin and not msg.remove:
-        if not config.check_pin(curpin, salt):
+        result = config.check_pin(curpin, salt, PinType.USER_CHECK)
+        if isinstance(result, tuple):
+            verified, usertype = result
+        else:
+            verified = result
+            usertype = PinType.USER_CHECK
+        if not verified:
             await error_pin_invalid(ctx)
 
     # get new pin
@@ -44,6 +53,16 @@ async def change_pin(ctx: wire.Context, msg: ChangePin) -> Success:
         )
     else:
         newpin = ""
+
+    if newpin:
+        result = config.check_pin(newpin, salt, PinType.PASSPHRASE_PIN)
+        if isinstance(result, tuple):
+            verified, usertype = result
+        else:
+            verified = result
+            usertype = PinResult.PASSPHRASE_PIN_ENTERED
+        if usertype == PinResult.PASSPHRASE_PIN_ENTERED:
+            return await error_pin_used(ctx)
 
     # write into storage
     if not config.change_pin(curpin, newpin, salt, salt):

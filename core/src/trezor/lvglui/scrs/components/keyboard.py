@@ -863,8 +863,9 @@ class IndexKeyboard(lv.keyboard):
 
 
 class PassphraseKeyboard(lv.btnmatrix):
-    def __init__(self, parent, max_len) -> None:
+    def __init__(self, parent, max_len, min_len=0) -> None:
         super().__init__(parent)
+        self.min_len = min_len
         self.ta = lv.textarea(parent)
         self.ta.align(lv.ALIGN.TOP_MID, 0, 177)
         self.ta.set_size(456, lv.SIZE.CONTENT)
@@ -882,16 +883,12 @@ class PassphraseKeyboard(lv.btnmatrix):
             .pad_all(24),
             0,
         )
-        # self.ta.set_one_line(True)
-        # include NBSP
         self.ta.set_accepted_chars(
             "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_<>.:@/|*#\\!()+%&-[]?{},'`;\"~$^= "
         )
         self.ta.set_max_length(max_len)
-        # self.ta.set_password_mode(True)
-        # self.ta.clear_flag(lv.obj.FLAG.CLICKABLE)
         self.ta.set_cursor_click_pos(True)
-        self.ta.add_state(lv.STATE.FOCUSED)  # make the cursor visible
+        self.ta.add_state(lv.STATE.FOCUSED)
         self.ta.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
         self.btn_map_text_lower = [
             "q",
@@ -1130,8 +1127,23 @@ class PassphraseKeyboard(lv.btnmatrix):
         self.ta.add_event_cb(self.event_cb, lv.EVENT.FOCUSED, None)
         self.move_foreground()
 
+        self.update_ok_button_state()
+
     def update_count_tips(self):
         self.input_count_tips.set_text(f"{len(self.ta.get_text())}/50")
+
+    def update_ok_button_state(self):
+        current_text = self.ta.get_text()
+        current_len = len(current_text)
+
+        if current_len >= self.min_len:
+            self.clear_btn_ctrl(34, lv.btnmatrix.CTRL.DISABLED)
+            self.set_btn_ctrl(
+                34, lv.btnmatrix.CTRL.NO_REPEAT | lv.btnmatrix.CTRL.CLICK_TRIG
+            )
+        else:
+            self.set_btn_ctrl(34, lv.btnmatrix.CTRL.DISABLED)
+            self.clear_btn_ctrl(34, lv.btnmatrix.CTRL.CLICK_TRIG)
 
     def event_cb(self, event):
         code = event.code
@@ -1154,10 +1166,12 @@ class PassphraseKeyboard(lv.btnmatrix):
                 change_key_bg(dsc, 31, 34, True)
             else:
                 change_key_bg(dsc, 31, 34, False, allow_empty=True)
-            # if dsc.id in (22, 32):
-            #     dsc.rect_dsc.bg_color = lv.color_hex(0x191919)
+
             if dsc.id == 34:
-                dsc.rect_dsc.bg_color = lv_colors.ONEKEY_GREEN
+                if len(txt_input) >= self.min_len:
+                    dsc.rect_dsc.bg_color = lv_colors.ONEKEY_GREEN
+                else:
+                    dsc.rect_dsc.bg_color = lv_colors.GRAY
             elif dsc.id in (10, 20, 21, 30):
                 dsc.rect_dsc.bg_color = lv_colors.BLACK
         elif code == lv.EVENT.VALUE_CHANGED:
@@ -1169,11 +1183,9 @@ class PassphraseKeyboard(lv.btnmatrix):
                     return
                 if text == " ":
                     if btn_id in (10, 21):
-                        # text = target.get_btn_text(btn_id + 1)
                         target.set_selected_btn(btn_id + 1)
                         return
                     elif btn_id in (20, 30):
-                        # text = target.get_btn_text(btn_id - 1)
                         target.set_selected_btn(btn_id - 1)
                         return
                 if text == "ABC":
@@ -1195,11 +1207,14 @@ class PassphraseKeyboard(lv.btnmatrix):
                 elif text == lv.SYMBOL.BACKSPACE:
                     self.ta.del_char()
                     self.update_count_tips()
+                    self.update_ok_button_state()
                     return
                 elif text == lv.SYMBOL.OK:
-                    lv.event_send(self, lv.EVENT.READY, None)
+                    if len(self.ta.get_text()) >= self.min_len:
+                        lv.event_send(self, lv.EVENT.READY, None)
                     return
                 self.ta.add_text(text)
                 self.update_count_tips()
+                self.update_ok_button_state()
         elif code == lv.EVENT.FOCUSED and target == self.ta:
             utils.lcd_resume()

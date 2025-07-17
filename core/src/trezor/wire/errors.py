@@ -81,3 +81,8 @@ class InvalidSession(Error):
 class FirmwareError(Error):
     def __init__(self, message: str) -> None:
         super().__init__(FailureType.FirmwareError, message)
+
+
+class AppVersionLow(Error):
+    def __init__(self, message: str) -> None:
+        super().__init__(FailureType.FirmwareError, message)

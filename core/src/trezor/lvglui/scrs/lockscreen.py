@@ -16,7 +16,15 @@ class LockScreen(Screen):
     @classmethod
     def retrieval(cls) -> tuple[bool, "LockScreen" | None]:
         try:
-            if cls._instance.is_visible():
+            if __debug__:
+                print(
+                    f"[LOCKSCREEN] retrieval() - checking _instance: {hasattr(cls, '_instance')}"
+                )
+            if hasattr(cls, "_instance") and cls._instance.is_visible():
+                if __debug__:
+                    print(
+                        "[LOCKSCREEN] retrieval() - _instance is visible, returning True"
+                    )
                 return True, cls._instance
         except Exception:
             pass
@@ -66,23 +74,31 @@ class LockScreen(Screen):
     def show_tips(self, level: int = 0):
         if level:
             if level == 1:
-                self.tap_tip.set_text(
-                    _(i18n_keys.MSG__FINGERPRINT_NOT_RECOGNIZED_TRY_AGAIN)
-                )
+                text = _(i18n_keys.MSG__FINGERPRINT_NOT_RECOGNIZED_TRY_AGAIN)
+                self.tap_tip.set_text(text)
+                if __debug__:
+                    print(f"[LOCKSCREEN] Set text for level 1: {text}")
             elif level == 2:
-                self.tap_tip.set_text(
-                    _(
-                        i18n_keys.MSG__YOUR_PIN_CODE_REQUIRED_TO_ENABLE_FINGERPRINT_UNLOCK
-                    )
+                text = _(
+                    i18n_keys.MSG__YOUR_PIN_CODE_REQUIRED_TO_ENABLE_FINGERPRINT_UNLOCK
                 )
+                self.tap_tip.set_text(text)
+                if __debug__:
+                    print(f"[LOCKSCREEN] Set text for level 2: {text}")
             elif level == 3:
-                self.tap_tip.set_text(_(i18n_keys.MSG__PUT_FINGER_ON_THE_FINGERPRINT))
+                text = _(i18n_keys.MSG__PUT_FINGER_ON_THE_FINGERPRINT)
+                self.tap_tip.set_text(text)
+                if __debug__:
+                    print(f"[LOCKSCREEN] Set text for level 3: {text}")
             elif level == 4:
-                self.tap_tip.set_text(
-                    _(i18n_keys.MSG__CLEAN_FINGERPRINT_SENSOR_AND_TRY_AGAIN)
-                )
+                text = _(i18n_keys.MSG__CLEAN_FINGERPRINT_SENSOR_AND_TRY_AGAIN)
+                self.tap_tip.set_text(text)
+                if __debug__:
+                    print(f"[LOCKSCREEN] Set text for level 4: {text}")
             if hasattr(self, "lock_state"):
                 self.lock_state.align_to(self.tap_tip, lv.ALIGN.OUT_TOP_MID, 0, -16)
+                if __debug__:
+                    print("[LOCKSCREEN] Aligned lock_state to tap_tip")
         else:
             from trezor.lvglui.scrs import fingerprints
 
@@ -107,6 +123,8 @@ class LockScreen(Screen):
         )
 
     def show_finger_mismatch_anim(self):
+        if __debug__:
+            print("[LOCKSCREEN] show_finger_mismatch_anim called")
         self.anim_right = lv.anim_t()
         self.anim_right.init()
         self.anim_right.set_var(self.lock_state)

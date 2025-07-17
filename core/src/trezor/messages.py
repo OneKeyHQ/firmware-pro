@@ -836,6 +836,14 @@ if TYPE_CHECKING:
             return isinstance(msg, cls)
 
     class PassphraseRequest(protobuf.MessageType):
+        exists_attach_pin_user: "bool | None"
+
+        def __init__(
+            self,
+            *,
+            exists_attach_pin_user: "bool | None" = None,
+        ) -> None:
+            pass
 
         @classmethod
         def is_type_of(cls, msg: Any) -> TypeGuard["PassphraseRequest"]:
@@ -844,12 +852,14 @@ if TYPE_CHECKING:
     class PassphraseAck(protobuf.MessageType):
         passphrase: "str | None"
         on_device: "bool | None"
+        on_device_attach_pin: "bool | None"
 
         def __init__(
             self,
             *,
             passphrase: "str | None" = None,
             on_device: "bool | None" = None,
+            on_device_attach_pin: "bool | None" = None,
         ) -> None:
             pass
 
@@ -2900,12 +2910,16 @@ if TYPE_CHECKING:
     class Initialize(protobuf.MessageType):
         session_id: "bytes | None"
         derive_cardano: "bool | None"
+        passphrase_state: "str | None"
+        is_contains_attach: "bool | None"
 
         def __init__(
             self,
             *,
             session_id: "bytes | None" = None,
             derive_cardano: "bool | None" = None,
+            passphrase_state: "str | None" = None,
+            is_contains_attach: "bool | None" = None,
         ) -> None:
             pass
 
@@ -3008,6 +3022,8 @@ if TYPE_CHECKING:
         onekey_se02_state: "OneKeySEState | None"
         onekey_se03_state: "OneKeySEState | None"
         onekey_se04_state: "OneKeySEState | None"
+        attach_to_pin_user: "bool | None"
+        unlocked_attach_pin: "bool | None"
 
         def __init__(
             self,
@@ -3094,6 +3110,8 @@ if TYPE_CHECKING:
             onekey_se02_state: "OneKeySEState | None" = None,
             onekey_se03_state: "OneKeySEState | None" = None,
             onekey_se04_state: "OneKeySEState | None" = None,
+            attach_to_pin_user: "bool | None" = None,
+            unlocked_attach_pin: "bool | None" = None,
         ) -> None:
             pass
 
@@ -3925,6 +3943,66 @@ if TYPE_CHECKING:
 
         @classmethod
         def is_type_of(cls, msg: Any) -> TypeGuard["UnlockedPathRequest"]:
+            return isinstance(msg, cls)
+
+    class GetPassphraseState(protobuf.MessageType):
+        passphrase_state: "str | None"
+        _only_main_pin: "bool | None"
+        allow_create_attach_pin: "bool | None"
+
+        def __init__(
+            self,
+            *,
+            passphrase_state: "str | None" = None,
+            _only_main_pin: "bool | None" = None,
+            allow_create_attach_pin: "bool | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["GetPassphraseState"]:
+            return isinstance(msg, cls)
+
+    class PassphraseState(protobuf.MessageType):
+        passphrase_state: "str | None"
+        session_id: "bytes | None"
+        unlocked_attach_pin: "bool | None"
+
+        def __init__(
+            self,
+            *,
+            passphrase_state: "str | None" = None,
+            session_id: "bytes | None" = None,
+            unlocked_attach_pin: "bool | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["PassphraseState"]:
+            return isinstance(msg, cls)
+
+    class UnLockDevice(protobuf.MessageType):
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["UnLockDevice"]:
+            return isinstance(msg, cls)
+
+    class UnLockDeviceResponse(protobuf.MessageType):
+        unlocked: "bool | None"
+        unlocked_attach_pin: "bool | None"
+        passphrase_protection: "bool | None"
+
+        def __init__(
+            self,
+            *,
+            unlocked: "bool | None" = None,
+            unlocked_attach_pin: "bool | None" = None,
+            passphrase_protection: "bool | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["UnLockDeviceResponse"]:
             return isinstance(msg, cls)
 
     class FileInfo(protobuf.MessageType):
