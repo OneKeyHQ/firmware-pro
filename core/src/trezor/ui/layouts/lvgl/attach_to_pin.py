@@ -244,7 +244,7 @@ async def show_attach_to_pin_window(ctx):
                         return False
 
         return True
-    except Exception as e:
+    except Exception:
         return False
 
 

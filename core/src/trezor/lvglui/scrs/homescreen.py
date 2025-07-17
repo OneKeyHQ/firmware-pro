@@ -5567,17 +5567,11 @@ class PassphraseScreen(AnimScreen):
                         result = await show_attach_to_pin_window(ctx)
 
                         if result:
-                            if hasattr(self, "prev_scr") and self.prev_scr:
-                                self.load_screen(self)
-                            else:
-                                self.load_screen(self)
+                            self.load_screen(self)
 
                         return result
                     except Exception:
-                        if hasattr(self, "prev_scr") and self.prev_scr:
-                            self.load_screen(self)
-                        else:
-                            self.load_screen(self)
+                        self.load_screen(self)
                         return False
                     finally:
                         global _attach_to_pin_task_running
