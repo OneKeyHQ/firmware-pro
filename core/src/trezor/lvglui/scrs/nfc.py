@@ -47,7 +47,7 @@ async def handle_sw1sw2_connect_error(self):
 
 def perform_ticks(motor_ctl, num_ticks):
     for _ticks in range(num_ticks):
-        motor_ctl.tick()
+        motor_ctl.play_medium()
 
 
 async def handle_cleanup(self, data):

@@ -19,13 +19,15 @@ async def wipe_device(ctx: wire.GenericContext, msg: WipeDevice) -> Success:
     )
 
     await confirm_wipe_device(ctx)
-    # verify user pin
-    if not __debug__:
-        from apps.common.pin_constants import PinType
 
-        await verify_user_pin(
-            ctx, allow_fingerprint=False, pin_use_type=PinType.USER_CHECK
-        )
+    from apps.common.pin_constants import PinType
+
+    await verify_user_pin(
+        ctx,
+        allow_fingerprint=False,
+        pin_use_type=PinType.USER_CHECK,
+        standy_wall_only=True,
+    )
     # show tips
     await confirm_wipe_device_tips(ctx)
     storage.wipe()
