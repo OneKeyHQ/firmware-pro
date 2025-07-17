@@ -2008,6 +2008,12 @@ class BackupWallet(Screen):
         # hide lite backup for now
         # self.lite.add_flag(lv.obj.FLAG.HIDDEN)
 
+        self.keytag = ListItemBtn(
+            self.container,
+            "OneKey Keytag",
+            left_img_src="A:/res/icon-dot-48.png",
+        )
+
         if not is_bip39:
             self.lite.disable()
             self.keytag.disable()
@@ -4609,7 +4615,7 @@ class SecurityScreen(AnimScreen):
                         allow_cancel=True,
                         callback=lambda: FingerprintSetting(self),
                         allow_fingerprint=False,
-                        standy_wall_only = True,
+                        standy_wall_only=True,
                         pin_use_type=1,
                     )
                 )
