@@ -811,12 +811,6 @@ class ShowAddress(AnimScreen):
                 nav_btn_align=lv.ALIGN.RIGHT_MID,
                 align=lv.ALIGN.TOP_RIGHT,
             )
-            self.nav_passphrase = Navigation(
-                self.content_area,
-                btn_bg_img="A:/res/repeat.png",
-                nav_btn_align=lv.ALIGN.RIGHT_MID,
-                align=lv.ALIGN.TOP_RIGHT,
-            )
 
         # Account button
         self.index_btn = ListItemBtn(
@@ -1001,7 +995,6 @@ class ShowAddress(AnimScreen):
                 return
             if isinstance(target, lv.imgbtn):
                 if target == self.nav_back.nav_btn:
-                    print(f"prev_session_id: {self.prev_session_id}")
                     storage.cache.end_current_session()
                     storage.cache.start_session(self.prev_session_id)
                     if self.prev_scr is not None:
@@ -1970,11 +1963,6 @@ class WalletList(Screen):
             if storage_device.is_passphrase_enabled()
             else get_hd_key()
         )
-        qr_data = (
-            retrieval_hd_key()
-            if storage_device.is_passphrase_enabled()
-            else get_hd_key()
-        )
         if qr_data is None:
             from trezor.qr import gen_hd_key
 
@@ -2019,10 +2007,6 @@ class BackupWallet(Screen):
         )
         # hide lite backup for now
         # self.lite.add_flag(lv.obj.FLAG.HIDDEN)
-
-        if not is_bip39:
-            self.lite.disable()
-            self.keytag.disable()
 
         if not is_bip39:
             self.lite.disable()
@@ -2103,8 +2087,6 @@ class ConnectWallet(FullSizeWindow):
         self.content_area.set_style_max_height(684, 0)
         self.add_nav_back()
 
-        gc.collect()
-        gc.threshold(int(18248 * 1.5))  # type: ignore["threshold" is not a known member of module]
         from trezor.lvglui.scrs.components.qrcode import QRCode
 
         self.encoder = encoder
