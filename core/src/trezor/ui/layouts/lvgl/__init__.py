@@ -90,8 +90,6 @@ __all__ = (
     "confirm_safe_tx",
     "confirm_safe_approve_hash",
     "confirm_safe_exec_transaction",
-    "confirm_safe_approve_hash",
-    "confirm_safe_exec_transaction",
 )
 
 

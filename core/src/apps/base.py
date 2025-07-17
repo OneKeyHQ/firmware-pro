@@ -158,11 +158,6 @@ def get_features() -> Features:
     if utils.MODEL in ("T",):
         f.capabilities.append(Capability.PassphraseEntry)
 
-    # Add AttachToPin capability if the feature is available
-    # This allows new clients to detect the feature while old clients ignore it
-    if storage.device.is_initialized():
-        f.capabilities.append(Capability.AttachToPin)
-
     f.sd_card_present = sdcard.is_present()
     f.initialized = storage.device.is_initialized()
 

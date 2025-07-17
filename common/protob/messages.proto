@@ -77,7 +77,7 @@ enum MessageType {
     option (has_bitcoin_only_values) = true;
     option allow_alias = true;
     // Management
-    MessageType_Initialize = 0 [(bitcoin_only) = true, (wire_in) = true];
+    MessageType_Initialize = 0 [(bitcoin_only) = true, (wire_in) = true,(wire_tiny)=true];
     MessageType_Ping = 1 [(bitcoin_only) = true, (wire_in) = true];
     MessageType_Success = 2 [(bitcoin_only) = true, (wire_out) = true, (wire_debug_out) = true];
     MessageType_Failure = 3 [(bitcoin_only) = true, (wire_out) = true, (wire_debug_out) = true];

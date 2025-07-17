@@ -81,9 +81,6 @@ class HardwareCall:
                 raise MismatchError(
                     f"Fingerprint mismatch: got {resp.root_fingerprint} expected {expected_fingerprint}"
                 )
-            raise MismatchError(
-                f"Fingerprint mismatch: got {xfp} expected {expected_fingerprint}"
-            )
 
     @staticmethod
     async def gen_request(ur):
