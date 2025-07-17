@@ -240,15 +240,11 @@ async def show_attach_to_pin_window(ctx):
                                 return True
                             else:
                                 return False
-                        elif remove_status == USER_CANCELLED:
-                            print("User cancelled removal")
                     else:
                         return False
 
         return True
     except Exception as e:
-        if __debug__:
-            print(f"Error in show_attach_to_pin_window: {e}")
         return False
 
 
