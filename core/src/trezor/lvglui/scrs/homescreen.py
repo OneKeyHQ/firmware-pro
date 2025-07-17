@@ -4609,6 +4609,7 @@ class SecurityScreen(AnimScreen):
                         allow_cancel=True,
                         callback=lambda: FingerprintSetting(self),
                         allow_fingerprint=False,
+                        standy_wall_only = True,
                         pin_use_type=1,
                     )
                 )
