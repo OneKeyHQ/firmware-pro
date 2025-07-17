@@ -2632,9 +2632,6 @@ async def confirm_safe_tx(
         domain_hash,
         message_hash,
         safe_tx_hash,
-        domain_hash,
-        message_hash,
-        safe_tx_hash,
     )
     await raise_if_cancelled(
         interact(ctx, screen, "confirm_safe_tx", ButtonRequestType.ProtectCall)
