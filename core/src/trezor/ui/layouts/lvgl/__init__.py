@@ -1283,10 +1283,6 @@ async def request_pin_on_device(
         standy_wall_only=standy_wall_only,
         min_len=min_len,
     )
-    if subprompt:
-        from trezor import motor
-
-        motor.vibrate(motor.ERROR)
     result = await ctx.wait(pinscreen.request())
     if not result:
         if not allow_cancel:

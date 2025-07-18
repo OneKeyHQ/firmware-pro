@@ -328,6 +328,10 @@ class MnemonicKeyboard(lv.keyboard):
             #     dsc.rect_dsc.bg_color = lv_colors.BLACK
         elif code == lv.EVENT.VALUE_CHANGED:
             utils.lcd_resume()
+            if isinstance(target, lv.keyboard):
+                btn_id = target.get_selected_btn()
+                if btn_id == 21:
+                    motor.vibrate()
             # btn_id = event.target.get_selected_btn()
             # text = event.target.get_btn_text(btn_id)
             # if text == " ":
@@ -594,6 +598,10 @@ class NumberKeyboard(lv.keyboard):
                     # dsc.rect_dsc.bg_img_src = "A:/res/keyboard-close.png"
         elif code == lv.EVENT.VALUE_CHANGED:
             utils.lcd_resume()
+            if isinstance(target, lv.keyboard):
+                btn_id = target.get_selected_btn()
+                if btn_id == 9:
+                    motor.vibrate()
             # if input_len > 10:
             #     self.ta.set_cursor_pos(lv.TEXTAREA_CURSOR.LAST)
             if input_len >= self.max_len:
@@ -842,7 +850,10 @@ class IndexKeyboard(lv.keyboard):
 
         elif code == lv.EVENT.VALUE_CHANGED:
             utils.lcd_resume()
-
+            if isinstance(target, lv.keyboard):
+                btn_id = target.get_selected_btn()
+                if btn_id == 9:
+                    motor.vibrate()
             if not self.is_pin:
                 if text and not text.startswith("#"):
                     self.ta.set_text("#" + text)
@@ -1151,9 +1162,7 @@ class PassphraseKeyboard(lv.btnmatrix):
         if code == lv.EVENT.PRESSED:
             if isinstance(target, lv.btnmatrix):
                 btn_id = target.get_selected_btn()
-                if btn_id == lv.BTNMATRIX_BTN.NONE or target.has_btn_ctrl(
-                    btn_id, lv.btnmatrix.CTRL.DISABLED
-                ):
+                if btn_id == lv.BTNMATRIX_BTN.NONE:
                     return
                 if btn_id == 31 and len(self.ta.get_text()) == 0:
                     return
@@ -1178,6 +1187,8 @@ class PassphraseKeyboard(lv.btnmatrix):
             if isinstance(target, lv.btnmatrix):
                 utils.lcd_resume()
                 btn_id = target.get_selected_btn()
+                if btn_id == lv.BTNMATRIX_BTN.NONE:
+                    return
                 text = target.get_btn_text(btn_id)
                 if text == "":
                     return
@@ -1205,9 +1216,13 @@ class PassphraseKeyboard(lv.btnmatrix):
                     self.set_ctrl_map(self.ctrl_map)
                     return
                 elif text == lv.SYMBOL.BACKSPACE:
+                    if len(self.ta.get_text()) == 0:
+                        target.set_selected_btn(lv.BTNMATRIX_BTN.NONE)
+                        return
                     self.ta.del_char()
                     self.update_count_tips()
                     self.update_ok_button_state()
+                    motor.vibrate()
                     return
                 elif text == lv.SYMBOL.OK:
                     if len(self.ta.get_text()) >= self.min_len:

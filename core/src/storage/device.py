@@ -434,7 +434,7 @@ def get_storage() -> str:
     global _STORAGE_SIZE_VALUE
     if _STORAGE_SIZE_VALUE is None:
         _STORAGE_SIZE_VALUE = config.get_capacity()
-    return _STORAGE_SIZE_VALUE
+    return _STORAGE_SIZE_VALUE or ""
 
 
 def set_ble_name(name: str) -> None:
@@ -506,7 +506,7 @@ def get_serial() -> str:
     global _SERIAL_NUMBER_VALUE
     if _SERIAL_NUMBER_VALUE is None:
         _SERIAL_NUMBER_VALUE = config.get_serial()
-    return _SERIAL_NUMBER_VALUE
+    return _SERIAL_NUMBER_VALUE or ""
 
 
 def set_brightness(brightness: int) -> None:

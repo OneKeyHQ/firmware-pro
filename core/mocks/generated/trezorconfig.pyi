@@ -29,7 +29,7 @@ def unlock(pin: str, ext_salt: bytes | None, pin_use_type: int = 0)
 
 # extmod/modtrezorconfig/modtrezorconfig.c
 def check_pin(pin: str, ext_salt: bytes | None, pin_use_type: int = 0) ->
-bool:
+tuple[bool, int]:
     """
     Check the given PIN with the given external salt.
     Returns True on success, False on failure.

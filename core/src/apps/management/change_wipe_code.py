@@ -30,7 +30,7 @@ async def change_wipe_code(ctx: wire.Context, msg: ChangeWipeCode) -> Success:
 
     if not msg.remove:
         # Pre-check the entered PIN.
-        if config.has_pin() and not config.check_pin(pin, salt):
+        if config.has_pin() and not config.check_pin(pin, salt)[0]:
             await error_pin_invalid(ctx)
 
         # Get new wipe code.

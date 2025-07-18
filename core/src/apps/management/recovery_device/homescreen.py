@@ -323,7 +323,7 @@ async def _process_words(
             )
         if __debug__:
             print(f"share.threshold: {share.threshold}")
-        await _request_share_next_screen(ctx, share.threshold)
+        await _request_share_next_screen(ctx, share.threshold, share.group_index)
 
     return secret, backup_type
 
@@ -346,7 +346,9 @@ async def _request_share_first_screen(
         await layout.homescreen_dialog(ctx, btn_text, title, f"({word_count} words)")
 
 
-async def _request_share_next_screen(ctx: wire.GenericContext, threshold: int) -> None:
+async def _request_share_next_screen(
+    ctx: wire.GenericContext, threshold: int, group_index: int
+) -> None:
     remaining = storage_recovery.fetch_slip39_remaining_shares()
     group_count = storage_recovery.get_slip39_group_count()
     if not remaining:
@@ -365,18 +367,19 @@ async def _request_share_next_screen(ctx: wire.GenericContext, threshold: int) -
     # text = strings.format_plural("{count} more {plural}", remaining[0], "share")
     # await layout.homescreen_dialog(ctx, "Enter share", text, "needed to enter")
     if __debug__:
-        print(f"threshold: {threshold}, remaining[0]: {remaining[0]}")
-    await layout.show_success(
-        ctx,
-        "Enter share",
-        header=_(i18n_keys.TITLE__STR_OF_STR_SHARES_ENTERED).format(
-            num=threshold, total=threshold - remaining[0]
-        ),
-        content=_(i18n_keys.TITLE__STR_OF_STR_SHARES_ENTERED_DESC).format(
-            num=remaining[0]
-        ),
-        button=_(i18n_keys.BUTTON__CONTINUE),
-    )
+        print(f"threshold: {threshold}, remaining: {remaining[group_index]}")
+    if remaining[group_index] > 0:
+        await layout.show_success(
+            ctx,
+            "Enter share",
+            header=_(i18n_keys.TITLE__STR_OF_STR_SHARES_ENTERED).format(
+                num=threshold, total=threshold - remaining[group_index]
+            ),
+            content=_(i18n_keys.TITLE__STR_OF_STR_SHARES_ENTERED_DESC).format(
+                num=remaining[group_index]
+            ),
+            button=_(i18n_keys.BUTTON__CONTINUE),
+        )
 
 
 async def _show_remaining_groups_and_shares(ctx: wire.GenericContext) -> None:

@@ -37,12 +37,7 @@ async def change_pin(ctx: wire.Context, msg: ChangePin) -> Success:
     from apps.common.pin_constants import PinType, PinResult
 
     if curpin and not msg.remove:
-        result = config.check_pin(curpin, salt, PinType.USER_CHECK)
-        if isinstance(result, tuple):
-            verified, usertype = result
-        else:
-            verified = result
-            usertype = PinType.USER_CHECK
+        verified = config.check_pin(curpin, salt, PinType.USER_CHECK)[0]
         if not verified:
             await error_pin_invalid(ctx)
 
@@ -55,12 +50,7 @@ async def change_pin(ctx: wire.Context, msg: ChangePin) -> Success:
         newpin = ""
 
     if newpin:
-        result = config.check_pin(newpin, salt, PinType.PASSPHRASE_PIN)
-        if isinstance(result, tuple):
-            verified, usertype = result
-        else:
-            verified = result
-            usertype = PinResult.PASSPHRASE_PIN_ENTERED
+        verified, usertype = config.check_pin(newpin, salt, PinType.PASSPHRASE_PIN)
         if usertype == PinResult.PASSPHRASE_PIN_ENTERED:
             return await error_pin_used(ctx)
 

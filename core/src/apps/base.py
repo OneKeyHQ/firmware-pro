@@ -456,7 +456,7 @@ ALLOW_WHILE_LOCKED = (
 )
 
 
-def set_homescreen() -> None:
+def set_homescreen(show_app_guide: bool = False) -> None:
     import lvgl as lv  # type: ignore[Import "lvgl" could not be resolved]
 
     from trezor.lvglui.scrs import fingerprints
@@ -483,6 +483,11 @@ def set_homescreen() -> None:
 
             store_ble_name(ble_name)
             screen = MainScreen(device_name, ble_name, dev_state)
+            if show_app_guide:
+                from trezor.lvglui.scrs import app_guide
+
+                app_guide.GuideAppDownload()
+
             if not first_unlock:
                 first_unlock = True
                 if (

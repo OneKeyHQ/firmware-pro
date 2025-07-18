@@ -54,7 +54,7 @@ async def handle_stop_mode():
 
 
 # run main event loop and specify which screen is the default
-apps.base.set_homescreen()
+apps.base.set_homescreen(show_app_guide=utils.show_app_guide())
 
 loop.schedule(handle_fingerprint_data_init())
 loop.schedule(handle_fingerprint())
@@ -70,10 +70,6 @@ loop.schedule(handle_qr_task())
 loop.schedule(handle_stop_mode())
 
 utils.set_up()
-if utils.show_app_guide():
-    from trezor.ui.layouts import show_onekey_app_guide
-
-    loop.schedule(show_onekey_app_guide())
 
 loop.run()
 

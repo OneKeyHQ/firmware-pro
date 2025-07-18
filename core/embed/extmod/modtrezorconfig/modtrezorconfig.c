@@ -167,7 +167,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_trezorconfig_unlock_obj, 2, 3,
                                            mod_trezorconfig_unlock);
 
 /// def check_pin(pin: str, ext_salt: bytes | None, pin_use_type: int = 0) ->
-/// bool:
+/// tuple[bool, int]:
 ///     """
 ///     Check the given PIN with the given external salt.
 ///     Returns True on success, False on failure.

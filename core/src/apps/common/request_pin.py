@@ -163,14 +163,7 @@ async def verify_user_pin(
 
     if not config.is_unlocked():
         try:
-            result = config.unlock(pin, salt, pin_use_type)
-            if isinstance(result, tuple):
-                verified, usertype = result
-            else:
-                verified = result
-                usertype = PinResult.USER_PIN_ENTERED
-            print("usertype", usertype)
-
+            verified, usertype = config.unlock(pin, salt, pin_use_type)
             if verified:
                 if usertype == PinResult.PASSPHRASE_PIN_ENTERED:
                     device.set_passphrase_pin_enabled(True)
@@ -181,12 +174,9 @@ async def verify_user_pin(
             raise wire.PinCancelled("cancle")
     else:
         try:
-            result = config.check_pin(pin, salt, pin_use_type)
-            if isinstance(result, tuple):
-                verified, usertype = result
-            else:
-                verified = result
-                usertype = PinResult.USER_PIN_ENTERED
+            verified, usertype = config.check_pin(
+                pin, salt, pin_use_type, auto_vibrate=True
+            )
             if verified:
                 if usertype == PinResult.PASSPHRASE_PIN_ENTERED:
                     device.set_passphrase_pin_enabled(True)
@@ -224,19 +214,11 @@ async def verify_user_pin(
 
         try:
             if not config.is_unlocked():
-                result = config.unlock(pin, salt, pin_use_type)
-                if isinstance(result, tuple):
-                    verified, usertype = result
-                else:
-                    verified = result
-                    usertype = PinResult.USER_PIN_ENTERED
+                verified, usertype = config.unlock(pin, salt, pin_use_type)
             else:
-                result = config.check_pin(pin, salt, pin_use_type)
-            if isinstance(result, tuple):
-                verified, usertype = result
-            else:
-                verified = result
-                usertype = PinResult.USER_PIN_ENTERED
+                verified, usertype = config.check_pin(
+                    pin, salt, pin_use_type, auto_vibrate=True
+                )
         except Exception:
             raise wire.PinCancelled("cal cale ..")
 

@@ -97,7 +97,11 @@ async def sign_tx(
 
         from trezor.ui.layouts.lvgl import confirm_turbo
 
-        await confirm_turbo(ctx, (_(i18n_keys.LIST_VALUE__SEND) + suffix), network.name)
+        if value == 0:
+            title = _(i18n_keys.TITLE_REQUEST_CONFIRMATION)
+        else:
+            title = _(i18n_keys.LIST_VALUE__SEND) + suffix
+        await confirm_turbo(ctx, title, network.name)
 
     elif approve_info:
         from .providers import provider_by_chain_address

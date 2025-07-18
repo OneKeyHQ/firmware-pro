@@ -1088,7 +1088,7 @@ class SafeTxExecTransaction(FullSizeWindow):
         self.item_group_body_operation = DisplayItem(
             self.group_safe_tx,
             "Operation",
-            f'#FF1100 {operation} {"(CALL)" if operation == 0 else "(DELEGATECALL)"}#',
+            "0 (CALL)" if operation == 0 else "#FF1100 1 (DELEGATECALL)#",
         )
         if call_method and isinstance(call_data, dict):
             from .components.listitem import DisplayItemWithFlexColPanel
@@ -5529,7 +5529,7 @@ class GnosisSafeTxDetails(FullSizeWindow):
         self.item_group_operation = DisplayItem(
             self.group_more,
             _(i18n_keys.GLOBAL_OPERATION),
-            f'#FF1100 {operation} {"(CALL)" if operation == 0 else "(DELEGATECALL)"}#',
+            "0 (CALL)" if operation == 0 else "#FF1100 1 (DELEGATECALL)#",
         )
         self.item_group_nonce = DisplayItem(
             self.group_more,
@@ -5785,7 +5785,7 @@ class Turbo(FullSizeWindow):
             if utils.lcd_resume():
                 return
 
-            if target == self.nav_back.select_btn:
+            if target == self.nav_back.nav_btn:
                 self.destroy(200)
                 self.channel.publish(0)
             elif target == self.gif_mask:

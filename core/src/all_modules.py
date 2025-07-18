@@ -65,6 +65,8 @@ storage.sd_salt
 import storage.sd_salt
 trezor
 import trezor
+trezor.config
+import trezor.config
 trezor.crypto
 import trezor.crypto
 trezor.crypto.base32

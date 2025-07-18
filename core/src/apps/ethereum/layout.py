@@ -615,21 +615,13 @@ async def require_confirm_safe_tx(
         int.from_bytes(msg.safeTxGas, "big"),
         int.from_bytes(msg.baseGas, "big"),
         format_ethereum_amount(int.from_bytes(msg.gasPrice, "big"), None, msg.chain_id),
-        msg.gasToken if not is_native_token(msg.gasToken) else "ETH",
+        msg.gasToken,
         msg.refundReceiver,
         int.from_bytes(msg.nonce, "big"),
         msg.verifyingContract,
         f"0x{hexlify(domain_hash).decode()}",
         f"0x{hexlify(message_hash).decode()}",
         f"0x{hexlify(safe_tx_hash).decode()}",
-    )
-
-
-def is_native_token(token_address: str) -> bool:
-    token_address = token_address.lower()
-    return token_address in (
-        "0x0000000000000000000000000000000000000000",
-        "0000000000000000000000000000000000000000",
     )
 
 
