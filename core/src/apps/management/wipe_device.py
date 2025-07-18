@@ -4,7 +4,6 @@ import storage
 from trezor import wire
 from trezor.messages import Success
 
-from ..common.request_pin import verify_user_pin
 from .apply_settings import reload_settings_from_storage
 
 if TYPE_CHECKING:
@@ -19,15 +18,6 @@ async def wipe_device(ctx: wire.GenericContext, msg: WipeDevice) -> Success:
     )
 
     await confirm_wipe_device(ctx)
-
-    from apps.common.pin_constants import PinType
-
-    await verify_user_pin(
-        ctx,
-        allow_fingerprint=False,
-        pin_use_type=PinType.USER_CHECK,
-        standy_wall_only=True,
-    )
     # show tips
     await confirm_wipe_device_tips(ctx)
     storage.wipe()
