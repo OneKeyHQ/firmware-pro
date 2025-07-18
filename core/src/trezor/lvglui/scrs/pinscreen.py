@@ -218,7 +218,10 @@ class InputPin(FullSizeWindow):
         )
         self.subtitle.set_text(subtitle)
         title_height = self.title.get_height()
-        subtitle_y = (16 if is_standard_wallet else 24) if title_height > 60 else 70
+        if is_standard_wallet:
+            subtitle_y = 16 if title_height <= 60 else 8
+        else:
+            subtitle_y = 24 if title_height > 60 else 70
         self.subtitle.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, subtitle_y)
         self.subtitle.set_text(subtitle)
         self._show_fingerprint_prompt_if_necessary()
@@ -242,7 +245,9 @@ class InputPin(FullSizeWindow):
             and passphrase.is_passphrase_pin_enabled()
         ):
             self.subtitle.set_style_bg_color(lv_colors.BLACK, 0)
-            self.subtitle.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, 16)
+            title_height = self.title.get_height()
+            offset_y = 16 if title_height <= 60 else 8
+            self.subtitle.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, offset_y)
         else:
             self.subtitle.set_style_bg_color(
                 lv_colors.ONEKEY_RED_2 if subtitle else lv_colors.BLACK, 0
@@ -250,10 +255,16 @@ class InputPin(FullSizeWindow):
             self.subtitle.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, 24)
 
         self.subtitle.set_text(subtitle)
+
         keyboard_text = self.keyboard.ta.get_text()
         if keyboard_text:
             if subtitle:
-                self.keyboard.ta.align_to(self.subtitle, lv.ALIGN.OUT_BOTTOM_MID, 0, 10)
+                if subtitle == _(i18n_keys.CONTENT__PIN_FOR_STANDARD_WALLET):
+                    self.keyboard.ta.align(lv.ALIGN.TOP_MID, 0, 210)
+                else:
+                    self.keyboard.ta.align_to(
+                        self.subtitle, lv.ALIGN.OUT_BOTTOM_MID, 0, 10
+                    )
             else:
                 self.keyboard.ta.align(lv.ALIGN.TOP_MID, 0, 188)
 
@@ -314,11 +325,11 @@ class InputPin(FullSizeWindow):
         code = event_obj.code
         if code == lv.EVENT.VALUE_CHANGED:
             utils.lcd_resume()
-            if self.keyboard.ta.get_text() != "":
+            current_input = self.keyboard.ta.get_text()
+            if current_input != "":
                 from apps.common import passphrase
 
                 if self.standy_wall_only and passphrase.is_passphrase_pin_enabled():
-
                     self.change_subtitle(_(i18n_keys.CONTENT__PIN_FOR_STANDARD_WALLET))
                 else:
                     self.change_subtitle("")
