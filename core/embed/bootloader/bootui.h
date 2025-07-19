@@ -77,6 +77,10 @@ void ui_fadeout(void);
 #define INPUT_RESTART 0x40       // Restart icon
 #define INPUT_BOOT_VERSION_TEXT 0x80     // Boot Version
 #define INPUT_BUILD_ID_TEXT 0x0100         // Build ID
+#define INPUT_MENU_DEVICE_INFO 0x0200      // Device Info menu item
+#define INPUT_MENU_GENERATE_TRNG 0x0400    // Generate TRNG menu item
+#define INPUT_MENU_REBOOT 0x0800           // Reboot Device menu item
+#define INPUT_MENU_FACTORY_RESET 0x1000    // Factory Reset menu item
 
 // clang-format on
 
@@ -98,4 +102,5 @@ void ui_install_progress(image_header* current_hdr,
                          const image_header* const new_hdr);
 void ui_bootloader_page_switch(const image_header* const hdr);
 int get_ui_bootloader_page_current(void);
+void ui_bootloader_factory_reset_confirm(void);
 #endif
