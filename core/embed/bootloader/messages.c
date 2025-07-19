@@ -533,8 +533,8 @@ static void send_msg_features_ex(uint8_t iface_num,
                              boot_version_len);
   uint8_t *boot_hash = get_bootloader_hash();
   MSG_SEND_ASSIGN_BYTES(onekey_boot_hash, boot_hash, 32);
-  MSG_SEND_ASSIGN_STRING_LEN(onekey_boot_build_id, "8be3971",
-                             strlen("8be3971"));
+  MSG_SEND_ASSIGN_STRING_LEN(onekey_boot_build_id, (char *)BUILD_COMMIT,
+                             strlen((char *)BUILD_COMMIT));
   MSG_SEND_ASSIGN_VALUE(onekey_device_type, OneKeyDeviceType_PRO);
   MSG_SEND_ASSIGN_VALUE(onekey_se_type, OneKeySeType_THD89);
 
