@@ -44,6 +44,7 @@
 #include "fw_keys.h"
 #include "icon_onekey.h"
 #include "image.h"
+#include "mipi_lcd.h"
 #include "se_thd89.h"
 #include "thd89_boot.h"
 #include "touch.h"
@@ -57,12 +58,13 @@
 #define COLOR_BL_DANGER RGB16(0xFF, 0x11, 0x00)  // onekey red
 #define COLOR_BL_DONE RGB16(0x00, 0xFF, 0x33)    // green
 #define COLOR_BL_PROCESS COLOR_PROCESS
-#define COLOR_BL_GRAY RGB16(0x99, 0x99, 0x99)          // gray
-#define COLOR_BL_DARK RGB16(0x2D, 0x2D, 0x2D)          // gray
-#define COLOR_BL_PANEL RGB16(0x1E, 0x1E, 0x1E)         //
-#define COLOR_BL_TAGVALUE RGB16(0xB4, 0xB4, 0xB4)      //
-#define COLOR_BL_SUBTITLE RGB16(0xD2, 0xD2, 0xD2)      //
-#define COLOR_BL_FG_INFO_ICON RGB16(0x96, 0x96, 0x96)  // info icon foreground
+#define COLOR_BL_GRAY RGB16(0x99, 0x99, 0x99)      // gray
+#define COLOR_BL_DARK RGB16(0x2D, 0x2D, 0x2D)      // gray
+#define COLOR_BL_PANEL RGB16(0x1E, 0x1E, 0x1E)     //
+#define COLOR_BL_TAGVALUE RGB16(0xB4, 0xB4, 0xB4)  //
+#define COLOR_BL_SUBTITLE RGB16(0xD2, 0xD2, 0xD2)  //
+#define COLOR_BL_FG_INFO_ICON \
+  COLOR_WHITE  // info icon foreground - changed to white
 
 #define COLOR_WELCOME_BG COLOR_WHITE  // welcome background
 #define COLOR_WELCOME_FG COLOR_BLACK  // welcome foreground
@@ -87,6 +89,8 @@
 #define BUTTON_HEIGHT 98
 #define BUTTON_RADIUS 49
 // common shared functions
+
+void ui_bootloader_main_menu(const image_header* const hdr);
 
 static void ui_confirm_cancel_buttons(const char* cancel_text,
                                       const char* confirm_text,
@@ -118,6 +122,7 @@ const char* format_ver(const char* format, uint32_t version) {
 static uint16_t boot_background;
 static bool ble_name_show = false;
 static int ui_bootloader_page_current = 0;
+static bool trng_from_menu = false;
 
 static int current_progress_value = 0;
 
@@ -130,6 +135,16 @@ char* format_progress_value(char* prefix) {
 }
 
 int get_ui_bootloader_page_current(void) { return ui_bootloader_page_current; }
+
+// Helper function to display raw RGB565 pixel data
+static void display_raw_rgb565(int x, int y, int w, int h,
+                               const uint16_t* data) {
+  for (int j = 0; j < h; j++) {
+    for (int i = 0; i < w; i++) {
+      fb_write_pixel(x + i, y + j, data[j * w + i]);
+    }
+  }
+}
 
 void ui_logo_onekey(void) {
   display_image(LOGO_OFFSET_X, LOGO_OFFSET_Y, LOGO_SIZE, LOGO_SIZE,
@@ -415,11 +430,15 @@ void ui_screen_wipe(void) {
   display_text_center(DISPLAY_RESX / 2, TITLE_OFFSET_Y, "Wipe Device", -1,
                       FONT_PJKS_BOLD_38, COLOR_BL_FG, COLOR_BL_BG);
 
-  display_progress("Wiping device...", 0);
+  // Move "Wiping device..." to the progress bar area (around y=720)
+  display_text_center(DISPLAY_RESX / 2, 720, "Wiping device...", -1,
+                      FONT_NORMAL, COLOR_BL_SUBTITLE, COLOR_BL_BG);
 }
 
 void ui_screen_wipe_progress(int pos, int len) {
-  display_progress(NULL, 100 * pos / len);
+  // Progress bar removed - wipe process is fast enough
+  (void)pos;
+  (void)len;
 }
 
 void ui_screen_wipe_done(void) {
@@ -559,7 +578,7 @@ int ui_input_poll(int zones, bool poll) {
       }
       // clicked on previous button
       if ((zones & INPUT_PREVIOUS) && x >= BUTTON_LEFT_OFFSET_X &&
-          x < BUTTON_LEFT_OFFSET_X + BUTTON_HALF_WIDTH && y > BUTTON_OFFSET_Y &&
+          x < BUTTON_LEFT_OFFSET_X + BUTTON_FULL_WIDTH && y > BUTTON_OFFSET_Y &&
           y < BUTTON_OFFSET_Y + BUTTON_HEIGHT) {
         return (zones & INPUT_PREVIOUS);
       }
@@ -578,6 +597,27 @@ int ui_input_poll(int zones, bool poll) {
       if ((zones & INPUT_BUILD_ID_TEXT) && x >= 0 && x <= 480 && y > 580 &&
           y < 640) {
         return (zones & INPUT_BUILD_ID_TEXT);
+      }
+      // Menu items detection
+      // Device Info menu item (y=90 + line height 30)
+      if ((zones & INPUT_MENU_DEVICE_INFO) && x >= BOARD_OFFSET_X &&
+          x < BOARD_OFFSET_X + BUTTON_FULL_WIDTH && y >= 90 && y < 150) {
+        return INPUT_MENU_DEVICE_INFO;
+      }
+      // Reboot Device menu item (now second)
+      if ((zones & INPUT_MENU_REBOOT) && x >= BOARD_OFFSET_X &&
+          x < BOARD_OFFSET_X + BUTTON_FULL_WIDTH && y >= 183 && y < 243) {
+        return INPUT_MENU_REBOOT;
+      }
+      // Generate TRNG menu item (now third)
+      if ((zones & INPUT_MENU_GENERATE_TRNG) && x >= BOARD_OFFSET_X &&
+          x < BOARD_OFFSET_X + BUTTON_FULL_WIDTH && y >= 276 && y < 336) {
+        return INPUT_MENU_GENERATE_TRNG;
+      }
+      // Factory Reset menu item
+      if ((zones & INPUT_MENU_FACTORY_RESET) && x >= BOARD_OFFSET_X &&
+          x < BOARD_OFFSET_X + BUTTON_FULL_WIDTH && y >= 369 && y < 429) {
+        return INPUT_MENU_FACTORY_RESET;
       }
     }
   } while (poll);
@@ -836,11 +876,13 @@ void ui_bootloader_first(const image_header* const hdr) {
   }
 
   ui_statusbar_update();
-  // info icon 48 * 48 - the entry point of the bootloader details
-  display_icon(INFO_ICON_OFFSET_X, INFO_ICON_OFFSET_Y, INFO_ICON_SIZE,
-               INFO_ICON_SIZE, toi_ok_icon_info + 12,
-               sizeof(toi_ok_icon_info) - 12, COLOR_BL_FG_INFO_ICON,
-               COLOR_BL_BG);
+  display_raw_rgb565(INFO_ICON_OFFSET_X, INFO_ICON_OFFSET_Y, 48, 48,
+                     (const uint16_t*)toi_msg_smooth_circle);
+
+  // display_icon(DISPLAY_RESX - offset_x, offset_y, 24, 32,
+  //                toi_icon_charging + 12, sizeof(toi_icon_charging) - 12,
+  //                COLOR_BL_FG, boot_background);
+
   ui_logo_onekey();
   display_text_center(DISPLAY_RESX / 2, TITLE_OFFSET_Y, "Update Mode", -1,
                       FONT_PJKS_BOLD_38, COLOR_BL_FG, COLOR_BL_BG);
@@ -881,6 +923,46 @@ void ui_bootloader_first(const image_header* const hdr) {
     display_text_center(DISPLAY_RESX / 2, 330, "please install se firmware", -1,
                         FONT_NORMAL, COLOR_BL_SUBTITLE, COLOR_BL_BG);
   }
+}
+
+void ui_bootloader_main_menu(const image_header* const hdr) {
+  ui_bootloader_page_current = 5;
+
+  int offset_x = 32, offset_y = 90, off_n = 28, offset_line = 30;
+  ui_statusbar_update();
+  display_bar_radius_ex(BOARD_OFFSET_X, 60, BUTTON_FULL_WIDTH, 362,
+                        COLOR_BL_PANEL, COLOR_BL_BG, BUTTON_RADIUS);
+  offset_y += offset_line;
+  display_text(offset_x, offset_y, "Device Info", -1, FONT_PJKS_BOLD_26,
+               COLOR_BL_FG, COLOR_BL_PANEL);
+  offset_y += offset_line;
+
+  display_bar(0, offset_y, DISPLAY_RESX, 3, COLOR_BLACK);
+
+  offset_y += offset_line;
+  offset_y += off_n;
+  display_text(offset_x, offset_y, "Reboot Device", -1, FONT_PJKS_BOLD_26,
+               COLOR_BL_FG, COLOR_BL_PANEL);
+
+  offset_y += offset_line;
+  display_bar(0, offset_y, DISPLAY_RESX, 3, COLOR_BLACK);
+  offset_y += offset_line;
+  offset_y += off_n;
+  display_text(offset_x, offset_y, "Generate TRNG", -1, FONT_PJKS_BOLD_26,
+               COLOR_BL_FG, COLOR_BL_PANEL);
+  offset_y += offset_line;
+  display_bar(0, offset_y, DISPLAY_RESX, 3, COLOR_BLACK);
+  offset_y += offset_line;
+  offset_y += off_n;
+  display_text(offset_x, offset_y, "Factory Reset", -1, FONT_PJKS_BOLD_26,
+               COLOR_BL_FG, COLOR_BL_PANEL);
+  offset_y += offset_line;
+
+  display_bar_radius_ex(BUTTON_LEFT_OFFSET_X, BUTTON_OFFSET_Y,
+                        BUTTON_FULL_WIDTH, BUTTON_HEIGHT, COLOR_BL_FG,
+                        COLOR_BL_BG, BUTTON_RADIUS);
+  display_text_center(DISPLAY_RESX / 2, 755, "Back", -1, FONT_PJKS_BOLD_26,
+                      COLOR_BL_BG, COLOR_BL_FG);
 }
 
 void ui_bootloader_view_details(const image_header* const hdr) {
@@ -970,29 +1052,70 @@ void ui_bootloader_view_details(const image_header* const hdr) {
   display_text(offset_x, offset_y, BUILD_ID + strlen(BUILD_ID) - 7, -1,
                FONT_NORMAL, COLOR_BL_FG, COLOR_BL_PANEL);
 
-  ui_confirm_cancel_buttons("Back", "Restart", COLOR_BL_DARK, COLOR_BL_DANGER);
+  display_bar_radius_ex(BUTTON_LEFT_OFFSET_X, BUTTON_OFFSET_Y,
+                        BUTTON_FULL_WIDTH, BUTTON_HEIGHT, COLOR_BL_FG,
+                        COLOR_BL_BG, BUTTON_RADIUS);
+  display_text_center(DISPLAY_RESX / 2, 755, "Back", -1, FONT_PJKS_BOLD_26,
+                      COLOR_BL_BG, COLOR_BL_FG);
 }
 
 void ui_bootloader_restart_confirm(void) {
   ui_bootloader_page_current = 4;
 
   ui_statusbar_update();
-  int title_offset_y = 90;
-  int title_offset_x = 12;
-  display_text(title_offset_x, title_offset_y, "Restart  Device?", -1,
-               FONT_PJKS_BOLD_38, COLOR_BL_FG, COLOR_BL_BG);
 
-  display_text(title_offset_x, title_offset_y + 46,
-               "Restarting  will  exit  the  device  from", -1, FONT_NORMAL,
-               COLOR_BL_SUBTITLE, COLOR_BL_BG);
-  display_text(title_offset_x, title_offset_y + 76,
-               "update  mode  and  interrupt  the", -1, FONT_NORMAL,
-               COLOR_BL_SUBTITLE, COLOR_BL_BG);
-  display_text(title_offset_x, title_offset_y + 106, "upgrade  process.", -1,
-               FONT_NORMAL, COLOR_BL_SUBTITLE, COLOR_BL_BG);
+  display_text(12, 276, "Reboot Device?", -1, FONT_PJKS_BOLD_38, COLOR_BL_FG,
+               COLOR_BL_BG);
 
-  ui_confirm_cancel_buttons("Cancel", "Restart", COLOR_BL_DARK,
-                            COLOR_BL_DANGER);
+  display_text(12, 276 + 38 + 16, "Rebooting will exit the device from", -1,
+               FONT_PJKS_BOLD_26, COLOR_BL_SUBTITLE, COLOR_BL_BG);
+  display_text(12, 276 + 38 + 16 + 30, "update mode and interrupt the", -1,
+               FONT_PJKS_BOLD_26, COLOR_BL_SUBTITLE, COLOR_BL_BG);
+  display_text(12, 276 + 38 + 16 + 60, "upgrade process.", -1,
+               FONT_PJKS_BOLD_26, COLOR_BL_SUBTITLE, COLOR_BL_BG);
+
+  display_bar_radius_ex(BUTTON_LEFT_OFFSET_X, BUTTON_OFFSET_Y,
+                        BUTTON_HALF_WIDTH, BUTTON_HEIGHT, COLOR_BL_DARK,
+                        COLOR_BL_BG, BUTTON_RADIUS);
+  display_text_center(DISPLAY_RESX / 4, 755, "Cancel", -1, FONT_PJKS_BOLD_26,
+                      COLOR_BL_FG, COLOR_BL_DARK);
+
+  display_bar_radius_ex(BUTTON_RIGHT_OFFSET_X, BUTTON_OFFSET_Y,
+                        BUTTON_HALF_WIDTH, BUTTON_HEIGHT, COLOR_BL_FG,
+                        COLOR_BL_BG, BUTTON_RADIUS);
+  display_text_center(DISPLAY_RESX - DISPLAY_RESX / 4, 755, "Reboot", -1,
+                      FONT_PJKS_BOLD_26, COLOR_BL_BG, COLOR_BL_FG);
+}
+
+void ui_bootloader_factory_reset_confirm(void) {
+  ui_bootloader_page_current = 6;
+
+  display_clear();  // Clear screen to remove any previous content
+  ui_statusbar_update();
+
+  display_text(12, 276, "Are you sure you want to", -1, FONT_PJKS_BOLD_38,
+               COLOR_BL_FG, COLOR_BL_BG);
+  display_text(12, 276 + 38, "factory reset the device?", -1, FONT_PJKS_BOLD_38,
+               COLOR_BL_FG, COLOR_BL_BG);
+
+  display_text(12, 276 + 38 + 38 + 16, "Please keep your Secret Recovery", -1,
+               FONT_PJKS_BOLD_26, COLOR_BL_SUBTITLE, COLOR_BL_BG);
+  display_text(12, 276 + 38 + 38 + 16 + 30, "Phrase handy to recover access",
+               -1, FONT_PJKS_BOLD_26, COLOR_BL_SUBTITLE, COLOR_BL_BG);
+  display_text(12, 276 + 38 + 38 + 16 + 60, "to your wallet.", -1,
+               FONT_PJKS_BOLD_26, COLOR_BL_SUBTITLE, COLOR_BL_BG);
+
+  display_bar_radius_ex(BUTTON_LEFT_OFFSET_X, BUTTON_OFFSET_Y,
+                        BUTTON_HALF_WIDTH, BUTTON_HEIGHT, COLOR_BL_DARK,
+                        COLOR_BL_BG, BUTTON_RADIUS);
+  display_text_center(DISPLAY_RESX / 4, 755, "Cancel", -1, FONT_PJKS_BOLD_26,
+                      COLOR_BL_FG, COLOR_BL_DARK);
+
+  display_bar_radius_ex(BUTTON_RIGHT_OFFSET_X, BUTTON_OFFSET_Y,
+                        BUTTON_HALF_WIDTH, BUTTON_HEIGHT, COLOR_BL_DANGER,
+                        COLOR_BL_BG, BUTTON_RADIUS);
+  display_text_center(DISPLAY_RESX - DISPLAY_RESX / 4, 755, "Reset", -1,
+                      FONT_PJKS_BOLD_26, COLOR_BL_BG, COLOR_BL_DANGER);
 }
 
 void ui_bootloader_factory(void) {
@@ -1027,7 +1150,10 @@ void ui_bootloader_page_switch(const image_header* const hdr) {
     response = ui_input_poll(INPUT_INFO, false);
     if (INPUT_INFO == response) {
       display_clear();
-      ui_bootloader_view_details(hdr);
+
+      ui_bootloader_main_menu(hdr);
+
+      // ui_bootloader_view_details(hdr);
     }
     if (!ble_name_show && ble_name_state()) {
       ui_bootloader_first(hdr);
@@ -1037,15 +1163,11 @@ void ui_bootloader_page_switch(const image_header* const hdr) {
     if ((click_now - click_pre) > (1000 / 2)) {
       click = 0;
     }
-    response = ui_input_poll(INPUT_PREVIOUS | INPUT_RESTART |
-                                 INPUT_BOOT_VERSION_TEXT | INPUT_BUILD_ID_TEXT,
-                             false);
+    response = ui_input_poll(
+        INPUT_PREVIOUS | INPUT_BOOT_VERSION_TEXT | INPUT_BUILD_ID_TEXT, false);
     if (INPUT_PREVIOUS == response) {
       display_clear();
-      ui_bootloader_first(hdr);
-    } else if (INPUT_RESTART == response) {
-      display_clear();
-      ui_bootloader_restart_confirm();
+      ui_bootloader_main_menu(hdr);
     } else if (INPUT_BOOT_VERSION_TEXT == response) {
       click++;
       click_pre = click_now;
@@ -1061,6 +1183,7 @@ void ui_bootloader_page_switch(const image_header* const hdr) {
       if (click == 5) {
         click = 0;
         display_clear();
+        trng_from_menu = false;
         ui_bootloader_generate_trng_data();
         click_pre = click_now;
       }
@@ -1079,25 +1202,80 @@ void ui_bootloader_page_switch(const image_header* const hdr) {
       ui_bootloader_first(hdr);
     }
   } else if (ui_bootloader_page_current == 3) {
-    response = ui_input_poll(INPUT_PREVIOUS | INPUT_RESTART, false);
-    if (INPUT_PREVIOUS == response) {
+    response = ui_input_poll(INPUT_CANCEL | INPUT_CONFIRM, false);
+    if (INPUT_CANCEL == response) {
       display_clear();
-      ui_bootloader_first(hdr);
-    } else if (INPUT_RESTART == response) {
+      if (trng_from_menu) {
+        ui_bootloader_main_menu(hdr);
+      } else {
+        ui_bootloader_first(hdr);
+      }
+    } else if (INPUT_CONFIRM == response) {
       device_generate_trng_data();
     }
-    click_now = HAL_GetTick();
-    if (click_now - click_pre > (1000 * 10)) {
-      display_clear();
-      ui_bootloader_first(hdr);
+
+    if (!trng_from_menu) {
+      click_now = HAL_GetTick();
+      if (click_now - click_pre > (1000 * 10)) {
+        display_clear();
+        ui_bootloader_first(hdr);
+      }
     }
   } else if (ui_bootloader_page_current == 4) {
-    response = ui_input_poll(INPUT_PREVIOUS | INPUT_RESTART, false);
-    if (INPUT_PREVIOUS == response) {
+    response = ui_input_poll(INPUT_CANCEL | INPUT_RESTART, false);
+    if (INPUT_CANCEL == response) {
       display_clear();
-      ui_bootloader_view_details(hdr);
+      ui_bootloader_main_menu(hdr);
     } else if (INPUT_RESTART == response) {
       HAL_NVIC_SystemReset();
+    }
+  } else if (ui_bootloader_page_current == 5) {
+    response = ui_input_poll(INPUT_PREVIOUS | INPUT_MENU_DEVICE_INFO |
+                                 INPUT_MENU_GENERATE_TRNG | INPUT_MENU_REBOOT |
+                                 INPUT_MENU_FACTORY_RESET,
+                             false);
+    if (INPUT_PREVIOUS == response) {
+      display_clear();
+      ui_bootloader_first(hdr);
+    } else if (INPUT_MENU_DEVICE_INFO == response) {
+      display_clear();
+      ui_bootloader_view_details(hdr);
+    } else if (INPUT_MENU_GENERATE_TRNG == response) {
+      display_clear();
+      trng_from_menu = true;
+      ui_bootloader_generate_trng_data();
+    } else if (INPUT_MENU_REBOOT == response) {
+      display_clear();
+      ui_bootloader_restart_confirm();
+    } else if (INPUT_MENU_FACTORY_RESET == response) {
+      display_clear();
+      ui_bootloader_factory_reset_confirm();
+    }
+  } else if (ui_bootloader_page_current == 6) {
+    response = ui_input_poll(INPUT_CANCEL | INPUT_RESTART, false);
+    if (INPUT_CANCEL == response) {
+      display_clear();
+      ui_bootloader_main_menu(hdr);
+    } else if (INPUT_RESTART == response) {
+      ui_fadeout();
+      ui_screen_wipe();
+      ui_fadein();
+
+      if (sectrue != se_reset_storage()) {
+        ui_fadeout();
+        ui_screen_fail();
+        ui_fadein();
+        while (!touch_click()) {
+        }
+        HAL_NVIC_SystemReset();
+      } else {
+        ui_fadeout();
+        ui_screen_wipe_done();
+        ui_fadein();
+        while (!ui_input_poll(INPUT_NEXT, true)) {
+        }
+        HAL_NVIC_SystemReset();
+      }
     }
   }
 }

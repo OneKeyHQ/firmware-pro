@@ -533,8 +533,8 @@ static void send_msg_features_ex(uint8_t iface_num,
                              boot_version_len);
   uint8_t *boot_hash = get_bootloader_hash();
   MSG_SEND_ASSIGN_BYTES(onekey_boot_hash, boot_hash, 32);
-  MSG_SEND_ASSIGN_STRING_LEN(onekey_boot_build_id, (char *)BUILD_COMMIT,
-                             strlen((char *)BUILD_COMMIT));
+  MSG_SEND_ASSIGN_STRING_LEN(onekey_boot_build_id, "8be3971",
+                             strlen("8be3971"));
   MSG_SEND_ASSIGN_VALUE(onekey_device_type, OneKeyDeviceType_PRO);
   MSG_SEND_ASSIGN_VALUE(onekey_se_type, OneKeySeType_THD89);
 
@@ -615,7 +615,7 @@ secbool load_vendor_header_keys(const uint8_t *const data,
                                 vendor_header *const vhdr);
 
 int process_msg_WipeDevice(uint8_t iface_num, uint32_t msg_size, uint8_t *buf) {
-  ui_screen_wipe_progress(0, 1000);
+  // Progress bar removed - wipe process is fast
   if (sectrue != se_reset_storage()) {
     MSG_SEND_INIT(Failure);
     MSG_SEND_ASSIGN_VALUE(code, FailureType_Failure_ProcessError);
@@ -623,7 +623,6 @@ int process_msg_WipeDevice(uint8_t iface_num, uint32_t msg_size, uint8_t *buf) {
     MSG_SEND(Failure);
     return -1;
   } else {
-    ui_screen_wipe_progress(1000, 1000);
     MSG_SEND_INIT(Success);
     MSG_SEND(Success);
     return 0;

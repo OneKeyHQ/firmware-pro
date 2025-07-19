@@ -27,6 +27,12 @@
 #include "display.h"
 #include "fonts/font_bitmap.h"
 
+#include <math.h>
+#include <stdarg.h>
+#include <string.h>
+
+#include "memzero.h"
+
 #if defined TREZOR_MODEL_T
 
 // TT new rust UI
@@ -125,16 +131,11 @@
 #error Unknown Trezor model
 #endif
 
-#include <stdarg.h>
-#include <string.h>
-
-#include "memzero.h"
+#include "mipi_lcd.h"
 
 static struct {
   int x, y;
 } DISPLAY_OFFSET;
-
-#include "mipi_lcd.h"
 
 // common display functions
 
@@ -174,44 +175,6 @@ void display_bar(int x, int y, int w, int h, uint16_t c) {
   fb_fill_rect(x, y, w, h, c);
 }
 
-static void display_rounded_corner(int x, int y, int r, int delta_x,
-                                   int delta_y, uint16_t c, uint16_t b) {
-  int r2 = r * r;
-  int r2_1 = (r + 1) * (r + 1);
-  int r2_2 = (r + 2) * (r + 2);
-  for (int i = 0; i < r + 2; ++i) {
-    for (int j = 0; j < r + 2; ++j) {
-      int d = i * i + j * j;
-      if (d <= r2) {
-        // fb_write_pixel(x + delta_x * i, y + delta_y * j, c);
-      } else if (d <= r2_1) {
-        uint16_t color = interpolate_color(c, b, 9);
-        fb_write_pixel(x + delta_x * i, y + delta_y * j, color);
-      } else if (d <= r2_2) {
-        uint16_t color = interpolate_color(c, b, 3);
-        fb_write_pixel(x + delta_x * i, y + delta_y * j, color);
-      } else {
-        fb_write_pixel(x + delta_x * i, y + delta_y * j, b);
-      }
-    }
-  }
-}
-
-void display_bar_radius_ex(int x, int y, int w, int h, uint16_t c, uint16_t b,
-                           int r) {
-  display_bar(x, y, w, h, c);
-
-  uint16_t color = interpolate_color(c, b, 9);
-
-  fb_draw_hline(x + r, y - 1, w - 2 * r, color);
-  fb_draw_hline(x + r, y + h, w - 2 * r, color);
-
-  display_rounded_corner(x + r, y + r, r, -1, -1, c, b);
-  display_rounded_corner(x + w - r, y + r, r, 1, -1, c, b);
-  display_rounded_corner(x + r, y + h - r, r, -1, 1, c, b);
-  display_rounded_corner(x + w - r, y + h - r, r, 1, 1, c, b);
-}
-
 #define CORNER_RADIUS 16
 
 static const uint8_t cornertable[CORNER_RADIUS * CORNER_RADIUS] = {
@@ -230,6 +193,99 @@ static const uint8_t cornertable[CORNER_RADIUS * CORNER_RADIUS] = {
     15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15,
     15, 15, 15, 15, 15, 15, 15, 15, 15,
 };
+
+void display_bar_radius_ex(int x, int y, int w, int h, uint16_t c, uint16_t b,
+                           int r) {
+  uint16_t colortable[16] = {0};
+  set_color_table(colortable, c, b);
+
+  x += DISPLAY_OFFSET.x;
+  y += DISPLAY_OFFSET.y;
+  int x0 = 0, y0 = 0, x1 = 0, y1 = 0;
+  clamp_coords(x, y, w, h, &x0, &y0, &x1, &y1);
+
+  float radius = (float)r;
+
+  for (int j = y0; j <= y1; j++) {
+    for (int i = x0; i <= x1; i++) {
+      int rx = i - x;
+      int ry = j - y;
+      uint8_t alpha = 15;
+
+      if (rx < r && ry < r) {
+        float dx = (float)(rx - r) + 0.5f;
+        float dy = (float)(ry - r) + 0.5f;
+        float pixel_distance = sqrtf(dx * dx + dy * dy);
+        float edge_distance = pixel_distance - radius;
+
+        if (edge_distance < -1.0f) {
+          alpha = 15;
+        } else if (edge_distance > 1.0f) {
+          fb_write_pixel(i, j, b);
+          continue;
+        } else {
+          float coverage = (1.0f - edge_distance) * 0.5f;
+          alpha = (uint8_t)(coverage * 15.0f);
+          if (alpha > 15) alpha = 15;
+          if (alpha < 0) alpha = 0;
+        }
+      } else if (rx >= w - r && ry < r) {
+        float dx = (float)(rx - (w - r)) + 0.5f;
+        float dy = (float)(ry - r) + 0.5f;
+        float pixel_distance = sqrtf(dx * dx + dy * dy);
+        float edge_distance = pixel_distance - radius;
+
+        if (edge_distance < -1.0f) {
+          alpha = 15;
+        } else if (edge_distance > 1.0f) {
+          fb_write_pixel(i, j, b);
+          continue;
+        } else {
+          float coverage = (1.0f - edge_distance) * 0.5f;
+          alpha = (uint8_t)(coverage * 15.0f);
+          if (alpha > 15) alpha = 15;
+          if (alpha < 0) alpha = 0;
+        }
+      } else if (rx < r && ry >= h - r) {
+        float dx = (float)(rx - r) + 0.5f;
+        float dy = (float)(ry - (h - r)) + 0.5f;
+        float pixel_distance = sqrtf(dx * dx + dy * dy);
+        float edge_distance = pixel_distance - radius;
+
+        if (edge_distance < -1.0f) {
+          alpha = 15;
+        } else if (edge_distance > 1.0f) {
+          fb_write_pixel(i, j, b);
+          continue;
+        } else {
+          float coverage = (1.0f - edge_distance) * 0.5f;
+          alpha = (uint8_t)(coverage * 15.0f);
+          if (alpha > 15) alpha = 15;
+          if (alpha < 0) alpha = 0;
+        }
+      } else if (rx >= w - r && ry >= h - r) {
+        float dx = (float)(rx - (w - r)) + 0.5f;
+        float dy = (float)(ry - (h - r)) + 0.5f;
+        float pixel_distance = sqrtf(dx * dx + dy * dy);
+        float edge_distance = pixel_distance - radius;
+
+        if (edge_distance < -1.0f) {
+          alpha = 15;
+        } else if (edge_distance > 1.0f) {
+          fb_write_pixel(i, j, b);
+          continue;
+        } else {
+          float coverage = (1.0f - edge_distance) * 0.5f;
+          alpha = (uint8_t)(coverage * 15.0f);
+          if (alpha > 15) alpha = 15;
+          if (alpha < 0) alpha = 0;
+        }
+      }
+
+      fb_write_pixel(i, j, colortable[alpha]);
+    }
+  }
+}
 
 void display_bar_radius(int x, int y, int w, int h, uint16_t c, uint16_t b,
                         uint8_t r) {
@@ -402,7 +458,6 @@ void display_icon(int x, int y, int w, int h, const void *data,
   x_pos = x0;
   y_pos = y0;
   x0 -= x;
-  x1 -= x;
   y0 -= y;
   y1 -= y;
 
