@@ -392,7 +392,11 @@ def find_registered_handler(iface: WireInterface, msg_type: int) -> Handler | No
         module = __import__(modname, None, None, (handler_name,), 0)
         handler = getattr(module, handler_name)
 
-        if iface is not None and _is_address_derivation_message(msg_type):
+        if (
+            handler is not None
+            and iface is not None
+            and _is_address_derivation_message(msg_type)
+        ):
             return _wrap_with_version_check(handler)
 
         return handler
@@ -401,47 +405,53 @@ def find_registered_handler(iface: WireInterface, msg_type: int) -> Handler | No
 
 
 def _is_address_derivation_message(msg_type: int) -> bool:
-    return msg_type in (
-        MessageType.GetAddress,
-        MessageType.GetPublicKey,
-        MessageType.EthereumGetAddress,
-        MessageType.EthereumGetAddressOneKey,
-        MessageType.MoneroGetAddress,
-        MessageType.NEMGetAddress,
-        MessageType.NeoGetAddress,
-        MessageType.StellarGetAddress,
-        MessageType.RippleGetAddress,
-        MessageType.CardanoGetAddress,
-        MessageType.TezosGetAddress,
-        MessageType.BinanceGetAddress,
-        MessageType.ConfluxGetAddress,
-        MessageType.TonGetAddress,
-        MessageType.TronGetAddress,
-        MessageType.SolanaGetAddress,
-        MessageType.StarcoinGetAddress,
-        MessageType.NearGetAddress,
-        MessageType.AptosGetAddress,
-        MessageType.AlgorandGetAddress,
-        MessageType.PolkadotGetAddress,
-        MessageType.SuiGetAddress,
-        MessageType.FilecoinGetAddress,
-        MessageType.CosmosGetAddress,
-        MessageType.KaspaGetAddress,
-        MessageType.NexaGetAddress,
-        MessageType.NervosGetAddress,
-        MessageType.ScdoGetAddress,
-        MessageType.AlephiumGetAddress,
-        MessageType.BenfenGetAddress,
-        # Add other GetPublicKey variants
-        MessageType.BinanceGetPublicKey,
-        MessageType.CardanoGetPublicKey,
-        MessageType.EthereumGetPublicKey,
-        MessageType.EthereumGetPublicKeyOneKey,
-        MessageType.TezosGetPublicKey,
-        MessageType.StarcoinGetPublicKey,
-        # MessageType.EOSGetPublicKey,
-        MessageType.NostrGetPublicKey,
-    )
+    if utils.BITCOIN_ONLY:
+        return msg_type in (
+            MessageType.GetAddress,
+            MessageType.GetPublicKey,
+        )
+    else:
+        return msg_type in (
+            MessageType.GetAddress,
+            MessageType.GetPublicKey,
+            MessageType.EthereumGetAddress,
+            MessageType.EthereumGetAddressOneKey,
+            MessageType.MoneroGetAddress,
+            MessageType.NEMGetAddress,
+            MessageType.NeoGetAddress,
+            MessageType.StellarGetAddress,
+            MessageType.RippleGetAddress,
+            MessageType.CardanoGetAddress,
+            MessageType.TezosGetAddress,
+            MessageType.BinanceGetAddress,
+            MessageType.ConfluxGetAddress,
+            MessageType.TonGetAddress,
+            MessageType.TronGetAddress,
+            MessageType.SolanaGetAddress,
+            MessageType.StarcoinGetAddress,
+            MessageType.NearGetAddress,
+            MessageType.AptosGetAddress,
+            MessageType.AlgorandGetAddress,
+            MessageType.PolkadotGetAddress,
+            MessageType.SuiGetAddress,
+            MessageType.FilecoinGetAddress,
+            MessageType.CosmosGetAddress,
+            MessageType.KaspaGetAddress,
+            MessageType.NexaGetAddress,
+            MessageType.NervosGetAddress,
+            MessageType.ScdoGetAddress,
+            MessageType.AlephiumGetAddress,
+            MessageType.BenfenGetAddress,
+            # Add other GetPublicKey variants
+            MessageType.BinanceGetPublicKey,
+            MessageType.CardanoGetPublicKey,
+            MessageType.EthereumGetPublicKey,
+            MessageType.EthereumGetPublicKeyOneKey,
+            MessageType.TezosGetPublicKey,
+            MessageType.StarcoinGetPublicKey,
+            # MessageType.EOSGetPublicKey,
+            MessageType.NostrGetPublicKey,
+        )
 
 
 def _wrap_with_version_check(handler):

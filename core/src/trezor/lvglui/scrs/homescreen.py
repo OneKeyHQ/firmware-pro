@@ -1562,11 +1562,12 @@ class SettingsScreen(AnimScreen):
         self.wallet = ListItemBtn(
             self.container, _(i18n_keys.ITEM__WALLET), left_img_src="A:/res/wallet.png"
         )
-        self.fido_keys = ListItemBtn(
-            self.container,
-            _(i18n_keys.FIDO_FIDO_KEYS_LABEL),
-            left_img_src="A:/res/fido-keys.png",
-        )
+        if not utils.BITCOIN_ONLY:
+            self.fido_keys = ListItemBtn(
+                self.container,
+                _(i18n_keys.FIDO_FIDO_KEYS_LABEL),
+                left_img_src="A:/res/fido-keys.png",
+            )
         self.about = ListItemBtn(
             self.container,
             _(i18n_keys.ITEM__ABOUT_DEVICE),
@@ -1587,7 +1588,8 @@ class SettingsScreen(AnimScreen):
         # self.home_scr.label_left.set_text(_(i18n_keys.ITEM__HOMESCREEN))
         self.security.label_left.set_text(_(i18n_keys.ITEM__SECURITY))
         self.wallet.label_left.set_text(_(i18n_keys.ITEM__WALLET))
-        self.fido_keys.label_left.set_text(_(i18n_keys.FIDO_FIDO_KEYS_LABEL))
+        if not utils.BITCOIN_ONLY:
+            self.fido_keys.label_left.set_text(_(i18n_keys.FIDO_FIDO_KEYS_LABEL))
         self.about.label_left.set_text(_(i18n_keys.ITEM__ABOUT_DEVICE))
 
     def on_click(self, event_obj):
@@ -1612,7 +1614,7 @@ class SettingsScreen(AnimScreen):
             #     Go2UpdateMode(self)
             elif target == self.air_gap:
                 AirGapSetting(self)
-            elif target == self.fido_keys:
+            elif not utils.BITCOIN_ONLY and target == self.fido_keys:
                 FidoKeysSetting(self)
             elif not utils.PRODUCTION and target == self.fp_test:
                 FingerprintTest(self)
