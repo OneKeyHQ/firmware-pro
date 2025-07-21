@@ -1986,17 +1986,20 @@ secbool se_gen_session_seed(const char *passphrase, bool cardano) {
     if (!session_generate_cardano_seed(passphrase, &percent)) {
       return secfalse;
     }
-    while (percent != 100) {
+    if (percent != 100) {
+      while (percent != 100) {
+        if (ui_callback) {
+          ui_callback(0, percent * 10, NULL);
+        }
+        if (!session_generate_seed_percent(&percent)) {
+          return secfalse;
+        }
+        hal_delay(100);
+      }
+
       if (ui_callback) {
-        ui_callback(0, percent * 10, NULL);
+        ui_callback(0, 100 * 10, NULL);
       }
-      if (!session_generate_seed_percent(&percent)) {
-        return secfalse;
-      }
-      hal_delay(100);
-    }
-    if (ui_callback) {
-      ui_callback(0, 100 * 10, NULL);
     }
   } else {
     if (status & 0x80) {
@@ -2005,18 +2008,20 @@ secbool se_gen_session_seed(const char *passphrase, bool cardano) {
     if (!session_generate_master_seed(passphrase, &percent)) {
       return secfalse;
     }
-    while (percent != 100) {
-      if (ui_callback) {
-        ui_callback(0, percent * 10, NULL);
+    if (percent != 100) {
+      while (percent != 100) {
+        if (ui_callback) {
+          ui_callback(0, percent * 10, NULL);
+        }
+        if (!session_generate_seed_percent(&percent)) {
+          return secfalse;
+        }
+        hal_delay(100);
       }
-      if (!session_generate_seed_percent(&percent)) {
-        return secfalse;
-      }
-      hal_delay(100);
-    }
 
-    if (ui_callback) {
-      ui_callback(0, 100 * 10, NULL);
+      if (ui_callback) {
+        ui_callback(0, 100 * 10, NULL);
+      }
     }
   }
 
