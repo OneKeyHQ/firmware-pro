@@ -2228,7 +2228,7 @@ LIST_MORE_TXHASH = 1011
 WARNING_UNRECOGNIZED_TOKEN = 1012
 # Recipient is a known energy rental service provider address.
 BANNER_ENERGY_RENTAL = 1013
-# Use the latest version of the OneKey App to use “Attach to PIN”.
+# This version doesn’t support the “Attach to PIN” feature.
 MSG__ATTACH_TO_PIN_TIPS = 1014
 # Request Confirmation
 TITLE_REQUEST_CONFIRMATION = 1015
@@ -2236,4 +2236,6 @@ TITLE_REQUEST_CONFIRMATION = 1015
 TITLE__ABORT_RECOVERY_PHRASE_CREATION = 1016
 # This is Share {num1} of {num2}.
 SUBTITLE__THIS_IS_SHARE_STR_OF_STR = 1017
+# Threshold of this group has been reached. Input share from different group.
+SUBTITLE__ENTER_A_DIFFERENT_SHARE = 1018
 # fmt: on

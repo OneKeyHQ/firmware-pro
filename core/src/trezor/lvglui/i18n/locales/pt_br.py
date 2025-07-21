@@ -1014,9 +1014,10 @@ translations = [
     "Hash de transação",
     "Este token não é reconhecido pela carteira física. Por favor, verifique cuidadosamente.",
     "O destinatário é um endereço conhecido de provedor de serviços de aluguel de energia.",
-    "Use a versão mais recente do OneKey App para usar o recurso \"Vincular ao PIN\".",
+    "Esta versão não suporta o recurso \"Vincular ao PIN\".",
     "Solicitar Confirmação",
     "Cancelar a criação da frase de recuperação?",
     "Esta é a Ação {num1} de {num2}.",
+    "O limite deste grupo foi atingido. Insira uma parte de um grupo diferente.",
 ]
 # fmt: on

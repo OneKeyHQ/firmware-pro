@@ -202,7 +202,10 @@ async def show_group_threshold_reached(ctx: wire.GenericContext) -> None:
     await show_warning(
         ctx,
         "warning_group_threshold",
-        "Threshold of this\ngroup has been reached.\nInput share from\ndifferent group.",
+        _(i18n_keys.SUBTITLE__ENTER_A_DIFFERENT_SHARE),
+        header=_(i18n_keys.TITLE__ENTER_A_DIFFERENT_SHARE),
+        button=_(i18n_keys.BUTTON__TRY_AGAIN),
+        btn_yes_bg_color=lv_colors.ONEKEY_GRAY_3,
     )
 
 

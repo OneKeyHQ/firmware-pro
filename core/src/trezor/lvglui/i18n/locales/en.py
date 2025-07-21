@@ -1014,9 +1014,10 @@ translations = [
     "Transaction Hash",
     "This token is not recognized by the hardware wallet. Please verify carefully.",
     "Recipient is a known energy rental service provider address.",
-    "Use the latest version of the OneKey App to use “Attach to PIN”.",
+    "This version doesn’t support the “Attach to PIN” feature.",
     "Request Confirmation",
     "Abort Recovery Phrase Creation?",
     "This is Share {num1} of {num2}.",
+    "Threshold of this group has been reached. Input share from different group.",
 ]
 # fmt: on

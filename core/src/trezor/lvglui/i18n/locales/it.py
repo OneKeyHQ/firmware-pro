@@ -1014,9 +1014,10 @@ translations = [
     "Hash della transazione",
     "Questo token non è riconosciuto dal wallet hardware. Si prega di verificare attentamente.",
     "Il destinatario è un indirizzo noto di un fornitore di servizi di noleggio di energia.",
-    "Usa l'ultima versione della OneKey App per utilizzare \"Allega al PIN\".",
+    "Questa versione non supporta la funzione \"Associa al PIN\".",
     "Conferma richiesta",
     "Annullare la creazione della frase di recupero?",
     "Questa è la quota {num1} di {num2}.",
+    "La soglia di questo gruppo è stata raggiunta. Inserisci una quota da un gruppo diverso.",
 ]
 # fmt: on

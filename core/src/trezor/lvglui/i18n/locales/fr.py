@@ -1014,9 +1014,10 @@ translations = [
     "Transaction Hash",
     "Ce jeton n'est pas reconnu par le portefeuille matériel. Veuillez vérifier attentivement.",
     "Le destinataire est une adresse connue de fournisseur de services de location d'énergie.",
-    "Utilisez la dernière version de OneKey App pour utiliser « Attacher au PIN ».",
+    "Cette version ne prend pas en charge la fonctionnalité « Associer au code PIN ».",
     "Demande de confirmation",
     "Abandonner la création de la phrase de récupération ?",
     "Ceci est la part {num1} sur {num2}.",
+    "Le seuil de ce groupe a été atteint. Veuillez saisir une part d'un groupe différent.",
 ]
 # fmt: on
