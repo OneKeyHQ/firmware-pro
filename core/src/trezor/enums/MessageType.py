@@ -104,7 +104,6 @@ ResourceUpdate = 10022
 ListResDir = 10023
 OnekeyGetFeatures = 10025
 OnekeyFeatures = 10026
-WriteSEPrivateKey = 10027
 GetPassphraseState = 10028
 PassphraseState = 10029
 UnLockDevice = 10030
@@ -427,3 +426,4 @@ if not utils.BITCOIN_ONLY:
     ResourceRequest = 10020
     ResourceAck = 10021
     FileInfoList = 10024
+    WriteSEPrivateKey = 10027
