@@ -605,9 +605,9 @@ enum MessageType {
     MessageType_FileInfoList = 10024 [(wire_out) = true];
     MessageType_OnekeyGetFeatures = 10025 [(bitcoin_only) = true,(wire_in) = true];
     MessageType_OnekeyFeatures = 10026 [(bitcoin_only) = true,(wire_out) = true];
-    MessageType_WriteSEPrivateKey = 10027 [(wire_in) = true, (wire_bootloader) = true];
-    MessageType_GetPassphraseState = 10028 [(wire_in) = true];
-    MessageType_PassphraseState = 10029 [(wire_out) = true];
+    MessageType_WriteSEPrivateKey = 10027 [(bitcoin_only) = true,(wire_in) = true, (wire_bootloader) = true];
+    MessageType_GetPassphraseState = 10028 [(bitcoin_only) = true,(wire_in) = true];
+    MessageType_PassphraseState = 10029 [(bitcoin_only) = true,(wire_out) = true];
     MessageType_UnLockDevice = 10030 [(bitcoin_only) = true, (wire_in) = true];
     MessageType_UnLockDeviceResponse = 10031 [(bitcoin_only) = true, (wire_out) = true];
  }
