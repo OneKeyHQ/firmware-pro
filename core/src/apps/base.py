@@ -252,17 +252,9 @@ async def handle_Initialize(
     else:
         storage.cache.delete(storage.cache.APP_COMMON_CLIENT_CONTAINS_ATTACH)
 
-    prev_session_id = storage.cache.get_session_id()
-
-    from apps.common import passphrase
-
-    passphrase_pin_enabled = passphrase.is_passphrase_pin_enabled()
     if (
-        device_is_unlocked()
-        and prev_session_id != msg.session_id
-        and hasattr(msg, "passphrase_state")
+        hasattr(msg, "passphrase_state")
         and msg.passphrase_state is not None
-        and passphrase_pin_enabled
         and msg.passphrase_state != ""
         and se_thd89.check_passphrase_btc_test_address(
             msg.passphrase_state
@@ -271,8 +263,17 @@ async def handle_Initialize(
         )
     ):
         session_id = storage.cache.start_session()
+    elif msg.session_id is not None:
+        if (
+            not hasattr(msg, "passphrase_state")
+            or msg.passphrase_state is None
+            or msg.passphrase_state == ""
+        ):
+            session_id = storage.cache.start_session()
+        else:
+            session_id = storage.cache.start_session(msg.session_id)
     else:
-        session_id = storage.cache.start_session(msg.session_id)
+        session_id = storage.cache.start_session()
     if not utils.BITCOIN_ONLY:
         if utils.USE_THD89:
             if msg.derive_cardano is not None and msg.derive_cardano:
@@ -664,7 +665,6 @@ def get_pinlocked_handler(
 
     async def wrapper(ctx: wire.Context, msg: wire.Msg) -> protobuf.MessageType:
         await unlock_device(ctx)
-        storage.cache.start_session()
         return await orig_handler(ctx, msg)
 
     return wrapper
@@ -756,7 +756,6 @@ async def handle_UnLockDevice(
     """Handle UnLockDevice message to unlock the device if needed."""
     if not config.is_unlocked():
         await unlock_device(ctx, pin_use_type=PinType.USER_AND_PASSPHRASE_PIN)
-        storage.cache.start_session()
 
     # Get current device state after unlock attempt
     from apps.common import passphrase

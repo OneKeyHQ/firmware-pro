@@ -36,7 +36,6 @@ async def bootscreen() -> None:
             from apps.common.pin_constants import PinType
 
             await verify_user_pin(pin_use_type=PinType.USER_AND_PASSPHRASE_PIN)
-            storage.cache.start_session()
             storage.init_unlocked()
             loop.close(lvgl_task)
             return

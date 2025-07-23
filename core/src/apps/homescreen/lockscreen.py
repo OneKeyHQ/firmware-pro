@@ -16,7 +16,6 @@ async def lockscreen() -> None:
     # to an unlocked state.
     try:
         await unlock_device()
-        storage.cache.start_session()
     except wire.PinCancelled:
         pass
 
