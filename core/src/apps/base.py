@@ -697,11 +697,6 @@ async def handle_GetPassphraseState(
     from trezor.messages import PassphraseState
     from apps.common import passphrase, paths
 
-    # Check if client supports attach pin
-    (
-        hasattr(msg, "allow_create_attach_pin")
-        and msg.allow_create_attach_pin is not None
-    )
     if not device_is_unlocked():
         await unlock_device(ctx, pin_use_type=2)
         session_id = storage.cache.start_session()
