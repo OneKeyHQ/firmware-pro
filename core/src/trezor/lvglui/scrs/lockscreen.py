@@ -191,6 +191,9 @@ class LockScreen(Screen):
                 from apps.base import unlock_device
 
                 workflow.spawn(unlock_device())
+                import storage.cache
+
+                storage.cache.start_session()
 
     def on_slide_up(self, event_obj: lv.event_t):
         code = event_obj.code
@@ -203,6 +206,9 @@ class LockScreen(Screen):
                 from apps.base import unlock_device
 
                 workflow.spawn(unlock_device())
+                import storage.cache
+
+                storage.cache.start_session()
 
     def _load_scr(self, scr: "Screen", back: bool = False) -> None:
         lv.scr_load(scr)

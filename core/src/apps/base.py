@@ -698,7 +698,7 @@ async def handle_GetPassphraseState(
     from apps.common import passphrase, paths
 
     if not device_is_unlocked():
-        await unlock_device(ctx, pin_use_type=2)
+        await unlock_device(ctx, pin_use_type=PinType.USER_AND_PASSPHRASE_PIN)
         session_id = storage.cache.start_session()
 
     from trezor.lvglui.scrs import fingerprints
@@ -755,7 +755,7 @@ async def handle_UnLockDevice(
 ) -> UnLockDeviceResponse:
     """Handle UnLockDevice message to unlock the device if needed."""
     if not config.is_unlocked():
-        await unlock_device(ctx, pin_use_type=2)
+        await unlock_device(ctx, pin_use_type=PinType.USER_AND_PASSPHRASE_PIN)
         storage.cache.start_session()
 
     # Get current device state after unlock attempt

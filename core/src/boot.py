@@ -18,7 +18,7 @@ def clear() -> None:
                 io.fatfs.unlink(f"1:/res/wallpapers/{name}")
 
 
-async def bootscreen() -> None:
+async def () -> None:
     from trezor.lvglui.scrs.bootscreen import BootScreen
     from trezor.lvglui.scrs.lockscreen import LockScreen
     from apps.common.request_pin import can_lock_device, verify_user_pin
@@ -36,6 +36,7 @@ async def bootscreen() -> None:
             from apps.common.pin_constants import PinType
 
             await verify_user_pin(pin_use_type=PinType.USER_AND_PASSPHRASE_PIN)
+            storage.cache.start_session()
             storage.init_unlocked()
             loop.close(lvgl_task)
             return
