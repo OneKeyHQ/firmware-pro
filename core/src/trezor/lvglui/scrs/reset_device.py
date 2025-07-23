@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+from trezor import utils
 from trezor.enums import BackupType
 from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
 from trezor.lvglui.scrs.components.container import (
@@ -83,6 +84,7 @@ class MnemonicDisplay(FullSizeWindow):
             .pad_bottom(48),
             0,
         )
+        self.container.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
         self.clear_flag(lv.obj.FLAG.SCROLLABLE)
         self.content_area.set_scroll_dir(lv.DIR.VER)
         self.content_area.clear_flag(lv.obj.FLAG.SCROLL_ELASTIC)
@@ -98,9 +100,11 @@ class MnemonicDisplay(FullSizeWindow):
             word_label = lv.label(word)
             word_label.set_align(lv.ALIGN.LEFT_MID)
             word_label.set_text(f"{i+1:>2}. {mnemonics[i]}")
+            word.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
             word.set_grid_cell(
                 lv.GRID_ALIGN.STRETCH, col, 1, lv.GRID_ALIGN.STRETCH, row, 1
             )
+        self.content_area.add_event_cb(self.on_event, lv.EVENT.SCROLL_BEGIN, None)
 
     def add_indicator(self, indicator_text: str):
         self.word_count_indicator = lv.btn(self)
@@ -138,6 +142,8 @@ class MnemonicDisplay(FullSizeWindow):
         if code == lv.EVENT.CLICKED:
             if target == self.word_count_indicator:
                 BackupTypeSelector(self)
+        elif code == lv.EVENT.SCROLL_BEGIN:
+            utils.lcd_resume()
         # region
         # self.panel = lv.obj(self.content_area)
         # self.panel.set_size(464, lv.SIZE.CONTENT)
@@ -479,8 +485,6 @@ class Slip39BasicConfig(FullSizeWindow):
         code = event_obj.code
         target = event_obj.get_target()
         if code == lv.EVENT.CLICKED:
-            from trezor import utils
-
             if utils.lcd_resume():
                 return
             if target == self.member_count_groups.selected_btn:
