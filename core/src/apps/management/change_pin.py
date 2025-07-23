@@ -50,7 +50,9 @@ async def change_pin(ctx: wire.Context, msg: ChangePin) -> Success:
         newpin = ""
 
     if newpin:
-        verified, usertype = config.check_pin(newpin, salt, PinType.PASSPHRASE_PIN)
+        verified, usertype = config.check_pin(
+            newpin, salt, PinType.PASSPHRASE_PIN_CHECK
+        )
         if usertype == PinResult.PASSPHRASE_PIN_ENTERED:
             return await error_pin_used(ctx)
 

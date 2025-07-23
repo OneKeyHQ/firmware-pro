@@ -198,20 +198,6 @@ async def show_attach_to_pin_window(ctx):
                                 if not save_result:
                                     return False
 
-                                # Convert passphrase pin to string if needed
-                                passphrase_pin_str = (
-                                    str(passphrase_pin)
-                                    if not isinstance(passphrase_pin, str)
-                                    else passphrase_pin
-                                )
-
-                                # Verify the pin
-                                pinstatus, result = config.check_pin(
-                                    passphrase_pin_str,
-                                    None,
-                                    PinType.USER_AND_PASSPHRASE_PIN,
-                                )
-
                                 # Show success message
                                 await show_passphrase_set_and_attached_to_pin_window(
                                     ctx
