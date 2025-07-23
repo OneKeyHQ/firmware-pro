@@ -30,11 +30,13 @@ from ..layout import (
 from .keychain import with_keychain_from_chain_id
 from .sign_tx import (
     check_common_fields,
+    get_remaining_data,
     handle_approve,
     handle_erc20,
     handle_erc_721_or_1155,
     handle_safe_tx,
     is_safe_tx,
+    reset_data_left,
     send_request_chunk,
 )
 
@@ -263,10 +265,15 @@ async def sign_tx_eip1559(
         rlp.write_header(sha, data_total, rlp.STRING_HEADER_BYTE, data)
         sha.extend(data)
 
-    while data_left > 0:
-        resp = await send_request_chunk(ctx, data_left)
-        data_left -= len(resp.data_chunk)
-        sha.extend(resp.data_chunk)
+    remaining_data = get_remaining_data()
+    if remaining_data is not None:
+        sha.extend(remaining_data)
+        reset_data_left()
+    else:
+        while data_left > 0:
+            resp = await send_request_chunk(ctx, data_left)
+            data_left -= len(resp.data_chunk)
+            sha.extend(resp.data_chunk)
 
     write_access_list(sha, msg.access_list)
 
@@ -323,5 +330,6 @@ def check(msg: EthereumSignTxEIP1559) -> None:
         raise wire.DataError("Fee overflow")
     if len(msg.max_priority_fee) + len(msg.gas_limit) > 30:
         raise wire.DataError("Fee overflow")
+    reset_data_left()
 
     check_common_fields(msg)

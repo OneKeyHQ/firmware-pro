@@ -41,6 +41,8 @@ if TYPE_CHECKING:
 # the full value: v = 2 * chain_id + 35 + v_bit
 MAX_CHAIN_ID = (0xFFFF_FFFF - 36) // 2
 
+DATA_LEFT: bytearray | None = None
+
 
 @with_keychain_from_chain_id
 async def sign_tx(
@@ -217,10 +219,15 @@ async def sign_tx(
         rlp.write_header(sha, data_total, rlp.STRING_HEADER_BYTE, data)
         sha.extend(data)
 
-    while data_left > 0:
-        resp = await send_request_chunk(ctx, data_left)
-        data_left -= len(resp.data_chunk)
-        sha.extend(resp.data_chunk)
+    global DATA_LEFT
+    if DATA_LEFT is not None:
+        sha.extend(DATA_LEFT)
+        DATA_LEFT = None
+    else:
+        while data_left > 0:
+            resp = await send_request_chunk(ctx, data_left)
+            data_left -= len(resp.data_chunk)
+            sha.extend(resp.data_chunk)
 
     # eip 155 replay protection
     rlp.write(sha, msg.chain_id)
@@ -360,13 +367,22 @@ def is_safe_exec_transaction(msg: EthereumSignTxAny) -> bool:
     if (
         len(msg.to) in (40, 42)
         and len(msg.value) == 0
-        and 437 <= msg.data_length <= 1024
+        and 437 <= msg.data_length
         and msg.data_initial_chunk[:16]
         == b"\x6a\x76\x12\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
         # 0x6a761202 == keccak("execTransaction(address,uint256,bytes,uint8,uint256,uint256,uint256,address,address,bytes)")[:4].hex()
     ):
         return True
     return False
+
+
+def get_remaining_data() -> bytearray | None:
+    return DATA_LEFT
+
+
+def reset_data_left() -> None:
+    global DATA_LEFT
+    DATA_LEFT = None
 
 
 async def handle_safe_tx(
@@ -391,7 +407,17 @@ async def handle_safe_tx(
         data_len = int.from_bytes(data[308:340], "big")
         call_data = None
         call_method = None
-        if data_len > 0:
+        data_left = msg.data_length - len(msg.data_initial_chunk)
+        global DATA_LEFT
+        if data_left > 0:
+            DATA_LEFT = bytearray(data_left)
+            DATA_LEFT[:] = bytes()
+            while data_left > 0:
+                resp = await send_request_chunk(ctx, data_left)
+                data_left -= len(resp.data_chunk)
+                DATA_LEFT.extend(resp.data_chunk)
+
+        if data_len > 0 and DATA_LEFT is None:
             nest_data = data[340 : 340 + data_len]
             if (
                 len(nest_data) == 68
@@ -455,9 +481,18 @@ async def handle_safe_tx(
             else:
                 call_data = hexlify(nest_data).decode()
                 call_method = None
-        assert signature_pos >= 340 + data_len
-        signatures_len = int.from_bytes(data[signature_pos : signature_pos + 20], "big")
-        signatures = data[signature_pos + 20 : signature_pos + 20 + signatures_len]
+        assert signature_pos >= 340 + data_len, "invalid call data"
+        if DATA_LEFT is not None:
+            remaining_data = data[340:] + DATA_LEFT
+            nest_data = remaining_data[:data_len]
+            call_data = hexlify(nest_data).decode()
+            call_method = None
+            signature_data = remaining_data[signature_pos - 340 :]
+        else:
+            signature_data = data[signature_pos:]
+        signatures_len = int.from_bytes(signature_data[:20], "big")
+        assert len(signature_data) >= 20 + signatures_len, "invalid call data length"
+        signatures = signature_data[20 : 20 + signatures_len]
         if not is_eip1559:
             from ..layout import require_confirm_safe_exec_transaction
 
@@ -617,7 +652,7 @@ def check(msg: EthereumSignTx) -> None:
 
     if len(msg.gas_price) + len(msg.gas_limit) > 30:
         raise wire.DataError("Fee overflow")
-
+    reset_data_left()
     check_common_fields(msg)
 
 
