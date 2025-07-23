@@ -664,6 +664,7 @@ def get_pinlocked_handler(
 
     async def wrapper(ctx: wire.Context, msg: wire.Msg) -> protobuf.MessageType:
         await unlock_device(ctx)
+        storage.cache.start_session()
         return await orig_handler(ctx, msg)
 
     return wrapper
@@ -760,12 +761,14 @@ async def handle_UnLockDevice(
     """Handle UnLockDevice message to unlock the device if needed."""
     if not config.is_unlocked():
         await unlock_device(ctx, pin_use_type=2)
+        storage.cache.start_session()
 
     # Get current device state after unlock attempt
     from apps.common import passphrase
 
     unlocked = config.is_unlocked()
     unlocked_attach_pin = passphrase.is_passphrase_pin_enabled() if unlocked else False
+
     passphrase_protection = (
         storage.device.is_passphrase_enabled() if unlocked else False
     )

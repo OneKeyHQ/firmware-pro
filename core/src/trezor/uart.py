@@ -160,6 +160,10 @@ async def handle_fingerprint():
                             if __debug__:
                                 print(f"fingerprint unlock result {res}")
                             await base.unlock_device()
+                            import storage.cache
+
+                            storage.cache.start_session()
+
                         # await loop.sleep(2000)
                         return
                 else:
@@ -331,6 +335,9 @@ async def _deal_ble_pair(value):
     if not base.device_is_unlocked():
         try:
             await base.unlock_device()
+            import storage.cache
+
+            storage.cache.start_session()
         except Exception:
             await safe_reloop()
             workflow.spawn(utils.internal_reloop())

@@ -663,6 +663,9 @@ async def verify_user(keepalive_callback: KeepaliveCallback) -> bool:
         trezor.pin.keepalive_callback = keepalive_callback
 
         await unlock_device()
+        import storage.cache
+
+        storage.cache.start_session()
         return True
     except Exception:
         return False
@@ -806,6 +809,9 @@ class U2fUnlock(State):
 
         try:
             await unlock_device()
+            import storage.cache
+
+            storage.cache.start_session()
             return True
         except Exception:
             return False
