@@ -18,7 +18,7 @@ def clear() -> None:
                 io.fatfs.unlink(f"1:/res/wallpapers/{name}")
 
 
-async def () -> None:
+async def bootscreen() -> None:
     from trezor.lvglui.scrs.bootscreen import BootScreen
     from trezor.lvglui.scrs.lockscreen import LockScreen
     from apps.common.request_pin import can_lock_device, verify_user_pin
