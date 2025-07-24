@@ -247,34 +247,33 @@ def get_onekey_features() -> OnekeyFeatures:
 async def handle_Initialize(
     ctx: wire.Context | wire.QRContext, msg: Initialize
 ) -> Features:
-    if hasattr(msg, "is_contains_attach") and msg.is_contains_attach is not None:
+    has_attach = (
+        hasattr(msg, "is_contains_attach") and msg.is_contains_attach is not None
+    )
+    if has_attach:
         storage.cache.set(storage.cache.APP_COMMON_CLIENT_CONTAINS_ATTACH, b"\x01")
     else:
         storage.cache.delete(storage.cache.APP_COMMON_CLIENT_CONTAINS_ATTACH)
+    ps_raw = getattr(msg, "passphrase_state", None)
+    if isinstance(ps_raw, bytes):
+        passphrase_state = ps_raw.decode() if ps_raw else None
+    elif isinstance(ps_raw, str):
+        passphrase_state = ps_raw
+    else:
+        passphrase_state = None
 
-    if (
-        hasattr(msg, "passphrase_state")
-        and msg.passphrase_state is not None
-        and msg.passphrase_state != ""
-        and se_thd89.check_passphrase_btc_test_address(
-            msg.passphrase_state
-            if isinstance(msg.passphrase_state, str)
-            else msg.passphrase_state.decode()
-        )
+    session_id_in_msg = getattr(msg, "session_id", None)
+    if passphrase_state and se_thd89.check_passphrase_btc_test_address(
+        passphrase_state
     ):
         session_id = storage.cache.start_session()
-    elif msg.session_id is not None:
-        if (
-            not hasattr(msg, "passphrase_state")
-            or msg.passphrase_state is None
-            or msg.passphrase_state == ""
-        ):
-            session_id = storage.cache.start_session()
-        else:
-            session_id = storage.cache.start_session(msg.session_id)
-    else:
+    elif has_attach and session_id_in_msg is not None and passphrase_state is None:
         session_id = storage.cache.start_session()
+    else:
+        session_id = storage.cache.start_session(session_id_in_msg)
+
     if not utils.BITCOIN_ONLY:
+
         if utils.USE_THD89:
             if msg.derive_cardano is not None and msg.derive_cardano:
                 state = se_thd89.get_session_state()
