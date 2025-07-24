@@ -1014,7 +1014,7 @@ translations = [
     "Hash della transazione",
     "Questo token non è riconosciuto dal wallet hardware. Si prega di verificare attentamente.",
     "Il destinatario è un indirizzo noto di un fornitore di servizi di noleggio di energia.",
-    "Questa versione non supporta la funzione \"Associa al PIN\".",
+    "Usa l'ultima versione dell'app OneKey per \"Collegare al PIN\".",
     "Conferma richiesta",
     "Annullare la creazione della frase di recupero?",
     "Questa è la quota {num1} di {num2}.",
