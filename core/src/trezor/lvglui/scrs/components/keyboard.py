@@ -234,6 +234,7 @@ class MnemonicKeyboard(lv.keyboard):
         self.set_popovers(True)
         self.set_textarea(self.ta)
         self.add_event_cb(self.event_cb, lv.EVENT.PRESSED, None)
+        self.add_event_cb(self.event_cb, lv.EVENT.LONG_PRESSED, None)
         self.add_event_cb(self.event_cb, lv.EVENT.DRAW_PART_BEGIN, None)
         self.add_event_cb(self.event_cb, lv.EVENT.VALUE_CHANGED, None)
         self.mnemonic_prompt = lv.obj(parent)
@@ -259,6 +260,7 @@ class MnemonicKeyboard(lv.keyboard):
         self.mnemonic_prompt.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
         self.mnemonic_prompt.add_event_cb(self.on_click, lv.EVENT.PRESSED, None)
         self.move_foreground()
+        self.vibrated = False
 
     def tip_submitted(self):
         self.tip_panel = lv.obj(self.parent)
@@ -316,7 +318,10 @@ class MnemonicKeyboard(lv.keyboard):
                 ):
                     return
                 motor.vibrate()
+                self.vibrated = True
             return
+        elif code == lv.EVENT.LONG_PRESSED:
+            self.vibrated = False
         if code == lv.EVENT.DRAW_PART_BEGIN:
             txt_input = self.ta.get_text()
             dsc = lv.obj_draw_part_dsc_t.__cast__(event.get_param())
@@ -328,7 +333,7 @@ class MnemonicKeyboard(lv.keyboard):
             #     dsc.rect_dsc.bg_color = lv_colors.BLACK
         elif code == lv.EVENT.VALUE_CHANGED:
             utils.lcd_resume()
-            if isinstance(target, lv.keyboard):
+            if isinstance(target, lv.keyboard) and not self.vibrated:
                 btn_id = target.get_selected_btn()
                 if btn_id == 21:
                     motor.vibrate()
@@ -524,11 +529,13 @@ class NumberKeyboard(lv.keyboard):
         self.input_count_tips.add_flag(lv.obj.FLAG.HIDDEN)
 
         self.add_event_cb(self.event_cb, lv.EVENT.PRESSED, None)
+        self.add_event_cb(self.event_cb, lv.EVENT.LONG_PRESSED, None)
         self.add_event_cb(self.event_cb, lv.EVENT.DRAW_PART_BEGIN, None)
         self.add_event_cb(self.event_cb, lv.EVENT.VALUE_CHANGED, None)
         self.add_event_cb(self.event_cb, lv.EVENT.READY, None)
         self.add_event_cb(self.event_cb, lv.EVENT.CANCEL, None)
         self.previous_input_len = 0
+        self.vibrated = False
 
     def update_count_tips(self):
         """Update/show tips only when input length larger than 10"""
@@ -581,7 +588,10 @@ class NumberKeyboard(lv.keyboard):
                 ):
                     return
                 motor.vibrate()
+                self.vibrated = True
             return
+        elif code == lv.EVENT.LONG_PRESSED:
+            self.vibrated = False
         input_len = len(self.ta.get_text())
         self.input_len = input_len
         self.ta.clear_flag(lv.obj.FLAG.HIDDEN)
@@ -598,7 +608,7 @@ class NumberKeyboard(lv.keyboard):
                     # dsc.rect_dsc.bg_img_src = "A:/res/keyboard-close.png"
         elif code == lv.EVENT.VALUE_CHANGED:
             utils.lcd_resume()
-            if isinstance(target, lv.keyboard):
+            if isinstance(target, lv.keyboard) and not self.vibrated:
                 btn_id = target.get_selected_btn()
                 if btn_id == 9:
                     motor.vibrate()
@@ -751,11 +761,13 @@ class IndexKeyboard(lv.keyboard):
         # self.input_count_tips.add_flag(lv.obj.FLAG.HIDDEN)
 
         self.add_event_cb(self.event_cb, lv.EVENT.PRESSED, None)
+        self.add_event_cb(self.event_cb, lv.EVENT.LONG_PRESSED, None)
         self.add_event_cb(self.event_cb, lv.EVENT.DRAW_PART_BEGIN, None)
         self.add_event_cb(self.event_cb, lv.EVENT.VALUE_CHANGED, None)
         self.add_event_cb(self.event_cb, lv.EVENT.READY, None)
         self.add_event_cb(self.event_cb, lv.EVENT.CANCEL, None)
         self.previous_input_len = 0
+        self.vibrated = False
 
     # def update_count_tips(self):
     #     """Update/show tips only when input length larger than 10"""
@@ -821,7 +833,10 @@ class IndexKeyboard(lv.keyboard):
                 ):
                     return
                 motor.vibrate()
+                self.vibrated = True
             return
+        elif code == lv.EVENT.LONG_PRESSED:
+            self.vibrated = False
         if not self.is_pin and text.startswith("#"):
             input_len = len(text) - 1
         else:
@@ -850,7 +865,7 @@ class IndexKeyboard(lv.keyboard):
 
         elif code == lv.EVENT.VALUE_CHANGED:
             utils.lcd_resume()
-            if isinstance(target, lv.keyboard):
+            if isinstance(target, lv.keyboard) and not self.vibrated:
                 btn_id = target.get_selected_btn()
                 if btn_id == 9:
                     motor.vibrate()
@@ -1133,6 +1148,7 @@ class PassphraseKeyboard(lv.btnmatrix):
 
         self.update_count_tips()
         self.add_event_cb(self.event_cb, lv.EVENT.PRESSED, None)
+        self.add_event_cb(self.event_cb, lv.EVENT.LONG_PRESSED, None)
         self.add_event_cb(self.event_cb, lv.EVENT.DRAW_PART_BEGIN, None)
         self.add_event_cb(self.event_cb, lv.EVENT.VALUE_CHANGED, None)
         self.ta.add_event_cb(self.event_cb, lv.EVENT.FOCUSED, None)
@@ -1167,7 +1183,10 @@ class PassphraseKeyboard(lv.btnmatrix):
                 if btn_id == 31 and len(self.ta.get_text()) == 0:
                     return
                 motor.vibrate()
+                self.vibrated = True
             return
+        elif code == lv.EVENT.LONG_PRESSED:
+            self.vibrated = False
         if code == lv.EVENT.DRAW_PART_BEGIN:
             txt_input = self.ta.get_text()
             dsc = lv.obj_draw_part_dsc_t.__cast__(event.get_param())
@@ -1222,7 +1241,8 @@ class PassphraseKeyboard(lv.btnmatrix):
                     self.ta.del_char()
                     self.update_count_tips()
                     self.update_ok_button_state()
-                    motor.vibrate()
+                    if not self.vibrated:
+                        motor.vibrate()
                     return
                 elif text == lv.SYMBOL.OK:
                     if len(self.ta.get_text()) >= self.min_len:
