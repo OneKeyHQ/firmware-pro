@@ -393,3 +393,52 @@ def sign_typed_data_hash(
             message_hash=message_hash,
         )
     )
+
+@session
+def sign_tx_eip7702(
+    client: "TrezorClient",
+    n: "Address",
+    *,
+    nonce: int,
+    gas_limit: int,
+    to: str,
+    value: int,
+    data: bytes = b"",
+    chain_id: int,
+    max_gas_fee: int,
+    max_priority_fee: int,
+    authorization_list: List[messages.EthereumAuthorizationOneKey],
+    access_list: Optional[List[messages.EthereumAccessListOneKey]] = None,
+) -> Tuple[int, bytes, bytes]:
+
+    length = len(data)
+    data, chunk = data[1024:], data[:1024]
+    msg = messages.EthereumSignTxEIP7702OneKey(
+        address_n=n,
+        nonce=int_to_big_endian(nonce),
+        gas_limit=int_to_big_endian(gas_limit),
+        value=int_to_big_endian(value),
+        to=to,
+        chain_id=chain_id,
+        max_gas_fee=int_to_big_endian(max_gas_fee),
+        max_priority_fee=int_to_big_endian(max_priority_fee),
+        access_list=access_list,
+        data_length=length,
+        data_initial_chunk=chunk,
+        authorization_list=authorization_list,
+    )
+
+    response = client.call(msg)
+    assert isinstance(response, messages.EthereumTxRequestOneKey)
+
+    while response.data_length is not None:
+        data_length = response.data_length
+        data, chunk = data[data_length:], data[:data_length]
+        response = client.call(messages.EthereumTxAckOneKey(data_chunk=chunk))
+        assert isinstance(response, messages.EthereumTxRequestOneKey)
+
+    assert response.signature_v is not None
+    assert response.signature_r is not None
+    assert response.signature_s is not None
+    assert response.authorization_signatures is not None
+    return response.signature_v, response.signature_r, response.signature_s, response.authorization_signatures

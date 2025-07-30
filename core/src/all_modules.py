@@ -215,6 +215,8 @@ trezor.lvglui.scrs.components.banner
 import trezor.lvglui.scrs.components.banner
 trezor.lvglui.scrs.components.button
 import trezor.lvglui.scrs.components.button
+trezor.lvglui.scrs.components.composite
+import trezor.lvglui.scrs.components.composite
 trezor.lvglui.scrs.components.container
 import trezor.lvglui.scrs.components.container
 trezor.lvglui.scrs.components.doubleclick
@@ -1241,6 +1243,8 @@ if not utils.BITCOIN_ONLY:
     import apps.ethereum.layout
     apps.ethereum.networks
     import apps.ethereum.networks
+    apps.ethereum.onekey.eip7702_delegators
+    import apps.ethereum.onekey.eip7702_delegators
     apps.ethereum.onekey.get_address
     import apps.ethereum.onekey.get_address
     apps.ethereum.onekey.get_public_key
@@ -1257,6 +1261,8 @@ if not utils.BITCOIN_ONLY:
     import apps.ethereum.onekey.sign_tx
     apps.ethereum.onekey.sign_tx_eip1559
     import apps.ethereum.onekey.sign_tx_eip1559
+    apps.ethereum.onekey.sign_tx_eip7702
+    import apps.ethereum.onekey.sign_tx_eip7702
     apps.ethereum.onekey.sign_typed_data
     import apps.ethereum.onekey.sign_typed_data
     apps.ethereum.onekey.sign_typed_data_hash

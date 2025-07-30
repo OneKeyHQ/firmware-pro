@@ -135,10 +135,9 @@ async def verify_user_pin(
         and fingerprints.is_unlocked()
     ):
         return
+    from trezor.ui.layouts import request_pin_on_device
 
     if config.has_pin():
-        from trezor.ui.layouts import request_pin_on_device
-
         try:
             pin = await request_pin_on_device(
                 ctx,
@@ -206,8 +205,7 @@ async def verify_user_pin(
     while retry:
         pin_rem = config.get_pin_rem()
         try:
-
-            pin = await request_pin_on_device(  # type: ignore ["request_pin_on_device" is possibly unbound]  # 再次请求PIN码
+            pin = await request_pin_on_device(
                 ctx,
                 # _(i18n_keys.TITLE__ENTER_PIN),
                 prompt,

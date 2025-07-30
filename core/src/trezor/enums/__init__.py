@@ -172,6 +172,7 @@ if TYPE_CHECKING:
         EthereumSignTypedHashOneKey = 20117
         EthereumGnosisSafeTxAck = 20118
         EthereumGnosisSafeTxRequest = 20119
+        EthereumSignTxEIP7702OneKey = 20120
         NEMGetAddress = 67
         NEMAddress = 68
         NEMSignTx = 69

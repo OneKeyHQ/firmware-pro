@@ -90,7 +90,13 @@ __all__ = (
     "confirm_safe_tx",
     "confirm_safe_approve_hash",
     "confirm_safe_exec_transaction",
+    "should_show_details_eip7702",
 )
+
+
+class CONFIRM_ACTION_TYPE:
+    CONFIRM_ACTION_NORMAL = 1
+    CONFIRM_ACTION_SHOW_MORE = 2
 
 
 async def confirm_action(
@@ -455,6 +461,7 @@ async def _show_modal(
     icon: str,
     icon_color: int,
     btn_yes_bg_color=None,
+    btn_yes_text_color=None,
     exc: ExceptionType = wire.ActionCancelled,
 ) -> None:
     from trezor.lvglui.scrs.template import Modal
@@ -467,7 +474,10 @@ async def _show_modal(
         icon_path=icon,
     )
     if btn_yes_bg_color:
-        screen.btn_yes.enable(bg_color=btn_yes_bg_color or lv_colors.ONEKEY_GREEN)
+        screen.btn_yes.enable(
+            bg_color=btn_yes_bg_color or lv_colors.ONEKEY_GREEN,
+            text_color=btn_yes_text_color or lv_colors.WHITE,
+        )
     await raise_if_cancelled(
         interact(
             ctx,
@@ -516,6 +526,7 @@ def show_warning(
     icon: str = "A:/res/warning.png",
     icon_color: int = ui.RED,
     btn_yes_bg_color=None,
+    btn_yes_text_color=None,
 ) -> Awaitable[None]:
     return _show_modal(
         ctx,
@@ -529,6 +540,7 @@ def show_warning(
         icon=icon,
         icon_color=icon_color,
         btn_yes_bg_color=btn_yes_bg_color,
+        btn_yes_text_color=btn_yes_text_color,
     )
 
 
@@ -609,17 +621,17 @@ async def confirm_output(
     br_code: ButtonRequestType = ButtonRequestType.ConfirmOutput,
     icon: str = ui.ICON_SEND,
 ) -> None:
-    from trezor.lvglui.scrs.template import TransactionOverview
+    from trezor.lvglui.scrs.template import TransactionOverviewSend
     from trezor.strings import strip_amount
 
     await raise_if_cancelled(
         interact(
             ctx,
-            TransactionOverview(
+            TransactionOverviewSend(
                 _(i18n_keys.TITLE__SEND_MULTILINE).format(strip_amount(amount)[0]),
-                address,
                 primary_color=ctx.primary_color,
                 icon_path=ctx.icon_path,
+                address=address,
             ),
             "confirm_output",
             br_code,
@@ -633,16 +645,16 @@ async def should_show_details(
     title: str,
     br_code: ButtonRequestType = ButtonRequestType.ConfirmOutput,
 ) -> bool:
-    from trezor.lvglui.scrs.template import TransactionOverview
+    from trezor.lvglui.scrs.template import TransactionOverviewSend
 
     res = await interact(
         ctx,
-        TransactionOverview(
+        TransactionOverviewSend(
             title,
-            address=address,
             primary_color=ctx.primary_color,
             icon_path=ctx.icon_path,
             has_details=True,
+            address=address,
         ),
         "confirm_output",
         br_code,
@@ -652,9 +664,9 @@ async def should_show_details(
 
         await loop.sleep(300)
         raise wire.ActionCancelled()
-    elif res == 2:  # show more
+    elif res == CONFIRM_ACTION_TYPE.CONFIRM_ACTION_SHOW_MORE:
         return True
-    else:  # confirm
+    else:
         return False
 
 
@@ -683,9 +695,61 @@ async def should_show_details_new(
 
         await loop.sleep(300)
         raise wire.ActionCancelled()
-    elif res == 2:  # show more
+    elif res == CONFIRM_ACTION_TYPE.CONFIRM_ACTION_SHOW_MORE:
         return True
-    else:  # confirm
+    else:
+        return False
+
+
+async def should_show_details_eip7702(
+    ctx: wire.GenericContext,
+    title: str,
+    authority_addr: str,
+    delegate_addr: str | None,
+    network: str,
+    delegator_name: str,
+    delegator_icon_path: str,
+    br_code: ButtonRequestType = ButtonRequestType.ProtectCall,
+) -> bool:
+    from trezor.lvglui.scrs.template import TransactionOverview
+
+    res = await interact(
+        ctx,
+        TransactionOverview(
+            title,
+            primary_color=ctx.primary_color,
+            icon_path=delegator_icon_path,
+            sub_icon_path=None,
+            card_title=_(i18n_keys.OVERVIEW),
+            card_icon="A:/res/group-icon-more.png",
+            items=(
+                (_(i18n_keys.FIELDS_ACCOUNT), authority_addr),
+                (_(i18n_keys.FIELDS_DELEGATE_TO), delegate_addr),
+                (
+                    _(i18n_keys.FIELDS_DELEGATE_ON_NETWORK)
+                    if delegate_addr
+                    else _(i18n_keys.FIELDS_REVOKE_ON_NETWORK),
+                    network,
+                ),
+            ),
+            banner_text=_(i18n_keys.BANNER_UPGRADING_SMART_ACCOUNT_WARNING).format(
+                platform=delegator_name
+            )
+            if delegate_addr
+            else _(i18n_keys.BANNER_REVOKE_SMART_ACCOUNT_WARNING),
+            has_details=True,
+        ),
+        "eip7702_authority_overview",
+        br_code,
+    )
+    if not res:
+        from trezor import loop
+
+        await loop.sleep(300)
+        raise wire.ActionCancelled()
+    elif res == CONFIRM_ACTION_TYPE.CONFIRM_ACTION_SHOW_MORE:
+        return True
+    else:
         return False
 
 
@@ -722,9 +786,9 @@ async def should_show_approve_details(
 
         await loop.sleep(300)
         raise wire.ActionCancelled()
-    elif res == 2:  # show more
+    elif res == CONFIRM_ACTION_TYPE.CONFIRM_ACTION_SHOW_MORE:
         return True
-    else:  # confirm
+    else:
         return False
 
 
@@ -2082,9 +2146,9 @@ async def cosmos_require_show_more(
 
         await loop.sleep(300)
         raise wire.ActionCancelled()
-    elif res == 2:  # show more
+    elif res == CONFIRM_ACTION_TYPE.CONFIRM_ACTION_SHOW_MORE:
         return True
-    else:  # confirm
+    else:
         return False
 
 

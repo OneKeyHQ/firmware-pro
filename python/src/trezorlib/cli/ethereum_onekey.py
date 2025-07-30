@@ -116,6 +116,33 @@ def _parse_access_list_item(value: str) -> ethereum.messages.EthereumAccessList:
     except Exception:
         raise click.BadParameter("Access List format invalid")
 
+def _parse_authorization_list(
+    ctx: click.Context, param: Any, value: Tuple[str, ...]
+) -> List[ethereum.messages.EthereumAuthorizationOneKey]:
+    try:
+        return [_parse_authorization_list_item(val) for val in value]
+    except Exception:
+        raise click.BadParameter("Authorization List format invalid")
+
+def _parse_authorization_list_item(value: str) -> ethereum.messages.EthereumAuthorizationOneKey:
+    try:
+        arr = value.split(":")
+        address_n, chain_id, address, nonce, y_parity, r, s = arr
+        assert chain_id, "Chain ID is required"
+        assert address, "Address is required"
+        assert nonce, "Nonce is required"
+        return ethereum.messages.EthereumAuthorizationOneKey(
+            address_n=address_n if address_n else None, 
+            chain_id=int(chain_id), 
+            address=address, 
+            nonce=ethereum.int_to_big_endian(int(nonce)), 
+            signature=ethereum.messages.EthereumAuthorizationSignature(
+                y_parity=int(y_parity), 
+                r=bytes.fromhex(r), 
+                s=bytes.fromhex(s)) if y_parity else None
+        )
+    except Exception:
+        raise click.BadParameter("Authorization List format invalid")
 
 def _list_units(ctx: click.Context, param: Any, value: bool) -> None:
     if not value or ctx.resilient_parsing:
@@ -150,6 +177,13 @@ def _format_access_list(
         (ethereum.decode_hex(item.address), item.storage_keys) for item in access_list
     ]
 
+def _format_authorization_list(
+    authorization_list: List[ethereum.messages.EthereumAuthorizationOneKey],
+) -> List[Tuple[int, bytes, bytes, int, bytes, bytes]]:
+    authorization_list_formatted = [
+        [item.chain_id, ethereum.decode_hex(item.address), int.from_bytes(item.nonce, "big"), item.signature.y_parity, item.signature.r, item.signature.s] for item in authorization_list
+    ]
+    return authorization_list_formatted
 
 #####################
 #
@@ -219,6 +253,13 @@ def get_public_node(client: "TrezorClient", address: str, show_display: bool) ->
     callback=_parse_access_list,
     multiple=True,
 )
+@click.option(
+    "-l",
+    "--authorization-list",
+    help="EIP7702 Authorization List",
+    callback=_parse_authorization_list,
+    multiple=True,
+)
 @click.option("--max-gas-fee", help="Max Gas Fee (EIP1559)", callback=_amount_to_int)
 @click.option(
     "--max-priority-fee",
@@ -253,6 +294,7 @@ def sign_tx(
     max_gas_fee: Optional[int],
     max_priority_fee: Optional[int],
     access_list: List[ethereum.messages.EthereumAccessList],
+    authorization_list: List[ethereum.messages.EthereumAuthorizationOneKey],
     eip2718_type: Optional[int],
 ) -> str:
     """Sign (and optionally publish) Ethereum transaction.
@@ -273,8 +315,9 @@ def sign_tx(
     """
 
     is_eip1559 = eip2718_type == 2
+    is_eip7702 = eip2718_type == 4
     if (
-        (not is_eip1559 and gas_price is None)
+        (not (is_eip1559 or is_eip7702) and gas_price is None)
         or any(x is None for x in (gas_limit, nonce))
         or publish
     ) and not _get_web3().isConnected():
@@ -334,6 +377,34 @@ def sign_tx(
             max_priority_fee=max_priority_fee,
             access_list=access_list,
         )
+    elif is_eip7702:
+        assert max_gas_fee is not None
+        assert max_priority_fee is not None
+        assert authorization_list is not None
+        assert to_address is not None
+        v, r, s, authorization_signatures = ethereum.sign_tx_eip7702(
+            client,
+            n=address_n,
+            nonce=nonce,
+            gas_limit=gas_limit,
+            to=to_address,
+            value=amount,
+            data=data_bytes,
+            chain_id=chain_id,
+            max_gas_fee=max_gas_fee,
+            max_priority_fee=max_priority_fee,
+            access_list=access_list,
+            authorization_list=authorization_list,
+        )
+        signed_authorization_list = [
+            ethereum.messages.EthereumAuthorizationOneKey(
+                chain_id=auth.chain_id,
+                address=auth.address,
+                nonce=auth.nonce,
+                signature=sig
+            )
+            for auth, sig in zip(authorization_list, authorization_signatures)
+        ]
     else:
         if gas_price is None:
             gas_price = _get_web3().eth.gasPrice
@@ -367,6 +438,20 @@ def sign_tx(
             data_bytes,
             _format_access_list(access_list) if access_list is not None else [],
             *sig,
+        ]
+    elif is_eip7702:
+        transaction_items = [
+            chain_id,
+            nonce,
+            max_priority_fee,
+            max_gas_fee,
+            gas_limit,
+            to,
+            amount,
+            data_bytes,
+            _format_access_list(access_list) if access_list is not None else [],
+            _format_authorization_list(signed_authorization_list),
+            v, r, s
         ]
     elif tx_type is None:
         transaction_items = [nonce, gas_price, gas_limit, to, amount, data_bytes, *sig]

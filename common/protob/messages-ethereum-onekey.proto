@@ -72,6 +72,10 @@ message EthereumSignTxOneKey {
     optional uint32 tx_type = 10;                        // Used for Wanchain
 }
 
+message EthereumAccessListOneKey {
+    required string address = 1;
+    repeated bytes storage_keys = 2;
+}
 /**
  * Request: Ask device to sign EIP1559 transaction
  * Note: the first at most 1024 bytes of data MUST be transmitted as part of this message.
@@ -92,9 +96,40 @@ message EthereumSignTxEIP1559OneKey {
     required uint64 chain_id = 10;                       // Chain Id for EIP 155
     repeated EthereumAccessListOneKey access_list = 11;        // Access List
 
-    message EthereumAccessListOneKey {
-        required string address = 1;
-        repeated bytes storage_keys = 2;
+}
+
+message EthereumAuthorizationSignature {
+    required uint32 y_parity = 1;
+    required bytes r = 2;
+    required bytes s = 3;
+}
+/**
+ * Request: Ask device to sign EIP7702 transaction
+ * Note: the first at most 1024 bytes of data MUST be transmitted as part of this message.
+ * @start
+ * @next EthereumTxRequestOneKey
+ * @next Failure
+ */
+ message EthereumSignTxEIP7702OneKey {
+    repeated uint32 address_n = 1;                       // BIP-32 path to derive the key from master node
+    required bytes nonce = 2;                            // <=256 bit unsigned big endian
+    required bytes max_gas_fee = 3;                      // <=256 bit unsigned big endian (in wei)
+    required bytes max_priority_fee = 4;                 // <=256 bit unsigned big endian (in wei)
+    required bytes gas_limit = 5;                        // <=256 bit unsigned big endian
+    required string to = 6;                     // destination address
+    required bytes value = 7;                            // <=256 bit unsigned big endian (in wei)
+    optional bytes data_initial_chunk = 8 [default=''];  // The initial data chunk (<= 1024 bytes)
+    required uint32 data_length = 9;                     // Length of transaction payload
+    required uint64 chain_id = 10;                       // Chain Id for EIP 155
+    repeated EthereumAccessListOneKey access_list = 11;        // Access List
+    repeated EthereumAuthorizationOneKey authorization_list = 12; // Authorization List
+    
+    message EthereumAuthorizationOneKey {
+        repeated uint32 address_n = 1;  // BIP-32 path to derive the key from master node, can be empty if the authority is the same as tx sender above, otherwise the authority signature must be provided
+        required uint64 chain_id = 2;   // Chain Id for EIP 155
+        required string address = 3;   // delegator address
+        required bytes nonce = 4;      // authority nonce, can be empty if the authority is the same as tx sender above
+        optional EthereumAuthorizationSignature signature = 5; // authority signature
     }
 }
 
@@ -110,6 +145,8 @@ message EthereumTxRequestOneKey {
     optional uint32 signature_v = 2;    // Computed signature (recovery parameter, limited to 27 or 28)
     optional bytes signature_r = 3;     // Computed signature R component (256 bit)
     optional bytes signature_s = 4;     // Computed signature S component (256 bit)
+    reserved 5, 6, 7, 8, 9;
+    repeated EthereumAuthorizationSignature authorization_signatures = 10; // Authorization signatures
 }
 
 /**

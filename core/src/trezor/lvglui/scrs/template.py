@@ -21,6 +21,14 @@ from . import (
 from .common import FullSizeWindow, lv
 from .components.banner import LEVEL, Banner
 from .components.button import ListItemBtn
+from .components.composite import (
+    AmountGroup,
+    CardGroup,
+    DirectionGroup,
+    FeeGroup,
+    MoreGroup,
+    RawDataItem,
+)
 from .components.container import ContainerFlexCol
 from .components.listitem import CardHeader, CardItem, DisplayItem
 from .components.qrcode import QRCode
@@ -595,62 +603,81 @@ class Message(FullSizeWindow):
 
 
 class TransactionOverview(FullSizeWindow):
-    def __init__(self, title, address, primary_color, icon_path, has_details=None):
-        if __debug__:
-            self.layout_address = address
-
+    def __init__(
+        self,
+        title,
+        primary_color,
+        icon_path,
+        sub_icon_path,
+        card_title: str,
+        card_icon: str,
+        items: tuple[tuple[str, str], ...],
+        banner_text: str | None = None,
+        banner_level: int = 2,
+        has_details=False,
+    ):
         super().__init__(
             title,
             None,
             _(i18n_keys.BUTTON__CONTINUE),
             _(i18n_keys.BUTTON__REJECT),
-            anim_dir=2,
+            anim_dir=0,
             primary_color=primary_color,
-            icon_path="A:/res/icon-send.png",
-            sub_icon_path=icon_path or "A:/res/evm-eth.png",
+            icon_path=icon_path,
+            sub_icon_path=sub_icon_path,
         )
-        self.group_directions = ContainerFlexCol(
-            self.content_area, self.title, pos=(0, 40), padding_row=0
+        if banner_text:
+            self.banner = Banner(
+                self.content_area,
+                banner_level,
+                banner_text,
+            )
+            self.banner.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, 24)
+        self.card_group = CardGroup(
+            self.content_area,
+            self.title if not banner_text else self.banner,
+            card_title,
+            card_icon,
+            items,
+            relative_pos=(0, 40 if not banner_text else 16),
+            no_align=False,
         )
-        self.item_group_header = CardHeader(
-            self.group_directions,
-            _(i18n_keys.FORM__DIRECTIONS),
-            "A:/res/group-icon-directions.png",
-        )
-        self.item_group_body_to = DisplayItem(
-            self.group_directions,
-            _(i18n_keys.LIST_KEY__TO__COLON),
-            address,
-        )
-        self.group_directions.add_dummy()
 
         if has_details:
-            self.view_btn = NormalButton(
-                self.content_area,
-                f"{LV_SYMBOLS.LV_SYMBOL_ANGLE_DOUBLE_DOWN}  {_(i18n_keys.BUTTON__DETAILS)}",
-            )
-            self.view_btn.set_size(456, 82)
-            self.view_btn.add_style(StyleWrapper().text_font(font_GeistSemiBold26), 0)
-            self.view_btn.enable()
-            self.view_btn.align_to(self.group_directions, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
-            self.view_btn.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
+            from .components.composite import ShowMore
+
+            self.show_more = ShowMore(self.content_area, self.card_group.pannel)
+
+            self.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
 
     def on_click(self, event_obj):
         code = event_obj.code
         target = event_obj.get_target()
         if code == lv.EVENT.CLICKED:
-            if target == self.view_btn:
+            if target == self.show_more.view_btn:
                 self.destroy(400)
                 self.channel.publish(2)
 
-    if __debug__:
 
-        def read_content(self) -> list[str]:
-            return (
-                [self.layout_title or ""]
-                + [self.layout_subtitle or ""]
-                + [self.layout_address or ""]
-            )
+class TransactionOverviewSend(TransactionOverview):
+    def __init__(
+        self,
+        title,
+        primary_color,
+        icon_path,
+        address,
+        has_details=False,
+    ):
+        super().__init__(
+            title,
+            primary_color,
+            "A:/res/icon-send.png",
+            icon_path or "A:/res/evm-eth.png",
+            _(i18n_keys.FORM__DIRECTIONS),
+            "A:/res/group-icon-directions.png",
+            items=((_(i18n_keys.LIST_KEY__TO__COLON), address),),
+            has_details=has_details,
+        )
 
 
 class TransactionOverviewNew(FullSizeWindow):
@@ -912,6 +939,144 @@ class TransactionDetailsETH(FullSizeWindow):
                     confirm_text=None,
                     cancel_text=None,
                 )
+
+
+class TransactionDetailsBase(FullSizeWindow):
+    ALLOWED_SECTIONS = ["amount", "direction", "fee", "more", "data"]
+
+    def __init__(
+        self,
+        title,
+        primary_color=lv_colors.ONEKEY_GREEN,
+        icon_path: str | None = None,
+        sub_icon_path: str | None = None,
+        banner_text: str | None = None,
+        banner_level: int = 2,
+        section_order: list[str] = None,
+        **kwargs,
+    ):
+        super().__init__(
+            title,
+            None,
+            _(i18n_keys.BUTTON__CONTINUE),
+            _(i18n_keys.BUTTON__REJECT),
+            primary_color=primary_color,
+            icon_path=icon_path,
+            sub_icon_path=sub_icon_path,
+        )
+        self.primary_color = primary_color
+
+        if any(
+            section_name.split("_")[0] not in TransactionDetailsBase.ALLOWED_SECTIONS
+            for section_name in kwargs.keys()
+        ):
+            raise ValueError("Invalid section name")
+        if banner_text:
+            self.banner = Banner(
+                self.content_area,
+                banner_level,
+                banner_text,
+            )
+            self.banner.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, 24)
+        self.container = ContainerFlexCol(
+            self.content_area,
+            self.title if not banner_text else self.banner,
+            pos=(0, 40 if not banner_text else 16),
+        )
+        self.section_order = section_order or TransactionDetailsBase.ALLOWED_SECTIONS
+        for section_prefix in self.section_order:
+            section_name = f"{section_prefix}_section"
+            section_params = kwargs.get(section_name, None)
+            if section_params is None:
+                continue
+            if section_prefix == "amount":
+                assert isinstance(
+                    section_params, tuple
+                ), "amount section params must be a tuple"
+                self.group_amounts = AmountGroup(
+                    self.container,
+                    section_params,
+                )
+            elif section_prefix == "direction":
+                assert isinstance(
+                    section_params, tuple
+                ), "direction section params must be a tuple"
+                self.group_directions = DirectionGroup(
+                    self.container,
+                    section_params,
+                )
+            elif section_prefix == "fee":
+                assert isinstance(
+                    section_params, tuple
+                ), "fee section params must be a tuple"
+                self.group_fees = FeeGroup(
+                    self.container,
+                    section_params,
+                )
+            elif section_prefix == "more":
+                assert isinstance(
+                    section_params, tuple
+                ), "more section params must be a tuple"
+                self.group_more = MoreGroup(
+                    self.container,
+                    section_params,
+                )
+            elif section_prefix == "data":
+                assert isinstance(
+                    section_params, dict
+                ), "data section params must be a dict"
+                self.group_data = RawDataItem(
+                    self.container,
+                    section_params.get("raw_data", None),
+                    max_length=section_params.get("max_length", 225),
+                    primary_color=self.primary_color,
+                )
+
+
+class TransactionDetailsEIP7702(TransactionDetailsBase):
+    def __init__(
+        self,
+        title: str,
+        authorty_adrr: str,
+        delegate_addr: str | None,
+        value: str,
+        nonce: str,
+        network: str,
+        max_priority_fee_per_gas=None,
+        max_fee_per_gas=None,
+        fee_max: str = None,
+        primary_color=lv_colors.ONEKEY_GREEN,
+        icon_path: str | None = None,
+    ):
+
+        super().__init__(
+            title,
+            primary_color,
+            icon_path,
+            direction_section=(
+                (_(i18n_keys.FIELDS_ACCOUNT), authorty_adrr),
+                (_(i18n_keys.FIELDS_DELEGATE_TO), delegate_addr),
+            ),
+            more_section=(
+                (_(i18n_keys.LIST_KEY__AMOUNT__COLON), value),
+                ("Nonce", nonce),
+                (
+                    _(i18n_keys.FIELDS_DELEGATE_ON_NETWORK)
+                    if delegate_addr
+                    else _(i18n_keys.FIELDS_REVOKE_ON_NETWORK),
+                    network,
+                ),
+            ),
+            fee_section=(
+                (_(i18n_keys.LIST_KEY__MAXIMUM_FEE__COLON), fee_max),
+                (
+                    _(i18n_keys.LIST_KEY__PRIORITY_FEE_PER_GAS__COLON),
+                    max_priority_fee_per_gas,
+                ),
+                (_(i18n_keys.LIST_KEY__MAXIMUM_FEE_PER_GAS__COLON), max_fee_per_gas),
+            ),
+            section_order=["direction", "more", "fee"],
+        )
 
 
 class SafeTxSafeApproveHash(FullSizeWindow):

@@ -103,14 +103,89 @@ def require_show_overview(
         else None,
     )
 
-    # return should_show_details(
-    #     ctx,
-    #     title=_(i18n_keys.TITLE__SEND_MULTILINE).format(
-    #         strip_amount(format_ethereum_amount(value, token, chain_id, is_nft))[0]
-    #     ),
-    #     address=to_str,
-    #     br_code=ButtonRequestType.SignTx,
-    # )
+
+def is_revoke_delegate(delegate_addr: str) -> bool:
+    return delegate_addr.lower() == "0x0000000000000000000000000000000000000000"
+
+
+def require_show_overview_eip7702(
+    ctx: Context,
+    authority_addr: str,
+    delegate_addr: str,
+    network: str,
+    delegator_name: str,
+    delegator_icon_path: str,
+) -> Awaitable[bool]:
+
+    from trezor.ui.layouts.lvgl import should_show_details_eip7702
+
+    is_revoke = is_revoke_delegate(delegate_addr)
+    if is_revoke:
+        title = _(i18n_keys.TITLE_REVOKE_SMART_ACCOUNT_DELEGATION)
+    else:
+        title = _(i18n_keys.TITLE_UPGRADE_SMART_ACCOUNT)
+    return should_show_details_eip7702(
+        ctx,
+        title,
+        authority_addr,
+        delegate_addr if not is_revoke else None,
+        network,
+        delegator_name,
+        delegator_icon_path,
+        br_code=ButtonRequestType.ProtectCall,
+    )
+
+
+async def show_invalid_delegate(ctx: Context) -> None:
+    from trezor.ui.layouts.lvgl import show_warning
+    from trezor.lvglui.lv_colors import lv_colors
+
+    await show_warning(
+        ctx,
+        "warning_delegate_not_in_white_list",
+        _(i18n_keys.BANNER_NOT_IN_SMART_ACCOUNT_WHITELIST),
+        button=_(i18n_keys.BUTTON_UNDERSTAND),
+        header=_(i18n_keys.TITLE_SMART_ACCOUNT_DELEGATION_BLOCKED),
+        btn_yes_bg_color=lv_colors.ONEKEY_YELLOW,
+        btn_yes_text_color=lv_colors.ONEKEY_BLACK,
+    )
+
+
+def require_confirm_eip7702(
+    ctx: Context,
+    authorty_adrr: str,
+    delegate_addr: str,
+    authority_network: str,
+    amount: int,
+    nonce: int,
+    max_priority_fee: int,
+    max_gas_fee: int,
+    gas_limit: int,
+    chain_id: int,
+    delegator_icon_path: str,
+) -> Awaitable[None]:
+    from trezor.ui.layouts.lvgl.altcoin import confirm_total_eip7702
+
+    fee_max = max_gas_fee * gas_limit
+    is_revoke = is_revoke_delegate(delegate_addr)
+    if is_revoke:
+        title = _(i18n_keys.TITLE_REVOKE_SMART_ACCOUNT_DELEGATION)
+    else:
+        title = _(i18n_keys.TITLE_UPGRADE_SMART_ACCOUNT)
+
+    return confirm_total_eip7702(
+        ctx,
+        title,
+        authorty_adrr,
+        delegate_addr if not is_revoke else None,
+        format_ethereum_amount(amount, None, chain_id),
+        str(nonce),
+        authority_network,
+        format_ethereum_amount(max_priority_fee, None, chain_id),
+        format_ethereum_amount(max_gas_fee, None, chain_id),
+        format_ethereum_amount(fee_max, None, chain_id),
+        delegator_icon_path,
+    )
 
 
 def require_confirm_fee(

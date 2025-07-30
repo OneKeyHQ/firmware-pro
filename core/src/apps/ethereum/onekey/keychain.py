@@ -18,6 +18,7 @@ if TYPE_CHECKING:
         EthereumSignTxEIP1559OneKey as EthereumSignTxEIP1559,
         EthereumSignTypedDataOneKey as EthereumSignTypedData,
         EthereumSignTypedHashOneKey as EthereumSignTypedHash,
+        EthereumSignTxEIP7702OneKey as EthereumSignTxEIP7702,
     )
 
     from apps.common.keychain import MsgOut, Handler, HandlerWithKeychain
@@ -29,10 +30,11 @@ if TYPE_CHECKING:
         | EthereumSignMessage
         | EthereumSignTypedData
         | EthereumSignTypedHash
+        | EthereumSignTxEIP7702
     )
     MsgIn = TypeVar("MsgIn", bound=EthereumMessages)
 
-    EthereumSignTxAny = EthereumSignTx | EthereumSignTxEIP1559
+    EthereumSignTxAny = EthereumSignTx | EthereumSignTxEIP1559 | EthereumSignTxEIP7702
     MsgInChainId = TypeVar("MsgInChainId", bound=EthereumSignTxAny)
 
 

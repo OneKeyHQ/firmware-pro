@@ -191,6 +191,39 @@ async def confirm_total_ethereum_eip1559(
     )
 
 
+async def confirm_total_eip7702(
+    ctx: wire.GenericContext,
+    title: str,
+    authorty_adrr: str,
+    delegate_addr: str | None,
+    amount: str,
+    nonce: str,
+    authority_network: str,
+    max_priority_fee: str,
+    max_gas_fee: str,
+    fee_max: str,
+    delegator_icon_path: str,
+) -> None:
+    from trezor.lvglui.scrs.template import TransactionDetailsEIP7702
+
+    screen = TransactionDetailsEIP7702(
+        title,
+        authorty_adrr,
+        delegate_addr,
+        amount,
+        nonce,
+        authority_network,
+        max_priority_fee,
+        max_gas_fee,
+        fee_max,
+        primary_color=ctx.primary_color,
+        icon_path=delegator_icon_path,
+    )
+    await raise_if_cancelled(
+        interact(ctx, screen, "confirm_eip7702", ButtonRequestType.SignTx)
+    )
+
+
 async def confirm_total_ripple(
     ctx: wire.GenericContext,
     address: str,
