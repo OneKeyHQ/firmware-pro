@@ -1019,5 +1019,16 @@ translations = [
     "Wiederherstellungsphrase-Erstellung abbrechen?",
     "Dies ist Anteil {num1} von {num2}.",
     "Der Schwellenwert dieser Gruppe wurde erreicht. Bitte einen Anteil aus einer anderen Gruppe eingeben.",
+    "Dieser PIN wurde bereits verwendet. Wenn Sie ihn überschreiben, wird die zuvor festgelegte Passphrase entfernt. Möchten Sie ihn überschreiben?",
+    "7702-Upgrade",
+    "Sie aktualisieren dieses Konto zu einem {platform} Smart Account. Unterschreiben Sie nur, wenn Sie die Risiken verstehen.",
+    "Delegieren an",
+    "Im Netzwerk delegieren",
+    "7702-Delegation widerrufen",
+    "Sie widerrufen die EIP-7702-Delegation. Die Funktionen des Smart Accounts werden deaktiviert.",
+    "Delegierung blockiert",
+    "Diese Autorisierung überträgt die Befugnis an einen Smart Contract, der nicht auf der Whitelist steht.",
+    "Im Netzwerk widerrufen",
+    "Verstanden",
 ]
 # fmt: on

@@ -1019,5 +1019,16 @@ translations = [
     "¿Abortar la creación de la frase de recuperación?",
     "Esta es la parte {num1} de {num2}.",
     "Se ha alcanzado el umbral de este grupo. Introduzca una participación de un grupo diferente.",
+    "Este PIN ya ha sido utilizado. Si lo sobrescribes, se eliminará la frase de contraseña establecida anteriormente. ¿Deseas sobrescribirlo?",
+    "Actualización 7702",
+    "Estás actualizando esta cuenta a una cuenta inteligente de {platform}. Firma solo si comprendes los riesgos.",
+    "Delegar a",
+    "Delegar en la red",
+    "Revocar delegación 7702",
+    "Está revocando la delegación EIP-7702. Las funciones de la cuenta inteligente se desactivarán.",
+    "Delegación bloqueada",
+    "Esta autorización delega autoridad a un contrato inteligente que no está incluido en la lista blanca.",
+    "Revocar en la red",
+    "Entender",
 ]
 # fmt: on

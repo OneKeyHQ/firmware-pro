@@ -552,7 +552,7 @@ class NumberKeyboard(lv.keyboard):
         if enable:
             self.dummy_ctl_map = []
             self.dummy_ctl_map.extend(self.ctrl_map)
-            if self.input_len > 3:
+            if self.input_len >= self.min_len:
                 self.dummy_ctl_map[-1] &= (
                     self.dummy_ctl_map[-1] ^ lv.btnmatrix.CTRL.DISABLED
                 )

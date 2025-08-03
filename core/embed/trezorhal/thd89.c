@@ -538,8 +538,8 @@ int i2c_master_recive(I2C_HandleTypeDef *hi2c, uint16_t DevAddress,
   }
 }
 
-secbool thd89_transmit_ex(uint8_t addr, uint8_t *cmd, uint16_t len,
-                          uint8_t *resp, uint16_t *resp_len) {
+static secbool _thd89_transmit_ex(uint8_t addr, uint8_t *cmd, uint16_t len,
+                                  uint8_t *resp, uint16_t *resp_len) {
   int ret = 0;
   char err_info[64] = {0};
   uint32_t irq = disable_irq();
@@ -553,7 +553,6 @@ secbool thd89_transmit_ex(uint8_t addr, uint8_t *cmd, uint16_t len,
     return secfalse;
   }
 
-  delay_ms(1);
   irq = disable_irq();
   ret =
       i2c_master_recive(&i2c_handle_se, addr, resp, resp_len, I2C_RECV_TIMEOUT);
@@ -575,6 +574,20 @@ secbool thd89_transmit_ex(uint8_t addr, uint8_t *cmd, uint16_t len,
   }
 
   return sectrue;
+}
+
+int thd89_irq_nest = 0;
+
+secbool thd89_transmit_ex(uint8_t addr, uint8_t *cmd, uint16_t len,
+                          uint8_t *resp, uint16_t *resp_len) {
+  uint32_t irq = disable_irq();
+  thd89_irq_nest++;
+  secbool result = _thd89_transmit_ex(addr, cmd, len, resp, resp_len);
+  thd89_irq_nest--;
+  if (thd89_irq_nest == 0) {
+    enable_irq(irq);
+  }
+  return result;
 }
 
 secbool thd89_transmit(uint8_t *cmd, uint16_t len, uint8_t *resp,

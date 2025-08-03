@@ -54,6 +54,13 @@ def get_session_state() -> bytes:
 
 
 # extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
+def get_session_current_id() -> bytes:
+    """
+    get current session id.
+    """
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
 def session_is_open() -> bool:
     """
     get current session secret state.
@@ -330,5 +337,13 @@ tuple[bool,bool]:
 def check_passphrase_btc_test_address(address: str) -> bool:
     """
     Check if the passphrase is a valid Bitcoin test address.
+    """
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
+def change_pin_passphrase(old_pin: str, new_pin: str) -> bool:
+    """
+    Change the PIN of an existing passphrase entry.
+    Returns True on success, False on failure.
     """
 FIDO2_CRED_COUNT_MAX: int

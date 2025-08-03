@@ -1127,6 +1127,7 @@ LIST_KEY__CHAIN_ID__COLON = 508
 LIST_KEY__CHAIN_NAME__COLON = 509
 # Account
 LIST_KEY__ACCOUNT__COLON = 510
+FIELDS_ACCOUNT = 510
 # Sequence
 LIST_KEY__SEQUENCE__COLON = 511
 # Delegator
@@ -2015,7 +2016,7 @@ PASSPHRASE__UNDERSTAND = 917
 # Passphrase set and attached to PIN
 PASSPHRASE__SET = 918
 # This PIN unlocks only the hidden wallet. For any security-related operation,
-# you’ll need the PIN of the standard wallet.
+# you'll need the PIN of the standard wallet.
 PASSPHRASE__SET_DESC = 919
 # Fingerprint data is protected by security chips.
 CONTENT__FINGERPRINT_DATA_IS_PROTECTED_BY_SECURITY_CHIPS = 920
@@ -2238,4 +2239,30 @@ TITLE__ABORT_RECOVERY_PHRASE_CREATION = 1016
 SUBTITLE__THIS_IS_SHARE_STR_OF_STR = 1017
 # Threshold of this group has been reached. Input share from different group.
 SUBTITLE__ENTER_A_DIFFERENT_SHARE = 1018
+# This PIN has already been used. Overwriting it will remove the previously se
+# t Passphrase. Do you want to overwrite it?
+TITLE__PIN_ALREADY_USED_DESC = 1019
+# 7702 Upgrade
+TITLE_UPGRADE_SMART_ACCOUNT = 1020
+# You are upgrading this account to {platform} smart account. Sign only if you
+# understand the risks.
+BANNER_UPGRADING_SMART_ACCOUNT_WARNING = 1021
+# Delegate to
+FIELDS_DELEGATE_TO = 1022
+# Delegate on Network
+FIELDS_DELEGATE_ON_NETWORK = 1023
+# Revoke 7702 Delegation
+TITLE_REVOKE_SMART_ACCOUNT_DELEGATION = 1024
+# You are revoking the EIP-7702 delegation. Smart account features will be dis
+# abled.
+BANNER_REVOKE_SMART_ACCOUNT_WARNING = 1025
+# Delegation Blocked
+TITLE_SMART_ACCOUNT_DELEGATION_BLOCKED = 1026
+# This authorization delegates authority to a smart contract not included on t
+# he whitelist.
+BANNER_NOT_IN_SMART_ACCOUNT_WHITELIST = 1027
+# Revoke on Network
+FIELDS_REVOKE_ON_NETWORK = 1028
+# Understand
+BUTTON_UNDERSTAND = 1029
 # fmt: on

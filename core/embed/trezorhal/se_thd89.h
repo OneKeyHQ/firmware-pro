@@ -40,6 +40,7 @@ typedef enum {
   PIN_TYPE_USER_AND_PASSPHRASE_PIN,
   PIN_TYPE_PASSPHRASE_PIN,
   PIN_TYPE_PASSPHRASE_PIN_CHECK,
+  PIN_TYPE_USER_AND_PASSPHRASE_PIN_CHECK,
   PIN_TYPE_MAX
 } pin_type_t;
 
@@ -120,6 +121,7 @@ secbool se_delete_pin_passphrase(const char *passphrase_pin, bool *current);
 pin_result_t se_get_pin_passphrase_ret(void);
 secbool se_get_pin_passphrase_space(uint8_t *space);
 secbool se_check_passphrase_btc_test_address(const char *address);
+secbool se_change_pin_passphrase(const char *old_pin, const char *new_pin);
 secbool se_clearSecsta(void);
 secbool se_getSecsta(void);
 secbool se_set_u2f_counter(uint32_t u2fcounter);
@@ -137,6 +139,7 @@ secbool se_session_is_open(void);
 secbool se_sessionClose(void);
 secbool se_sessionClear(void);
 secbool se_session_get_type(uint8_t *type);
+secbool se_session_get_current_id(uint8_t id[32]);
 
 secbool se_set_public_region(uint16_t offset, const void *val_dest,
                              uint16_t len);

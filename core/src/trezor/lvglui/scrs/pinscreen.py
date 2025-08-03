@@ -553,6 +553,20 @@ async def passphrase_pin_mismatch(ctx) -> None:
     )
 
 
+async def request_change_passphrase_pin(ctx) -> str:
+    while True:
+        pin1 = await request_passphrase_pin(ctx, _(i18n_keys.TITLE__ENTER_NEW_PIN))
+        if pin1 == 0:
+            return pin1
+
+        pin2 = await request_passphrase_pin(ctx, _(i18n_keys.TITLE__ENTER_PIN_AGAIN))
+        if pin2 == 0:
+            return pin2
+        if pin1 == pin2:
+            return pin1
+        await passphrase_pin_mismatch(ctx)
+
+
 class InputMainPin(FullSizeWindow):
     def __init__(self):
         super().__init__(

@@ -1019,5 +1019,16 @@ translations = [
     "Annullare la creazione della frase di recupero?",
     "Questa è la quota {num1} di {num2}.",
     "La soglia di questo gruppo è stata raggiunta. Inserisci una quota da un gruppo diverso.",
+    "Questo PIN è già stato utilizzato. Sovrascrivendolo verrà rimossa la Passphrase precedentemente impostata. Vuoi sovrascriverlo?",
+    "Aggiornamento 7702",
+    "Stai aggiornando questo account a un account smart {platform}. Firma solo se comprendi i rischi.",
+    "Delegare a",
+    "Delega sulla rete",
+    "Revoca delega 7702",
+    "Stai revocando la delega EIP-7702. Le funzionalità dell'account smart verranno disabilitate.",
+    "Delegazione bloccata",
+    "Questa autorizzazione delega l'autorità a uno smart contract non incluso nella whitelist.",
+    "Revoca sulla rete",
+    "Capisco",
 ]
 # fmt: on

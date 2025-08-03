@@ -6,7 +6,8 @@ import storage.sd_salt
 from trezor import config, loop, wire
 from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
 from trezor.lvglui.lv_colors import lv_colors
-from trezor.lvglui.scrs import fingerprints
+from trezor.lvglui.scrs import fingerprints, font_GeistRegular30, font_GeistSemiBold64
+from trezor.lvglui.scrs.common import FullSizeWindow, lv
 
 from apps.common.pin_constants import PinResult, PinType
 
@@ -285,6 +286,85 @@ async def error_pin_used(ctx: wire.Context) -> NoReturn:
         exc=wire.PinInvalid,
     )
     assert False
+
+
+async def passphrase_pin_used(ctx: wire.Context):
+    screen = FullSizeWindow(
+        None,
+        None,
+        confirm_text=_(i18n_keys.BUTTON__OVERWRITE),
+        anim_dir=0,
+    )
+
+    close_btn = lv.btn(screen)
+    close_btn.set_size(48, 48)
+    close_btn.align(lv.ALIGN.TOP_RIGHT, -12, 56)
+    close_btn.set_style_bg_color(lv_colors.BLACK, 0)
+    close_btn.set_style_bg_opa(0, 0)
+    close_btn.set_style_border_width(0, 0)
+    close_btn.set_style_shadow_width(0, 0)
+    close_btn.add_flag(lv.obj.FLAG.CLICKABLE)
+    close_btn.set_ext_click_area(100)
+
+    close_img = lv.img(close_btn)
+    close_img.set_src("A:/res/nav-icon.png")
+    close_img.center()
+
+    title_label = lv.label(screen.content_area)
+    title_label.set_text(_(i18n_keys.PASSPHRASE__PIN_USED))
+    title_label.set_style_text_font(font_GeistSemiBold64, 0)
+    title_label.set_style_text_color(lv_colors.WHITE, 0)
+    title_label.set_style_text_letter_space(-6, 0)
+    title_label.set_style_text_line_space(-6, 0)
+    title_label.set_long_mode(lv.label.LONG.WRAP)
+    title_label.set_size(456, lv.SIZE.CONTENT)
+    title_label.align(lv.ALIGN.TOP_MID, 0, 72)
+
+    if hasattr(screen, "subtitle"):
+        screen.subtitle.delete()
+
+    subtitle_label = lv.label(screen.content_area)
+    subtitle_label.set_text(_(i18n_keys.TITLE__PIN_ALREADY_USED_DESC))
+    subtitle_label.set_style_text_font(font_GeistRegular30, 0)
+    subtitle_label.set_style_text_color(lv_colors.LIGHT_GRAY, 0)
+    subtitle_label.set_style_text_letter_space(-2, 0)
+    subtitle_label.set_style_text_line_space(5, 0)
+    subtitle_label.set_long_mode(lv.label.LONG.WRAP)
+    subtitle_label.set_size(456, lv.SIZE.CONTENT)
+    subtitle_label.align_to(title_label, lv.ALIGN.OUT_BOTTOM_MID, 0, 16)
+
+    # Set confirm button text color to gray
+    if hasattr(screen, "btn_yes"):
+        screen.btn_yes.enable(lv_colors.ONEKEY_GRAY_3, text_color=lv_colors.WHITE)
+
+    processing = False
+
+    def on_close_clicked(e):
+        nonlocal processing
+        if e.code == lv.EVENT.CLICKED and not processing:
+            processing = True
+            screen.show_dismiss_anim()
+            screen.channel.publish(0)
+
+    close_btn.add_event_cb(on_close_clicked, lv.EVENT.CLICKED, None)
+
+    screen.btn_layout_ver()
+    result = await ctx.wait(screen.request())
+    return result
+
+
+# async def passphrase_pin_used(ctx: wire.Context) -> NoReturn:
+#     from trezor.ui.layouts import show_error_and_raise
+
+#     await show_error_and_raise(
+#         ctx,
+#         "warning_wrong_pin",
+#         header=_(i18n_keys.PASSPHRASE__PIN_USED),
+#         content=_(i18n_keys.PASSPHRASE__PIN_USED_DESC),  #i18n待更改
+#         red=True,
+#         exc=wire.PinInvalid,
+#     )
+#     assert False
 
 
 async def error_pin_matches_wipe_code(ctx: wire.Context) -> NoReturn:

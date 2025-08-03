@@ -11,6 +11,8 @@
 #define THD89_MASTER_ADDRESS THD89_1ST_ADDRESS
 #define THD89_FINGER_ADDRESS THD89_4TH_ADDRESS
 
+extern int thd89_irq_nest;
+
 void thd89_io_init(void);
 void thd89_init(void);
 void thd89_power_up(bool up);

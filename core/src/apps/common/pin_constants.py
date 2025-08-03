@@ -20,7 +20,8 @@ class PinType:
     USER_AND_PASSPHRASE_PIN = 2
     PASSPHRASE_PIN = 3
     PASSPHRASE_PIN_CHECK = 4
-    MAX = 5
+    USER_AND_PASSPHRASE_PIN_CHECK = 5
+    MAX = 6
 
 
 class AttachCommon:

@@ -1019,5 +1019,16 @@ translations = [
     "Abandonner la création de la phrase de récupération ?",
     "Ceci est la part {num1} sur {num2}.",
     "Le seuil de ce groupe a été atteint. Veuillez saisir une part d'un groupe différent.",
+    "Ce code PIN est déjà utilisé. Le remplacer supprimera la phrase secrète précédemment définie. Voulez-vous le remplacer ?",
+    "Mise à niveau 7702",
+    "Vous mettez à niveau ce compte vers un compte intelligent {platform}. Ne signez que si vous comprenez les risques.",
+    "Déléguer à",
+    "Déléguer sur le réseau",
+    "Révoquer la délégation 7702",
+    "Vous révoquez la délégation EIP-7702. Les fonctionnalités de compte intelligent seront désactivées.",
+    "Délégation bloquée",
+    "Cette autorisation délègue l'autorité à un contrat intelligent non inclus dans la liste blanche.",
+    "Révoquer sur le réseau",
+    "Comprendre",
 ]
 # fmt: on

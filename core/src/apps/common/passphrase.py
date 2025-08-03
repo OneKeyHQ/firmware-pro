@@ -81,7 +81,10 @@ async def _request_on_host(ctx: wire.Context) -> str:
         from apps.common.pin_constants import PinType
 
         await unlock_device(
-            ctx, pin_use_type=PinType.PASSPHRASE_PIN, attach_wall_only=True
+            ctx,
+            pin_use_type=PinType.PASSPHRASE_PIN,
+            attach_wall_only=True,
+            allow_fingerprint=False,
         )
         storage.cache.start_session()
         return ""

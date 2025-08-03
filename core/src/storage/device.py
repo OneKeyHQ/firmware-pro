@@ -29,7 +29,6 @@ _BRIGHTNESS_VALUE: int | None = None
 _LANGUAGE_VALUE: str | None = None
 _LABEL_VALUE: str | None = None
 _USE_PASSPHRASE_VALUE: bool | None = None
-_USE_PASSPHRASE_PIN_VALUE: bool | None = None
 _AUTO_PASSPHRASE_VALUE: bool | None = None
 _PASSPHRASE_ALWAYS_ON_DEVICE_VALUE: bool | None = None
 _AUTOLOCK_DELAY_MS_VALUE: int | None = None
@@ -1426,10 +1425,12 @@ def is_passphrase_pin_enabled() -> bool:
     Returns True if the device is currently in passphrase pin mode.
     In this mode, a separate PIN is used to access the passphrase.
     """
-    global _USE_PASSPHRASE_PIN_VALUE
-    if _USE_PASSPHRASE_PIN_VALUE is None:
-        _USE_PASSPHRASE_PIN_VALUE = common.get_bool(_NAMESPACE, _USE_PASSPHRASE_PIN)
-    return _USE_PASSPHRASE_PIN_VALUE
+    import storage.cache
+
+    cached = storage.cache.get(storage.cache.APP_COMMON_PASSPHRASE_PIN_ENABLED)
+    if cached is None:
+        return False
+    return cached == b"\x01"
 
 
 def set_passphrase_pin_enabled(enable: bool) -> None:
@@ -1439,15 +1440,15 @@ def set_passphrase_pin_enabled(enable: bool) -> None:
 
     Note: This requires passphrase to be enabled first.
     """
-    global _USE_PASSPHRASE_PIN_VALUE
+    import storage.cache
 
     if enable and not is_passphrase_enabled():
         raise ValueError(
             "Cannot enable passphrase PIN without enabling passphrase first"
         )
 
-    common.set_bool(_NAMESPACE, _USE_PASSPHRASE_PIN, enable)
-    _USE_PASSPHRASE_PIN_VALUE = enable
+    cached_bytes = b"\x01" if enable else b"\x00"
+    storage.cache.set(storage.cache.APP_COMMON_PASSPHRASE_PIN_ENABLED, cached_bytes)
 
 
 def is_passphrase_auto_status() -> bool:
@@ -1482,7 +1483,6 @@ def clear_global_cache() -> None:
     global _LABEL_VALUE
     global _USE_PASSPHRASE_VALUE
     global _AUTO_PASSPHRASE_VALUE
-    global _USE_PASSPHRASE_PIN_VALUE
     global _PASSPHRASE_ALWAYS_ON_DEVICE_VALUE
     global _AUTOLOCK_DELAY_MS_VALUE
     global _HOMESCREEN_VALUE
@@ -1522,7 +1522,6 @@ def clear_global_cache() -> None:
     _LABEL_VALUE = None
     _USE_PASSPHRASE_VALUE = None
     _AUTO_PASSPHRASE_VALUE = None
-    _USE_PASSPHRASE_PIN_VALUE = None
     _PASSPHRASE_ALWAYS_ON_DEVICE_VALUE = None
     _AUTOLOCK_DELAY_MS_VALUE = None
     _HOMESCREEN_VALUE = None
