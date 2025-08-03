@@ -110,7 +110,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(
 ///     """
 STATIC mp_obj_t mod_trezorcrypto_se_thd89_start_session(mp_obj_t session_id) {
   printf("start_session: Function entry\n");
-  
+
   mp_buffer_info_t sid = {0};
   sid.buf = NULL;
   if (session_id != mp_const_none) {
@@ -132,7 +132,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorcrypto_se_thd89_start_session_obj,
 ///     """
 STATIC mp_obj_t mod_trezorcrypto_se_thd89_end_session(void) {
   printf("end_session: Function entry\n");
-  
+
   se_sessionClose();
   return mp_const_none;
 }
@@ -145,7 +145,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorcrypto_se_thd89_end_session_obj,
 ///     """
 STATIC mp_obj_t mod_trezorcrypto_se_thd89_get_session_state(void) {
   printf("get_session_state: Function entry\n");
-  
+
   uint8_t status[2] = {0};
   if (!se_get_session_seed_state(status)) {
     mp_raise_msg(&mp_type_RuntimeError, "Failed to get se state.");
@@ -1132,8 +1132,8 @@ STATIC mp_obj_t mod_trezorcrypto_se_thd89_change_pin_passphrase(
     }
   }
 
-  secbool ret = se_change_pin_passphrase(
-      (const char *)old_pin_buf.buf, (const char *)new_pin_buf.buf);
+  secbool ret = se_change_pin_passphrase((const char *)old_pin_buf.buf,
+                                         (const char *)new_pin_buf.buf);
 
   return ret ? mp_const_true : mp_const_false;
 }

@@ -3,9 +3,9 @@
 
 #include "common.h"
 #include "flash.h"
+#include "irq.h"
 #include "memzero.h"
 #include "secbool.h"
-#include "irq.h"
 
 #include "aes/aes.h"
 #include "bip32.h"
@@ -1212,7 +1212,6 @@ static secbool se_verifyPin_ex(uint8_t addr, uint8_t *session_key,
   pin_result_type = resp[0];
   memset(pin_buf, 0, sizeof(pin_buf));
   printf("PIN verification result - pin_result_type: %d\n", pin_result_type);
-
 
   if (pin_type == PIN_TYPE_PASSPHRASE_PIN &&
       pin_result_type != PASSPHRASE_PIN_ENTERED) {

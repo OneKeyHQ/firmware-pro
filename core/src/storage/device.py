@@ -1425,8 +1425,6 @@ def is_passphrase_pin_enabled() -> bool:
     Returns True if the device is currently in passphrase pin mode.
     In this mode, a separate PIN is used to access the passphrase.
     """
-    import storage.cache
-
     cached = storage.cache.get(storage.cache.APP_COMMON_PASSPHRASE_PIN_ENABLED)
     if cached is None:
         return False
@@ -1440,7 +1438,6 @@ def set_passphrase_pin_enabled(enable: bool) -> None:
 
     Note: This requires passphrase to be enabled first.
     """
-    import storage.cache
 
     if enable and not is_passphrase_enabled():
         raise ValueError(

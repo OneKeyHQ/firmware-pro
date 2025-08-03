@@ -18,6 +18,9 @@ from apps.common.request_pin import (
     request_pin_confirm,
 )
 
+PIN_CANCEL = 0
+PIN_OVERWRITE = 1
+
 if TYPE_CHECKING:
     from typing import Awaitable
 
@@ -62,9 +65,9 @@ async def change_pin(ctx: wire.Context, msg: ChangePin) -> Success:
                 )
                 if usertype == PinResult.PASSPHRASE_PIN_ENTERED:
                     result = await passphrase_pin_used(ctx)
-                    if result == 0:
-                        return
-                    elif result == 1:
+                    if result == PIN_CANCEL:
+                        return Success(message="Operation cancelled")
+                    elif result == PIN_OVERWRITE:
                         passphrase_pin_str = (
                             str(newpin) if not isinstance(newpin, str) else newpin
                         )
@@ -124,17 +127,18 @@ async def change_pin(ctx: wire.Context, msg: ChangePin) -> Success:
                     return await error_pin_used(ctx)
                 if usertype == PinResult.PASSPHRASE_PIN_ENTERED:
                     if newpin == curpin:
-                        return await show_success(
+                        await show_success(
                             ctx,
                             "success_pin",
                             _(i18n_keys.SUBTITLE__SET_PIN_PIN_CHANGED),
                             header=_(i18n_keys.TITLE__PIN_CHANGED),
                             button=_(i18n_keys.BUTTON__DONE),
                         )
+                        return Success(message=_(i18n_keys.TITLE__PIN_CHANGED))
                     result = await passphrase_pin_used(ctx)
-                    if result == 0:
-                        return
-                    elif result == 1:
+                    if result == PIN_CANCEL:
+                        return Success(message="Operation cancelled")
+                    elif result == PIN_OVERWRITE:
                         # Define messages for passphrase PIN change
                         if curpin and not msg.remove:
                             msg_screen = _(i18n_keys.SUBTITLE__SET_PIN_PIN_CHANGED)
@@ -147,13 +151,8 @@ async def change_pin(ctx: wire.Context, msg: ChangePin) -> Success:
                         else:
                             msg_screen = _(i18n_keys.SUBTITLE__SET_PIN_PIN_DISABLED)
                             msg_wire = _(i18n_keys.TITLE__PIN_DISABLED)
-                        print(
-                            "change_pin: passphrase pin change, curpin, newpin:",
-                            curpin,
-                            newpin,
-                        )
+
                         result = se_thd89.change_pin_passphrase(curpin, newpin)
-                        print("change_pin_passphrase result:", result)
 
                         await show_success(
                             ctx,
@@ -175,7 +174,7 @@ async def change_pin(ctx: wire.Context, msg: ChangePin) -> Success:
                         msg_screen = _(i18n_keys.SUBTITLE__SET_PIN_PIN_DISABLED)
                         msg_wire = _(i18n_keys.TITLE__PIN_DISABLED)
 
-                        result = se_thd89.change_pin_passphrase(curpin, newpin)
+                    result = se_thd89.change_pin_passphrase(curpin, newpin)
                     if result:
                         await show_success(
                             ctx,
@@ -188,7 +187,7 @@ async def change_pin(ctx: wire.Context, msg: ChangePin) -> Success:
                     else:
                         return await error_pin_used(ctx)
 
-    return
+    return Success(message="PIN operation completed")
     # return await error_pin_used(ctx)
 
 
