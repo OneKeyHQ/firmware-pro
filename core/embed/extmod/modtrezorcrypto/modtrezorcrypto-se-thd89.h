@@ -163,7 +163,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(
 STATIC mp_obj_t mod_trezorcrypto_se_thd89_get_session_current_id(void) {
   uint8_t session_id[32] = {0};
   if (!se_session_get_current_id(session_id)) {
-    mp_raise_msg(&mp_type_RuntimeError, "Failed to get session id.");
+    return mp_const_none;
   }
   return mp_obj_new_bytes(session_id, 32);
 }

@@ -248,6 +248,7 @@ async def handle_Initialize(
     ctx: wire.Context | wire.QRContext, msg: Initialize
 ) -> Features:
     session_id_in_msg = getattr(msg, "session_id", None)
+    print(f"Initialize: session_id_in_msg = {session_id_in_msg}")
     original_has_attach = False
     if (
         session_id_in_msg
@@ -256,11 +257,17 @@ async def handle_Initialize(
     ):
         original_has_attach = True
         session_id_in_msg = session_id_in_msg[:-6]
+        print(
+            f"Initialize: Found 'attach' suffix, trimmed session_id = {session_id_in_msg}"
+        )
         if hasattr(msg, "session_id"):
             msg.session_id = session_id_in_msg
 
     has_attach = (
         hasattr(msg, "is_contains_attach") and msg.is_contains_attach is not None
+    )
+    print(
+        f"Initialize: has_attach = {has_attach}, original_has_attach = {original_has_attach}"
     )
 
     if has_attach:
@@ -268,6 +275,7 @@ async def handle_Initialize(
     else:
         storage.cache.delete(storage.cache.APP_COMMON_CLIENT_CONTAINS_ATTACH)
     ps_raw = getattr(msg, "passphrase_state", None)
+    print(f"Initialize: ps_raw = {ps_raw}")
 
     if isinstance(ps_raw, bytes):
         passphrase_state = ps_raw.decode() if ps_raw else None
@@ -275,6 +283,7 @@ async def handle_Initialize(
         passphrase_state = ps_raw
     else:
         passphrase_state = None
+    print(f"Initialize: passphrase_state = {passphrase_state}")
 
     if (
         passphrase_state
@@ -282,10 +291,13 @@ async def handle_Initialize(
         and original_has_attach
     ):
         session_id = storage.cache.start_session()
+        print(f"Initialize: Started new session (case 1) = {session_id}")
     elif has_attach and session_id_in_msg is not None and passphrase_state is None:
         session_id = storage.cache.start_session()
+        print(f"Initialize: Started new session (case 2) = {session_id}")
     else:
         session_id = storage.cache.start_session(session_id_in_msg)
+        print(f"Initialize: Started session with existing id (case 3) = {session_id}")
 
     if not utils.BITCOIN_ONLY:
 
@@ -717,11 +729,14 @@ async def handle_GetPassphraseState(
 
     if not device_is_unlocked():
         await unlock_device(ctx, pin_use_type=PinType.USER_AND_PASSPHRASE_PIN)
+        # session_id = storage.cache.start_session()
         print("Device unlocked in GetPassphraseState")
 
     session_id = se_thd89.get_session_current_id()
+    print(f"GetPassphraseState session_id: {session_id}")
     if session_id is None or session_id == b"":
         session_id = storage.cache.start_session()
+        print(f"GetPassphraseState session_id set to: {session_id}")
 
     import utime
     from apps.bitcoin.get_address import get_address as btc_get_address
@@ -737,6 +752,7 @@ async def handle_GetPassphraseState(
         )
 
         address_obj = await btc_get_address(ctx, address_msg)
+        print(f"Generated address: {address_obj.address}")
         is_attach_to_pin_state = passphrase.is_passphrase_pin_enabled()
         if is_attach_to_pin_state and not (session_id is None or session_id == b""):
             session_id = session_id + b"attach"
