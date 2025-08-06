@@ -4315,8 +4315,7 @@ class PowerOff(FullSizeWindow):
                             allow_cancel=False,
                             callback=self.back,
                             allow_fingerprint=False,
-                            pin_use_type=1,
-                            standy_wall_only=True,
+                            pin_use_type=2,
                         )
                     )
                 else:

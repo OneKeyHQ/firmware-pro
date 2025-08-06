@@ -109,8 +109,6 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(
 ///     start session.
 ///     """
 STATIC mp_obj_t mod_trezorcrypto_se_thd89_start_session(mp_obj_t session_id) {
-  printf("start_session: Function entry\n");
-
   mp_buffer_info_t sid = {0};
   sid.buf = NULL;
   if (session_id != mp_const_none) {
@@ -131,8 +129,6 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorcrypto_se_thd89_start_session_obj,
 ///     end current session.
 ///     """
 STATIC mp_obj_t mod_trezorcrypto_se_thd89_end_session(void) {
-  printf("end_session: Function entry\n");
-
   se_sessionClose();
   return mp_const_none;
 }
@@ -144,8 +140,6 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorcrypto_se_thd89_end_session_obj,
 ///     get current session secret state.
 ///     """
 STATIC mp_obj_t mod_trezorcrypto_se_thd89_get_session_state(void) {
-  printf("get_session_state: Function entry\n");
-
   uint8_t status[2] = {0};
   if (!se_get_session_seed_state(status)) {
     mp_raise_msg(&mp_type_RuntimeError, "Failed to get se state.");

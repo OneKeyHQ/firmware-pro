@@ -214,14 +214,9 @@ class EthSignRequest:
         # pyright: on
         expected_fingerprint = key_path.source_fingerprint
         if resp.root_fingerprint != expected_fingerprint:
-            if __debug__:
-                print(
-                    f"Fingerprint mismatch: got {resp.root_fingerprint} expected {expected_fingerprint}"
-                )
-            else:
-                raise MismatchError(
-                    f"Fingerprint mismatch: got {resp.root_fingerprint} expected {expected_fingerprint}"
-                )
+            raise MismatchError(
+                f"Fingerprint mismatch: got {resp.root_fingerprint} expected {expected_fingerprint}"
+            )
 
     @staticmethod
     async def gen_request(ur):

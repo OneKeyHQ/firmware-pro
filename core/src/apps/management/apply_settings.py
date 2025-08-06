@@ -75,6 +75,12 @@ async def apply_settings(ctx: wire.Context, msg: ApplySettings) -> Success:
         await require_confirm_change_passphrase(ctx, msg.use_passphrase)
         storage.device.set_passphrase_enabled(msg.use_passphrase)
 
+        if not msg.use_passphrase and storage.device.is_passphrase_pin_enabled():
+            from apps.base import lock_device
+
+            storage.device.set_passphrase_pin_enabled(False)
+            lock_device()
+
     if msg.passphrase_always_on_device is not None:
         if not storage.device.is_passphrase_enabled():
             raise wire.DataError("Passphrase is not enabled")

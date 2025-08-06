@@ -1180,8 +1180,6 @@ static secbool se_verifyPin_ex(uint8_t addr, uint8_t *session_key,
   uint16_t resp_len = 1;
   uint8_t data_len = 0;
 
-  printf("se_verifyPin_ex - addr: 0x%02x, pin_type: %d\n", addr, pin_type);
-
   if (strlen(pin) > PIN_MAX_LEN) {
     return secfalse;
   }
@@ -1211,7 +1209,6 @@ static secbool se_verifyPin_ex(uint8_t addr, uint8_t *session_key,
 
   pin_result_type = resp[0];
   memset(pin_buf, 0, sizeof(pin_buf));
-  printf("PIN verification result - pin_result_type: %d\n", pin_result_type);
 
   if (pin_type == PIN_TYPE_PASSPHRASE_PIN &&
       pin_result_type != PASSPHRASE_PIN_ENTERED) {
@@ -1236,7 +1233,6 @@ static void reset_storage_and_restart(void) {
 secbool se_verifyPin(const char *pin, pin_type_t pin_type) {
   secbool result =
       se_verifyPin_ex(THD89_MASTER_ADDRESS, se_session_key, pin, pin_type);
-  printf("se_verifyPin result: %lu, pin_type: %d\n", result, pin_type);
   if (result == sectrue) {
     if (pin_type != PIN_TYPE_PASSPHRASE_PIN_CHECK) {
       secbool fp_result = se_verifyPin_ex(THD89_FINGER_ADDRESS,

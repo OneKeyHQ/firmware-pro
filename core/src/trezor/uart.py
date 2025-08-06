@@ -149,6 +149,8 @@ async def handle_fingerprint():
                         if __debug__:
                             print(f"fingerprint match {match_id}")
                         # motor.vibrate(motor.SUCCESS)
+                        if device.is_passphrase_pin_enabled():
+                            device.set_passphrase_pin_enabled(False)
                         # # 1. publish signal
                         if fingerprints.has_takers():
                             if __debug__:
@@ -160,7 +162,6 @@ async def handle_fingerprint():
                             if __debug__:
                                 print(f"fingerprint unlock result {res}")
                             await base.unlock_device()
-
                         # await loop.sleep(2000)
                         return
                 else:

@@ -30,27 +30,21 @@ if TYPE_CHECKING:
 async def change_pin(ctx: wire.Context, msg: ChangePin) -> Success:
     if not is_initialized():
         raise wire.NotInitialized("Device is not initialized")
-    # confirm that user wants to change the pin
     await require_confirm_change_pin(ctx, msg)
-    # get old pin
     curpin, salt = await request_pin_and_sd_salt(
         ctx,
         _(i18n_keys.TITLE__ENTER_OLD_PIN),
         allow_fingerprint=False,
     )
-    print("change_pin: curpin, salt:", curpin, salt)
-    # if changing pin, pre-check the entered pin before getting new pin
     from apps.common.pin_constants import PinType, PinResult
 
     if curpin and not msg.remove:
         verified, usertype = config.check_pin(
             curpin, salt, PinType.USER_AND_PASSPHRASE_PIN_CHECK
         )
-        print("one change_pin: verified, usertype:", verified, usertype)
         if not verified:
             await error_pin_invalid(ctx)
         if usertype == PinResult.USER_PIN_ENTERED:
-            # get new pin
             if not msg.remove:
                 newpin = await request_pin_confirm(
                     ctx, show_tip=(not bool(curpin)), allow_fingerprint=False
@@ -117,12 +111,6 @@ async def change_pin(ctx: wire.Context, msg: ChangePin) -> Success:
                 verified, usertype = config.check_pin(
                     newpin, salt, PinType.USER_AND_PASSPHRASE_PIN_CHECK
                 )
-                print(
-                    "two change_pin: newpin, verified, usertype:",
-                    newpin,
-                    verified,
-                    usertype,
-                )
                 if usertype == PinResult.USER_PIN_ENTERED:
                     return await error_pin_used(ctx)
                 if usertype == PinResult.PASSPHRASE_PIN_ENTERED:
@@ -163,7 +151,6 @@ async def change_pin(ctx: wire.Context, msg: ChangePin) -> Success:
                         )
                         return Success(message=msg_wire)
                 else:
-                    # Define messages for passphrase PIN change fallback
                     if curpin and not msg.remove:
                         msg_screen = _(i18n_keys.SUBTITLE__SET_PIN_PIN_CHANGED)
                         msg_wire = _(i18n_keys.TITLE__PIN_CHANGED)
@@ -188,7 +175,6 @@ async def change_pin(ctx: wire.Context, msg: ChangePin) -> Success:
                         return await error_pin_used(ctx)
 
     return Success(message="PIN operation completed")
-    # return await error_pin_used(ctx)
 
 
 def require_confirm_change_pin(ctx: wire.Context, msg: ChangePin) -> Awaitable[None]:

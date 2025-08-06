@@ -165,7 +165,11 @@ async def verify_user_pin(
     if not config.is_unlocked():
         try:
             verified, usertype = config.unlock(pin, salt, pin_use_type)
-            if verified:
+            if verified and pin_use_type in (
+                PinType.USER,
+                PinType.PASSPHRASE_PIN,
+                PinType.USER_AND_PASSPHRASE_PIN,
+            ):
                 if usertype == PinResult.PASSPHRASE_PIN_ENTERED:
                     device.set_passphrase_pin_enabled(True)
                 elif usertype == PinResult.USER_PIN_ENTERED:
@@ -178,7 +182,11 @@ async def verify_user_pin(
             verified, usertype = config.check_pin(
                 pin, salt, pin_use_type, auto_vibrate=True
             )
-            if verified:
+            if verified and pin_use_type in (
+                PinType.USER,
+                PinType.PASSPHRASE_PIN,
+                PinType.USER_AND_PASSPHRASE_PIN,
+            ):
                 if usertype == PinResult.PASSPHRASE_PIN_ENTERED:
                     device.set_passphrase_pin_enabled(True)
                 elif usertype == PinResult.USER_PIN_ENTERED:
@@ -223,7 +231,11 @@ async def verify_user_pin(
         except Exception:
             raise wire.PinCancelled("cal cale ..")
 
-        if verified:
+        if verified and pin_use_type in (
+            PinType.USER,
+            PinType.PASSPHRASE_PIN,
+            PinType.USER_AND_PASSPHRASE_PIN,
+        ):
             if usertype == PinResult.PASSPHRASE_PIN_ENTERED:
                 device.set_passphrase_pin_enabled(True)
             elif usertype == PinResult.USER_PIN_ENTERED:
@@ -250,9 +262,6 @@ async def verify_user_fingerprint(
         return
     if await fingerprints.request():
         fingerprints.unlock()
-        import storage.device as device
-
-        device.set_passphrase_pin_enabled(False)
         if re_loop:
             loop.clear()
         elif callback:
