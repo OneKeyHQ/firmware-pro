@@ -355,14 +355,9 @@ class SignPsbt:
                                 found = True
                             our_keys += 1
                         else:
-                            if __debug__:
-                                print(
-                                    f"Key fingerprint {keypath.fingerprint} does not match master key {master_fp}"
-                                )
-                            else:
-                                raise MismatchError(
-                                    "Key fingerprint does not match master key"
-                                )
+                            raise MismatchError(
+                                "Key fingerprint does not match master key"
+                            )
                 elif txinputtype.script_type in SCHNORR_SCRIPT_TYPES:
                     for key, (_, origin) in psbt_in.tap_bip32_paths.items():
                         # Assume key path signing
@@ -378,14 +373,9 @@ class SignPsbt:
                             our_keys += 1
                             break
                         else:
-                            if __debug__:
-                                print(
-                                    f"Key fingerprint {origin.fingerprint} does not match master key {master_fp}"
-                                )
-                            else:
-                                raise MismatchError(
-                                    "Key fingerprint does not match master key"
-                                )
+                            raise MismatchError(
+                                "Key fingerprint does not match master key"
+                            )
 
                 # Determine if we need to do more passes to sign everything
                 if our_keys > passes:
@@ -434,14 +424,9 @@ class SignPsbt:
                 if not wit or (wit and ver == 0):
                     for _, keypath in psbt_out.hd_keypaths.items():
                         if keypath.fingerprint != master_fp:
-                            if __debug__:
-                                print(
-                                    f"Key fingerprint {keypath.fingerprint} does not match master key {master_fp}"
-                                )
-                            else:
-                                raise MismatchError(
-                                    "Key fingerprint does not match master key"
-                                )
+                            raise MismatchError(
+                                "Key fingerprint does not match master key"
+                            )
                         wit, ver, prog = out.is_witness()
                         if out.is_p2pkh():
                             txoutput.address_n = keypath.path

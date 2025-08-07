@@ -267,11 +267,15 @@ async def handle_Initialize(
         passphrase_state
     ):
         session_id = se_thd89.get_session_current_id()
-        if session_id_in_msg == session_id:
+        if device_is_unlocked() and not storage.device.is_passphrase_pin_enabled():
+            session_id = storage.cache.start_session(session_id_in_msg)
+        elif session_id_in_msg == session_id:
             session_id = storage.cache.start_session(session_id_in_msg)
         else:
             session_id = storage.cache.start_session()
     elif has_attach and session_id_in_msg is not None and passphrase_state is None:
+        session_id = storage.cache.start_session()
+    elif device_is_unlocked() and storage.device.is_passphrase_pin_enabled():
         session_id = storage.cache.start_session()
     else:
         session_id = storage.cache.start_session(session_id_in_msg)
