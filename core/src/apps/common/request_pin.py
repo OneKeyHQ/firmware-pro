@@ -231,15 +231,16 @@ async def verify_user_pin(
         except Exception:
             raise wire.PinCancelled("cal cale ..")
 
-        if verified and pin_use_type in (
-            PinType.USER,
-            PinType.PASSPHRASE_PIN,
-            PinType.USER_AND_PASSPHRASE_PIN,
-        ):
-            if usertype == PinResult.PASSPHRASE_PIN_ENTERED:
-                device.set_passphrase_pin_enabled(True)
-            elif usertype == PinResult.USER_PIN_ENTERED:
-                device.set_passphrase_pin_enabled(False)
+        if verified:
+            if pin_use_type in (
+                PinType.USER,
+                PinType.PASSPHRASE_PIN,
+                PinType.USER_AND_PASSPHRASE_PIN,
+            ):
+                if usertype == PinResult.PASSPHRASE_PIN_ENTERED:
+                    device.set_passphrase_pin_enabled(True)
+                elif usertype == PinResult.USER_PIN_ENTERED:
+                    device.set_passphrase_pin_enabled(False)
 
             if re_loop:
                 loop.clear()
