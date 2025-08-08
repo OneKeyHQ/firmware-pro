@@ -104,7 +104,7 @@ def get_features() -> Features:
         device_id=storage.device.get_device_id(),
         label=storage.device.get_label(),
         pin_protection=config.has_pin(),
-        unlocked=config.is_unlocked(),
+        unlocked=device_is_unlocked(),
         ble_name=uart.get_ble_name(),
         ble_ver=uart.get_ble_version(),
         ble_enable=storage.device.ble_enabled(),
@@ -751,13 +751,13 @@ async def handle_UnLockDevice(
     ctx: wire.Context, msg: UnLockDevice
 ) -> UnLockDeviceResponse:
     """Handle UnLockDevice message to unlock the device if needed."""
-    if not config.is_unlocked():
+    if not device_is_unlocked():
         await unlock_device(ctx, pin_use_type=PinType.USER_AND_PASSPHRASE_PIN)
 
     # Get current device state after unlock attempt
     from apps.common import passphrase
 
-    unlocked = config.is_unlocked()
+    unlocked = device_is_unlocked()
     unlocked_attach_pin = passphrase.is_passphrase_pin_enabled() if unlocked else False
 
     passphrase_protection = (
