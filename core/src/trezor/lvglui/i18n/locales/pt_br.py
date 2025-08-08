@@ -1030,5 +1030,7 @@ translations = [
     "Esta autorização delega autoridade a um contrato inteligente não incluído na lista de permissões.",
     "Revogar na rede",
     "Entender",
+    "3 tentativas falhas. Deslize para continuar. Você não tem a Frase-senha ativada.",
+    "Desativar a Frase-senha impedirá que você use o PIN da carteira oculta para desbloquear seu dispositivo.",
 ]
 # fmt: on

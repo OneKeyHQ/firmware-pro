@@ -1030,5 +1030,7 @@ translations = [
     "This authorization delegates authority to a smart contract not included on the whitelist.",
     "Revoke on Network",
     "Understand",
+    "3 failed attempts. Slide to continue. You do not have Passphrase turned on.",
+    "Disabling the Passphrase will prevent you from using the hidden wallet PIN to unlock your device.",
 ]
 # fmt: on

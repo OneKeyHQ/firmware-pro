@@ -1589,18 +1589,42 @@ async def confirm_final(
 
 
 async def confirm_password_input(ctx: wire.Context) -> None:
-    from trezor.ui.layouts.lvgl import confirm_action
 
-    await confirm_action(
-        ctx,
-        "confirm_password_input",
-        title=_(i18n_keys.MISTOUCH_PROTECTION_TITLE),
-        action=_(i18n_keys.CONTENT__STR_FAILED_TRIES_SLIDE_TO_CONTINUE),
-        verb=_(i18n_keys.MISTOUCH_PROTECTION_SLIDE_TEXT),
-        verb_cancel=_(i18n_keys.BUTTON__BACK),
-        hold=True,
+    from trezor.crypto import se_thd89
+    from apps.common import passphrase
+    from apps.common.pin_constants import AttachCommon
+
+    current_space = se_thd89.get_pin_passphrase_space()
+    subtitle = _(i18n_keys.CONTENT__STR_FAILED_TRIES_SLIDE_TO_CONTINUE)
+
+    if (
+        current_space < AttachCommon.MAX_PASSPHRASE_PIN_NUM
+        and not passphrase.is_enabled()
+    ):
+        subtitle = _(
+            i18n_keys.CONTENT__STR_FAILED_TRIES_SLIDE_TO_CONTINUE_DISABLE_PASSPHRASE
+        )
+    else:
+        subtitle = _(i18n_keys.CONTENT__STR_FAILED_TRIES_SLIDE_TO_CONTINUE)
+    from trezor.ui.layouts.lvgl.common import button_request, raise_if_cancelled
+    from trezor.lvglui.scrs.common import FullSizeWindow
+
+    await button_request(
+        ctx, "confirm_password_input", code=ButtonRequestType.Other, close_others=False
+    )
+    confirm_screen = FullSizeWindow(
+        _(i18n_keys.MISTOUCH_PROTECTION_TITLE),
+        subtitle,
+        _(i18n_keys.MISTOUCH_PROTECTION_SLIDE_TEXT),
+        cancel_text=_(i18n_keys.BUTTON__BACK),
+        icon_path="A:/res/protection.png",
+        hold_confirm=True,
         anim_dir=0,
-        icon="A:/res/protection.png",
+        primary_color=lv_colors.ONEKEY_GREEN,
+    )
+    await raise_if_cancelled(
+        ctx.wait(confirm_screen.request()),
+        wire.ActionCancelled,
     )
 
 

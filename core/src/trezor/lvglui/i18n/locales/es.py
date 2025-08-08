@@ -1030,5 +1030,7 @@ translations = [
     "Esta autorización delega autoridad a un contrato inteligente que no está incluido en la lista blanca.",
     "Revocar en la red",
     "Entender",
+    "3 intentos fallidos. Desliza para continuar. No tienes la frase de acceso activada.",
+    "Desactivar la frase de contraseña impedirá que uses el PIN de la billetera oculta para desbloquear tu dispositivo.",
 ]
 # fmt: on

@@ -147,7 +147,15 @@ async def require_confirm_change_passphrase(
     if use:
         description = _(i18n_keys.SUBTITLE__ENABLE_PASSPHRASE)
     else:
-        description = _(i18n_keys.SUBTITLE__DISABLE_PASSPHRASE)
+        from trezor.crypto import se_thd89
+        from apps.common.pin_constants import AttachCommon
+
+        current_space = se_thd89.get_pin_passphrase_space()
+
+        if current_space < AttachCommon.MAX_PASSPHRASE_PIN_NUM:
+            description = _(i18n_keys.TITLE__DISABLE_PASSPHRASE_DESC)
+        else:
+            description = _(i18n_keys.SUBTITLE__DISABLE_PASSPHRASE)
     await confirm_action(
         ctx,
         "set_passphrase",

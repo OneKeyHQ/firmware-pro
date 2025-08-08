@@ -1030,5 +1030,7 @@ translations = [
     "Cette autorisation délègue l'autorité à un contrat intelligent non inclus dans la liste blanche.",
     "Révoquer sur le réseau",
     "Comprendre",
+    "3 tentatives échouées. Faites glisser pour continuer. Vous n'avez pas activé la phrase secrète.",
+    "La désactivation de la phrase secrète vous empêchera d'utiliser le code PIN du portefeuille caché pour déverrouiller votre appareil.",
 ]
 # fmt: on

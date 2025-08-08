@@ -5500,9 +5500,19 @@ class PassphraseScreen(AnimScreen):
                     )
                     screen.btn_yes.enable(lv_colors.ONEKEY_YELLOW, lv_colors.BLACK)
                 else:
+                    subtitle = None
+                    from trezor.crypto import se_thd89
+                    from apps.common.pin_constants import AttachCommon
+
+                    current_space = se_thd89.get_pin_passphrase_space()
+                    if current_space < AttachCommon.MAX_PASSPHRASE_PIN_NUM:
+                        subtitle = _(i18n_keys.TITLE__DISABLE_PASSPHRASE_DESC)
+                    else:
+                        subtitle = _(i18n_keys.SUBTITLE__DISABLE_PASSPHRASE)
+
                     PassphraseTipsConfirm(
                         _(i18n_keys.TITLE__DISABLE_PASSPHRASE),
-                        _(i18n_keys.SUBTITLE__DISABLE_PASSPHRASE),
+                        subtitle,
                         _(i18n_keys.BUTTON__DISABLE),
                         self,
                         icon_path="",

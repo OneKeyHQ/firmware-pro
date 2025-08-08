@@ -2265,4 +2265,9 @@ BANNER_NOT_IN_SMART_ACCOUNT_WHITELIST = 1027
 FIELDS_REVOKE_ON_NETWORK = 1028
 # Understand
 BUTTON_UNDERSTAND = 1029
+# 3 failed attempts. Slide to continue. You do not have Passphrase turned on.
+CONTENT__STR_FAILED_TRIES_SLIDE_TO_CONTINUE_DISABLE_PASSPHRASE = 1030
+# Disabling the Passphrase will prevent you from using the hidden wallet PIN t
+# o unlock your device.
+TITLE__DISABLE_PASSPHRASE_DESC = 1031
 # fmt: on

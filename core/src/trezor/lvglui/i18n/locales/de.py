@@ -1030,5 +1030,7 @@ translations = [
     "Diese Autorisierung überträgt die Befugnis an einen Smart Contract, der nicht auf der Whitelist steht.",
     "Im Netzwerk widerrufen",
     "Verstanden",
+    "3 fehlgeschlagene Versuche. Zum Fortfahren wischen. Sie haben die Passphrase nicht aktiviert.",
+    "Wenn Sie die Passphrase deaktivieren, können Sie die PIN für das versteckte Wallet nicht mehr verwenden, um Ihr Gerät zu entsperren.",
 ]
 # fmt: on

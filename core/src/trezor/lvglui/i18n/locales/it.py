@@ -1030,5 +1030,7 @@ translations = [
     "Questa autorizzazione delega l'autorità a uno smart contract non incluso nella whitelist.",
     "Revoca sulla rete",
     "Capisco",
+    "3 tentativi non riusciti. Scorri per continuare. Non hai attivato la Passphrase.",
+    "Disabilitare la Passphrase ti impedirà di utilizzare il PIN del portafoglio nascosto per sbloccare il dispositivo.",
 ]
 # fmt: on

@@ -26,3 +26,4 @@ class PinType:
 
 class AttachCommon:
     ATTACH_TO_PIN_MIN_LEN = 6
+    MAX_PASSPHRASE_PIN_NUM = 30
