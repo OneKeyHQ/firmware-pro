@@ -1153,7 +1153,7 @@ class PassphraseKeyboard(lv.btnmatrix):
         self.add_event_cb(self.event_cb, lv.EVENT.VALUE_CHANGED, None)
         self.ta.add_event_cb(self.event_cb, lv.EVENT.FOCUSED, None)
         self.move_foreground()
-
+        self.vibrated = False
         self.update_ok_button_state()
 
     def update_count_tips(self):
