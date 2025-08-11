@@ -193,17 +193,15 @@ async def show_attach_to_pin_window(ctx):
                                     passphrase_pin_str,
                                     passphrase_content_str,
                                 )
-
-                                # Only proceed if save was successful
                                 if not save_result:
                                     return False
-
-                                # Show success message
+                                if save_status:
+                                    config.check_pin(
+                                        curpin_str, None, PinType.PASSPHRASE_PIN
+                                    )
                                 await show_passphrase_set_and_attached_to_pin_window(
                                     ctx
                                 )
-
-                                # Lock device if needed based on save status
                                 if save_status:
                                     return lock_device_if_unlocked()
                                 return True
