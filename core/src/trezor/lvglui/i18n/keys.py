@@ -1960,7 +1960,7 @@ PASSPHRASE__ENABLE_DESC = 890
 PASSPHRASE__ADVANCE = 891
 # Attach to PIN
 PASSPHRASE__ATTACH_TO_PIN = 892
-# Unlock your hidden wallet using PIN
+# Unlock your hidden wallet using PIN.
 PASSPHRASE__ATTACH_TO_PIN_DESC = 893
 # Set Hidden Wallet PIN
 PASSPHRASE__SET_PASSPHRASE_PIN = 894

@@ -893,7 +893,7 @@ translations = [
     "Fügt Ihrer Wiederherstellungsphrase ein zusätzliches Wort hinzu und schaltet versteckte Wallets frei.",
     "Vorauszahlung",
     "An PIN anhängen",
-    "Entsperren Sie Ihr verstecktes Wallet mit der PIN",
+    "Entsperren Sie Ihr verstecktes Wallet mit der PIN.",
     "Versteckte Wallet-PIN festlegen",
     "Fingerabdruck-Upgrade",
     "Jetzt einrichten",

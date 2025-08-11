@@ -893,7 +893,7 @@ translations = [
     "Ajoute un mot supplémentaire à votre phrase de récupération, débloquant des portefeuilles cachés.",
     "Avance",
     "Attacher à la broche",
-    "Déverrouillez votre portefeuille caché à l'aide du code PIN",
+    "Déverrouillez votre portefeuille caché à l'aide du code PIN.",
     "Définir le code PIN du portefeuille caché",
     "Mise à niveau d'empreinte digitale",
     "Configurez maintenant",

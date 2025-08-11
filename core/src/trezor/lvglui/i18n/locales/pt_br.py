@@ -893,7 +893,7 @@ translations = [
     "Adiciona uma palavra extra à sua frase de recuperação, desbloqueando carteiras ocultas.",
     "Avanço",
     "Anexar ao PIN",
-    "Desbloqueie sua carteira oculta usando o PIN",
+    "Desbloqueie sua carteira oculta usando o PIN.",
     "Definir PIN da Carteira Oculta",
     "Atualização de Impressão Digital",
     "Configure agora",

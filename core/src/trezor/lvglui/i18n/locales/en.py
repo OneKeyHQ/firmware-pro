@@ -893,7 +893,7 @@ translations = [
     "Adds an extra word to your recovery phrase, unlocking hidden wallets.",
     "Advance",
     "Attach to PIN",
-    "Unlock your hidden wallet using PIN",
+    "Unlock your hidden wallet using PIN.",
     "Set Hidden Wallet PIN",
     "Fingerprint Upgrade",
     "Set up now",

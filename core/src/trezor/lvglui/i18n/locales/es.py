@@ -893,7 +893,7 @@ translations = [
     "Agrega una palabra extra a tu frase de recuperación, desbloqueando billeteras ocultas.",
     "Avanzar",
     "Adjuntar al PIN",
-    "Desbloquea tu billetera oculta usando el PIN",
+    "Desbloquea tu billetera oculta usando el PIN.",
     "Establecer PIN de la billetera oculta",
     "Actualización de Huella Dactilar",
     "Configurar ahora",

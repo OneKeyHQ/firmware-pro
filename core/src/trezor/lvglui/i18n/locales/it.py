@@ -893,7 +893,7 @@ translations = [
     "Aggiunge una parola extra alla tua frase di recupero, sbloccando portafogli nascosti.",
     "Avanzare",
     "Allega al PIN",
-    "Sblocca il tuo portafoglio nascosto usando il PIN",
+    "Sblocca il tuo portafoglio nascosto usando il PIN.",
     "Imposta PIN del portafoglio nascosto",
     "Aggiornamento dell'impronta digitale",
     "Imposta ora",
