@@ -133,7 +133,7 @@ class MnemonicDisplay(FullSizeWindow):
         self.click_indicator_img.align_to(self.label, lv.ALIGN.OUT_RIGHT_MID, 4, 0)
         self.click_indicator_img.set_size(13, 7)
         self.word_count_indicator.add_event_cb(self.on_event, lv.EVENT.CLICKED, None)
-
+        self.content_area.set_style_max_height(574, 0)
         self.content_area.align(lv.ALIGN.TOP_MID, 0, 96)
 
     def on_event(self, event_obj: lv.event_t):
