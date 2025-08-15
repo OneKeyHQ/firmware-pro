@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from .crypto_coin_info import Bitcoin, CryptoCoinInfo, Ethereum, MainNet, Solana
+from .crypto_coin_info import Bitcoin, CryptoCoinInfo, Ethereum, MainNet, Solana, Tron
 from .crypto_hd_key import CryptoHDKey
 from .crypto_key_path import CryptoKeyPath
 
@@ -14,6 +14,7 @@ BTC_TAPROOT_PREFIX: str = "m/86'/0'/0'"
 ETH_STANDARD_PREFIX: str = "m/44'/60'/0'"
 SOL_STANDARD_PATH: str = "m/44'/501'/0'/0'"
 SOL_LEDGER_LIVE_PATH: str = "m/44'/501'/0'"
+TRON_STANDARD_PATH: str = "m/44'/195'/0'"
 
 
 def generate_HDKey(
@@ -150,6 +151,17 @@ def generate_hdkey_BTCTaproot(pubkey: PublicKey) -> CryptoHDKey:
         pubkey.root_fingerprint,
         None,
         "account.btc_taproot",
+    )
+
+
+def generate_hdkey_TRONStandard(pubkey: PublicKey) -> CryptoHDKey:
+    return generate_HDKey(
+        pubkey,
+        CryptoCoinInfo(Tron, MainNet),
+        TRON_STANDARD_PATH,
+        pubkey.root_fingerprint,
+        None,
+        "account.standard",
     )
 
 

@@ -149,12 +149,10 @@ class CBOREncoder:
         self.buf += value
         return length + len(value)
 
-    # pyright: off
     def encodeEncodedBytesPrefix(self, value):
         length = self.encodeTagAndValue(Tag_Major_semantic, Tag_Minor_cborEncodedData)
-        return length + self.encodeTagAndAdditional
+        return length + self.encodeTagAndValue(Tag_Major_byteString, value)
 
-    # pyright: on
     def encodeEncodedBytes(self, value):
         length = self.encodeTagAndValue(Tag_Major_semantic, Tag_Minor_cborEncodedData)
         return length + self.encodeBytes(value)

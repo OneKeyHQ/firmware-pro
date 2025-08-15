@@ -10,6 +10,7 @@ from apps.ur_registry.registry_types import (
     ETH_SIGN_REQUEST,
     HARDWARE_CALL,
     SOL_SIGN_REQUEST,
+    TRON_SIGN_REQUEST,
 )
 from apps.ur_registry.ur_py.ur.ur import UR
 from apps.ur_registry.ur_py.ur.ur_encoder import UREncoder
@@ -90,6 +91,7 @@ class QRTask:
         if registry_type in [
             ETH_SIGN_REQUEST.get_registry_type(),
             SOL_SIGN_REQUEST.get_registry_type(),
+            TRON_SIGN_REQUEST.get_registry_type(),
         ]:
             if self.req is not None:
                 from trezor.ui.layouts import show_ur_response

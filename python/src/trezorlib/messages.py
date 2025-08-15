@@ -841,6 +841,11 @@ class TonWorkChain(IntEnum):
     MASTERCHAIN = 1
 
 
+class TronMessageType(IntEnum):
+    MESSAGE_TYPE_SIGN_MESSAGE_V1 = 1
+    MESSAGE_TYPE_SIGN_MESSAGE_V2 = 2
+
+
 class TronResourceCode(IntEnum):
     BANDWIDTH = 0
     ENERGY = 1
@@ -11667,6 +11672,7 @@ class TronSignMessage(protobuf.MessageType):
     FIELDS = {
         1: protobuf.Field("address_n", "uint32", repeated=True, required=False),
         2: protobuf.Field("message", "bytes", repeated=False, required=True),
+        3: protobuf.Field("message_type", "TronMessageType", repeated=False, required=False),
     }
 
     def __init__(
@@ -11674,9 +11680,11 @@ class TronSignMessage(protobuf.MessageType):
         *,
         message: "bytes",
         address_n: Optional[Sequence["int"]] = None,
+        message_type: Optional["TronMessageType"] = TronMessageType.V1,
     ) -> None:
         self.address_n: Sequence["int"] = address_n if address_n is not None else []
         self.message = message
+        self.message_type = message_type
 
 
 class TronMessageSignature(protobuf.MessageType):

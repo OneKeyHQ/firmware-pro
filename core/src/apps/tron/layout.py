@@ -135,7 +135,7 @@ def require_confirm_freeze(
 
     return confirm_tron_freeze(
         ctx,
-        "Freeze" if receiver_address is not None else "Freeze Balance V2 Contract",
+        "Freeze" if frozen_duration is not None else "Freeze Balance V2 Contract",
         signer,
         res,
         format_amount_trx(frozen_balance, None) if frozen_balance is not None else None,

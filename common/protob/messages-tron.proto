@@ -144,6 +144,11 @@ message TronSignedTx {
     optional bytes serialized_tx = 2; // Serialized transaction
 }
 
+enum TronMessageType {
+    V1 = 1 [deprecated = true];
+    V2 = 2;
+}
+
 /**
  * Request: Ask device to sign message
  * @next TronMessageSignature
@@ -152,6 +157,7 @@ message TronSignedTx {
  message TronSignMessage {
     repeated uint32 address_n = 1;                          // BIP-32 path to derive the key from master node
     required bytes message = 2;                             // message to be signed
+    optional TronMessageType message_type = 3[default = V1];              // message type
 }
 
 /**

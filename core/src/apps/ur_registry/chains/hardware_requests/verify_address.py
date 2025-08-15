@@ -58,11 +58,15 @@ class VerifyAddressRequest:
             # pyright: off
             await sol_get_address(wire.QR_CONTEXT, msg)
             # pyright: on
+        elif params["chain"].lower() == "tron":
+            from apps.tron.get_address import get_address as tron_get_address
+
+            msg = messages.TronGetAddress(
+                address_n=paths.parse_path(params["path"]),
+                show_display=True,
+            )
+            # pyright: off
+            await tron_get_address(wire.QR_CONTEXT, msg)
+            # pyright: on
         else:
             raise ValueError("Invalid chain")
-        # assert address.address is not None, "Address should not be None"
-        # if address.address.lower() != params["address"].lower():
-        #     if __debug__:
-        #         print(f"Address mismatch: {address.address} != {params['address']}")
-        #     else:
-        #         raise ValueError("Address mismatch")

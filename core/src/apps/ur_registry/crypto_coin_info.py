@@ -8,6 +8,7 @@ NETWORK = 2
 Bitcoin = 0
 Ethereum = 60
 Solana = 501
+Tron = 195
 
 # Network
 MainNet = 0

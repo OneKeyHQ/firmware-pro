@@ -70,6 +70,7 @@ if TYPE_CHECKING:
     from trezor.enums import TezosContractType  # noqa: F401
     from trezor.enums import TonWalletVersion  # noqa: F401
     from trezor.enums import TonWorkChain  # noqa: F401
+    from trezor.enums import TronMessageType  # noqa: F401
     from trezor.enums import TronResourceCode  # noqa: F401
     from trezor.enums import WordRequestType  # noqa: F401
 
@@ -9414,12 +9415,14 @@ if TYPE_CHECKING:
     class TronSignMessage(protobuf.MessageType):
         address_n: "list[int]"
         message: "bytes"
+        message_type: "TronMessageType"
 
         def __init__(
             self,
             *,
             message: "bytes",
             address_n: "list[int] | None" = None,
+            message_type: "TronMessageType | None" = None,
         ) -> None:
             pass
 

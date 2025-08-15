@@ -164,6 +164,10 @@ async def generate_crypto_multi_accounts(ctx: wire.Context) -> UREncoder:
     btc_taproot_pub = await bitcoin_get_public_key.get_public_key(
         ctx, GetPublicKey(address_n=paths.parse_path(helpers.BTC_TAPROOT_PREFIX))
     )
+    tron_pub = await bitcoin_get_public_key.get_public_key(
+        ctx,
+        GetPublicKey(address_n=paths.parse_path(helpers.TRON_STANDARD_PATH)),
+    )
     sol_pubs = await misc_batch_get_pubkeys.batch_get_pubkeys(
         ctx,
         BatchGetPublickeys(
@@ -186,6 +190,7 @@ async def generate_crypto_multi_accounts(ctx: wire.Context) -> UREncoder:
             helpers.generate_hdkey_BTCNativeSegWit(btc_native_segwit_pub),
             helpers.generate_hdkey_BTCTaproot(btc_taproot_pub),
             helpers.generate_hdkey_SOLStandard(sol_pubs.public_keys[0]),
+            helpers.generate_hdkey_TRONStandard(tron_pub),
             helpers.generate_hdkey_SOLLedgerLive(sol_pubs.public_keys[1]),
         ],
         device=name,

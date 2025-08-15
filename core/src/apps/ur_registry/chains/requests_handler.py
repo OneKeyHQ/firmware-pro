@@ -5,6 +5,7 @@ from apps.ur_registry.registry_types import (
     ETH_SIGN_REQUEST,
     HARDWARE_CALL,
     SOL_SIGN_REQUEST,
+    TRON_SIGN_REQUEST,
 )
 
 
@@ -27,5 +28,9 @@ def get_request_class(registry_type: str):
             from apps.ur_registry.chains.solana.sol_sign_request import SolSignRequest
 
             return SolSignRequest
+        elif registry_type == TRON_SIGN_REQUEST.get_registry_type():
+            from apps.ur_registry.chains.tron.tron_sign_request import TronSignRequest
+
+            return TronSignRequest
 
     return None

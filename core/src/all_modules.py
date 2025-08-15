@@ -141,6 +141,8 @@ trezor.enums.TonWalletVersion
 import trezor.enums.TonWalletVersion
 trezor.enums.TonWorkChain
 import trezor.enums.TonWorkChain
+trezor.enums.TronMessageType
+import trezor.enums.TronMessageType
 trezor.enums.TronResourceCode
 import trezor.enums.TronResourceCode
 trezor.enums.WordRequestType
@@ -975,6 +977,10 @@ apps.ur_registry.account
 import apps.ur_registry.account
 apps.ur_registry.chains
 import apps.ur_registry.chains
+apps.ur_registry.chains.base_sign_request
+import apps.ur_registry.chains.base_sign_request
+apps.ur_registry.chains.base_signature
+import apps.ur_registry.chains.base_signature
 apps.ur_registry.chains.bitcoin
 import apps.ur_registry.chains.bitcoin
 apps.ur_registry.chains.bitcoin.crypto_psbt
@@ -1017,6 +1023,16 @@ apps.ur_registry.chains.solana.sol_transaction
 import apps.ur_registry.chains.solana.sol_transaction
 apps.ur_registry.chains.solana.sol_unsafe_message
 import apps.ur_registry.chains.solana.sol_unsafe_message
+apps.ur_registry.chains.tron
+import apps.ur_registry.chains.tron
+apps.ur_registry.chains.tron.tron_message
+import apps.ur_registry.chains.tron.tron_message
+apps.ur_registry.chains.tron.tron_sign_request
+import apps.ur_registry.chains.tron.tron_sign_request
+apps.ur_registry.chains.tron.tron_signature
+import apps.ur_registry.chains.tron.tron_signature
+apps.ur_registry.chains.tron.tron_transaction
+import apps.ur_registry.chains.tron.tron_transaction
 apps.ur_registry.crypto_coin_info
 import apps.ur_registry.crypto_coin_info
 apps.ur_registry.crypto_hd_key
