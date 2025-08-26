@@ -384,6 +384,22 @@ if TYPE_CHECKING:
         def is_type_of(cls, msg: Any) -> TypeGuard["AptosSignMessage"]:
             return isinstance(msg, cls)
 
+    class AptosSignSIWAMessage(protobuf.MessageType):
+        address_n: "list[int]"
+        siwa_payload: "str"
+
+        def __init__(
+            self,
+            *,
+            siwa_payload: "str",
+            address_n: "list[int] | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["AptosSignSIWAMessage"]:
+            return isinstance(msg, cls)
+
     class AptosMessageSignature(protobuf.MessageType):
         signature: "bytes"
         address: "str"

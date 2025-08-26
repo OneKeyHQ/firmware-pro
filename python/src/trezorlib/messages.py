@@ -332,6 +332,7 @@ class MessageType(IntEnum):
     AptosSignedTx = 10603
     AptosSignMessage = 10604
     AptosMessageSignature = 10605
+    AptosSignSIWAMessage = 10606
     WebAuthnListResidentCredentials = 800
     WebAuthnCredentials = 801
     WebAuthnAddResidentCredential = 802
@@ -842,8 +843,8 @@ class TonWorkChain(IntEnum):
 
 
 class TronMessageType(IntEnum):
-    MESSAGE_TYPE_SIGN_MESSAGE_V1 = 1
-    MESSAGE_TYPE_SIGN_MESSAGE_V2 = 2
+    V1 = 1
+    V2 = 2
 
 
 class TronResourceCode(IntEnum):
@@ -1182,6 +1183,23 @@ class AptosSignMessage(protobuf.MessageType):
     ) -> None:
         self.address_n: Sequence["int"] = address_n if address_n is not None else []
         self.payload = payload
+
+
+class AptosSignSIWAMessage(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 10606
+    FIELDS = {
+        1: protobuf.Field("address_n", "uint32", repeated=True, required=False),
+        2: protobuf.Field("siwa_payload", "string", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        siwa_payload: "str",
+        address_n: Optional[Sequence["int"]] = None,
+    ) -> None:
+        self.address_n: Sequence["int"] = address_n if address_n is not None else []
+        self.siwa_payload = siwa_payload
 
 
 class AptosMessageSignature(protobuf.MessageType):

@@ -440,6 +440,7 @@ enum MessageType {
     MessageType_AptosSignedTx = 10603 [(wire_out) = true];
     MessageType_AptosSignMessage = 10604 [(wire_in) = true];
     MessageType_AptosMessageSignature = 10605 [(wire_out) = true];
+    MessageType_AptosSignSIWAMessage = 10606 [(wire_in) = true];
 
     // WebAuthn
     MessageType_WebAuthnListResidentCredentials = 800 [(wire_in) = true];

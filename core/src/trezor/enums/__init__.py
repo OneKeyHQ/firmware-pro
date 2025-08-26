@@ -323,6 +323,7 @@ if TYPE_CHECKING:
         AptosSignedTx = 10603
         AptosSignMessage = 10604
         AptosMessageSignature = 10605
+        AptosSignSIWAMessage = 10606
         WebAuthnListResidentCredentials = 800
         WebAuthnCredentials = 801
         WebAuthnAddResidentCredential = 802

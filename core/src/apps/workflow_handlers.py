@@ -293,6 +293,8 @@ def find_message_handler_module(msg_type: int) -> str:
             return "apps.aptos.sign_tx"
         if msg_type == MessageType.AptosSignMessage:
             return "apps.aptos.sign_message"
+        if msg_type == MessageType.AptosSignSIWAMessage:
+            return "apps.aptos.sign_siwa_message"
 
         # algo
         if msg_type == MessageType.AlgorandGetAddress:

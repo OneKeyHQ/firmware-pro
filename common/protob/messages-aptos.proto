@@ -66,6 +66,15 @@ message AptosSignMessage {
 }
 
 /**
+ * Request: ask device to sign SIWA message
+ * @start
+ * @next AptosMessageSignature
+ */
+message AptosSignSIWAMessage {
+    repeated uint32 address_n = 1;
+    required string siwa_payload = 2;
+}
+/**
  * Response: signature for message
  * @end
  */
