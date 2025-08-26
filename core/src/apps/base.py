@@ -551,6 +551,8 @@ def lock_device() -> None:
     if storage.device.is_initialized() and config.has_pin():
         from trezor.lvglui.scrs import fingerprints
 
+        se_thd89.clear_session()
+
         if fingerprints.is_available():
             fingerprints.lock()
         else:
@@ -558,10 +560,6 @@ def lock_device() -> None:
                 print(
                     f"pin locked,  finger is available: {fingerprints.is_available()} ===== finger is unlocked: {fingerprints.is_unlocked()} "
                 )
-            from apps.common import passphrase
-
-            if passphrase.is_passphrase_pin_enabled():
-                storage.cache.end_current_session()
             config.lock()
         wire.find_handler = get_pinlocked_handler
         set_homescreen()

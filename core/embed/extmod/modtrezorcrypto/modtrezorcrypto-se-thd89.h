@@ -135,6 +135,17 @@ STATIC mp_obj_t mod_trezorcrypto_se_thd89_end_session(void) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorcrypto_se_thd89_end_session_obj,
                                  mod_trezorcrypto_se_thd89_end_session);
 
+/// def clear_session() -> None:
+///     """
+///     clear all sessions.
+///     """
+STATIC mp_obj_t mod_trezorcrypto_se_thd89_clear_session(void) {
+  se_sessionClear();
+  return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorcrypto_se_thd89_clear_session_obj,
+                                 mod_trezorcrypto_se_thd89_clear_session);
+
 /// def get_session_state() -> bytes:
 ///     """
 ///     get current session secret state.
@@ -1149,6 +1160,8 @@ STATIC const mp_rom_map_elem_t mod_trezorcrypto_se_thd89_globals_table[] = {
      MP_ROM_PTR(&mod_trezorcrypto_se_thd89_start_session_obj)},
     {MP_ROM_QSTR(MP_QSTR_end_session),
      MP_ROM_PTR(&mod_trezorcrypto_se_thd89_end_session_obj)},
+    {MP_ROM_QSTR(MP_QSTR_clear_session),
+     MP_ROM_PTR(&mod_trezorcrypto_se_thd89_clear_session_obj)},
     {MP_ROM_QSTR(MP_QSTR_get_session_state),
      MP_ROM_PTR(&mod_trezorcrypto_se_thd89_get_session_state_obj)},
     {MP_ROM_QSTR(MP_QSTR_get_session_current_id),

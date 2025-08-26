@@ -209,17 +209,13 @@ async def handle_usb_state():
                 usb_auto_lock = device.is_usb_lock_enabled()
                 if usb_auto_lock and device.is_initialized() and config.has_pin():
                     from trezor.lvglui.scrs import fingerprints
+                    from trezor.crypto import se_thd89
 
                     if config.is_unlocked():
+                        se_thd89.clear_session()
                         if fingerprints.is_available():
                             fingerprints.lock()
                         else:
-
-                            from apps.common import passphrase
-                            import storage.cache
-
-                            if passphrase.is_passphrase_pin_enabled():
-                                storage.cache.end_current_session()
                             config.lock()
                         await safe_reloop()
                         await workflow.spawn(utils.internal_reloop())
@@ -367,16 +363,14 @@ async def _deal_button_press(value: bytes) -> None:
                 from trezor.lvglui.scrs import fingerprints
 
                 if config.has_pin() and config.is_unlocked():
+                    from trezor.crypto import se_thd89
+
+                    se_thd89.clear_session()
+
                     if fingerprints.is_available():
                         if fingerprints.is_unlocked():
                             fingerprints.lock()
                     else:
-
-                        from apps.common import passphrase
-                        import storage.cache
-
-                        if passphrase.is_passphrase_pin_enabled():
-                            storage.cache.end_current_session()
                         config.lock()
                 await loop.race(safe_reloop(), loop.sleep(200))
                 await loop.sleep(300)

@@ -47,6 +47,13 @@ def end_session() -> None:
 
 
 # extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
+def clear_session() -> None:
+    """
+    clear all sessions.
+    """
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
 def get_session_state() -> bytes:
     """
     get current session secret state.
