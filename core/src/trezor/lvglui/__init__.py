@@ -187,7 +187,7 @@ class StatusBar(lv.obj):
 
         # air gap mode tips
         self.air_gap_tips = lv.label(lv.layer_top())
-        self.air_gap_tips.set_text("Air Gap Mode")
+        self.air_gap_tips.set_text("Air Gap Only")
         self.air_gap_tips.add_style(
             StyleWrapper()
             .text_font(font_GeistRegular20)

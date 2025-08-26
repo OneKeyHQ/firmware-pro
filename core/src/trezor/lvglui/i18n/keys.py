@@ -788,6 +788,7 @@ BUTTON__SET_WALLPAPER = 355
 # Lock Screen
 ITEM__LOCK_SCREEN = 356
 TITLE__LOCK_SCREEN = 356
+BUTTON__LOCK_SCREEN = 356
 # During locked, double-tap the screen to wake up the display.
 CONTENT__TAP_TO_WAKE_ENABLED__HINT = 357
 # Double-tap to Wake
@@ -986,6 +987,7 @@ ITEM__BLUETOOTH_VERSION = 446
 # Home Screen
 TITLE__HOME_SCREEN = 447
 ITEM__HOME_SCREEN = 447
+BUTTON__HOME_SCREEN = 447
 # Do you want to change the homescreen image?
 SUBTITLE__SET_HOMESCREEN = 448
 # Do you want to sign this transaction?
@@ -1557,717 +1559,709 @@ BUTTON__TORCH_ON = 708
 BUTTON__TORCH_OFF = 709
 # Export Signed Transaction
 TITLE__EXPORT_SIGNED_TRANSACTION = 710
-# Air Gap Mode
+# Air Gap Only
 ITEM__AIR_GAP_MODE = 711
 TITLE__AIR_GAP_MODE = 711
-# After enabling the Air Gap, Bluetooth, USB and NFC transfer function will be
-# disabled simultaneously.
+ITEM__AIR_GAP = 711
+# Enabling this mode disables Bluetooth, USB, and NFC.
 CONTENT__AFTER_ENABLING_THE_AIRGAP_BLUETOOTH_USB_AND_NFC_TRANSFER_WILL_BE_DISABLED_SIMULTANEOUSLY = 712
-# Air Gap
-ITEM__AIR_GAP = 713
-# Bluetooth, USB and NFC transfer functions have been disabled.
-CONTENT__BLUETOOTH_USB_AND_NFT_TRANSFER_FUNCTIONS_HAVE_BEEN_DISABLED = 714
+# Bluetooth, USB and NFC have been disabled.
+CONTENT__BLUETOOTH_USB_AND_NFT_TRANSFER_FUNCTIONS_HAVE_BEEN_DISABLED = 713
 # Enable Air Gap
-TITLE__ENABLE_AIR_GAP = 715
-# Are you sure to enable Air Gap mode? After enabled, operations such as conne
-# cting software wallets and signing transactions will be performed offline th
-# rough scanning QR codes.
-CONTENT__ARE_YOU_SURE_TO_ENABLE_AIRGAP_MODE = 716
+TITLE__ENABLE_AIR_GAP = 714
+# Enabling this mode disables Bluetooth, USB, and NFC. You can still connect t
+# o software wallets and sign transactions offline by scanning QR codes.
+CONTENT__ARE_YOU_SURE_TO_ENABLE_AIRGAP_MODE = 715
 # Air Gap is a security measure that prevents the intermediate transmission me
 # dia attacks.\nAfter enabling Air Gap, OneKey Pro will disable all wired and
 # wireless communication modules and maintain strict physical isolation from e
 # xternal devices or untrusted networks.
-CONTENT__WHAT_DOES_AIR_GAP_MEANS = 717
+CONTENT__WHAT_DOES_AIR_GAP_MEANS = 716
 # OKX Wallet
-ITEM__OKX_WALLET = 718
+ITEM__OKX_WALLET = 717
 # MetaMask
-ITEM__METAMASK_WALLET = 719
+ITEM__METAMASK_WALLET = 718
 # OneKey App
-ITEM__ONEKEY_WALLET = 720
-TITLE__ONEKEY_APP = 720
+ITEM__ONEKEY_WALLET = 719
+TITLE__ONEKEY_APP = 719
 # Finger {}
-FORM__FINGER_STR = 721
+FORM__FINGER_STR = 720
 # Charging
-MSG__CHARGING = 722
+MSG__CHARGING = 721
 # Scan the QR Code on the app
-CONTENT__SCAN_THE_QR_CODE_DISPLAYED_ON_THE_APP = 723
+CONTENT__SCAN_THE_QR_CODE_DISPLAYED_ON_THE_APP = 722
 # Unsupported data format
-TITLE__DATA_FORMAT_NOT_SUPPORT = 724
+TITLE__DATA_FORMAT_NOT_SUPPORT = 723
 # QR code type not support, please try again.
-CONTENT__QR_CODE_TYPE_NOT_SUPPORT_PLEASE_TRY_AGAIN = 725
+CONTENT__QR_CODE_TYPE_NOT_SUPPORT_PLEASE_TRY_AGAIN = 724
 # Invalid Transaction
-TITLE__INVALID_TRANSACTION = 726
+TITLE__INVALID_TRANSACTION = 725
 # Transaction data is incorrect, please try again
-CONTENT__TX_DATA_IS_INCORRECT_PLEASE_TRY_AGAIN = 727
+CONTENT__TX_DATA_IS_INCORRECT_PLEASE_TRY_AGAIN = 726
 # Encrypt {} Message
-TITLE__ENCRYPT_STR_MESSAGE = 728
+TITLE__ENCRYPT_STR_MESSAGE = 727
 # Decrypt {} Message
-TITLE__DECRYPT_STR_MESSAGE = 729
+TITLE__DECRYPT_STR_MESSAGE = 728
 # Export Signature
-TITLE__EXPORT_SIGNED_SIGNATURE = 730
+TITLE__EXPORT_SIGNED_SIGNATURE = 729
 # Return to the app, and scan the signed signature QR code below.
-CONTENT__RETUNRN_TO_THE_APP_AND_SCAN_THE_SIGNED_TX_QR_CODE_BELOW = 731
+CONTENT__RETUNRN_TO_THE_APP_AND_SCAN_THE_SIGNED_TX_QR_CODE_BELOW = 730
 # Encrypt
-ACTION__ENCRYPT = 732
+ACTION__ENCRYPT = 731
 # Decrypt
-ACTION__DECRYPT = 733
+ACTION__DECRYPT = 732
 # Lift and fine-tune the position, then touch power button again.
-MSG__LIFT_AND_FINE_TUNE_THE_POSITION_THEN_TOUCH_POWER_BUTTON_AGAIN = 734
+MSG__LIFT_AND_FINE_TUNE_THE_POSITION_THEN_TOUCH_POWER_BUTTON_AGAIN = 733
 # Clean power button and try again.
-MSG__CLEAN_FINGERPRINT_SENSOR_AND_TRY_AGAIN = 735
+MSG__CLEAN_FINGERPRINT_SENSOR_AND_TRY_AGAIN = 734
 # Put finger on the power button and keep in place.
-MSG__PUT_FINGER_ON_THE_FINGERPRINT = 736
+MSG__PUT_FINGER_ON_THE_FINGERPRINT = 735
 # Domain
-LIST_KEY__DOMAIN__COLON = 737
+LIST_KEY__DOMAIN__COLON = 736
 # LNURL Auth
-FORM__LNURL_AUTH = 738
+FORM__LNURL_AUTH = 737
 # Approve LNURL Authorization
-TITLE__APPROVE_LNURL_AUTHORIZATION = 739
+TITLE__APPROVE_LNURL_AUTHORIZATION = 738
 # Disable Air Gap
-TITLE__DISABLE_AIR_GAP = 740
-# Are you sure to disable Air Gap mode? After disable, it will be able to conn
-# ect your device via USB or Bluetooth.
-CONTENT__ARE_YOU_SURE_TO_DISABLE_AIRGAP_MODE = 741
+TITLE__DISABLE_AIR_GAP = 739
+# Disabling this mode will allow the device to connect via Bluetooth, USB, and
+# NFC.
+CONTENT__ARE_YOU_SURE_TO_DISABLE_AIRGAP_MODE = 740
 # Select the chain you need, then click Create button.
-SUBTITLE__ADD_ACCOUNT_2__TUTORIAL_AFTER_INIT = 742
+SUBTITLE__ADD_ACCOUNT_2__TUTORIAL_AFTER_INIT = 741
 # ETH & EVM networks
-CONTENT__ETH_AND_EVM_POWERED_NETWORK = 743
+CONTENT__ETH_AND_EVM_POWERED_NETWORK = 742
 # fingerprint not recognized, try again
-MSG__FINGERPRINT_NOT_RECOGNIZED_TRY_AGAIN = 744
+MSG__FINGERPRINT_NOT_RECOGNIZED_TRY_AGAIN = 743
 # Use fingerprint or tap to unlock
-MSG__USE_FINGERPRINT_OR_TAP_TO_UNLOCK = 745
+MSG__USE_FINGERPRINT_OR_TAP_TO_UNLOCK = 744
 # SE Firmware
-ITEM__SE_FIRMWARE = 746
+ITEM__SE_FIRMWARE = 745
 # Low battery (<20%). To keep the battery healthy, please ensure the device is
 # fully charged before long-term storage.
-CONTENT__POWER_OFF_LOW_BATTERY_DESC = 747
+CONTENT__POWER_OFF_LOW_BATTERY_DESC = 746
 # Select the way to connect
-TITLE__CONNECT_APP_WALLET_DESC = 748
+TITLE__CONNECT_APP_WALLET_DESC = 747
 # Bluetooth Connect
-TITLE__BLUETOOTH_CONNECT = 749
+TITLE__BLUETOOTH_CONNECT = 748
 # Select the wallet you want to connect
-CONTENT__SELECT_THE_WALLET_YOU_WANT_TO_CONNECT = 750
+CONTENT__SELECT_THE_WALLET_YOU_WANT_TO_CONNECT = 749
 # iOS & Android
-CONTENT__IOS_ANDROID = 751
+CONTENT__IOS_ANDROID = 750
 # Download OneKey App
-FORM__DOWNLOAD_ONEKEY_APP = 752
+FORM__DOWNLOAD_ONEKEY_APP = 751
 # Download OneKey App Desktop from:\nonekey.so/download
-FORM__DOWNLOAD_ONEKEY_APP_DESKTOP = 753
+FORM__DOWNLOAD_ONEKEY_APP_DESKTOP = 752
 # Connect via Bluetooth
-FORM__CONNECT_VIA_BLUETOOTH = 754
+FORM__CONNECT_VIA_BLUETOOTH = 753
 # Turn on Bluetooth on both devices. Keep the wallet close to your phone, and
 # click on the detected OneKey Pro device name.
-FORM__CONNECT_VIA_BLUETOOTH_DESC = 755
+FORM__CONNECT_VIA_BLUETOOTH_DESC = 754
 # Pair Devices
-FORM__PAIR_DEVICES = 756
+FORM__PAIR_DEVICES = 755
 # Enter the pair code shown on your OneKey Pro hardware wallet in the OneKey A
 # pp to pair your devices.
-FORM__PAIR_DEVICES_DESC = 757
+FORM__PAIR_DEVICES_DESC = 756
 # Learn More
-ACTION__LEARN_MORE = 758
+ACTION__LEARN_MORE = 757
 # Scan the QR code to view the detailed tutorial
-CONTENT__SCAN_THE_QR_CODE_TO_VIEW_THE_DETAILED_TUTORIAL = 759
+CONTENT__SCAN_THE_QR_CODE_TO_VIEW_THE_DETAILED_TUTORIAL = 758
 # Access Wallet
-FORM__ACCESS_WALLET = 760
+FORM__ACCESS_WALLET = 759
 # Open the OKX Mobile App, go to Wallet, select "Add wallet" > "Hardware walle
 # t" > "OneKey".
-FORM__ACCESS_WALLET_DESC = 761
+FORM__ACCESS_WALLET_DESC = 760
 # Import Wallet Accounts
-FORM__IMPORT_WALLET_ACCOUNTS = 762
+FORM__IMPORT_WALLET_ACCOUNTS = 761
 # Enter your PIN when prompted, wait for the wallet list, and choose the accou
 # nt to import.
-FORM__IMPORT_WALLET_ACCOUNTS_DESC = 763
+FORM__IMPORT_WALLET_ACCOUNTS_DESC = 762
 # USB Connect
-TITLE__USB_CONNECT = 764
+TITLE__USB_CONNECT = 763
 # Desktop & Browser Extension
-CONTENT__DESKTOP_BROWSER_EXTENSION = 765
+CONTENT__DESKTOP_BROWSER_EXTENSION = 764
 # Download OneKey App Mobile from:\nonekey.so/download
-FORM__DOWNLOAD_ONEKEY_APP_MOBILE = 766
+FORM__DOWNLOAD_ONEKEY_APP_MOBILE = 765
 # Connect Your Device
-FORM__CONNECT_YOUR_DEVICE = 767
+FORM__CONNECT_YOUR_DEVICE = 766
 # Connect your OneKey Pro to the computer using a USB cable.
-FORM__CONNECT_YOUR_DEVICE_DESC = 768
+FORM__CONNECT_YOUR_DEVICE_DESC = 767
 # Start the Connection
-FORM__START_THE_CONNECTION = 769
+FORM__START_THE_CONNECTION = 768
 # Open the OneKey App Desktop and select "Connect Hardware Wallet".
-FORM__START_THE_CONNECTION_DESC = 770
+FORM__START_THE_CONNECTION_DESC = 769
 # Browser Extension
-CONTENT__BROWSER_EXTENSION = 771
+CONTENT__BROWSER_EXTENSION = 770
 # Open MetaMask in your browser, click on the account name, and select "Add ac
 # count or hardware wallet" at the bottom.
-FORM__OPEN_METAMASK_IN_YOUR_BROWSER = 772
+FORM__OPEN_METAMASK_IN_YOUR_BROWSER = 771
 # Connect Hardware Wallet
-FORM__CONNECT_HARDWARE_WALLET = 773
+FORM__CONNECT_HARDWARE_WALLET = 772
 # Select "OneKey" > "Continue", then choose your device in the dialog box and
 # click "Connect". On the authorization page, select "Allow this session", and
 # follow the on-screen instructions to export your account.
-FORM__CONNECT_HARDWARE_WALLET_DESC = 774
+FORM__CONNECT_HARDWARE_WALLET_DESC = 773
 # Unlock Account
-FORM__UNLOCK_ACCOUNT = 775
+FORM__UNLOCK_ACCOUNT = 774
 # From the list of accounts, select the one you wish to connect and click "Unl
 # ock".
-FORM__UNLOCK_ACCOUNT_DESC = 776
+FORM__UNLOCK_ACCOUNT_DESC = 775
 # Open the OKX wallet extension, select "Add wallet" > "Connect hardware walle
 # t" > "OneKey".
-FORM__OPEN_THE_OKX_WALLET_EXTENSION = 777
+FORM__OPEN_THE_OKX_WALLET_EXTENSION = 776
 # Install OneKey Bridge
-FORM__INSTALL_ONEKEY_BRIDGE = 778
+FORM__INSTALL_ONEKEY_BRIDGE = 777
 # Download and install OneKey Bridge if prompted, then refresh, choose your de
 # vice, and enter your PIN.
-FORM__INSTALL_ONEKEY_BRIDGE_DESC = 779
+FORM__INSTALL_ONEKEY_BRIDGE_DESC = 778
 # Once connected, select the account to import and click "Connect" at the bott
 # om.
-FORM__OKX_EXTENSION_IMPORT_WALLET_ACCOUNTS_DESC = 780
+FORM__OKX_EXTENSION_IMPORT_WALLET_ACCOUNTS_DESC = 779
 # QR Code Connect
-TITLE__QR_CODE_CONNECT = 781
-# Bluetooth and USB has disabled in Air Gap Mode
-MSG__BLUETOOTH_AND_USB_HAS_DISABLED_IN_AIR_GAP_MODE = 782
+TITLE__QR_CODE_CONNECT = 780
+# Air Gap Only enabled. Bluetooth and USB have been disabled.
+MSG__BLUETOOTH_AND_USB_HAS_DISABLED_IN_AIR_GAP_MODE = 781
 # Restart Device?
-TITLE_RESTART_DEVICE = 783
+TITLE_RESTART_DEVICE = 782
 # Restarting will exit the device from update mode and interrupt the upgrade p
 # rocess.
-TITLE_RESTART_DEVICE_DESC = 784
+TITLE_RESTART_DEVICE_DESC = 783
 # Confirm Address
-TITLE_CONFIRM_ADDRESS = 785
+TITLE_CONFIRM_ADDRESS = 784
 # Return to the app, and scan the QR code below.
-TITLE_CONFIRM_ADDRESS_DESC = 786
+TITLE_CONFIRM_ADDRESS_DESC = 785
 # BTC, ETH & EVM networks
-CONTENT__BTC_AND_EVM_COMPATIBLE_NETWORKS = 787
+CONTENT__BTC_AND_EVM_COMPATIBLE_NETWORKS = 786
 # Open OneKey and scan the QR code below
-CONTENT__OPEN_ONEKEY_AND_SCAN_THE_QR_CODE_BELOW = 788
+CONTENT__OPEN_ONEKEY_AND_SCAN_THE_QR_CODE_BELOW = 787
 # Export Account
-CONTENT__EXPORT_ACCOUNT = 789
+CONTENT__EXPORT_ACCOUNT = 788
 # Connecting...
-TITLE__CONNECTING = 790
+TITLE__CONNECTING = 789
 # Set OneKey Lite PIN
-TITLE__SET_ONEKEY_LITE_PIN = 791
+TITLE__SET_ONEKEY_LITE_PIN = 790
 # I understand that the backup will be overwritten
-FORM__I_UNDERSTAND_THAT_THE_BACKUP_WILL_BE_OVERWRITTEN = 792
+FORM__I_UNDERSTAND_THAT_THE_BACKUP_WILL_BE_OVERWRITTEN = 791
 # Confirm OneKey Lite PIN
-TITLE__CONFIRM_ONEKEY_LITE_PIN = 793
+TITLE__CONFIRM_ONEKEY_LITE_PIN = 792
 # PINs do not match, please reconfirm.
-CONTENT__PINS_DO_NOT_MATCH = 794
+CONTENT__PINS_DO_NOT_MATCH = 793
 # Connect again
-TITLE__CONNECT_AGAIN = 795
+TITLE__CONNECT_AGAIN = 794
 # Exit
-BUTTON__EXIT = 796
+BUTTON__EXIT = 795
 # The two OneKey Lite used for connection are not the same.
-CONTENT__THE_TWO_ONEKEY_LITE_USED_FOR_CONNECTION_ARE_NOT_THE_SAME = 797
+CONTENT__THE_TWO_ONEKEY_LITE_USED_FOR_CONNECTION_ARE_NOT_THE_SAME = 796
 # Exit Backup Process?
-TITLE__EXIT_BACKUP_PROCESS = 798
+TITLE__EXIT_BACKUP_PROCESS = 797
 # If you exit now, you will need to re-verify your recovery phrase when you re
 # -enter. Are you sure you want to exit?
-TITLE__EXIT_BACKUP_PROCESS_DESC = 799
+TITLE__EXIT_BACKUP_PROCESS_DESC = 798
 # Unsupported Recovery Phrase
-TITLE__UNSUPPORTED_RECOVERY_PHRASE = 800
+TITLE__UNSUPPORTED_RECOVERY_PHRASE = 799
 # The current hardware wallet only supports 12, 18, and 24-word recovery phras
 # es.\nThis Lite backup cannot be restored.
-TITLE__UNSUPPORTED_RECOVERY_PHRASE_DESC = 801
+TITLE__UNSUPPORTED_RECOVERY_PHRASE_DESC = 800
 # Open OneKey App and scan the QR Code.
-CONTENT__OPEN_ONEKEY_SCAN_THE_QRCODE = 802
+CONTENT__OPEN_ONEKEY_SCAN_THE_QRCODE = 801
 # Wallet Mismatch
-CONTENT__WALLET_MISMATCH = 803
+CONTENT__WALLET_MISMATCH = 802
 # Your selected wallet in the app does not match the hardware wallet. Please c
 # heck and try again.
-CONTENT__WALLET_MISMATCH_DESC = 804
+CONTENT__WALLET_MISMATCH_DESC = 803
 # Non-standard message signature.
-CONTENT__NON_STANDARD_MESSAGE_SIGNATURE = 805
+CONTENT__NON_STANDARD_MESSAGE_SIGNATURE = 804
 # Send Tokens
-TITLE__SEND_TOKENS = 806
+TITLE__SEND_TOKENS = 805
 # The following transaction output contains contract data:
-CONTENT__FOLLOWING_TRANSACTION_CONTAINS_CONTRACT = 807
+CONTENT__FOLLOWING_TRANSACTION_CONTAINS_CONTRACT = 806
 # You are using {type} authorization, ensure the dApp is trustworthy to avoid
 # asset loss.
-MSG___PERMIT_SIGN_ALERT = 808
+MSG___PERMIT_SIGN_ALERT = 807
 # Backup Limited
-TITLE__BACKUP_LIMITED = 809
+TITLE__BACKUP_LIMITED = 808
 # Airgap mode is enabled and NFC is disabled, so you cannot back up to OneKey
 # Lite. Please disable Airgap mode and try again.
-TITLE__BACKUP_LIMITED_DESC = 810
+TITLE__BACKUP_LIMITED_DESC = 809
 # Go Settings
-BUTTON__GO_SETTINGS = 811
+BUTTON__GO_SETTINGS = 810
 # Certifications
-CONTENT__CERTIFICATIONS = 812
+CONTENT__CERTIFICATIONS = 811
 # My Address
-APP__ADDRESS = 813
+APP__ADDRESS = 812
 # Select Network
-TITLE__SELECT_NETWORK = 814
+TITLE__SELECT_NETWORK = 813
 # {network} Address
-TITLE__NETWORK_ADDRESS = 815
+TITLE__NETWORK_ADDRESS = 814
 # Select Derivation Path
-TITLE__SELECT_DERIVATION_PATH = 816
+TITLE__SELECT_DERIVATION_PATH = 815
 # Select Account
-TITLE__SELECT_ACCOUNT = 817
+TITLE__SELECT_ACCOUNT = 816
 # Go To Account
-TITLE__SET_INITIAL_ACCOUNT = 818
+TITLE__SET_INITIAL_ACCOUNT = 817
 # Input formatting error
-TITLE__SET_INITIAL_ACCOUNT_ERROR = 819
+TITLE__SET_INITIAL_ACCOUNT_ERROR = 818
 # Your address is an EVM network address. You can use it to manage your assets
 # across other EVM-compatible networks (such as Ethereum, BNB Chain, Polygon,
 # Arbitrum One, Avalanche, etc.).
-CONTENT__NETWORK_ADDRESS_ETHEREUM = 820
+CONTENT__NETWORK_ADDRESS_ETHEREUM = 819
 # Security Keys
-APP__SECURITY = 821
-FIDO_FIDO_KEYS_LABEL = 821
+APP__SECURITY = 820
+FIDO_FIDO_KEYS_LABEL = 820
 # Wallet Setup Required
-ONBOARDING_BLUETOOTH_PAIRING_BEFORE_SETUP_PIN_TITLE = 822
+ONBOARDING_BLUETOOTH_PAIRING_BEFORE_SETUP_PIN_TITLE = 821
 # To pair your device via Bluetooth, please create a wallet on your hardware d
 # evice first. This is necessary for secure connection
-ONBOARDING_BLUETOOTH_PAIRING_BEFORE_SETUP_PIN_DESC = 823
+ONBOARDING_BLUETOOTH_PAIRING_BEFORE_SETUP_PIN_DESC = 822
 # Bluetooth pairing unavailable while in Boot mode
-BOOT_BLUETOOTH_PAIRING_ERROR_TITLE = 824
+BOOT_BLUETOOTH_PAIRING_ERROR_TITLE = 823
 # To update your device, visit firmware.onekey.so on your computer and connect
 # via USB to install firmware.
-BOOT_BLUETOOTH_PAIRING_ERROR_DESC = 825
+BOOT_BLUETOOTH_PAIRING_ERROR_DESC = 824
 # Verify Now
-ACTION_VERIFY_NOW = 826
+ACTION_VERIFY_NOW = 825
 # Connect Device
-VERIFY_DEVICE_CONNECT_DEVICE_TITLE = 827
+VERIFY_DEVICE_CONNECT_DEVICE_TITLE = 826
 # Open OneKey App and connect your device to create a wallet. Device verificat
 # ion will be performed automatically
-VERIFY_DEVICE_CONNECT_DEVICE_DESC = 828
+VERIFY_DEVICE_CONNECT_DEVICE_DESC = 827
 # Verify Device
-TITLE__VEIRIFY_DEVICE = 829
+TITLE__VEIRIFY_DEVICE = 828
 # Visit https://bit.ly/3ZsHB40 for additional verification methods
-VERIFY_DEVICE_HELP_CENTER_TEXT = 830
+VERIFY_DEVICE_HELP_CENTER_TEXT = 829
 # More Networks
-BUTTON__MORE_NETWORKS = 831
+BUTTON__MORE_NETWORKS = 830
 # Show Less
-BUTTON__LESS_NETWORKS = 832
+BUTTON__LESS_NETWORKS = 831
 # Bootloader URL requires device verification in OneKey App 5.5.0+
-VERIFY_DEVICE_BOOTLOADER_DESC = 833
+VERIFY_DEVICE_BOOTLOADER_DESC = 832
 # Download OneKey App at: onekey.so/download
-FORM__DOWNLOAD_APP_FROM_DOWNLOAD_CENTER = 834
+FORM__DOWNLOAD_APP_FROM_DOWNLOAD_CENTER = 833
 # Secure accounts with security keys
-FIDO_FIDO_KEYS_DESC = 835
+FIDO_FIDO_KEYS_DESC = 834
 # Remove Security Key?
-FIDO_REMOVE_KEY_TITLE = 836
+FIDO_REMOVE_KEY_TITLE = 835
 # This security key will be permanently removed.
-FIDO_REMOVE_KEY_DESC = 837
+FIDO_REMOVE_KEY_DESC = 836
 # Security Key Removed
-FIDO_REMOVE_KEY_SUCCESS_TITLE = 838
+FIDO_REMOVE_KEY_SUCCESS_TITLE = 837
 # Key Limit Reached
-FIDO_ADD_KEY_LIMIT_REACHED_TITLE = 839
+FIDO_ADD_KEY_LIMIT_REACHED_TITLE = 838
 # 60 security keys limit reached. Remove unused to add new
-FIDO_ADD_KEY_LIMIT_REACHED_DESC = 840
+FIDO_ADD_KEY_LIMIT_REACHED_DESC = 839
 # Manage Security Keys
-FIDO_MANAGE_KEY_CTA_LABEL = 841
+FIDO_MANAGE_KEY_CTA_LABEL = 840
 # No security keys added yet
-FIDO_LIST_EMPTY_TEXT = 842
+FIDO_LIST_EMPTY_TEXT = 841
 # Using OneKey Devices as Security Keys
-TIPS_SECURITY_KEYS_TEXT = 843
+TIPS_SECURITY_KEYS_TEXT = 842
 # Register
-TIPS_SECURITY_KEYS_REGISTER_TITLE = 844
+TIPS_SECURITY_KEYS_REGISTER_TITLE = 843
 # Plug in your OneKey to your computer
-TIPS_SECURITY_KEYS_REGISTER_PLUG_IN = 845
+TIPS_SECURITY_KEYS_REGISTER_PLUG_IN = 844
 # Go to security settings of the website (e.g. Google, Facebook)
-TIPS_SECURITY_KEYS_REGISTER_GO_TO_WEBSITE = 846
+TIPS_SECURITY_KEYS_REGISTER_GO_TO_WEBSITE = 845
 # Select "Add Security Key" option
-TIPS_SECURITY_KEYS_REGISTER_SELECT_OPTION = 847
+TIPS_SECURITY_KEYS_REGISTER_SELECT_OPTION = 846
 # Confirm with OneKey (unlock required)
-TIPS_SECURITY_KEYS_REGISTER_CONFIRM = 848
+TIPS_SECURITY_KEYS_REGISTER_CONFIRM = 847
 # Choose "Security Key" at login
-TIPS_SECURITY_KEYS_AUTHENTICATE_CHOOSE_OPTION = 849
+TIPS_SECURITY_KEYS_AUTHENTICATE_CHOOSE_OPTION = 848
 # Approve with OneKey
-TIPS_SECURITY_KEYS_AUTHENTICATE_APPROVE = 850
+TIPS_SECURITY_KEYS_AUTHENTICATE_APPROVE = 849
 # Authenticate
-TIPS_SECURITY_KEYS_AUTHENTICATE_TITLE = 851
+TIPS_SECURITY_KEYS_AUTHENTICATE_TITLE = 850
 # Slide to unlock
-MISTOUCH_PROTECTION_TITLE = 852
+MISTOUCH_PROTECTION_TITLE = 851
 # 5 failed tries. Slide to continue
-MISTOUCH_PROTECTION_DESC = 853
+MISTOUCH_PROTECTION_DESC = 852
 # Slide to continue
-MISTOUCH_PROTECTION_SLIDE_TEXT = 854
+MISTOUCH_PROTECTION_SLIDE_TEXT = 853
 # Back to home
-BUTTON__BACK_TO_HOME = 855
+BUTTON__BACK_TO_HOME = 854
 # Adding Security Key…
-FIDO_KEY_REGISTERING_DESC = 856
+FIDO_KEY_REGISTERING_DESC = 855
 # Security Key Added
-FIDO_KEY_REGISTERED_TITLE = 857
+FIDO_KEY_REGISTERED_TITLE = 856
 # Low Battery
-POWER_ON_LOW_BATTERY_TITLE = 858
+POWER_ON_LOW_BATTERY_TITLE = 857
 # Powering off
-POWER_ON_LOW_BATTERY_DESC = 859
+POWER_ON_LOW_BATTERY_DESC = 858
 # Auto Lock/Shutdown
-ITEM__AUTO_LOCK_AND_SHUTDOWN = 860
+ITEM__AUTO_LOCK_AND_SHUTDOWN = 859
 # Solana Raw Signing
-SECURITY__SOLANA_RAW_SIGNING_TITLE = 861
+SECURITY__SOLANA_RAW_SIGNING_TITLE = 860
 # Allows signing raw Solana messages without processing or validation. This ma
 # y expose you to phishing, blind signing, and unauthorized approvals. Use wit
 # h caution.
-SECURITY__SOLANA_RAW_SIGNING_DESC = 862
+SECURITY__SOLANA_RAW_SIGNING_DESC = 861
 # Enable Solana Raw Signing?
-SECURITY__SOLANA_RAW_SIGNING_ENABLE_TITLE = 863
+SECURITY__SOLANA_RAW_SIGNING_ENABLE_TITLE = 862
 # This may expose you to phishing, blind signing, and unauthorized transaction
 # s. Enable only if you fully understand the risks.
-SECURITY__SOLANA_RAW_SIGNING_ENABLE_DESC = 864
+SECURITY__SOLANA_RAW_SIGNING_ENABLE_DESC = 863
 # Risk of phishing & blind signing. Proceed only if you trust the source.
-SECURITY__SOLANA_RAW_SIGNING_TX_WARNING = 865
+SECURITY__SOLANA_RAW_SIGNING_TX_WARNING = 864
 # Security Protection
-ITEM__SECURITY_PROTECTION = 866
+ITEM__SECURITY_PROTECTION = 865
 # Basic Tutorial
-ITEM__BASIC_TUTORIAL = 867
-# BTC, SOL, ETH & EVM networks
-CONTENT__BTC_SOL_ETH_N_EVM_NETWORKS = 868
+ITEM__BASIC_TUTORIAL = 866
+# BTC, SOL, TRON, ETH & EVM networks
+CONTENT__BTC_SOL_ETH_N_EVM_NETWORKS = 867
 # Candidate
-GLOBAL_CANDIDATE = 869
+GLOBAL_CANDIDATE = 868
 # Target network
-GLOBAL_TARGET_NETWORK = 870
+GLOBAL_TARGET_NETWORK = 869
 # Remove vote
-TITLE_REMOVE_VOTE = 871
+TITLE_REMOVE_VOTE = 870
 # High-risk operation: This transaction contains delegatecall, which could all
 # ow external code to control your wallet
-GNOSIS_SAFE_SIG_DELEGATECALL_WARNING_TEXT = 872
+GNOSIS_SAFE_SIG_DELEGATECALL_WARNING_TEXT = 871
 # Operation
-GLOBAL_OPERATION = 873
+GLOBAL_OPERATION = 872
 # Gnosis Safe Transaction
-GNOSIS_SAFE_SIG_TITLE = 874
+GNOSIS_SAFE_SIG_TITLE = 873
 # Safe Tx Gas
-GNOSIS_SAGE_SIG_SAFE_TX_GAS = 875
+GNOSIS_SAGE_SIG_SAFE_TX_GAS = 874
 # Base Gas
-GLOBAL_BASE_GAS = 876
+GLOBAL_BASE_GAS = 875
 # Gas Token
-GLOBAL_GAS_TOKEN = 877
+GLOBAL_GAS_TOKEN = 876
 # Refund Receiver
-GNOSIS_SAGE_SIG_REFUND_RECEIVER = 878
+GNOSIS_SAGE_SIG_REFUND_RECEIVER = 877
 # Do you want to sign this Gnosis Safe transaction?
-GNOSIS_SAGE_SIG_DOUBLE_CHECK_TO_CONFIRM_DESC_TEXT = 879
+GNOSIS_SAGE_SIG_DOUBLE_CHECK_TO_CONFIRM_DESC_TEXT = 878
 # Enable Security Keys
-SECURITY__ENABLE_FIDO_KEYS = 880
+SECURITY__ENABLE_FIDO_KEYS = 879
 # When enabled, OneKey works as a security key for passwordless login and 2FA
 # across websites and apps.
-SECURITY__ENABLE_FIDO_KEYS_DESC = 881
+SECURITY__ENABLE_FIDO_KEYS_DESC = 880
 # Security keys disabled. Cannot register or verify credentials. Re-enable to
 # restore.
-FIDO_DISABLED_INFO_TEXT = 882
+FIDO_DISABLED_INFO_TEXT = 881
 # Disable Security Keys
-SECURITY__DISABLE_FIDO_KEYS = 883
+SECURITY__DISABLE_FIDO_KEYS = 882
 # Invalid Phrases
-INVALID_PHRASES__TITLE = 884
+INVALID_PHRASES__TITLE = 883
 # You can edit a single word or start over.
-INVALID_PHRASES__DESC = 885
+INVALID_PHRASES__DESC = 884
 # Start Over
-GLOBAL__START_OVER = 886
+GLOBAL__START_OVER = 885
 # Forgetting your passphrase will lose access to funds
-PASSPHRASE_FORGETTING_WARNING_TEXT = 887
+PASSPHRASE_FORGETTING_WARNING_TEXT = 886
 # Edit
-GLOBAL__EDIT = 888
+GLOBAL__EDIT = 887
+BUTTON__EDIT = 887
 # Vote count
-GLOBAL__VOTE_COUNT = 889
+GLOBAL__VOTE_COUNT = 888
 # Adds an extra word to your recovery phrase, unlocking hidden wallets.
-PASSPHRASE__ENABLE_DESC = 890
+PASSPHRASE__ENABLE_DESC = 889
 # Advance
-PASSPHRASE__ADVANCE = 891
+PASSPHRASE__ADVANCE = 890
 # Attach to PIN
-PASSPHRASE__ATTACH_TO_PIN = 892
+PASSPHRASE__ATTACH_TO_PIN = 891
 # Unlock your hidden wallet using PIN.
-PASSPHRASE__ATTACH_TO_PIN_DESC = 893
+PASSPHRASE__ATTACH_TO_PIN_DESC = 892
 # Set Hidden Wallet PIN
-PASSPHRASE__SET_PASSPHRASE_PIN = 894
+PASSPHRASE__SET_PASSPHRASE_PIN = 893
 # Fingerprint Upgrade
-TITLE__FINGERPRINT_UPGRADE = 895
+TITLE__FINGERPRINT_UPGRADE = 894
 # Set up now
-BUTTON__SET_UP_NOW = 896
+BUTTON__SET_UP_NOW = 895
 # Put your finger on the power button and lift it afterwards, Move your finger
 # as guided by the light dot, repeating this step.
-TITLE__GET_STARTED_DESC = 897
+TITLE__GET_STARTED_DESC = 896
 # No Passphrase Linked to This PIN
-PASSPHRASE__PIN_NOT_ATTACHED = 898
+PASSPHRASE__PIN_NOT_ATTACHED = 897
 # Attach Passphrase
-PASSPHRASE__PIN_ATTACHED_ONE = 899
+PASSPHRASE__PIN_ATTACHED_ONE = 898
 # PIN has attached one Passphrase
-PASSPHRASE__PIN_ATTACHED = 900
+PASSPHRASE__PIN_ATTACHED = 899
 # You can attach a passphrase to this PIN.
-PASSPHRASE__PIN_NOT_ATTACHED_DESC = 901
+PASSPHRASE__PIN_NOT_ATTACHED_DESC = 900
 # You can remove this PIN or attach a new Passphrase.
-PASSPHRASE__PIN_ATTACHED_DESC = 902
+PASSPHRASE__PIN_ATTACHED_DESC = 901
 # PIN Already Used
-PASSPHRASE__PIN_USED = 903
+PASSPHRASE__PIN_USED = 902
 # This PIN has already been used. Please try a different one.
-PASSPHRASE__PIN_USED_DESC = 904
+PASSPHRASE__PIN_USED_DESC = 903
 # Hit the Limit
-PASSPHRASE__PIN_HIT_LIMIT = 905
+PASSPHRASE__PIN_HIT_LIMIT = 904
 # You’ve reached the maximum of 30 PINs. Please remove some before adding new
 # ones.
-PASSPHRASE__PIN_HIT_LIMIT_DESC = 906
+PASSPHRASE__PIN_HIT_LIMIT_DESC = 905
 # Put your finger on the power button and lift it afterwards.
-MSG__PUT_YOUR_FINGER_ON_THE_POWER_BUTTON_AND_LIFT_IT_AFTERWARDS = 907
+MSG__PUT_YOUR_FINGER_ON_THE_POWER_BUTTON_AND_LIFT_IT_AFTERWARDS = 906
 # Follow the on-screen guidance to fine-tune finger position.
-MSG__FOLLOW_THE_ON_SCREEN_GUIDANCE_TO_FINE_TUNE_FINGER_POSITION = 908
+MSG__FOLLOW_THE_ON_SCREEN_GUIDANCE_TO_FINE_TUNE_FINGER_POSITION = 907
 # Enrolling fingerprint...
-MSG__ENROLLING_FINGERPRINT = 909
+MSG__ENROLLING_FINGERPRINT = 908
 # Attach One Passphrase
-PASSPHRASE__ATTACH_ONE_PASSPHRASE = 910
+PASSPHRASE__ATTACH_ONE_PASSPHRASE = 909
 # I understand the Passphrase PIN is an alternative login for hidden wallet.
-PASSPHRASE__ATTACH_ONE_PASSPHRASE_DESC1 = 911
-# I know that if I forget the word, I might lose my assets.
-PASSPHRASE__ATTACH_ONE_PASSPHRASE_DESC2 = 912
+PASSPHRASE__ATTACH_ONE_PASSPHRASE_DESC1 = 910
+# I know that if I forget the Passphrase, I might lose my assets.
+PASSPHRASE__ATTACH_ONE_PASSPHRASE_DESC2 = 911
 # Keep going to capture the edges of your print.
-TITLE__ADJUST_YOUR_GRIP_DESC = 913
+TITLE__ADJUST_YOUR_GRIP_DESC = 912
 # Adjust Your Grip
-TITLE__ADJUST_YOUR_GRIP = 914
+TITLE__ADJUST_YOUR_GRIP = 913
 # Save Your Passphrase
-PASSPHRASE__SAVE = 915
+PASSPHRASE__SAVE = 914
 # Forget your Passphrase will lose access to funds linked to your hidden walle
 # t.
-PASSPHRASE__SAVE_DESC = 916
+PASSPHRASE__SAVE_DESC = 915
 # I undersand
-PASSPHRASE__UNDERSTAND = 917
+PASSPHRASE__UNDERSTAND = 916
 # Passphrase set and attached to PIN
-PASSPHRASE__SET = 918
+PASSPHRASE__SET = 917
 # This PIN unlocks only the hidden wallet. For any security-related operation,
 # you'll need the PIN of the standard wallet.
-PASSPHRASE__SET_DESC = 919
+PASSPHRASE__SET_DESC = 918
 # Fingerprint data is protected by security chips.
-CONTENT__FINGERPRINT_DATA_IS_PROTECTED_BY_SECURITY_CHIPS = 920
+CONTENT__FINGERPRINT_DATA_IS_PROTECTED_BY_SECURITY_CHIPS = 919
 # Once removed, you won’t be able to unlock the device with this PIN.
-PASSPHRASE__REMOVE_DESC = 921
+PASSPHRASE__REMOVE_DESC = 920
 # PIN Removed
-PASSPHRASE__REMOVE_SUCCESSFUL = 922
+PASSPHRASE__REMOVE_SUCCESSFUL = 921
 # Fingerprint Enrollment Timeout
-TITLE__FINGERPRINT_ENROLLMENT_TIMEOUT = 923
+TITLE__FINGERPRINT_ENROLLMENT_TIMEOUT = 922
 # Re-enrolling your fingerprint will remove current fingerprint data and enhan
 # ce your unlocking accuracy. Set up now?
-TITLE__FINGERPRINT_UPGRADE_DESC = 924
+TITLE__FINGERPRINT_UPGRADE_DESC = 923
 # Wallet information is protected with a security chip. You should back up you
 # r new wallet right now.
-TITLE__WALLET_CREATED_DESC = 925
+TITLE__WALLET_CREATED_DESC = 924
 # Your PIN is protected by security chips.
-TITLE__PIN_CHANGED_DESC = 926
+TITLE__PIN_CHANGED_DESC = 925
 # The security key is protected by security chips.
-TITLE__FIDO_KEY_REGISTERED_DESC = 927
+TITLE__FIDO_KEY_REGISTERED_DESC = 926
 # Confirm remove PIN
-PASSPHRASE__REMOVE = 928
+PASSPHRASE__REMOVE = 927
 # Scanning... Hold still
-CONTENT__SCANNING_HOLD_STILL = 929
+CONTENT__SCANNING_HOLD_STILL = 928
 # By setting up different PIN codes linked to different passphrases, you can e
 # asily access different wallets. Just enter a specific PIN, and you'll open t
 # he wallet that's tied to it.
-ITEM__ATTACH_TO_PIN_DESC = 930
+ITEM__ATTACH_TO_PIN_DESC = 929
 # Turbo Mode
-ACTION__TURBO_MODE = 931
-TITLE__TURBO_MODE = 931
+ACTION__TURBO_MODE = 930
+TITLE__TURBO_MODE = 930
 # Sign transactions with one click. (only EVM Network and Solana)
-CONTENT__SIGN_TRANSACTIONS_WITH_ONE_CLICK_ONLY_EVM_NETWORK_AND_SOLANA = 932
+CONTENT__SIGN_TRANSACTIONS_WITH_ONE_CLICK_ONLY_EVM_NETWORK_AND_SOLANA = 931
 # Enable Turbo Mode?
-TITLE__ENABLE_TURBO_MODE = 933
+TITLE__ENABLE_TURBO_MODE = 932
 # Sign transactions with one click.
-CONTENT__SIGN_TRANSACTIONS_WITH_ONE_CLICK = 934
+CONTENT__SIGN_TRANSACTIONS_WITH_ONE_CLICK = 933
 # Once enabled, the device will omit details when reviewing transactions. I kn
 # ow the risks.
-ACTION__ONCE_ENABLED_THE_DEVICE_WILL_OMIT_DETAILS_WHEN_REVIEWING_TRANSACTIONS_I_KNOW_THE_RISKS = 935
+ACTION__ONCE_ENABLED_THE_DEVICE_WILL_OMIT_DETAILS_WHEN_REVIEWING_TRANSACTIONS_I_KNOW_THE_RISKS = 934
 # Slide to Enable
-ACTION__SLIDE_TO_ENABLE = 936
+ACTION__SLIDE_TO_ENABLE = 935
 # Send {num} {token} to {addr}
-MSG__SEND_TURBO = 937
+MSG__SEND_TURBO = 936
 # Sign Message
-MSG__SIGN_MESSAGE = 938
+MSG__SIGN_MESSAGE = 937
 # Sign Transaction
-MSG__SIGN_TRANSACTION = 939
+MSG__SIGN_TRANSACTION = 938
 # Your Fingerprint (SE) needs an update. Please visit https://firmware.onekey.
 # so/ to update it and try again.
-CONTENT__YOUR_FINGERPRINT_SE_VERSION_IS_OUTDATED = 940
+CONTENT__YOUR_FINGERPRINT_SE_VERSION_IS_OUTDATED = 939
 # OP_RETURN
-TITLE__OP_RETURN = 941
+TITLE__OP_RETURN = 940
 # This transaction contains a non-zero OP_RETURN value. Once confirmed, your f
 # unds will be permanently locked.
-TITLE__OP_RETURN_DESC = 942
+TITLE__OP_RETURN_DESC = 941
 # PIN for standard wallet
-CONTENT__PIN_FOR_STANDARD_WALLET = 943
+CONTENT__PIN_FOR_STANDARD_WALLET = 942
 # Enter Hidden Wallet PIN
-TITLE__ENTER_HIDDEN_WALLET_PIN = 944
+TITLE__ENTER_HIDDEN_WALLET_PIN = 943
 # Standard Wallet
-TITLE__STANDARD_WALLET = 945
+TITLE__STANDARD_WALLET = 944
 # Hidden Wallet
-TITLE__HIDDEN_WALLET = 946
+TITLE__HIDDEN_WALLET = 945
 # Tap to send
-ITEM__TAP_TO_SEND = 947
+ITEM__TAP_TO_SEND = 946
 # Unknown Message
-MSG__UNKNOWN_MESSAGE = 948
+MSG__UNKNOWN_MESSAGE = 947
 # Unknown Network
-MSG__UNKNOWN_NETWORK = 949
+MSG__UNKNOWN_NETWORK = 948
 # 3 failed tries. Slide to continue
-CONTENT__STR_FAILED_TRIES_SLIDE_TO_CONTINUE = 950
+CONTENT__STR_FAILED_TRIES_SLIDE_TO_CONTINUE = 949
 # Recovery Phrase Types
-TITLE__RECOVERY_PHRASE_TYPES = 951
+TITLE__RECOVERY_PHRASE_TYPES = 950
 # Choose the wallet backup type that fits your needs.
-TITLE__RECOVERY_PHRASE_TYPES_DESC = 952
+TITLE__RECOVERY_PHRASE_TYPES_DESC = 951
 # Legacy Backup Types
-TITLE__LEGACY_BACKUP_TYPES_BIP39 = 953
+TITLE__LEGACY_BACKUP_TYPES_BIP39 = 952
 # 20-word backup types
-TITLE__ADVANCED_BACKUP_TYPES_SLIP_39 = 954
+TITLE__ADVANCED_BACKUP_TYPES_SLIP_39 = 953
 # Single-share Backup
-BUTTON__SINGLE_SHARE_BACKUP = 955
+BUTTON__SINGLE_SHARE_BACKUP = 954
 # Multi-share Backup
-BUTTON__MULTI_SHARE_BACKUP = 956
-TITLE__MULTI_SHARE_BACKUP = 956
+BUTTON__MULTI_SHARE_BACKUP = 955
+TITLE__MULTI_SHARE_BACKUP = 955
 # Generates a single 20-word recovery phrase or multiple 20-word shares (wordl
 # ists) to recover your wallet.
-CONTENT__GENERATES_A_SINGLE_20_WORD_RECOVERY_PHRASE_OR_MULTIPLE_20_WORD_SHARES_WORDLISTS_TO_RECOVER_YOUR_WALLET = 957
+CONTENT__GENERATES_A_SINGLE_20_WORD_RECOVERY_PHRASE_OR_MULTIPLE_20_WORD_SHARES_WORDLISTS_TO_RECOVER_YOUR_WALLET = 956
 # Number of Share
-TITLE__NUMBER_OF_SHARE = 958
+TITLE__NUMBER_OF_SHARE = 957
 # Threshould
-TITLE__THRESHOLD = 959
+TITLE__THRESHOLD = 958
 # You have completed verification of Share {num} of {total} Recovery Phrase.
-CONTENT__YOU_HAVE_COMPLETED_VERIFICATION_OF_SHARE_STR_OF_STR_RECOVERY_PHRASE = 960
+CONTENT__YOU_HAVE_COMPLETED_VERIFICATION_OF_SHARE_STR_OF_STR_RECOVERY_PHRASE = 959
 # {num} of {total} Shares Entered
-TITLE__STR_OF_STR_SHARES_ENTERED = 961
+TITLE__STR_OF_STR_SHARES_ENTERED = 960
 # {num} more share needed.
-TITLE__STR_OF_STR_SHARES_ENTERED_DESC = 962
+TITLE__STR_OF_STR_SHARES_ENTERED_DESC = 961
 # Enter a Different Share
-TITLE__ENTER_A_DIFFERENT_SHARE = 963
+TITLE__ENTER_A_DIFFERENT_SHARE = 962
 # The Recovery Phrase you entered is duplicated. Please enter a different Shar
 # e.
-TITLE__ENTER_A_DIFFERENT_SHARE_DESC = 964
+TITLE__ENTER_A_DIFFERENT_SHARE_DESC = 963
 # Create Multi-share Backup
-BUTTON__CREATE_MULTI_SHARE_BACKUP = 965
-TITLE__CREATE_MULTI_SHARE_BACKUP = 965
+BUTTON__CREATE_MULTI_SHARE_BACKUP = 964
+TITLE__CREATE_MULTI_SHARE_BACKUP = 964
 # Upgrading to a Multi-share Backup adds more backup shares for the same walle
 # t. Your original Single-share Backup still works, so keep it safe.
-TITLE__CREATE_MULTI_SHARE_BACKUP_DESC = 966
+TITLE__CREATE_MULTI_SHARE_BACKUP_DESC = 965
 # Next, verify wallet ownership by entering your backup phrase. Here’s what yo
 # u need to know:
-CONTENT__NEXT_VERIFY_WALLET_OWNERSHIP_BY_ENTERING_YOUR_BACKUP_PHRASE_HERE_IS_WHAT_YOU_NEED_TO_KNOW = 967
+CONTENT__NEXT_VERIFY_WALLET_OWNERSHIP_BY_ENTERING_YOUR_BACKUP_PHRASE_HERE_IS_WHAT_YOU_NEED_TO_KNOW = 966
 # This is an advanced feature, and you accept the increased responsibility.
-CHECK__CREATE_MULTI_SHARE_BACKUP_PHRASE_1 = 968
+CHECK__CREATE_MULTI_SHARE_BACKUP_PHRASE_1 = 967
 # Your current wallet backup is still able to recover your wallet.
-CHECK__CREATE_MULTI_SHARE_BACKUP_PHRASE_2 = 969
+CHECK__CREATE_MULTI_SHARE_BACKUP_PHRASE_2 = 968
 # Create additional backups？
-TITLE__CREATE_ADDITIONAL_BACKUP = 970
+TITLE__CREATE_ADDITIONAL_BACKUP = 969
 # Your wallet backup contains multiple lists of words in a specific order (sha
 # res).
-TITLE__CREATE_ADDITIONAL_BACKUP_DESC = 971
+TITLE__CREATE_ADDITIONAL_BACKUP_DESC = 970
 # Wallpaper
-BUTTON__WALLPAPER = 972
-TITLE__WALLPAPER = 972
+BUTTON__WALLPAPER = 971
+TITLE__WALLPAPER = 971
 # Display
-BUTTON__DISPLAY = 973
-TITLE__DISPLAY = 973
+BUTTON__DISPLAY = 972
+TITLE__DISPLAY = 972
 # Customize
-BUTTON__CUSTOMIZE = 974
+BUTTON__CUSTOMIZE = 973
 # Change Wallpaper
-BUTTON__CHANGE_WALLPAPER = 975
-TITLE__CHANGE_WALLPAPER = 975
-# Album
-BUTTON__ALBUM = 976
-# Select Items
-TITLE__SELECT_ITEMS = 977
+TITLE__CHANGE_WALLPAPER = 974
+BUTTON__CHANGE_WALLPAPER = 974
 # {num} Selected
-TITLE__STR_SELECTED = 978
-# No Wallpapers Available for Deletion
-TITLE__NO_WALLPAPERS_AVAILABLE_FOR_DELETION = 979
-# Open your OneKey App and choose any wallpaper image for your lock screen or
-# home screen.
-TITLE__NO_WALLPAPERS_AVAILABLE_FOR_DELETION_DESC = 980
-# Pair
-BUTTON__PAIR = 981
+TITLE__STR_SELECTED = 975
 # Blur
-BUTTON__BLUR = 982
+BUTTON__BLUR = 976
 # Set as Wallpaper Pair
-BUTTON__SET_AS_WALLPAPER_PAIR = 983
-TITLE__SET_AS_WALLPAPER_PAIR = 983
-# Customize Home Screen
-BUTTON__CUSTOMIZE_HOME_SCREEN = 984
-# Do you want to change the wallpaper pair?
-TITLE__SET_AS_WALLPAPER_PAIR_DESC = 985
+BUTTON__SET_AS_WALLPAPER_PAIR = 977
+TITLE__SET_AS_WALLPAPER_PAIR = 977
 # Set custom home screen
-TLTLE__SET_CUSTOM_HOME_SCREEN = 986
+TLTLE__SET_CUSTOM_HOME_SCREEN = 978
 # Do you want to customize your home screen?
-TLTLE__SET_CUSTOM_HOME_SCREEN_DESC = 987
+TLTLE__SET_CUSTOM_HOME_SCREEN_DESC = 979
 # Model Name & Bluetooth ID
-BUTTON__MODEL_NAME_BLUETOOTH_ID = 988
+BUTTON__MODEL_NAME_BLUETOOTH_ID = 980
 # Displays the device model and Bluetooth ID on the lock screen.
-BUTTON__MODEL_NAME_BLUETOOTH_ID_DESC = 989
+BUTTON__MODEL_NAME_BLUETOOTH_ID_DESC = 981
 # Approve {token} for {name}
-APPROVE_TOKEN_AMOUNT = 990
+APPROVE_TOKEN_AMOUNT = 982
 # Overview
-OVERVIEW = 991
+OVERVIEW = 983
 # Contract address
-CONTRACT_ADDRESS = 992
+CONTRACT_ADDRESS = 984
 # Token address
-TOKEN_ADDRESS = 993
+TOKEN_ADDRESS = 985
 # Approve to
-APPROVE_PROVIDER = 994
+APPROVE_PROVIDER = 986
 # Approve unlimited {token} for {name}
-APPROVE_UNLIMITED_TOKEN = 995
+APPROVE_UNLIMITED_TOKEN = 987
 # This action grants the contract unlimited access to this asset. Trust the dA
 # pp before proceeding.
-APPROVE_UNLIMITED_WARNING = 996
+APPROVE_UNLIMITED_WARNING = 988
 # Revoke {token} for {name}
-REVOKE_TOKEN = 997
+REVOKE_TOKEN = 989
 # Approve {name}
-TITLE_APPROVE = 998
+TITLE_APPROVE = 990
 # Approve unlimited {name}
-TITLE_UNLIMITED = 999
+TITLE_UNLIMITED = 991
 # Revoke {name}
-TITLE_REVOKE = 1000
+TITLE_REVOKE = 992
 # Secure chip reading…
-MSG__READING_FINGERPRINT_FROM_SECURITY_CHIP = 1001
+MSG__READING_FINGERPRINT_FROM_SECURITY_CHIP = 993
 # Single-share
-BUTTON__SINGLE_SHARE = 1002
+BUTTON__SINGLE_SHARE = 994
 # Multi-share
-BUTTON__MULTI_SHARE = 1003
+BUTTON__MULTI_SHARE = 995
 # Enter a Valid Share
-TITLE__ENTER_A_VALID_SHARE = 1004
+TITLE__ENTER_A_VALID_SHARE = 996
 # You have entered a share from a different backup. Please check and try again
 # .
-TITLE__ENTER_A_VALID_SHARE_DESC = 1005
+TITLE__ENTER_A_VALID_SHARE_DESC = 997
 # You Have Entered Share {num1} From Group {num2}
-TITLE__YOU_HAVE_ENTERED_SHARE_STR_FROM_GROUP_STR = 1006
+TITLE__YOU_HAVE_ENTERED_SHARE_STR_FROM_GROUP_STR = 998
 # You need to enter more shares.
-TITLE__YOU_HAVE_ENTERED_SHARE_STR_FROM_GROUP_STR_DESC = 1007
+TITLE__YOU_HAVE_ENTERED_SHARE_STR_FROM_GROUP_STR_DESC = 999
 # OneKey Extended
-BUTTON_ONEKEY_EXTENDED = 1008
+BUTTON_ONEKEY_EXTENDED = 1000
 # Kaspa Official
-BUTTON_KASPA_OFFICIAL = 1009
+BUTTON_KASPA_OFFICIAL = 1001
 # Select Account Type
-TITLE__SELECT_ACCOUNT_TYPE = 1010
+TITLE__SELECT_ACCOUNT_TYPE = 1002
 # Transaction Hash
-LIST_MORE_TXHASH = 1011
+LIST_MORE_TXHASH = 1003
 # This token is not recognized by the hardware wallet. Please verify carefully
 # .
-WARNING_UNRECOGNIZED_TOKEN = 1012
+WARNING_UNRECOGNIZED_TOKEN = 1004
 # Recipient is a known energy rental service provider address.
-BANNER_ENERGY_RENTAL = 1013
+BANNER_ENERGY_RENTAL = 1005
 # Use the latest version of the OneKey App to use “Attach to PIN”.
-MSG__ATTACH_TO_PIN_TIPS = 1014
+MSG__ATTACH_TO_PIN_TIPS = 1006
 # Request Confirmation
-TITLE_REQUEST_CONFIRMATION = 1015
+TITLE_REQUEST_CONFIRMATION = 1007
 # Abort Recovery Phrase Creation?
-TITLE__ABORT_RECOVERY_PHRASE_CREATION = 1016
+TITLE__ABORT_RECOVERY_PHRASE_CREATION = 1008
 # This is Share {num1} of {num2}.
-SUBTITLE__THIS_IS_SHARE_STR_OF_STR = 1017
+SUBTITLE__THIS_IS_SHARE_STR_OF_STR = 1009
 # Threshold of this group has been reached. Input share from different group.
-SUBTITLE__ENTER_A_DIFFERENT_SHARE = 1018
+SUBTITLE__ENTER_A_DIFFERENT_SHARE = 1010
 # This PIN has already been used. Overwriting it will remove the previously se
 # t Passphrase. Do you want to overwrite it?
-TITLE__PIN_ALREADY_USED_DESC = 1019
+TITLE__PIN_ALREADY_USED_DESC = 1011
 # 7702 Upgrade
-TITLE_UPGRADE_SMART_ACCOUNT = 1020
+TITLE_UPGRADE_SMART_ACCOUNT = 1012
 # You are upgrading this account to {platform} smart account. Sign only if you
 # understand the risks.
-BANNER_UPGRADING_SMART_ACCOUNT_WARNING = 1021
+BANNER_UPGRADING_SMART_ACCOUNT_WARNING = 1013
 # Delegate to
-FIELDS_DELEGATE_TO = 1022
+FIELDS_DELEGATE_TO = 1014
 # Delegate on Network
-FIELDS_DELEGATE_ON_NETWORK = 1023
+FIELDS_DELEGATE_ON_NETWORK = 1015
 # Revoke 7702 Delegation
-TITLE_REVOKE_SMART_ACCOUNT_DELEGATION = 1024
-# You are revoking the EIP-7702 delegation. Smart account features will be dis
-# abled.
-BANNER_REVOKE_SMART_ACCOUNT_WARNING = 1025
+TITLE_REVOKE_SMART_ACCOUNT_DELEGATION = 1016
+# You are revoking the 7702 delegation. Smart account features will be disable
+# d.
+BANNER_REVOKE_SMART_ACCOUNT_WARNING = 1017
 # Delegation Blocked
-TITLE_SMART_ACCOUNT_DELEGATION_BLOCKED = 1026
+TITLE_SMART_ACCOUNT_DELEGATION_BLOCKED = 1018
 # This authorization delegates authority to a smart contract not included on t
 # he whitelist.
-BANNER_NOT_IN_SMART_ACCOUNT_WHITELIST = 1027
+BANNER_NOT_IN_SMART_ACCOUNT_WHITELIST = 1019
 # Revoke on Network
-FIELDS_REVOKE_ON_NETWORK = 1028
+FIELDS_REVOKE_ON_NETWORK = 1020
 # Understand
-BUTTON_UNDERSTAND = 1029
+BUTTON_UNDERSTAND = 1021
 # 3 failed attempts. Slide to continue. You do not have Passphrase turned on.
-CONTENT__STR_FAILED_TRIES_SLIDE_TO_CONTINUE_DISABLE_PASSPHRASE = 1030
+CONTENT__STR_FAILED_TRIES_SLIDE_TO_CONTINUE_DISABLE_PASSPHRASE = 1022
 # Disabling the Passphrase will prevent you from using the hidden wallet PIN t
 # o unlock your device.
-TITLE__DISABLE_PASSPHRASE_DESC = 1031
+TITLE__DISABLE_PASSPHRASE_DESC = 1023
+# Touch
+BUTTON__TOUCH = 1024
+TITLE__TOUCH = 1024
+# Change
+BUTTON__CHANGE = 1025
+# Wallpaper Added
+TITLE__WALLPAPER_ADDED = 1026
+# Do you want to change it as your wallpaper now?
+TITLE__WALLPAPER_ADDED_DESC = 1027
 # fmt: on

@@ -14,7 +14,12 @@ from .transition import BtnClickTransition, DefaultTransition
 
 class NormalButton(lv.btn):
     def __init__(
-        self, parent, text=_(i18n_keys.BUTTON__NEXT), enable=True, pressed_style=None
+        self,
+        parent,
+        text=_(i18n_keys.BUTTON__NEXT),
+        enable=True,
+        pressed_style=None,
+        label_align=lv.ALIGN.CENTER,
     ) -> None:
         super().__init__(parent)
         self.remove_style_all()
@@ -26,6 +31,8 @@ class NormalButton(lv.btn):
             .bg_opa(lv.OPA.COVER)
             .text_opa(lv.OPA.COVER)
             .text_letter_space(-1)
+            .pad_hor(24)
+            .pad_ver(30)
             .text_font(font_GeistSemiBold30),
             0,
         )
@@ -46,7 +53,7 @@ class NormalButton(lv.btn):
         self.label = lv.label(self)
         self.label.set_long_mode(lv.label.LONG.WRAP)
         self.label.set_text(text)
-        self.label.set_align(lv.ALIGN.CENTER)
+        self.label.set_align(label_align)
         self.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
 
         self.click_mask = lv.obj(self)

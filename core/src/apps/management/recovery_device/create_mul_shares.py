@@ -59,7 +59,8 @@ async def create_multi_share_backup() -> None:
         return
 
     try:
-        await backup_multi_share(storage_recovery.get_slip39_checked_secret())
+        mods = utils.unimport_begin()
+        await _backup_multi_share(storage_recovery.get_slip39_checked_secret())
     except BaseException as e:
         if __debug__:
             import sys
@@ -67,9 +68,10 @@ async def create_multi_share_backup() -> None:
             sys.print_exception(e)  # type: ignore["print_exception" is not a known member of module]
     finally:
         storage_recovery.clear_slip39_extend_share_state()
+        utils.unimport_end(mods)
 
 
-async def backup_multi_share(encrypted_master_secret: bytes) -> None:
+async def _backup_multi_share(encrypted_master_secret: bytes) -> None:
     from apps.management.reset_device import _get_slip39_mnemonics
     from trezor.lvglui.scrs.reset_device import Slip39BasicConfig
     from trezor.wire import ActionCancelled
@@ -107,14 +109,14 @@ async def backup_multi_share(encrypted_master_secret: bytes) -> None:
             True,
         )
         try:
-            await show_and_confirm_shares(mnemonics[0])
+            await _show_and_confirm_shares(mnemonics[0])
         except ActionCancelled:
             continue
         else:
             break
 
 
-async def show_and_confirm_shares(shares: list[str]) -> None:
+async def _show_and_confirm_shares(shares: list[str]) -> None:
     from trezor.ui.layouts.lvgl.reset import show_share_words
     from apps.management.reset_device.layout import (
         show_check_word_tips,

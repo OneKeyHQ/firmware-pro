@@ -14,17 +14,17 @@ def get_delegator_info(chain_id: int, address: str) -> tuple[str, str, str]:
     for name, addr, initial_data in _delegator_iterator(chain_id):
         if address.lower() == addr.lower():
             return name, _get_delegator_provider_icon(name), initial_data
-    assert False, "Invalid delegator address"
+    raise ValueError("Invalid delegator address")
 
 
 def _get_delegator_provider_icon(delegator_name: str) -> str:
     if delegator_name == "OKX":
-        return "A:/res/okx-logo-96.png"
+        return "A:/res/provider-okx.png"
     elif delegator_name == "MetaMask":
         return "A:/res/mm-logo-96.png"
-    elif delegator_name == "Revoke":
+    elif delegator_name in ("Revoke", "Simple7702"):
         return "A:/res/icon-send.png"
-    assert False, "Invalid delegator name"
+    return "A:/res/icon-send.png"
 
 
 def is_revoke_delegator(address: str) -> bool:
@@ -49,7 +49,7 @@ def _delegator_iterator(chain_id: int) -> Iterator[tuple[str, str, str]]:
         "",  # can only be empty value
     )
     yield (
-        "Simple7702Account",
+        "Simple7702",
         "0x4Cd241E8d1510e30b2076397afc7508Ae59C66c9",
         "",  # can only be empty value
     )

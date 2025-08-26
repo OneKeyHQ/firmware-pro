@@ -1781,9 +1781,9 @@ class ConnectWalletGuide(Screen):
                 ]
                 logo = "A:/res/ok-logo-96.png"
                 url = (
-                    "https://help.onekey.so/hc/articles/9541173629455"
+                    "https://help.onekey.so/articles/11461081"
                     if self.connect_type == "ble"
-                    else "https://help.onekey.so/hc/articles/9402090066319"
+                    else "https://help.onekey.so/articles/11461081#h_01HMWVPP85HWYTZGPQQTB300VX"
                 )
             elif target == self.mm:
                 title = _(i18n_keys.ITEM__METAMASK_WALLET)
@@ -1803,7 +1803,7 @@ class ConnectWalletGuide(Screen):
                     ),
                 ]
                 logo = "A:/res/mm-logo-96.png"
-                url = "https://help.onekey.so/hc/articles/8910581291151#tab-item-generated-0"
+                url = "https://help.onekey.so/articles/11461106"
             else:
                 title = _(i18n_keys.ITEM__OKX_WALLET)
                 subtitle = (
@@ -1837,9 +1837,9 @@ class ConnectWalletGuide(Screen):
                 ]
                 logo = "A:/res/okx-logo-96.png"
                 url = (
-                    "https://help.onekey.so/hc/articles/8925272484111#tab-item-generated-1"
+                    " https://help.onekey.so/articles/11461103"
                     if self.connect_type == "ble"
-                    else "https://help.onekey.so/hc/articles/8925272484111#tab-item-generated-0"
+                    else "https://help.onekey.so/articles/11461103"
                 )
             ConnectWalletTutorial(title, subtitle, steps, url, logo)
 
@@ -3961,11 +3961,13 @@ class AirGapSetting(AnimScreen):
                 )
             return
         super().__init__(
-            prev_scr=prev_scr, title=_(i18n_keys.ITEM__AIR_GAP_MODE), nav_back=True
+            prev_scr=prev_scr, title=_(i18n_keys.TITLE__AIR_GAP_MODE), nav_back=True
         )
 
         self.container = ContainerFlexCol(self.content_area, self.title)
-        self.air_gap = ListItemBtnWithSwitch(self.container, _(i18n_keys.ITEM__AIR_GAP))
+        self.air_gap = ListItemBtnWithSwitch(
+            self.container, _(i18n_keys.ITEM__AIR_GAP_MODE)
+        )
 
         self.description = lv.label(self.content_area)
         self.description.set_size(456, lv.SIZE.CONTENT)
@@ -4109,36 +4111,26 @@ class AboutSetting(AnimScreen):
         )
         self.serial.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
 
-        self.fcc_id = DisplayItemWithFont_30(self.container, "FCC ID", "2BB8VP1")
-        self.fcc_id.set_style_pad_right(0, 0)
-        self.fcc_icon = lv.img(self.fcc_id)
-        self.fcc_icon.set_src("A:/res/icon-fcc.png")
-        self.fcc_icon.align(lv.ALIGN.RIGHT_MID, 0, 0)
-
-        self.mic_id = DisplayItemWithFont_30(self.container, "MIC ID", "211-240720")
-        self.mic_id.set_style_pad_right(0, 0)
-        self.mic_icon = lv.img(self.mic_id)
-        self.mic_icon.set_src("A:/res/icon-mic.png")
-        self.mic_icon.align(lv.ALIGN.RIGHT_MID, 0, 0)
-
-        self.anatel_id = DisplayItemWithFont_30(
-            self.container, "ANATEL ID", "02335-25-16343"
-        )
-        self.anatel_id.set_style_pad_right(0, 0)
-        self.anatel_icon = lv.img(self.anatel_id)
-        self.anatel_icon.set_src("A:/res/icon-anatel.png")
-        self.anatel_icon.align(lv.ALIGN.RIGHT_MID, 0, 0)
-
         self.container.add_dummy()
 
-        self.firmware_update = NormalButton(
-            self.content_area, _(i18n_keys.BUTTON__SYSTEM_UPDATE)
+        self.certification = NormalButton(
+            self.content_area,
+            _(i18n_keys.CONTENT__CERTIFICATIONS),
+            label_align=lv.ALIGN.LEFT_MID,
         )
+        self.certification.align_to(self.container, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 8)
+        if __debug__:
+            self.firmware_update = NormalButton(
+                self.content_area, _(i18n_keys.BUTTON__SYSTEM_UPDATE)
+            )
+            self.firmware_update.align_to(
+                self.certification, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 8
+            )
+            self.firmware_update.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
 
-        self.firmware_update.align_to(self.container, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 8)
         self.serial.add_event_cb(self.on_long_pressed, lv.EVENT.LONG_PRESSED, None)
         self.container.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
-        self.firmware_update.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
+        self.certification.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
         self.load_screen(self)
         gc.collect()
 
@@ -4146,7 +4138,11 @@ class AboutSetting(AnimScreen):
         target = event_obj.get_target()
         # if target == self.board_loader:
         #     GO2BoardLoader()
-        if target == self.firmware_update:
+        if target == self.certification:
+            from .template import CertificationInfo
+
+            CertificationInfo()
+        elif __debug__ and target == self.firmware_update:
             Go2UpdateMode(self)
 
     def on_long_pressed(self, event_obj):
@@ -6280,13 +6276,13 @@ class HelpDetails(FullSizeWindow):
         self.website.set_style_text_color(lv_colors.WHITE_2, 0)
         self.website.set_style_text_line_space(3, 0)
         self.website.set_style_text_letter_space(-1, 0)
-        self.website.set_text("help.onekey.so/hc")
+        self.website.set_text("https://help.onekey.so/")
         self.website.align_to(self.item.label, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 0)
         self.underline = lv.line(self.item)
         self.underline.set_points(
             [
                 {"x": 0, "y": 2},
-                {"x": 245, "y": 2},
+                {"x": 305, "y": 2},
             ],
             2,
         )

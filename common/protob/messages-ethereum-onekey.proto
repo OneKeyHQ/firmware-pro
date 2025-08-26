@@ -72,6 +72,9 @@ message EthereumSignTxOneKey {
     optional uint32 tx_type = 10;                        // Used for Wanchain
 }
 
+/**
+ * @embed
+ */
 message EthereumAccessListOneKey {
     required string address = 1;
     repeated bytes storage_keys = 2;
@@ -98,6 +101,9 @@ message EthereumSignTxEIP1559OneKey {
 
 }
 
+/**
+ * @embed
+ */
 message EthereumAuthorizationSignature {
     required uint32 y_parity = 1;
     required bytes r = 2;
