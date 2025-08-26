@@ -631,6 +631,9 @@ def fetch_ble_info():
     if BLE_ENABLED is None:
         BLE_CTRL.ctrl(0x81, b"\x04")
 
+    if utils.BLE_CONNECTED is None:
+        BLE_CTRL.ctrl(0x81, b"\x05")
+
     if utils.BLE_BUILD_ID is None:
         BLE_CTRL.ctrl(0x83, b"\x05")
 
