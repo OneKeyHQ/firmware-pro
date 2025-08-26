@@ -194,7 +194,7 @@ async def confirm_total_ethereum_eip1559(
 async def confirm_total_eip7702(
     ctx: wire.GenericContext,
     title: str,
-    authorty_adrr: str,
+    authorty_addr: str,
     delegate_addr: str | None,
     amount: str,
     nonce: str,
@@ -208,7 +208,7 @@ async def confirm_total_eip7702(
 
     screen = TransactionDetailsEIP7702(
         title,
-        authorty_adrr,
+        authorty_addr,
         delegate_addr,
         amount,
         nonce,

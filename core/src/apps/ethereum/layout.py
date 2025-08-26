@@ -153,7 +153,7 @@ async def show_invalid_delegate(ctx: Context) -> None:
 
 def require_confirm_eip7702(
     ctx: Context,
-    authorty_adrr: str,
+    authorty_addr: str,
     delegate_addr: str,
     authority_network: str,
     amount: int,
@@ -176,7 +176,7 @@ def require_confirm_eip7702(
     return confirm_total_eip7702(
         ctx,
         title,
-        authorty_adrr,
+        authorty_addr,
         delegate_addr if not is_revoke else None,
         format_ethereum_amount(amount, None, chain_id),
         str(nonce),

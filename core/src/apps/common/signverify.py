@@ -29,7 +29,16 @@ def message_digest(coin: CoinInfo, message: bytes) -> bytes:
 
 
 def is_non_printable(message: str) -> bool:
-    return any(ord(c) < 32 or ord(c) == 127 for c in message)
+    allowed_control_chars = {9, 10, 13}  # \t, \n, \r
+
+    has_disallowed_control = any(
+        (ord(c) < 32 and ord(c) not in allowed_control_chars) or ord(c) == 127
+        for c in message
+    )
+
+    has_printable_chars = any(32 <= ord(c) <= 126 for c in message)
+
+    return has_disallowed_control or not has_printable_chars
 
 
 def decode_message(message: bytes) -> str:

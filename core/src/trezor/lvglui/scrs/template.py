@@ -1037,7 +1037,7 @@ class TransactionDetailsEIP7702(TransactionDetailsBase):
     def __init__(
         self,
         title: str,
-        authorty_adrr: str,
+        authorty_addr: str,
         delegate_addr: str | None,
         value: str,
         nonce: str,
@@ -1054,7 +1054,7 @@ class TransactionDetailsEIP7702(TransactionDetailsBase):
             primary_color,
             icon_path,
             direction_section=(
-                (_(i18n_keys.FIELDS_ACCOUNT), authorty_adrr),
+                (_(i18n_keys.FIELDS_ACCOUNT), authorty_addr),
                 (_(i18n_keys.FIELDS_DELEGATE_TO), delegate_addr),
             ),
             more_section=(
