@@ -2,4 +2,5 @@
 # fmt: off
 # isort:skip_file
 
+V1 = 1
 V2 = 2

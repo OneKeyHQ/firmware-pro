@@ -145,7 +145,7 @@ message TronSignedTx {
 }
 
 enum TronMessageType {
-    V1 = 1 [deprecated = true];
+    V1 = 1;
     V2 = 2;
 }
 
