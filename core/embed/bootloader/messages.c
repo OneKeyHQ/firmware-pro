@@ -404,10 +404,10 @@ static void send_msg_features(uint8_t iface_num,
     }                                                                        \
   } while (0)
 
-    GET_SE_INFO(se01);
-    GET_SE_INFO(se02);
-    GET_SE_INFO(se03);
-    GET_SE_INFO(se04);
+    // GET_SE_INFO(se01);
+    // GET_SE_INFO(se02);
+    // GET_SE_INFO(se03);
+    // GET_SE_INFO(se04);
 
     char *serial = NULL;
     if (device_get_serial(&serial)) {
@@ -506,10 +506,10 @@ static void send_msg_features_ex(uint8_t iface_num,
     }                                                                          \
   } while (0)
 
-  GET_SE_INFO_EX(se01);
-  GET_SE_INFO_EX(se02);
-  GET_SE_INFO_EX(se03);
-  GET_SE_INFO_EX(se04);
+  // GET_SE_INFO_EX(se01);
+  // GET_SE_INFO_EX(se02);
+  // GET_SE_INFO_EX(se03);
+  // GET_SE_INFO_EX(se04);
 
   char *board_build_id = get_boardloader_build_id();
   MSG_SEND_ASSIGN_STRING_LEN(onekey_board_build_id, board_build_id,

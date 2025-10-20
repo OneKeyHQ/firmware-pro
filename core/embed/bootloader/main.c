@@ -49,6 +49,8 @@
 #include "ble.h"
 #include "bootui.h"
 #include "device.h"
+#include "camera.h"
+#include "emmc_wrapper.h"
 #include "i2c.h"
 #include "jpeg_dma.h"
 #include "messages.h"
@@ -57,11 +59,11 @@
 #include "spi_legacy.h"
 #include "usart.h"
 
+#include "debug_ui_fp.h"
+
 #define MSG_NAME_TO_ID(x) MessageType_MessageType_##x
 
-#if defined(STM32H747xx)
-#include "stm32h7xx_hal.h"
-#endif
+#include STM32_HAL_H
 
 #include "camera.h"
 #include "emmc_wrapper.h"
@@ -130,9 +132,50 @@ static void set_handle_flash_ecc_error(secbool val) {
 }
 
 // fault handlers
+#if !PRODUCTION
+enum { r0, r1, r2, r3, r12, lr, pc, psr };
+void STACK_DUMP(unsigned int* stack) {
+  display_print_color(COLOR_RED, COLOR_BLACK);
+  display_printf("[STACK DUMP]\n");
+  display_printf("R0 = 0x%08x\n", stack[r0]);
+  display_printf("R1 = 0x%08x\n", stack[r1]);
+  display_printf("R2 = 0x%08x\n", stack[r2]);
+  display_printf("R3 = 0x%08x\n", stack[r3]);
+  display_printf("R12 = 0x%08x\n", stack[r12]);
+  display_printf("LR = 0x%08x\n", stack[lr]);
+  display_printf("PC = 0x%08x\n", stack[pc]);
+  display_printf("PSR = 0x%08x\n", stack[psr]);
+  display_printf("BFAR = 0x%08x\n", (*((volatile unsigned int*)(0xE000ED38))));
+  display_printf("CFSR = 0x%08x\n", (*((volatile unsigned int*)(0xE000ED28))));
+  display_printf("HFSR = 0x%08x\n", (*((volatile unsigned int*)(0xE000ED2C))));
+  display_printf("DFSR = 0x%08x\n", (*((volatile unsigned int*)(0xE000ED30))));
+  display_printf("AFSR = 0x%08x\n", (*((volatile unsigned int*)(0xE000ED3C))));
+
+#ifdef BUILD_ID
+  const uint8_t* id = (const uint8_t*)BUILD_ID;
+  display_printf("build id: %s", id);
+#endif
+
+  exit(0);
+  return;
+}
+
+__attribute__((naked)) void HardFault_Handler(void) {
+  __asm volatile(
+      " tst lr, #4    \n"  // Test Bit 3 to see which stack pointer we should
+                           // use.
+      " ite eq        \n"  // Tell the assembler that the nest 2 instructions
+                           // are if-then-else
+      " mrseq r0, msp \n"  // Make R0 point to main stack pointer
+      " mrsne r0, psp \n"  // Make R0 point to process stack pointer
+      " b STACK_DUMP \n"   // Off to C land
+  );
+}
+#else
 void HardFault_Handler(void) {
   error_shutdown("Internal error", "(HF)", NULL, NULL);
 }
+#endif
 
 void MemManage_Handler_MM(void) {
   error_shutdown("Internal error", "(MM)", NULL, NULL);
@@ -662,10 +705,10 @@ static BOOT_TARGET decide_boot_target(vendor_header* const vhdr,
   if (boot_target == BOOT_TARGET_BOOTLOADER) return boot_target;
 
   // check se status
-  if (se_get_state() != 0) {
-    boot_target = BOOT_TARGET_BOOTLOADER;
-    return boot_target;
-  }
+  // if (se_get_state() != 0) {
+  //   boot_target = BOOT_TARGET_BOOTLOADER;
+  //   return boot_target;
+  // }
 
   // check bluetooth state
   if (bluetooth_detect_dfu()) {
@@ -751,35 +794,83 @@ int main(void) {
   camera_io_init();
   thd89_io_init();
 
+  // fp test
+  debug_ui_fp();
+
   // se
   thd89_reset();
   thd89_init();
 
-  uint8_t se_mode = se_get_state();
-  // all se in app mode
-  if (se_mode == 0) {
-    device_para_init();
-  }
+  // uint8_t se_states[4] = {0xff};
 
-  if ((!device_serial_set() || !se_has_cerrificate()) && se_mode == 0) {
-    display_clear();
-    device_set_factory_mode(true);
-    ui_bootloader_factory();
-    if (bootloader_usb_loop_factory(NULL, NULL) != sectrue) {
-      return 1;
-    }
-  }
+  // while(1)
+  // {
+  //   display_print_clear();
+
+  //   if(se01_get_state(&(se_states[0])))
+  //   {
+  //     display_printf("0x10 = 0x%02x\n", se_states[0]);
+  //   }
+  //   else
+  //   {
+  //     display_printf("0x10 = failed\n");
+  //   }
+
+  //   if(se02_get_state(&(se_states[1])))
+  //   {
+  //     display_printf("0x11 = 0x%02x\n", se_states[1]);
+  //   }
+  //   else
+  //   {
+  //     display_printf("0x11 = failed\n");
+  //   }
+
+  //   if(se03_get_state(&(se_states[2])))
+  //   {
+  //     display_printf("0x12 = 0x%02x\n", se_states[2]);
+  //   }
+  //   else
+  //   {
+  //     display_printf("0x12 = failed\n");
+  //   }
+
+  //   if(se04_get_state(&(se_states[3])))
+  //   {
+  //     display_printf("0x13 = 0x%02x\n", se_states[3]);
+  //   }
+  //   else
+  //   {
+  //     display_printf("0x13 = failed\n");
+  //   }
+
+  //   hal_delay(500);
+  // }
+
+  // uint8_t se_mode = se_get_state();
+  // // all se in app mode
+  // if (se_mode == 0) {
+  //   device_para_init();
+  // }
+
+  // if ((!device_serial_set() || !se_has_cerrificate()) && se_mode == 0) {
+  //   display_clear();
+  //   device_set_factory_mode(true);
+  //   ui_bootloader_factory();
+  //   if (bootloader_usb_loop_factory(NULL, NULL) != sectrue) {
+  //     return 1;
+  //   }
+  // }
 
 #if !PRODUCTION
 
-  // if (!device_serial_set()) {
-  //   write_dev_dummy_serial();
-  // }
+  if (!device_serial_set()) {
+    // write_dev_dummy_serial();
+  }
   UNUSED(write_dev_dummy_serial);
 
-  // if (!se_has_cerrificate()) {
-  //   write_dev_dummy_cert();
-  // }
+  if (!se_has_cerrificate()) {
+    // write_dev_dummy_cert();
+  }
   UNUSED(write_dev_dummy_cert);
 
   // if(!device_overwrite_serial("PRA50I0000 QA"))
@@ -813,7 +904,7 @@ int main(void) {
 
   BOOT_TARGET boot_target =
       decide_boot_target(&vhdr, &hdr, &vhdr_valid, &hdr_valid, &code_valid);
-  // boot_target = BOOT_TARGET_BOOTLOADER;
+  boot_target = BOOT_TARGET_BOOTLOADER;
 
   if (boot_target == BOOT_TARGET_BOOTLOADER) {
     display_clear();

@@ -94,65 +94,87 @@ bool SPI_3_INIT()
     // PB3     ------> SPI3_SCK
     // PA15    ------> SPI3_NSS
 
-    GPIO_InitTypeDef gpio_A_config = {
+    // NSS
+    GPIO_InitTypeDef gpio_NSS_config = {
         .Pin = GPIO_PIN_15,
 
     // TODO: chose one then clean up!
-#ifndef FP_USE_SOFTWARE_CS
-        .Alternate = GPIO_AF6_SPI3,
-        .Mode = GPIO_MODE_AF_PP,
-        .Pull = GPIO_NOPULL,
-        .Speed = GPIO_SPEED_FREQ_HIGH,
-#else
+#if FP_USE_SOFTWARE_CS
         .Alternate = 0,
         .Mode = GPIO_MODE_OUTPUT_PP,
         .Pull = GPIO_PULLUP,
+        .Speed = GPIO_SPEED_FREQ_HIGH,
+#else
+        .Alternate = GPIO_AF6_SPI3,
+        .Mode = GPIO_MODE_AF_PP,
+        .Pull = GPIO_NOPULL,
+        // .Pull = GPIO_PULLUP,
         .Speed = GPIO_SPEED_FREQ_HIGH,
 #endif
 
     };
     __HAL_RCC_GPIOA_CLK_ENABLE();
-    HAL_GPIO_Init(GPIOA, &gpio_A_config);
+    HAL_GPIO_Init(GPIOA, &gpio_NSS_config);
 
-    GPIO_InitTypeDef gpio_B_config = {
-        .Pin = GPIO_PIN_3 | GPIO_PIN_4,
+    // MISO
+    GPIO_InitTypeDef gpio_MISO_config = {
+        .Pin = GPIO_PIN_4,
         .Alternate = GPIO_AF6_SPI3,
         .Mode = GPIO_MODE_AF_PP,
-        .Pull = GPIO_NOPULL,
+        // .Pull = GPIO_NOPULL,
+        .Pull = GPIO_PULLUP,
         .Speed = GPIO_SPEED_FREQ_HIGH,
     };
     __HAL_RCC_GPIOB_CLK_ENABLE();
-    HAL_GPIO_Init(GPIOB, &gpio_B_config);
+    HAL_GPIO_Init(GPIOB, &gpio_MISO_config);
 
-    GPIO_InitTypeDef gpio_D_config = {
+    // SCK
+    GPIO_InitTypeDef gpio_SCK_config = {
+        .Pin = GPIO_PIN_3,
+        .Alternate = GPIO_AF6_SPI3,
+        .Mode = GPIO_MODE_AF_PP,
+        // .Pull = GPIO_NOPULL,
+        .Pull = GPIO_PULLUP,
+        .Speed = GPIO_SPEED_FREQ_HIGH,
+    };
+    __HAL_RCC_GPIOB_CLK_ENABLE();
+    HAL_GPIO_Init(GPIOB, &gpio_SCK_config);
+
+    // MOSI
+    GPIO_InitTypeDef gpio_MOSI_config = {
         .Pin = GPIO_PIN_6,
         .Alternate = GPIO_AF5_SPI3,
         .Mode = GPIO_MODE_AF_PP,
         .Pull = GPIO_NOPULL,
+        // .Pull = GPIO_PULLUP,
         .Speed = GPIO_SPEED_FREQ_HIGH,
     };
     __HAL_RCC_GPIOD_CLK_ENABLE();
-    HAL_GPIO_Init(GPIOD, &gpio_D_config);
+    HAL_GPIO_Init(GPIOD, &gpio_MOSI_config);
 
     // SPI3 Peripherals Configuration
     spi_handles[SPI_3].Instance = SPI3;
     spi_handles[SPI_3].Init.Mode = SPI_MODE_MASTER;
     spi_handles[SPI_3].Init.Direction = SPI_DIRECTION_2LINES;
     spi_handles[SPI_3].Init.DataSize = SPI_DATASIZE_8BIT;
-    spi_handles[SPI_3].Init.CLKPolarity = SPI_POLARITY_LOW;
+    // spi_handles[SPI_3].Init.CLKPhase = SPI_PHASE_2EDGE;
     spi_handles[SPI_3].Init.CLKPhase = SPI_PHASE_1EDGE;
-#ifndef FP_USE_SOFTWARE_CS
+    spi_handles[SPI_3].Init.CLKPolarity = SPI_POLARITY_LOW;
+#if FP_USE_SOFTWARE_CS
+    spi_handles[SPI_3].Init.NSS = SPI_NSS_SOFT;
+#else
     // TODO: chose one then clean up!
     spi_handles[SPI_3].Init.NSS = SPI_NSS_HARD_OUTPUT;
     spi_handles[SPI_3].Init.NSSPolarity = SPI_NSS_POLARITY_LOW;
     spi_handles[SPI_3].Init.NSSPMode = SPI_NSS_PULSE_DISABLE;
-#else
-    spi_handles[SPI_3].Init.NSS = SPI_NSS_SOFT;
 #endif
     spi_handles[SPI_3].Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
     spi_handles[SPI_3].Init.FirstBit = SPI_FIRSTBIT_MSB;
-    spi_handles[SPI_3].Init.TIMode = SPI_TIMODE_DISABLE;
-    spi_handles[SPI_3].Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+    // spi_handles[SPI_3].Init.TIMode = SPI_TIMODE_DISABLE;
+    // spi_handles[SPI_3].Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+    // spi_handles[SPI_3].Init.MasterSSIdleness = SPI_MASTER_SS_IDLENESS_15CYCLE;
+    // spi_handles[SPI_3].Init.MasterInterDataIdleness = SPI_MASTER_INTERDATA_IDLENESS_15CYCLE;
+    spi_handles[SPI_3].Init.MasterKeepIOState = SPI_MASTER_KEEP_IO_STATE_ENABLE;
 
     __HAL_RCC_SPI3_CLK_ENABLE();
     __HAL_RCC_SPI3_FORCE_RESET();

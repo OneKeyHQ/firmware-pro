@@ -135,6 +135,7 @@ bool emmc_fs_file_write(
     bool overwrite, bool append
 );
 bool emmc_fs_file_touch(const char* path_buff);
+bool emmc_fs_file_resize(const char* path_buff, uint32_t target_len);
 bool emmc_fs_file_delete(const char* path_buff);
 
 // bool emmc_fs_dir_list_internal(

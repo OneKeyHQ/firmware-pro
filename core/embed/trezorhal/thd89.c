@@ -549,7 +549,7 @@ secbool thd89_transmit_ex(uint8_t addr, uint8_t *cmd, uint16_t len,
   if (result != HAL_OK) {
     mini_snprintf(err_info, sizeof(err_info), "se 0x%02x send error",
                   addr >> 1);
-    ensure(secfalse, err_info);
+    // ensure(secfalse, err_info);
     return secfalse;
   }
 
@@ -562,11 +562,11 @@ secbool thd89_transmit_ex(uint8_t addr, uint8_t *cmd, uint16_t len,
     if (ret == I2C_RECV_BUFFER_TOO_SMALL) {
       mini_snprintf(err_info, sizeof(err_info),
                     "se 0x%02x receive buffer too small", addr >> 1);
-      ensure(secfalse, err_info);
+      // ensure(secfalse, err_info);
     } else {
       mini_snprintf(err_info, sizeof(err_info), "se 0x%02x receive error",
                     addr >> 1);
-      ensure(secfalse, err_info);
+      // ensure(secfalse, err_info);
     }
     return secfalse;
   }

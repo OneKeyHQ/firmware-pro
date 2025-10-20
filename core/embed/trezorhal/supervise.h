@@ -8,7 +8,6 @@
 
 // from util.s
 extern void shutdown_privileged(void);
-extern void reboot_to_bootloader(void);
 
 static inline uint32_t is_mode_unprivileged(void) {
   uint32_t r0;

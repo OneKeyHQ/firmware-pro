@@ -3,7 +3,7 @@
 
 #include "secbool.h"
 
-#define THD89_1ST_ADDRESS (0x10 << 1)
+#define THD89_1ST_ADDRESS (0x20 << 1)
 #define THD89_2ND_ADDRESS (0x11 << 1)
 #define THD89_3RD_ADDRESS (0x12 << 1)
 #define THD89_4TH_ADDRESS (0x13 << 1)

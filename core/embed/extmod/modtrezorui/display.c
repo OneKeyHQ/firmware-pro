@@ -667,12 +667,17 @@ void display_print(const char *text, int textlen) {
   }
 }
 
-#ifdef TREZOR_EMULATOR
-#define mini_vsnprintf vsnprintf
+// #ifdef TREZOR_EMULATOR
+// #define mini_vsnprintf vsnprintf
+// #include <stdio.h>
+// #include <string.h>
+// #else
+// #include "mini_printf.h"
+// #endif
+
+#include <inttypes.h>
 #include <stdio.h>
-#else
-#include "mini_printf.h"
-#endif
+#include <string.h>
 
 // variadic display_print
 void display_printf(const char *fmt, ...) {
@@ -682,7 +687,7 @@ void display_printf(const char *fmt, ...) {
     va_list va;
     va_start(va, fmt);
     char buf[256] = {0};
-    int len = mini_vsnprintf(buf, sizeof(buf), fmt, va);
+    int len = vsnprintf(buf, sizeof(buf), fmt, va);
     display_print(buf, len);
     va_end(va);
   }
@@ -927,7 +932,7 @@ void display_text_printf(int x, int y, const char *fmt, ...) {
     va_list va;
     va_start(va, fmt);
     char buf[256] = {0};
-    int len = mini_vsnprintf(buf, sizeof(buf), fmt, va);
+    int len = vsnprintf(buf, sizeof(buf), fmt, va);
     display_text(x, y, buf, len, FONT_NORMAL, display_print_fgcolor,
                  display_print_bgcolor);
     va_end(va);

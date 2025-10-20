@@ -258,13 +258,6 @@ void ShowUsageFault(void) {
   error_shutdown("Internal error", "(UF)", NULL, NULL);
 }
 
-__attribute__((noreturn)) void reboot_to_bootloader() {
-  jump_to_with_flag(BOOTLOADER_START + IMAGE_HEADER_SIZE,
-                    BOOT_TARGET_BOOTLOADER);
-  for (;;)
-    ;
-}
-
 void SVC_C_Handler(uint32_t *stack) {
   uint8_t svc_number = ((uint8_t *)stack[6])[-2];
   switch (svc_number) {

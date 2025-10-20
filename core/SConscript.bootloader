@@ -5,6 +5,10 @@ import os
 TREZOR_MODEL = ARGUMENTS.get('TREZOR_MODEL', 'T')
 PRODUCTION_MODEL = ARGUMENTS.get('PRODUCTION_MODEL', 'H')
 
+FEATURE_FLAGS = {
+    "RTT": True,
+}
+
 CCFLAGS_MOD = ''
 CPPPATH_MOD = []
 CPPDEFINES_MOD = []
@@ -128,6 +132,7 @@ SOURCE_BOOTLOADER = [
     'embed/bootloader/main.c',
     'embed/bootloader/messages.c',
     'embed/bootloader/protob/messages.pb.c',
+    'embed/bootloader/debug_ui_fp.c',
 ]
 
 SOURCE_NANOPB = [
@@ -188,6 +193,21 @@ SOURCE_TREZORHAL = [
 
 ]
 
+
+if FEATURE_FLAGS["RTT"]:
+    SOURCE_BOOTLOADER += [
+        'embed/segger/SEGGER/SEGGER_RTT.c',
+        'embed/segger/SEGGER/SEGGER_RTT_printf.c',
+        'embed/segger/SEGGER/SEGGER_RTT_ASM_ARMv7M.S',
+        'embed/segger/SEGGER/Syscalls/SEGGER_RTT_Syscalls_GCC.c',
+    ]
+    CPPPATH_MOD += [
+        'embed/segger/SEGGER/',
+        'embed/segger/Config/',
+    ]
+    CPPDEFINES_MOD += ['RTT']
+    CCFLAGS_MOD += '-DRDI '
+
 if TREZOR_MODEL in ('T',):
     SOURCE_TREZORHAL.append('embed/trezorhal/touch.c')
 
@@ -206,6 +226,10 @@ SOURCE_EMMC_WRAPPER.extend(Glob('embed/emmc_wrapper/*.c'))
 # pn532 wrapper
 SOURCE_PN532_WRAPPER = []
 SOURCE_PN532_WRAPPER.extend(Glob('embed/pn532/*.c'))
+
+# fp_sensor wrapper
+SOURCE_FP_SENSOR_WRAPPER = []
+SOURCE_FP_SENSOR_WRAPPER.extend(Glob('embed/fp_sensor_wrapper/*.c'))
 
 env = Environment(ENV=os.environ, CFLAGS='%s -DPRODUCTION=%s' % (ARGUMENTS.get('CFLAGS', ''), ARGUMENTS.get('PRODUCTION', '0')))
 
@@ -239,10 +263,11 @@ env.Replace(
     '-fsingle-precision-constant -fdata-sections -ffunction-sections '
     '-ffreestanding '
     '-fstack-protector '
+    '-Wno-error=cpp -Wno-unused-function -Wno-unused-variable -Wno-unused-parameter '
     + CPU_CCFLAGS + CCFLAGS_MOD,
     CCFLAGS_QSTR='-DNO_QSTR -DN_X64 -DN_X86 -DN_THUMB',
     LINKFLAGS='-T embed/bootloader/memory.ld -Wl,--gc-sections -Wl,-Map=build/bootloader/bootloader.map -Wl,--warn-common '
-    '-Wl,-L embed/fp_sensor_wrapper -Wl,-whole-archive -Wl,-no-whole-archive',
+    '-Wl,-L embed/fp_sensor_wrapper -Wl,-whole-archive -Wl,-lfpalgorithm_gd -Wl,-no-whole-archive -u_printf_float ',
     CPPPATH=[
         'embed/bootloader',
         'embed/bootloader/nanopb',
@@ -293,6 +318,7 @@ obj_program += env.Object(source=SOURCE_FW_KEYS)
 obj_program += env.Object(source=SOURCE_DEBUG_UTILS)
 obj_program += env.Object(source=SOURCE_EMMC_WRAPPER)
 # obj_program += env.Object(source=SOURCE_PN532_WRAPPER)
+obj_program += env.Object(source=SOURCE_FP_SENSOR_WRAPPER)
 
 program_elf = env.Command(
     target='bootloader.elf',

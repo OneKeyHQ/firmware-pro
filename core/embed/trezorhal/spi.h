@@ -6,7 +6,8 @@
 #include <stdio.h>
 #include STM32_HAL_H
 
-#define SPI_CHANNEL_TOTAL 3
+#define SPI_CHANNEL_TOTAL  3
+#define FP_USE_SOFTWARE_CS 0
 
 typedef enum SPI_DEVICE
 {

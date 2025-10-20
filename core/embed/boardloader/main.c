@@ -506,7 +506,7 @@ static BOOT_TARGET decide_boot_target(STAY_REASON *stay_reason,
   TOUCH_AREA ta_end = TOUCH_AREA_OTHER;
   bool touch_center_cross = false;
 
-  for (int timer = 0; timer < 1600; timer++) {
+  for (int timer = 0; timer < 400; timer++) {
     // display bar
     if (timer % 8 == 0) {
       show_poweron_bar();
@@ -585,11 +585,11 @@ static BOOT_TARGET decide_boot_target(STAY_REASON *stay_reason,
   }
 
   // check bootloader
-  if (sectrue != verify_bootloader(hdr, hdr_valid, code_valid, NULL, 0)) {
-    boot_target = BOOT_TARGET_BOARDLOADER;
-    *stay_reason = STAY_REASON_INVALID_NEXT_TARGET;
-    return boot_target;
-  }
+  // if (sectrue != verify_bootloader(hdr, hdr_valid, code_valid, NULL, 0)) {
+  //   boot_target = BOOT_TARGET_BOARDLOADER;
+  //   *stay_reason = STAY_REASON_INVALID_NEXT_TARGET;
+  //   return boot_target;
+  // }
 
   return boot_target;
 }
@@ -654,6 +654,7 @@ static void usb_connect_switch(void) {
       if (usb_opened) {
         usb_stop();
         usb_opened = false;
+        system_reset = 1; // reboot after unplug
       }
     }
   }
@@ -748,7 +749,7 @@ int main(void) {
 
   mpu_config_bootloader(sectrue, sectrue);
 
-  jump_to(BOOTLOADER_START + hdr.hdrlen);
+  jump_to(BOOTLOADER_START + 0x400);
 
   return 0;
 }

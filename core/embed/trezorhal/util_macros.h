@@ -1,6 +1,14 @@
 #ifndef _UTIL_MACROS_H_
 #define _UTIL_MACROS_H_
 
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#define BIGE_32(_a_) __builtin_bswap32(_a_)
+#define BIGE_16(_a_) __builtin_bswap16(_a_)
+#else
+#define BIGE_32(_a_) (_a_)
+#define BIGE_16(_a_) (_a_)
+#endif
+
 #define KB(x) ((x)*1024U)
 #define MB(x) ((x)*1024U * 1024U)
 

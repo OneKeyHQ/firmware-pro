@@ -65,3 +65,66 @@ void dead_white(void)
     while ( 1 )
         ;
 }
+
+#ifdef RTT
+//   #pragma GCC diagnostic ignored "-Wunused-function"
+  #include <stdarg.h>
+  #include <stdio.h>
+  #include <ctype.h>
+  #include "SEGGER_RTT.h"
+
+int _DBG_PRINTF(const char* from, char* fmt, ...)
+{
+    int processed = 0;
+
+    if ( from )
+        processed += SEGGER_RTT_printf(0, "%s: ", from);
+
+    va_list args;
+    va_start(args, fmt);
+    processed += SEGGER_RTT_vprintf(0, fmt, &args);
+    va_end(args);
+
+    return processed;
+}
+// Note:
+// "##__VA_ARGS__" is a GCC hack to allow zero arg case, this is not standard
+
+  #define HEXDUMP_BYTES_IN_LINE 32
+  #define CHAR_CODE_MAX         0x7E
+void _DBG_BUF_DUMP(const char* from, uint8_t* p_data, uint32_t data_len)
+{
+    char str_bytes[HEXDUMP_BYTES_IN_LINE * (2 + 1) + 1] = {0};
+    char str_ascii[HEXDUMP_BYTES_IN_LINE * (1) + 1] = {0};
+
+    uint32_t byte_processed = 0;
+    uint32_t batch_index = 0;
+
+    // print all data
+    while ( byte_processed < data_len )
+    {
+        sprintf(str_bytes + (batch_index * (2 + 1)), " %02x", p_data[byte_processed]);
+        char c = (char)p_data[byte_processed];
+        sprintf(str_ascii + (batch_index * (1)), "%c", ((c <= CHAR_CODE_MAX) && isprint((int)c)) ? c : '.');
+        byte_processed++;
+        batch_index++;
+
+        if ( batch_index >= HEXDUMP_BYTES_IN_LINE )
+        {
+            _DBG_PRINTF(from, "=> %s | %s\n", str_bytes, str_ascii);
+            batch_index = 0;
+        }
+    }
+    // print last part
+    if ( batch_index != 0 )
+    {
+        for ( uint8_t i = batch_index; i < HEXDUMP_BYTES_IN_LINE; i++ )
+        {
+            sprintf(str_bytes + (i * (2 + 1)), " ..");
+            sprintf(str_ascii + (i * (1)), " ");
+        }
+        _DBG_PRINTF(from, "-> %s | %s\n", str_bytes, str_ascii);
+    }
+}
+
+#endif

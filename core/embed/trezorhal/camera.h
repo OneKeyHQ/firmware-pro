@@ -15,8 +15,8 @@ extern unsigned short CameraFrameCnt;
 #define GC_MAX_WIN_H (1200)
 
 // camera frame settings, do not change unless initialize config also changed
-#define WIN_W 320
-#define WIN_H 320
+#define WIN_W                320
+#define WIN_H                320
 
 #define CAMERA_MCLK_FROM_MCO 0
 

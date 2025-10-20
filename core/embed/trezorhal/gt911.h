@@ -1,6 +1,10 @@
 #ifndef _GT911_H_
 #define _GT911_H_
 
+#include <stdbool.h>
+
+#include "util_macros.h"
+
 #define GT911
 
 #define GT911_ADDR (0x5D << 1)
@@ -120,11 +124,104 @@ typedef struct __attribute__((packed)) {
 } GT911_Config_t;
 
 // clang-format on
+#define GTP_ENUM_ITEM(b, c) JOIN_EXPR(GTP, b, c)
+// regex -> (GTP_ENUM_ITEM\((.*), (.*)\).*,).*
+// replace -> $1 // GTP_$2_$3
+
+typedef enum {
+  GTP_ENUM_ITEM(REG_RT, CMD) = 0x8040,    // GTP_REG_RT_CMD
+  GTP_ENUM_ITEM(REG_RT, CMDCK) = 0x8046,  // GTP_REG_RT_CMDCK
+} GTP_REG_REALTIME_t;
+
+typedef enum {
+  GTP_ENUM_ITEM(REG_CONF, VER) = 0x8047,           // GTP_REG_CONF_VER
+  GTP_ENUM_ITEM(REG_CONF, MODSWITCH1) = 0x804D,    // GTP_REG_CONF_MODSWITCH1
+  GTP_ENUM_ITEM(REG_CONF, REFRESH_RATE) = 0x8056,  // GTP_REG_CONF_REFRESH_RATE
+
+  GTP_ENUM_ITEM(REG_CONF, MODSWITCH3) = 0x8070,  // GTP_REG_CONF_MODSWITCH3
+  GTP_ENUM_ITEM(REG_CONF, GEST_DIST) = 0x8071,   // GTP_REG_CONF_GEST_DIST
+  GTP_ENUM_ITEM(REG_CONF, GEST_LG_TOUCH) =
+      0x809E,  // GTP_REG_CONF_GEST_LG_TOUCH
+
+  GTP_ENUM_ITEM(REG_CONF, CHKSUM) = 0x80FF,  // GTP_REG_CONF_CHKSUM
+  GTP_ENUM_ITEM(REG_CONF, CHANGE_NOTIFY) =
+      0x8100,  // GTP_REG_CONF_CHANGE_NOTIFY
+} GTP_REG_CONFIG_t;
+
+typedef enum {
+  GTP_ENUM_ITEM(REG_CORD, PID_B0) = 0x8140,  // GTP_REG_CORD_PID_B0
+  GTP_ENUM_ITEM(REG_CORD, PID_B2) = 0x8141,  // GTP_REG_CORD_PID_B2
+  GTP_ENUM_ITEM(REG_CORD, PID_B3) = 0x8142,  // GTP_REG_CORD_PID_B3
+  GTP_ENUM_ITEM(REG_CORD, PID_B4) = 0x8143,  // GTP_REG_CORD_PID_B4
+  GTP_ENUM_ITEM(REG_CORD, FW_L) = 0x8144,    // GTP_REG_CORD_FW_L
+  GTP_ENUM_ITEM(REG_CORD, FW_H) = 0x8145,    // GTP_REG_CORD_FW_H
+  GTP_ENUM_ITEM(REG_CORD, VID) = 0x814A,     // GTP_REG_CORD_VID
+  GTP_ENUM_ITEM(REG_CORD, STATUS) = 0x814E,  // GTP_REG_CORD_STATUS
+} GTP_REG_CORDINATE_t;
+
+typedef enum {
+  GTP_ENUM_ITEM(REG_GEST, CTRL) = 0x8074,  // GTP_REG_GEST_CTRL
+  GTP_ENUM_ITEM(REG_GEST, SW1) = 0x8075,   // GTP_REG_GEST_SW1
+  GTP_ENUM_ITEM(REG_GEST, SW2) = 0x8076,   // GTP_REG_GEST_SW2
+
+  GTP_ENUM_ITEM(REG_GEST, GID_B0) = 0x8140,  // GTP_REG_GEST_GID_B0
+  GTP_ENUM_ITEM(REG_GEST, GID_B2) = 0x8141,  // GTP_REG_GEST_GID_B2
+  GTP_ENUM_ITEM(REG_GEST, GID_B3) = 0x8142,  // GTP_REG_GEST_GID_B3
+  GTP_ENUM_ITEM(REG_GEST, GID_B4) = 0x8143,  // GTP_REG_GEST_GID_B4
+  GTP_ENUM_ITEM(REG_GEST, FW_L) = 0x8144,    // GTP_REG_GEST_FW_L
+  GTP_ENUM_ITEM(REG_GEST, FW_H) = 0x8145,    // GTP_REG_GEST_FW_H
+
+  GTP_ENUM_ITEM(REG_GEST, TYPE) = 0x814B,         // GTP_REG_GEST_TYPE
+  GTP_ENUM_ITEM(REG_GEST, POINT_COUNT) = 0x814C,  // GTP_REG_GEST_POINT_COUNT
+} GTP_REG_GESTURE_t;
+
+typedef struct __attribute__((packed)) {
+  // begin at GTP_REG_CONF_GEST_DIST
+
+  uint8_t slide_distance;
+  uint8_t long_press_time;
+  uint8_t xy_slope_adj;
+  uint8_t control;
+  uint8_t sw1;
+  uint8_t sw2;
+  uint8_t refresh_rate;
+  uint8_t threshold;
+
+} GTP_CONF_GESTURE_t;
+
+typedef struct __attribute__((packed)) {
+  // begin at GTP_REG_GEST_TYPE
+
+  uint8_t g_type;
+  uint8_t g_points_count;
+  uint16_t g_cord_start_x;
+  uint16_t g_cord_start_y;
+  uint16_t g_cord_end_x;
+  uint16_t g_cord_end_y;
+
+} GTP_GESTURE_STATUS_t;
+
+typedef struct __attribute__((packed)) {
+  // begin at GTP_REG_GEST_GID_B0
+
+  char g_id[4];
+  uint16_t fw_ver;
+  uint16_t res_x;
+  uint16_t res_y;
+
+  uint8_t reserved0;
+
+  GTP_GESTURE_STATUS_t g_status;
+
+} GTP_GESTURE_INFO_t;
 
 void gt911_init(void);
 uint32_t gt911_read_location(void);
 void gt911_enter_sleep(void);
 void gt911_enable_irq(void);
 void gt911_disable_irq(void);
+bool gt911_wait_gesture(GTP_GESTURE_INFO_t* gi, GTP_GESTURE_STATUS_t* gs);
+void gt911_test(void);
+void gt911_test_gesture(void);
 
 #endif

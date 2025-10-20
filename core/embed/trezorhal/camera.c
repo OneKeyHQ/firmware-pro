@@ -159,8 +159,8 @@ static void camera_clk_ctrl(bool enable)
     }
     else
     {
-          #define MCO1_GPIO_PORT         GPIOA
-          #define MCO1_PIN               GPIO_PIN_8
+  #define MCO1_GPIO_PORT GPIOA
+  #define MCO1_PIN       GPIO_PIN_8
         HAL_GPIO_DeInit(MCO1_GPIO_PORT, MCO1_PIN);
     }
 }
@@ -348,16 +348,16 @@ void camera_power_off(void)
     camera_delay(10);
     camera_powered = false;
     camera_configured = false;
-    #if CAMERA_MCLK_FROM_MCO
+#if CAMERA_MCLK_FROM_MCO
     camera_clk_ctrl(false);
-    #endif
+#endif
 }
 
 void camera_power_on(void)
 {
-    #if CAMERA_MCLK_FROM_MCO
+#if CAMERA_MCLK_FROM_MCO
     camera_clk_ctrl(true);
-    #endif
+#endif
     if ( !camera_powered )
     {
         CAMERA_PWDN_LOW();

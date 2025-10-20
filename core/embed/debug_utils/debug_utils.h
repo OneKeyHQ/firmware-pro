@@ -46,4 +46,15 @@ bool buffer_to_hex_string(const void* buff, size_t buff_len, char* str, size_t s
 
 void dead_white(void); // screen brighness test
 
+#ifdef RTT
+
+int _DBG_PRINTF(const char* from, char* fmt, ...);
+void _DBG_BUF_DUMP(const char* from, uint8_t* p_data, uint32_t data_len);
+
+  #define DBG_PRINTF(fmt, ...)    _DBG_PRINTF(__func__, fmt, ##__VA_ARGS__)
+  #define DBG_PRINTF_NL(fmt, ...) _DBG_PRINTF(__func__, fmt "\n", ##__VA_ARGS__)
+  #define DBG_BUF_DUMP(data_p, len) _DBG_BUF_DUMP(__func__, data_p, len)
+
+#endif
+
 #endif // _DEBUG_UTILS_H_

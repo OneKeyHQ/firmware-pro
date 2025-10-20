@@ -1,14 +1,37 @@
+#include <string.h>
+
 #include "common.h"
 #ifndef EMULATOR
-  #include "fp_sensor_wrapper.h"
+  #include "fp_algo_interface.h"
+  #include "fp_algo_interface_dark.h"
 #endif
 #include "fingerprint.h"
 #include "irq.h"
-#ifdef SYSTEM_VIEW
-  #include "systemview.h"
-  #include "mipi_lcd.h"
-#endif
-extern uint8_t MAX_USER_COUNT;
+#include "debug_utils.h"
+#include "display.h"
+#include "mipi_lcd.h"
+
+#pragma GCC diagnostic ignored "-Wcpp"
+#pragma GCC diagnostic ignored "-Wunused-function"
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+
+// disable log
+#undef DBG_PRINTF
+#define DBG_PRINTF(...)
+
+// alg config
+FPS_Init_Data algo_init_data = {
+    .noise_base_offset = 0,
+    .template_offset = 20 * 1024,
+    .MAX_ENROLL_NUM = FP_MAX_ENROLL_STEP,
+    .MAX_USER_COUNT = FP_MAX_USER_COUNT,
+};
+
+uint8_t* fp_buff_img;
+uint8_t* fp_buff_img_raw;
+uint8_t* fp_buff_algo;
 
 static bool fingerprint_module_status = false;
 
@@ -18,388 +41,331 @@ bool fingerprint_module_status_get(void)
 }
 
 #ifdef EMULATOR
-void fingerprint_get_version(char* version)
+FP_RESULT fingerprint_get_version(char* version)
 {
     strcpy(version, "1.0.0");
+    return FP_RESULT_OK;
 }
-int fingerprint_detect(void)
+FP_RESULT fingerprint_detect(void)
 {
-    return 1;
+    return FP_RESULT_OK;
 }
-int fingerprint_enroll(uint8_t counter)
+FP_RESULT fingerprint_enroll(uint8_t counter, uint8_t repeat_detect_num, uint8_t overlap_detect_threshold)
 {
     (void)counter;
-    return 0;
+    (void)repeat_detect_num;
+    (void)overlap_detect_threshold;
+    return FP_RESULT_OK;
 }
-int fingerprint_save(uint8_t index)
-{
-    (void)index;
-    return 0;
-}
-int fingerprint_match(uint8_t* match_id)
-{
-    (void)match_id;
-    return 0;
-}
-int fingerprint_delete(uint8_t id)
+FP_RESULT fingerprint_save(uint8_t* id)
 {
     (void)id;
-    return 0;
+    return FP_RESULT_OK;
 }
-int fingerprint_delete_all(void)
+FP_RESULT fingerprint_match(uint8_t* match_id)
 {
-    return 0;
+    (void)match_id;
+    return FP_RESULT_OK;
 }
-int fingerprint_get_count(uint8_t* count)
+FP_RESULT fingerprint_delete(uint8_t id)
+{
+    (void)id;
+    return FP_RESULT_OK;
+}
+FP_RESULT fingerprint_delete_all(void)
+{
+    return FP_RESULT_OK;
+}
+FP_RESULT fingerprint_get_count(uint8_t* count)
 {
     (void)count;
-    return 0;
+    return FP_RESULT_OK;
 }
-int fingerprint_get_list(uint8_t* list, uint8_t len)
+FP_RESULT fingerprint_get_list(uint8_t* list, uint8_t len)
 {
     (void)list;
     (void)len;
-    return 0;
+    return FP_RESULT_OK;
 }
 #else
-void fingerprint_get_version(char* version)
+
+FP_RESULT fingerprint_init(void)
 {
-    FpLibVersion(version);
-}
-void fingerprint_init(void)
-{
-    ensure_ex(fpsensor_gpio_init(), FPSENSOR_OK, "fpsensor_gpio_init failed");
-    ensure_ex(fpsensor_spi_init(), FPSENSOR_OK, "fpsensor_spi_init failed");
-    ensure_ex(fpsensor_hard_reset(), FPSENSOR_OK, "fpsensor_hard_reset failed");
-    ensure_ex(fpsensor_init(), FPSENSOR_OK, "fpsensor_init failed");
-    ensure_ex(fpsensor_adc_init(18, 13, 4, 3), FPSENSOR_OK, "fpsensor_adc_init failed");
-    ensure_ex(fpsensor_set_config_param(0xC0, 8), FPSENSOR_OK, "fpsensor_set_config_param failed");
-    if ( FpAlgorithmInit(TEMPLATE_ADDR_START) == FPSENSOR_OK )
+    // image buffer
+    fp_buff_img = (uint8_t*)FMC_SDRAM_BOOLOADER_BUFFER_ADDRESS; // image
+    fp_buff_img_raw = fp_buff_img + IMG_BUFFER_SIZE;            // image (copy, use for debug display)
+    fp_buff_algo = fp_buff_img_raw + IMG_BUFFER_SIZE;           // 0xD0201900
+
+    // sensor
+    GSL61xx_init();
+    fingerprint_module_status = true;
+
+    // config
+    FPS_FailCode ret = SLAlg_Init(&algo_init_data, fp_buff_algo);
+
+    if ( ret != FPS_SUCCESS )
     {
-        fingerprint_module_status = true;
+        return FP_RESULT_ErrOther;
     }
-    else
-    {
-        return;
-    }
-    MAX_USER_COUNT = MAX_FINGERPRINT_COUNT;
-    fingerprint_enter_sleep();
+    fingerprint_module_status = true;
+    return FP_RESULT_OK;
 }
 
-int fingerprint_enter_sleep(void)
+FP_RESULT fingerprint_get_version(char* version)
+{
+    uint32_t version_int = 0;
+    Get_version(&version_int);
+    sprintf(version, "0x%08lx", version_int);
+    return FP_RESULT_OK;
+}
+
+FP_RESULT fingerprint_get_image_dark(void)
 {
     if ( !fingerprint_module_status )
-    {
-        return -1;
-    }
-    if ( FpsSleep(256) != 0 )
-    {
-        return -1;
-    }
-    fpsensor_irq_enable();
-    return 0;
-}
+        return FP_RESULT_ErrState;
 
-int fingerprint_detect(void)
-{
-    if ( !fingerprint_module_status )
-    {
-        return 0;
-    }
-    return FpsDetectFinger();
-}
+    uint8_t result_curr = 0;
+    static uint8_t result_last = 0;
+    static uint32_t need_release_count = 0;
 
-FP_RESULT fingerprint_enroll(uint8_t counter)
-{
-
-    if ( FpsDetectFinger() != 1 )
-    {
-        return FP_NO_FP;
-    }
-  #if SYSTEM_VIEW
-    uint8_t image_data[88 * 112 + 2];
-    if ( FpsGetImageData(image_data) != 0 )
-    {
-        return -1;
-    }
-
-    display_fp(300, 600, 88, 112, image_data);
-  #endif
-    if ( FpsGetImage() != 0 )
-    {
-        return FP_GET_IMAGE_FAIL;
-    }
-    uint8_t res = FpaExtractfeature(counter);
-    if ( res == 2 )
-    {
-        return FP_DUPLICATE;
-    }
-    if ( res != 0 )
-    {
-        return FP_EXTRACT_FEATURE_FAIL;
-    }
-    if ( FpaMergeFeatureToTemplate(counter) != 0 )
-    {
-        return FP_ERROR_OTHER;
-    }
-    return FP_OK;
-}
-
-int fingerprint_register_template(uint8_t id)
-{
-
-    if ( id > fpsensor_get_max_template_count() - 1 )
-    {
-        return -1;
-    }
-    if ( FpaEnrollTemplatesave(id) != 0 )
-    {
-        return -1;
-    }
-    return 0;
-}
-
-int fingerprint_save(uint8_t index)
-{
-    fpsensor_data_save(index);
-    return 0;
-}
-
-void fingerprint_get_group(uint8_t group[8])
-{
-    fpsensor_data_get_group(group);
-}
-
-FP_RESULT fingerprint_match(uint8_t* match_id)
-{
-    volatile int ret = 0;
     uint32_t irq = disable_irq();
-    if ( FpsDetectFinger() != 1 )
+    volatile FP_RESULT ret = FP_RESULT_ErrOther;
+
+    result_curr = CaptureGSL61xx(fp_buff_img);
+
+    if ( result_curr == FINGER_DOWN && result_last == FINGER_UP )
     {
-        enable_irq(irq);
-        return FP_NO_FP;
+        // backup original picture
+        memcpy(fp_buff_img_raw, fp_buff_img, IMG_BUFFER_SIZE);
+        // debug display
+        display_fp(
+            DISPLAY_RESX - IMG_WIDTH - 30, DISPLAY_RESY - IMG_HEIGHT - 100, IMG_WIDTH, IMG_HEIGHT, fp_buff_img_raw
+        );
+
+        ReduceBaseStep2(fp_buff_img, 100);
+        ReduceBaseStep1(fp_buff_img, 36, 160);
+        ret = FP_RESULT_OK;
+        result_last = result_curr;
     }
-  #if SYSTEM_VIEW
-    uint8_t image_data[88 * 112 + 2];
-    if ( FpsGetImageData(image_data) != 0 )
+    else if ( result_curr == FINGER_DOWN && result_last == FINGER_DOWN )
     {
-        enable_irq(irq);
-        return -1;
+        // with maximum release count
+        if ( need_release_count < 150 )
+        {
+            need_release_count++;
+            ret = FP_RESULT_NeedRelease;
+        }
+        else
+        {
+            need_release_count = 0;
+            ret = FP_RESULT_NoFinger;
+        }
+
+        // without maximum release count
+        // ret = FP_RESULT_NeedRelease;
+    }
+    else if ( result_curr == FINGER_UP )
+    {
+        ret = FP_RESULT_NoFinger;
+        result_last = result_curr;
     }
     else
     {
-        display_fp(300, 600, 88, 112, image_data);
+        ret = FP_RESULT_ErrOther;
     }
-  #endif
-    if ( FpsGetImage() != 0 )
-    {
-        enable_irq(irq);
-        return FP_GET_IMAGE_FAIL;
-    }
-    if ( FpaExtractfeature(0) != 0 )
-    {
-        enable_irq(irq);
-        return FP_EXTRACT_FEATURE_FAIL;
-    }
-    ret = FpaIdentify(match_id);
     enable_irq(irq);
-    if ( ret != 0 )
-    {
-        return FP_NOT_MATCH;
-    }
-    return FP_OK;
+
+    return ret;
 }
 
-int fingerprint_delete(uint8_t id)
+FP_RESULT fingerprint_get_image(void)
 {
-    if ( id > fpsensor_get_max_template_count() - 1 )
-    {
-        return -1;
-    }
-    if ( FpaDeleteTemplateId(id) != 0 )
-    {
+    // use self implemented Finger_ImageGet
+    // mainly to have a img buffer copy
+    return fingerprint_get_image_dark();
 
-        return -1;
+    // use library Finger_ImageGet
+    if ( !fingerprint_module_status )
+        return FP_RESULT_ErrState;
+
+    uint8_t result_curr = 0;
+    static uint8_t result_last = 0;
+
+    uint32_t irq = disable_irq();
+    volatile FP_RESULT ret = FP_RESULT_ErrOther;
+
+    result_curr = !Finger_ImageGet(fp_buff_img);
+
+    if ( result_curr == FINGER_DOWN && result_last == FINGER_UP )
+    {
+        // debug display
+        display_fp(DISPLAY_RESX - IMG_WIDTH - 30, DISPLAY_RESY - IMG_HEIGHT - 100, IMG_WIDTH, IMG_HEIGHT, fp_buff_img);
+        ret = FP_RESULT_OK;
+        result_last = result_curr;
     }
-    fpsensor_data_delete(false, id);
-    return 0;
+    else if ( result_curr == FINGER_DOWN && result_last == FINGER_DOWN )
+    {
+        ret = FP_RESULT_NeedRelease;
+    }
+    else if ( result_curr == FINGER_UP )
+    {
+        ret = FP_RESULT_NoFinger;
+        result_last = result_curr;
+    }
+    else
+    {
+        ret = FP_RESULT_ErrOther;
+        result_last = 0;
+    }
+    enable_irq(irq);
+
+    return ret;
 }
 
-int fingerprint_delete_group(uint8_t group_id[4])
+// note this function only exec one enroll step
+FP_RESULT fingerprint_enroll(uint8_t counter, uint8_t repeat_detect_num, uint8_t overlap_detect_threshold)
 {
-    fpsensor_data_delete_group(group_id);
-    return 0;
+    // get image
+    FP_EC_FP_RESULT(fingerprint_get_image());
+
+    // enroll
+    // 3rd arg = 0 to disable registred finger detection
+    FPS_FailCode ret = SL_Enroll(fp_buff_img, counter, repeat_detect_num, overlap_detect_threshold);
+    DBG_PRINTF("SL_Enroll ret -> 0x%02x (%u)\n", ret, ret);
+    switch ( ret )
+    {
+    case FPS_LOCK_REGISTER_MOVE_SLOW:
+    case FPS_LOCK_REGISTER_MOVE_LARGE:
+    case FPS_LOCK_REGISTER_LOW_QUALITY:
+        return FP_RESULT_NeedsMove;
+
+    case FPS_TEMPLATE_ALREADY_EXIST:
+        return FP_RESULT_Duplicate;
+
+    case FPS_LESSEFATUREPOINT:
+        return FP_RESULT_InsufficientFeature;
+
+    case FPS_MAX_ENROLL:
+        return FP_RESULT_SlotFull;
+
+    case FPS_LOCK_REGISTER_OK:
+    case FPS_SUCCESS:
+        break;
+
+    default:
+        return FP_RESULT_ErrOther;
+    }
+
+    return FP_RESULT_OK;
 }
 
-int fingerprint_delete_all(void)
+FP_RESULT fingerprint_match(uint8_t* match_id, bool single_target)
 {
-    if ( FpaClearTemplate() != 0 )
+    // get image
+    FP_EC_FP_RESULT(fingerprint_get_image());
+
+    FPS_FailCode ret;
+
+    // feature
+    ret = SL_GetFeature(fp_buff_img);
+    DBG_PRINTF("SL_GetFeature ret -> 0x%02x (%u)\n", ret, ret);
+
+    // match checks
+    uint8_t reco_score = 0;
+    uint8_t reco_learn = 0;
+    uint8_t match_id_slg = 0;
+    ret = SL_Match(&reco_score, &reco_learn, &match_id_slg);
+    DBG_PRINTF("SL_Match ret -> 0x%02x (%u)\n", ret, ret);
+    switch ( ret )
     {
-        return -1;
+    default:
+        return FP_RESULT_ErrOther;
+    case FPS_TEMPLETMISMATCH:
+    case FPS_IMAGEBLURRING:
+    case FPS_AREASMALL:
+        return FP_RESULT_NoMatch;
+    case FPS_TEMPLATE_NULL:
+        return FP_RESULT_ErrState;
+    case FPS_SUCCESS:
+        if ( reco_score <= 0 )
+            return FP_RESULT_NoMatch;
+        break;
     }
-    fpsensor_data_delete(true, 0);
-    return 0;
+
+    // learn if needed
+    if ( reco_learn )
+    {
+        DBG_PRINTF("SL_UpDate triggered\n");
+        SL_UpDate(match_id_slg);
+    }
+
+    // check fingger id
+    if ( single_target && (match_id_slg != *match_id) )
+    {
+        return FP_RESULT_SlotMissmatch;
+    }
+    else
+    {
+        *match_id = match_id_slg;
+        return FP_RESULT_Match;
+    }
 }
 
-int fingerprint_get_count(uint8_t* count)
+FP_RESULT fingerprint_save(uint8_t* id)
 {
-    return FpaGetTemplateNum(count);
+    DBG_PRINTF("SL_SaveTemp triggered\n");
+    SL_SaveTemp(id);
+    return FP_RESULT_OK;
 }
 
-int fingerprint_get_list(uint8_t* list, uint8_t len)
+FP_RESULT fingerprint_delete(uint8_t id)
 {
-    uint8_t fp_list[32];
-    if ( FpaGetTemplateIDlist(fp_list) != 0 )
-    {
-        return -1;
-    }
-
-    len = len > 32 ? 32 : len;
-    memcpy(list, fp_list, len);
-    return 0;
+    SL_DellChar(id);
+    return FP_RESULT_OK;
 }
 
-void fp_test(void)
+FP_RESULT fingerprint_delete_all(void)
 {
-    display_printf("Function Test\n");
-    display_printf("%s\n", __func__);
-    display_printf("======================\n\n");
-
-    uint8_t count = 0;
-    uint8_t fp_list[32];
-
-    // register
-    for ( int m = 0; m < 3; m++ )
-    {
-        display_printf("Finger registre %d...\n", m);
-        for ( int i = 0; i < 5; i++ )
-        {
-            display_printf("Finger Detecting...\n");
-            while ( fingerprint_detect() != 1 )
-                ;
-            display_printf("Finger enroll...\n");
-            if ( fingerprint_enroll(i) != 0 )
-            {
-                display_printf("fp enroll Fail\n");
-                continue;
-            }
-
-            display_printf("Remove finger...\n");
-            while ( fingerprint_detect() == 1 )
-                ;
-        }
-        if ( fingerprint_save(m) != 0 )
-        {
-            display_printf("fp save Fail\n");
-            while ( 1 )
-                ;
-        }
-    }
-
-    fingerprint_get_count(&count);
-    display_printf("fp count: %d\n", count);
-
-    fingerprint_get_list(fp_list, 32);
-    display_printf("fp list: ");
-    for ( int i = 0; i < 10; i++ )
-    {
-        display_printf("%x ", fp_list[i]);
-    }
-
-    // match
-    while ( 1 )
-    {
-        uint8_t match_id;
-        display_printf("Finger Detecting...\n");
-        while ( fingerprint_detect() != 1 )
-            ;
-
-        if ( fingerprint_match(&match_id) != 0 )
-        {
-            display_printf("Finger match Fail\n");
-            continue;
-        }
-        display_printf("Finger matched %d \n", match_id);
-        while ( fingerprint_detect() != 0 )
-            ;
-    }
+    SL_DeleteAll();
+    return FP_RESULT_OK;
 }
 
-void fingerprint_test(void)
+void fingerprint_wipe_storage(void)
 {
-    display_printf("Function Test\n");
-    display_printf("%s\n", __func__);
-    display_printf("======================\n\n");
-    char fpver[32];
-    FpLibVersion(fpver);
-    display_printf("FP Lib - %s\n", fpver);
-    display_printf("FP Init...");
-
-    uint8_t finger_index = 0;
-
-    // register
-    for ( int i = 0; i < 5; i++ )
-    {
-        display_printf("Finger Detecting...\n");
-        while ( FpsDetectFinger() != 1 )
-            ;
-        display_printf("Finger Getting Image...\n");
-        if ( FpsGetImage() != 0 )
-        {
-            display_printf("FpsGetImage Fail\n");
-            continue;
-        }
-
-        if ( FpaExtractfeature(i) != 0 )
-        {
-            display_printf("FpaExtractfeature Fail\n");
-            continue;
-        }
-
-        if ( FpaMergeFeatureToTemplate(i) != 0 )
-        {
-            display_printf("FpaMergeFeatureToTemplate Fail\n");
-            continue;
-        }
-        display_printf("Remove finger...\n");
-        while ( FpsDetectFinger() == 1 )
-            ;
-    }
-    if ( FpaEnrollTemplatesave(finger_index) != 0 )
-    {
-        display_printf("FpaEnrollTemplatesave Fail\n");
-        while ( 1 )
-            ;
-    }
-
-    // match
-    while ( 1 )
-    {
-        uint8_t match_id;
-        display_printf("Finger Detecting...\n");
-        while ( FpsDetectFinger() != 1 )
-            ;
-
-        if ( FpsGetImage() != 0 )
-        {
-            display_printf("FpsGetImage Fail\n");
-            continue;
-        }
-
-        if ( FpaExtractfeature(0) != 0 )
-        {
-            display_printf("FpaExtractfeature Fail\n");
-            continue;
-        }
-
-        display_printf("remove finger...\n");
-
-        if ( FpaIdentify(&match_id) != 0 )
-        {
-            display_printf("FpaIdentify Fail\n");
-            continue;
-        }
-        display_printf("FpaIdentify matched\n");
-    }
+    DATA_FLASH_Wipe();
 }
+
+FP_RESULT fingerprint_get_count(uint8_t* count)
+{
+    FPS_IdRead_return_struct fps_ids = SL_IdRead();
+    *count = fps_ids.ExistIdNum;
+    return FP_RESULT_OK;
+}
+
+FP_RESULT fingerprint_get_list(uint8_t* list, uint8_t len)
+{
+    FPS_IdRead_return_struct fps_ids = SL_IdRead();
+
+    // clear
+    memset(list, 0, len);
+
+    // convert to bit group
+    for ( uint8_t i = 0; (i < FP_MAX_USER_COUNT && i < len * 8); i++ )
+    {
+        list[i] = fps_ids.ExistId[i];
+    }
+
+    return FP_RESULT_OK;
+}
+
+void fp_test_getImage()
+{
+    FP_RESULT fp_result = FP_RESULT_ErrOther;
+
+    display_fp(DISPLAY_RESX - IMG_WIDTH, DISPLAY_RESY - IMG_HEIGHT, IMG_WIDTH, IMG_HEIGHT, fp_buff_img);
+    fp_result = CaptureGSL61xx(fp_buff_img);
+    // UNUSED(fp_result);
+    DBG_PRINTF("fp_result -> %u\n", fp_result);
+}
+
 #endif

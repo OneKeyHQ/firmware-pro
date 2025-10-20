@@ -299,3 +299,49 @@ combine: ## combine boardloader + bootloader + prodtest into one combined image
 
 coverage:  # generate coverage report
 	./tools/coverage-report
+
+# backup
+# ./tools/headertool.py -h -v $(FIRMWARE_BUILD_DIR)/firmware.bin \
+# -S 1:3d129d2202e7671dfd48a5444dea807b7f614c7fe79f83016a3b4faaee6b8e54 \
+# -S 2:ebcea0917af1eb2f0cfe8d80c005c36a50743e07ccd73283869e7a42efb635f4 \
+# -S 3:76267466cb36185cdb5b9f9d67826d45fc7b776a4f95f6e93dd863f4a8ca558f \
+# -S 4:aa44b24d8f36a607b61621624d50c82451f022e416538fa41bb1290e091e25a8
+
+sign_dev_bl:
+	./tools/headertool.py -h -v $(BOOTLOADER_BUILD_DIR)/bootloader.bin \
+	-S 1:3d129d2202e7671dfd48a5444dea807b7f614c7fe79f83016a3b4faaee6b8e54 \
+	-S 2:ebcea0917af1eb2f0cfe8d80c005c36a50743e07ccd73283869e7a42efb635f4
+
+sign_dev_board_reflash:
+	./tools/headertool.py -h -v $(BOAR_DEV_REFLASH_BUILD_DIR)/boardloader_reflash_dev.bin \
+	-S 1:3d129d2202e7671dfd48a5444dea807b7f614c7fe79f83016a3b4faaee6b8e54 \
+	-S 2:ebcea0917af1eb2f0cfe8d80c005c36a50743e07ccd73283869e7a42efb635f4
+
+sign_dev_vendor_header:
+	cp embed/vendorheader/vendorheader_onekey_test_unsigned.bin embed/vendorheader/vendorheader_onekey_test_signed.bin
+	./tools/headertool.py -h -v embed/vendorheader/vendorheader_onekey_test_signed.bin \
+	-S 1:3d129d2202e7671dfd48a5444dea807b7f614c7fe79f83016a3b4faaee6b8e54 \
+	-S 2:ebcea0917af1eb2f0cfe8d80c005c36a50743e07ccd73283869e7a42efb635f4
+
+sign_dev_fw:
+	./tools/headertool.py -h -v $(FIRMWARE_BUILD_DIR)/firmware.bin \
+	-S 1:3d129d2202e7671dfd48a5444dea807b7f614c7fe79f83016a3b4faaee6b8e54 \
+	-S 2:ebcea0917af1eb2f0cfe8d80c005c36a50743e07ccd73283869e7a42efb635f4
+	dd if=$(FIRMWARE_BUILD_DIR)/firmware.bin of=$(FIRMWARE_BUILD_DIR)/firmware.bin.p1 skip=0 bs=128k count=12
+
+# lazy_ba: clean_boardloader build_boardloader flash_boardloader_jlink
+lazy_ba: build_boardloader flash_boardloader_jlink
+
+lazy_dev_ba_reflash: clean_boardloader_reflash_dev build_boardloader_reflash_dev sign_dev_board_reflash flash_boardloader_reflash_dev_jlink
+
+lazy_bl: build_bootloader sign_dev_bl flash_bootloader_jlink
+
+lazy_fw: build_firmware sign_dev_fw flash_firmware_jlink
+
+lazy_fw_usb_boot: jlink_device_enter_boot build_firmware sign_dev_fw
+	trezorctl device emmc-file-write -l ../core/build/firmware/firmware.bin -r 0:firmware.bin -f -cs 256KB
+	trezorctl device firmware-update-emmc -p 0:firmware.bin
+
+lazy_fw_usb: build_firmware sign_dev_fw
+	trezorctl device emmc-file-write -l ../core/build/firmware/firmware.bin -r 0:firmware.bin -f -cs 256KB
+	trezorctl device firmware-update-emmc -p 0:firmware.bin

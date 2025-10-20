@@ -45,17 +45,21 @@
 void cpu_cache_enable(void) {
   /* Enable I-Cache */
   SCB_EnableICache();
+  SCB_InvalidateICache();
 
   /* Enable D-Cache */
   SCB_EnableDCache();
+  SCB_InvalidateDCache();
 }
 
 void cpu_cache_disable(void) {
   /* Disable I-Cache */
   SCB_DisableICache();
+  SCB_InvalidateICache();
 
   /* Disable D-Cache */
   SCB_DisableDCache();
+  SCB_InvalidateDCache();
 }
 
 /**

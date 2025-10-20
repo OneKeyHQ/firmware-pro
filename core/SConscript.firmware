@@ -15,6 +15,7 @@ USE_THD89 = ARGUMENTS.get('USE_THD89', '0')
 FEATURE_FLAGS = {
     "RDI": True,
     "SECP256K1_ZKP": True,  # required for trezor.crypto.curve.bip340 (BIP340/Taproot)
+    "RTT": False,
     "SYSTEM_VIEW": False,
     "LVGL_DOUBLE_BUFFER": False,
 }
@@ -627,21 +628,29 @@ SOURCE_ZBAR.extend(Glob('embed/zbar/qrcode/*.c'))
 
 CPPDEFINES_MOD += ['USE_SVC_SHUTDOWN']
 
-if FEATURE_FLAGS["RDI"]:
-    CPPDEFINES_MOD += ['RDI']
-
-if FEATURE_FLAGS["SYSTEM_VIEW"]:
+if FEATURE_FLAGS["RTT"]:
     SOURCE_FIRMWARE += [
-        'embed/segger/SEGGER/SEGGER_SYSVIEW_Config_NoOS.c',
-        'embed/segger/SEGGER/SEGGER_SYSVIEW.c',
         'embed/segger/SEGGER/SEGGER_RTT.c',
+        'embed/segger/SEGGER/SEGGER_RTT_printf.c',
         'embed/segger/SEGGER/SEGGER_RTT_ASM_ARMv7M.S',
         'embed/segger/SEGGER/Syscalls/SEGGER_RTT_Syscalls_GCC.c',
-        'embed/firmware/systemview.c',
     ]
     CPPPATH_MOD += [
         'embed/segger/SEGGER/',
         'embed/segger/Config/',
+    ]
+    CPPDEFINES_MOD += ['RTT']
+    CCFLAGS_MOD += '-DRDI '
+
+if FEATURE_FLAGS["SYSTEM_VIEW"]:
+
+    if not FEATURE_FLAGS["RTT"]:
+        raise ValueError('SYSTEM_VIEW enabled without RTT')
+
+    SOURCE_FIRMWARE += [
+        'embed/segger/SEGGER/SEGGER_SYSVIEW_Config_NoOS.c',
+        'embed/segger/SEGGER/SEGGER_SYSVIEW.c',
+        'embed/firmware/systemview.c',
     ]
     CPPDEFINES_MOD += ['SYSTEM_VIEW', ('LV_USE_PERF_MONITOR', '1')]
     CCFLAGS_MOD += '-DSYSTEM_VIEW '
@@ -1155,18 +1164,21 @@ program_elf = env.Command(
 
 env.Depends(program_elf, rust)
 
-if PRODUCTION_MODEL == 'H':
-    action_bin=[
-        '$OBJCOPY -O binary -j .vendorheader -j .header -j .flash -j .data --pad-to 0x081E0000 $SOURCE ${TARGET}.p1',
-        '$OBJCOPY -O binary -j .flash2 $SOURCE ${TARGET}.p2',
-        '$CAT ${TARGET}.p1 ${TARGET}.p2 > $TARGET',
-        '$DD if=$TARGET of=${TARGET}.p1 skip=0 bs=128k count=12',
-    ]
-else:
-    raise ValueError('Unknown Trezor model')
-
 program_bin = env.Command(
     target='firmware.bin',
     source=program_elf,
-    action=action_bin,
+    action=[
+        # '$OBJCOPY -O binary -j .vendorheader -j .header -j .flash -j .data --gap-fill 0xff --pad-to 0x081E0000 $SOURCE ${TARGET}.p1',
+        # '$OBJCOPY -O binary -j .flash2 $SOURCE ${TARGET}.p2',
+        # '$OBJCOPY -O binary -j .flash2 --gap-fill 0xff --pad-to 0x90200000 $SOURCE ${TARGET}.p2',
+
+        # '$OBJCOPY -O binary -j .vendorheader -j .header -j .flash -j .data -j .padding1 --gap-fill 0xff --pad-to 0x081E0000 $SOURCE ${TARGET}.p1',
+        # '$OBJCOPY -O binary -j .flash2 -j .padding2 --gap-fill 0xff --pad-to 0x90200000 $SOURCE ${TARGET}.p2',
+
+        '$OBJCOPY -O binary -j .vendorheader -j .header -j .flash -j .data -j .padding1 $SOURCE ${TARGET}.p1',
+        '$OBJCOPY -O binary -j .flash2 -j .padding2 $SOURCE ${TARGET}.p2',
+
+        '$CAT ${TARGET}.p1 ${TARGET}.p2 > $TARGET',
+        '$DD if=$TARGET of=${TARGET}.p1 skip=0 bs=128k count=12',
+    ],
 )

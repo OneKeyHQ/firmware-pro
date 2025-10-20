@@ -34,7 +34,9 @@ sram_end = ORIGIN(SRAM) + LENGTH(SRAM);
 _ram_start = sram_start;
 _ram_end = sram_end;
 
-_codelen = LENGTH(FLASH) - SIZEOF(.vendorheader) - SIZEOF(.header) + SIZEOF(.flash2);
+/* always full size */
+_codelen = (LENGTH(FLASH) - (SIZEOF(.vendorheader) + SIZEOF(.header))) + (LENGTH(FLASH2));
+
 _flash_start = ORIGIN(FLASH);
 _flash_end = ORIGIN(FLASH) + LENGTH(FLASH);
 _heap_start = ADDR(.heap);
@@ -54,6 +56,7 @@ SECTIONS {
   } >FLASH AT>FLASH
 
   .flash2 : ALIGN(512) {
+    KEEP(*(.flash2));
     build/firmware/frozen_mpy.o(.rodata*);
     build/firmware/vendor/secp256k1-zkp/src/secp256k1.o(.rodata*);
     . = ALIGN(512);
@@ -85,6 +88,20 @@ SECTIONS {
     *(.data*);
     . = ALIGN(512);
   } >SRAM AT>FLASH
+
+  .padding1 : {
+    KEEP(*(.padding1));
+    FILL(0xDEADBEEF); /* fill pattern */
+    . = LENGTH(FLASH) - SIZEOF(.vendorheader) - SIZEOF(.header) - SIZEOF(.flash) - SIZEOF(.data) - 1 - 8;
+    BYTE(0x00); /* needed to keep this section without references in .s or .c */
+  } >FLASH AT>FLASH
+
+  .padding2 : {
+    KEEP(*(.padding2));
+    FILL(0xDEADBEEF); /* fill pattern */
+    . = LENGTH(FLASH2) - SIZEOF(.flash2) - 1;
+    BYTE(0x00); /* needed to keep this section without references in .s or .c */
+  } >FLASH2 AT>FLASH2
 
   .sram1 : {
 		*(sram1)

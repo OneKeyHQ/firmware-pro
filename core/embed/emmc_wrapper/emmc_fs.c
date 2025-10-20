@@ -473,6 +473,47 @@ bool emmc_fs_file_touch(const char* path_buff)
     return emmc_fs_file_write(path_buff, 0, NULL, 0, NULL, false, true);
 }
 
+bool emmc_fs_file_resize(const char* path_buff, uint32_t target_len)
+{
+    // status update
+    OKEMMC_DBG_STATUS_SETUP();
+
+    if ( !emmc_wrapper_status.is_inited )
+        return false;
+
+    FIL fhandle;
+    BYTE fopenmodes;
+
+    // handle overwrite
+    switch ( emmc_fs_f_stat(path_buff, NULL) )
+    {
+    case FR_OK: // exists
+        fopenmodes = FA_OPEN_EXISTING | FA_WRITE;
+        break;
+    case FR_NO_FILE: // do nothing
+        fopenmodes = FA_CREATE_NEW | FA_WRITE;
+        break;
+    default: // anything else considered as error
+        emmc_fs_dbgex_set("emmc_fs_f_stat errored out");
+        return false;
+        break;
+    }
+
+    // open
+    ExecuteCheck_OKEMMC_SIMPLE(f_open(&fhandle, path_buff, fopenmodes));
+
+    // seek
+    ExecuteCheck_OKEMMC_SIMPLE(f_lseek(&fhandle, target_len));
+
+    // truncate to current seek position
+    ExecuteCheck_OKEMMC_SIMPLE(f_truncate(&fhandle));
+
+    // close
+    ExecuteCheck_OKEMMC_SIMPLE(f_close(&fhandle));
+
+    return true;
+}
+
 bool emmc_fs_file_delete(const char* path_buff)
 {
     // status update

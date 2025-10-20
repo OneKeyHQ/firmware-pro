@@ -3,7 +3,7 @@
 ENTRY(reset_handler)
 
 MEMORY {
-  FLASH  (rx)  : ORIGIN = 0x08020000, LENGTH = 256K
+  FLASH  (rx)  : ORIGIN = 0x08020000, LENGTH = 512K
   SRAM   (wal) : ORIGIN = 0x20000000, LENGTH = 128K
   AXIRAM (wal) : ORIGIN = 0x24000000, LENGTH = 512K
   /* SRAM3 is used for DMA */
