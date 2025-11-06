@@ -425,6 +425,7 @@ if not utils.BITCOIN_ONLY:
     SEPublicKey = 10005
     WriteSEPublicCert = 10006
     ZoomRequest = 10019
+    BlurRequest = 10032
     ResourceRequest = 10020
     ResourceAck = 10021
     FileInfoList = 10024

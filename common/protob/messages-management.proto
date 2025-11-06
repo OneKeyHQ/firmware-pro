@@ -726,6 +726,7 @@ message SEMessageSignature {
     optional bytes nft_meta_data = 4;
     required uint32 zoom_data_length = 5;
     optional string file_name_no_ext = 6; // name template: nft/wp - mac(unique verify) - timestamp(sort)
+    optional uint32 blur_data_length = 7;  // total length of the blur data for wallpaper
 
     enum ResourceType {
         WallPaper = 0;
@@ -738,6 +739,15 @@ message SEMessageSignature {
  * @next ResourceAck
  */
  message ZoomRequest {
+    optional uint32 offset = 1;       // offset of requested data chunk
+    required uint32 data_length = 2;  // length of requested data chunk
+}
+
+/**
+ * Response: Device asks for blur data
+ * @next ResourceAck
+ */
+ message BlurRequest {
     optional uint32 offset = 1;       // offset of requested data chunk
     required uint32 data_length = 2;  // length of requested data chunk
 }
@@ -791,6 +801,7 @@ message ListResDir {
 message FileInfoList {
     repeated FileInfo files = 1;
     message FileInfo {
+        
         required string name = 1;
         required uint64 size =2;
     }

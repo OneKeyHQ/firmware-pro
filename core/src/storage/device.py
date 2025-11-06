@@ -1,10 +1,11 @@
+import re
 from micropython import const
 from typing import TYPE_CHECKING
 from ubinascii import hexlify
 
 import storage.cache
 from storage import common
-from trezor import config, utils
+from trezor import config, io, utils
 
 if TYPE_CHECKING:
     from trezor.enums import BackupType
@@ -14,6 +15,7 @@ HOMESCREEN_MAXSIZE = 16384
 LABEL_MAXLENGTH = const(32)
 LANGUAGE_MAXLENGTH = const(16)
 HOMESCREEN_PATH_MAXSIZE = const(128)
+LOCKSCREEN_PATH_MAXSIZE = const(128)
 BLE_NAME_MAXLENGTH = const(16)
 BLE_VERSION_MAXLENGTH = const(8)
 PREVIOUS_LABEL_MAXLENGTH = const(13)
@@ -33,6 +35,7 @@ _AUTO_PASSPHRASE_VALUE: bool | None = None
 _PASSPHRASE_ALWAYS_ON_DEVICE_VALUE: bool | None = None
 _AUTOLOCK_DELAY_MS_VALUE: int | None = None
 _HOMESCREEN_VALUE: str | None = None
+_LOCKSCREEN_VALUE: str | None = None
 _BLE_NAME_VALUE: str | None = None
 _BLE_VERSION_VALUE: str | None = None
 _BLE_ENABLED_VALUE: bool | None = None
@@ -89,6 +92,7 @@ _FIDO_SEED_GEN = False
 _FIDO2_COUNTER_VALUE: int | None = None
 _FIDO_ENABLED_VALUE: bool | None = None
 _TURBOMODE_VALUE: bool | None = None
+_DEVICE_NAME_DISPLAY_ENABLED_VALUE: bool | None = None
 
 if utils.USE_THD89:
     import uctypes
@@ -136,6 +140,12 @@ if utils.USE_THD89:
         "has_value": 0 | uctypes.UINT8,
         "size": 1 | uctypes.UINT16,
         "uuid": (3 | uctypes.ARRAY, HOMESCREEN_PATH_MAXSIZE | uctypes.UINT8),
+    }
+
+    struct_lockscreen: uctypes.StructDict = {
+        "has_value": 0 | uctypes.UINT8,
+        "size": 1 | uctypes.UINT16,
+        "uuid": (3 | uctypes.ARRAY, LOCKSCREEN_PATH_MAXSIZE | uctypes.UINT8),
     }
 
     struct_sessionkey: uctypes.StructDict = {
@@ -246,10 +256,14 @@ if utils.USE_THD89:
     offset += uctypes.sizeof(struct_bool, uctypes.LITTLE_ENDIAN)
     struct_public["turbomode"] = (offset, struct_bool)
     offset += uctypes.sizeof(struct_bool, uctypes.LITTLE_ENDIAN)
+    struct_public["device_name_display_enabled"] = (offset, struct_bool)
+    offset += uctypes.sizeof(struct_bool, uctypes.LITTLE_ENDIAN)
     struct_public["use_passphrase_pin"] = (offset, struct_bool)
     offset += uctypes.sizeof(struct_bool, uctypes.LITTLE_ENDIAN)
     struct_public["auto_passphrase"] = (offset, struct_bool)
     offset += uctypes.sizeof(struct_bool, uctypes.LITTLE_ENDIAN)
+    struct_public["lockscreen"] = (offset, struct_lockscreen)
+    offset += uctypes.sizeof(struct_lockscreen, uctypes.LITTLE_ENDIAN)
 
     # public_field = uctypes.struct(0, struct_public, uctypes.LITTLE_ENDIAN)
     assert (
@@ -290,6 +304,7 @@ if utils.USE_THD89:
     _PASSPHRASE_ALWAYS_ON_DEVICE = struct_public["passphrase_always_on_device"][0]
     _AUTOLOCK_DELAY_MS = struct_public["autolock_delay_ms"][0]
     _HOMESCREEN = struct_public["homescreen"][0]
+    _LOCKSCREEN = struct_public["lockscreen"][0]
     _BLE_NAME = struct_public["ble_name"][0]
     _BLE_VERSION = struct_public["ble_version"][0]
     _BLE_ENABLED = struct_public["ble_enabled"][0]
@@ -313,6 +328,7 @@ if utils.USE_THD89:
     _FIDO2_COUNTER = struct_public["fido2_counter"][0]
     _FIDO_ENABLED = struct_public["fido_enabled"][0]
     _TURBOMODE = struct_public["turbomode"][0]
+    _DEVICE_NAME_DISPLAY_ENABLED = struct_public["device_name_display_enabled"][0]
     U2F_COUNTER = 0x00  # u2f counter
 
     # recovery key
@@ -382,6 +398,7 @@ else:
     _FIDO2_COUNTER = (0x90)  # int
     _FIDO_ENABLED = (0x91)  # bool
     _TURBOMODE = (0x92)  # bool
+    _DEVICE_NAME_DISPLAY_ENABLED = (0x93)  # bool
     # fmt: on
 SAFETY_CHECK_LEVEL_STRICT: Literal[0] = const(0)
 SAFETY_CHECK_LEVEL_PROMPT: Literal[1] = const(1)
@@ -706,6 +723,38 @@ def set_turbomode_enable(enable: bool) -> None:
     _TURBOMODE_VALUE = enable
 
 
+def is_device_name_display_enabled() -> bool:
+    global _DEVICE_NAME_DISPLAY_ENABLED_VALUE
+    if _DEVICE_NAME_DISPLAY_ENABLED_VALUE is None:
+        # Check if the key exists in storage first
+        stored_value = common.get(_NAMESPACE, _DEVICE_NAME_DISPLAY_ENABLED, public=True)
+        if stored_value is not None:
+            # Key exists, get the boolean value
+            _DEVICE_NAME_DISPLAY_ENABLED_VALUE = stored_value == common._TRUE_BYTE
+        else:
+            # Key doesn't exist, use default True (show device names by default)
+            _DEVICE_NAME_DISPLAY_ENABLED_VALUE = True
+            # Save the default value to storage directly
+            common.set_bool(
+                _NAMESPACE,
+                _DEVICE_NAME_DISPLAY_ENABLED,
+                True,
+                public=True,
+            )
+    return _DEVICE_NAME_DISPLAY_ENABLED_VALUE
+
+
+def set_device_name_display_enabled(enable: bool) -> None:
+    global _DEVICE_NAME_DISPLAY_ENABLED_VALUE
+    common.set_bool(
+        _NAMESPACE,
+        _DEVICE_NAME_DISPLAY_ENABLED,
+        enable,
+        public=True,
+    )
+    _DEVICE_NAME_DISPLAY_ENABLED_VALUE = enable
+
+
 def keyboard_haptic_enabled() -> bool:
     global _KEYBOARD_HAPTIC_VALUE
     if _KEYBOARD_HAPTIC_VALUE is None:
@@ -733,6 +782,14 @@ def increase_wp_cnts() -> None:
     global _WALLPAPER_COUNTS_VALUE
     cur_cnt = get_wp_cnts()
     cnts = cur_cnt + 1
+    common.set(_NAMESPACE, _WALLPAPER_COUNTS, cnts.to_bytes(2, "big"), public=True)
+    _WALLPAPER_COUNTS_VALUE = cnts
+
+
+def decrease_wp_cnts() -> None:
+    global _WALLPAPER_COUNTS_VALUE
+    cur_cnt = get_wp_cnts()
+    cnts = max(0, cur_cnt - 1)  # Ensure count never goes below 0
     common.set(_NAMESPACE, _WALLPAPER_COUNTS, cnts.to_bytes(2, "big"), public=True)
     _WALLPAPER_COUNTS_VALUE = cnts
 
@@ -827,6 +884,7 @@ def get_label() -> str:
     global _LABEL_VALUE
     if _LABEL_VALUE is None:
         label = common.get(_NAMESPACE, _LABEL, True)  # public
+
         if label is None:
             previous_label_len = common.get_val_len(_NAMESPACE, _LABEL_DEPRECATED, True)
             if (
@@ -834,14 +892,18 @@ def get_label() -> str:
                 and 0 < previous_label_len < PREVIOUS_LABEL_MAXLENGTH
             ):
                 label = common.get(_NAMESPACE, _LABEL_DEPRECATED, True)
+
         _LABEL_VALUE = label.decode() if label else utils.DEFAULT_LABEL
+
     return _LABEL_VALUE
 
 
 def set_label(label: str) -> None:
     global _LABEL_VALUE
+
     if len(label.encode("utf-8")) > LABEL_MAXLENGTH:
         raise ValueError  # label too long
+
     common.set(_NAMESPACE, _LABEL, label.encode(), True)  # public
     _LABEL_VALUE = label
 
@@ -936,9 +998,57 @@ def get_homescreen() -> str | None:
 def set_homescreen(full_path: str) -> None:
     if len(full_path.encode("utf-8")) > HOMESCREEN_PATH_MAXSIZE:
         raise ValueError  # homescreen too large
+
     global _HOMESCREEN_VALUE
     common.set(_NAMESPACE, _HOMESCREEN, full_path.encode(), public=True)
     _HOMESCREEN_VALUE = full_path
+
+
+def get_appdrawer_background() -> str | None:
+    global _LOCKSCREEN_VALUE
+
+    if _LOCKSCREEN_VALUE is None:
+        lockscreen = common.get(_NAMESPACE, _LOCKSCREEN, public=True)
+        if lockscreen:
+            _LOCKSCREEN_VALUE = lockscreen.decode()
+        else:
+            # If appdrawer background is empty, check homescreen value
+            homescreen = get_homescreen()
+            if homescreen:
+                # Check if homescreen starts with "wallpaper-" followed by a digit
+                match = re.match(r"^(.*wallpaper-)(\d+)(\.jpg)?$", homescreen)
+                if match and 1 <= int(match.group(2)) <= 6:
+                    # Generate corresponding blur wallpaper path
+                    prefix = match.group(1)
+                    number = match.group(2)
+                    blur_path = f"{prefix}{number}-blur.jpg"
+
+                    # Check if the blur file exists
+                    try:
+                        # Remove "A:" prefix if present for fatfs.stat
+                        check_path = (
+                            blur_path[2:] if blur_path.startswith("A:") else blur_path
+                        )
+                        io.fatfs.stat(check_path)
+                        _LOCKSCREEN_VALUE = blur_path
+                    except (io.fatfs.FatFSError, OSError):
+                        # File doesn't exist, use black background
+                        _LOCKSCREEN_VALUE = (
+                            ""  # Empty string will result in black background
+                        )
+                else:
+                    _LOCKSCREEN_VALUE = utils.get_default_wallpaper()
+            else:
+                _LOCKSCREEN_VALUE = utils.get_default_wallpaper()
+    return _LOCKSCREEN_VALUE
+
+
+def set_appdrawer_background(full_path: str) -> None:
+    if len(full_path.encode("utf-8")) > LOCKSCREEN_PATH_MAXSIZE:
+        raise ValueError  # lockscreen path too large
+    global _LOCKSCREEN_VALUE
+    common.set(_NAMESPACE, _LOCKSCREEN, full_path.encode(), public=True)
+    _LOCKSCREEN_VALUE = full_path
 
 
 def store_mnemonic_secret(
@@ -1483,6 +1593,7 @@ def clear_global_cache() -> None:
     global _PASSPHRASE_ALWAYS_ON_DEVICE_VALUE
     global _AUTOLOCK_DELAY_MS_VALUE
     global _HOMESCREEN_VALUE
+    global _LOCKSCREEN_VALUE
     global _BLE_NAME_VALUE
     global _BLE_VERSION_VALUE
     global _BLE_ENABLED_VALUE
@@ -1514,6 +1625,7 @@ def clear_global_cache() -> None:
     global _STORAGE_SIZE_VALUE
     global _SERIAL_NUMBER_VALUE
     global _TREZOR_COMPATIBLE_VALUE
+    global _DEVICE_NAME_DISPLAY_ENABLED_VALUE
 
     _LANGUAGE_VALUE = None
     _LABEL_VALUE = None
@@ -1522,6 +1634,7 @@ def clear_global_cache() -> None:
     _PASSPHRASE_ALWAYS_ON_DEVICE_VALUE = None
     _AUTOLOCK_DELAY_MS_VALUE = None
     _HOMESCREEN_VALUE = None
+    _LOCKSCREEN_VALUE = None
     _BLE_NAME_VALUE = None
     _BLE_VERSION_VALUE = None
     _BLE_ENABLED_VALUE = None
@@ -1553,3 +1666,4 @@ def clear_global_cache() -> None:
     _DEVICE_ID_VALUE = None
     _SERIAL_NUMBER_VALUE = None
     _TREZOR_COMPATIBLE_VALUE = None
+    _DEVICE_NAME_DISPLAY_ENABLED_VALUE = None

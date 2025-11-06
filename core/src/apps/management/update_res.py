@@ -31,7 +31,8 @@ if TYPE_CHECKING:
 # FR_TOO_MANY_OPEN_FILES: int  # (18) Number of open files > FF_FS_LOCK
 # FR_INVALID_PARAMETER: int    # (19) Given parameter is invalid
 
-REQUEST_CHUNK_SIZE = const(16 * 1024)
+# Match upload chunk size with conservative 8KB wire buffer limit to prevent DataError responses.
+REQUEST_CHUNK_SIZE = const(8 * 1024)
 
 BOOTLOADER_NAME = "bootloader.bin"
 

@@ -32,9 +32,13 @@ class LockScreen(Screen):
 
     def __init__(self, device_name, ble_name="", dev_state=None):
         lockscreen = storage_device.get_homescreen()
-        self.double_click = DoubleClickDetector(click_timeout=800, click_dist=50)
+        show_device_names = storage_device.is_device_name_display_enabled()
+
         if not hasattr(self, "_init"):
             self._init = True
+
+            self.double_click = DoubleClickDetector(click_timeout=800, click_dist=50)
+
             super().__init__(title=device_name, subtitle=ble_name)
             self.title.add_style(
                 StyleWrapper().text_align_center().text_opa(int(lv.OPA.COVER * 0.85)), 0
@@ -46,13 +50,26 @@ class LockScreen(Screen):
                 .text_opa(int(lv.OPA.COVER * 0.85)),
                 0,
             )
+            if not show_device_names:
+                self.title.set_text("")
+                self.title.add_flag(lv.obj.FLAG.HIDDEN)
+                self.subtitle.set_text("")
+                self.subtitle.add_flag(lv.obj.FLAG.HIDDEN)
         else:
             self.add_style(
                 StyleWrapper().bg_img_src(lockscreen).bg_img_opa(lv.OPA._40),
                 0,
             )
-            if ble_name:
+            if show_device_names:
+                self.title.set_text(device_name)
+                self.title.clear_flag(lv.obj.FLAG.HIDDEN)
                 self.subtitle.set_text(ble_name)
+                self.subtitle.clear_flag(lv.obj.FLAG.HIDDEN)
+            else:
+                self.title.set_text("")
+                self.title.add_flag(lv.obj.FLAG.HIDDEN)
+                self.subtitle.set_text("")
+                self.subtitle.add_flag(lv.obj.FLAG.HIDDEN)
             self.show_tips()
             return
         self.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)

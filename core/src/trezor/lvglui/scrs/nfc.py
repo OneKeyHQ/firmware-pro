@@ -209,7 +209,6 @@ async def start_import_pin_mnemonicmphrase(self, pin):
 
     if sw1sw2[0] == 0x63 and (sw1sw2[1] & 0xF0) == 0xC0:
         retry_count = sw1sw2[1] & 0x0F
-        print(f"PIN verification failed. Remaining retries: {retry_count}")
         pin_status = f"63C{retry_count:X}"
         await handle_cleanup(self, pin_status)
         return
@@ -276,7 +275,6 @@ async def start_check_pin_mnemonicmphrase(self, pin, mnemonic, card_num):
         return
     if sw1sw2[0] == 0x63 and (sw1sw2[1] & 0xF0) == 0xC0:
         retry_count = sw1sw2[1] & 0x0F
-        print(f"PIN verification failed. Remaining retries: {retry_count}")
         pin_status = f"63C{retry_count:X}"
         self.stop_animation()
         await handle_cleanup(self, pin_status)

@@ -131,6 +131,7 @@ int main(void) {
   lcd_pwm_init();
   touch_init();
   adc_init();
+  
 
   ensure_emmcfs(emmc_fs_init(), "emmc_fs_init");
   ensure_emmcfs(emmc_fs_mount(true, false), "emmc_fs_mount");
@@ -139,6 +140,7 @@ int main(void) {
     qspi_flash_config();
     qspi_flash_memory_mapped();
   }
+
   cm_backtrace_init("firmware", hw_ver_to_str(get_hw_ver()), ONEKEY_VERSION);
 
   ble_usart_init();
@@ -155,6 +157,7 @@ int main(void) {
 
   timer_init();
   display_clear();
+  lcd_add_second_layer();
   pendsv_init();
 
   device_test(false);

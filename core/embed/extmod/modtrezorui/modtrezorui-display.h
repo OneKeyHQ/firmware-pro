@@ -18,6 +18,7 @@
  */
 
 #include "display.h"
+#include "mipi_lcd.h"
 
 /// class Display:
 ///     """
@@ -606,6 +607,105 @@ STATIC mp_obj_t mod_trezorui_Display_clear_save(mp_obj_t self) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorui_Display_clear_save_obj,
                                  mod_trezorui_Display_clear_save);
 
+/// def cover_background_show(self) -> None:
+///     """
+///     Show hardware CoverBackground layer.
+///     """
+STATIC mp_obj_t mod_trezorui_Display_cover_background_show(mp_obj_t self) {
+  lcd_cover_background_show();
+  return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorui_Display_cover_background_show_obj,
+                                 mod_trezorui_Display_cover_background_show);
+
+/// def cover_background_hide(self) -> None:
+///     """
+///     Hide hardware CoverBackground layer.
+///     """
+STATIC mp_obj_t mod_trezorui_Display_cover_background_hide(mp_obj_t self) {
+  lcd_cover_background_hide();
+  return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorui_Display_cover_background_hide_obj,
+                                 mod_trezorui_Display_cover_background_hide);
+
+
+/// def cover_background_set_visible(self, visible: bool) -> None:
+///     """
+///     Set hardware CoverBackground layer visibility state.
+///     """
+STATIC mp_obj_t mod_trezorui_Display_cover_background_set_visible(mp_obj_t self, mp_obj_t visible) {
+  bool vis = mp_obj_is_true(visible);
+  lcd_cover_background_set_visible(vis);
+  return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_trezorui_Display_cover_background_set_visible_obj,
+                                 mod_trezorui_Display_cover_background_set_visible);
+
+/// def cover_background_set_image(self, image_data: bytes) -> None:
+///     """
+///     Set hardware CoverBackground layer image from raw image data.
+///     """
+STATIC mp_obj_t mod_trezorui_Display_cover_background_set_image(mp_obj_t self, mp_obj_t image_data) {
+  mp_buffer_info_t buf = {0};
+  mp_get_buffer_raise(image_data, &buf, MP_BUFFER_READ);
+  if (buf.len > 0) {
+    lcd_cover_background_set_image(buf.buf, buf.len);
+  }
+  return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_trezorui_Display_cover_background_set_image_obj,
+                                 mod_trezorui_Display_cover_background_set_image);
+
+/// def cover_background_load_jpeg(self, jpeg_path: str) -> None:
+STATIC mp_obj_t mod_trezorui_Display_cover_background_load_jpeg(mp_obj_t self, mp_obj_t jpeg_path) {
+  const char *path = mp_obj_str_get_str(jpeg_path);
+  lcd_cover_background_load_jpeg(path);
+  return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_trezorui_Display_cover_background_load_jpeg_obj,
+                                 mod_trezorui_Display_cover_background_load_jpeg);
+
+/// def cover_background_move_to_y(self, y_position: int) -> None:
+///     """
+///     Move hardware CoverBackground layer to Y position.
+///     """
+STATIC mp_obj_t mod_trezorui_Display_cover_background_move_to_y(mp_obj_t self, mp_obj_t y_position) {
+  mp_int_t y = mp_obj_get_int(y_position);
+  lcd_cover_background_move_to_y((int16_t)y);
+  return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_trezorui_Display_cover_background_move_to_y_obj,
+                                 mod_trezorui_Display_cover_background_move_to_y);
+
+
+/// def cover_background_animate_to_y(self, target_y: int, duration_ms: int) -> None:
+///     """
+///     Animate hardware CoverBackground layer to Y position.
+///     """
+STATIC mp_obj_t mod_trezorui_Display_cover_background_animate_to_y(mp_obj_t self, mp_obj_t target_y, mp_obj_t duration_ms) {
+  mp_int_t y = mp_obj_get_int(target_y);
+  mp_int_t duration = mp_obj_get_int(duration_ms);
+  if (duration < 0 || duration > 10000) {
+    mp_raise_ValueError("Duration must be between 0 and 10000ms");
+  }
+  lcd_cover_background_animate_to_y((int16_t)y, (uint16_t)duration);
+  return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_3(mod_trezorui_Display_cover_background_animate_to_y_obj,
+                                 mod_trezorui_Display_cover_background_animate_to_y);
+
+/// def cover_background_is_visible(self) -> bool:
+///     """
+///     Check if hardware CoverBackground layer is visible.
+///     """
+STATIC mp_obj_t mod_trezorui_Display_cover_background_is_visible(mp_obj_t self) {
+  bool is_visible = lcd_cover_background_is_visible();
+  return mp_obj_new_bool(is_visible);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorui_Display_cover_background_is_visible_obj,
+                                 mod_trezorui_Display_cover_background_is_visible);
+
 STATIC const mp_rom_map_elem_t mod_trezorui_Display_locals_dict_table[] = {
     {MP_ROM_QSTR(MP_QSTR_clear), MP_ROM_PTR(&mod_trezorui_Display_clear_obj)},
     {MP_ROM_QSTR(MP_QSTR_refresh),
@@ -638,6 +738,22 @@ STATIC const mp_rom_map_elem_t mod_trezorui_Display_locals_dict_table[] = {
     {MP_ROM_QSTR(MP_QSTR_save), MP_ROM_PTR(&mod_trezorui_Display_save_obj)},
     {MP_ROM_QSTR(MP_QSTR_clear_save),
      MP_ROM_PTR(&mod_trezorui_Display_clear_save_obj)},
+    {MP_ROM_QSTR(MP_QSTR_cover_background_show),
+     MP_ROM_PTR(&mod_trezorui_Display_cover_background_show_obj)},
+    {MP_ROM_QSTR(MP_QSTR_cover_background_hide),
+     MP_ROM_PTR(&mod_trezorui_Display_cover_background_hide_obj)},
+    {MP_ROM_QSTR(MP_QSTR_cover_background_set_visible),
+     MP_ROM_PTR(&mod_trezorui_Display_cover_background_set_visible_obj)},
+    {MP_ROM_QSTR(MP_QSTR_cover_background_set_image),
+     MP_ROM_PTR(&mod_trezorui_Display_cover_background_set_image_obj)},
+    {MP_ROM_QSTR(MP_QSTR_cover_background_load_jpeg),
+     MP_ROM_PTR(&mod_trezorui_Display_cover_background_load_jpeg_obj)},
+    {MP_ROM_QSTR(MP_QSTR_cover_background_move_to_y),
+     MP_ROM_PTR(&mod_trezorui_Display_cover_background_move_to_y_obj)},
+    {MP_ROM_QSTR(MP_QSTR_cover_background_animate_to_y),
+     MP_ROM_PTR(&mod_trezorui_Display_cover_background_animate_to_y_obj)},
+    {MP_ROM_QSTR(MP_QSTR_cover_background_is_visible),
+     MP_ROM_PTR(&mod_trezorui_Display_cover_background_is_visible_obj)},
     {MP_ROM_QSTR(MP_QSTR_WIDTH), MP_ROM_INT(DISPLAY_RESX)},
     {MP_ROM_QSTR(MP_QSTR_HEIGHT), MP_ROM_INT(DISPLAY_RESY)},
     {MP_ROM_QSTR(MP_QSTR_FONT_NORMAL), MP_ROM_INT(FONT_NORMAL)},

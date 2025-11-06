@@ -62,8 +62,8 @@ async def apply_settings(ctx: wire.Context, msg: ApplySettings) -> Success:
 
     if msg.homescreen is not None:
         validate_homescreen(msg.homescreen)
-        await confirm_set_homescreen(ctx)
-        storage.device.set_homescreen(f"A:/res/{msg.homescreen.decode()}")
+        # await confirm_set_homescreen(ctx)
+        # storage.device.set_homescreen(f"A:/res/{msg.homescreen.decode()}")
 
     if msg.label is not None:
         if len(msg.label.encode("utf-8")) > storage.device.LABEL_MAXLENGTH:
@@ -114,6 +114,24 @@ async def apply_settings(ctx: wire.Context, msg: ApplySettings) -> Success:
         storage.device.set_experimental_features(msg.experimental_features)
 
     reload_settings_from_storage()
+    
+
+    storage.device._LABEL_VALUE = None
+    updated_label = storage.device.get_label()
+    
+    from trezor.lvglui.scrs.homescreen import MainScreen
+    if hasattr(MainScreen, "_instance") and MainScreen._instance:
+        main_screen = MainScreen._instance
+        if (hasattr(main_screen, "title") and main_screen.title and 
+            storage.device.is_device_name_display_enabled()):
+            main_screen.title.set_text(updated_label)
+    
+    from trezor.lvglui.scrs.lockscreen import LockScreen
+    if hasattr(LockScreen, "_instance") and LockScreen._instance:
+        lock_screen = LockScreen._instance
+        if (hasattr(lock_screen, "title") and lock_screen.title and 
+            storage.device.is_device_name_display_enabled()):
+            lock_screen.title.set_text(updated_label)
 
     return Success(message="Settings applied")
 

@@ -263,10 +263,14 @@ trezor.lvglui.scrs.lockscreen
 import trezor.lvglui.scrs.lockscreen
 trezor.lvglui.scrs.nfc
 import trezor.lvglui.scrs.nfc
+trezor.lvglui.scrs.nftmanager
+import trezor.lvglui.scrs.nftmanager
 trezor.lvglui.scrs.passphrase
 import trezor.lvglui.scrs.passphrase
 trezor.lvglui.scrs.pinscreen
 import trezor.lvglui.scrs.pinscreen
+trezor.lvglui.scrs.preview_utils
+import trezor.lvglui.scrs.preview_utils
 trezor.lvglui.scrs.recovery_device
 import trezor.lvglui.scrs.recovery_device
 trezor.lvglui.scrs.reset_device

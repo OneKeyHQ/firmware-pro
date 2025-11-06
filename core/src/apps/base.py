@@ -470,16 +470,18 @@ ALLOW_WHILE_LOCKED = (
 )
 
 
-def set_homescreen(show_app_guide: bool = False) -> None:
+def set_homescreen(show_app_guide: bool = False, prefer_appdrawer: bool = False) -> None:
     import lvgl as lv  # type: ignore[Import "lvgl" could not be resolved]
 
     from trezor.lvglui.scrs import fingerprints
 
     ble_name = storage.device.get_ble_name()
     first_unlock = False
+
     if storage.device.is_initialized():
         dev_state = get_state()
         device_name = storage.device.get_label()
+
         if not device_is_unlocked():
             if __debug__:
                 print(
@@ -497,6 +499,18 @@ def set_homescreen(show_app_guide: bool = False) -> None:
 
             store_ble_name(ble_name)
             screen = MainScreen(device_name, ble_name, dev_state)
+
+            if prefer_appdrawer:
+                screen.hidden_others(True)
+                if hasattr(screen, "bottom_tips") and screen.bottom_tips:
+                    screen.bottom_tips.add_flag(lv.obj.FLAG.HIDDEN)
+                if hasattr(screen, "up_arrow") and screen.up_arrow:
+                    screen.up_arrow.add_flag(lv.obj.FLAG.HIDDEN)
+                if hasattr(screen, "apps") and screen.apps:
+                    screen.apps.clear_flag(lv.obj.FLAG.HIDDEN)
+                    screen.apps.clear_flag(lv.obj.FLAG.GESTURE_BUBBLE)
+                    screen.apps.visible = True
+
             if show_app_guide:
                 from trezor.lvglui.scrs import app_guide
 
@@ -510,7 +524,6 @@ def set_homescreen(show_app_guide: bool = False) -> None:
                 ):
                     fingerprints.FingerprintDataUpgrade(True)
                     fingerprints.data_upgrade_prompted()
-
     else:
         from trezor.lvglui.scrs.initscreen import InitScreen
 
@@ -657,7 +670,11 @@ async def unlock_device(
 
     utils.mark_pin_verified()
     reload_settings_from_storage()
-    set_homescreen()
+
+    is_manual_unlock = (ctx is wire.DUMMY_CONTEXT)
+
+    set_homescreen(prefer_appdrawer=is_manual_unlock)
+
     wire.find_handler = workflow_handlers.find_registered_handler
 
 

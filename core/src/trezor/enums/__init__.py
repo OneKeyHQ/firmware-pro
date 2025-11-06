@@ -439,6 +439,7 @@ if TYPE_CHECKING:
         SEMessageSignature = 10013
         ResourceUpload = 10018
         ZoomRequest = 10019
+        BlurRequest = 10032
         ResourceRequest = 10020
         ResourceAck = 10021
         ResourceUpdate = 10022

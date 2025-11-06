@@ -58,6 +58,10 @@ def apply_settings(
     )
 
     out = client.call(settings)
+
+    if use_passphrase is not None:
+        time.sleep(1.0)
+
     client.refresh_features()
     return out
 
@@ -252,6 +256,7 @@ def upload_res(
     ext: str,
     data: bytes,
     zoomdata: bytes,
+    blurdata: Optional[bytes] = None,
     res_type: messages.ResourceType = messages.ResourceType.WallPaper,
     nft_metadata: Optional[str] = None,
     progress_update: Callable[[int], Any] = lambda _: None,
@@ -265,6 +270,7 @@ def upload_res(
             data_length=len(data),
             res_type=res_type,
             zoom_data_length=len(zoomdata),
+            blur_data_length=len(blurdata) if blurdata else 0,
             file_name_no_ext=file_name_no_ext,
             nft_meta_data=nft_metadata.encode() if nft_metadata else None,
         )
@@ -286,6 +292,18 @@ def upload_res(
         assert offset is not None
         assert length is not None
         payload = zoomdata[offset : offset + length]
+        digest = blake2s(payload).digest()
+        resp = client.call(messages.ResourceAck(data_chunk=payload, hash=digest))
+        progress_update(length)
+
+    while isinstance(resp, messages.BlurRequest):
+        if blurdata is None:
+            raise RuntimeError("Device requested blur data but none provided")
+        offset = resp.offset
+        length = resp.data_length
+        assert offset is not None
+        assert length is not None
+        payload = blurdata[offset : offset + length]
         digest = blake2s(payload).digest()
         resp = client.call(messages.ResourceAck(data_chunk=payload, hash=digest))
         progress_update(length)
