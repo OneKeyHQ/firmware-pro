@@ -535,9 +535,8 @@ class NftManager(AnimScreen):
                     # Handle trash icon click - delete NFT
                     from trezor.ui.layouts import confirm_remove_nft
                     from trezor.wire import DUMMY_CONTEXT
-                    from .homescreen import spawn_with_animation_guard
 
-                    spawn_with_animation_guard(
+                    workflow.spawn(
                         confirm_remove_nft(
                             DUMMY_CONTEXT,
                             self.del_callback,
