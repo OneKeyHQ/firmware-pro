@@ -350,7 +350,7 @@ class ImgGridItem(lv.img):
         """Set up all styles before loading the image"""
         if self.style_type == "nft":
             # NFT Gallery style - square thumbnail, subtle radius, no clipping
-            self.set_size(238, 238)
+            self.set_size(226, 226)
             self.set_style_radius(8, 0)
             self.set_style_clip_corner(False, 0)
             self.set_style_pad_all(0, 0)

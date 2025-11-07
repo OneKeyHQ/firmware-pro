@@ -266,12 +266,12 @@ class NftGallery(Screen):
             self.empty()
         else:
             rows_num = math.ceil(nft_counts / 2)
-            row_dsc = [238] * rows_num
+            row_dsc = [226] * rows_num
             row_dsc.append(lv.GRID_TEMPLATE.LAST)
             # 2 columns
             col_dsc = [
-                238,
-                238,
+                226,
+                226,
                 lv.GRID_TEMPLATE.LAST,
             ]
 
@@ -297,9 +297,8 @@ class NftGallery(Screen):
                 row_dsc=row_dsc,
                 col_dsc=col_dsc,
                 align_base=self.title,
-                pos=(0, 74),
+                pos=(-12, 74),
                 pad_gap=4,
-                pad_hor=0,
             )
             self.nfts = []
             if not utils.EMULATOR:
