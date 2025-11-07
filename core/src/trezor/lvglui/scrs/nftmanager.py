@@ -639,13 +639,7 @@ class NftLockScreenPreview(WallpaperPreviewBase):
                         hs_mod._last_jpeg_loaded = None
 
                     from .lockscreen import LockScreen as LockScreenCls  # type: ignore
-                    lock_instance = getattr(LockScreenCls, "_instance", None)
-                    if lock_instance is not None:
-                        if hasattr(utils, "SCREENS") and lock_instance in utils.SCREENS:
-                            utils.SCREENS.remove(lock_instance)
-                        if hasattr(lock_instance, "_init"):
-                            delattr(lock_instance, "_init")
-                        del LockScreenCls._instance
+                    LockScreenCls.invalidate("NFT wallpaper applied")
                     main_screen = (
                         MainScreen._instance
                         if hasattr(MainScreen, "_instance") and MainScreen._instance

@@ -127,10 +127,13 @@ async def apply_settings(ctx: wire.Context, msg: ApplySettings) -> Success:
             main_screen.title.set_text(updated_label)
     
     from trezor.lvglui.scrs.lockscreen import LockScreen
-    if hasattr(LockScreen, "_instance") and LockScreen._instance:
-        lock_screen = LockScreen._instance
-        if (hasattr(lock_screen, "title") and lock_screen.title and 
-            storage.device.is_device_name_display_enabled()):
+    _visible, lock_screen = LockScreen.retrieval()
+    if lock_screen:
+        if (
+            hasattr(lock_screen, "title")
+            and lock_screen.title
+            and storage.device.is_device_name_display_enabled()
+        ):
             lock_screen.title.set_text(updated_label)
 
     return Success(message="Settings applied")

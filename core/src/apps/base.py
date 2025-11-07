@@ -483,22 +483,23 @@ def set_homescreen(show_app_guide: bool = False, prefer_appdrawer: bool = False)
         device_name = storage.device.get_label()
 
         if not device_is_unlocked():
-            if __debug__:
-                print(
-                    f"Device is locked by pin {not config.is_unlocked()} === fingerprint {not fingerprints.is_unlocked()}"
-                )
+            # debug logging removed
             from trezor.lvglui.scrs.lockscreen import LockScreen
 
-            screen = LockScreen(device_name, ble_name, dev_state)
+            exists, cached_screen = LockScreen.retrieval()
+            if cached_screen is not None:
+                # Re-run __init__ to refresh wallpaper/device names (guarded internally).
+                cached_screen.__init__(device_name, ble_name, dev_state)
+                screen = cached_screen
+            else:
+                screen = LockScreen(device_name, ble_name, dev_state)
         else:
-            if __debug__:
-                print(
-                    f"Device is unlocked and has fingerprint {fingerprints.is_available() and not fingerprints.is_unlocked()}"
-                )
+            # debug logging removed
             from trezor.lvglui.scrs.homescreen import MainScreen
 
             store_ble_name(ble_name)
             screen = MainScreen(device_name, ble_name, dev_state)
+            # debug logging removed
 
             if prefer_appdrawer:
                 screen.hidden_others(True)
@@ -529,9 +530,14 @@ def set_homescreen(show_app_guide: bool = False, prefer_appdrawer: bool = False)
 
         InitScreen()
         return
+
     if not screen.is_visible():
         lv.scr_load(screen)
+    else:
+        pass
+
     lv.refr_now(None)
+    # debug logging removed
 
 
 def store_ble_name(ble_name):
@@ -569,14 +575,12 @@ def lock_device() -> None:
         if fingerprints.is_available():
             fingerprints.lock()
         else:
-            if __debug__:
-                print(
-                    f"pin locked,  finger is available: {fingerprints.is_available()} ===== finger is unlocked: {fingerprints.is_unlocked()} "
-                )
+            # debug logging removed
             config.lock()
         wire.find_handler = get_pinlocked_handler
         set_homescreen()
         workflow.close_others()
+        # debug logging removed
 
 
 def device_is_unlocked():
@@ -814,14 +818,7 @@ def boot() -> None:
     reload_settings_from_storage()
     from trezor.lvglui.scrs import fingerprints
 
-    if __debug__:
-        print(f"fingerprints.is_unlocked(): {fingerprints.is_unlocked()}")
-        print(f"config.is_unlocked(): {config.is_unlocked()}")
     if config.is_unlocked() and fingerprints.is_unlocked():
-        if __debug__:
-            print("fingerprints is unlocked and config is unlocked")
         wire.find_handler = workflow_handlers.find_registered_handler
     else:
-        if __debug__:
-            print("fingerprints is locked or config is locked")
         wire.find_handler = get_pinlocked_handler

@@ -3262,8 +3262,8 @@ class DisplayScreen(AnimScreen):
             # Update LockScreen display if it exists
             from .lockscreen import LockScreen
 
-            if hasattr(LockScreen, "_instance") and LockScreen._instance:
-                lock_screen = LockScreen._instance
+            _visible, lock_screen = LockScreen.retrieval()
+            if lock_screen:
                 real_device_name = storage_device.get_label()
                 real_ble_name = storage_device.get_ble_name() or uart.get_ble_name()
                 if new_switch_checked:
@@ -3409,9 +3409,15 @@ class AppdrawerBackgroundSetting(AnimScreen):
     def __init__(
         self, prev_scr=None, selected_wallpaper=None, return_from_wallpaper=False
     ):
+        # debug logging removed
+
         if not hasattr(self, "_init"):
+            # debug logging removed
             self._init = True
+            AppdrawerBackgroundSetting._instance = self
+            # debug logging removed
         else:
+            # debug logging removed
             # Even if already initialized, update the wallpaper if a new one is provided
             if selected_wallpaper:
                 self.selected_wallpaper = selected_wallpaper
@@ -3447,6 +3453,7 @@ class AppdrawerBackgroundSetting(AnimScreen):
                             self.lockscreen_preview.set_src("A:/res/wallpaper-7.jpg")
                         storage_device.set_homescreen("A:/res/wallpaper-7.jpg")
             self.refresh_text()
+            # debug logging removed
             return
 
         self.selected_wallpaper = selected_wallpaper
@@ -3780,21 +3787,8 @@ class AppdrawerBackgroundSetting(AnimScreen):
 
                 # Delete LockScreen instance to force recreation with new wallpaper
                 from .lockscreen import LockScreen
-                if hasattr(LockScreen, "_instance") and LockScreen._instance:
 
-                    old_instance = LockScreen._instance
-                    if hasattr(utils, "SCREENS") and old_instance in utils.SCREENS:
-                        utils.SCREENS.remove(old_instance)
-  
-
-                    # Clear _init flag to force full re-initialization
-
-                    if hasattr(LockScreen._instance, "_init"):
-                        delattr(LockScreen._instance, "_init")
-
-
-                    # Delete the instance reference
-                    del LockScreen._instance
+                LockScreen.invalidate("wallpaper change")
 
             if self.prev_scr is not None:
                 self.load_screen(self.prev_scr, destroy_self=True)
@@ -4550,13 +4544,16 @@ class WallperChange(AnimScreen):
 
 
     def delete_marked_files(self):
+        # debug logging removed
         from trezor import io
         import storage.device as storage_device
         marked_count = len(self.marked_for_deletion)
+        # debug logging removed
 
         for wallpaper in self.marked_for_deletion:
                 # Extract file name from img_path
                 img_path = wallpaper.img_path
+                # debug logging removed
                 if "A:1:/res/wallpapers/" in img_path:
                     # Custom wallpaper path format: A:1:/res/wallpapers/filename.ext (without zoom- prefix)
                     filename = img_path.replace("A:1:/res/wallpapers/", "")
@@ -4583,25 +4580,31 @@ class WallperChange(AnimScreen):
                     io.fatfs.unlink(blur_path)
 
                     # Check if this wallpaper is currently in use and replace it
+                    # debug logging removed
                     self.replace_if_in_use(img_path)
 
         # Clear the marked for deletion set
         self.marked_for_deletion.clear()
+        # debug logging removed
 
         # Decrease wallpaper count
         for _ in range(marked_count):
             storage_device.decrease_wp_cnts()
 
         # Refresh the screen to show updated wallpaper list
+        # debug logging removed
         self.__init__(self.prev_scr)
+        # debug logging removed
 
     def replace_if_in_use(self, deleted_path):
+        # debug logging removed
         import storage.device as storage_device
 
         try:
             current_homescreen = storage_device.get_appdrawer_background()
             current_lockscreen = storage_device.get_homescreen()
             replacement_path = "A:/res/wallpaper-7.jpg"
+            # debug logging removed
 
             base_name = deleted_path.split("/")[-1]
             blur_name = base_name
@@ -4615,6 +4618,7 @@ class WallperChange(AnimScreen):
                 or current_homescreen.endswith("/" + base_name)
                 or current_homescreen.endswith("/" + blur_name)
             ):
+                # debug logging removed
                 storage_device.set_appdrawer_background(replacement_path)
 
             if current_lockscreen and (
@@ -4622,6 +4626,7 @@ class WallperChange(AnimScreen):
                 or current_lockscreen.endswith("/" + base_name)
                 or current_lockscreen.endswith("/" + blur_name)
             ):
+                # debug logging removed
                 storage_device.set_homescreen(replacement_path)
 
             # Clear Layer2 JPEG cache if we changed wallpaper
@@ -4636,8 +4641,9 @@ class WallperChange(AnimScreen):
                 or current_lockscreen.endswith("/" + blur_name)
             )):
                 Layer2Manager.reset_background_cache()
+                # debug logging removed
 
-        except Exception as e:
+        except Exception:
             pass
 
     def eventhandler(self, event_obj):
@@ -5947,13 +5953,19 @@ class WallpaperScreen(AnimScreen):
         return targets
 
     def __init__(self, prev_scr=None):
+        # debug logging removed
+
         if not hasattr(self, "_init"):
+            # debug logging removed
             self._init = True
         else:
+            # debug logging removed
             # Already initialized - refresh the container and recreate content
             if hasattr(self, "container"):
+                # debug logging removed
                 self.container.delete()
             if prev_scr is not None:
+                # debug logging removed
                 self.prev_scr = prev_scr
 
         if not hasattr(self, "content_area"):
