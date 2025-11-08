@@ -1085,7 +1085,7 @@ class MainScreen(Screen):
             # Keep AppDrawer visible while layer2 slides down over it.
             move_cb(-800)  # type: ignore[cannot be called]
             if hasattr(display, "cover_background_set_visible"):
-                display.cover_background_set_visible(True)  # type: ignore[is unknown]
+                display.cover_background_set_visible(True)
 
             def on_layer2_covers_screen():
                 self.add_flag(lv.obj.FLAG.HIDDEN)
@@ -1099,7 +1099,7 @@ class MainScreen(Screen):
                 lv.refr_now(None)
 
                 if hasattr(display, "cover_background_hide"):
-                    display.cover_background_hide()  # type: ignore[is unknown]
+                    display.cover_background_hide()
                 if hasattr(self.parent, "start_title_fade_in"):
                     self.parent.start_title_fade_in(duration=100)
 

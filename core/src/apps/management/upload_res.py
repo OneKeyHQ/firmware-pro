@@ -77,9 +77,9 @@ async def upload_res(ctx: wire.Context, msg: ResourceUpload) -> Success:
 
     display = Display()
     if hasattr(display, "cover_background_hide"):
-        display.cover_background_hide()  # type: ignore[is unknown]
+        display.cover_background_hide()
     if hasattr(display, "cover_background_set_visible"):
-        display.cover_background_set_visible(False)  # type: ignore[is unknown]
+        display.cover_background_set_visible(False)
 
     import trezorio
     from trezor import loop
