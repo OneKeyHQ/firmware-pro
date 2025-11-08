@@ -210,3 +210,41 @@ class Display:
         """
         Clears buffers in display saving.
         """
+
+    def cover_background_show(self) -> None:
+        """
+        Show hardware CoverBackground layer.
+        """
+
+    def cover_background_hide(self) -> None:
+        """
+        Hide hardware CoverBackground layer.
+        """
+
+    def cover_background_set_visible(self, visible: bool) -> None:
+        """
+        Set hardware CoverBackground layer visibility state.
+        """
+
+    def cover_background_set_image(self, image_data: bytes) -> None:
+        """
+        Set hardware CoverBackground layer image from raw image data.
+        """
+
+    def cover_background_load_jpeg(self, jpeg_path: str) -> None:
+
+    def cover_background_move_to_y(self, y_position: int) -> None:
+        """
+        Move hardware CoverBackground layer to Y position.
+        """
+
+    def cover_background_animate_to_y(self, target_y: int, duration_ms: int) ->
+    None:
+        """
+        Animate hardware CoverBackground layer to Y position.
+        """
+
+    def cover_background_is_visible(self) -> bool:
+        """
+        Check if hardware CoverBackground layer is visible.
+        """
