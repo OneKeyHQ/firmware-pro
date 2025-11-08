@@ -1027,7 +1027,7 @@ translations = [
     "Écran d'accueil",
     "Modifier",
     "Définir écran verrouillage",
-    "Écran d’accueil",
+    "Écran d'accueil",
     "Aperçu",
     "Ajouter un fond d'écran depuis OneKey App",
     "Téléchargez une image dans Mon OneKey > Sélectionnez votre appareil OneKey > Ajouter un fond d'écran.",

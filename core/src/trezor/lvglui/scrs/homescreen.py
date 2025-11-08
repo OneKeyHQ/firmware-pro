@@ -3211,9 +3211,11 @@ class DisplayScreen(AnimScreen):
             self.device_info_container,
             _(i18n_keys.BUTTON__MODEL_NAME_BLUETOOTH_ID),
         )
+        # Allow the switch row to grow when long locale strings wrap
+        self.model_name_bt_id.set_size(456, lv.SIZE.CONTENT)
         # Fix background color to match other ListItemBtn containers
         self.model_name_bt_id.add_style(
-            StyleWrapper().bg_color(lv_colors.ONEKEY_BLACK_3),
+            StyleWrapper().bg_color(lv_colors.ONEKEY_BLACK_3).min_height(94),
             0,
         )
 
@@ -3224,11 +3226,11 @@ class DisplayScreen(AnimScreen):
             # Clear the default checked state
             self.model_name_bt_id.clear_state()
 
-        # Create description label with safer approach - no alignment initially
+        # Description below the toggle - keep width identical so multi-line text aligns
         self.device_name_description = lv.label(self.content_area)
-        self.device_name_description.set_size(
-            480, lv.SIZE.CONTENT
-        )  # Wider to prevent line breaks
+        desc_width = self.device_info_container.get_width()
+        self.device_name_description.set_size(desc_width, lv.SIZE.CONTENT)
+        self.device_name_description.set_long_mode(lv.label.LONG.WRAP)
         self.device_name_description.add_style(
             StyleWrapper()
             .text_font(font_GeistRegular26)
@@ -3241,10 +3243,9 @@ class DisplayScreen(AnimScreen):
         self.device_name_description.set_text(
             _(i18n_keys.BUTTON__MODEL_NAME_BLUETOOTH_ID_DESC),
         )
-        # Use simple positioning instead of align_to to avoid deadlock
-        self.device_name_description.set_pos(
-            15, 550
-        )  # Moved right (24) to match ListItem padding
+        self.device_name_description.align_to(
+            self.device_info_container, lv.ALIGN.OUT_BOTTOM_MID, 0, 8
+        )
 
         # Disable elastic scrolling and scrollbar to match other pages
         self.content_area.clear_flag(lv.obj.FLAG.SCROLL_ELASTIC)
@@ -5038,17 +5039,21 @@ class AnimationSetting(AnimScreen):
 
         self.container = ContainerFlexCol(self.content_area, self.title)
         self.item = ListItemBtnWithSwitch(self.container, _(i18n_keys.ITEM__ANIMATIONS))
+
         self.tips = lv.label(self.content_area)
-        self.tips.align_to(self.container, lv.ALIGN.OUT_BOTTOM_LEFT, 8, 16)
+        desc_width = self.container.get_width()
+        self.tips.set_size(desc_width, lv.SIZE.CONTENT)
         self.tips.set_long_mode(lv.label.LONG.WRAP)
         self.tips.add_style(
             StyleWrapper()
             .text_font(font_GeistRegular26)
-            .width(448)
             .text_color(lv_colors.WHITE_2)
-            .text_align_left(),
+            .text_align_left()
+            .pad_hor(24)
+            .pad_ver(8),
             0,
         )
+        self.tips.align_to(self.container, lv.ALIGN.OUT_BOTTOM_MID, 0, 12)
         if storage_device.is_animation_enabled():
             self.item.add_state()
             self.tips.set_text(_(i18n_keys.CONTENT__ANIMATIONS__ENABLED_HINT))
