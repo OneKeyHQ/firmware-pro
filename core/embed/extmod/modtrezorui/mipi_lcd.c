@@ -1,169 +1,132 @@
 #include STM32_HAL_H
-#include <stdio.h>
-#include <stdbool.h>
 #include <math.h>
+#include <stdbool.h>
+#include <stdio.h>
 #include <string.h>
 
+#include "jpeg_dma.h"
 #include "mipi_lcd.h"
 #include "sdram.h"
-#include "jpeg_dma.h"
 #include "systick.h"
 
-#define LAYER2_MEMORY_BASE (FMC_SDRAM_LTDC_BUFFER_ADDRESS + MB(1) + KB(512))  // 1.5MB offset
+#define LAYER2_MEMORY_BASE \
+  (FMC_SDRAM_LTDC_BUFFER_ADDRESS + MB(1) + KB(512))  // 1.5MB offset
 
 #define TRANSPARENT_STATUSBAR_HEIGHT 44
 #define TRANSPARENT_COLOR_KEY 0x0001
-
 
 static bool g_layer2_initialized = false;
 
 static volatile bool g_animation_in_progress = false;
 
+#define LCD_TXW350135B0
 
-
-static DbgPrintf_t dbg_printf = NULL;
-
-// Fps = LCD_PCLK / ((LCD_WIDTH + LCD_HBP + LCD_HFP + LCD_HSW) * (LCD_HEIGHT +
-// LCD_VBP + LCD_VFP + LCD_VSW)) mipi_mbps = ((LCD_WIDTH + LCD_HBP + LCD_HFP +
-// LCD_HSW) * (LCD_HEIGHT + LCD_VBP + LCD_VFP + LCD_VSW) * fps * 24) /
-
-#define LCD_TXW350135B0  // Default TXW350135B0 LCD model
-
-#if 0 
+#if 0
 #elif defined(LCD_TXW350135B0)
-#include "TXW350135B0.c"  
-#define LCD_init_sequence TXW350135B0_init_sequence  // LCD initialization sequence macro
+#include "TXW350135B0.c"
+#define LCD_init_sequence TXW350135B0_init_sequence
 const DisplayParam_t lcd_params = {
-    .hres = TXW350135B0_HRES,         // Horizontal resolution
-    .vres = TXW350135B0_VRES,         // Vertical resolution
-    .hsync = TXW350135B0_HSYNC,       // Horizontal sync width
-    .hfp = TXW350135B0_HFP,           // Horizontal front porch
-    .hbp = TXW350135B0_HBP,           // Horizontal back porch
-    .vsync = TXW350135B0_VSYNC,       // Vertical sync width
-    .vfp = TXW350135B0_VFP,           // Vertical front porch
-    .vbp = TXW350135B0_VBP,           // Vertical back porch
-    .pixel_format_ltdc = LTDC_PIXEL_FORMAT_RGB565, // LTDC pixel format
-    .pixel_format_dsi = DSI_RGB565,               // DSI pixel format
-    .bbp = 2,                                     // Bytes per pixel
-    .fb_base = DISPLAY_MEMORY_BASE,               // Frame buffer base address
-
-    .ltdc_pll = {                                // LTDC PLL parameters
+    .hres = TXW350135B0_HRES,
+    .vres = TXW350135B0_VRES,
+    .hsync = TXW350135B0_HSYNC,
+    .hfp = TXW350135B0_HFP,
+    .hbp = TXW350135B0_HBP,
+    .vsync = TXW350135B0_VSYNC,
+    .vfp = TXW350135B0_VFP,
+    .vbp = TXW350135B0_VBP,
+    .pixel_format_ltdc = LTDC_PIXEL_FORMAT_RGB565,
+    .pixel_format_dsi = DSI_RGB565,
+    .bbp = 2,
+    .fb_base = DISPLAY_MEMORY_BASE,
+    .ltdc_pll = {
         .PLL3N = 132U,
         .PLL3R = 20U,
         .PLL3FRACN = 0U,
     }};
 #elif defined(LCD_TXW700140K0)
-#include "TXW700140K0.c"  // Include TXW700140K0 parameter definitions
-#define LCD_init_sequence TXW700140K0_init_sequence  // LCD initialization sequence macro
+#include "TXW700140K0.c"
+#define LCD_init_sequence TXW700140K0_init_sequence
 const DisplayParam_t lcd_params = {
-    .hres = TXW700140K0_HRES,         // Horizontal resolution
-    .vres = TXW700140K0_VRES,         // Vertical resolution
-    .hsync = TXW700140K0_HSYNC,       // Horizontal sync width
-    .hfp = TXW700140K0_HFP,           // Horizontal front porch
-    .hbp = TXW700140K0_HBP,           // Horizontal back porch
-    .vsync = TXW700140K0_VSYNC,       // Vertical sync width
-    .vfp = TXW700140K0_VFP,           // Vertical front porch
-    .vbp = TXW700140K0_VBP,           // Vertical back porch
-    .pixel_format_ltdc = LTDC_PIXEL_FORMAT_RGB565, // LTDC pixel format
-    .pixel_format_dsi = DSI_RGB565,               // DSI pixel format
-    .bbp = 2,                                     // Bytes per pixel
-    .fb_base = DISPLAY_MEMORY_BASE,               // Frame buffer base address
-
-    .ltdc_pll = {                                // LTDC PLL parameters
+    .hres = TXW700140K0_HRES,
+    .vres = TXW700140K0_VRES,
+    .hsync = TXW700140K0_HSYNC,
+    .hfp = TXW700140K0_HFP,
+    .hbp = TXW700140K0_HBP,
+    .vsync = TXW700140K0_VSYNC,
+    .vfp = TXW700140K0_VFP,
+    .vbp = TXW700140K0_VBP,
+    .pixel_format_ltdc = LTDC_PIXEL_FORMAT_RGB565,
+    .pixel_format_dsi = DSI_RGB565,
+    .bbp = 2,
+    .fb_base = DISPLAY_MEMORY_BASE,
+    .ltdc_pll = {
         .PLL3N = 43U,
         .PLL3R = 5U,
         .PLL3FRACN = 2048U,
     }};
 #else
-#error "display selection not defined!"  // Error when display model is not defined
+#error "display selection not defined!"
 #endif
 
-#define LED_PWM_TIM_PERIOD (50)  // LED backlight PWM period
+#define LED_PWM_TIM_PERIOD (50)
 
-// HSE/DIVM3*(DIVN3+(FRACN3/8192))/DIVR3/to_Khz Calculate LTDC clock frequency
 #define LTDC_FREQ                                          \
   (uint32_t)(HSE_VALUE / 5 *                               \
              (lcd_params.ltdc_pll.PLL3N +                  \
               (lcd_params.ltdc_pll.PLL3FRACN / 8192.0F)) / \
              lcd_params.ltdc_pll.PLL3R / 1000)
 
-// HSE/IDF*2*NDIV/2/ODF/8/to_Khz = 62.5 Mhz or 625000 Khz Calculate DSI clock frequency
 #define DSI_FREQ (uint32_t)(HSE_VALUE / 1 * 2 * 40 / 2 / 2 / 8 / 1000)
 
-// Calculate target frame rate FPS
-// LCD_PCLK / ((LCD_WIDTH + LCD_HBP + LCD_HFP + LCD_HSW) * (LCD_HEIGHT + LCD_VBP + LCD_VFP + LCD_VSW))
 #define FPS_TARGET                                                     \
   (uint32_t)((float)LTDC_FREQ / ((lcd_params.hres + lcd_params.hbp +   \
                                   lcd_params.hfp + lcd_params.hsync) * \
                                  (lcd_params.vres + lcd_params.vbp +   \
                                   lcd_params.vfp + lcd_params.vsync)))
 
-// Display backlight brightness (global variable, -1 means uninitialized)
 static int DISPLAY_BACKLIGHT = -1;
-// Display orientation (global variable, -1 means uninitialized)
 static int DISPLAY_ORIENTATION = -1;
 
-// DSI, DMA2D, LTDC peripheral handles (global variables)
 static DSI_HandleTypeDef hlcd_dsi = {0};
 static DMA2D_HandleTypeDef hlcd_dma2d = {0};
 static LTDC_HandleTypeDef hlcd_ltdc = {0};
 
-// DSI interrupt handler function
-void DSI_IRQHandler(void) {
-  HAL_DSI_IRQHandler(&hlcd_dsi);
-  dbg_printf("DSI_IRQHandler called!");  // Debug message
-}
+void DSI_IRQHandler(void) { HAL_DSI_IRQHandler(&hlcd_dsi); }
 
-// Current LCD frame rate
 float lcd_fps = 0.0;
-// static void frame_callback(DSI_HandleTypeDef* hdsi)
-// {
-//     static uint32_t lcd_fps_tick = 0;
-//     static uint32_t lcd_fps_tock = 0;
-//     lcd_fps_tick = lcd_fps_tock;
-//     lcd_fps_tock = HAL_GetTick();
-//     lcd_fps = 1000 / (lcd_fps_tock - lcd_fps_tick);
-// }
 
-// Initialize LCD backlight PWM
 void lcd_pwm_init(void) {
   GPIO_InitTypeDef gpio_init_structure = {0};
-  /* LCD_BL_CTRL GPIO configuration */
-  __HAL_RCC_GPIOK_CLK_ENABLE();   // Enable GPIOK clock
-  __HAL_RCC_TIM1_CLK_ENABLE();    // Enable TIM1 clock
-  // LCD_PWM/PA7 (backlight control)
-  gpio_init_structure.Mode = GPIO_MODE_AF_PP;         // Alternate function push-pull
-  gpio_init_structure.Pull = GPIO_NOPULL;             // No pull-up/pull-down
-  gpio_init_structure.Speed = GPIO_SPEED_FREQ_LOW;    // Low speed
-  gpio_init_structure.Alternate = GPIO_AF1_TIM1;      // Alternate function as TIM1
-  gpio_init_structure.Pin = LCD_BL_CTRL_PIN;          // Backlight control pin
+  __HAL_RCC_GPIOK_CLK_ENABLE();
+  __HAL_RCC_TIM1_CLK_ENABLE();
+  gpio_init_structure.Mode = GPIO_MODE_AF_PP;
+  gpio_init_structure.Pull = GPIO_NOPULL;
+  gpio_init_structure.Speed = GPIO_SPEED_FREQ_LOW;
+  gpio_init_structure.Alternate = GPIO_AF1_TIM1;
+  gpio_init_structure.Pin = LCD_BL_CTRL_PIN;
   HAL_GPIO_Init(LCD_BL_CTRL_GPIO_PORT, &gpio_init_structure);
 
-  // Enable PWM timer
   TIM_HandleTypeDef TIM1_Handle;
   TIM1_Handle.Instance = TIM1;
-  TIM1_Handle.Init.Period = LED_PWM_TIM_PERIOD - 1;  // Set period
-  // TIM1/APB2 clock equals fCPU, target 1MHz
-  TIM1_Handle.Init.Prescaler =
-      SystemCoreClock / 1000000 / 4 - 1;  // APB = fCPU/2(AHB)/2(APB)
-  TIM1_Handle.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;  // Clock division
-  TIM1_Handle.Init.CounterMode = TIM_COUNTERMODE_UP;        // Up counting
-  TIM1_Handle.Init.RepetitionCounter = 0;                   // Repetition counter
+  TIM1_Handle.Init.Period = LED_PWM_TIM_PERIOD - 1;
+  TIM1_Handle.Init.Prescaler = SystemCoreClock / 1000000 / 4 - 1;
+  TIM1_Handle.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  TIM1_Handle.Init.CounterMode = TIM_COUNTERMODE_UP;
+  TIM1_Handle.Init.RepetitionCounter = 0;
   HAL_TIM_PWM_Init(&TIM1_Handle);
 
   TIM_OC_InitTypeDef TIM_OC_InitStructure;
-  TIM_OC_InitStructure.Pulse =
-      (LED_PWM_TIM_PERIOD / 2 - 1);  // Default 50% duty cycle
-  TIM_OC_InitStructure.OCMode = TIM_OCMODE_PWM2;            // PWM mode 2
-  TIM_OC_InitStructure.OCPolarity = TIM_OCPOLARITY_HIGH;    // High polarity active
-  TIM_OC_InitStructure.OCFastMode = TIM_OCFAST_DISABLE;     // Disable fast mode
-  TIM_OC_InitStructure.OCNPolarity = TIM_OCNPOLARITY_HIGH;  // High polarity active
-  TIM_OC_InitStructure.OCIdleState = TIM_OCIDLESTATE_SET;   // Idle state
-  TIM_OC_InitStructure.OCNIdleState = TIM_OCNIDLESTATE_SET; // Idle state
+  TIM_OC_InitStructure.Pulse = (LED_PWM_TIM_PERIOD / 2 - 1);
+  TIM_OC_InitStructure.OCMode = TIM_OCMODE_PWM2;
+  TIM_OC_InitStructure.OCPolarity = TIM_OCPOLARITY_HIGH;
+  TIM_OC_InitStructure.OCFastMode = TIM_OCFAST_DISABLE;
+  TIM_OC_InitStructure.OCNPolarity = TIM_OCNPOLARITY_HIGH;
+  TIM_OC_InitStructure.OCIdleState = TIM_OCIDLESTATE_SET;
+  TIM_OC_InitStructure.OCNIdleState = TIM_OCNIDLESTATE_SET;
   HAL_TIM_PWM_ConfigChannel(&TIM1_Handle, &TIM_OC_InitStructure, TIM_CHANNEL_1);
 
-  HAL_TIM_PWM_Start(&TIM1_Handle, TIM_CHANNEL_1);           // Start PWM
-  HAL_TIMEx_PWMN_Start(&TIM1_Handle, TIM_CHANNEL_1);        // Start complementary PWM
+  HAL_TIM_PWM_Start(&TIM1_Handle, TIM_CHANNEL_1);
+  HAL_TIMEx_PWMN_Start(&TIM1_Handle, TIM_CHANNEL_1);
 }
 
 // Initialize DMA2D peripheral
@@ -186,20 +149,24 @@ static HAL_StatusTypeDef ltdc_init(LTDC_HandleTypeDef* hltdc) {
 
   // Configure LTDC clock source
   {
-    __HAL_RCC_LTDC_CLK_ENABLE();      // Enable LTDC clock
-    __HAL_RCC_LTDC_FORCE_RESET();     // Reset LTDC peripheral
-    __HAL_RCC_LTDC_RELEASE_RESET();   // Release LTDC peripheral reset
+    __HAL_RCC_LTDC_CLK_ENABLE();     // Enable LTDC clock
+    __HAL_RCC_LTDC_FORCE_RESET();    // Reset LTDC peripheral
+    __HAL_RCC_LTDC_RELEASE_RESET();  // Release LTDC peripheral reset
 
     RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
     PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_LTDC;
-    PeriphClkInitStruct.PLL3.PLL3M = 5U; // PLL3 division factor M
-    PeriphClkInitStruct.PLL3.PLL3N = lcd_params.ltdc_pll.PLL3N; // PLL3 multiplication factor N
-    PeriphClkInitStruct.PLL3.PLL3P = 2U; // PLL3 division factor P
-    PeriphClkInitStruct.PLL3.PLL3Q = 2U; // PLL3 division factor Q
-    PeriphClkInitStruct.PLL3.PLL3R = lcd_params.ltdc_pll.PLL3R; // PLL3 division factor R
-    PeriphClkInitStruct.PLL3.PLL3RGE = RCC_PLLCFGR_PLL3RGE_2; // PLL3 input frequency range
-    PeriphClkInitStruct.PLL3.PLL3VCOSEL = RCC_PLL3VCOWIDE; // PLL3 wide VCO
-    PeriphClkInitStruct.PLL3.PLL3FRACN = lcd_params.ltdc_pll.PLL3FRACN; // PLL3 fractional division
+    PeriphClkInitStruct.PLL3.PLL3M = 5U;  // PLL3 division factor M
+    PeriphClkInitStruct.PLL3.PLL3N =
+        lcd_params.ltdc_pll.PLL3N;        // PLL3 multiplication factor N
+    PeriphClkInitStruct.PLL3.PLL3P = 2U;  // PLL3 division factor P
+    PeriphClkInitStruct.PLL3.PLL3Q = 2U;  // PLL3 division factor Q
+    PeriphClkInitStruct.PLL3.PLL3R =
+        lcd_params.ltdc_pll.PLL3R;  // PLL3 division factor R
+    PeriphClkInitStruct.PLL3.PLL3RGE =
+        RCC_PLLCFGR_PLL3RGE_2;  // PLL3 input frequency range
+    PeriphClkInitStruct.PLL3.PLL3VCOSEL = RCC_PLL3VCOWIDE;  // PLL3 wide VCO
+    PeriphClkInitStruct.PLL3.PLL3FRACN =
+        lcd_params.ltdc_pll.PLL3FRACN;  // PLL3 fractional division
     HAL_StatusTypeDef result = HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct);
     if (result != HAL_OK) {
       return result;
@@ -207,30 +174,34 @@ static HAL_StatusTypeDef ltdc_init(LTDC_HandleTypeDef* hltdc) {
   }
 
   // Configure polarity parameters
-  hltdc->Init.HSPolarity = LTDC_HSPOLARITY_AH; // Horizontal sync polarity
+  hltdc->Init.HSPolarity = LTDC_HSPOLARITY_AH;  // Horizontal sync polarity
   // hltdc->Init.HSPolarity = LTDC_HSPOLARITY_AL;
 
-  hltdc->Init.VSPolarity = LTDC_VSPOLARITY_AH; // Vertical sync polarity
+  hltdc->Init.VSPolarity = LTDC_VSPOLARITY_AH;  // Vertical sync polarity
   // hltdc->Init.VSPolarity = LTDC_VSPOLARITY_AL;
 
   // hltdc->Init.DEPolarity = LTDC_DEPOLARITY_AH;
-  hltdc->Init.DEPolarity = LTDC_DEPOLARITY_AL; // Data enable polarity
+  hltdc->Init.DEPolarity = LTDC_DEPOLARITY_AL;  // Data enable polarity
 
-  hltdc->Init.PCPolarity = LTDC_PCPOLARITY_IPC; // Pixel clock polarity
+  hltdc->Init.PCPolarity = LTDC_PCPOLARITY_IPC;  // Pixel clock polarity
 
   // Configure timing parameters
-  hltdc->Init.HorizontalSync = lcd_params.hsync - 1; // Horizontal sync width
-  hltdc->Init.AccumulatedHBP = lcd_params.hsync + lcd_params.hbp - 1; // Horizontal sync + back porch
+  hltdc->Init.HorizontalSync = lcd_params.hsync - 1;  // Horizontal sync width
+  hltdc->Init.AccumulatedHBP =
+      lcd_params.hsync + lcd_params.hbp - 1;  // Horizontal sync + back porch
   hltdc->Init.AccumulatedActiveW =
-      lcd_params.hsync + lcd_params.hres + lcd_params.hbp - 1; // Horizontal sync + back porch + active width
-  hltdc->Init.TotalWidth =
-      lcd_params.hsync + lcd_params.hres + lcd_params.hbp + lcd_params.hfp - 1; // Total width
-  hltdc->Init.VerticalSync = lcd_params.vsync - 1; // Vertical sync width
-  hltdc->Init.AccumulatedVBP = lcd_params.vsync + lcd_params.vbp - 1; // Vertical sync + back porch
+      lcd_params.hsync + lcd_params.hres + lcd_params.hbp -
+      1;  // Horizontal sync + back porch + active width
+  hltdc->Init.TotalWidth = lcd_params.hsync + lcd_params.hres + lcd_params.hbp +
+                           lcd_params.hfp - 1;      // Total width
+  hltdc->Init.VerticalSync = lcd_params.vsync - 1;  // Vertical sync width
+  hltdc->Init.AccumulatedVBP =
+      lcd_params.vsync + lcd_params.vbp - 1;  // Vertical sync + back porch
   hltdc->Init.AccumulatedActiveH =
-      lcd_params.vsync + lcd_params.vres + lcd_params.vbp - 1; // Vertical sync + back porch + active height
-  hltdc->Init.TotalHeigh =
-      lcd_params.vsync + lcd_params.vres + lcd_params.vbp + lcd_params.vfp - 1; // Total height
+      lcd_params.vsync + lcd_params.vres + lcd_params.vbp -
+      1;  // Vertical sync + back porch + active height
+  hltdc->Init.TotalHeigh = lcd_params.vsync + lcd_params.vres + lcd_params.vbp +
+                           lcd_params.vfp - 1;  // Total height
 
   // Keep original black background to avoid affecting normal display
   hltdc->Init.Backcolor.Blue = 0x00;
@@ -247,14 +218,14 @@ static HAL_StatusTypeDef ltdc_layer_config(LTDC_HandleTypeDef* hltdc,
   LTDC_LayerCfgTypeDef pLayerCfg;
 
   // Set window start and end coordinates
-  pLayerCfg.WindowX0 = config->x0; // Window top-left X coordinate
-  pLayerCfg.WindowX1 = config->x1; // Window bottom-right X coordinate
-  pLayerCfg.WindowY0 = config->y0; // Window top-left Y coordinate
-  pLayerCfg.WindowY1 = config->y1; // Window bottom-right Y coordinate
+  pLayerCfg.WindowX0 = config->x0;  // Window top-left X coordinate
+  pLayerCfg.WindowX1 = config->x1;  // Window bottom-right X coordinate
+  pLayerCfg.WindowY0 = config->y0;  // Window top-left Y coordinate
+  pLayerCfg.WindowY1 = config->y1;  // Window bottom-right Y coordinate
   // Set pixel format
-  pLayerCfg.PixelFormat = config->pixel_format; // Pixel format
+  pLayerCfg.PixelFormat = config->pixel_format;  // Pixel format
   // Set frame buffer start address
-  pLayerCfg.FBStartAdress = config->address; // Frame buffer start address
+  pLayerCfg.FBStartAdress = config->address;  // Frame buffer start address
   // Set image width and height
   pLayerCfg.ImageWidth = (config->x1 - config->x0);   // Image width
   pLayerCfg.ImageHeight = (config->y1 - config->y0);  // Image height
@@ -262,14 +233,15 @@ static HAL_StatusTypeDef ltdc_layer_config(LTDC_HandleTypeDef* hltdc,
   pLayerCfg.Backcolor.Blue = 0;   // Background blue component
   pLayerCfg.Backcolor.Green = 0;  // Background green component
   pLayerCfg.Backcolor.Red = 0;    // Background red component
-  
+
   // Simplified blending configuration: all layers use standard opaque settings
   pLayerCfg.Alpha = 255;  // Fully opaque
   pLayerCfg.Alpha0 = 0;
   pLayerCfg.BlendingFactor1 = LTDC_BLENDING_FACTOR1_PAxCA;
   pLayerCfg.BlendingFactor2 = LTDC_BLENDING_FACTOR2_PAxCA;
   // Configure layer
-  HAL_StatusTypeDef result = HAL_LTDC_ConfigLayer(hltdc, &pLayerCfg, layer_index);
+  HAL_StatusTypeDef result =
+      HAL_LTDC_ConfigLayer(hltdc, &pLayerCfg, layer_index);
   return result;
 }
 
@@ -280,15 +252,19 @@ static HAL_StatusTypeDef dsi_host_init(DSI_HandleTypeDef* hdsi) {
   // Configure DSI clock source
   {
     /** Enable DSI host and wrapper clocks */
-    __HAL_RCC_DSI_CLK_ENABLE();      // Enable DSI clock
-    __HAL_RCC_DSI_FORCE_RESET();     // DSI reset
-    __HAL_RCC_DSI_RELEASE_RESET();   // Release DSI reset
+    __HAL_RCC_DSI_CLK_ENABLE();     // Enable DSI clock
+    __HAL_RCC_DSI_FORCE_RESET();    // DSI reset
+    __HAL_RCC_DSI_RELEASE_RESET();  // Release DSI reset
 
     RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
-    PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_DSI; // Select DSI peripheral clock
-    PeriphClkInitStruct.DsiClockSelection = RCC_DSICLKSOURCE_PHY; // Select DSI clock source as PHY
-    // PeriphClkInitStruct.DsiClockSelection = RCC_DSICLKSOURCE_PLL2; // PLL2Q = 9 in sdram.c
-    HAL_StatusTypeDef result = HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct); // Configure peripheral clock
+    PeriphClkInitStruct.PeriphClockSelection =
+        RCC_PERIPHCLK_DSI;  // Select DSI peripheral clock
+    PeriphClkInitStruct.DsiClockSelection =
+        RCC_DSICLKSOURCE_PHY;  // Select DSI clock source as PHY
+    // PeriphClkInitStruct.DsiClockSelection = RCC_DSICLKSOURCE_PLL2; // PLL2Q =
+    // 9 in sdram.c
+    HAL_StatusTypeDef result = HAL_RCCEx_PeriphCLKConfig(
+        &PeriphClkInitStruct);  // Configure peripheral clock
     if (result != HAL_OK) {
       return result;
     }
@@ -302,15 +278,17 @@ static HAL_StatusTypeDef dsi_host_init(DSI_HandleTypeDef* hdsi) {
 
   // Configure DSI clock division
   {
-    hdsi->Init.AutomaticClockLaneControl = DSI_AUTO_CLK_LANE_CTRL_DISABLE; // Disable automatic clock lane control
-    hdsi->Init.TXEscapeCkdiv = 4;  // lp txclkesc 15.625 Mhz, low power escape clock division
-    hdsi->Init.NumberOfLanes = DSI_TWO_DATA_LANES; // Use 2 data lanes
+    hdsi->Init.AutomaticClockLaneControl =
+        DSI_AUTO_CLK_LANE_CTRL_DISABLE;  // Disable automatic clock lane control
+    hdsi->Init.TXEscapeCkdiv =
+        4;  // lp txclkesc 15.625 Mhz, low power escape clock division
+    hdsi->Init.NumberOfLanes = DSI_TWO_DATA_LANES;  // Use 2 data lanes
 
     // Configure DSI PLL, lane byte rate 62.5MHz (maximum supported)
     DSI_PLLInitTypeDef PLLInit = {0};
-    PLLInit.PLLNDIV = 40;                 // PLL multiplication factor
-    PLLInit.PLLIDF = DSI_PLL_IN_DIV1;     // PLL input division
-    PLLInit.PLLODF = DSI_PLL_OUT_DIV2;    // PLL output division
+    PLLInit.PLLNDIV = 40;               // PLL multiplication factor
+    PLLInit.PLLIDF = DSI_PLL_IN_DIV1;   // PLL input division
+    PLLInit.PLLODF = DSI_PLL_OUT_DIV2;  // PLL output division
     if (HAL_DSI_Init(hdsi, &PLLInit) != HAL_OK) {
       return HAL_ERROR;
     }
@@ -319,15 +297,17 @@ static HAL_StatusTypeDef dsi_host_init(DSI_HandleTypeDef* hdsi) {
   // Configure DSI timeout parameters
   {
     DSI_HOST_TimeoutTypeDef HostTimeouts = {0};
-    HostTimeouts.TimeoutCkdiv = 1;                 // Timeout clock division
-    HostTimeouts.HighSpeedTransmissionTimeout = 0; // High speed transmission timeout
-    HostTimeouts.LowPowerReceptionTimeout = 0;     // Low power reception timeout
-    HostTimeouts.HighSpeedReadTimeout = 0;         // High speed read timeout
-    HostTimeouts.LowPowerReadTimeout = 0;          // Low power read timeout
-    HostTimeouts.HighSpeedWriteTimeout = 0;        // High speed write timeout
-    HostTimeouts.HighSpeedWritePrespMode = DSI_HS_PM_DISABLE; // High speed write pre-response mode
-    HostTimeouts.LowPowerWriteTimeout = 0;         // Low power write timeout
-    HostTimeouts.BTATimeout = 0;                   // BTA timeout
+    HostTimeouts.TimeoutCkdiv = 1;  // Timeout clock division
+    HostTimeouts.HighSpeedTransmissionTimeout =
+        0;  // High speed transmission timeout
+    HostTimeouts.LowPowerReceptionTimeout = 0;  // Low power reception timeout
+    HostTimeouts.HighSpeedReadTimeout = 0;      // High speed read timeout
+    HostTimeouts.LowPowerReadTimeout = 0;       // Low power read timeout
+    HostTimeouts.HighSpeedWriteTimeout = 0;     // High speed write timeout
+    HostTimeouts.HighSpeedWritePrespMode =
+        DSI_HS_PM_DISABLE;  // High speed write pre-response mode
+    HostTimeouts.LowPowerWriteTimeout = 0;  // Low power write timeout
+    HostTimeouts.BTATimeout = 0;            // BTA timeout
     if (HAL_DSI_ConfigHostTimeouts(hdsi, &HostTimeouts) != HAL_OK) {
       return HAL_ERROR;
     }
@@ -336,12 +316,12 @@ static HAL_StatusTypeDef dsi_host_init(DSI_HandleTypeDef* hdsi) {
   // Configure DSI PHY timing parameters
   {
     DSI_PHY_TimerTypeDef PhyTimings = {0};
-    PhyTimings.ClockLaneHS2LPTime = 27;   // Clock lane HS to LP transition time
-    PhyTimings.ClockLaneLP2HSTime = 32;   // Clock lane LP to HS transition time
-    PhyTimings.DataLaneHS2LPTime = 15;    // Data lane HS to LP transition time
-    PhyTimings.DataLaneLP2HSTime = 24;    // Data lane LP to HS transition time
-    PhyTimings.DataLaneMaxReadTime = 0;   // Data lane maximum read time
-    PhyTimings.StopWaitTime = 0;          // Stop wait time
+    PhyTimings.ClockLaneHS2LPTime = 27;  // Clock lane HS to LP transition time
+    PhyTimings.ClockLaneLP2HSTime = 32;  // Clock lane LP to HS transition time
+    PhyTimings.DataLaneHS2LPTime = 15;   // Data lane HS to LP transition time
+    PhyTimings.DataLaneLP2HSTime = 24;   // Data lane LP to HS transition time
+    PhyTimings.DataLaneMaxReadTime = 0;  // Data lane maximum read time
+    PhyTimings.StopWaitTime = 0;         // Stop wait time
     if (HAL_DSI_ConfigPhyTimer(hdsi, &PhyTimings) != HAL_OK) {
       return HAL_ERROR;
     }
@@ -361,38 +341,48 @@ static HAL_StatusTypeDef dsi_host_init(DSI_HandleTypeDef* hdsi) {
   // Configure DSI video mode parameters
   {
     DSI_VidCfgTypeDef VidCfg = {0};
-    VidCfg.VirtualChannelID = 0; // Virtual channel ID
-    VidCfg.ColorCoding = lcd_params.pixel_format_dsi; // Color coding
-    VidCfg.LooselyPacked = DSI_LOOSELY_PACKED_DISABLE; // Not loosely packed
-    VidCfg.Mode = DSI_VID_MODE_BURST; // Burst mode
-    VidCfg.PacketSize = lcd_params.hres; // Pixels per line
+    VidCfg.VirtualChannelID = 0;                        // Virtual channel ID
+    VidCfg.ColorCoding = lcd_params.pixel_format_dsi;   // Color coding
+    VidCfg.LooselyPacked = DSI_LOOSELY_PACKED_DISABLE;  // Not loosely packed
+    VidCfg.Mode = DSI_VID_MODE_BURST;                   // Burst mode
+    VidCfg.PacketSize = lcd_params.hres;                // Pixels per line
     VidCfg.NumberOfChunks = 0;  // No chunking needed in burst mode
     VidCfg.NullPacketSize = 0;  // No null packets needed in burst mode
-    VidCfg.HSPolarity = DSI_HSYNC_ACTIVE_HIGH; // Horizontal sync polarity
-    VidCfg.VSPolarity = DSI_VSYNC_ACTIVE_HIGH; // Vertical sync polarity
-    VidCfg.DEPolarity = DSI_DATA_ENABLE_ACTIVE_HIGH; // Data enable polarity
-    VidCfg.HorizontalSyncActive = (lcd_params.hsync * DSI_FREQ) / LTDC_FREQ; // Horizontal sync width
-    VidCfg.HorizontalBackPorch = (lcd_params.hbp * DSI_FREQ) / LTDC_FREQ;    // Horizontal back porch
+    VidCfg.HSPolarity = DSI_HSYNC_ACTIVE_HIGH;  // Horizontal sync polarity
+    VidCfg.VSPolarity = DSI_VSYNC_ACTIVE_HIGH;  // Vertical sync polarity
+    VidCfg.DEPolarity = DSI_DATA_ENABLE_ACTIVE_HIGH;  // Data enable polarity
+    VidCfg.HorizontalSyncActive =
+        (lcd_params.hsync * DSI_FREQ) / LTDC_FREQ;  // Horizontal sync width
+    VidCfg.HorizontalBackPorch =
+        (lcd_params.hbp * DSI_FREQ) / LTDC_FREQ;  // Horizontal back porch
     VidCfg.HorizontalLine = ((lcd_params.hres + lcd_params.hsync +
                               lcd_params.hbp + lcd_params.hfp) *
                              DSI_FREQ) /
-                            LTDC_FREQ; // Total line period
-    VidCfg.VerticalSyncActive = lcd_params.vsync; // Vertical sync width
-    VidCfg.VerticalBackPorch = lcd_params.vbp;    // Vertical back porch
-    VidCfg.VerticalFrontPorch = lcd_params.vfp;   // Vertical front porch
-    VidCfg.VerticalActive = lcd_params.vres;      // Active lines
+                            LTDC_FREQ;             // Total line period
+    VidCfg.VerticalSyncActive = lcd_params.vsync;  // Vertical sync width
+    VidCfg.VerticalBackPorch = lcd_params.vbp;     // Vertical back porch
+    VidCfg.VerticalFrontPorch = lcd_params.vfp;    // Vertical front porch
+    VidCfg.VerticalActive = lcd_params.vres;       // Active lines
 
     // Low power mode related configuration
-    VidCfg.LPCommandEnable = DSI_LP_COMMAND_ENABLE;           // Enable low power commands
-    VidCfg.LPLargestPacketSize = 128;                         // Low power largest packet size
-    VidCfg.LPVACTLargestPacketSize = 0;                       // Low power VACT largest packet size
-    VidCfg.LPHorizontalFrontPorchEnable = DSI_LP_HFP_ENABLE;  // Enable low power HFP
-    VidCfg.LPHorizontalBackPorchEnable = DSI_LP_HBP_ENABLE;   // Enable low power HBP
-    VidCfg.LPVerticalActiveEnable = DSI_LP_VACT_ENABLE;       // Enable low power VACT
-    VidCfg.LPVerticalFrontPorchEnable = DSI_LP_VFP_ENABLE;    // Enable low power VFP
-    VidCfg.LPVerticalBackPorchEnable = DSI_LP_VBP_ENABLE;     // Enable low power VBP
-    VidCfg.LPVerticalSyncActiveEnable = DSI_LP_VSYNC_ENABLE;  // Enable low power VSYNC
-    VidCfg.FrameBTAAcknowledgeEnable = DSI_FBTAA_DISABLE;     // Disable BTA frame acknowledgment
+    VidCfg.LPCommandEnable =
+        DSI_LP_COMMAND_ENABLE;           // Enable low power commands
+    VidCfg.LPLargestPacketSize = 128;    // Low power largest packet size
+    VidCfg.LPVACTLargestPacketSize = 0;  // Low power VACT largest packet size
+    VidCfg.LPHorizontalFrontPorchEnable =
+        DSI_LP_HFP_ENABLE;  // Enable low power HFP
+    VidCfg.LPHorizontalBackPorchEnable =
+        DSI_LP_HBP_ENABLE;  // Enable low power HBP
+    VidCfg.LPVerticalActiveEnable =
+        DSI_LP_VACT_ENABLE;  // Enable low power VACT
+    VidCfg.LPVerticalFrontPorchEnable =
+        DSI_LP_VFP_ENABLE;  // Enable low power VFP
+    VidCfg.LPVerticalBackPorchEnable =
+        DSI_LP_VBP_ENABLE;  // Enable low power VBP
+    VidCfg.LPVerticalSyncActiveEnable =
+        DSI_LP_VSYNC_ENABLE;  // Enable low power VSYNC
+    VidCfg.FrameBTAAcknowledgeEnable =
+        DSI_FBTAA_DISABLE;  // Disable BTA frame acknowledgment
 
     if (HAL_DSI_ConfigVideoMode(hdsi, &VidCfg) != HAL_OK) {
       return HAL_ERROR;
@@ -407,7 +397,6 @@ static HAL_StatusTypeDef dsi_host_init(DSI_HandleTypeDef* hdsi) {
   ((((((((Color) >> (11U)) & 0x1FU) * 527U) + 23U) >> (6U)) << (16U)) | \
    (((((((Color) >> (5U)) & 0x3FU) * 259U) + 33U) >> (6U)) << (8U)) |   \
    (((((Color)&0x1FU) * 527U) + 23U) >> (6U)) | (0xFF000000U))
-
 
 // Write pixel value to specified coordinates (x_pos, y_pos)
 void fb_write_pixel(uint32_t x_pos, uint32_t y_pos, uint32_t color) {
@@ -428,8 +417,8 @@ static void fb_fill_buffer(uint32_t* dest, uint32_t x_size, uint32_t y_size,
 
   switch (lcd_params.pixel_format_ltdc) {
     case LTDC_PIXEL_FORMAT_RGB565:
-      output_color_mode = DMA2D_OUTPUT_RGB565; /* RGB565 output mode */
-      input_color = CONVERTRGB5652ARGB8888(color); // Convert to ARGB8888
+      output_color_mode = DMA2D_OUTPUT_RGB565;      /* RGB565 output mode */
+      input_color = CONVERTRGB5652ARGB8888(color);  // Convert to ARGB8888
       break;
     case LTDC_PIXEL_FORMAT_RGB888:
     default:
@@ -437,7 +426,8 @@ static void fb_fill_buffer(uint32_t* dest, uint32_t x_size, uint32_t y_size,
       break;
   }
 
-  /* Configure DMA2D to register-to-memory mode, color mode as output_color_mode */
+  /* Configure DMA2D to register-to-memory mode, color mode as output_color_mode
+   */
   hlcd_dma2d.Init.Mode = DMA2D_R2M;
   hlcd_dma2d.Init.ColorMode = output_color_mode;
   hlcd_dma2d.Init.OutputOffset = offset;
@@ -468,7 +458,6 @@ void fb_fill_rect(uint32_t x_pos, uint32_t y_pos, uint32_t width,
                  color);
 }
 
-
 // Copy buffer using DMA2D
 void dma2d_copy_buffer(uint32_t* pSrc, uint32_t* pDst, uint16_t x, uint16_t y,
                        uint16_t xsize, uint16_t ysize) {
@@ -488,7 +477,8 @@ void dma2d_copy_buffer(uint32_t* pSrc, uint32_t* pDst, uint16_t x, uint16_t y,
   /*##-2- DMA2D callback configuration ######################################*/
   hlcd_dma2d.XferCpltCallback = NULL;
 
-  /*##-3- Foreground layer configuration ###########################################*/
+  /*##-3- Foreground layer configuration
+   * ###########################################*/
   hlcd_dma2d.LayerCfg[1].AlphaMode = DMA2D_NO_MODIF_ALPHA;
   hlcd_dma2d.LayerCfg[1].InputAlpha = 0xFF;
   hlcd_dma2d.LayerCfg[1].InputColorMode = DMA2D_INPUT_RGB565;
@@ -519,7 +509,6 @@ void dma2d_copy_ycbcr_to_rgb(uint32_t* pSrc, uint32_t* pDst, uint16_t xsize,
                              uint16_t output_line_width) {
   uint32_t cssMode = DMA2D_CSS_420, inputLineOffset = 0;
 
-
   // Set DMA2D parameters based on chroma subsampling type
   if (ChromaSampling == JPEG_420_SUBSAMPLING) {
     cssMode = DMA2D_CSS_420;
@@ -527,21 +516,18 @@ void dma2d_copy_ycbcr_to_rgb(uint32_t* pSrc, uint32_t* pDst, uint16_t xsize,
     if (inputLineOffset != 0) {
       inputLineOffset = 16 - inputLineOffset;
     }
-    // printf("[DMA2D YCbCr] Using 4:2:0 subsampling, inputLineOffset: %lu\n", inputLineOffset);
   } else if (ChromaSampling == JPEG_444_SUBSAMPLING) {
     cssMode = DMA2D_NO_CSS;
     inputLineOffset = xsize % 8;
     if (inputLineOffset != 0) {
       inputLineOffset = 8 - inputLineOffset;
     }
-    // printf("[DMA2D YCbCr] Using 4:4:4 subsampling, inputLineOffset: %lu\n", inputLineOffset);
   } else if (ChromaSampling == JPEG_422_SUBSAMPLING) {
     cssMode = DMA2D_CSS_422;
     inputLineOffset = xsize % 16;
     if (inputLineOffset != 0) {
       inputLineOffset = 16 - inputLineOffset;
     }
-    // printf("[DMA2D YCbCr] Using 4:2:2 subsampling, inputLineOffset: %lu\n", inputLineOffset);
   }
 
   // Calculate output offset for proper line alignment
@@ -562,7 +548,8 @@ void dma2d_copy_ycbcr_to_rgb(uint32_t* pSrc, uint32_t* pDst, uint16_t xsize,
   /*##-2- DMA2D callback configuration ######################################*/
   hlcd_dma2d.XferCpltCallback = NULL;
 
-  /*##-3- Foreground layer configuration ###########################################*/
+  /*##-3- Foreground layer configuration
+   * ###########################################*/
   hlcd_dma2d.LayerCfg[1].AlphaMode = DMA2D_REPLACE_ALPHA;
   hlcd_dma2d.LayerCfg[1].InputAlpha = 0xFF;
   hlcd_dma2d.LayerCfg[1].InputColorMode = DMA2D_INPUT_YCBCR;
@@ -573,32 +560,26 @@ void dma2d_copy_ycbcr_to_rgb(uint32_t* pSrc, uint32_t* pDst, uint16_t xsize,
 
   hlcd_dma2d.Instance = DMA2D;
 
-  /*##-4- DMA2D initialization     ###########################################*/
   HAL_StatusTypeDef dma2d_result = HAL_DMA2D_Init(&hlcd_dma2d);
   if (dma2d_result != HAL_OK) {
-    // printf("[DMA2D YCbCr ERROR] HAL_DMA2D_Init failed: %d\n", dma2d_result);
-    return;
-  }
-  
-  dma2d_result = HAL_DMA2D_ConfigLayer(&hlcd_dma2d, 1);
-  if (dma2d_result != HAL_OK) {
-    // printf("[DMA2D YCbCr ERROR] HAL_DMA2D_ConfigLayer failed: %d\n", dma2d_result);
     return;
   }
 
-  dma2d_result = HAL_DMA2D_Start(&hlcd_dma2d, (uint32_t)pSrc, (uint32_t)pDst, xsize, ysize);
+  dma2d_result = HAL_DMA2D_ConfigLayer(&hlcd_dma2d, 1);
   if (dma2d_result != HAL_OK) {
-    // printf("[DMA2D YCbCr ERROR] HAL_DMA2D_Start failed: %d\n", dma2d_result);
     return;
   }
-  
-  dma2d_result = HAL_DMA2D_PollForTransfer(&hlcd_dma2d, 1000); // Increase timeout
+
+  dma2d_result = HAL_DMA2D_Start(&hlcd_dma2d, (uint32_t)pSrc, (uint32_t)pDst,
+                                 xsize, ysize);
   if (dma2d_result != HAL_OK) {
-    // printf("[DMA2D YCbCr ERROR] HAL_DMA2D_PollForTransfer failed: %d\n", dma2d_result);
     return;
   }
-  
-  // printf("[DMA2D YCbCr] Conversion completed successfully\n");
+
+  dma2d_result = HAL_DMA2D_PollForTransfer(&hlcd_dma2d, 1000);
+  if (dma2d_result != HAL_OK) {
+    return;
+  }
 }
 
 // Send DSI DCS write command
@@ -625,16 +606,19 @@ int display_backlight(int val) {
   return DISPLAY_BACKLIGHT;
 }
 
-// Set backlight brightness and automatically reset/restore LCD when turning on/off
+// Set backlight brightness and automatically reset/restore LCD when turning
+// on/off
 int display_backlight_with_lcd_reset(int val) {
-  // When turning off backlight and current is not 0, turn off backlight first then suspend refresh
+  // When turning off backlight and current is not 0, turn off backlight first
+  // then suspend refresh
   if (val == 0 && DISPLAY_BACKLIGHT != 0) {
     display_backlight(0);
     lcd_refresh_suspend();
   } else if (val > 0 && DISPLAY_BACKLIGHT == 0) {
-    // When turning on backlight and current is 0, restore refresh first then turn on backlight
+    // When turning on backlight and current is 0, restore refresh first then
+    // turn on backlight
     lcd_refresh_resume();
-    HAL_Delay(5); // Wait for LCD recovery
+    HAL_Delay(5);  // Wait for LCD recovery
   }
   return display_backlight(val);
 }
@@ -652,8 +636,6 @@ int display_orientation(int degrees) {
 
 // LCD initialization function
 void lcd_init(void) {
-  // printf("LCD initialization started - single layer mode\n");
-  
   // GPIO initialization
   {
     GPIO_InitTypeDef gpio_init_structure = {0};
@@ -673,7 +655,8 @@ void lcd_init(void) {
     gpio_init_structure.Pull = GPIO_NOPULL;
     gpio_init_structure.Speed = GPIO_SPEED_FREQ_HIGH;
     HAL_GPIO_Init(LCD_TE_GPIO_PORT, &gpio_init_structure);
-    // HAL_GPIO_WritePin(LCD_TE_GPIO_PORT, LCD_TE_PIN, GPIO_PIN_SET); // TODO: is this needed?
+    // HAL_GPIO_WritePin(LCD_TE_GPIO_PORT, LCD_TE_PIN, GPIO_PIN_SET); // TODO:
+    // is this needed?
   }
 
   // DMA2D initialization
@@ -682,10 +665,9 @@ void lcd_init(void) {
     dma2d_init(&hlcd_dma2d);
   }
 
-  // LTDC initialization
   {
     hlcd_ltdc.Instance = LTDC;
-    if (ltdc_init(&hlcd_ltdc) != HAL_OK) dbg_printf("ltdc_init failed !\r\n");
+    ltdc_init(&hlcd_ltdc);
 
     LTDC_LAYERCONFIG config;
     config.x0 = 0;
@@ -694,15 +676,12 @@ void lcd_init(void) {
     config.y1 = lcd_params.vres;
     config.pixel_format = lcd_params.pixel_format_ltdc;
     config.address = DISPLAY_MEMORY_BASE;
-    if (ltdc_layer_config(&hlcd_ltdc, 0, &config) != HAL_OK)
-      dbg_printf("ltdc_layer_config failed !\r\n");
+    ltdc_layer_config(&hlcd_ltdc, 0, &config);
   }
 
-  // DSI host initialization
   {
     hlcd_dsi.Instance = DSI;
-    if (dsi_host_init(&hlcd_dsi) != HAL_OK)
-      dbg_printf("dsi_host_init failed !\r\n");
+    dsi_host_init(&hlcd_dsi);
   }
 
   // LCD initialization process
@@ -716,25 +695,14 @@ void lcd_init(void) {
     HAL_Delay(120);
     HAL_DSI_Start(&hlcd_dsi);  // Ensure LTDC is initialized before starting DSI
 
-    // Send LCD initialization sequence
     int result = LCD_init_sequence(DSI_DCS_write, HAL_Delay);
     if (result != 0) {
-      dbg_printf("LCD_init_sequence failed with 0x%02x!\r\n", result);
       while (1)
         ;
     }
   }
 
-  dbg_printf("LTDC_FREQ=%d\r\n", LTDC_FREQ);
-  dbg_printf("DSI_FREQ=%d\r\n", DSI_FREQ);
-  dbg_printf("FPS_TARGET=%d\r\n", FPS_TARGET);
-  
-  // printf("First layer initialization completed, starting second layer initialization\n");
-  
-  // Initialize second layer
   lcd_add_second_layer();
-  
-  // printf("LCD initialization completely finished\n");
 }
 
 // Refresh display (not implemented)
@@ -791,7 +759,8 @@ void lcd_ltdc_dsi_enable(void) {
   HAL_DSI_Start(&hlcd_dsi);
 }
 
-// Suspend LCD refresh (disable LTDC/DSI first, then reset LCD, wait for complete blanking)
+// Suspend LCD refresh (disable LTDC/DSI first, then reset LCD, wait for
+// complete blanking)
 void lcd_refresh_suspend(void) {
   // Wait for transfer completion
   lcd_ltdc_dsi_disable();
@@ -802,210 +771,187 @@ void lcd_refresh_suspend(void) {
   HAL_Delay(125);
 }
 
-void lcd_refresh_resume(void) { // Resume LCD refresh
+void lcd_refresh_resume(void) {  // Resume LCD refresh
   // lcd reset // Reset LCD
-  HAL_GPIO_WritePin(LCD_RESET_GPIO_PORT, LCD_RESET_PIN, GPIO_PIN_RESET); // Pull reset pin low
-  HAL_Delay(5); // Delay 5 milliseconds
-  HAL_GPIO_WritePin(LCD_RESET_GPIO_PORT, LCD_RESET_PIN, GPIO_PIN_SET); // Pull reset pin high
-  HAL_Delay(50); // Delay 50 milliseconds
-  lcd_ltdc_dsi_enable(); // Enable LTDC and DSI
-  // lcd wakeup / re-init // Wake up LCD and re-initialize
-  int result = LCD_init_sequence(DSI_DCS_write, HAL_Delay); // Execute LCD initialization sequence
-  if (result != 0) { // If initialization fails
-    dbg_printf("LCD_init_sequence failed with 0x%02x!\r\n", result); // Print error message
-    while (1) // Infinite loop, prevent further execution
+  HAL_GPIO_WritePin(LCD_RESET_GPIO_PORT, LCD_RESET_PIN,
+                    GPIO_PIN_RESET);  // Pull reset pin low
+  HAL_Delay(5);                       // Delay 5 milliseconds
+  HAL_GPIO_WritePin(LCD_RESET_GPIO_PORT, LCD_RESET_PIN,
+                    GPIO_PIN_SET);  // Pull reset pin high
+  HAL_Delay(50);                    // Delay 50 milliseconds
+  lcd_ltdc_dsi_enable();
+  int result = LCD_init_sequence(DSI_DCS_write, HAL_Delay);
+  if (result != 0) {
+    while (1)
       ;
   }
 }
 
-static volatile uint32_t g_current_display_addr = FMC_SDRAM_LTDC_BUFFER_ADDRESS; // Current display frame buffer address
+static volatile uint32_t g_current_display_addr =
+    FMC_SDRAM_LTDC_BUFFER_ADDRESS;  // Current display frame buffer address
 
-void lcd_set_src_addr(uint32_t addr) { // Set LTDC source address
-  static uint32_t animation_counter = 0; // Animation counter
-  static uint32_t last_addr = 0; // Last set address
-  
+void lcd_set_src_addr(uint32_t addr) {    // Set LTDC source address
+  static uint32_t animation_counter = 0;  // Animation counter
+  static uint32_t last_addr = 0;          // Last set address
+
   // Skip update if address hasn't changed to reduce unnecessary reloads
-  if (addr == last_addr) { // Address hasn't changed
-    return; // Return directly
+  if (addr == last_addr) {  // Address hasn't changed
+    return;                 // Return directly
   }
-  
+
   // During animation keep Layer0 normal updates but use gentler reload method
   // Don't skip update, ensure Layer0 content displays normally
-  
-  last_addr = addr; // Update the last address
-  
-  hlcd_ltdc.Instance = LTDC; // Set LTDC instance
-  LTDC_LAYERCONFIG config; // Define layer configuration struct
-  config.x0 = 0; // Layer start X coordinate is 0
-  config.x1 = lcd_params.hres; // Layer end X coordinate is screen width
-  config.y0 = 0; // Layer start Y coordinate is 0
-  config.y1 = lcd_params.vres; // Layer end Y coordinate is screen height
-  config.pixel_format = lcd_params.pixel_format_ltdc; // Set pixel format
-  config.address = addr; // Set frame buffer address
-  if (ltdc_layer_config(&hlcd_ltdc, 0, &config) != HAL_OK) { // Configure Layer0
-    dbg_printf("ltdc_layer_config failed !\r\n"); // Print error on configuration failure
-  }
-  
+
+  last_addr = addr;  // Update the last address
+
+  hlcd_ltdc.Instance = LTDC;    // Set LTDC instance
+  LTDC_LAYERCONFIG config;      // Define layer configuration struct
+  config.x0 = 0;                // Layer start X coordinate is 0
+  config.x1 = lcd_params.hres;  // Layer end X coordinate is screen width
+  config.y0 = 0;                // Layer start Y coordinate is 0
+  config.y1 = lcd_params.vres;  // Layer end Y coordinate is screen height
+  config.pixel_format = lcd_params.pixel_format_ltdc;
+  config.address = addr;
+  ltdc_layer_config(&hlcd_ltdc, 0, &config);
+
   // Ensure first layer is always enabled // Ensure Layer0 is always enabled
-  __HAL_LTDC_LAYER_ENABLE(&hlcd_ltdc, 0); // Enable Layer0
-  // Note: Don't set Layer0 transparency here, it will interfere with normal display
-  // Remove frequent debug output to reduce log spam // Remove frequent debug output to reduce log spam
-  
+  __HAL_LTDC_LAYER_ENABLE(&hlcd_ltdc, 0);  // Enable Layer0
+  // Note: Don't set Layer0 transparency here, it will interfere with normal
+  // display Remove frequent debug output to reduce log spam // Remove frequent
+  // debug output to reduce log spam
+
   // Use VSync reload to reduce flicker
-  __HAL_LTDC_RELOAD_CONFIG(&hlcd_ltdc); // Trigger LTDC reload (VSync synchronized)
-  
-  // Pause second layer maintenance during animation to avoid interfering with Layer0 display
-  if (!g_animation_in_progress) { // If no animation is in progress
-    animation_counter++; // Animation counter increment
-    if (animation_counter % 2 == 0) {  // Every other call to maintain 30fps animation // Maintain second layer every other call to keep 30fps animation
-      lcd_ensure_second_layer(); // Ensure second layer exists
+  __HAL_LTDC_RELOAD_CONFIG(
+      &hlcd_ltdc);  // Trigger LTDC reload (VSync synchronized)
+
+  // Pause second layer maintenance during animation to avoid interfering with
+  // Layer0 display
+  if (!g_animation_in_progress) {  // If no animation is in progress
+    animation_counter++;           // Animation counter increment
+    if (animation_counter % 2 ==
+        0) {  // Every other call to maintain 30fps animation // Maintain second
+              // layer every other call to keep 30fps animation
+      lcd_ensure_second_layer();  // Ensure second layer exists
     }
   }
-  
-  g_current_display_addr = addr; // Update current display address
-  
-  // When Layer2 is displayed, update Layer1 background to match Layer2, ensuring status bar area background consistency
-  // Simplified handling: Layer1 status bar update no longer needed
-  // Transparent status bar feature has been removed
+
+  g_current_display_addr = addr;  // Update current display address
+
+  // When Layer2 is displayed, update Layer1 background to match Layer2,
+  // ensuring status bar area background consistency Simplified handling: Layer1
+  // status bar update no longer needed Transparent status bar feature has been
+  // removed
 }
 
-uint32_t lcd_get_src_addr(void) { return g_current_display_addr; } // Get current display frame buffer address
+uint32_t lcd_get_src_addr(void) {
+  return g_current_display_addr;
+}  // Get current display frame buffer address
 
 // Second layer configuration function - CoverBackground hardware layer
-void lcd_add_second_layer(void) { // Add second layer (CoverBackground)
+void lcd_add_second_layer(void) {  // Add second layer (CoverBackground)
   // Check if already initialized
-  if (g_layer2_initialized) { // Already initialized, return
+  if (g_layer2_initialized) {  // Already initialized, return
     return;
   }
-  
-  // Configure second layer (layer 1) - dedicated for CoverBackground
-  // Layer2 covers full screen, with top area transparent for Layer1 status bar
-  // printf("Configuring Layer2 covering full screen with transparent statusbar (height=%d)\n", TRANSPARENT_STATUSBAR_HEIGHT); // Print configuration info
-  LTDC_LAYERCONFIG config; // Define layer configuration struct
-  config.x0 = 0; // Layer start X coordinate is 0
-  config.x1 = lcd_params.hres; // Layer end X coordinate is screen width
-  config.y0 = 0;  // Display from 0, covering full screen
-  config.y1 = lcd_params.vres; // Layer end Y coordinate is screen height
-  config.pixel_format = lcd_params.pixel_format_ltdc; // Set pixel format
-  // Layer2 memory starts from first line, wallpaper content overlaps with Layer1
-  config.address = LAYER2_MEMORY_BASE; // Set Layer2 frame buffer address
-  
-  // printf("[Layer2 Config] Address: 0x%08lX, Size: %lu x %lu, Pixel Format: 0x%02lX\n", 
-  //        (uint32_t)LAYER2_MEMORY_BASE, lcd_params.hres, lcd_params.vres, config.pixel_format);
-  // printf("[Layer2 Config] Window: (%lu,%lu) to (%lu,%lu)\n", config.x0, config.y0, config.x1, config.y1);
-  
-  if (ltdc_layer_config(&hlcd_ltdc, 1, &config) != HAL_OK) { // Configure Layer1
-    // printf("[ERROR] Failed to configure Layer2 (LTDC Layer1)\n");
-    return; // Configuration failed, return
+
+  LTDC_LAYERCONFIG config;
+  config.x0 = 0;                // Layer start X coordinate is 0
+  config.x1 = lcd_params.hres;  // Layer end X coordinate is screen width
+  config.y0 = 0;                // Display from 0, covering full screen
+  config.y1 = lcd_params.vres;  // Layer end Y coordinate is screen height
+  config.pixel_format = lcd_params.pixel_format_ltdc;  // Set pixel format
+  config.address = LAYER2_MEMORY_BASE;
+
+  if (ltdc_layer_config(&hlcd_ltdc, 1, &config) != HAL_OK) {
+    return;
   }
-  // printf("[Layer2] Successfully configured Layer2\n");
-  
+
   // Initialize CoverBackground content
-  lcd_cover_background_init(); // Initialize CoverBackground content
-  
-  // Initial state: Layer2 should be completely hidden, only shown on upward swipe
-  hlcd_ltdc.Instance = LTDC; // Set LTDC instance
-  
-  // Ensure Layer0 is enabled (without modifying transparency to avoid display interference)
-  __HAL_LTDC_LAYER_ENABLE(&hlcd_ltdc, 0); // Enable Layer0
-  
-  // Layer2 initial state: completely disabled, only enabled on upward swipe gesture
-  HAL_LTDC_SetAlpha(&hlcd_ltdc, 255, 1);  // Layer 1 completely opaque (but still disabled)
-  __HAL_LTDC_LAYER_DISABLE(&hlcd_ltdc, 1); // Disable Layer2, only enable on upward swipe
-  // printf("[Layer2] Layer2 initially disabled, will enable only on upward swipe\n");
-  
-  // Verify Layer2 address range
-  // uint32_t layer2_start = (uint32_t)LAYER2_MEMORY_BASE;
-  // uint32_t layer2_end = layer2_start + (lcd_params.hres * lcd_params.vres * 2);
-  // uint32_t ltdc_buffer_end = FMC_SDRAM_LTDC_BUFFER_ADDRESS + FMC_SDRAM_LTDC_BUFFER_LEN;
-  // printf("[Layer2 Memory Check] Layer2: 0x%08lX - 0x%08lX, LTDC buffer ends at: 0x%08lX\n", 
-  //        layer2_start, layer2_end, ltdc_buffer_end);
-  // if (layer2_end > ltdc_buffer_end) {
-  //   printf("[ERROR] Layer2 memory exceeds LTDC buffer! Overflow by %lu bytes\n", 
-  //          layer2_end - ltdc_buffer_end);
-  // }
-  
-  // Initialize layer to above-screen position (considering transparent status bar)
-  // Mark as initialized before moving
-  g_layer2_initialized = true; // Mark Layer2 as initialized
-  
+  lcd_cover_background_init();  // Initialize CoverBackground content
+
+  // Initial state: Layer2 should be completely hidden, only shown on upward
+  // swipe
+  hlcd_ltdc.Instance = LTDC;  // Set LTDC instance
+
+  // Ensure Layer0 is enabled (without modifying transparency to avoid display
+  // interference)
+  __HAL_LTDC_LAYER_ENABLE(&hlcd_ltdc, 0);  // Enable Layer0
+
+  HAL_LTDC_SetAlpha(&hlcd_ltdc, 255, 1);
+  __HAL_LTDC_LAYER_DISABLE(&hlcd_ltdc, 1);
+
+  // Initialize layer to above-screen position (considering transparent status
+  // bar) Mark as initialized before moving
+  g_layer2_initialized = true;  // Mark Layer2 as initialized
+
   // Initialize animation system
-  lcd_animation_init(); // Initialize animation system
-  
-  // Layer2 initial state: keep disabled, don't call move_to_y function (it would enable layer)
-  // cover_bg_state already initialized to {false, 0, -800, false}, keeping hidden state
-  
+  lcd_animation_init();  // Initialize animation system
+
+  // Layer2 initial state: keep disabled, don't call move_to_y function (it
+  // would enable layer) cover_bg_state already initialized to {false, 0, -800,
+  // false}, keeping hidden state
+
   // Use VSync reload to avoid interfering with normal display
-  __HAL_LTDC_RELOAD_CONFIG(&hlcd_ltdc); // Trigger LTDC reload (VSync synchronized)
+  __HAL_LTDC_RELOAD_CONFIG(
+      &hlcd_ltdc);  // Trigger LTDC reload (VSync synchronized)
 }
-
-
 
 // CoverBackground layer state - hardware layer implementation
 static struct {
-  bool visible; // Visibility state
-  uint8_t opacity;     // 0-255 opacity level
-  int32_t y_offset;    // Y-axis offset, -60 for hidden position, 0 for visible position
-  bool is_animating; // Animation state
-} cover_bg_state = {false, 0, -800, false};  // Initial state: hidden, transparent, positioned above screen
+  bool visible;       // Visibility state
+  uint8_t opacity;    // 0-255 opacity level
+  int32_t y_offset;   // Y-axis offset, -60 for hidden position, 0 for visible
+                      // position
+  bool is_animating;  // Animation state
+} cover_bg_state = {
+    false, 0, -800,
+    false};  // Initial state: hidden, transparent, positioned above screen
 
 // Initialize CoverBackground content
-void lcd_cover_background_init(void) { // Initialize CoverBackground content
+void lcd_cover_background_init(void) {  // Initialize CoverBackground content
   // Note: this function is now called before g_layer2_initialized is set
-  // so no need to check g_layer2_initialized, but need to ensure backup buffer is properly initialized
-  
-  // Backup buffer functionality removed (transparent status bar no longer needed)
-  
-  uint16_t *layer2_buffer = (uint16_t*)LAYER2_MEMORY_BASE; // Get Layer2 buffer pointer
-  uint32_t buffer_size = lcd_params.hres * lcd_params.vres; // Calculate pixel count
-  
-  // printf("[Layer2 Init] Initializing Layer2 buffer at 0x%08lX, size: %lu pixels\n", 
-  //        (uint32_t)layer2_buffer, buffer_size);
-  
-  // // First clear entire layer2 buffer to avoid random data
-  // printf("CoverBackground: Clearing layer2 buffer...\n"); // Print clearing info
-  // printf("[Layer2 Clear] Clearing %lu pixels at address 0x%08lX\n", buffer_size, (uint32_t)layer2_buffer);
-  for (uint32_t i = 0; i < buffer_size; i++) { // Iterate through each pixel
-    layer2_buffer[i] = 0x0000;  // Clear to black
+  // so no need to check g_layer2_initialized, but need to ensure backup buffer
+  // is properly initialized
+
+  // Backup buffer functionality removed (transparent status bar no longer
+  // needed)
+
+  uint16_t* layer2_buffer = (uint16_t*)LAYER2_MEMORY_BASE;
+  uint32_t buffer_size = lcd_params.hres * lcd_params.vres;
+
+  for (uint32_t i = 0; i < buffer_size; i++) {
+    layer2_buffer[i] = 0x0000;
   }
-  // Verify clearing result
-  uint32_t black_count = 0;
-  for (uint32_t i = 0; i < 100; i++) { // Check first 100 pixels
-    if (layer2_buffer[i] == 0x0000) black_count++;
-  }
-  // printf("[Layer2 Clear] Verified: first 100 pixels, %lu are black\n", black_count);
-  
-  // Copy current Layer1 display content to Layer2 to ensure background consistency
-  // printf("CoverBackground: Copying Layer1 background to Layer2 for consistency\n"); // Print copy info
-  
+
   // Wait for LTDC idle to avoid conflicts with ongoing display operations
   while (lcd_ltdc_busy()) {
     HAL_Delay(1);
   }
-  
+
   // Wait for DMA2D idle to ensure previous operations are complete
   while (HAL_DMA2D_GetState(&hlcd_dma2d) != HAL_DMA2D_STATE_READY) {
     HAL_Delay(1);
   }
-  
+
   // Safely copy current Layer1 display content using DMA2D
-  if (g_current_display_addr != 0) { // If current display address is valid
-    // Use DMA2D to copy entire Layer1 content to Layer2 for background consistency
-    dma2d_copy_buffer((uint32_t*)g_current_display_addr, 
-                      (uint32_t*)LAYER2_MEMORY_BASE,
-                      0, 0, lcd_params.hres, lcd_params.vres); // DMA2D copy
+  if (g_current_display_addr != 0) {  // If current display address is valid
+    // Use DMA2D to copy entire Layer1 content to Layer2 for background
+    // consistency
+    dma2d_copy_buffer((uint32_t*)g_current_display_addr,
+                      (uint32_t*)LAYER2_MEMORY_BASE, 0, 0, lcd_params.hres,
+                      lcd_params.vres);  // DMA2D copy
   } else {
     // If no Layer1 content, use default Layer1 frame buffer
-    dma2d_copy_buffer((uint32_t*)FMC_SDRAM_LTDC_BUFFER_ADDRESS, 
-                      (uint32_t*)LAYER2_MEMORY_BASE,
-                      0, 0, lcd_params.hres, lcd_params.vres); // DMA2D copy
+    dma2d_copy_buffer((uint32_t*)FMC_SDRAM_LTDC_BUFFER_ADDRESS,
+                      (uint32_t*)LAYER2_MEMORY_BASE, 0, 0, lcd_params.hres,
+                      lcd_params.vres);  // DMA2D copy
   }
-  
+
   // Wait for DMA2D copy completion to ensure Layer2 content is ready
   while (HAL_DMA2D_GetState(&hlcd_dma2d) != HAL_DMA2D_STATE_READY) {
     HAL_Delay(1);
   }
-  
+
   // Verify Layer2 content after initialization
   uint32_t total_non_black = 0;
   for (uint32_t i = 0; i < buffer_size; i++) {
@@ -1013,17 +959,14 @@ void lcd_cover_background_init(void) { // Initialize CoverBackground content
       total_non_black++;
     }
   }
-  
+
   // Pre-configure Layer2 but keep disabled to avoid initialization flicker
   hlcd_ltdc.Instance = LTDC;
-  HAL_LTDC_SetAlpha(&hlcd_ltdc, 0, 1);  // Set to completely transparent
+  HAL_LTDC_SetAlpha(&hlcd_ltdc, 0, 1);      // Set to completely transparent
   __HAL_LTDC_LAYER_DISABLE(&hlcd_ltdc, 1);  // Disable Layer2
-  
+
   // Layer2 content is now ready, will display only when show is called
 }
-
-
-
 
 // Show CoverBackground - only called on upward swipe gesture
 // Optimized seamless display to avoid flicker
@@ -1031,43 +974,44 @@ __attribute__((used)) void lcd_cover_background_show(void) {
   if (!g_layer2_initialized) {
     return;
   }
-  
-  // Key improvement: force wait and stabilize Layer state to prevent layer confusion during fast switching
-  // Wait for LTDC to be completely idle
+
+  // Key improvement: force wait and stabilize Layer state to prevent layer
+  // confusion during fast switching Wait for LTDC to be completely idle
   while (lcd_ltdc_busy()) {
     HAL_Delay(1);
   }
-  
+
   hlcd_ltdc.Instance = LTDC;
-  
+
   // Step 0: Reset Layer1 state to prevent layer confusion from fast switching
   // Note: don't operate on Layer0, it's the system main display layer
-  
-  // Ensure Layer1 (Layer2 overlay) is initially completely disabled and transparent
+
+  // Ensure Layer1 (Layer2 overlay) is initially completely disabled and
+  // transparent
   __HAL_LTDC_LAYER_DISABLE(&hlcd_ltdc, 1);
-  HAL_LTDC_SetAlpha(&hlcd_ltdc, 0, 1);    // Layer1 initially transparent
-  
+  HAL_LTDC_SetAlpha(&hlcd_ltdc, 0, 1);  // Layer1 initially transparent
+
   // Force reload to ensure disabled state takes effect
   __HAL_LTDC_RELOAD_CONFIG(&hlcd_ltdc);
-  
+
   // Wait for reset completion to ensure hardware state is stable
   while (lcd_ltdc_busy()) {
     HAL_Delay(1);
   }
-  
+
   // Clean SDRAM cache to ensure LTDC reads the latest data
-  SCB_CleanDCache_by_Addr((uint32_t*)LAYER2_MEMORY_BASE, 
+  SCB_CleanDCache_by_Addr((uint32_t*)LAYER2_MEMORY_BASE,
                           lcd_params.hres * lcd_params.vres * lcd_params.bbp);
-  
+
   // Memory barrier to ensure cache operations complete
   __DSB();
   __ISB();
-  
+
   // Pre-configure Layer2 state
   cover_bg_state.visible = true;
   cover_bg_state.y_offset = 0;
   cover_bg_state.opacity = 255;
-  
+
   // Step 1: Configure Layer2 but keep completely transparent
   LTDC_LAYERCONFIG config;
   config.x0 = 0;
@@ -1076,28 +1020,29 @@ __attribute__((used)) void lcd_cover_background_show(void) {
   config.y1 = lcd_params.vres;
   config.pixel_format = lcd_params.pixel_format_ltdc;
   config.address = LAYER2_MEMORY_BASE;
-  
+
   // Configure Layer2 but set alpha to 0 (completely transparent)
   HAL_LTDC_SetAlpha(&hlcd_ltdc, 0, 1);
   ltdc_layer_config(&hlcd_ltdc, 1, &config);
   __HAL_LTDC_LAYER_ENABLE(&hlcd_ltdc, 1);
-  
+
   // Reload configuration, Layer2 is now configured but completely transparent
   __HAL_LTDC_RELOAD_CONFIG(&hlcd_ltdc);
-  
+
   // Wait for configuration to take effect, ensure transparent state is applied
   while (lcd_ltdc_busy()) {
     HAL_Delay(1);
   }
-  
-  // Step 2: Wait for VSync signal, only modify Alpha value during vertical blanking
+
+  // Step 2: Wait for VSync signal, only modify Alpha value during vertical
+  // blanking
   volatile uint32_t timeout = 10000;
   while (timeout-- > 0) {
     if (hlcd_ltdc.Instance->CDSR & 0x01) {  // Check VSync status
       break;
     }
   }
-  
+
   // During VSync only modify Alpha value from 0 to 255 for atomic switching
   HAL_LTDC_SetAlpha(&hlcd_ltdc, 255, 1);
   __HAL_LTDC_RELOAD_CONFIG(&hlcd_ltdc);
@@ -1108,96 +1053,85 @@ __attribute__((used)) void lcd_cover_background_hide(void) {
   if (!g_layer2_initialized) {
     return;
   }
-  
+
   // Wait for LTDC idle
   while (lcd_ltdc_busy()) {
     HAL_Delay(1);
   }
-  
+
   cover_bg_state.visible = false;
   cover_bg_state.opacity = 0;
   cover_bg_state.y_offset = -800;
-  
+
   // First move layer to hidden position, then disable Layer2
   lcd_cover_background_move_to_y(-800);
-  
+
   hlcd_ltdc.Instance = LTDC;
-  __HAL_LTDC_LAYER_DISABLE(&hlcd_ltdc, 1); // Completely disable Layer2
-  
+  __HAL_LTDC_LAYER_DISABLE(&hlcd_ltdc, 1);  // Completely disable Layer2
+
   __HAL_LTDC_RELOAD_IMMEDIATE_CONFIG(&hlcd_ltdc);
 }
 
-
-// Set CoverBackground visibility state - does not change hardware, only updates state
+// Set CoverBackground visibility state - does not change hardware, only updates
+// state
 __attribute__((used)) void lcd_cover_background_set_visible(bool visible) {
   if (!g_layer2_initialized) {
     return;
   }
-  
+
   cover_bg_state.visible = visible;
 }
 
 // Set CoverBackground image data
-__attribute__((used)) void lcd_cover_background_set_image(const void* image_data, uint32_t image_size) {
+__attribute__((used)) void lcd_cover_background_set_image(
+    const void* image_data, uint32_t image_size) {
   if (!g_layer2_initialized) {
-    // printf("ERROR: layer2 not initialized for image setting\n");
     return;
   }
-  
-  // printf("Setting CoverBackground image, size: %lu bytes\n", image_size);
-  
-  uint16_t *layer2_buffer = (uint16_t*)LAYER2_MEMORY_BASE;
+
+  uint16_t* layer2_buffer = (uint16_t*)LAYER2_MEMORY_BASE;
   uint32_t max_pixels = lcd_params.hres * lcd_params.vres;
-  uint32_t max_bytes = max_pixels * 2; // RGB565 = 2 bytes per pixel
-  
-  // Ensure we don't exceed buffer size
+  uint32_t max_bytes = max_pixels * 2;
+
   uint32_t copy_size = (image_size > max_bytes) ? max_bytes : image_size;
-  
-  // Copy image data directly to layer2 buffer
+
   memcpy(layer2_buffer, image_data, copy_size);
-  
-  // printf("CoverBackground image set successfully\n");
 }
 
 // Load JPEG image to CoverBackground hardware layer
-__attribute__((used)) void lcd_cover_background_load_jpeg(const char* jpeg_path) {
+__attribute__((used)) void lcd_cover_background_load_jpeg(
+    const char* jpeg_path) {
   if (!g_layer2_initialized) {
-    // printf("ERROR: layer2 not initialized for JPEG loading\n");
     return;
   }
-  
-  // printf("Loading JPEG wallpaper: %s\n", jpeg_path);
-  
-  // === Optimal solution: complete JPEG decoder state isolation ===
-  // Save LVGL's JPEG decoder state to ensure it doesn't affect LVGL image loading
+
   jpeg_save_state();
-  
+
   // Use dedicated JPEG output buffer
   uint32_t jpeg_output_address = FMC_SDRAM_JPEG_OUTPUT_DATA_BUFFER_ADDRESS;
-  
+
   // Initialize independent JPEG decoder instance for AppDrawer
   // Set to dedicated FATFS mode, completely isolated from LVGL mode
   jpeg_decode_file_operation(JPEG_FILE_FATFS);  // Explicitly use FATFS mode
   jpeg_decode_init(jpeg_output_address);        // Use dedicated buffer
-  
+
   int decode_result = jpeg_decode_start(jpeg_path);
   if (decode_result != 0) {
-    printf("ERROR: Failed to decode JPEG file %s, error code: %d\n", jpeg_path, decode_result);
     jpeg_restore_state();
     return;
   }
-  
+
   // Get decoded image information
   uint32_t width, height, subsampling;
   jpeg_decode_info(&width, &height, &subsampling);
-  
+
   // Prepare Layer2 buffer and clear to black before copying the decoded image
   uint16_t* layer2_buffer = (uint16_t*)LAYER2_MEMORY_BASE;
   uint32_t total_pixels = lcd_params.hres * lcd_params.vres;
   for (uint32_t i = 0; i < total_pixels; i++) {
     layer2_buffer[i] = 0x0000;
   }
-  
+
   // When the decoded image height is smaller than the screen height,
   // add black padding above and below to keep the image vertically centered.
   uint32_t top_padding = 0;
@@ -1206,8 +1140,8 @@ __attribute__((used)) void lcd_cover_background_load_jpeg(const char* jpeg_path)
   }
 
   // Adjust width to standard 480 pixels
-  // If width < 480: convert actual width, right side already filled with black (layer2 cleared)
-  // If width > 480: crop to 480 pixels
+  // If width < 480: convert actual width, right side already filled with black
+  // (layer2 cleared) If width > 480: crop to 480 pixels
   uint32_t adjusted_width = width;
   if (width > lcd_params.hres) {
     // Crop to screen width (480)
@@ -1217,68 +1151,46 @@ __attribute__((used)) void lcd_cover_background_load_jpeg(const char* jpeg_path)
 
   uint32_t dest_address =
       (uint32_t)(layer2_buffer + top_padding * lcd_params.hres);
-  dma2d_copy_ycbcr_to_rgb((uint32_t*)jpeg_output_address,
-                          (uint32_t*)dest_address,
-                          adjusted_width, height, subsampling,
-                          lcd_params.hres);  // Pass screen width for proper line stride
-  
-  // Immediately restore LVGL's JPEG decoder state to ensure no impact on subsequent operations
+  dma2d_copy_ycbcr_to_rgb(
+      (uint32_t*)jpeg_output_address, (uint32_t*)dest_address, adjusted_width,
+      height, subsampling,
+      lcd_params.hres);  // Pass screen width for proper line stride
+
   jpeg_restore_state();
-  
-  // Optional verification hook (debug logging disabled by default)
-  uint32_t non_black_in_layer2 = 0;
-  uint32_t sample_offset = top_padding * lcd_params.hres;
-  for (uint32_t i = 0; i < 1000 && (sample_offset + i) < total_pixels; i++) {
-    if (layer2_buffer[sample_offset + i] != 0x0000) {
-      non_black_in_layer2++;
-    }
-  }
-  // printf("[Layer2 JPEG] After centered decode: %lu/1000 non-black pixels\n", non_black_in_layer2);
-  
-  // Background image has been completely loaded to Layer2
-  
-  // printf("JPEG wallpaper loaded to CoverBackground layer: %s (%lux%lu)\n", 
-  //        jpeg_path, width, height);
 }
 
-// Correct hardware movement of CoverBackground - dynamic window to avoid black screen blocking
+// Correct hardware movement of CoverBackground - dynamic window to avoid black
+// screen blocking
 void lcd_cover_background_move_to_y(int16_t y_position) {
   if (!g_layer2_initialized) {
     return;
   }
-  
+
   // Update state
   cover_bg_state.y_offset = y_position;
-  
-  // Handle boundary case - when Layer2 moves completely off-screen above, directly disable Layer2
+
   if (y_position <= -((int16_t)lcd_params.vres)) {
-    // Layer2 completely off-screen, disable display
-    // printf("CoverBackground: Layer2 completely off-screen at Y=%d, disabling\n", y_position);
     __HAL_LTDC_LAYER_DISABLE(&hlcd_ltdc, 1);
     __HAL_LTDC_RELOAD_CONFIG(&hlcd_ltdc);
     return;
   }
-  
-  // Ensure Layer1 is enabled
+
   __HAL_LTDC_LAYER_ENABLE(&hlcd_ltdc, 1);
-  
-  // Check current Layer2 state
-  // printf("[Layer2 Move] Moving Layer2 to Y=%d\n", y_position);
-  
+
   // Key optimization: dynamic window instead of dynamic address
   // This avoids reading out-of-range memory causing black screen
-  
+
   uint32_t window_x0 = 0;
   uint32_t window_y0, window_y1;
   uint32_t window_x1 = lcd_params.hres;
   uint32_t layer_address = LAYER2_MEMORY_BASE;
-  
+
   if (y_position < 0) {
     // Moving up: window starts from screen top, height decreases
     // Bottom exposed part shows Layer1
     window_y0 = 0;
-    window_y1 = lcd_params.vres + y_position; // y_position is negative
-    
+    window_y1 = lcd_params.vres + y_position;  // y_position is negative
+
     // Start address needs to skip lines moved off-screen
     uint32_t bytes_per_line = lcd_params.hres * lcd_params.bbp;
     uint32_t skip_lines = (uint32_t)(-y_position);
@@ -1294,20 +1206,24 @@ void lcd_cover_background_move_to_y(int16_t y_position) {
   if (window_y1 > lcd_params.vres) {
     window_y1 = lcd_params.vres;
   }
-  // During animation use simplified configuration, only update necessary parameters to avoid full layer reconfiguration
+  // During animation use simplified configuration, only update necessary
+  // parameters to avoid full layer reconfiguration
   if (g_animation_in_progress) {
-    // During animation ensure Layer1 state is stable to prevent flicker from alpha value changes
+    // During animation ensure Layer1 state is stable to prevent flicker from
+    // alpha value changes
     static uint32_t layer1_stabilize_counter = 0;
     layer1_stabilize_counter++;
-    
-    // Stabilize Layer1 alpha value and blending parameters every 4 frames to prevent sudden darkening
+
+    // Stabilize Layer1 alpha value and blending parameters every 4 frames to
+    // prevent sudden darkening
     if (layer1_stabilize_counter % 4 == 0) {
-      HAL_LTDC_SetAlpha(&hlcd_ltdc, 255, 1);  // Ensure Layer1 is completely opaque
-      
+      HAL_LTDC_SetAlpha(&hlcd_ltdc, 255,
+                        1);  // Ensure Layer1 is completely opaque
+
       // Ensure Layer1 enable state is stable
       __HAL_LTDC_LAYER_ENABLE(&hlcd_ltdc, 1);
     }
-    
+
     // During animation only create configuration but reduce processing overhead
     LTDC_LAYERCONFIG config;
     config.x0 = window_x0;
@@ -1316,13 +1232,16 @@ void lcd_cover_background_move_to_y(int16_t y_position) {
     config.y1 = window_y1;
     config.pixel_format = lcd_params.pixel_format_ltdc;
     config.address = layer_address;
-    
-    // Use our lightweight configuration function (already optimized Color Keying skip)
+
+    // Use our lightweight configuration function (already optimized Color
+    // Keying skip)
     ltdc_layer_config(&hlcd_ltdc, 1, &config);
-    
-    // Simplified processing during animation, no special status bar handling needed
+
+    // Simplified processing during animation, no special status bar handling
+    // needed
   } else {
-    // Use full layer configuration during non-animation periods to ensure all parameters are correct
+    // Use full layer configuration during non-animation periods to ensure all
+    // parameters are correct
     LTDC_LAYERCONFIG config;
     config.x0 = window_x0;
     config.x1 = window_x1;
@@ -1330,12 +1249,13 @@ void lcd_cover_background_move_to_y(int16_t y_position) {
     config.y1 = window_y1;
     config.pixel_format = lcd_params.pixel_format_ltdc;
     config.address = layer_address;
-    
-    // Reconfigure Layer1 (but don't reset blending parameters, only update position and address)
-    // Avoid reconfiguring Color Keying during animation, maintain status bar data
+
+    // Reconfigure Layer1 (but don't reset blending parameters, only update
+    // position and address) Avoid reconfiguring Color Keying during animation,
+    // maintain status bar data
     ltdc_layer_config(&hlcd_ltdc, 1, &config);
   }
-  
+
   // Use simplified reconfiguration method to reduce flicker
   LTDC_LAYERCONFIG config;
   config.x0 = window_x0;
@@ -1344,10 +1264,10 @@ void lcd_cover_background_move_to_y(int16_t y_position) {
   config.y1 = window_y1;
   config.pixel_format = lcd_params.pixel_format_ltdc;
   config.address = layer_address;
-  
+
   // Use optimized layer configuration function
   ltdc_layer_config(&hlcd_ltdc, 1, &config);
-  
+
   // Always use VSync reload to ensure stability
   __HAL_LTDC_RELOAD_CONFIG(&hlcd_ltdc);
 }
@@ -1376,7 +1296,7 @@ static void animation_systick_callback(uint32_t tick) {
   // Add basic protection check
   if (g_layer2_initialized && g_animation_state.active) {
     static uint32_t last_update_tick = 0;
-    
+
     // Update every 16ms to match 60fps display
     if (tick - last_update_tick >= 16) {
       lcd_cover_background_update_animation();
@@ -1387,28 +1307,22 @@ static void animation_systick_callback(uint32_t tick) {
 
 // Initialize animation system
 __attribute__((used)) void lcd_animation_init(void) {
-  // Register systick callback for animation updates
-  systick_enable_dispatch(SYSTICK_DISPATCH_ANIMATION_UPDATE, animation_systick_callback);
-  // printf("Animation system initialized with systick callback\n");
+  systick_enable_dispatch(SYSTICK_DISPATCH_ANIMATION_UPDATE,
+                          animation_systick_callback);
 }
 
 // Start animation
-__attribute__((used)) void lcd_cover_background_start_animation(int16_t target_y, uint16_t duration_ms) {
+__attribute__((used)) void lcd_cover_background_start_animation(
+    int16_t target_y, uint16_t duration_ms) {
   if (!g_layer2_initialized) {
-    // Silent return, no error logging during animation
     return;
   }
-  
+
   int16_t start_y = cover_bg_state.y_offset;
-  
+
   if (start_y == target_y) {
-    // Silent skip, no logging
     return;
   }
-  
-  // Completely disable logging during animation startup
-  
-  // Initialize animation state
   g_animation_state.active = true;
   g_animation_state.start_y = start_y;
   g_animation_state.target_y = target_y;
@@ -1416,21 +1330,22 @@ __attribute__((used)) void lcd_cover_background_start_animation(int16_t target_y
   g_animation_state.duration_ms = duration_ms;
   g_animation_state.last_update_time = g_animation_state.start_time;
   g_animation_state.frame_count = 0;
-  
+
   // Set global animation flag
   g_animation_in_progress = true;
-  
+
   // Pre-enable Layer1 before animation to ensure smooth animation
   __HAL_LTDC_LAYER_ENABLE(&hlcd_ltdc, 1);
-  
-  // Ensure Layer1 state is completely stable before animation to prevent flicker
+
+  // Ensure Layer1 state is completely stable before animation to prevent
+  // flicker
   hlcd_ltdc.Instance = LTDC;
   HAL_LTDC_SetAlpha(&hlcd_ltdc, 255, 1);  // Layer1 completely opaque
   cover_bg_state.opacity = 255;
-  
+
   // Force refresh once to ensure Layer1 settings take effect
   __HAL_LTDC_RELOAD_IMMEDIATE_CONFIG(&hlcd_ltdc);
-  
+
   // Simplified animation configuration, no Color Keying setup
 }
 
@@ -1439,43 +1354,36 @@ __attribute__((used)) bool lcd_cover_background_update_animation(void) {
   if (!g_animation_state.active) {
     return false;
   }
-  
-  // Completely disable debug logging during animation
-  
+
   uint32_t current_time = HAL_GetTick();
   uint32_t elapsed_time = current_time - g_animation_state.start_time;
-  
+
   // Check if animation is complete
   if (elapsed_time >= g_animation_state.duration_ms) {
     // Animation complete, move to exact position
     lcd_cover_background_move_to_y(g_animation_state.target_y);
-    
-    // Force reload after animation completion to ensure final position displays accurately
+
+    // Force reload after animation completion to ensure final position displays
+    // accurately
     __HAL_LTDC_RELOAD_CONFIG(&hlcd_ltdc);
-    
+
     // Clear animation state
     g_animation_state.active = false;
     g_animation_in_progress = false;
-    
+
     // Wait for LTDC idle before final configuration
     while (lcd_ltdc_busy()) {
       HAL_Delay(1);
     }
-    
-    // Use VSync reload to ensure final state is stable
+
     __HAL_LTDC_RELOAD_CONFIG(&hlcd_ltdc);
-    
-    // Output statistics only after animation completion
-    // uint32_t avg_fps = (g_animation_state.frame_count * 1000) / elapsed_time;
-    // printf("Animation completed: Y=%d, frames=%lu, time=%lums, fps=%lu\n", 
-    //        g_animation_state.target_y, g_animation_state.frame_count, elapsed_time, avg_fps);
-    
+
     return false;
   }
-  
+
   // Calculate animation progress
   float progress = (float)elapsed_time / g_animation_state.duration_ms;
-  
+
   // Use cubic ease-in-out easing function
   float eased_progress;
   if (progress < 0.5f) {
@@ -1484,22 +1392,18 @@ __attribute__((used)) bool lcd_cover_background_update_animation(void) {
     float temp = -2.0f * progress + 2.0f;
     eased_progress = 1.0f - (temp * temp * temp) / 2.0f;
   }
-  
+
   // Calculate current position
   int16_t distance = g_animation_state.target_y - g_animation_state.start_y;
-  int16_t current_y = g_animation_state.start_y + (int16_t)(distance * eased_progress);
-  
-  // Update position
+  int16_t current_y =
+      g_animation_state.start_y + (int16_t)(distance * eased_progress);
+
   lcd_cover_background_move_to_y(current_y);
-  
-  // Update frame count and statistics
+
   g_animation_state.frame_count++;
-  
-  // Completely disable frame statistics logging during animation
-  
+
   return true;
 }
-
 
 // Check if any animation is in progress
 __attribute__((used)) bool lcd_cover_background_has_active_animation(void) {
@@ -1509,7 +1413,6 @@ __attribute__((used)) bool lcd_cover_background_has_active_animation(void) {
 // Stop current animation
 __attribute__((used)) void lcd_cover_background_stop_animation(void) {
   if (g_animation_state.active) {
-    // No logging during animation, silent stop
     g_animation_state.active = false;
     g_animation_in_progress = false;
   }
@@ -1519,8 +1422,9 @@ __attribute__((used)) void lcd_cover_background_stop_animation(void) {
 /*
  * lcd_cover_background_animate_to_y(int16_t target_y, uint16_t duration_ms)
  *
- * Implements a direct, blocking animation effect to smoothly move CoverBackground 
- * (Layer1) from current Y offset to target position over specified duration.
+ * Implements a direct, blocking animation effect to smoothly move
+ * CoverBackground (Layer1) from current Y offset to target position over
+ * specified duration.
  *
  * Process:
  * 1. Check Layer1 initialization, return if not initialized
@@ -1531,56 +1435,53 @@ __attribute__((used)) void lcd_cover_background_stop_animation(void) {
  *
  * Note: Blocking animation, suitable for direct UI thread calls.
  */
-__attribute__((used)) void lcd_cover_background_animate_to_y(int16_t target_y, uint16_t duration_ms) {
+__attribute__((used)) void lcd_cover_background_animate_to_y(
+    int16_t target_y, uint16_t duration_ms) {
   if (!g_layer2_initialized) {
-    // Silent return, no error logging
     return;
   }
-  
+
   int16_t start_y = cover_bg_state.y_offset;
-  
+
   if (start_y == target_y) {
-    // Silent skip, no logging
     return;
   }
-  
+
   // Set animation flag
   g_animation_in_progress = true;
-  
+
   // Wait for LTDC idle to ensure previous operations complete
   while (lcd_ltdc_busy()) {
     HAL_Delay(1);
   }
-  
+
   // Ensure Layer1 is correctly configured, set only once
   hlcd_ltdc.Instance = LTDC;
   __HAL_LTDC_LAYER_ENABLE(&hlcd_ltdc, 1);
   HAL_LTDC_SetAlpha(&hlcd_ltdc, 255, 1);
   cover_bg_state.opacity = 255;
-  
+
   // Use VSync reload consistently to ensure synchronization
   __HAL_LTDC_RELOAD_CONFIG(&hlcd_ltdc);
-  
+
   uint32_t start_time = HAL_GetTick();
   uint32_t frame_count = 0;
   int16_t distance = target_y - start_y;
-  
-  // Completely disable parameter logging during animation
-  
+
   while (true) {
     uint32_t current_time = HAL_GetTick();
     uint32_t elapsed_time = current_time - start_time;
-    
+
     // Check if animation is complete
     if (elapsed_time >= duration_ms) {
       // Animation complete, move to exact position
       lcd_cover_background_move_to_y(target_y);
       break;
     }
-    
+
     // Calculate animation progress
     float progress = (float)elapsed_time / duration_ms;
-    
+
     // Use cubic ease-in-out easing function
     float eased_progress;
     if (progress < 0.5f) {
@@ -1589,45 +1490,38 @@ __attribute__((used)) void lcd_cover_background_animate_to_y(int16_t target_y, u
       float temp = -2.0f * progress + 2.0f;
       eased_progress = 1.0f - (temp * temp * temp) / 2.0f;
     }
-    
+
     // Calculate current position
     int16_t current_y = start_y + (int16_t)(distance * eased_progress);
-    
+
     // Update position
     lcd_cover_background_move_to_y(current_y);
-    
+
     // Wait for LTDC idle after each frame to ensure configuration takes effect
     while (lcd_ltdc_busy()) {
       HAL_Delay(1);
     }
-    
+
     // Use VSync reload consistently to ensure Layer1 and Layer2 synchronization
     __HAL_LTDC_RELOAD_CONFIG(&hlcd_ltdc);
-    
+
     frame_count++;
-    
+
     // 16ms delay for ~60fps
     HAL_Delay(16);
   }
-  
+
   // Wait for final update completion
   while (lcd_ltdc_busy()) {
     HAL_Delay(1);
   }
-  
-  // After animation completion, use VSync reload to ensure final state is stable
-  __HAL_LTDC_RELOAD_CONFIG(&hlcd_ltdc);
-  
-  // Clear animation flag
-  g_animation_in_progress = false;
-  
-  // Output statistics only after animation completion
-  uint32_t total_time = HAL_GetTick() - start_time;
-  uint32_t avg_fps = (frame_count * 1000) / total_time;
-  printf("Direct animation completed: Y=%d, frames=%lu, time=%lums, fps=%lu\n", 
-         target_y, frame_count, total_time, avg_fps);
-}
 
+  // After animation completion, use VSync reload to ensure final state is
+  // stable
+  __HAL_LTDC_RELOAD_CONFIG(&hlcd_ltdc);
+
+  g_animation_in_progress = false;
+}
 
 // Get current opacity
 __attribute__((used)) uint8_t lcd_cover_background_get_opacity(void) {
@@ -1639,22 +1533,21 @@ __attribute__((used)) bool lcd_cover_background_is_visible(void) {
   return cover_bg_state.visible && cover_bg_state.opacity > 0;
 }
 
-
-
 // Function to ensure second layer remains active
 __attribute__((used)) void lcd_ensure_second_layer(void) {
   static bool layer_enabled = false;
-  
+
   if (!g_layer2_initialized) {
     return;
   }
-  
+
   // Enable second layer only once (unless it was disabled)
   if (!layer_enabled) {
     __HAL_LTDC_LAYER_ENABLE(&hlcd_ltdc, 1);
     layer_enabled = true;
   }
-  
+
   // CoverBackground layer is now managed separately via dedicated functions
-  // No automatic updates needed here - controlled by show/hide/set_opacity functions
+  // No automatic updates needed here - controlled by show/hide/set_opacity
+  // functions
 }

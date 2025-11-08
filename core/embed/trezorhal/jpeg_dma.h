@@ -7,7 +7,8 @@ enum { JPEG_FILE_LVGL = 0, JPEG_FILE_FATFS };
 
 void jpeg_init(void);
 int jped_decode(char *path, uint32_t address);
-int jped_decode_to_address(char *path, uint32_t src_address, uint32_t dst_address);
+int jped_decode_to_address(char *path, uint32_t src_address,
+                           uint32_t dst_address);
 void jpeg_decode_init(uint32_t address);
 void jpeg_decode_file_operation(uint8_t mode);
 int jpeg_get_decode_state(void);

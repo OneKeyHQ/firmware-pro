@@ -57,10 +57,7 @@ def create_top_mask(
 
     mask.set_style_bg_color(color, 0)
     mask.set_style_bg_opa(opa, 0)
-    try:
-        mask.move_foreground()
-    except AttributeError:
-        pass
+    mask.move_foreground()
 
     return mask
 

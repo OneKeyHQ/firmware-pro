@@ -293,9 +293,7 @@ class ImgGridItem(lv.img):
         self.file_name = file_name
         self.zoom_path = path_dir + file_name
         self.style_type = style_type
-        self.selected_indicator_src = (
-            img_path_selected if style_type != "nft" else None
-        )
+        self.selected_indicator_src = img_path_selected if style_type != "nft" else None
         self.unselected_indicator_src = (
             img_path_unselected if style_type != "nft" else None
         )
@@ -329,9 +327,7 @@ class ImgGridItem(lv.img):
         self.check = None
         if self.selected_indicator_src:
             self.check = lv.img(self)
-            initial_src = (
-                self.unselected_indicator_src or self.selected_indicator_src
-            )
+            initial_src = self.unselected_indicator_src or self.selected_indicator_src
             try:
                 self.check.set_src(initial_src)
             except Exception:
@@ -383,7 +379,9 @@ class ImgGridItem(lv.img):
 
         if self.unselected_indicator_src:
             self.check.set_src(
-                self.selected_indicator_src if checked else self.unselected_indicator_src
+                self.selected_indicator_src
+                if checked
+                else self.unselected_indicator_src
             )
             self.check.clear_flag(lv.obj.FLAG.HIDDEN)
         elif checked:

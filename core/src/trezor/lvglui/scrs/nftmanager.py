@@ -1,4 +1,3 @@
-import ujson as json
 import math
 from typing import Callable
 
@@ -6,6 +5,8 @@ import storage.device as storage_device
 from trezor import io as trezor_io, uart, utils, workflow
 from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
 from trezor.lvglui.lv_colors import lv_colors
+
+import ujson as json
 
 from . import (
     font_GeistRegular20,
@@ -19,12 +20,12 @@ from .components.banner import LEVEL, Banner
 from .components.button import NormalButton
 from .components.container import ContainerGrid
 from .components.listitem import ImgGridItem
-from .widgets.style import StyleWrapper
 from .preview_utils import (
     create_preview_container,
     create_preview_image,
     create_top_mask,
 )
+from .widgets.style import StyleWrapper
 
 # Path constants to reduce qstr usage
 _P1 = "1:/res/nfts/zooms"
@@ -99,10 +100,7 @@ class WallpaperPreviewBase(AnimScreen):
 
         style = _cached_style(
             _K1,
-            lambda: StyleWrapper()
-            .bg_opa(lv.OPA.TRANSP)
-            .pad_all(0)
-            .border_width(0),
+            lambda: StyleWrapper().bg_opa(lv.OPA.TRANSP).pad_all(0).border_width(0),
         )
         self.preview_container = create_preview_container(
             self.container,
@@ -206,6 +204,7 @@ class WallpaperPreviewBase(AnimScreen):
                 icon_path = _P11
 
         self.blur_button_icon.set_src(icon_path)
+
 
 class NftGallery(Screen):
     def __init__(self, prev_scr=None):
@@ -389,9 +388,7 @@ class NftManager(AnimScreen):
 
         # Add trash icon to title bar (right side)
         self.trash_icon = lv.imgbtn(self.content_area)
-        self.trash_icon.set_src(
-            lv.imgbtn.STATE.RELEASED, _P9, None, None
-        )
+        self.trash_icon.set_src(lv.imgbtn.STATE.RELEASED, _P9, None, None)
         self.trash_icon.set_size(40, 40)
         self.trash_icon.align(lv.ALIGN.TOP_RIGHT, -16, 60)
         self.trash_icon.add_style(
@@ -442,9 +439,7 @@ class NftManager(AnimScreen):
         self.btn_lock_screen = NormalButton(self.content_area)
         self.btn_lock_screen.set_size(456, 98)
         self.btn_lock_screen.enable(lv_colors.ONEKEY_PURPLE, lv_colors.BLACK)
-        self.btn_lock_screen.label.set_text(
-            _(i18n_keys.BUTTON__SET_AS_LOCK_SCREEN)
-        )
+        self.btn_lock_screen.label.set_text(_(i18n_keys.BUTTON__SET_AS_LOCK_SCREEN))
         self.btn_lock_screen.align_to(
             self.nft_description, lv.ALIGN.OUT_BOTTOM_LEFT, -8, 32
         )
@@ -453,9 +448,7 @@ class NftManager(AnimScreen):
         self.btn_home_screen = NormalButton(self.content_area)
         self.btn_home_screen.set_size(456, 98)
         self.btn_home_screen.enable(lv_colors.GRAY_1, lv_colors.WHITE)
-        self.btn_home_screen.label.set_text(
-            _(i18n_keys.BUTTON__SET_AS_HOME_SCREEN)
-        )
+        self.btn_home_screen.label.set_text(_(i18n_keys.BUTTON__SET_AS_HOME_SCREEN))
         self.btn_home_screen.align_to(
             self.btn_lock_screen, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 8
         )
@@ -473,9 +466,7 @@ class NftManager(AnimScreen):
         blur_path = self.img_path.replace(img_file, blur_file)
         if _fatfs_file_exists(blur_path):
             trezor_io.fatfs.unlink(blur_path[2:])
-        trezor_io.fatfs.unlink(
-            _P3 + self.file_name.split(".")[0] + ".json"
-        )
+        trezor_io.fatfs.unlink(_P3 + self.file_name.split(".")[0] + ".json")
 
         from .homescreen import replace_wallpaper_if_in_use
 
@@ -619,7 +610,9 @@ class NftHomeScreenPreview(WallpaperPreviewBase):
             self.blur_button,
             self.blur_button_icon,
             self.blur_label,
-        ) = self._create_button_with_label(_P11, _(i18n_keys.BUTTON__BLUR), self.on_blur_clicked)
+        ) = self._create_button_with_label(
+            _P11, _(i18n_keys.BUTTON__BLUR), self.on_blur_clicked
+        )
 
         self.blur_button.align_to(
             self.preview_container, lv.ALIGN.OUT_BOTTOM_MID, 0, 10

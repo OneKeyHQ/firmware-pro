@@ -93,30 +93,32 @@ extern int jpeg_get_decode_state(void);
 extern int jpeg_get_decode_error(void);
 
 STATIC mp_obj_t mod_trezorio_jpeg_save_decoder_state(void) {
-    jpeg_save_state();
-    return mp_const_none;
+  jpeg_save_state();
+  return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorio_jpeg_save_decoder_state_obj, mod_trezorio_jpeg_save_decoder_state);
-
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorio_jpeg_save_decoder_state_obj,
+                                 mod_trezorio_jpeg_save_decoder_state);
 
 STATIC mp_obj_t mod_trezorio_jpeg_restore_decoder_state(void) {
-    jpeg_restore_state();
-    return mp_const_none;
+  jpeg_restore_state();
+  return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorio_jpeg_restore_decoder_state_obj, mod_trezorio_jpeg_restore_decoder_state);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorio_jpeg_restore_decoder_state_obj,
+                                 mod_trezorio_jpeg_restore_decoder_state);
 
 STATIC mp_obj_t mod_trezorio_jpeg_decoder_is_busy(void) {
-    int state = jpeg_get_decode_state();
-    return mp_obj_new_bool(state == 0);
+  int state = jpeg_get_decode_state();
+  return mp_obj_new_bool(state == 0);
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorio_jpeg_decoder_is_busy_obj, mod_trezorio_jpeg_decoder_is_busy);
-
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorio_jpeg_decoder_is_busy_obj,
+                                 mod_trezorio_jpeg_decoder_is_busy);
 
 STATIC mp_obj_t mod_trezorio_jpeg_decoder_has_error(void) {
-    int error = jpeg_get_decode_error();
-    return mp_obj_new_bool(error != 0);
+  int error = jpeg_get_decode_error();
+  return mp_obj_new_bool(error != 0);
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorio_jpeg_decoder_has_error_obj, mod_trezorio_jpeg_decoder_has_error);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorio_jpeg_decoder_has_error_obj,
+                                 mod_trezorio_jpeg_decoder_has_error);
 
 STATIC const mp_rom_map_elem_t mp_module_trezorio_globals_table[] = {
     {MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_trezorio)},
@@ -161,10 +163,14 @@ STATIC const mp_rom_map_elem_t mp_module_trezorio_globals_table[] = {
     {MP_ROM_QSTR(MP_QSTR_SPI_FIDO_FACE), MP_ROM_INT(SPI_FIDO_IFACE)},
 
     // JPEG decoder state management functions
-    {MP_ROM_QSTR(MP_QSTR_jpeg_save_decoder_state), MP_ROM_PTR(&mod_trezorio_jpeg_save_decoder_state_obj)},
-    {MP_ROM_QSTR(MP_QSTR_jpeg_restore_decoder_state), MP_ROM_PTR(&mod_trezorio_jpeg_restore_decoder_state_obj)},
-    {MP_ROM_QSTR(MP_QSTR_jpeg_decoder_is_busy), MP_ROM_PTR(&mod_trezorio_jpeg_decoder_is_busy_obj)},
-    {MP_ROM_QSTR(MP_QSTR_jpeg_decoder_has_error), MP_ROM_PTR(&mod_trezorio_jpeg_decoder_has_error_obj)},
+    {MP_ROM_QSTR(MP_QSTR_jpeg_save_decoder_state),
+     MP_ROM_PTR(&mod_trezorio_jpeg_save_decoder_state_obj)},
+    {MP_ROM_QSTR(MP_QSTR_jpeg_restore_decoder_state),
+     MP_ROM_PTR(&mod_trezorio_jpeg_restore_decoder_state_obj)},
+    {MP_ROM_QSTR(MP_QSTR_jpeg_decoder_is_busy),
+     MP_ROM_PTR(&mod_trezorio_jpeg_decoder_is_busy_obj)},
+    {MP_ROM_QSTR(MP_QSTR_jpeg_decoder_has_error),
+     MP_ROM_PTR(&mod_trezorio_jpeg_decoder_has_error_obj)},
 };
 
 STATIC MP_DEFINE_CONST_DICT(mp_module_trezorio_globals,

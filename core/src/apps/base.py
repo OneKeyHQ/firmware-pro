@@ -470,7 +470,9 @@ ALLOW_WHILE_LOCKED = (
 )
 
 
-def set_homescreen(show_app_guide: bool = False, prefer_appdrawer: bool = False) -> None:
+def set_homescreen(
+    show_app_guide: bool = False, prefer_appdrawer: bool = False
+) -> None:
     import lvgl as lv  # type: ignore[Import "lvgl" could not be resolved]
 
     from trezor.lvglui.scrs import fingerprints
@@ -486,7 +488,7 @@ def set_homescreen(show_app_guide: bool = False, prefer_appdrawer: bool = False)
             # debug logging removed
             from trezor.lvglui.scrs.lockscreen import LockScreen
 
-            exists, cached_screen = LockScreen.retrieval()
+            _exists, cached_screen = LockScreen.retrieval()
             if cached_screen is not None:
                 # Re-run __init__ to refresh wallpaper/device names (guarded internally).
                 cached_screen.__init__(device_name, ble_name, dev_state)
@@ -675,7 +677,7 @@ async def unlock_device(
     utils.mark_pin_verified()
     reload_settings_from_storage()
 
-    is_manual_unlock = (ctx is wire.DUMMY_CONTEXT)
+    is_manual_unlock = ctx is wire.DUMMY_CONTEXT
 
     set_homescreen(prefer_appdrawer=is_manual_unlock)
 

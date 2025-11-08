@@ -22,7 +22,6 @@ from trezor.qr import (
 )
 from trezor.ui import display, style
 
-import ujson as json
 from apps.common import passphrase, safety_checks
 
 from . import (
@@ -38,19 +37,21 @@ from .common import AnimScreen, FullSizeWindow, Screen, lv  # noqa: F401, F403, 
 from .components.anim import Anim
 from .components.banner import LEVEL, Banner
 from .components.button import ListItemBtn, ListItemBtnWithSwitch, NormalButton
-from .components.label import Title, SubTitle
 from .components.container import ContainerFlexCol, ContainerFlexRow, ContainerGrid
+from .components.label import SubTitle, Title
 from .components.listitem import (
     DisplayItemWithFont_30,
     DisplayItemWithFont_TextPairs,
-    ListItemWithLeadingCheckbox,
     ImgGridItem,
+    ListItemWithLeadingCheckbox,
 )
 from .deviceinfo import DeviceInfoManager
-from .nftmanager import (
-    NftGallery,
+from .nftmanager import NftGallery
+from .preview_utils import (
+    create_preview_container,
+    create_preview_image,
+    create_top_mask,
 )
-from .preview_utils import create_preview_container, create_preview_image, create_top_mask
 from .widgets.style import StyleWrapper
 
 _attach_to_pin_task_running = False
@@ -58,7 +59,6 @@ _cached_styles = {}
 _animation_in_progress = False
 _last_jpeg_loaded = None
 _active_timers = []
-
 
 
 def _clear_preview_cache() -> None:
@@ -124,9 +124,10 @@ class Layer2Manager:
         """Warm up the Layer2 JPEG background if the loader is available."""
         cls.ensure_background(display)
 
-
     @classmethod
-    def set_visibility(cls, display, visible: bool, position: int | None = None) -> None:
+    def set_visibility(
+        cls, display, visible: bool, position: int | None = None
+    ) -> None:
         setter = getattr(display, "cover_background_set_visible", None)
         mover = getattr(display, "cover_background_move_to_y", None)
         shower = getattr(display, "cover_background_show", None)
@@ -208,12 +209,9 @@ def apply_home_wallpaper(new_wallpaper: str | None) -> None:
 
     main_screen = _get_main_screen_instance()
     if main_screen and hasattr(main_screen, "apps") and main_screen.apps:
-        try:
-            main_screen.apps.refresh_background()
-            if main_screen.apps.has_flag(lv.obj.FLAG.HIDDEN):
-                main_screen.apps.invalidate()
-        except Exception:
-            pass
+        main_screen.apps.refresh_background()
+        if main_screen.apps.has_flag(lv.obj.FLAG.HIDDEN):
+            main_screen.apps.invalidate()
 
 
 def apply_lock_wallpaper(new_wallpaper: str | None) -> None:
@@ -228,12 +226,9 @@ def apply_lock_wallpaper(new_wallpaper: str | None) -> None:
 
     main_screen = _get_main_screen_instance()
     if main_screen:
-        try:
-            sanitized = _normalize_wallpaper_src(new_wallpaper)
-            main_screen.set_background_image(sanitized)
-            lv.refr_now(None)
-        except Exception:
-            pass
+        sanitized = _normalize_wallpaper_src(new_wallpaper)
+        main_screen.set_background_image(sanitized)
+        lv.refr_now(None)
 
     from .lockscreen import LockScreen
 
@@ -263,7 +258,7 @@ def replace_wallpaper_if_in_use(
         if not candidate:
             return False
         return (
-            deleted_path in candidate
+            deleted_path in candidate  # type: ignore[not supported]
             or candidate.endswith("/" + base_name)
             or candidate.endswith("/" + blur_name)
         )
@@ -295,9 +290,11 @@ def change_state(is_busy: bool = False):
         if MainScreen._instance:
             MainScreen._instance.change_state(is_busy)
 
+
 class MainScreen(Screen):
     # When True, the next time MainScreen appears it should reopen AppDrawer
     _reopen_drawer_on_next_show = False
+
     def _ensure_background_style(self):
         """Ensure the singleton screen has a reusable background style."""
         if not hasattr(self, "_background_style"):
@@ -312,8 +309,6 @@ class MainScreen(Screen):
         self.invalidate()
 
     def __init__(self, device_name=None, ble_name=None, dev_state=None):
-        import storage.device as storage_device
-
         self._is_busy = False
         self._communication_hold = False
 
@@ -362,7 +357,9 @@ class MainScreen(Screen):
                     self.title.clear_flag(lv.obj.FLAG.HIDDEN)
 
                 if not (hasattr(self, "subtitle") and self.subtitle):
-                    self.subtitle = SubTitle(self.content_area, self.title, (0, 16), real_ble_name)
+                    self.subtitle = SubTitle(
+                        self.content_area, self.title, (0, 16), real_ble_name
+                    )
                     # Center align + white color like first-time init
                     self.subtitle.add_style(
                         StyleWrapper().text_align_center().text_color(lv_colors.WHITE),
@@ -469,7 +466,6 @@ class MainScreen(Screen):
             indev = lv.indev_get_act()
             _dir = indev.get_gesture_dir()
 
-
             if _dir == lv.DIR.TOP:
                 self.refresh_appdrawer_background()
                 self.show_appdrawer_simple()
@@ -503,7 +499,7 @@ class MainScreen(Screen):
         def start_layer2_animation():
             try:
                 Layer2Manager.with_lvgl_timer_pause(
-                    display.cover_background_animate_to_y, -800, 200
+                    display.cover_background_animate_to_y, -800, 200  # type: ignore[is unknown]
                 )
             except Exception:
                 Layer2Manager.set_visibility(display, False)
@@ -614,7 +610,10 @@ class MainScreen(Screen):
             def _ready_cb(_anim):
                 target_label.set_style_text_opa(lv.OPA.COVER, 0)
                 target_label.invalidate()
-                if hasattr(self, "_title_fade_anims") and _anim in self._title_fade_anims:
+                if (
+                    hasattr(self, "_title_fade_anims")
+                    and _anim in self._title_fade_anims
+                ):
                     self._title_fade_anims.remove(_anim)
                 if not getattr(self, "_title_fade_anims", []):
                     self._title_fade_prepared = False
@@ -752,7 +751,7 @@ class MainScreen(Screen):
         def _set_background_image(self, image_src: str | None):
             if image_src:
                 style = self._ensure_background_style()
-                style.bg_img_src(image_src)
+                style.bg_img_src(image_src)  # type: ignore[is not a known member of "None"]
                 self.invalidate()
             elif getattr(self, "_background_style", None):
                 self.remove_style(self._background_style, 0)
@@ -770,7 +769,9 @@ class MainScreen(Screen):
                 .border_width(0),
                 0,
             )
-            homescreen = _normalize_wallpaper_src(storage_device.get_appdrawer_background(), allow_default=False)
+            homescreen = _normalize_wallpaper_src(
+                storage_device.get_appdrawer_background(), allow_default=False
+            )
             self._set_background_image(homescreen or None)
             # If homescreen is empty, keep the existing black background
 
@@ -784,7 +785,9 @@ class MainScreen(Screen):
             # Align content container to screen-left to avoid early clip on slide-out
             self.main_cont.set_pos(0, 75)
             self.main_cont.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
-            self.main_cont.add_flag(lv.obj.FLAG.GESTURE_BUBBLE)  # Allow gesture events to bubble up
+            self.main_cont.add_flag(
+                lv.obj.FLAG.GESTURE_BUBBLE
+            )  # Allow gesture events to bubble up
             self.main_cont.set_style_pad_all(0, 0)
             self.main_cont.set_style_border_width(0, 0)
             self.main_cont.set_style_bg_opa(lv.OPA.TRANSP, 0)
@@ -814,7 +817,9 @@ class MainScreen(Screen):
                 page_cont.set_size(self.page_width, self.page_height)
                 page_cont.set_pos(0, 0)
                 page_cont.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
-                page_cont.add_flag(lv.obj.FLAG.GESTURE_BUBBLE)  # Allow gesture events to bubble up
+                page_cont.add_flag(
+                    lv.obj.FLAG.GESTURE_BUBBLE
+                )  # Allow gesture events to bubble up
                 page_cont.clear_flag(lv.obj.FLAG.SCROLLABLE)
                 # Use inline styles
                 page_cont.add_style(
@@ -912,7 +917,9 @@ class MainScreen(Screen):
             cont.set_size(144, 214)  # Updated to match main branch
             cont.set_pos(x, y)
             cont.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
-            cont.add_flag(lv.obj.FLAG.GESTURE_BUBBLE)  # Allow gesture events to bubble up
+            cont.add_flag(
+                lv.obj.FLAG.GESTURE_BUBBLE
+            )  # Allow gesture events to bubble up
             # Disable container scrolling to reduce unnecessary calculations
             cont.clear_flag(lv.obj.FLAG.SCROLLABLE)
 
@@ -951,8 +958,8 @@ class MainScreen(Screen):
                 StyleWrapper().text_opa(lv.OPA._70), lv.PART.MAIN | lv.STATE.PRESSED
             )
             label.set_style_text_letter_space(-1, 0)
-            label.set_long_mode(lv.label.LONG.WRAP)  
-            label.set_style_max_height(52, 0)  
+            label.set_long_mode(lv.label.LONG.WRAP)
+            label.set_style_max_height(52, 0)
 
             label.set_pos(0, 144 + 8)
 
@@ -1050,12 +1057,12 @@ class MainScreen(Screen):
                 indev = lv.indev_get_act()
                 _dir = indev.get_gesture_dir()
 
-            if _dir == lv.DIR.BOTTOM:
-                self.hide_to_mainscreen()
-            elif _dir == lv.DIR.TOP:
-                return
-            else:
-                self.handle_page_gesture(_dir)
+                if _dir == lv.DIR.BOTTOM:
+                    self.hide_to_mainscreen()
+                elif _dir == lv.DIR.TOP:
+                    return
+                else:
+                    self.handle_page_gesture(_dir)
 
         def hide_to_mainscreen(self):
             if Layer2Manager.is_animating():
@@ -1076,9 +1083,9 @@ class MainScreen(Screen):
             Layer2Manager.set_animating(True)
 
             # Keep AppDrawer visible while layer2 slides down over it.
-            move_cb(-800)
+            move_cb(-800)  # type: ignore[cannot be called]
             if hasattr(display, "cover_background_set_visible"):
-                display.cover_background_set_visible(True)
+                display.cover_background_set_visible(True)  # type: ignore[is unknown]
 
             def on_layer2_covers_screen():
                 self.add_flag(lv.obj.FLAG.HIDDEN)
@@ -1092,7 +1099,7 @@ class MainScreen(Screen):
                 lv.refr_now(None)
 
                 if hasattr(display, "cover_background_hide"):
-                    display.cover_background_hide()
+                    display.cover_background_hide()  # type: ignore[is unknown]
                 if hasattr(self.parent, "start_title_fade_in"):
                     self.parent.start_title_fade_in(duration=100)
 
@@ -1121,7 +1128,6 @@ class MainScreen(Screen):
 
             if display:
                 Layer2Manager.set_visibility(display, False)
-
 
             # Ensure animation flag is properly reset
             Layer2Manager.set_animating(False)
@@ -1210,7 +1216,6 @@ class MainScreen(Screen):
             lv.anim_del(old_wrap, None)
             lv.anim_del(new_wrap, None)
 
-
             # Ensure the incoming page starts off-screen in the intended direction.
             slide_distance = self._page_wrap_slide
             offset = slide_distance if direction == lv.DIR.LEFT else -slide_distance
@@ -1237,7 +1242,14 @@ class MainScreen(Screen):
                 prev_area = lv.area_t()
                 new_area = lv.area_t()
 
-                def exec_cb(_anim, val, *, target=target_obj, prev_area=prev_area, new_area=new_area):
+                def exec_cb(
+                    _anim,
+                    val,
+                    *,
+                    target=target_obj,
+                    prev_area=prev_area,
+                    new_area=new_area,
+                ):
                     target.get_coords(prev_area)
                     target.set_x(int(val))
                     target.get_coords(new_area)
@@ -1281,7 +1293,11 @@ class MainScreen(Screen):
                 return
 
             target_index = getattr(self, "_page_anim_target", None)
-            if target_index is None or target_index < 0 or target_index >= self.PAGE_SIZE:
+            if (
+                target_index is None
+                or target_index < 0
+                or target_index >= self.PAGE_SIZE
+            ):
                 # No valid target, just clean up the animation bookkeeping.
                 self.page_animating = False
                 self._page_anim_refs = []
@@ -1290,19 +1306,18 @@ class MainScreen(Screen):
 
             old_index = self.current_page
 
-
             old_wrap = self.page_wraps[old_index]
             lv.anim_del(old_wrap, None)
-
 
             new_wrap = self.page_wraps[target_index]
             lv.anim_del(new_wrap, None)
             self.page_conts[target_index].clear_flag(lv.obj.FLAG.HIDDEN)
 
-
             self._on_page_anim_ready(old_index, target_index, force=force)
 
-        def _on_page_anim_ready(self, old_index: int, target_index: int, *, force: bool = False):
+        def _on_page_anim_ready(
+            self, old_index: int, target_index: int, *, force: bool = False
+        ):
             # Reset both pages to their resting positions and visibility.
             old_cont = self.page_conts[old_index]
             new_cont = self.page_conts[target_index]
@@ -1326,14 +1341,11 @@ class MainScreen(Screen):
             lv.refr_now(None)
 
             if force:
-                import gc
                 gc.collect()
-
 
             # OPTIMIZATION: Delay GC longer (150ms instead of 50ms) to avoid
             # interfering with rendering stabilization after animation
             def delayed_gc():
-                import gc
                 gc.collect()
 
             def schedule_gc():
@@ -1344,7 +1356,6 @@ class MainScreen(Screen):
 
         def force_cleanup(self):
             self.finish_page_animation(force=True)
-
 
             self.communication_locked = False
 
@@ -1402,7 +1413,9 @@ class MainScreen(Screen):
             return
 
         def refresh_background(self):
-            homescreen = _normalize_wallpaper_src(storage_device.get_appdrawer_background(), allow_default=False)
+            homescreen = _normalize_wallpaper_src(
+                storage_device.get_appdrawer_background(), allow_default=False
+            )
             self._set_background_image(homescreen or None)
 
         def on_pressed(self, text_key):
@@ -1600,7 +1613,6 @@ class PasskeysManager(AnimScreen):
             elif hasattr(self, "rti_btn") and target == self.rti_btn:
                 FidoKeysSetting(self)
 
-
     def _load_scr(self, scr: "Screen", back: bool = False) -> None:
         lv.scr_load(scr)
 
@@ -1667,14 +1679,12 @@ class ShowAddress(AnimScreen):
         self.invalidate()
 
     def animate_list_items(self):
-
         def create_move_cb_container(obj, item_index):
             def cb(value):
                 obj.set_style_translate_x(value, 0)
                 obj.invalidate()
 
             return cb
-
 
         container_move_anim = Anim(
             50,
@@ -1875,7 +1885,6 @@ class ShowAddress(AnimScreen):
 
     def update_index_btn_text(self):
         self.index_btn.label_left.set_text(f"Account #{self.current_index + 1}")
-        # pass
 
     def eventhandler(self, event_obj):
         event = event_obj.code
@@ -1976,7 +1985,6 @@ class IndexSelectionScreen(AnimScreen):
             self.animate_list_items()
 
     def animate_list_items(self):
-
         def create_move_cb_container(obj, item_index):
             def cb(value):
                 obj.set_style_translate_x(value, 0)
@@ -2001,7 +2009,6 @@ class IndexSelectionScreen(AnimScreen):
             delay=0,
             path_cb=lv.anim_t.path_ease_out,
         )
-
 
         self.animations_next.append(container_move_anim)
         container_move_anim.start()
@@ -2748,7 +2755,6 @@ class ConnectWallet(FullSizeWindow):
         if encoder is not None:
             workflow.spawn(self.update_qr())
 
-
     def on_nav_back(self, event_obj):
         code = event_obj.code
         target = event_obj.get_target()
@@ -3094,23 +3100,20 @@ class GeneralScreen(AnimScreen):
                 self.language.label_right.set_text(self.cur_language)
             self.refresh_text()
             return
-        
+
         super().__init__(
             prev_scr=prev_scr,
             title=_(i18n_keys.TITLE__GENERAL),
             nav_back=True,
             rti_path="A:/res/poweroff-white.png",
         )
-        
 
         self.container = ContainerFlexCol(self.content_area, self.title, padding_row=2)
         current_lang = storage_device.get_language()
         if current_lang not in langs_keys:
             current_lang = "en"
             storage_device.set_language(current_lang)
-        GeneralScreen.cur_language = langs[
-            langs_keys.index(current_lang)
-        ][1]
+        GeneralScreen.cur_language = langs[langs_keys.index(current_lang)][1]
         self.language = ListItemBtn(
             self.container, _(i18n_keys.ITEM__LANGUAGE), GeneralScreen.cur_language
         )
@@ -3147,7 +3150,7 @@ class GeneralScreen(AnimScreen):
             TouchSetting(self)
         elif target == self.wallpaper:
             WallpaperScreen(self)
-            
+
         elif target == self.rti_btn:
             PowerOff()
         else:
@@ -3163,10 +3166,7 @@ class DisplayScreen(AnimScreen):
             targets.append(self.auto_container)
         if hasattr(self, "device_info_container") and self.device_info_container:
             targets.append(self.device_info_container)
-        if (
-            hasattr(self, "device_name_description")
-            and self.device_name_description
-        ):
+        if hasattr(self, "device_name_description") and self.device_name_description:
             targets.append(self.device_name_description)
         return targets
 
@@ -3251,7 +3251,9 @@ class DisplayScreen(AnimScreen):
 
         # Create description label with safer approach - no alignment initially
         self.device_name_description = lv.label(self.content_area)
-        self.device_name_description.set_size(480, lv.SIZE.CONTENT)  # Wider to prevent line breaks
+        self.device_name_description.set_size(
+            480, lv.SIZE.CONTENT
+        )  # Wider to prevent line breaks
         self.device_name_description.add_style(
             StyleWrapper()
             .text_font(font_GeistRegular26)
@@ -3265,7 +3267,9 @@ class DisplayScreen(AnimScreen):
             _(i18n_keys.BUTTON__MODEL_NAME_BLUETOOTH_ID_DESC),
         )
         # Use simple positioning instead of align_to to avoid deadlock
-        self.device_name_description.set_pos(15, 550)  # Moved right (24) to match ListItem padding
+        self.device_name_description.set_pos(
+            15, 550
+        )  # Moved right (24) to match ListItem padding
 
         # Disable elastic scrolling and scrollbar to match other pages
         self.content_area.clear_flag(lv.obj.FLAG.SCROLL_ELASTIC)
@@ -3282,8 +3286,6 @@ class DisplayScreen(AnimScreen):
             self.on_switch_change, lv.EVENT.VALUE_CHANGED, None
         )
         gc.collect()
-
-   
 
     def refresh_text(self):
         self.title.set_text(_(i18n_keys.TITLE__DISPLAY))
@@ -3308,12 +3310,10 @@ class DisplayScreen(AnimScreen):
 
             storage_device.set_device_name_display_enabled(new_switch_checked)
 
-
             if hasattr(MainScreen, "_instance") and MainScreen._instance:
                 main_screen = MainScreen._instance
                 real_device_name = storage_device.get_label()
                 real_ble_name = storage_device.get_ble_name() or uart.get_ble_name()
-
 
                 if new_switch_checked:
                     # Show device names - create labels if they don't exist
@@ -3332,7 +3332,10 @@ class DisplayScreen(AnimScreen):
 
                     if not (hasattr(main_screen, "subtitle") and main_screen.subtitle):
                         main_screen.subtitle = SubTitle(
-                            main_screen.content_area, main_screen.title, (0, 16), real_ble_name
+                            main_screen.content_area,
+                            main_screen.title,
+                            (0, 16),
+                            real_ble_name,
                         )
                     else:
                         main_screen.subtitle.set_text(real_ble_name)
@@ -3341,7 +3344,7 @@ class DisplayScreen(AnimScreen):
                         StyleWrapper().text_align_center().text_color(lv_colors.WHITE),
                         0,
                     )
-                else:                   
+                else:
 
                     # Hide device names - only if title/subtitle exist
                     if hasattr(main_screen, "title") and main_screen.title:
@@ -3448,7 +3451,7 @@ class AutolockSetting(AnimScreen):
         gc.collect()
 
     def get_str_from_ms(self, delay_ms: int) -> str:
-        if delay_ms == 0 or delay_ms == storage_device.AUTOLOCK_DELAY_MAXIMUM:
+        if delay_ms in (0, storage_device.AUTOLOCK_DELAY_MAXIMUM):
             return "从不"
         elif delay_ms < 60000:
             return f"{delay_ms // 1000}秒"
@@ -3477,56 +3480,38 @@ class AppdrawerBackgroundSetting(AnimScreen):
     def _dispose_existing(cls, reason=""):
         if hasattr(cls, "_instance"):
             instance = cls._instance
-            try:
-                if hasattr(utils, "SCREENS") and instance in utils.SCREENS:
-                    utils.SCREENS.remove(instance)
-            except Exception:
-                pass
-            try:
-                instance.delete()
-            except Exception:
-                pass
-            try:
-                if hasattr(instance, "_init"):
-                    delattr(instance, "_init")
-            except Exception:
-                pass
+            if hasattr(utils, "SCREENS") and instance in utils.SCREENS:
+                utils.SCREENS.remove(instance)
+            instance.delete()
+            if hasattr(instance, "_init"):
+                delattr(instance, "_init")
             del cls._instance
             gc.collect()
 
     def collect_animation_targets(self) -> list:
-        # Disable animations for lock screen preview
         return []
 
     def __init__(
         self, prev_scr=None, selected_wallpaper=None, return_from_wallpaper=False
     ):
-        # debug logging removed
-
         if not hasattr(self, "_init"):
-            # debug logging removed
             self._init = True
             AppdrawerBackgroundSetting._instance = self
-            # debug logging removed
         else:
             self._return_to_prev_instance = return_from_wallpaper
-            # debug logging removed
-            # Even if already initialized, update the wallpaper if a new one is provided
             if selected_wallpaper:
                 self.selected_wallpaper = selected_wallpaper
                 self.current_wallpaper_path = selected_wallpaper
                 if hasattr(self, "lockscreen_preview"):
                     self.lockscreen_preview.set_src(selected_wallpaper)
             else:
-                # No new wallpaper provided, reload from storage and check if it still exists
-                from trezor import io
                 lockscreen_path = storage_device.get_homescreen()
                 if lockscreen_path:
-                    # Check if the wallpaper file still exists (may have been deleted)
                     try:
-                        # Convert path for file system check
                         if lockscreen_path.startswith("A:/res/wallpapers/"):
-                            file_path = lockscreen_path.replace("A:/res/wallpapers/", "1:/res/wallpapers/")
+                            file_path = lockscreen_path.replace(
+                                "A:/res/wallpapers/", "1:/res/wallpapers/"
+                            )
                         elif lockscreen_path.startswith("A:/res/"):
                             file_path = lockscreen_path[2:]
                         elif lockscreen_path.startswith("A:1:/"):
@@ -3535,18 +3520,15 @@ class AppdrawerBackgroundSetting(AnimScreen):
                             file_path = lockscreen_path
 
                         io.fatfs.stat(file_path)
-                        # File exists, use it
                         self.current_wallpaper_path = lockscreen_path
                         if hasattr(self, "lockscreen_preview"):
                             self.lockscreen_preview.set_src(lockscreen_path)
-                    except:
-                        # File doesn't exist, use default black wallpaper (last built-in)
+                    except Exception:
                         self.current_wallpaper_path = "A:/res/wallpaper-7.jpg"
                         if hasattr(self, "lockscreen_preview"):
                             self.lockscreen_preview.set_src("A:/res/wallpaper-7.jpg")
                         storage_device.set_homescreen("A:/res/wallpaper-7.jpg")
             self.refresh_text()
-            # debug logging removed
             return
 
         self.selected_wallpaper = selected_wallpaper
@@ -3556,24 +3538,18 @@ class AppdrawerBackgroundSetting(AnimScreen):
             prev_scr=prev_scr, nav_back=True, rti_path="A:/res/checkmark.png"
         )
 
-
-        # Disable scrollbars on content_area (inherited from AnimScreen)
         self.content_area.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
         self.content_area.clear_flag(lv.obj.FLAG.SCROLLABLE)
-        # Remove bottom padding to prevent content overflow (800 - 24 = 776 vs container 800)
         self.content_area.set_style_pad_bottom(0, 0)
 
-        # Main container for the screen
         self.container = lv.obj(self.content_area)
         self.container.set_size(lv.pct(100), lv.pct(100))
         self.container.align(lv.ALIGN.TOP_MID, 0, 0)
         self.container.add_style(
             StyleWrapper().bg_opa(lv.OPA.TRANSP).pad_all(0).border_width(0), 0
         )
-        # Don't capture click events - let them pass through to buttons
         self.container.clear_flag(lv.obj.FLAG.CLICKABLE)
         self.container.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
-        # Disable scrollbars on the main container
         self.container.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
         self.container.clear_flag(lv.obj.FLAG.SCROLLABLE)
 
@@ -3587,7 +3563,6 @@ class AppdrawerBackgroundSetting(AnimScreen):
             )
         container_style = _cached_styles["appdrawer_preview_container"]
 
-        # Lock screen preview container with image
         self.preview_container = create_preview_container(
             self.container,
             width=344,
@@ -3596,55 +3571,44 @@ class AppdrawerBackgroundSetting(AnimScreen):
             style=container_style,
         )
 
-        # Lock screen preview image
         self.lockscreen_preview = create_preview_image(
             self.preview_container,
             target_size=(344, 572),
         )
         self.preview_mask = create_top_mask(self.preview_container, height=5)
 
-        # Use selected wallpaper if provided, otherwise use current lock screen
         if self.selected_wallpaper:
             self.current_wallpaper_path = self.selected_wallpaper
             self.lockscreen_preview.set_src(self.selected_wallpaper)
         else:
-            # Get current lock screen image from storage
             lockscreen_path = storage_device.get_homescreen()
             if lockscreen_path:
-                # Check if the wallpaper file still exists (may have been deleted)
                 try:
-                    from trezor import io
-                    # Convert path for file system check
                     if lockscreen_path.startswith("A:/res/wallpapers/"):
-                        file_path = lockscreen_path.replace("A:/res/wallpapers/", "1:/res/wallpapers/")
+                        file_path = lockscreen_path.replace(
+                            "A:/res/wallpapers/", "1:/res/wallpapers/"
+                        )
                     elif lockscreen_path.startswith("A:/res/"):
-                        file_path = lockscreen_path[2:]  # Remove "A:/" prefix
+                        file_path = lockscreen_path[2:]
                     elif lockscreen_path.startswith("A:1:/"):
-                        file_path = lockscreen_path[2:]  # Remove "A:" prefix
+                        file_path = lockscreen_path[2:]
                     else:
                         file_path = lockscreen_path
 
-                    # Check if file exists
                     io.fatfs.stat(file_path)
-                    # File exists, use it
                     self.current_wallpaper_path = lockscreen_path
                     self.lockscreen_preview.set_src(lockscreen_path)
-                except:
-                    # File doesn't exist, use default black wallpaper (last built-in)
+                except Exception:
                     self.current_wallpaper_path = "A:/res/wallpaper-7.jpg"
                     self.lockscreen_preview.set_src("A:/res/wallpaper-7.jpg")
-                    # Update storage to reflect the change
                     storage_device.set_homescreen("A:/res/wallpaper-7.jpg")
             else:
-                # Use default black wallpaper (last built-in) if no custom lockscreen is set
                 self.current_wallpaper_path = "A:/res/wallpaper-7.jpg"
                 self.lockscreen_preview.set_src("A:/res/wallpaper-7.jpg")
 
-        # Device name and bluetooth name overlaid on the image
         device_name = storage_device.get_label() or "OneKey Pro"
         ble_name = storage_device.get_ble_name() or uart.get_ble_name()
 
-        # Device name label (overlaid on image, horizontally centered, 49px from top edge)
         self.device_name_label = lv.label(self.preview_container)
         self.device_name_label.set_text(device_name)
 
@@ -3656,10 +3620,8 @@ class AppdrawerBackgroundSetting(AnimScreen):
             0,
         )
 
-        # device_name 49px from preview_container top edge, horizontally centered (not vertically centered)
         self.device_name_label.align_to(self.preview_container, lv.ALIGN.TOP_MID, 0, 49)
 
-        # Bluetooth name label (overlaid on image, placed below device_name_label)
         self.bluetooth_label = lv.label(self.preview_container)
         if ble_name and len(ble_name) >= 4:
             self.bluetooth_label.set_text("Pro " + ble_name[-4:])
@@ -3674,48 +3636,35 @@ class AppdrawerBackgroundSetting(AnimScreen):
             0,
         )
 
-        # bluetooth_label 8px from device_name_label bottom edge, horizontally centered (not vertically centered)
         self.bluetooth_label.align_to(
             self.device_name_label, lv.ALIGN.OUT_BOTTOM_MID, 0, 8
         )
 
-        # Create container for larger click area (120px wide)
         self.change_button_container = lv.obj(self.container)
-        self.change_button_container.set_size(120, 100)  # 120px wide, height for button + label
+        self.change_button_container.set_size(120, 100)
         self.change_button_container.align_to(
             self.preview_container, lv.ALIGN.OUT_BOTTOM_MID, 0, 10
         )
         self.change_button_container.add_style(
-            StyleWrapper()
-            .bg_opa(lv.OPA.TRANSP)  # Transparent background
-            .border_width(0)
-            .pad_all(0),
-            0
+            StyleWrapper().bg_opa(lv.OPA.TRANSP).border_width(0).pad_all(0),
+            0,
         )
         self.change_button_container.add_flag(lv.obj.FLAG.CLICKABLE)
         self.change_button_container.clear_flag(lv.obj.FLAG.SCROLLABLE)
 
-        # Create button inside container
         self.change_button = lv.btn(self.change_button_container)
         self.change_button.set_size(64, 64)
         self.change_button.align(lv.ALIGN.TOP_MID, 0, 0)
         self.change_button.add_style(
-            StyleWrapper()
-            .border_width(0)
-            .radius(40)
-            .bg_opa(lv.OPA.TRANSP),  # Transparent background to avoid blue edge
+            StyleWrapper().border_width(0).radius(40).bg_opa(lv.OPA.TRANSP),
             0,
         )
 
-        # Icon in the button - using landscape icon as shown in the image
         self.button_icon = lv.img(self.change_button)
-        self.button_icon.set_src(
-            "A:/res/change-wallper.png"
-        )  # Landscape icon for wallpaper selection
-        self.button_icon.set_antialias(True)  # Enable anti-aliasing for smooth edges
+        self.button_icon.set_src("A:/res/change-wallper.png")
+        self.button_icon.set_antialias(True)
         self.button_icon.align(lv.ALIGN.CENTER, 0, 0)
 
-        # "Change" text below button (inside container)
         self.change_label = lv.label(self.change_button_container)
         self.change_label.set_text(_(i18n_keys.BUTTON__CHANGE))
         self.change_label.add_style(
@@ -3726,16 +3675,14 @@ class AppdrawerBackgroundSetting(AnimScreen):
             0,
         )
         self.change_label.align_to(self.change_button, lv.ALIGN.OUT_BOTTOM_MID, 0, 4)
-        # Make label clickable so text can also be clicked
         self.change_label.add_flag(lv.obj.FLAG.CLICKABLE)
         self.change_label.add_event_cb(self.on_select_clicked, lv.EVENT.CLICKED, None)
 
-        # Add event handlers
         self.change_button.add_event_cb(self.on_select_clicked, lv.EVENT.CLICKED, None)
-        self.change_button_container.add_event_cb(self.on_select_clicked, lv.EVENT.CLICKED, None)
-        # Don't make the preview image clickable
+        self.change_button_container.add_event_cb(
+            self.on_select_clicked, lv.EVENT.CLICKED, None
+        )
 
-        # Add event handler for button_icon: click to go to HomeScreenSetting
         def _on_button_icon_clicked(e):
             WallperChange(self)
 
@@ -3747,9 +3694,11 @@ class AppdrawerBackgroundSetting(AnimScreen):
 
     def on_select_clicked(self, event_obj):
         target = event_obj.get_target()
-        # Check if any part of the Change button was clicked
-        if target in [self.change_button_container, self.change_button, self.change_label]:
-            # Navigate to WallperChange for wallpaper selection
+        if target in [
+            self.change_button_container,
+            self.change_button,
+            self.change_label,
+        ]:
             WallperChange(self)
 
     def on_wallpaper_clicked(self, event_obj):
@@ -3772,12 +3721,11 @@ class AppdrawerBackgroundSetting(AnimScreen):
 
         self.lockscreen_preview.set_src(wallpapers[next_index])
 
-        # TODO: Save selected wallpaper to storage
-
     def refresh_text(self):
 
-
-        if hasattr(self, "lockscreen_preview") and hasattr(self, "current_wallpaper_path"):
+        if hasattr(self, "lockscreen_preview") and hasattr(
+            self, "current_wallpaper_path"
+        ):
             if self.current_wallpaper_path:
                 self.lockscreen_preview.set_src(self.current_wallpaper_path)
 
@@ -3786,16 +3734,9 @@ class AppdrawerBackgroundSetting(AnimScreen):
 
         self.invalidate()
 
-
-
     async def _first_frame_fix(self):
-        """Fix first-frame JPEG decoding artifacts by waiting for decode completion"""
-        import utime
-
-        # Wait for JPEG decoding to complete (async decode takes time)
         utime.sleep_ms(100)
 
-        # Full screen refresh + targeted invalidates to re-render with complete data
         self.refresh()
         if hasattr(self, "container") and self.container:
             self.container.invalidate()
@@ -3809,24 +3750,19 @@ class AppdrawerBackgroundSetting(AnimScreen):
         if hasattr(utils, "SCREENS") and self in utils.SCREENS:
             utils.SCREENS.remove(self)
 
-
         if hasattr(self, "container") and self.container:
             self.container.delete()
 
-
         _clear_preview_cache()
-
 
     def eventhandler(self, event_obj):
         event = event_obj.code
         target = event_obj.get_target()
 
-
         if event == lv.EVENT.CLICKED:
             if utils.lcd_resume():
                 return
 
-            # Check if target is imgbtn (direct button click)
             if isinstance(target, lv.imgbtn):
                 if hasattr(self, "nav_back") and target == self.nav_back.nav_btn:
                     if self.prev_scr is not None:
@@ -3836,7 +3772,6 @@ class AppdrawerBackgroundSetting(AnimScreen):
                     self.on_click_ext(target)
                     return
 
-            # Check if target is the navigation container (back button area)
             if hasattr(self, "nav_back") and target == self.nav_back:
                 if self.prev_scr is not None:
                     self._return_to_previous_screen()
@@ -3867,18 +3802,16 @@ class AppdrawerBackgroundSetting(AnimScreen):
                 self.load_screen(self.prev_scr, destroy_self=True)
                 return
             utils.try_remove_scr(self)
-            try:
-                if (
-                    hasattr(self.__class__, "_instance")
-                    and self.__class__._instance is self
-                ):
-                    del self.__class__._instance
-            except Exception:
-                pass
+            if (
+                hasattr(self.__class__, "_instance")
+                and self.__class__._instance is self
+            ):
+                del self.__class__._instance
             self.del_delayed(100)
             gc.collect()
         else:
             self.load_screen(self.prev_scr, destroy_self=True)
+
 
 class WallperChange(AnimScreen):
     def collect_animation_targets(self) -> list:
@@ -3894,57 +3827,46 @@ class WallperChange(AnimScreen):
                 nav_back=True,
             )
         else:
-            # Already initialized - refresh the container and recreate content
             if hasattr(self, "container"):
                 self.container.delete()
-            # Delete custom_header_container and its children (including buttons)
             if hasattr(self, "custom_header_container"):
                 self.custom_header_container.delete()
-            # Update prev_scr if provided
             if prev_scr is not None:
                 self.prev_scr = prev_scr
 
         self.edit_mode = False
-        self.marked_for_deletion = set()  # Track which files are marked for deletion
-        self.selected_wallpapers = set()  # Track which wallpapers are selected for deletion
+        self.marked_for_deletion = set()
+        self.selected_wallpapers = set()
 
         file_name_list = []
         if not utils.EMULATOR:
-            try:
-                for size, _attrs, name in io.fatfs.listdir("1:/res/wallpapers"):
-                    if (
-                        size > 0
-                        and name.startswith("wp-")
-                        and not name.endswith("-blur.jpeg")
-                        and not name.endswith("-blur.jpg")
-                    ):
-                        file_name_list.append(name)
+            for size, _attrs, name in io.fatfs.listdir("1:/res/wallpapers"):
+                if (
+                    size > 0
+                    and name.startswith("wp-")
+                    and not name.endswith("-blur.jpeg")
+                    and not name.endswith("-blur.jpg")
+                ):
+                    file_name_list.append(name)
 
-            except Exception as e:
-                pass
-
-        # If we found custom wallpapers but wp_cnts is 0, update the count to prevent deletion
         if len(file_name_list) > 0 and storage_device.get_wp_cnts() == 0:
             storage_device.increase_wp_cnts()
 
         if file_name_list:
-            # Sort by timestamp in filename descending (newest first)
-            # Filename format: wp-{hash}-{timestamp}.jpeg
+
             def extract_timestamp(filename):
                 try:
-                    # Extract timestamp from "wp-xxx-123456789.jpeg"
-                    parts = filename.rsplit("-", 1)  # Split from right, get last part
+                    parts = filename.rsplit("-", 1)
                     if len(parts) == 2:
-                        timestamp_str = parts[1].split(".")[0]  # Remove extension
+                        timestamp_str = parts[1].split(".")[0]
                         return int(timestamp_str)
                 except (ValueError, IndexError):
-                    pass
-                return 0  # Fallback for malformed filenames
+                    return 0
+                return 0
 
             file_name_list.sort(key=extract_timestamp, reverse=True)
             file_name_list = file_name_list[:5]
 
-        # Calculate grid layout
         internal_wp_nums = 7
         custom_wp_nums = len(file_name_list)
 
@@ -3953,19 +3875,14 @@ class WallperChange(AnimScreen):
 
         row_dsc = []
         if custom_rows > 0:
-            row_dsc.extend([GRID_CELL_SIZE_ROWS] * custom_rows)  # Custom images
-            row_dsc.append(60)  # Pro header (same height as Custom header)
+            row_dsc.extend([GRID_CELL_SIZE_ROWS] * custom_rows)
+            row_dsc.append(60)
         else:
-            row_dsc.append(
-                180
-            )  # Empty state text container with enough space for 3 lines
-            row_dsc.append(
-                60
-            )  # Pro header with normal spacing when no custom wallpapers
-        row_dsc.extend([GRID_CELL_SIZE_ROWS] * pro_rows)  # Pro images
+            row_dsc.append(180)
+            row_dsc.append(60)
+        row_dsc.extend([GRID_CELL_SIZE_ROWS] * pro_rows)
         row_dsc.append(lv.GRID_TEMPLATE.LAST)
 
-        # 3 columns
         col_dsc = [
             GRID_CELL_SIZE_COLS,
             GRID_CELL_SIZE_COLS,
@@ -3978,16 +3895,15 @@ class WallperChange(AnimScreen):
             row_dsc=row_dsc,
             col_dsc=col_dsc,
             pad_gap=12,
-            pad_hor=0,  # No horizontal padding - buttons reach screen edge
+            pad_hor=0,
         )
-        self.container.set_width(lv.pct(100))  # Full width to reach screen edges
+        self.container.set_width(lv.pct(100))
         self.container.align(lv.ALIGN.TOP_MID, 0, 196)
 
         self.container.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
 
         current_row = 0
 
-        # Custom section header container - placed in content_area to reach screen edges
         self.custom_header_container = lv.obj(self.content_area)
         self.custom_header_container.set_size(lv.pct(100), 60)
         self.custom_header_container.clear_flag(lv.obj.FLAG.SCROLLABLE)
@@ -3998,7 +3914,6 @@ class WallperChange(AnimScreen):
         self.custom_header_container.set_style_clip_corner(False, 0)
         self.custom_header_container.align(lv.ALIGN.TOP_MID, 0, 136)
 
-        # Custom text on the left
         self.custom_header = lv.label(self.custom_header_container)
         self.custom_header.set_text(_(i18n_keys.OPTION__CUSTOM__INSERT))
         self.custom_header.add_style(
@@ -4008,12 +3923,15 @@ class WallperChange(AnimScreen):
             .text_align(lv.TEXT_ALIGN.LEFT),
             0,
         )
-        self.custom_header.align(lv.ALIGN.LEFT_MID, 7, 0)  # 7px from screen left edge (8px - 1px)
-
-        # No need to increment current_row since custom_header_container is outside the grid now
+        self.custom_header.align(lv.ALIGN.LEFT_MID, 7, 0)
 
         if file_name_list:
-            btn_style = StyleWrapper().bg_opa(lv.OPA.TRANSP).border_opa(lv.OPA.TRANSP).pad_ver(5)
+            btn_style = (
+                StyleWrapper()
+                .bg_opa(lv.OPA.TRANSP)
+                .border_opa(lv.OPA.TRANSP)
+                .pad_ver(5)
+            )
 
             self.edit_button = lv.btn(self.custom_header_container)
             self.edit_button.set_size(lv.SIZE.CONTENT, 60)
@@ -4022,7 +3940,9 @@ class WallperChange(AnimScreen):
             self.edit_button_icon = lv.img(self.edit_button)
             self.edit_button_icon.set_src("A:/res/edit.png")
             self.edit_button_icon.center()
-            self.edit_button.add_event_cb(self.on_edit_button_clicked, lv.EVENT.CLICKED, None)
+            self.edit_button.add_event_cb(
+                self.on_edit_button_clicked, lv.EVENT.CLICKED, None
+            )
 
             self.done_button = lv.btn(self.custom_header_container)
             self.done_button.set_size(lv.SIZE.CONTENT, 60)
@@ -4032,7 +3952,9 @@ class WallperChange(AnimScreen):
             self.done_button_icon = lv.img(self.done_button)
             self.done_button_icon.set_src("A:/res/checkmark.png")
             self.done_button_icon.center()
-            self.done_button.add_event_cb(self.on_done_button_clicked, lv.EVENT.CLICKED, None)
+            self.done_button.add_event_cb(
+                self.on_done_button_clicked, lv.EVENT.CLICKED, None
+            )
 
             self.delete_button = lv.btn(self.custom_header_container)
             self.delete_button.set_size(lv.SIZE.CONTENT, 60)
@@ -4041,23 +3963,23 @@ class WallperChange(AnimScreen):
             self.delete_button_icon = lv.img(self.delete_button)
             self.delete_button_icon.set_src("A:/res/delete.png")
             self.delete_button_icon.center()
-            self.delete_button.add_event_cb(self.on_delete_button_clicked, lv.EVENT.CLICKED, None)
+            self.delete_button.add_event_cb(
+                self.on_delete_button_clicked, lv.EVENT.CLICKED, None
+            )
 
-        # Custom wallpapers
         self.wps = []
-        self.custom_wps = []  # Track custom wallpapers separately
+        self.custom_wps = []
         if file_name_list:
             for i, file_name in enumerate(file_name_list):
                 path_dir = "A:1:/res/wallpapers/"
-                # Use zoom- prefix like Collection wallpapers
                 zoom_file_name = f"zoom-{file_name}"
                 current_wp = ImgGridItem(
                     self.container,
                     i % 3,
                     current_row + (i // 3),
-                    zoom_file_name,  # Use zoom- prefix for thumbnails
+                    zoom_file_name,
                     path_dir,
-                    img_path_unselected=None,  # Disable built-in selection for custom wallpapers
+                    img_path_unselected=None,
                     is_internal=True,
                     style_type="wallpaper",
                 )
@@ -4065,76 +3987,62 @@ class WallperChange(AnimScreen):
                 self.custom_wps.append(current_wp)
 
                 selection_checkbox = lv.btn(current_wp)
-                selection_checkbox.set_size(32, 32)  # Reduced size to prevent overflow
+                selection_checkbox.set_size(32, 32)
                 selection_checkbox.clear_flag(lv.obj.FLAG.SCROLLABLE)
-                selection_checkbox.add_flag(lv.obj.FLAG.HIDDEN)  # Initially hidden
+                selection_checkbox.add_flag(lv.obj.FLAG.HIDDEN)
                 selection_checkbox.add_flag(lv.obj.FLAG.CLICKABLE)
 
                 selection_checkbox.set_style_bg_opa(lv.OPA.TRANSP, 0)
                 selection_checkbox.set_style_border_opa(lv.OPA.TRANSP, 0)
                 selection_checkbox.set_style_shadow_opa(lv.OPA.TRANSP, 0)
-                selection_checkbox.set_style_clip_corner(True, 0)  # Enable clipping
-                selection_checkbox.set_style_pad_all(0, 0)  # Remove padding
+                selection_checkbox.set_style_clip_corner(True, 0)
+                selection_checkbox.set_style_pad_all(0, 0)
 
                 selection_checkbox_img = lv.img(selection_checkbox)
                 selection_checkbox_img.set_src("A:/res/unselect.png")
-                selection_checkbox_img.set_size(32, 32)  # Match actual image pixel size
-                selection_checkbox_img.center()  # Center in the 32px container
-                selection_checkbox_img.clear_flag(
-                    lv.obj.FLAG.CLICKABLE
-                )  # Not clickable, parent handles events
+                selection_checkbox_img.set_size(32, 32)
+                selection_checkbox_img.center()
+                selection_checkbox_img.clear_flag(lv.obj.FLAG.CLICKABLE)
 
-                # Position relative to parent wallpaper - top right corner (adjusted left and down)
                 selection_checkbox.align(lv.ALIGN.TOP_RIGHT, -12, 12)
                 selection_checkbox.move_foreground()
 
-                # Add independent event handler for selection
                 selection_checkbox.add_event_cb(
                     lambda e, wp=current_wp: self.on_selection_checkbox_clicked(e, wp),
                     lv.EVENT.CLICKED,
                     None,
                 )
 
-                # Store selection checkbox reference in the wallpaper object
                 current_wp.selection_checkbox = selection_checkbox
                 current_wp.selection_checkbox_img = selection_checkbox_img
-                current_wp.is_selected = False  # Track selection state
+                current_wp.is_selected = False
 
                 remove_icon = lv.btn(self.container)
-                remove_icon.set_size(44, 44)  # 44px hot area
+                remove_icon.set_size(44, 44)
                 remove_icon.clear_flag(lv.obj.FLAG.SCROLLABLE)
-                remove_icon.add_flag(lv.obj.FLAG.HIDDEN)  # Initially hidden
+                remove_icon.add_flag(lv.obj.FLAG.HIDDEN)
                 remove_icon.add_flag(lv.obj.FLAG.CLICKABLE)
 
-                # Style the button - transparent background for hot area
                 remove_icon.set_style_bg_opa(lv.OPA.TRANSP, 0)
                 remove_icon.set_style_border_opa(lv.OPA.TRANSP, 0)
                 remove_icon.set_style_shadow_opa(lv.OPA.TRANSP, 0)
 
-                # Use remove_icon.png image directly
                 remove_icon_img = lv.img(remove_icon)
                 remove_icon_img.set_src("A:/res/remove_icon.png")
-                remove_icon_img.set_size(40, 40)  # Display size 40x40 as specified
-                remove_icon_img.set_antialias(True)  # Enable anti-aliasing for smooth edges
-                remove_icon_img.center()  # Center in the 44px hot area
-                remove_icon_img.clear_flag(
-                    lv.obj.FLAG.CLICKABLE
-                )  # Not clickable, parent handles events
+                remove_icon_img.set_size(40, 40)
+                remove_icon_img.set_antialias(True)
+                remove_icon_img.center()
+                remove_icon_img.clear_flag(lv.obj.FLAG.CLICKABLE)
 
-                # Position relative to wallpaper - slightly overlapping the rounded corner
-                remove_icon.align_to(
-                    current_wp, lv.ALIGN.TOP_RIGHT, 14, -14
-                )  # Slightly inside to overlap rounded corner
+                remove_icon.align_to(current_wp, lv.ALIGN.TOP_RIGHT, 14, -14)
                 remove_icon.move_foreground()
 
-                # Add independent event handler for the button
                 remove_icon.add_event_cb(
                     lambda e, wp=current_wp: self.on_remove_icon_clicked(e, wp),
                     lv.EVENT.CLICKED,
                     None,
                 )
 
-                # Store remove icon reference in the wallpaper object
                 current_wp.remove_icon = remove_icon
 
                 current_wp.add_event_cb(
@@ -4145,11 +4053,8 @@ class WallperChange(AnimScreen):
 
             current_row += custom_rows
         else:
-            # No custom wallpapers - show instructional text
             self.empty_state_container = lv.obj(self.container)
-            self.empty_state_container.set_size(
-                lv.pct(100), lv.SIZE.CONTENT
-            )  # Auto height to accommodate different language lengths
+            self.empty_state_container.set_size(lv.pct(100), lv.SIZE.CONTENT)
             self.empty_state_container.clear_flag(lv.obj.FLAG.SCROLLABLE)
             self.empty_state_container.set_style_bg_opa(lv.OPA.TRANSP, 0)
             self.empty_state_container.set_style_border_opa(lv.OPA.TRANSP, 0)
@@ -4158,47 +4063,38 @@ class WallperChange(AnimScreen):
                 lv.GRID_ALIGN.STRETCH, 0, 3, lv.GRID_ALIGN.START, current_row, 1
             )
 
-            # Title: "Add Wallpaper from OneKey App"
             self.empty_title = lv.label(self.empty_state_container)
             self.empty_title.set_text(_(i18n_keys.TITLE__ADD_WALLPAPER_FROM_ONEKEY_APP))
-            self.empty_title.set_long_mode(lv.label.LONG.WRAP)  # Enable text wrapping for title
-            self.empty_title.set_size(
-                lv.pct(100), lv.SIZE.CONTENT
-            )  # Full width, auto height
+            self.empty_title.set_long_mode(lv.label.LONG.WRAP)
+            self.empty_title.set_size(lv.pct(100), lv.SIZE.CONTENT)
             self.empty_title.add_style(
                 StyleWrapper()
                 .text_font(font_GeistSemiBold26)
                 .text_color(lv_colors.WHITE)
                 .text_align(lv.TEXT_ALIGN.LEFT)
                 .text_letter_space(-1),
-                0,  # Reduce letter spacing
+                0,
             )
-            self.empty_title.align(
-                lv.ALIGN.TOP_LEFT, 3, 10
-            )  # 6px from screen left edge (11px - 5px)
-            # Description: "Upload an image in My OneKey > Select your OneKey device > Wallpaper."
+            self.empty_title.align(lv.ALIGN.TOP_LEFT, 3, 10)
             self.empty_desc = lv.label(self.empty_state_container)
             self.empty_desc.set_text(
                 _(i18n_keys.TITLE__ADD_WALLPAPER_FROM_ONEKEY_APP_DESC)
             )
-            self.empty_desc.set_long_mode(lv.label.LONG.WRAP)  # Enable text wrapping
-            self.empty_desc.set_size(
-                lv.pct(100), lv.SIZE.CONTENT
-            )  # Full width, auto height for up to 3 lines
+            self.empty_desc.set_long_mode(lv.label.LONG.WRAP)
+            self.empty_desc.set_size(lv.pct(100), lv.SIZE.CONTENT)
             self.empty_desc.add_style(
                 StyleWrapper()
                 .text_font(font_GeistRegular26)
                 .text_color(lv_colors.ONEKEY_GRAY_1)
                 .text_align(lv.TEXT_ALIGN.LEFT)
                 .text_letter_space(-2)
-                .text_line_space(4),  # Add line spacing for better readability
+                .text_line_space(4),
                 0,
             )
             self.empty_desc.align_to(self.empty_title, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 16)
 
             current_row += 1
 
-        # Pro section header
         self.pro_header = lv.label(self.container)
         self.pro_header.set_text(_(i18n_keys.TITLE__COLLECTION))
         self.pro_header.add_style(
@@ -4211,11 +4107,9 @@ class WallperChange(AnimScreen):
         self.pro_header.set_grid_cell(
             lv.GRID_ALIGN.START, 0, 3, lv.GRID_ALIGN.CENTER, current_row, 1
         )
-        # Set to 8px from screen left edge (same as Custom header)
         self.pro_header.set_x(8)
         current_row += 1
 
-        # Pro wallpapers (built-in)
         for i in range(internal_wp_nums):
             path_dir = "A:/res/"
             file_name = f"zoom-wallpaper-{i+1}.jpg"
@@ -4226,49 +4120,33 @@ class WallperChange(AnimScreen):
                 current_row + (i // 3),
                 file_name,
                 path_dir,
-                img_path_unselected=None,  # Disable built-in selection for internal wallpapers
+                img_path_unselected=None,
                 is_internal=True,
                 style_type="wallpaper",
             )
             self.wps.append(current_wp)
 
-
         self.container.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
 
-        self.remove_event_cb(None)  # Remove all existing event callbacks
-        self.add_event_cb(
-            self.eventhandler, lv.EVENT.CLICKED, None
-        )  # Add our custom handler
+        self.remove_event_cb(None)
+        self.add_event_cb(self.eventhandler, lv.EVENT.CLICKED, None)
 
-        # Schedule a refresh to fix initial rendering artifacts
         try:
-            import trezor.loop
-
-            trezor.loop.schedule(self._refresh_previews_after_load())
+            loop.schedule(self._refresh_previews_after_load())
         except (ImportError, AttributeError):
-            # Fallback: immediate refresh
             self._refresh_previews_immediate()
 
         gc.collect()
 
     async def _refresh_previews_after_load(self):
-        import utime
-
-        utime.sleep_ms(10)  # Reduced delay to minimize black screen
+        utime.sleep_ms(10)
         self._refresh_previews_immediate()
 
     def _refresh_previews_immediate(self):
-        # Performance: Minimal logging during refresh
-
         if hasattr(self, "wps"):
             for wp in self.wps:
-                try:
-                    # Simple invalidate without risky source reloading
-                    wp.invalidate()
-                except Exception as e:
-                    pass
+                wp.invalidate()
 
-        # Also refresh the container
         if hasattr(self, "container"):
             self.container.invalidate()
             self.container.clear_flag(lv.obj.FLAG.HIDDEN)
@@ -4276,7 +4154,6 @@ class WallperChange(AnimScreen):
     def on_click(self, event_obj):
         code = event_obj.code
         target = event_obj.get_target()
-        # Debug output disabled for click performance
         if code == lv.EVENT.CLICKED:
             if getattr(self, "_pending_custom_wallpaper_click", None):
                 self._pending_custom_wallpaper_click = None
@@ -4284,11 +4161,9 @@ class WallperChange(AnimScreen):
             if utils.lcd_resume():
                 return
 
-            # Check if clicked target is a remove icon
             if self.edit_mode and hasattr(self, "custom_wps"):
-                for i, wp in enumerate(self.custom_wps):
+                for _i, wp in enumerate(self.custom_wps):
                     if hasattr(wp, "remove_icon"):
-                        # Check if target is the button or its child label
                         if target == wp.remove_icon or (
                             hasattr(wp.remove_icon, "get_child")
                             and target == wp.remove_icon.get_child(0)
@@ -4299,7 +4174,6 @@ class WallperChange(AnimScreen):
             if self.edit_mode:
                 return
 
-            # Check if target is a wallpaper
             if not hasattr(self, "wps") or target not in self.wps:
                 return
             for wp in self.wps:
@@ -4325,16 +4199,13 @@ class WallperChange(AnimScreen):
 
                             if selected_wallpaper_base == current_wallpaper_base:
 
-                                # Simply load the previous screen with return animation
                                 try:
                                     self._load_scr(self.prev_scr, back=True)
-                                    # Clean up WallperChange properly
                                     utils.try_remove_scr(self)
                                     if hasattr(self.__class__, "_instance"):
                                         del self.__class__._instance
                                     self.del_delayed(100)
-                                except Exception as nav_error:
-                                    # Simple fallback to WallpaperScreen
+                                except Exception:
                                     fallback_screen = WallpaperScreen()
                                     self._load_scr(fallback_screen, back=True)
                                     utils.try_remove_scr(self)
@@ -4343,13 +4214,12 @@ class WallperChange(AnimScreen):
                                     self.del_delayed(100)
                             else:
                                 try:
-                                    # Reset HomeScreenSetting singleton if it exists
                                     if hasattr(HomeScreenSetting, "_instance"):
                                         old_instance = HomeScreenSetting._instance
                                         if (
-                                                hasattr(utils, "SCREENS")
-                                                and old_instance in utils.SCREENS
-                                            ):
+                                            hasattr(utils, "SCREENS")
+                                            and old_instance in utils.SCREENS
+                                        ):
                                             utils.SCREENS.remove(old_instance)
 
                                         old_instance.delete()
@@ -4368,30 +4238,33 @@ class WallperChange(AnimScreen):
                                     )
                                     self._load_scr(new_screen, back=True)
 
-                                    # Clean up WallperChange properly
                                     utils.try_remove_scr(self)
                                     if hasattr(self.__class__, "_instance"):
                                         del self.__class__._instance
                                     self.del_delayed(100)
-                                except Exception as e:
-                                    # Fallback to WallpaperScreen
+                                except Exception:
                                     fallback_screen = WallpaperScreen()
                                     self._load_scr(fallback_screen, back=True)
                                     utils.try_remove_scr(self)
                                     if hasattr(self.__class__, "_instance"):
                                         del self.__class__._instance
                                     self.del_delayed(100)
-                        elif self.prev_scr.__class__.__name__ == "AppdrawerBackgroundSetting":
+                        elif (
+                            self.prev_scr.__class__.__name__
+                            == "AppdrawerBackgroundSetting"
+                        ):
                             try:
                                 self.prev_scr.selected_wallpaper = wp.img_path
                                 self.prev_scr.current_wallpaper_path = wp.img_path
 
                                 if hasattr(self.prev_scr, "lockscreen_preview"):
-                                    self.prev_scr.lockscreen_preview.set_src(wp.img_path)
+                                    self.prev_scr.lockscreen_preview.set_src(
+                                        wp.img_path
+                                    )
 
-                                if hasattr(self.prev_scr, 'refresh_text'):
+                                if hasattr(self.prev_scr, "refresh_text"):
                                     self.prev_scr.refresh_text()
-                                if hasattr(self.prev_scr, 'invalidate'):
+                                if hasattr(self.prev_scr, "invalidate"):
                                     self.prev_scr.invalidate()
 
                                 self._load_scr(self.prev_scr, back=True)
@@ -4400,7 +4273,7 @@ class WallperChange(AnimScreen):
                                 if hasattr(self.__class__, "_instance"):
                                     del self.__class__._instance
                                 self.del_delayed(100)
-                            except Exception as e:
+                            except Exception:
                                 try:
                                     AppdrawerBackgroundSetting._dispose_existing(
                                         "recreate after wallpaper selection fallback"
@@ -4415,7 +4288,7 @@ class WallperChange(AnimScreen):
                                     if hasattr(self.__class__, "_instance"):
                                         del self.__class__._instance
                                     self.del_delayed(100)
-                                except Exception as fallback_e:
+                                except Exception:
                                     fallback_screen = WallpaperScreen()
                                     self._load_scr(fallback_screen, back=True)
                                     utils.try_remove_scr(self)
@@ -4429,7 +4302,7 @@ class WallperChange(AnimScreen):
                                 if hasattr(self.__class__, "_instance"):
                                     del self.__class__._instance
                                 self.del_delayed(100)
-                            except Exception as e:
+                            except Exception:
                                 fallback_screen = WallpaperScreen()
                                 self._load_scr(fallback_screen, back=True)
                                 utils.try_remove_scr(self)
@@ -4439,9 +4312,11 @@ class WallperChange(AnimScreen):
 
     def on_select_clicked(self, event_obj):
         target = event_obj.get_target()
-        # Check if any part of the Change button was clicked
-        if target in [self.change_button_container, self.change_button, self.change_label]:
-            # Navigate to WallperChange for wallpaper selection
+        if target in [
+            self.change_button_container,
+            self.change_button,
+            self.change_label,
+        ]:
             WallperChange(self)
 
     def on_wallpaper_clicked(self, event_obj):
@@ -4464,10 +4339,7 @@ class WallperChange(AnimScreen):
 
         self.lockscreen_preview.set_src(wallpapers[next_index])
 
-        # TODO: Save selected wallpaper to storage
-
     def refresh_text(self):
-        # TODO: Load current wallpaper from storage and update preview
         pass
 
     def on_edit_button_clicked(self, event_obj):
@@ -4480,18 +4352,14 @@ class WallperChange(AnimScreen):
         if not self.edit_mode or not self.selected_wallpapers:
             return
 
-        # Move selected wallpapers to marked_for_deletion and delete immediately
         self.marked_for_deletion = self.selected_wallpapers.copy()
         self.delete_marked_files()
-        # No need to call _exit_edit_mode or clear selected_wallpapers
-        # delete_marked_files() calls __init__ which recreates everything in non-edit mode
 
     def on_done_button_clicked(self, event_obj):
         if not self.edit_mode:
             return
 
-        self._exit_edit_mode(commit=False)  # Exit without deleting
-
+        self._exit_edit_mode(commit=False)
 
     def _enter_edit_mode(self):
         if self.edit_mode:
@@ -4500,31 +4368,22 @@ class WallperChange(AnimScreen):
         self.edit_mode = True
         self._pending_custom_wallpaper_click = None
 
-        # Hide Edit button and show Delete and Done buttons
         if hasattr(self, "edit_button"):
             self.edit_button.add_flag(lv.obj.FLAG.HIDDEN)
         if hasattr(self, "done_button"):
             self.done_button.clear_flag(lv.obj.FLAG.HIDDEN)
         if hasattr(self, "delete_button"):
             self.delete_button.clear_flag(lv.obj.FLAG.HIDDEN)
-            # Position Delete button: text-to-text distance = 24px
-            # Delete text to Delete container right edge: 8px (right padding)
-            # Done container left edge to Done text: 8px (left padding)
-            # Container gap = 24 - 8 - 8 = 8px
             self.delete_button.align_to(self.done_button, lv.ALIGN.OUT_LEFT_MID, -8, 0)
 
-        # Show selection checkboxes for custom wallpapers
-        for i, wp in enumerate(self.custom_wps):
+        for _i, wp in enumerate(self.custom_wps):
             if hasattr(wp, "selection_checkbox"):
                 wp.selection_checkbox.clear_flag(lv.obj.FLAG.HIDDEN)
                 wp.selection_checkbox.move_foreground()
-                # Reset selection state
                 wp.is_selected = False
                 wp.selection_checkbox_img.set_src("A:/res/unselect.png")
 
-        # Clear any previous selections
         self.selected_wallpapers.clear()
-
 
     def _exit_edit_mode(self, *, commit: bool):
         if not self.edit_mode:
@@ -4533,7 +4392,6 @@ class WallperChange(AnimScreen):
         self.edit_mode = False
         self._pending_custom_wallpaper_click = None
 
-        # Show Edit button and hide Delete and Done buttons
         if hasattr(self, "edit_button"):
             self.edit_button.clear_flag(lv.obj.FLAG.HIDDEN)
         if hasattr(self, "delete_button"):
@@ -4541,7 +4399,6 @@ class WallperChange(AnimScreen):
         if hasattr(self, "done_button"):
             self.done_button.add_flag(lv.obj.FLAG.HIDDEN)
 
-        # Hide selection checkboxes for custom wallpapers
         for wp in self.custom_wps:
             if hasattr(wp, "selection_checkbox"):
                 wp.selection_checkbox.add_flag(lv.obj.FLAG.HIDDEN)
@@ -4550,9 +4407,7 @@ class WallperChange(AnimScreen):
             self.selected_wallpapers.clear()
             return
 
-        # Delete selected wallpapers when committing
         if self.selected_wallpapers:
-            # Move selected wallpapers to marked_for_deletion for consistent deletion logic
             self.marked_for_deletion = self.selected_wallpapers.copy()
             self.delete_marked_files()
             self.selected_wallpapers.clear()
@@ -4605,16 +4460,13 @@ class WallperChange(AnimScreen):
     def on_selection_checkbox_clicked(self, event_obj, wallpaper):
         if not self.edit_mode:
             return
-            
-        # Toggle selection state
+
         wallpaper.is_selected = not wallpaper.is_selected
-        
+
         if wallpaper.is_selected:
-            # Add to selected set and change to selected image
             self.selected_wallpapers.add(wallpaper)
             wallpaper.selection_checkbox_img.set_src("A:/res/selected.png")
         else:
-            # Remove from selected set and change to unselected image
             self.selected_wallpapers.discard(wallpaper)
             wallpaper.selection_checkbox_img.set_src("A:/res/unselect.png")
 
@@ -4622,72 +4474,46 @@ class WallperChange(AnimScreen):
 
         self.marked_for_deletion.add(wallpaper)
 
-        # Hide the entire wallpaper item immediately
         wallpaper.add_flag(lv.obj.FLAG.HIDDEN)
 
-        # Also hide the remove icon
         if hasattr(wallpaper, "remove_icon"):
             wallpaper.remove_icon.add_flag(lv.obj.FLAG.HIDDEN)
 
-
     def delete_marked_files(self):
-        # debug logging removed
-        from trezor import io
-        import storage.device as storage_device
         marked_count = len(self.marked_for_deletion)
-        # debug logging removed
 
         for wallpaper in self.marked_for_deletion:
-                # Extract file name from img_path
-                img_path = wallpaper.img_path
-                # debug logging removed
-                if "A:1:/res/wallpapers/" in img_path:
-                    # Custom wallpaper path format: A:1:/res/wallpapers/filename.ext (without zoom- prefix)
-                    filename = img_path.replace("A:1:/res/wallpapers/", "")
+            img_path = wallpaper.img_path
+            if "A:1:/res/wallpapers/" in img_path:
+                filename = img_path.replace("A:1:/res/wallpapers/", "")
 
-                    # Delete original file first
-                    original_path = f"1:/res/wallpapers/{filename}"
-                    io.fatfs.unlink(original_path)
+                original_path = f"1:/res/wallpapers/{filename}"
+                io.fatfs.unlink(original_path)
 
+                zoom_filename = f"zoom-{filename}"
+                zoom_path = f"1:/res/wallpapers/{zoom_filename}"
 
-                    # Delete zoom file (add zoom- prefix)
-                    zoom_filename = f"zoom-{filename}"
-                    zoom_path = f"1:/res/wallpapers/{zoom_filename}"
+                io.fatfs.unlink(zoom_path)
 
-                    io.fatfs.unlink(zoom_path)
+                if "." in filename:
+                    name_part, ext_part = filename.rsplit(".", 1)
+                    blur_filename = f"{name_part}-blur.{ext_part}"
+                else:
+                    blur_filename = f"{filename}-blur"
+                blur_path = f"1:/res/wallpapers/{blur_filename}"
+                io.fatfs.unlink(blur_path)
 
+                self.replace_if_in_use(img_path)
 
-                    # Delete blur file if it exists
-                    if "." in filename:
-                        name_part, ext_part = filename.rsplit(".", 1)
-                        blur_filename = f"{name_part}-blur.{ext_part}"
-                    else:
-                        blur_filename = f"{filename}-blur"
-                    blur_path = f"1:/res/wallpapers/{blur_filename}"
-                    io.fatfs.unlink(blur_path)
-
-                    # Check if this wallpaper is currently in use and replace it
-                    # debug logging removed
-                    self.replace_if_in_use(img_path)
-
-        # Clear the marked for deletion set
         self.marked_for_deletion.clear()
-        # debug logging removed
 
-        # Decrease wallpaper count
-        for _ in range(marked_count):
+        for _i in range(marked_count):
             storage_device.decrease_wp_cnts()
 
-        # Refresh the screen to show updated wallpaper list
-        # debug logging removed
         self.__init__(self.prev_scr)
-        # debug logging removed
 
     def replace_if_in_use(self, deleted_path):
-        try:
-            replace_wallpaper_if_in_use(deleted_path, "A:/res/wallpaper-7.jpg")
-        except Exception:
-            pass
+        replace_wallpaper_if_in_use(deleted_path, "A:/res/wallpaper-7.jpg")
 
     def eventhandler(self, event_obj):
         event = event_obj.code
@@ -4699,21 +4525,30 @@ class WallperChange(AnimScreen):
                 if hasattr(self, "nav_back") and target == self.nav_back.nav_btn:
                     if self.prev_scr is not None:
                         try:
-                            if hasattr(self.prev_scr, '__class__') and self.prev_scr.__class__.__name__ == 'AppdrawerBackgroundSetting':
+                            if (
+                                hasattr(self.prev_scr, "__class__")
+                                and self.prev_scr.__class__.__name__
+                                == "AppdrawerBackgroundSetting"
+                            ):
                                 self.load_screen(self.prev_scr, destroy_self=True)
-                            elif hasattr(self.prev_scr, '__class__') and self.prev_scr.__class__.__name__ == 'HomeScreenSetting':
+                            elif (
+                                hasattr(self.prev_scr, "__class__")
+                                and self.prev_scr.__class__.__name__
+                                == "HomeScreenSetting"
+                            ):
                                 self.load_screen(self.prev_scr, destroy_self=True)
                             else:
                                 self.load_screen(self.prev_scr, destroy_self=True)
-                        except Exception as e:
+                        except Exception:
                             try:
                                 self._load_scr(self.prev_scr, back=True)
                                 self.del_delayed(100)
-                            except Exception as fallback_e:
-                                    from .homescreen import SettingsScreen
-                                    settings_screen = SettingsScreen()
-                                    self._load_scr(settings_screen, back=True)
-                                    self.del_delayed(100)
+                            except Exception:
+                                from .homescreen import SettingsScreen
+
+                                settings_screen = SettingsScreen()
+                                self._load_scr(settings_screen, back=True)
+                                self.del_delayed(100)
 
                     return
                 elif hasattr(self, "rti_btn") and target == self.rti_btn:
@@ -4721,7 +4556,6 @@ class WallperChange(AnimScreen):
                     return
 
         if event == lv.EVENT.CLICKED:
-            # This should trigger the on_click method for wallpaper selections
             self.on_click(event_obj)
 
 
@@ -4769,7 +4603,7 @@ class ShutdownSetting(AnimScreen):
         gc.collect()
 
     def get_str_from_ms(self, delay_ms: int) -> str:
-        if delay_ms == 0 or delay_ms == storage_device.AUTOSHUTDOWN_DELAY_MAXIMUM:
+        if delay_ms in (0, storage_device.AUTOSHUTDOWN_DELAY_MAXIMUM):
             return "从不"
         elif delay_ms < 60000:
             return f"{delay_ms // 1000}秒"
@@ -4796,7 +4630,7 @@ class ShutdownSetting(AnimScreen):
 def get_autolock_delay_str() -> str:
     delay_ms = storage_device.get_autolock_delay_ms()
 
-    if delay_ms == 0 or delay_ms == storage_device.AUTOLOCK_DELAY_MAXIMUM:
+    if delay_ms in (0, storage_device.AUTOLOCK_DELAY_MAXIMUM):
         result = _(i18n_keys.OPTION__NEVER)
     elif delay_ms < 60000:
         seconds = delay_ms // 1000
@@ -4819,7 +4653,7 @@ def get_autolock_delay_str() -> str:
 
 def get_autoshutdown_delay_str() -> str:
     delay_ms = storage_device.get_autoshutdown_delay_ms()
-    if delay_ms == 0 or delay_ms == storage_device.AUTOSHUTDOWN_DELAY_MAXIMUM:
+    if delay_ms in (0, storage_device.AUTOSHUTDOWN_DELAY_MAXIMUM):
         return _(i18n_keys.OPTION__NEVER)
     elif delay_ms < 60000:
         seconds = delay_ms // 1000
@@ -4836,7 +4670,6 @@ def get_autoshutdown_delay_str() -> str:
         return _(
             i18n_keys.OPTION__STR_HOUR if hours == 1 else i18n_keys.OPTION__STR_HOURS
         ).format(hours)
-
 
 
 class Autolock_and_ShutingDown(AnimScreen):
@@ -4978,7 +4811,6 @@ class AutoLockSetting(AnimScreen):
         for index, item in enumerate(self.setting_items):
             if item is None:
                 break
-            original_item = item  # Keep original for comparison
             if not item == "Never":  # last item
                 if item == 0.5:
                     item = _(i18n_keys.OPTION__STR_SECONDS).format(int(item * 60))
@@ -4995,7 +4827,6 @@ class AutoLockSetting(AnimScreen):
                 self.container, item, has_next=False, use_transition=False
             )
             self.btns[index].add_check_img()
-
 
             if item == Autolock_and_ShutingDown.cur_auto_lock:
                 has_custom = False
@@ -5130,14 +4961,13 @@ class LanguageSetting(AnimScreen):
                     # Refresh previous screen texts and language label immediately
                     if hasattr(self, "prev_scr") and self.prev_scr:
                         if hasattr(self.prev_scr, "language") and hasattr(
-                                self.prev_scr.language, "label_right"
-                            ):
+                            self.prev_scr.language, "label_right"
+                        ):
                             self.prev_scr.language.label_right.set_text(
-                                    GeneralScreen.cur_language
-                                )
+                                GeneralScreen.cur_language
+                            )
                         if hasattr(self.prev_scr, "refresh_text"):
                             self.prev_scr.refresh_text()
-
 
 
 class BacklightSetting(AnimScreen):
@@ -5209,7 +5039,6 @@ class BacklightSetting(AnimScreen):
                     if self.temp_brightness != self.current_brightness:
                         storage_device.set_brightness(self.temp_brightness)
             super().eventhandler(event_obj)
-
 
 
 class AnimationSetting(AnimScreen):
@@ -5301,12 +5130,8 @@ class TouchSetting(AnimScreen):
         self.keyboard_tips = lv.label(self.content_area)
         self.keyboard_tips.set_size(456, lv.SIZE.CONTENT)
         self.keyboard_tips.set_long_mode(lv.label.LONG.WRAP)
-        self.keyboard_tips.set_style_text_color(
-            lv_colors.ONEKEY_GRAY, lv.STATE.DEFAULT
-        )
-        self.keyboard_tips.set_style_text_font(
-            font_GeistRegular26, lv.STATE.DEFAULT
-        )
+        self.keyboard_tips.set_style_text_color(lv_colors.ONEKEY_GRAY, lv.STATE.DEFAULT)
+        self.keyboard_tips.set_style_text_font(font_GeistRegular26, lv.STATE.DEFAULT)
         self.keyboard_tips.set_style_text_line_space(3, 0)
         # Add left text alignment and horizontal padding to match list item padding (24)
         self.keyboard_tips.add_style(
@@ -5329,9 +5154,7 @@ class TouchSetting(AnimScreen):
         self.description = lv.label(self.content_area)
         self.description.set_size(456, lv.SIZE.CONTENT)
         self.description.set_long_mode(lv.label.LONG.WRAP)
-        self.description.set_style_text_color(
-            lv_colors.ONEKEY_GRAY, lv.STATE.DEFAULT
-        )
+        self.description.set_style_text_color(lv_colors.ONEKEY_GRAY, lv.STATE.DEFAULT)
         self.description.set_style_text_font(font_GeistRegular26, lv.STATE.DEFAULT)
         self.description.set_style_text_line_space(3, 0)
         self.description.add_style(
@@ -5596,7 +5419,6 @@ class PinMapSetting(AnimScreen):
             else:
                 return
             self.fresh_tips()
-
 
 
 class AirGapSetting(AnimScreen):
@@ -5996,19 +5818,12 @@ class WallpaperScreen(AnimScreen):
         return targets
 
     def __init__(self, prev_scr=None):
-        # debug logging removed
-
         if not hasattr(self, "_init"):
-            # debug logging removed
             self._init = True
         else:
-            # debug logging removed
-            # Already initialized - refresh the container and recreate content
             if hasattr(self, "container"):
-                # debug logging removed
                 self.container.delete()
             if prev_scr is not None:
-                # debug logging removed
                 self.prev_scr = prev_scr
 
         if not hasattr(self, "content_area"):
@@ -6018,25 +5833,19 @@ class WallpaperScreen(AnimScreen):
                 nav_back=True,
             )
 
-        # Always recreate container and buttons to avoid missing UI elements
         self.container = ContainerFlexCol(self.content_area, self.title, padding_row=2)
 
         self.lock_screen = ListItemBtn(
             self.container, _(i18n_keys.ITEM__LOCK_SCREEN), use_transition=False
         )
 
-        # Always create home_screen button - it's lightweight
         self.home_screen = ListItemBtn(
             self.container, _(i18n_keys.BUTTON__HOME_SCREEN), use_transition=False
         )
 
-        # Only add event callback once on first initialization
         if not hasattr(self, "_event_added"):
             self.content_area.add_event_cb(self.on_click_event, lv.EVENT.CLICKED, None)
             self._event_added = True
-
-        # Fix: Remove duplicate load_screen call - already called in AnimScreen.__init__
-        # self.load_screen(self)  # ← This causes double loading and freeze!
 
     def refresh_text(self):
         if hasattr(self, "lock_screen") and self.lock_screen:
@@ -6045,16 +5854,9 @@ class WallpaperScreen(AnimScreen):
             self.home_screen.label_left.set_text(_(i18n_keys.BUTTON__HOME_SCREEN))
 
     def __del__(self):
-        """Clean up resources when screen is destroyed"""
-        try:
-            if hasattr(self, "container") and self.container:
-                self.container.delete()
-        except Exception:
-            pass
-        try:
-            _clear_preview_cache()
-        except Exception:
-            pass
+        if hasattr(self, "container") and self.container:
+            self.container.delete()
+        _clear_preview_cache()
 
     def on_click_event(self, event_obj):
         target = event_obj.get_target()
@@ -6066,12 +5868,9 @@ class WallpaperScreen(AnimScreen):
             AppdrawerBackgroundSetting(self)
         elif hasattr(self, "home_screen") and target == self.home_screen:
             HomeScreenSetting(self)
-        else:
-            pass
 
 
 class HomeScreenSetting(AnimScreen):
-
     def collect_animation_targets(self) -> list:
         return []
 
@@ -6087,7 +5886,6 @@ class HomeScreenSetting(AnimScreen):
             self._init = True
         else:
             self._return_to_prev_instance = return_from_wallpaper
-            # Even if already initialized, update the wallpaper if a new one is provided
             if selected_wallpaper:
 
                 self.selected_wallpaper = selected_wallpaper
@@ -6095,11 +5893,9 @@ class HomeScreenSetting(AnimScreen):
 
                 display_path = selected_wallpaper
 
-                # Handle blur state preservation
-                self.is_blur_active = False  # Default to original
+                self.is_blur_active = False
                 final_display_path = display_path
 
-                # If we should preserve blur state and it was active, check for blur version
                 if preserve_blur_state and preserve_blur_state is True:
                     blur_path = self._get_blur_wallpaper_path(display_path)
                     if blur_path and self._blur_wallpaper_exists(blur_path):
@@ -6108,20 +5904,15 @@ class HomeScreenSetting(AnimScreen):
 
                 self.current_wallpaper_path = final_display_path
 
-                # Update the preview if it exists
                 if hasattr(self, "homescreen_preview"):
                     self.homescreen_preview.set_src(final_display_path)
 
-                # Update blur button state
                 if hasattr(self, "blur_button"):
                     self._update_blur_button_state()
             else:
-                # No new wallpaper provided, reload from storage and check if it still exists
                 self._load_blur_state()
-                # Update the preview if it exists
                 if hasattr(self, "homescreen_preview"):
                     self.homescreen_preview.set_src(self.current_wallpaper_path)
-                # Update blur button state
                 if hasattr(self, "blur_button"):
                     self._update_blur_button_state()
 
@@ -6133,31 +5924,22 @@ class HomeScreenSetting(AnimScreen):
         super().__init__(
             prev_scr=prev_scr, nav_back=True, rti_path="A:/res/checkmark.png"
         )
-        
 
-        # Animations disabled for home screen preview
-
-        # Disable scrollbars on content_area (inherited from AnimScreen)
         self.content_area.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
         self.content_area.clear_flag(lv.obj.FLAG.SCROLLABLE)
-        # Remove bottom padding to prevent content overflow (800 - 24 = 776 vs container 800)
         self.content_area.set_style_pad_bottom(0, 0)
 
-        # Main container for the screen
         self.container = lv.obj(self.content_area)
         self.container.set_size(lv.pct(100), lv.pct(100))
         self.container.align(lv.ALIGN.TOP_MID, 0, 0)
         self.container.add_style(
             StyleWrapper().bg_opa(lv.OPA.TRANSP).pad_all(0).border_width(0), 0
         )
-        # Don't capture click events - let them pass through to buttons
         self.container.clear_flag(lv.obj.FLAG.CLICKABLE)
         self.container.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
-        # Disable scrollbars on the main container
         self.container.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
         self.container.clear_flag(lv.obj.FLAG.SCROLLABLE)
 
-        # Home screen preview container with image (same size as LockScreenSetting)
         self.preview_container = create_preview_container(
             self.container,
             width=344,
@@ -6170,34 +5952,27 @@ class HomeScreenSetting(AnimScreen):
             .border_width(0),
         )
 
-        # Home screen preview image
         self.homescreen_preview = create_preview_image(
             self.preview_container,
             target_size=(344, 572),
         )
         self.preview_mask = create_top_mask(self.preview_container, height=5)
-        # Initialize blur cache first
         self._blur_cache = {}
 
-        # Use selected wallpaper if provided, otherwise load blur state from storage
         if self.selected_wallpaper:
 
             self.original_wallpaper_path = self.selected_wallpaper
 
             display_path = self.selected_wallpaper
 
-
-            # Handle blur state preservation
-            self.is_blur_active = False  # Default to original
+            self.is_blur_active = False
             final_display_path = display_path
 
-            # If we should preserve blur state and it was active, check for blur version
             if preserve_blur_state and preserve_blur_state is True:
                 blur_path = self._get_blur_wallpaper_path(display_path)
                 if blur_path and self._blur_wallpaper_exists(blur_path):
                     final_display_path = blur_path
                     self.is_blur_active = True
-
 
             self.current_wallpaper_path = final_display_path
             self.homescreen_preview.set_src(final_display_path)
@@ -6210,90 +5985,68 @@ class HomeScreenSetting(AnimScreen):
 
         self.app_icons = []
 
-        # Actual display size: 343x572, centered with offset (0.5, 1)
-        scale_x = 343.0 / 480.0  # ≈ 0.71458
-        scale_y = 572.0 / 800.0  # ≈ 0.715
+        scale_x = 343.0 / 480.0
+        scale_y = 572.0 / 800.0
         offset_x = 0.5
         offset_y = 1.0
 
-        # Desktop icon positions in absolute screen coordinates
         desktop_positions = [
-            (64, 164),   # Left-Top
-            (272, 164),  # Right-Top
-            (64, 442),   # Left-Bottom
-            (272, 442),  # Right-Bottom
+            (64, 164),
+            (272, 164),
+            (64, 442),
+            (272, 442),
         ]
 
         for i in range(4):
             screen_x, screen_y = desktop_positions[i]
 
-            # Map desktop screen coordinates to preview coordinates
             x_pos = int(screen_x * scale_x + offset_x)
             y_pos = int(screen_y * scale_y + offset_y)
 
-            # Create image directly without holder to show natural shape
             icon_img = lv.img(self.preview_container)
             icon_img.set_src("A:/res/icon_example.png")
-            icon_img.set_antialias(True)  # Enable anti-aliasing for smooth edges
-            # Let image use its natural size
+            icon_img.set_antialias(True)
             icon_img.set_size(lv.SIZE.CONTENT, lv.SIZE.CONTENT)
-            # Use set_pos for absolute positioning (left-top corner)
             icon_img.set_pos(x_pos, y_pos)
 
             self.app_icons.append(icon_img)
-        # Create button group
         self._create_buttons()
-        from trezor import loop as _loop
-
-        _loop.schedule(self._first_frame_fix())
-        # Change button left-aligned, Blur button right-aligned
+        loop.schedule(self._first_frame_fix())
         self.change_button_container.align_to(
             self.preview_container, lv.ALIGN.OUT_BOTTOM_LEFT, 50, 10
         )
         self.blur_button_container.align_to(
             self.preview_container, lv.ALIGN.OUT_BOTTOM_RIGHT, -50, 10
         )
-        # AnimScreen.__init__ already loads the screen; avoid double-loading here
         gc.collect()
 
     def _create_button_with_label(self, icon_path, text, callback):
-
-        # Create container for larger click area (120px wide)
         button_container = lv.obj(self.container)
-        button_container.set_size(120, 100)  # 120px wide, height for button + label
+        button_container.set_size(120, 100)
         button_container.align_to(self.preview_container, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
         button_container.add_style(
-            StyleWrapper()
-            .bg_opa(lv.OPA.TRANSP)  # Transparent background
-            .border_width(0)
-            .pad_all(0),
-            0
+            StyleWrapper().bg_opa(lv.OPA.TRANSP).border_width(0).pad_all(0),
+            0,
         )
         button_container.add_flag(lv.obj.FLAG.CLICKABLE)
         button_container.clear_flag(lv.obj.FLAG.SCROLLABLE)
 
-        # Create button inside container (keep original 64x64 size)
         button = lv.btn(button_container)
         button.set_size(64, 64)
         button.align(lv.ALIGN.TOP_MID, 0, 0)
         button.add_style(
-            StyleWrapper()
-            .border_width(0)
-            .radius(40)
-            .bg_opa(lv.OPA.TRANSP),  # Transparent background to avoid blue edge
-            0
+            StyleWrapper().border_width(0).radius(40).bg_opa(lv.OPA.TRANSP),
+            0,
         )
         button.add_flag(lv.obj.FLAG.CLICKABLE)
         button.clear_flag(lv.obj.FLAG.EVENT_BUBBLE)
 
-        # Create icon
         icon = lv.img(button)
-        if icon_path:  # Only set icon when path is not empty
+        if icon_path:
             icon.set_src(icon_path)
-        icon.set_antialias(True)  # Enable anti-aliasing for smooth edges
+        icon.set_antialias(True)
         icon.align(lv.ALIGN.CENTER, 0, 0)
 
-        # Create label inside container
         label = lv.label(button_container)
         label.set_text(text)
         label.add_style(
@@ -6304,19 +6057,15 @@ class HomeScreenSetting(AnimScreen):
             0,
         )
         label.align_to(button, lv.ALIGN.OUT_BOTTOM_MID, 0, 4)
-        # Make label clickable so text can also be clicked
         label.add_flag(lv.obj.FLAG.CLICKABLE)
         label.add_event_cb(callback, lv.EVENT.CLICKED, None)
 
-        # Add event callback to button and container
         button.add_event_cb(callback, lv.EVENT.CLICKED, None)
         button_container.add_event_cb(callback, lv.EVENT.CLICKED, None)
 
         return button_container, button, icon, label
 
     def _create_buttons(self):
-
-        # Create Change button
         (
             self.change_button_container,
             self.change_button,
@@ -6328,7 +6077,6 @@ class HomeScreenSetting(AnimScreen):
             self.on_select_clicked,
         )
 
-        # Create Blur button
         (
             self.blur_button_container,
             self.blur_button,
@@ -6338,17 +6086,11 @@ class HomeScreenSetting(AnimScreen):
             "", _(i18n_keys.BUTTON__BLUR), self.on_blur_clicked
         )
 
-        # Initialize blur button state
         self._update_blur_button_state()
 
     async def _first_frame_fix(self):
-        """Fix first-frame JPEG decoding artifacts by waiting for decode completion"""
-        import utime
-
-        # Wait for JPEG decoding to complete (async decode takes time)
         utime.sleep_ms(100)
 
-        # Full screen refresh + targeted invalidates to re-render with complete data
         self.refresh()
         if hasattr(self, "container") and self.container:
             self.container.invalidate()
@@ -6357,9 +6099,7 @@ class HomeScreenSetting(AnimScreen):
         if hasattr(self, "homescreen_preview") and self.homescreen_preview:
             self.homescreen_preview.invalidate()
 
-
     def on_select_clicked(self, event_obj):
-
         WallperChange(prev_scr=self)
 
     def eventhandler(self, event_obj):
@@ -6370,7 +6110,6 @@ class HomeScreenSetting(AnimScreen):
             if utils.lcd_resume():
                 return
 
-            # Handle navigation buttons
             if isinstance(target, lv.imgbtn):
                 if hasattr(self, "nav_back") and target == self.nav_back.nav_btn:
                     if self.prev_scr is not None:
@@ -6388,45 +6127,34 @@ class HomeScreenSetting(AnimScreen):
 
     def __del__(self):
         if hasattr(utils, "SCREENS") and self in utils.SCREENS:
-                utils.SCREENS.remove(self)
+            utils.SCREENS.remove(self)
         _clear_preview_cache()
 
     def _rebuild_image_object(self):
+        if hasattr(self, "homescreen_preview") and hasattr(self, "preview_container"):
+            target_path = getattr(
+                self, "current_wallpaper_path", "A:/res/wallpaper-2.jpg"
+            )
 
-        try:
-            if hasattr(self, "homescreen_preview") and hasattr(
-                self, "preview_container"
-            ):
-                target_path = getattr(
-                    self, "current_wallpaper_path", "A:/res/wallpaper-2.jpg"
-                )
+            if self.homescreen_preview:
+                self.homescreen_preview.delete()
+            gc.collect()
 
-                # Delete old preview object
-                if self.homescreen_preview:
-                    self.homescreen_preview.delete()
-                gc.collect()
+            self.preview_button = lv.btn(self.preview_container)
+            self.preview_button.set_size(344, 567)
+            self.preview_button.align(lv.ALIGN.CENTER, 0, 0)
+            self.preview_button.remove_style_all()
+            self.preview_button.add_style(
+                StyleWrapper().bg_opa(lv.OPA.TRANSP).border_width(0).pad_all(0), 0
+            )
+            self.preview_button.clear_flag(lv.obj.FLAG.CLICKABLE)
 
-                # Create a button container to hold image (mimicking successful button icon pattern)
-                self.preview_button = lv.btn(self.preview_container)
-                self.preview_button.set_size(344, 567)
-                self.preview_button.align(lv.ALIGN.CENTER, 0, 0)
-                self.preview_button.remove_style_all()
-                self.preview_button.add_style(
-                    StyleWrapper().bg_opa(lv.OPA.TRANSP).border_width(0).pad_all(0), 0
-                )
-                self.preview_button.clear_flag(
-                    lv.obj.FLAG.CLICKABLE
-                )  # Does not respond to clicks
+            self.homescreen_preview = create_preview_image(
+                self.preview_button,
+                target_size=(344, 572),
+            )
 
-                # Create image inside button (exactly same way as button icons)
-                self.homescreen_preview = create_preview_image(
-                    self.preview_button,
-                    target_size=(344, 572),
-                )
-
-                self.homescreen_preview.set_src(target_path)
-        except Exception as e:
-            pass
+            self.homescreen_preview.set_src(target_path)
         if hasattr(self, "blur_label"):
             self.blur_label.set_text("Blur")
 
@@ -6444,35 +6172,22 @@ class HomeScreenSetting(AnimScreen):
             return
         _clear_preview_cache()
         if getattr(self, "_return_to_prev_instance", False):
-            try:
-                self._load_scr(self.prev_scr, back=True)
-            except Exception:
-                fallback_screen = WallpaperScreen()
-                self.load_screen(fallback_screen, destroy_self=True)
-                return
+            self._load_scr(self.prev_scr, back=True)
             utils.try_remove_scr(self)
-            try:
-                if (
-                    hasattr(self.__class__, "_instance")
-                    and self.__class__._instance is self
-                ):
-                    del self.__class__._instance
-            except Exception:
-                pass
+            if (
+                hasattr(self.__class__, "_instance")
+                and self.__class__._instance is self
+            ):
+                del self.__class__._instance
             self.del_delayed(100)
             gc.collect()
         else:
-            try:
-                self.load_screen(self.prev_scr, destroy_self=True)
-            except Exception:
-                fallback_screen = WallpaperScreen()
-                self.load_screen(fallback_screen, destroy_self=True)
+            self.load_screen(self.prev_scr, destroy_self=True)
 
     def _get_blur_wallpaper_path(self, original_path):
         if not original_path:
             return None
 
-        # Split the path at the last dot to separate name and extension
         if "." in original_path:
             path_without_ext, ext = original_path.rsplit(".", 1)
             blur_path = f"{path_without_ext}-blur.{ext}"
@@ -6486,26 +6201,21 @@ class HomeScreenSetting(AnimScreen):
             return False
 
         try:
-            # Unified path format handling
             if blur_path.startswith("A:/res/wallpapers/"):
-                # Custom wallpapers: A:/res/wallpapers/ -> 1:/res/wallpapers/ (filesystem access)
                 file_path = blur_path.replace(
                     "A:/res/wallpapers/", "1:/res/wallpapers/"
                 )
             elif blur_path.startswith("A:/res/"):
-                # Built-in Pro wallpapers: A:/res/ -> /res/ (direct access)
-                file_path = blur_path[2:]  # Remove "A:/" prefix
+                file_path = blur_path[2:]
             elif blur_path.startswith("A:1:/"):
-                # Legacy format: A:1:/res/ -> 1:/res/ (filesystem access)
-                file_path = blur_path[2:]  # Remove "A:" prefix, keep "1:/"
+                file_path = blur_path[2:]
             else:
                 file_path = blur_path
 
-            # Directly check if file exists
             io.fatfs.stat(file_path)
             return True
 
-        except Exception as e:
+        except Exception:
             return False
 
     def _update_blur_button_state(self):
@@ -6515,22 +6225,16 @@ class HomeScreenSetting(AnimScreen):
         blur_path = self._get_blur_wallpaper_path(self.original_wallpaper_path)
         blur_exists = self._blur_wallpaper_exists(blur_path) if blur_path else False
 
-        # Set icon and clickable state based on status
         if not blur_exists:
-            # No blur version: not clickable, no styles
             icon_path = "A:/res/blur_not_available.png"
             self.blur_button.clear_flag(lv.obj.FLAG.CLICKABLE)
             self.blur_button.set_style_bg_opa(lv.OPA.TRANSP, 0)
             self.blur_button.set_style_border_width(0, 0)
-            # Set label text color to gray when disabled
             self.blur_label.set_style_text_color(lv_colors.WHITE_2, 0)
         else:
-            # Has blur version: clickable, restore styles
             self.blur_button.add_flag(lv.obj.FLAG.CLICKABLE)
-            # Restore button styles
             self.blur_button.set_style_bg_opa(lv.OPA.COVER, 0)
             self.blur_button.set_style_border_width(1, 0)
-            # Restore label text color to white when enabled
             self.blur_label.set_style_text_color(lv_colors.WHITE, 0)
 
             if getattr(self, "is_blur_active", False):
@@ -6541,23 +6245,17 @@ class HomeScreenSetting(AnimScreen):
         self.blur_button_icon.set_src(icon_path)
 
     def on_blur_clicked(self, event_obj):
-
         blur_path = self._get_blur_wallpaper_path(self.original_wallpaper_path)
 
         if not blur_path or not self._blur_wallpaper_exists(blur_path):
-            return  # No blur version, return directly
+            return
 
-        # Toggle state
         self.is_blur_active = not getattr(self, "is_blur_active", False)
 
-        # Select correct image path based on blur state
         test_path = blur_path if self.is_blur_active else self.original_wallpaper_path
 
-        # For Custom wallpapers, need special path handling
         if test_path and "/res/wallpapers/" in test_path:
-            # Non-blur files keep A:1: prefix (previously worked)
-            if not "-blur." in test_path:
-                # Ensure using A:1: prefix
+            if "-blur." not in test_path:
                 if test_path.startswith("A:/res/wallpapers/"):
                     test_path = test_path.replace(
                         "A:/res/wallpapers/", "A:1:/res/wallpapers/"
@@ -6567,7 +6265,6 @@ class HomeScreenSetting(AnimScreen):
                         "1:/res/wallpapers/", "A:1:/res/wallpapers/"
                     )
             else:
-                # Blur files use A:1: prefix (consistent with original image)
                 if test_path.startswith("A:/res/wallpapers/"):
                     test_path = test_path.replace(
                         "A:/res/wallpapers/", "A:1:/res/wallpapers/"
@@ -6579,11 +6276,9 @@ class HomeScreenSetting(AnimScreen):
 
         self.current_wallpaper_path = test_path
 
-        # Since it may have become a label, need to check type
         if hasattr(self.homescreen_preview, "set_src"):
             self.homescreen_preview.set_src(self.current_wallpaper_path)
         else:
-            # Already a label, update text
             filename = (
                 self.current_wallpaper_path.split("/")[-1]
                 if "/" in self.current_wallpaper_path
@@ -6593,55 +6288,43 @@ class HomeScreenSetting(AnimScreen):
             self.homescreen_preview.set_text(display_text)
         self.invalidate()
 
-        # Update button state
         self._update_blur_button_state()
 
     def _load_blur_state(self):
         try:
-            # Get current homescreen from storage - use get_appdrawer_background since we save with set_appdrawer_background
             current_homescreen = (
                 storage_device.get_appdrawer_background()
                 or storage_device.get_homescreen()
                 or "A:/res/wallpaper-2.jpg"
             )
 
-            # Check if the wallpaper file still exists (may have been deleted)
             if not self._blur_wallpaper_exists(current_homescreen):
-                # Wallpaper was deleted, use default black wallpaper (last built-in wallpaper)
                 current_homescreen = "A:/res/wallpaper-7.jpg"
-                # Update storage to reflect the change
                 storage_device.set_appdrawer_background(current_homescreen)
                 storage_device.set_homescreen(current_homescreen)
 
-            # Check if current homescreen is a blur version (contains '-blur')
             if "-blur." in current_homescreen:
-                # Currently showing blur version
                 self.is_blur_active = True
                 self.current_wallpaper_path = current_homescreen
                 path_parts = current_homescreen.rsplit(".", 1)
                 if len(path_parts) == 2:
                     name_part, ext = path_parts
                     if name_part.endswith("-blur"):
-                        self.original_wallpaper_path = (
-                            name_part[:-5] + "." + ext
-                        )  # Remove '-blur' (5 chars)
+                        self.original_wallpaper_path = name_part[:-5] + "." + ext
                     else:
-                        self.original_wallpaper_path = current_homescreen  # Fallback
+                        self.original_wallpaper_path = current_homescreen
                 else:
-                    self.original_wallpaper_path = current_homescreen  # Fallback
+                    self.original_wallpaper_path = current_homescreen
             else:
-                # Currently showing original version
                 self.is_blur_active = False
                 self.original_wallpaper_path = current_homescreen
                 self.current_wallpaper_path = current_homescreen
 
-        except Exception as e:
-            # Fallback to safe defaults (black wallpaper - last built-in)
+        except Exception:
             current_homescreen = "A:/res/wallpaper-7.jpg"
             self.original_wallpaper_path = current_homescreen
             self.current_wallpaper_path = current_homescreen
             self.is_blur_active = False
-
 
 
 class SecurityScreen(AnimScreen):
@@ -7689,7 +7372,6 @@ class PassphraseTipsConfirm(FullSizeWindow):
             self.show_dismiss_anim()
 
 
-
 class TurboModeScreen(AnimScreen):
     def collect_animation_targets(self) -> list:
         targets = []
@@ -8171,7 +7853,6 @@ class PowerOnOffDetails(FullSizeWindow):
         self.item.label.set_long_mode(lv.label.LONG.WRAP)
 
 
-
 class RecoveryPhraseDetails(FullSizeWindow):
     def __init__(self):
         super().__init__(
@@ -8192,7 +7873,6 @@ class RecoveryPhraseDetails(FullSizeWindow):
         self.item.label.set_long_mode(lv.label.LONG.WRAP)
 
 
-
 class PinProtectionDetails(FullSizeWindow):
     def __init__(self):
         super().__init__(
@@ -8211,7 +7891,6 @@ class PinProtectionDetails(FullSizeWindow):
         self.item.label.set_style_text_color(lv_colors.WHITE_2, 0)
         self.item.label.align_to(self.item.label_top, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 16)
         self.item.label.set_long_mode(lv.label.LONG.WRAP)
-
 
 
 class FingerprintDetails(FullSizeWindow):
@@ -8255,7 +7934,6 @@ class HardwareWalletDetails(FullSizeWindow):
         self.item.label.set_long_mode(lv.label.LONG.WRAP)
 
 
-
 class PassphraseDetails(FullSizeWindow):
     def __init__(self):
         super().__init__(
@@ -8274,7 +7952,6 @@ class PassphraseDetails(FullSizeWindow):
         self.item.label.set_style_text_color(lv_colors.WHITE_2, 0)
         self.item.label.align_to(self.item.label_top, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 16)
         self.item.label.set_long_mode(lv.label.LONG.WRAP)
-
 
 
 class HelpDetails(FullSizeWindow):

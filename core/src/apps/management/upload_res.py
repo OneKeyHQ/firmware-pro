@@ -1,3 +1,4 @@
+import gc
 from micropython import const
 from typing import TYPE_CHECKING
 
@@ -14,7 +15,7 @@ from trezor.messages import (
 )
 
 import ujson as json
-import ure as re
+import ure as re  # type: ignore[could not be resolved]
 
 if TYPE_CHECKING:
     from trezor.messages import ResourceUpload
@@ -52,20 +53,25 @@ async def upload_res(ctx: wire.Context, msg: ResourceUpload) -> Success:
     res_blur_size = msg.blur_data_length or 0
 
     from trezorui import Display
+
     display = Display()
-    if hasattr(display, 'cover_background_hide'):
-        display.cover_background_hide()
-    if hasattr(display, 'cover_background_set_visible'):
-        display.cover_background_set_visible(False)
+    if hasattr(display, "cover_background_hide"):
+        display.cover_background_hide()  # type: ignore[is unknown]
+    if hasattr(display, "cover_background_set_visible"):
+        display.cover_background_set_visible(False)  # type: ignore[is unknown]
 
     import trezorio
     from trezor import loop
 
-    if hasattr(trezorio, 'jpeg_decoder_is_busy'):
+    if hasattr(trezorio, "jpeg_decoder_is_busy"):
         max_wait_iterations = 100
         for _ in range(max_wait_iterations):
-            is_busy = trezorio.jpeg_decoder_is_busy()
-            has_error = trezorio.jpeg_decoder_has_error() if hasattr(trezorio, 'jpeg_decoder_has_error') else False
+            is_busy = trezorio.jpeg_decoder_is_busy()  # type: ignore[is not a known member of module]
+            has_error = (
+                trezorio.jpeg_decoder_has_error()  # type: ignore[is not a known member of module]
+                if hasattr(trezorio, "jpeg_decoder_has_error")
+                else False
+            )
 
             if has_error:
                 break
@@ -77,33 +83,33 @@ async def upload_res(ctx: wire.Context, msg: ResourceUpload) -> Success:
     else:
         await loop.sleep(500)
 
-    if hasattr(trezorio, 'jpeg_save_decoder_state'):
-        trezorio.jpeg_save_decoder_state()
+    if hasattr(trezorio, "jpeg_save_decoder_state"):
+        trezorio.jpeg_save_decoder_state()  # type: ignore[is not a known member of module]
 
     from trezor.lvglui.scrs.common import lv
+
     lv.img.cache_invalidate_src(None)
 
     from trezor.lvglui.scrs import homescreen
-    if hasattr(homescreen, '_cached_styles'):
-        homescreen._cached_styles.clear()
-    if hasattr(homescreen, '_last_jpeg_loaded'):
-        homescreen._last_jpeg_loaded = None
 
-    import gc
+    if hasattr(homescreen, "_cached_styles"):
+        homescreen._cached_styles.clear()
+    if hasattr(homescreen, "_last_jpeg_loaded"):
+        homescreen._last_jpeg_loaded = None
 
     for _ in range(5):
         gc.collect()
 
-    mem_after = gc.mem_free()
+    mem_after = gc.mem_free()  # type: ignore[is not a known member of module]
 
     MIN_REQUIRED_MEMORY = 50 * 1024
     if mem_after < MIN_REQUIRED_MEMORY:
         for _ in range(3):
             gc.collect()
 
-    if hasattr(trezorio, 'jpeg_decoder_is_busy'):
+    if hasattr(trezorio, "jpeg_decoder_is_busy"):
         for _ in range(20):
-            if not trezorio.jpeg_decoder_is_busy():
+            if not trezorio.jpeg_decoder_is_busy():  # type: ignore[is not a known member of module]
                 break
             await loop.sleep(10)
 
@@ -172,7 +178,7 @@ async def upload_res(ctx: wire.Context, msg: ResourceUpload) -> Success:
             if ext != res_ext:
                 continue
 
-            orig_name = name[len("zoom-"):]
+            orig_name = name[len("zoom-") :]
             zoom_path = f"1:/res/wallpapers/{name}"
             orig_path = f"1:/res/wallpapers/{orig_name}"
 
@@ -198,7 +204,6 @@ async def upload_res(ctx: wire.Context, msg: ResourceUpload) -> Success:
         if res_blur_size > 0:
             blur_path = f"1:/res/nfts/imgs/{file_name}-blur.{res_ext}"
 
-
     try:
         with io.fatfs.open(file_full_path, "w") as f:
             data_left = res_size
@@ -220,7 +225,9 @@ async def upload_res(ctx: wire.Context, msg: ResourceUpload) -> Success:
                             continue
                         _heavy_gc(3)
                         try:
-                            request = ResourceRequest(data_length=requested, offset=offset)
+                            request = ResourceRequest(
+                                data_length=requested, offset=offset
+                            )
                             ack = await ctx.call(request, ResourceAck)
                             break
                         except Exception:
@@ -310,7 +317,9 @@ async def upload_res(ctx: wire.Context, msg: ResourceUpload) -> Success:
                                 continue
                             _heavy_gc(3)
                             try:
-                                request = BlurRequest(data_length=requested, offset=offset)
+                                request = BlurRequest(
+                                    data_length=requested, offset=offset
+                                )
                                 ack = await ctx.call(request, ResourceAck)
                                 break
                             except Exception:
@@ -338,12 +347,9 @@ async def upload_res(ctx: wire.Context, msg: ResourceUpload) -> Success:
 
         gc.collect()
 
-
         if replace:
-            from storage import device as storage_device
-
-            lockscreen_wallpaper = storage_device.get_homescreen()
-            mainscreen_wallpaper = storage_device.get_appdrawer_background()
+            lockscreen_wallpaper = device.get_homescreen()
+            mainscreen_wallpaper = device.get_appdrawer_background()
 
             wallpapers_in_use = set()
 
@@ -371,7 +377,7 @@ async def upload_res(ctx: wire.Context, msg: ResourceUpload) -> Success:
 
             def safe_extract_timestamp(name):
                 try:
-                    parts = name[len("zoom-"):].split("-")
+                    parts = name[len("zoom-") :].split("-")
                     if len(parts) >= 2:
                         timestamp_part = parts[-2] if "-blur" in name else parts[-1]
                         if "." in timestamp_part:
@@ -386,7 +392,7 @@ async def upload_res(ctx: wire.Context, msg: ResourceUpload) -> Success:
             zoom_file = None
             file_name = None
             for zoom_candidate in name_list:
-                orig_candidate = zoom_candidate[len("zoom-"):]
+                orig_candidate = zoom_candidate[len("zoom-") :]
                 if orig_candidate not in wallpapers_in_use:
                     zoom_file = zoom_candidate
                     file_name = orig_candidate
@@ -395,7 +401,12 @@ async def upload_res(ctx: wire.Context, msg: ResourceUpload) -> Success:
             if zoom_file is None:
                 replace = False
 
-            if replace and zoom_file and res_type == ResourceType.WallPaper:
+            if (
+                replace
+                and zoom_file
+                and file_name
+                and res_type == ResourceType.WallPaper
+            ):
                 zoom_to_delete = f"1:/res/wallpapers/{zoom_file}"
                 orig_to_delete = f"1:/res/wallpapers/{file_name}"
 
@@ -405,7 +416,7 @@ async def upload_res(ctx: wire.Context, msg: ResourceUpload) -> Success:
                 blur_file_name = file_name[: -(len(res_ext) + 1)] + f"-blur.{res_ext}"
                 blur_to_delete = f"1:/res/wallpapers/{blur_file_name}"
                 _ensure_file_removed(blur_to_delete)
-            elif replace and zoom_file and res_type == ResourceType.Nft:
+            elif replace and zoom_file and file_name and res_type == ResourceType.Nft:
                 zoom_to_delete = f"1:/res/nfts/zooms/{zoom_file}"
                 img_to_delete = f"1:/res/nfts/imgs/{file_name}"
                 config_name = file_name[: -(len(res_ext) + 1)]
@@ -421,20 +432,19 @@ async def upload_res(ctx: wire.Context, msg: ResourceUpload) -> Success:
             device.increase_wp_cnts()
 
     except BaseException as e:
-        import gc
         for _ in range(5):
             gc.collect()
 
-        if hasattr(trezorio, 'jpeg_restore_decoder_state'):
-            trezorio.jpeg_restore_decoder_state()
+        if hasattr(trezorio, "jpeg_restore_decoder_state"):
+            trezorio.jpeg_restore_decoder_state()  # type: ignore[is not a known member of module]
 
         raise wire.FirmwareError(f"Failed to write file with error code {e}")
 
     for _ in range(5):
         gc.collect()
 
-    if hasattr(trezorio, 'jpeg_restore_decoder_state'):
-        trezorio.jpeg_restore_decoder_state()
+    if hasattr(trezorio, "jpeg_restore_decoder_state"):
+        trezorio.jpeg_restore_decoder_state()  # type: ignore[is not a known member of module]
 
     if res_type == ResourceType.WallPaper:
         wallpaper_files = []
@@ -448,6 +458,7 @@ async def upload_res(ctx: wire.Context, msg: ResourceUpload) -> Success:
                 wallpaper_files.append(name)
 
         if len(wallpaper_files) > 5:
+
             def extract_timestamp(filename):
                 try:
                     parts = filename.rsplit("-", 1)
@@ -460,9 +471,7 @@ async def upload_res(ctx: wire.Context, msg: ResourceUpload) -> Success:
 
             wallpaper_files.sort(key=extract_timestamp, reverse=True)
 
-            from storage import device as storage_device
-
-            lockscreen_wallpaper = storage_device.get_homescreen()
+            lockscreen_wallpaper = device.get_homescreen()
             lockscreen_wallpaper_name = None
             if lockscreen_wallpaper:
                 if "/" in lockscreen_wallpaper:
@@ -472,11 +481,13 @@ async def upload_res(ctx: wire.Context, msg: ResourceUpload) -> Success:
 
                 if lockscreen_wallpaper_name.startswith("wp-"):
                     if "-blur." in lockscreen_wallpaper_name:
-                        lockscreen_wallpaper_name = lockscreen_wallpaper_name.replace("-blur.", ".")
+                        lockscreen_wallpaper_name = lockscreen_wallpaper_name.replace(
+                            "-blur.", "."
+                        )
                 else:
                     lockscreen_wallpaper_name = None
 
-            mainscreen_wallpaper = storage_device.get_appdrawer_background()
+            mainscreen_wallpaper = device.get_appdrawer_background()
             mainscreen_wallpaper_name = None
             if mainscreen_wallpaper:
                 if "/" in mainscreen_wallpaper:
@@ -486,7 +497,9 @@ async def upload_res(ctx: wire.Context, msg: ResourceUpload) -> Success:
 
                 if mainscreen_wallpaper_name.startswith("wp-"):
                     if "-blur." in mainscreen_wallpaper_name:
-                        mainscreen_wallpaper_name = mainscreen_wallpaper_name.replace("-blur.", ".")
+                        mainscreen_wallpaper_name = mainscreen_wallpaper_name.replace(
+                            "-blur.", "."
+                        )
                 else:
                     mainscreen_wallpaper_name = None
 
@@ -519,16 +532,18 @@ async def upload_res(ctx: wire.Context, msg: ResourceUpload) -> Success:
                     if dot_idx > 0:
                         base_name = wallpaper_name[:dot_idx]
                         wallpaper_ext = wallpaper_name[dot_idx + 1 :]
-                        blur_path = f"1:/res/wallpapers/{base_name}-blur.{wallpaper_ext}"
+                        blur_path = (
+                            f"1:/res/wallpapers/{base_name}-blur.{wallpaper_ext}"
+                        )
                         _ensure_file_removed(blur_path)
 
     return Success(message="Success")
 
+
 def _heavy_gc(passes: int = 3) -> tuple[int, int]:
-    import gc
     for _ in range(passes):
         gc.collect()
-    return gc.mem_free(), gc.mem_alloc()
+    return gc.mem_free(), gc.mem_alloc()  # type: ignore[is not a known member of module]
 
 
 def _is_codec_too_large(err: Exception) -> bool:
@@ -536,4 +551,8 @@ def _is_codec_too_large(err: Exception) -> bool:
     msg = getattr(err, "args", ())
     if msg:
         msg = msg[0]
-    return name in ("CodecError", "DataError") and isinstance(msg, str) and "Message too large" in msg
+    return (
+        name in ("CodecError", "DataError")
+        and isinstance(msg, str)
+        and "Message too large" in msg
+    )

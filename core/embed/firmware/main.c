@@ -131,7 +131,6 @@ int main(void) {
   lcd_pwm_init();
   touch_init();
   adc_init();
-  
 
   ensure_emmcfs(emmc_fs_init(), "emmc_fs_init");
   ensure_emmcfs(emmc_fs_mount(true, false), "emmc_fs_mount");

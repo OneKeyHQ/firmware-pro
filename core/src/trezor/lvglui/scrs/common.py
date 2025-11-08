@@ -190,7 +190,7 @@ class AnimScreen(lv.obj):
             del self.__class__._instance
             del self
             gc.collect()
-            gc.threshold(gc.mem_free() // 4 + gc.mem_alloc())
+            gc.threshold(gc.mem_free() // 4 + gc.mem_alloc())  # type: ignore[is not a known member of module]
         else:
             self._load_scr(scr)
 
