@@ -87,9 +87,11 @@ void fb_draw_vline(uint32_t x_pos, uint32_t y_pos, uint32_t len,
                    uint32_t color);
 void dma2d_copy_buffer(uint32_t *pSrc, uint32_t *pDst, uint16_t x, uint16_t y,
                        uint16_t xsize, uint16_t ysize);
-void dma2d_copy_ycbcr_to_rgb(uint32_t *pSrc, uint32_t *pDst, uint16_t xsize,
-                             uint16_t ysize, uint32_t ChromaSampling,
-                             uint16_t output_line_width);
+void dma2d_copy_ycbcr_to_rgb(uint32_t *pSrc, uint32_t *pDst,
+                             uint16_t copy_width, uint16_t copy_height,
+                             uint32_t ChromaSampling,
+                             uint16_t output_line_width,
+                             uint16_t input_line_width);
 
 void lcd_set_src_addr(uint32_t addr);
 uint32_t lcd_get_src_addr(void);

@@ -348,7 +348,7 @@ int jped_decode(char *path, uint32_t address) {
     dma2d_copy_ycbcr_to_rgb(
         (uint32_t *)address, (uint32_t *)lcd_get_src_addr(),
         JPEG_Info.ImageWidth, JPEG_Info.ImageHeight,
-        JPEG_Info.ChromaSubsampling,
+        JPEG_Info.ChromaSubsampling, JPEG_Info.ImageWidth,
         JPEG_Info.ImageWidth);  // No width adjustment needed
     return 0;
   }
@@ -365,7 +365,8 @@ int jped_decode_to_address(char *path, uint32_t src_address,
 
     dma2d_copy_ycbcr_to_rgb((uint32_t *)src_address, (uint32_t *)dst_address,
                             JPEG_Info.ImageWidth, JPEG_Info.ImageHeight,
-                            JPEG_Info.ChromaSubsampling, JPEG_Info.ImageWidth);
+                            JPEG_Info.ChromaSubsampling, JPEG_Info.ImageWidth,
+                            JPEG_Info.ImageWidth);
     return 0;
   }
   return -1;

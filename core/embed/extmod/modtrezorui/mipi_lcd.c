@@ -504,38 +504,55 @@ void dma2d_copy_buffer(uint32_t* pSrc, uint32_t* pDst, uint16_t x, uint16_t y,
 }
 
 // Use DMA2D to convert YCbCr format to RGB and copy
-void dma2d_copy_ycbcr_to_rgb(uint32_t* pSrc, uint32_t* pDst, uint16_t xsize,
-                             uint16_t ysize, uint32_t ChromaSampling,
-                             uint16_t output_line_width) {
-  uint32_t cssMode = DMA2D_CSS_420, inputLineOffset = 0;
+void dma2d_copy_ycbcr_to_rgb(uint32_t* pSrc, uint32_t* pDst,
+                             uint16_t copy_width, uint16_t copy_height,
+                             uint32_t ChromaSampling,
+                             uint16_t output_line_width,
+                             uint16_t input_line_width) {
+  if (input_line_width == 0) {
+    input_line_width = copy_width;
+  }
+  if (copy_width > input_line_width) {
+    copy_width = input_line_width;
+  }
 
-  // Set DMA2D parameters based on chroma subsampling type
+  uint32_t cssMode = DMA2D_CSS_420;
+  uint32_t alignmentOffset = 0;
+
+  // Set DMA2D parameters based on chroma subsampling type and take into account
+  // the native JPEG stride (input_line_width) instead of the requested copy
+  // width.
   if (ChromaSampling == JPEG_420_SUBSAMPLING) {
     cssMode = DMA2D_CSS_420;
-    inputLineOffset = xsize % 16;
-    if (inputLineOffset != 0) {
-      inputLineOffset = 16 - inputLineOffset;
+    alignmentOffset = input_line_width % 16;
+    if (alignmentOffset != 0) {
+      alignmentOffset = 16 - alignmentOffset;
     }
   } else if (ChromaSampling == JPEG_444_SUBSAMPLING) {
     cssMode = DMA2D_NO_CSS;
-    inputLineOffset = xsize % 8;
-    if (inputLineOffset != 0) {
-      inputLineOffset = 8 - inputLineOffset;
+    alignmentOffset = input_line_width % 8;
+    if (alignmentOffset != 0) {
+      alignmentOffset = 8 - alignmentOffset;
     }
   } else if (ChromaSampling == JPEG_422_SUBSAMPLING) {
     cssMode = DMA2D_CSS_422;
-    inputLineOffset = xsize % 16;
-    if (inputLineOffset != 0) {
-      inputLineOffset = 16 - inputLineOffset;
+    alignmentOffset = input_line_width % 16;
+    if (alignmentOffset != 0) {
+      alignmentOffset = 16 - alignmentOffset;
     }
   }
 
-  // Calculate output offset for proper line alignment
-  // If xsize < output_line_width, we need to skip the remaining pixels
-  // to move to the next line in the destination buffer
+  // Skip any pixels that we intentionally crop from the right side so that
+  // Layer2 never overruns the 480 px area.
+  uint32_t croppedOffset = 0;
+  if (input_line_width > copy_width) {
+    croppedOffset = input_line_width - copy_width;
+  }
+
+  // Calculate output offset for proper line alignment.
   uint32_t outputLineOffset = 0;
-  if (output_line_width > xsize) {
-    outputLineOffset = output_line_width - xsize;
+  if (output_line_width > copy_width) {
+    outputLineOffset = output_line_width - copy_width;
   }
 
   /*##-1- Configure DMA2D mode, color mode and output offset #############*/
@@ -554,7 +571,7 @@ void dma2d_copy_ycbcr_to_rgb(uint32_t* pSrc, uint32_t* pDst, uint16_t xsize,
   hlcd_dma2d.LayerCfg[1].InputAlpha = 0xFF;
   hlcd_dma2d.LayerCfg[1].InputColorMode = DMA2D_INPUT_YCBCR;
   hlcd_dma2d.LayerCfg[1].ChromaSubSampling = cssMode;
-  hlcd_dma2d.LayerCfg[1].InputOffset = inputLineOffset;
+  hlcd_dma2d.LayerCfg[1].InputOffset = alignmentOffset + croppedOffset;
   hlcd_dma2d.LayerCfg[1].RedBlueSwap = DMA2D_RB_REGULAR;
   hlcd_dma2d.LayerCfg[1].AlphaInverted = DMA2D_REGULAR_ALPHA;
 
@@ -571,7 +588,7 @@ void dma2d_copy_ycbcr_to_rgb(uint32_t* pSrc, uint32_t* pDst, uint16_t xsize,
   }
 
   dma2d_result = HAL_DMA2D_Start(&hlcd_dma2d, (uint32_t)pSrc, (uint32_t)pDst,
-                                 xsize, ysize);
+                                 copy_width, copy_height);
   if (dma2d_result != HAL_OK) {
     return;
   }
@@ -1151,10 +1168,11 @@ __attribute__((used)) void lcd_cover_background_load_jpeg(
 
   uint32_t dest_address =
       (uint32_t)(layer2_buffer + top_padding * lcd_params.hres);
-  dma2d_copy_ycbcr_to_rgb(
-      (uint32_t*)jpeg_output_address, (uint32_t*)dest_address, adjusted_width,
-      height, subsampling,
-      lcd_params.hres);  // Pass screen width for proper line stride
+  dma2d_copy_ycbcr_to_rgb((uint32_t*)jpeg_output_address,
+                          (uint32_t*)dest_address, adjusted_width, height,
+                          subsampling, lcd_params.hres,
+                          width);  // Pass screen width for proper line stride,
+                                   // original stride for cropping
 
   jpeg_restore_state();
 }
