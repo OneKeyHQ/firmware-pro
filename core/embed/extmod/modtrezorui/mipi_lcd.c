@@ -270,12 +270,6 @@ static HAL_StatusTypeDef dsi_host_init(DSI_HandleTypeDef* hdsi) {
     }
   }
 
-  // Configure interrupts (can be enabled if needed)
-  {
-      // HAL_NVIC_SetPriority(DSI_IRQn, 0, 0);
-      // HAL_NVIC_EnableIRQ(DSI_IRQn);
-  }
-
   // Configure DSI clock division
   {
     hdsi->Init.AutomaticClockLaneControl =
@@ -392,7 +386,6 @@ static HAL_StatusTypeDef dsi_host_init(DSI_HandleTypeDef* hdsi) {
   return HAL_OK;
 }
 
-// Macro to convert RGB565 format color to ARGB8888 format
 #define CONVERTRGB5652ARGB8888(Color)                                   \
   ((((((((Color) >> (11U)) & 0x1FU) * 527U) + 23U) >> (6U)) << (16U)) | \
    (((((((Color) >> (5U)) & 0x3FU) * 259U) + 33U) >> (6U)) << (8U)) |   \
@@ -479,7 +472,7 @@ void dma2d_copy_buffer(uint32_t* pSrc, uint32_t* pDst, uint16_t x, uint16_t y,
 
   /*##-3- Foreground layer configuration
    * ###########################################*/
-  hlcd_dma2d.LayerCfg[1].AlphaMode = DMA2D_NO_MODIF_ALPHA;
+      hlcd_dma2d.LayerCfg[1].AlphaMode = DMA2D_NO_MODIF_ALPHA;
   hlcd_dma2d.LayerCfg[1].InputAlpha = 0xFF;
   hlcd_dma2d.LayerCfg[1].InputColorMode = DMA2D_INPUT_RGB565;
   hlcd_dma2d.LayerCfg[1].InputOffset = 0;
@@ -503,7 +496,6 @@ void dma2d_copy_buffer(uint32_t* pSrc, uint32_t* pDst, uint16_t x, uint16_t y,
   }
 }
 
-// Use DMA2D to convert YCbCr format to RGB and copy
 void dma2d_copy_ycbcr_to_rgb(uint32_t* pSrc, uint32_t* pDst,
                              uint16_t copy_width, uint16_t copy_height,
                              uint32_t ChromaSampling,
@@ -519,9 +511,6 @@ void dma2d_copy_ycbcr_to_rgb(uint32_t* pSrc, uint32_t* pDst,
   uint32_t cssMode = DMA2D_CSS_420;
   uint32_t alignmentOffset = 0;
 
-  // Set DMA2D parameters based on chroma subsampling type and take into account
-  // the native JPEG stride (input_line_width) instead of the requested copy
-  // width.
   if (ChromaSampling == JPEG_420_SUBSAMPLING) {
     cssMode = DMA2D_CSS_420;
     alignmentOffset = input_line_width % 16;
@@ -632,20 +621,16 @@ int display_backlight_with_lcd_reset(int val) {
     display_backlight(0);
     lcd_refresh_suspend();
   } else if (val > 0 && DISPLAY_BACKLIGHT == 0) {
-    // When turning on backlight and current is 0, restore refresh first then
-    // turn on backlight
     lcd_refresh_resume();
     HAL_Delay(5);  // Wait for LCD recovery
   }
   return display_backlight(val);
 }
 
-// Set display orientation (0/90/180/270 degrees), return current orientation
 int display_orientation(int degrees) {
   if (degrees != DISPLAY_ORIENTATION) {
     if (degrees == 0 || degrees == 90 || degrees == 180 || degrees == 270) {
       DISPLAY_ORIENTATION = degrees;
-      // Here only record orientation, do not perform actual operation
     }
   }
   return DISPLAY_ORIENTATION;
@@ -811,13 +796,9 @@ void lcd_set_src_addr(uint32_t addr) {    // Set LTDC source address
   static uint32_t animation_counter = 0;  // Animation counter
   static uint32_t last_addr = 0;          // Last set address
 
-  // Skip update if address hasn't changed to reduce unnecessary reloads
-  if (addr == last_addr) {  // Address hasn't changed
-    return;                 // Return directly
+  if (addr == last_addr) {
+    return;
   }
-
-  // During animation keep Layer0 normal updates but use gentler reload method
-  // Don't skip update, ensure Layer0 content displays normally
 
   last_addr = addr;  // Update the last address
 
@@ -831,43 +812,25 @@ void lcd_set_src_addr(uint32_t addr) {    // Set LTDC source address
   config.address = addr;
   ltdc_layer_config(&hlcd_ltdc, 0, &config);
 
-  // Ensure first layer is always enabled // Ensure Layer0 is always enabled
   __HAL_LTDC_LAYER_ENABLE(&hlcd_ltdc, 0);  // Enable Layer0
-  // Note: Don't set Layer0 transparency here, it will interfere with normal
-  // display Remove frequent debug output to reduce log spam // Remove frequent
-  // debug output to reduce log spam
 
   // Use VSync reload to reduce flicker
   __HAL_LTDC_RELOAD_CONFIG(
       &hlcd_ltdc);  // Trigger LTDC reload (VSync synchronized)
 
-  // Pause second layer maintenance during animation to avoid interfering with
-  // Layer0 display
-  if (!g_animation_in_progress) {  // If no animation is in progress
-    animation_counter++;           // Animation counter increment
-    if (animation_counter % 2 ==
-        0) {  // Every other call to maintain 30fps animation // Maintain second
-              // layer every other call to keep 30fps animation
-      lcd_ensure_second_layer();  // Ensure second layer exists
+  if (!g_animation_in_progress) {
+    animation_counter++;
+    if (animation_counter % 2 == 0) {
+      lcd_ensure_second_layer();
     }
   }
-
-  g_current_display_addr = addr;  // Update current display address
-
-  // When Layer2 is displayed, update Layer1 background to match Layer2,
-  // ensuring status bar area background consistency Simplified handling: Layer1
-  // status bar update no longer needed Transparent status bar feature has been
-  // removed
+  // Update current display address
 }
 
-uint32_t lcd_get_src_addr(void) {
-  return g_current_display_addr;
-}  // Get current display frame buffer address
+uint32_t lcd_get_src_addr(void) { return g_current_display_addr; }
 
-// Second layer configuration function - CoverBackground hardware layer
-void lcd_add_second_layer(void) {  // Add second layer (CoverBackground)
-  // Check if already initialized
-  if (g_layer2_initialized) {  // Already initialized, return
+void lcd_add_second_layer(void) {
+  if (g_layer2_initialized) {
     return;
   }
 
@@ -883,30 +846,19 @@ void lcd_add_second_layer(void) {  // Add second layer (CoverBackground)
     return;
   }
 
-  // Initialize CoverBackground content
   lcd_cover_background_init();  // Initialize CoverBackground content
 
-  // Initial state: Layer2 should be completely hidden, only shown on upward
-  // swipe
   hlcd_ltdc.Instance = LTDC;  // Set LTDC instance
 
-  // Ensure Layer0 is enabled (without modifying transparency to avoid display
-  // interference)
   __HAL_LTDC_LAYER_ENABLE(&hlcd_ltdc, 0);  // Enable Layer0
 
   HAL_LTDC_SetAlpha(&hlcd_ltdc, 255, 1);
   __HAL_LTDC_LAYER_DISABLE(&hlcd_ltdc, 1);
 
-  // Initialize layer to above-screen position (considering transparent status
-  // bar) Mark as initialized before moving
   g_layer2_initialized = true;  // Mark Layer2 as initialized
 
   // Initialize animation system
   lcd_animation_init();  // Initialize animation system
-
-  // Layer2 initial state: keep disabled, don't call move_to_y function (it
-  // would enable layer) cover_bg_state already initialized to {false, 0, -800,
-  // false}, keeping hidden state
 
   // Use VSync reload to avoid interfering with normal display
   __HAL_LTDC_RELOAD_CONFIG(
@@ -926,13 +878,6 @@ static struct {
 
 // Initialize CoverBackground content
 void lcd_cover_background_init(void) {  // Initialize CoverBackground content
-  // Note: this function is now called before g_layer2_initialized is set
-  // so no need to check g_layer2_initialized, but need to ensure backup buffer
-  // is properly initialized
-
-  // Backup buffer functionality removed (transparent status bar no longer
-  // needed)
-
   uint16_t* layer2_buffer = (uint16_t*)LAYER2_MEMORY_BASE;
   uint32_t buffer_size = lcd_params.hres * lcd_params.vres;
 
@@ -985,23 +930,17 @@ void lcd_cover_background_init(void) {  // Initialize CoverBackground content
   // Layer2 content is now ready, will display only when show is called
 }
 
-// Show CoverBackground - only called on upward swipe gesture
 // Optimized seamless display to avoid flicker
 __attribute__((used)) void lcd_cover_background_show(void) {
   if (!g_layer2_initialized) {
     return;
   }
 
-  // Key improvement: force wait and stabilize Layer state to prevent layer
-  // confusion during fast switching Wait for LTDC to be completely idle
   while (lcd_ltdc_busy()) {
     HAL_Delay(1);
   }
 
   hlcd_ltdc.Instance = LTDC;
-
-  // Step 0: Reset Layer1 state to prevent layer confusion from fast switching
-  // Note: don't operate on Layer0, it's the system main display layer
 
   // Ensure Layer1 (Layer2 overlay) is initially completely disabled and
   // transparent
@@ -1029,7 +968,6 @@ __attribute__((used)) void lcd_cover_background_show(void) {
   cover_bg_state.y_offset = 0;
   cover_bg_state.opacity = 255;
 
-  // Step 1: Configure Layer2 but keep completely transparent
   LTDC_LAYERCONFIG config;
   config.x0 = 0;
   config.x1 = lcd_params.hres;
@@ -1038,21 +976,16 @@ __attribute__((used)) void lcd_cover_background_show(void) {
   config.pixel_format = lcd_params.pixel_format_ltdc;
   config.address = LAYER2_MEMORY_BASE;
 
-  // Configure Layer2 but set alpha to 0 (completely transparent)
   HAL_LTDC_SetAlpha(&hlcd_ltdc, 0, 1);
   ltdc_layer_config(&hlcd_ltdc, 1, &config);
   __HAL_LTDC_LAYER_ENABLE(&hlcd_ltdc, 1);
 
-  // Reload configuration, Layer2 is now configured but completely transparent
   __HAL_LTDC_RELOAD_CONFIG(&hlcd_ltdc);
 
-  // Wait for configuration to take effect, ensure transparent state is applied
   while (lcd_ltdc_busy()) {
     HAL_Delay(1);
   }
 
-  // Step 2: Wait for VSync signal, only modify Alpha value during vertical
-  // blanking
   volatile uint32_t timeout = 10000;
   while (timeout-- > 0) {
     if (hlcd_ltdc.Instance->CDSR & 0x01) {  // Check VSync status
@@ -1127,8 +1060,6 @@ __attribute__((used)) void lcd_cover_background_load_jpeg(
   // Use dedicated JPEG output buffer
   uint32_t jpeg_output_address = FMC_SDRAM_JPEG_OUTPUT_DATA_BUFFER_ADDRESS;
 
-  // Initialize independent JPEG decoder instance for AppDrawer
-  // Set to dedicated FATFS mode, completely isolated from LVGL mode
   jpeg_decode_file_operation(JPEG_FILE_FATFS);  // Explicitly use FATFS mode
   jpeg_decode_init(jpeg_output_address);        // Use dedicated buffer
 
@@ -1195,21 +1126,15 @@ void lcd_cover_background_move_to_y(int16_t y_position) {
 
   __HAL_LTDC_LAYER_ENABLE(&hlcd_ltdc, 1);
 
-  // Key optimization: dynamic window instead of dynamic address
-  // This avoids reading out-of-range memory causing black screen
-
   uint32_t window_x0 = 0;
   uint32_t window_y0, window_y1;
   uint32_t window_x1 = lcd_params.hres;
   uint32_t layer_address = LAYER2_MEMORY_BASE;
 
   if (y_position < 0) {
-    // Moving up: window starts from screen top, height decreases
-    // Bottom exposed part shows Layer1
     window_y0 = 0;
-    window_y1 = lcd_params.vres + y_position;  // y_position is negative
+    window_y1 = lcd_params.vres + y_position;
 
-    // Start address needs to skip lines moved off-screen
     uint32_t bytes_per_line = lcd_params.hres * lcd_params.bbp;
     uint32_t skip_lines = (uint32_t)(-y_position);
     layer_address = LAYER2_MEMORY_BASE + (skip_lines * bytes_per_line);
@@ -1224,8 +1149,6 @@ void lcd_cover_background_move_to_y(int16_t y_position) {
   if (window_y1 > lcd_params.vres) {
     window_y1 = lcd_params.vres;
   }
-  // During animation use simplified configuration, only update necessary
-  // parameters to avoid full layer reconfiguration
   if (g_animation_in_progress) {
     // During animation ensure Layer1 state is stable to prevent flicker from
     // alpha value changes
@@ -1251,8 +1174,6 @@ void lcd_cover_background_move_to_y(int16_t y_position) {
     config.pixel_format = lcd_params.pixel_format_ltdc;
     config.address = layer_address;
 
-    // Use our lightweight configuration function (already optimized Color
-    // Keying skip)
     ltdc_layer_config(&hlcd_ltdc, 1, &config);
 
     // Simplified processing during animation, no special status bar handling
@@ -1267,10 +1188,6 @@ void lcd_cover_background_move_to_y(int16_t y_position) {
     config.y1 = window_y1;
     config.pixel_format = lcd_params.pixel_format_ltdc;
     config.address = layer_address;
-
-    // Reconfigure Layer1 (but don't reset blending parameters, only update
-    // position and address) Avoid reconfiguring Color Keying during animation,
-    // maintain status bar data
     ltdc_layer_config(&hlcd_ltdc, 1, &config);
   }
 
@@ -1355,8 +1272,6 @@ __attribute__((used)) void lcd_cover_background_start_animation(
   // Pre-enable Layer1 before animation to ensure smooth animation
   __HAL_LTDC_LAYER_ENABLE(&hlcd_ltdc, 1);
 
-  // Ensure Layer1 state is completely stable before animation to prevent
-  // flicker
   hlcd_ltdc.Instance = LTDC;
   HAL_LTDC_SetAlpha(&hlcd_ltdc, 255, 1);  // Layer1 completely opaque
   cover_bg_state.opacity = 255;
@@ -1367,7 +1282,6 @@ __attribute__((used)) void lcd_cover_background_start_animation(
   // Simplified animation configuration, no Color Keying setup
 }
 
-// Update animation state - needs to be called regularly
 __attribute__((used)) bool lcd_cover_background_update_animation(void) {
   if (!g_animation_state.active) {
     return false;
@@ -1381,7 +1295,6 @@ __attribute__((used)) bool lcd_cover_background_update_animation(void) {
     // Animation complete, move to exact position
     lcd_cover_background_move_to_y(g_animation_state.target_y);
 
-    // Force reload after animation completion to ensure final position displays
     // accurately
     __HAL_LTDC_RELOAD_CONFIG(&hlcd_ltdc);
 
@@ -1436,23 +1349,6 @@ __attribute__((used)) void lcd_cover_background_stop_animation(void) {
   }
 }
 
-// Direct animation function - simplified version, not dependent on systick
-/*
- * lcd_cover_background_animate_to_y(int16_t target_y, uint16_t duration_ms)
- *
- * Implements a direct, blocking animation effect to smoothly move
- * CoverBackground (Layer1) from current Y offset to target position over
- * specified duration.
- *
- * Process:
- * 1. Check Layer1 initialization, return if not initialized
- * 2. Get current Y offset, return if already at target
- * 3. Set animation flag and enable Layer1 with full opacity
- * 4. Animation loop with cubic ease-in-out easing at ~60fps
- * 5. Clear animation flag and force LTDC reload on completion
- *
- * Note: Blocking animation, suitable for direct UI thread calls.
- */
 __attribute__((used)) void lcd_cover_background_animate_to_y(
     int16_t target_y, uint16_t duration_ms) {
   if (!g_layer2_initialized) {
@@ -1520,7 +1416,6 @@ __attribute__((used)) void lcd_cover_background_animate_to_y(
       HAL_Delay(1);
     }
 
-    // Use VSync reload consistently to ensure Layer1 and Layer2 synchronization
     __HAL_LTDC_RELOAD_CONFIG(&hlcd_ltdc);
 
     frame_count++;
@@ -1529,13 +1424,10 @@ __attribute__((used)) void lcd_cover_background_animate_to_y(
     HAL_Delay(16);
   }
 
-  // Wait for final update completion
   while (lcd_ltdc_busy()) {
     HAL_Delay(1);
   }
 
-  // After animation completion, use VSync reload to ensure final state is
-  // stable
   __HAL_LTDC_RELOAD_CONFIG(&hlcd_ltdc);
 
   g_animation_in_progress = false;
@@ -1564,8 +1456,4 @@ __attribute__((used)) void lcd_ensure_second_layer(void) {
     __HAL_LTDC_LAYER_ENABLE(&hlcd_ltdc, 1);
     layer_enabled = true;
   }
-
-  // CoverBackground layer is now managed separately via dedicated functions
-  // No automatic updates needed here - controlled by show/hide/set_opacity
-  // functions
 }
