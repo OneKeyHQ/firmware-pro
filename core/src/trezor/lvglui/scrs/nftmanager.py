@@ -1,6 +1,6 @@
 import ujson as json
 import math
-from typing import Callable, TYPE_CHECKING
+from typing import Callable
 
 import storage.device as storage_device
 from trezor import io as trezor_io, uart, utils, workflow
@@ -14,7 +14,7 @@ from . import (
     font_GeistSemiBold38,
     font_GeistSemiBold48,
 )
-from .common import AnimScreen, FullSizeWindow, Screen, lv
+from .common import AnimScreen, Screen, lv
 from .components.banner import LEVEL, Banner
 from .components.button import NormalButton
 from .components.container import ContainerGrid
@@ -26,16 +26,10 @@ from .preview_utils import (
     create_top_mask,
 )
 
-if TYPE_CHECKING:
-    from .homescreen import MainScreen
-
 # Path constants to reduce qstr usage
 _P1 = "1:/res/nfts/zooms"
-_P2 = "1:/res/nfts/imgs/"
 _P3 = "1:/res/nfts/desc/"
 _P4 = "A:1:/res/nfts/zooms/"
-_P5 = "A:1:/res/nfts/imgs/"
-_P6 = "A:/res/"
 _P7 = "A:/res/wallpaper-7.jpg"
 _P8 = "A:/res/checkmark.png"
 _P9 = "A:/res/btn-del-white.png"
@@ -43,9 +37,6 @@ _P10 = "A:/res/icon_example.png"
 _P11 = "A:/res/blur_no_selected.png"
 _P12 = "A:/res/blur_not_available.png"
 _P13 = "A:/res/blur_selected.png"
-_S1 = "NftLockScreenPreview.MainScreen"
-_S2 = "NftLockScreenPreview.LockScreen"
-_S3 = "NftHomeScreenPreview.MainScreen"
 _K1 = "nft_preview_container"
 _K2 = "nft_device_name"
 _K3 = "nft_bluetooth_name"
@@ -58,7 +49,6 @@ def _cached_style(_name: str, factory: Callable[[], StyleWrapper]) -> StyleWrapp
 def _safe_wallpaper_src(path: str | None, context: str = "") -> str:
     if not path:
         return ""
-    # LVGL expects paths prefixed with drive designator. Convert raw FAT path if needed.
     if path.startswith("1:/"):
         return "A:1:/" + path[len("1:/") :]
     return path
@@ -96,7 +86,6 @@ class WallpaperPreviewBase(AnimScreen):
         self.content_area.clear_flag(lv.obj.FLAG.SCROLLABLE)
         self.content_area.set_style_pad_bottom(0, 0)
 
-        # Main container
         self.container = lv.obj(self.content_area)
         self.container.set_size(lv.pct(100), lv.pct(100))
         self.container.align(lv.ALIGN.TOP_MID, 0, 0)
@@ -128,7 +117,6 @@ class WallpaperPreviewBase(AnimScreen):
     def _create_preview_image(self, image_path):
         src = _safe_wallpaper_src(image_path, "NftPreview.Image")
 
-        # Reuse the generic preview helper so scaling matches the system wallpaper preview.
         self.preview_image = create_preview_image(
             self.preview_container,
             base_size=(480, 800),
@@ -147,10 +135,10 @@ class WallpaperPreviewBase(AnimScreen):
         offset_y = 1.0
 
         desktop_positions = [
-            (64, 164),   # Left-Top
-            (272, 164),  # Right-Top
-            (64, 442),   # Left-Bottom
-            (272, 442),  # Right-Bottom
+            (64, 164),
+            (272, 164),
+            (64, 442),
+            (272, 442),
         ]
 
         for i in range(4):
@@ -165,7 +153,6 @@ class WallpaperPreviewBase(AnimScreen):
             self.app_icons.append(icon_img)
 
     def _create_button_with_label(self, icon_path, text, callback):
-        """Create a button with icon and label."""
         button = lv.btn(self.container)
         button.set_size(64, 64)
         button.align_to(self.preview_container, lv.ALIGN.OUT_BOTTOM_MID, 0, 10)
@@ -195,11 +182,9 @@ class WallpaperPreviewBase(AnimScreen):
         return button, icon, label
 
     def _check_blur_exists(self, blur_path):
-        """Check if blur version exists."""
         return _fatfs_file_exists(blur_path)
 
     def _update_blur_button_state(self):
-        """Update blur button state and appearance."""
         if not hasattr(self, "blur_exists"):
             return
 
@@ -492,32 +477,9 @@ class NftManager(AnimScreen):
             _P3 + self.file_name.split(".")[0] + ".json"
         )
 
-        replacement_path = _P7
-        deleted_name = self.img_path.split("/")[-1]
+        from .homescreen import replace_wallpaper_if_in_use
 
-        current_home = storage_device.get_appdrawer_background()
-        current_lock = storage_device.get_homescreen()
-
-        home_uses_image = current_home and (
-            current_home == self.img_path or current_home.endswith("/" + deleted_name)
-        )
-        lock_uses_image = current_lock and (
-            current_lock == self.img_path or current_lock.endswith("/" + deleted_name)
-        )
-
-        if home_uses_image:
-            storage_device.set_appdrawer_background(replacement_path)
-        if lock_uses_image:
-            storage_device.set_homescreen(replacement_path)
-
-        if home_uses_image or lock_uses_image:
-            if hasattr(lv.img, "cache_invalidate_src") and _fatfs_file_exists(
-                self.img_path
-            ):
-                lv.img.cache_invalidate_src(self.img_path)
-            import trezor.lvglui.scrs.homescreen as hs_mod
-
-            hs_mod._last_jpeg_loaded = None
+        replace_wallpaper_if_in_use(self.img_path, _P7)
 
         self.load_screen(self.prev_scr, destroy_self=True)
 
@@ -545,10 +507,8 @@ class NftManager(AnimScreen):
                     )
             else:
                 if target == self.btn_lock_screen:
-                    # Navigate to lock screen preview
                     NftLockScreenPreview(self, self.img_path, self.nft_config)
                 elif target == self.btn_home_screen:
-                    # Navigate to home screen preview
                     NftHomeScreenPreview(self, self.img_path, self.nft_config)
 
 
@@ -563,15 +523,12 @@ class NftLockScreenPreview(WallpaperPreviewBase):
         self.nft_path = nft_path
         self.nft_config = nft_config
 
-        # Use base class methods to create UI
         self._create_preview_container(top_offset=118)
         self.lockscreen_preview = self._create_preview_image(nft_path)
 
-        # Device name and bluetooth name overlaid on the image
         device_name = storage_device.get_label() or "OneKey Pro"
         ble_name = storage_device.get_ble_name() or uart.get_ble_name()
 
-        # Device name label (overlaid on image)
         self.device_name_label = lv.label(self.preview_container)
         self.device_name_label.set_text(device_name)
         self.device_name_label.add_style(
@@ -586,7 +543,6 @@ class NftLockScreenPreview(WallpaperPreviewBase):
         )
         self.device_name_label.align_to(self.preview_container, lv.ALIGN.TOP_MID, 0, 49)
 
-        # Bluetooth name label (overlaid on image)
         self.bluetooth_label = lv.label(self.preview_container)
         if ble_name and len(ble_name) >= 4:
             self.bluetooth_label.set_text("Pro " + ble_name[-4:])
@@ -618,27 +574,11 @@ class NftLockScreenPreview(WallpaperPreviewBase):
                         lv.scr_load(self.prev_scr)
                     return
                 elif hasattr(self, "rti_btn") and target == self.rti_btn:
-                    lockscreen_path = self.nft_path
+                    from .homescreen import apply_lock_wallpaper
+
+                    apply_lock_wallpaper(self.nft_path)
+
                     MainScreen = _get_main_screen_cls()
-
-                    storage_device.set_homescreen(lockscreen_path)
-
-                    main_screen = getattr(MainScreen, "_instance", None)
-                    safe_unlock_path = _safe_wallpaper_src(lockscreen_path, _S1)
-                    if main_screen:
-                        main_screen.set_background_image(safe_unlock_path)
-                        if hasattr(main_screen, "apps") and main_screen.apps:
-                            main_screen.apps.refresh_background()
-
-                    if hasattr(lv.img, "cache_invalidate_src"):
-                        lv.img.cache_invalidate_src(lockscreen_path)
-
-                    import trezor.lvglui.scrs.homescreen as hs_mod
-                    if hs_mod is not None:
-                        hs_mod._last_jpeg_loaded = None
-
-                    from .lockscreen import LockScreen as LockScreenCls  # type: ignore
-                    LockScreenCls.invalidate("NFT wallpaper applied")
                     main_screen = (
                         MainScreen._instance
                         if hasattr(MainScreen, "_instance") and MainScreen._instance
@@ -662,36 +602,30 @@ class NftHomeScreenPreview(WallpaperPreviewBase):
         self.is_blur_active = False
         self.current_wallpaper_path = nft_path
 
-        # Check if blur file exists
         file_name = nft_path.split("/")[-1]
         if "." in file_name:
             base_name, ext = file_name.rsplit(".", 1)
             blur_file = f"{base_name}-blur.{ext}"
         else:
-            base_name, ext = file_name, ""
-            blur_file = f"{base_name}-blur"
+            blur_file = f"{file_name}-blur"
         self.blur_path = nft_path.replace(file_name, blur_file)
         self.blur_exists = self._check_blur_exists(self.blur_path)
 
-        # Use base class methods to create UI
         self._create_preview_container(top_offset=118)
         self.homescreen_preview = self._create_preview_image(nft_path)
         self._create_app_icons()
 
-        # Create Blur button
         (
             self.blur_button,
             self.blur_button_icon,
             self.blur_label,
         ) = self._create_button_with_label(_P11, _(i18n_keys.BUTTON__BLUR), self.on_blur_clicked)
 
-        # Position blur button centered at bottom
         self.blur_button.align_to(
             self.preview_container, lv.ALIGN.OUT_BOTTOM_MID, 0, 10
         )
         self.blur_label.align_to(self.blur_button, lv.ALIGN.OUT_BOTTOM_MID, 0, 4)
 
-        # Initialize blur button state
         self._update_blur_button_state()
 
     def on_blur_clicked(self, _event_obj):
@@ -702,7 +636,6 @@ class NftHomeScreenPreview(WallpaperPreviewBase):
         if not self.blur_exists:
             return
 
-        # Get original file name and construct blur path
         file_name = self.nft_path.split("/")[-1]
         if "." in file_name:
             base_name, ext = file_name.rsplit(".", 1)
@@ -710,15 +643,12 @@ class NftHomeScreenPreview(WallpaperPreviewBase):
         else:
             blur_file = f"{file_name}-blur"
 
-        # Construct blur path using the same directory structure (A: prefix preserved)
         blur_path = self.nft_path.replace(file_name, blur_file)
 
         if self.is_blur_active:
-            # Switch to original
             self.current_wallpaper_path = self.original_wallpaper_path
             self.is_blur_active = False
         else:
-            # Switch to blur
             self.current_wallpaper_path = blur_path
             self.is_blur_active = True
 
@@ -738,53 +668,18 @@ class NftHomeScreenPreview(WallpaperPreviewBase):
                         lv.scr_load(self.prev_scr)
                     return
                 elif hasattr(self, "rti_btn") and target == self.rti_btn:
-                    # Set as home screen - convert A:1: to A: format for storage
-                    wallpaper_path = self.current_wallpaper_path
+                    from .homescreen import apply_home_wallpaper
+
+                    apply_home_wallpaper(self.current_wallpaper_path)
+
                     MainScreen = _get_main_screen_cls()
-
-                    # Save old wallpaper path BEFORE setting new one
-                    old_wallpaper = storage_device.get_appdrawer_background()
-
-                    # Set the new AppDrawer background
-                    storage_device.set_appdrawer_background(wallpaper_path)
-
-                    # CRITICAL: Clear LVGL image cache for BOTH old and new wallpapers
-                    if hasattr(lv.img, "cache_invalidate_src"):
-                        if old_wallpaper and _fatfs_file_exists(old_wallpaper):
-                            lv.img.cache_invalidate_src(old_wallpaper)
-                        if _fatfs_file_exists(wallpaper_path):
-                            lv.img.cache_invalidate_src(wallpaper_path)
-                        lv.img.cache_invalidate_src(None)
-
-                    main_screen = getattr(MainScreen, "_instance", None)
-                    if main_screen:
-                        # Refresh the AppDrawer background
-                        if hasattr(main_screen, "apps") and main_screen.apps:
-                            # Remove existing background style first to avoid style stacking
-                            if getattr(main_screen.apps, "_background_style", None):
-                                main_screen.apps.remove_style(
-                                    main_screen.apps._background_style, 0
-                                )
-                                main_screen.apps._background_style = None
-
-                            # Now refresh the background which will create a new style
-                            main_screen.apps.refresh_background()
-
-                            # Force invalidate to refresh display
-                            if main_screen.apps.has_flag(lv.obj.FLAG.HIDDEN):
-                                main_screen.apps.invalidate()
-
-                    # Find the root MainScreen instance
                     main_screen = (
                         MainScreen._instance
                         if hasattr(MainScreen, "_instance") and MainScreen._instance
                         else MainScreen()
                     )
-
-                    # Use AnimScreen's load_screen method for proper navigation
                     self.load_screen(main_screen, destroy_self=True)
                     return
             else:
-                # Handle button clicks for Blur button only
                 if hasattr(self, "blur_button") and target == self.blur_button:
                     self.on_blur_clicked(event_obj)

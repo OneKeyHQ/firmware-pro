@@ -180,6 +180,98 @@ def get_cached_style(image_src):
     return StyleWrapper().bg_img_src(safe_src).border_width(0)
 
 
+def _get_main_screen_instance():
+    MainScreenCls = globals().get("MainScreen")
+    if not MainScreenCls:
+        return None
+    return getattr(MainScreenCls, "_instance", None)
+
+
+def _invalidate_image_cache(*paths):
+    if not hasattr(lv.img, "cache_invalidate_src"):
+        return
+    for path in paths:
+        if path:
+            lv.img.cache_invalidate_src(path)
+    lv.img.cache_invalidate_src(None)
+
+
+def apply_home_wallpaper(new_wallpaper: str | None) -> None:
+    if not new_wallpaper:
+        return
+
+    old_wallpaper = storage_device.get_appdrawer_background()
+    storage_device.set_appdrawer_background(new_wallpaper)
+
+    Layer2Manager.reset_background_cache()
+    _invalidate_image_cache(old_wallpaper, new_wallpaper)
+
+    main_screen = _get_main_screen_instance()
+    if main_screen and hasattr(main_screen, "apps") and main_screen.apps:
+        try:
+            main_screen.apps.refresh_background()
+            if main_screen.apps.has_flag(lv.obj.FLAG.HIDDEN):
+                main_screen.apps.invalidate()
+        except Exception:
+            pass
+
+
+def apply_lock_wallpaper(new_wallpaper: str | None) -> None:
+    if not new_wallpaper:
+        return
+
+    old_wallpaper = storage_device.get_homescreen()
+    storage_device.set_homescreen(new_wallpaper)
+
+    Layer2Manager.reset_background_cache()
+    _invalidate_image_cache(old_wallpaper, new_wallpaper)
+
+    main_screen = _get_main_screen_instance()
+    if main_screen:
+        try:
+            sanitized = _normalize_wallpaper_src(new_wallpaper)
+            main_screen.set_background_image(sanitized)
+            lv.refr_now(None)
+        except Exception:
+            pass
+
+    from .lockscreen import LockScreen
+
+    LockScreen.invalidate("wallpaper change")
+
+
+def replace_wallpaper_if_in_use(
+    deleted_path: str | None, replacement_path: str | None = None
+) -> None:
+    if not deleted_path:
+        return
+
+    replacement = replacement_path or utils.get_default_wallpaper()
+
+    base_name = deleted_path.split("/")[-1]
+    blur_name = base_name
+    lower_name = base_name.lower()
+    for ext in (".jpg", ".jpeg", ".png"):
+        if lower_name.endswith(ext):
+            blur_name = base_name[: -len(ext)] + "-blur" + ext
+            break
+
+    current_home = storage_device.get_appdrawer_background()
+    current_lock = storage_device.get_homescreen()
+
+    def _matches(candidate: str | None) -> bool:
+        if not candidate:
+            return False
+        return (
+            deleted_path in candidate
+            or candidate.endswith("/" + base_name)
+            or candidate.endswith("/" + blur_name)
+        )
+
+    if _matches(current_home):
+        apply_home_wallpaper(replacement)
+    if _matches(current_lock):
+        apply_lock_wallpaper(replacement)
 
 
 def brightness2_percent_str(brightness: int) -> str:
@@ -3417,6 +3509,7 @@ class AppdrawerBackgroundSetting(AnimScreen):
             AppdrawerBackgroundSetting._instance = self
             # debug logging removed
         else:
+            self._return_to_prev_instance = return_from_wallpaper
             # debug logging removed
             # Even if already initialized, update the wallpaper if a new one is provided
             if selected_wallpaper:
@@ -3457,6 +3550,7 @@ class AppdrawerBackgroundSetting(AnimScreen):
             return
 
         self.selected_wallpaper = selected_wallpaper
+        self._return_to_prev_instance = return_from_wallpaper
 
         super().__init__(
             prev_scr=prev_scr, nav_back=True, rti_path="A:/res/checkmark.png"
@@ -3736,8 +3830,7 @@ class AppdrawerBackgroundSetting(AnimScreen):
             if isinstance(target, lv.imgbtn):
                 if hasattr(self, "nav_back") and target == self.nav_back.nav_btn:
                     if self.prev_scr is not None:
-                        _clear_preview_cache()
-                        self.load_screen(self.prev_scr, destroy_self=True)
+                        self._return_to_previous_screen()
                     return
                 elif hasattr(self, "rti_btn") and target == self.rti_btn:
                     self.on_click_ext(target)
@@ -3746,8 +3839,7 @@ class AppdrawerBackgroundSetting(AnimScreen):
             # Check if target is the navigation container (back button area)
             if hasattr(self, "nav_back") and target == self.nav_back:
                 if self.prev_scr is not None:
-                    _clear_preview_cache()
-                    self.load_screen(self.prev_scr, destroy_self=True)
+                    self._return_to_previous_screen()
                 return
 
             if isinstance(target, (lv.btn, lv.imgbtn)) and not hasattr(
@@ -3759,39 +3851,34 @@ class AppdrawerBackgroundSetting(AnimScreen):
         if hasattr(self, "rti_btn") and target == self.rti_btn:
             current_wallpaper = getattr(self, "current_wallpaper_path", None)
             if current_wallpaper:
-                # Save old wallpaper path BEFORE setting new one
-                old_wallpaper = storage_device.get_homescreen()
-
-                storage_device.set_homescreen(current_wallpaper)
-
-                # Clear Layer2 cache only, not LVGL image cache
-                # Clearing all image cache causes freeze with many cached wallpaper previews
-                Layer2Manager.reset_background_cache()
-
-
-                    # Clear old wallpaper cache
-                if old_wallpaper:
-                    lv.img.cache_invalidate_src(old_wallpaper)
-                # Clear new wallpaper cache
-                lv.img.cache_invalidate_src(current_wallpaper)
-                # Clear all caches for good measure
-                lv.img.cache_invalidate_src(None)
-
-
-                # Update MainScreen background
-                if hasattr(MainScreen, "_instance") and MainScreen._instance:
-                    ms = MainScreen._instance
-                    sanitized = _normalize_wallpaper_src(current_wallpaper)
-                    ms.set_background_image(sanitized)
-                    lv.refr_now(None)
-
-                # Delete LockScreen instance to force recreation with new wallpaper
-                from .lockscreen import LockScreen
-
-                LockScreen.invalidate("wallpaper change")
+                apply_lock_wallpaper(current_wallpaper)
 
             if self.prev_scr is not None:
+                self._return_to_previous_screen()
+
+    def _return_to_previous_screen(self):
+        if not self.prev_scr:
+            return
+        _clear_preview_cache()
+        if getattr(self, "_return_to_prev_instance", False):
+            try:
+                self._load_scr(self.prev_scr, back=True)
+            except Exception:
                 self.load_screen(self.prev_scr, destroy_self=True)
+                return
+            utils.try_remove_scr(self)
+            try:
+                if (
+                    hasattr(self.__class__, "_instance")
+                    and self.__class__._instance is self
+                ):
+                    del self.__class__._instance
+            except Exception:
+                pass
+            self.del_delayed(100)
+            gc.collect()
+        else:
+            self.load_screen(self.prev_scr, destroy_self=True)
 
 class WallperChange(AnimScreen):
     def collect_animation_targets(self) -> list:
@@ -4597,52 +4684,8 @@ class WallperChange(AnimScreen):
         # debug logging removed
 
     def replace_if_in_use(self, deleted_path):
-        # debug logging removed
-        import storage.device as storage_device
-
         try:
-            current_homescreen = storage_device.get_appdrawer_background()
-            current_lockscreen = storage_device.get_homescreen()
-            replacement_path = "A:/res/wallpaper-7.jpg"
-            # debug logging removed
-
-            base_name = deleted_path.split("/")[-1]
-            blur_name = base_name
-            for ext in (".jpg", ".jpeg", ".png"):
-                if base_name.lower().endswith(ext):
-                    blur_name = base_name[: -len(ext)] + "-blur" + ext
-                    break
-
-            if current_homescreen and (
-                deleted_path in current_homescreen
-                or current_homescreen.endswith("/" + base_name)
-                or current_homescreen.endswith("/" + blur_name)
-            ):
-                # debug logging removed
-                storage_device.set_appdrawer_background(replacement_path)
-
-            if current_lockscreen and (
-                deleted_path in current_lockscreen
-                or current_lockscreen.endswith("/" + base_name)
-                or current_lockscreen.endswith("/" + blur_name)
-            ):
-                # debug logging removed
-                storage_device.set_homescreen(replacement_path)
-
-            # Clear Layer2 JPEG cache if we changed wallpaper
-            # This prevents timing issues on next AppDrawer swipe
-            if (current_homescreen and (
-                deleted_path in current_homescreen
-                or current_homescreen.endswith("/" + base_name)
-                or current_homescreen.endswith("/" + blur_name)
-            )) or (current_lockscreen and (
-                deleted_path in current_lockscreen
-                or current_lockscreen.endswith("/" + base_name)
-                or current_lockscreen.endswith("/" + blur_name)
-            )):
-                Layer2Manager.reset_background_cache()
-                # debug logging removed
-
+            replace_wallpaper_if_in_use(deleted_path, "A:/res/wallpaper-7.jpg")
         except Exception:
             pass
 
@@ -6043,6 +6086,7 @@ class HomeScreenSetting(AnimScreen):
         if not hasattr(self, "_init"):
             self._init = True
         else:
+            self._return_to_prev_instance = return_from_wallpaper
             # Even if already initialized, update the wallpaper if a new one is provided
             if selected_wallpaper:
 
@@ -6084,6 +6128,7 @@ class HomeScreenSetting(AnimScreen):
             return
 
         self.selected_wallpaper = selected_wallpaper
+        self._return_to_prev_instance = return_from_wallpaper
 
         super().__init__(
             prev_scr=prev_scr, nav_back=True, rti_path="A:/res/checkmark.png"
@@ -6329,12 +6374,7 @@ class HomeScreenSetting(AnimScreen):
             if isinstance(target, lv.imgbtn):
                 if hasattr(self, "nav_back") and target == self.nav_back.nav_btn:
                     if self.prev_scr is not None:
-                        _clear_preview_cache()
-                        try:
-                            self.load_screen(self.prev_scr, destroy_self=True)
-                        except Exception as e:
-                                fallback_screen = WallpaperScreen()
-                                self.load_screen(fallback_screen, destroy_self=True)
+                        self._return_to_previous_screen()
                     return
                 elif hasattr(self, "rti_btn") and target == self.rti_btn:
                     self.on_click_ext(target)
@@ -6394,41 +6434,39 @@ class HomeScreenSetting(AnimScreen):
         if hasattr(self, "rti_btn") and target == self.rti_btn:
             current_wallpaper = getattr(self, "current_wallpaper_path", None)
             if current_wallpaper:
-                # Save old wallpaper path BEFORE setting new one
-                old_wallpaper = storage_device.get_appdrawer_background()
+                apply_home_wallpaper(current_wallpaper)
 
-                storage_device.set_appdrawer_background(current_wallpaper)
-
-                # Clear Layer2 JPEG cache to force reload with new wallpaper
-                Layer2Manager.reset_background_cache()
-
-                # CRITICAL: Clear LVGL image cache for BOTH old and new wallpapers
-
-                # Clear old wallpaper cache
-                if old_wallpaper:
-                    lv.img.cache_invalidate_src(old_wallpaper)
-                # Clear new wallpaper cache
-                lv.img.cache_invalidate_src(current_wallpaper)
-                # Clear all caches for good measure
-                lv.img.cache_invalidate_src(None)
-
-
-                if hasattr(MainScreen, "_instance") and MainScreen._instance:
-                    main_screen = MainScreen._instance
-                    if hasattr(main_screen, "apps") and main_screen.apps:
-                        # Refresh AppDrawer background with cached style
-                        cached_style = get_cached_style(current_wallpaper)
-                        if cached_style is not None:
-                            main_screen.apps.add_style(cached_style, 0)
-
-                        # Only invalidate when AppDrawer is hidden
-                        if main_screen.apps.has_flag(lv.obj.FLAG.HIDDEN):
-                            main_screen.apps.invalidate()
-
-            # Return to previous screen
             if self.prev_scr is not None:
-                _clear_preview_cache()
+                self._return_to_previous_screen()
+
+    def _return_to_previous_screen(self):
+        if not self.prev_scr:
+            return
+        _clear_preview_cache()
+        if getattr(self, "_return_to_prev_instance", False):
+            try:
+                self._load_scr(self.prev_scr, back=True)
+            except Exception:
+                fallback_screen = WallpaperScreen()
+                self.load_screen(fallback_screen, destroy_self=True)
+                return
+            utils.try_remove_scr(self)
+            try:
+                if (
+                    hasattr(self.__class__, "_instance")
+                    and self.__class__._instance is self
+                ):
+                    del self.__class__._instance
+            except Exception:
+                pass
+            self.del_delayed(100)
+            gc.collect()
+        else:
+            try:
                 self.load_screen(self.prev_scr, destroy_self=True)
+            except Exception:
+                fallback_screen = WallpaperScreen()
+                self.load_screen(fallback_screen, destroy_self=True)
 
     def _get_blur_wallpaper_path(self, original_path):
         if not original_path:
