@@ -1,6 +1,8 @@
 #include "display.h"
 #include "mipi_lcd.h"
 
+/// package: trezorio.__init__
+
 /// class Display:
 ///     """
 ///     Provide access to device display.
