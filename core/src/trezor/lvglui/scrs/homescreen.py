@@ -717,7 +717,7 @@ class MainScreen(Screen):
 
     class AppDrawer(lv.obj):
         PAGE_SIZE = 2
-        PAGE_SLIDE_TIME = 300  # Shortened animation time for quick response
+        PAGE_SLIDE_TIME = 300  # Animation time with ease_out for smooth feel
 
         def __init__(self, parent):
             super().__init__(parent)
@@ -1209,6 +1209,9 @@ class MainScreen(Screen):
             if not old_cont or not new_cont:
                 return
 
+            # Clean up memory before starting animation to prevent GC during animation
+            gc.collect()
+
             self.page_animating = True
             self._page_anim_target = target_index
 
@@ -1239,29 +1242,15 @@ class MainScreen(Screen):
                 anim.set_time(anim_time)
                 anim.set_path_cb(easing_cb)
 
-                prev_area = lv.area_t()
-                new_area = lv.area_t()
-
-                def exec_cb(
-                    _anim,
-                    val,
-                    *,
-                    target=target_obj,
-                    prev_area=prev_area,
-                    new_area=new_area,
-                ):
-                    target.get_coords(prev_area)
+                def exec_cb(_anim, val, *, target=target_obj):
                     target.set_x(int(val))
-                    target.get_coords(new_area)
-                    target.invalidate_area(prev_area)
-                    target.invalidate_area(new_area)
 
                 anim.set_custom_exec_cb(exec_cb)
                 anim.set_repeat_count(1)
                 return anim
 
-            # Use linear easing for fastest speed
-            easing_cb = lv.anim_t.path_ease_out  # Linear animation, no easing
+            # Use ease_out for smooth feel
+            easing_cb = lv.anim_t.path_ease_out
             anim_out = animate_x(
                 old_wrap,
                 old_wrap.get_x(),
@@ -1285,8 +1274,6 @@ class MainScreen(Screen):
                 lv.anim_t.start(anim_out),
                 lv.anim_t.start(anim_in),
             ]
-
-            lv.refr_now(None)
 
         def finish_page_animation(self, force: bool = False):
             if not getattr(self, "page_animating", False):
@@ -1338,21 +1325,9 @@ class MainScreen(Screen):
             self._page_anim_refs = []
             self._page_anim_handles = []
 
-            lv.refr_now(None)
-
+            # Clean up immediately if forced, otherwise let normal GC handle it
             if force:
                 gc.collect()
-
-            # OPTIMIZATION: Delay GC longer (150ms instead of 50ms) to avoid
-            # interfering with rendering stabilization after animation
-            def delayed_gc():
-                gc.collect()
-
-            def schedule_gc():
-                gc_timer = lv.timer_create(lambda t: delayed_gc(), 150, None)
-                gc_timer.set_repeat_count(1)
-
-            schedule_gc()
 
         def force_cleanup(self):
             self.finish_page_animation(force=True)

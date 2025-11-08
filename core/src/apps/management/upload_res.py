@@ -1,6 +1,6 @@
 import gc
 from micropython import const
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from storage import device
 from trezor import io, wire
@@ -43,6 +43,27 @@ def _ensure_file_removed(path: str) -> None:
     except BaseException:
         return
     io.fatfs.unlink(path)
+
+
+def _cleanup_partial_files(*paths: Optional[str]) -> None:
+    for path in paths:
+        if path:
+            _ensure_file_removed(path)
+
+
+def _verify_file_size(path: str, expected_size: int) -> None:
+    if expected_size <= 0:
+        return
+    try:
+        actual_size, _, _ = io.fatfs.stat(path)
+    except BaseException as err:
+        _ensure_file_removed(path)
+        raise wire.FirmwareError(f"Failed to verify file {path}: {err}")
+    if actual_size != expected_size:
+        _ensure_file_removed(path)
+        raise wire.FirmwareError(
+            f"File size mismatch for {path}. Expected {expected_size}, got {actual_size}"
+        )
 
 
 async def upload_res(ctx: wire.Context, msg: ResourceUpload) -> Success:
@@ -126,6 +147,7 @@ async def upload_res(ctx: wire.Context, msg: ResourceUpload) -> Success:
             )
     else:
         raise wire.DataError("File name required")
+    metadata_len = 0
     if res_type == ResourceType.Nft:
         if msg.nft_meta_data is None:
             raise wire.DataError("NFT metadata required")
@@ -135,6 +157,7 @@ async def upload_res(ctx: wire.Context, msg: ResourceUpload) -> Success:
             metadata = json.loads(msg.nft_meta_data.decode("utf-8"))
         except BaseException as e:
             raise wire.DataError(f"Invalid metadata {e}")
+        metadata_len = len(msg.nft_meta_data)
         if any(key not in metadata.keys() for key in NFT_METADATA_ALLOWED_KEYS):
             raise wire.DataError("Invalid metadata")
     replace = False
@@ -246,6 +269,7 @@ async def upload_res(ctx: wire.Context, msg: ResourceUpload) -> Success:
                 offset += actual_len
                 data_left -= actual_len
             f.sync()
+        _verify_file_size(file_full_path, res_size)
 
         with io.fatfs.open(zoom_path, "w") as f:
             data_left = res_zoom_size
@@ -286,6 +310,7 @@ async def upload_res(ctx: wire.Context, msg: ResourceUpload) -> Success:
                 offset += actual_len
                 data_left -= actual_len
             f.sync()
+        _verify_file_size(zoom_path, res_zoom_size)
 
         if (
             res_type in (ResourceType.WallPaper, ResourceType.Nft)
@@ -338,12 +363,14 @@ async def upload_res(ctx: wire.Context, msg: ResourceUpload) -> Success:
                     offset += actual_len
                     data_left -= actual_len
                 f.sync()
+            _verify_file_size(blur_path, res_blur_size)
 
         if res_type == ResourceType.Nft and config_path:
             with io.fatfs.open(config_path, "w") as f:
                 assert msg.nft_meta_data
                 f.write(msg.nft_meta_data)
                 f.sync()
+            _verify_file_size(config_path, metadata_len)
 
         gc.collect()
 
@@ -434,6 +461,8 @@ async def upload_res(ctx: wire.Context, msg: ResourceUpload) -> Success:
     except BaseException as e:
         for _ in range(5):
             gc.collect()
+
+        _cleanup_partial_files(file_full_path, zoom_path, blur_path, config_path)
 
         if hasattr(trezorio, "jpeg_restore_decoder_state"):
             trezorio.jpeg_restore_decoder_state()  # type: ignore[is not a known member of module]
