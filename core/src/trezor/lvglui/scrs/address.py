@@ -267,7 +267,11 @@ class AddressManager:
         path = self.current_chain_info["base_path"][:]
         pos = self.current_chain_info["index_pos"]
         path[pos] += self.current_index
-        self.addr_type = _(i18n_keys.BUTTON_ONEKEY_EXTENDED)
+        self.addr_type = (
+            _(i18n_keys.BUTTON_ONEKEY_EXTENDED)
+            if self.use_standard_derivation
+            else _(i18n_keys.BUTTON_KASPA_OFFICIAL)
+        )
         msg_class = getattr(messages, self.current_chain_info["msg_class"])
         return msg_class(
             address_n=path, show_display=False, use_tweak=self.use_standard_derivation

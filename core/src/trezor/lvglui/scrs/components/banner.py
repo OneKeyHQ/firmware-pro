@@ -52,6 +52,7 @@ class Banner(lv.obj):
         else:
             self.banner_desc.align_to(self.lead_icon, lv.ALIGN.OUT_RIGHT_TOP, 8, 3)
         self.banner_desc.set_text(text)
+        self.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
 
 
 def get_style(level: int):

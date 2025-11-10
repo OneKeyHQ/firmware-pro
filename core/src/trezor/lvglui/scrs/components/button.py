@@ -99,6 +99,7 @@ class ListItemBtn(lv.btn):
         text: str,
         right_text="",
         left_img_src: str = "",
+        right_img_src: str = "",
         has_next: bool = False,
         has_bgcolor=True,
         use_transition=True,
@@ -136,6 +137,10 @@ class ListItemBtn(lv.btn):
         if has_next:
             self.img_right = lv.img(self)
             self.img_right.set_src("A:/res/arrow-right.png")
+            self.img_right.set_align(lv.ALIGN.RIGHT_MID)
+        elif right_img_src:
+            self.img_right = lv.img(self)
+            self.img_right.set_src(right_img_src)
             self.img_right.set_align(lv.ALIGN.RIGHT_MID)
         self.label_left = lv.label(self)
         self.label_left.set_width(360)
@@ -194,7 +199,7 @@ class ListItemBtn(lv.btn):
             StyleWrapper().pad_ver(pad_ver).pad_top(pad_top).min_height(104), 0
         )
         self.label_left.align_to(self.img_left, lv.ALIGN.OUT_RIGHT_TOP, 16, -6)
-        self.label_right.set_width(344)
+        self.label_right.set_width(216)
         self.label_left.add_style(StyleWrapper().pad_all(0), 0)
         self.label_right.add_style(
             StyleWrapper().text_font(font_GeistRegular20).text_align_left().pad_all(0),

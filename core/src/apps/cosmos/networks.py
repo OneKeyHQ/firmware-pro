@@ -128,7 +128,7 @@ def _networks_iterator() -> Iterator[NetworkInfoTuple]:
     )
     yield (
         "crypto-org-chain-mainnet-1",
-        "Crypto.org",
+        "Cronos POS Chain",
         "CRO",
         "basecro",
         8,

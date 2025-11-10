@@ -471,9 +471,7 @@ ALLOW_WHILE_LOCKED = (
 )
 
 
-def set_homescreen(
-    prefer_appdrawer: bool = False
-) -> None:
+def set_homescreen(prefer_appdrawer: bool = False) -> None:
     import lvgl as lv  # type: ignore[Import "lvgl" could not be resolved]
 
     from trezor.lvglui.scrs import fingerprints
