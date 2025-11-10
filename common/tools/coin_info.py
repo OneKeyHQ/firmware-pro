@@ -484,6 +484,26 @@ def _load_erc20_tokens() -> Coins:
     return tokens
 
 
+def _load_spl_tokens() -> Coins:
+    """Load SPL tokens from `solana/spl_tokens.json`"""
+    tokens: Coins = []
+
+    tokens_path = DEFS_DIR / "solana" / "spl_tokens.json"
+    tokens_data = load_json(tokens_path)
+    for token in tokens_data:
+        token.update(
+            address=token["address"],
+            symbol=token["symbol"],
+            decimals=token["decimals"],
+            name=token["name"],
+            shortcut=token["symbol"],
+            key=f"spl:{token['symbol']}",
+        )
+        tokens.append(token)
+
+    return tokens
+
+
 def _load_nem_mosaics() -> Coins:
     """Loads NEM mosaics from `nem/nem_mosaics.json`"""
     mosaics: Coins = load_json("nem/nem_mosaics.json")
@@ -917,6 +937,7 @@ def collect_coin_info() -> CoinsInfo:
     `eth` for ethereum networks,
     `erc20` for ERC20 tokens,
     `nem` for NEM mosaics,
+    `spl` for solana SPL tokens,
     `misc` for other networks.
     """
     all_coins = CoinsInfo(
@@ -928,6 +949,7 @@ def collect_coin_info() -> CoinsInfo:
         conflux=_load_conflux_tokens(),
         algorand=_load_algo_tokens(),
         misc=_load_misc(),
+        spl=_load_spl_tokens(),
     )
 
     for coins in all_coins.values():

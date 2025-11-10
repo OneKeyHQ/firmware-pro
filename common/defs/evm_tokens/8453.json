@@ -3,28 +3,304 @@
     "chain": "Base",
     "tokens": [
         {
-            "name": "USD Coin",
-            "symbol": "USDC",
-            "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-            "decimals": 6
-        },
-        {
-            "name": "Bridged Tether USD",
-            "symbol": "USDT",
-            "address": "0xfde4c96c8593536e31f229ea8f37b2ada2699bb2",
-            "decimals": 6
-        },
-        {
-            "name": "Wrapped Ether",
-            "symbol": "WETH",
             "address": "0x4200000000000000000000000000000000000006",
-            "decimals": 18
-        },
-        {
-            "name": "Dai Stablecoin",
-            "symbol": "DAI",
-            "address": "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb",
-            "decimals": 18
-        }
+            "symbol": "WETH",
+            "name": "Wrapped Ether",
+            "decimals": "18"
+          },
+          {
+            "address": "0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca",
+            "symbol": "USDbC",
+            "name": "USD Base Coin",
+            "decimals": "6"
+          },
+          {
+            "address": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+            "symbol": "USDC",
+            "name": "USD Coin",
+            "decimals": "6"
+          },
+          {
+            "address": "0x0555e30da8f98308edb960aa94c0db47230d2b9c",
+            "symbol": "WBTC",
+            "name": "Wrapped BTC",
+            "decimals": "8"
+          },
+          {
+            "address": "0x88fb150bdc53a65fe94dea0c9ba0a6daf8c6e196",
+            "symbol": "LINK",
+            "name": "ChainLink Token",
+            "decimals": "18"
+          },
+          {
+            "address": "0x04c0599ae5a44757c0af6f9ec3b93da8976c150a",
+            "symbol": "weETH",
+            "name": "Wrapped eETH",
+            "decimals": "18"
+          },
+          {
+            "address": "0x5d3a1ff2b6bab83b63cd9ad0787074081a52ef34",
+            "symbol": "USDe",
+            "name": "USDe",
+            "decimals": "18"
+          },
+          {
+            "address": "0x820c137fa70c8691f0e44dc420a5e53c168921dc",
+            "symbol": "USDS",
+            "name": "USDS Stablecoin",
+            "decimals": "18"
+          },
+          {
+            "address": "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf",
+            "symbol": "cbBTC",
+            "name": "Coinbase Wrapped BTC",
+            "decimals": "8"
+          },
+          {
+            "address": "0x211cc4dd073734da055fbf44a2b4667d5e5fe5d2",
+            "symbol": "sUSDe",
+            "name": "Staked USDe",
+            "decimals": "18"
+          },
+          {
+            "address": "0x8d010bf9c26881788b4e6bf5fd1bdc358c8f90b8",
+            "symbol": "DOT",
+            "name": "Polkadot Token (Relay Chain)",
+            "decimals": "18"
+          },
+          {
+            "address": "0x5875eee11cf8398102fdad704c9e96607675467a",
+            "symbol": "sUSDS",
+            "name": "Savings USDS",
+            "decimals": "18"
+          },
+          {
+            "address": "0x63706e401c06ac8513145b7687a14804d17f814b",
+            "symbol": "AAVE",
+            "name": "Aave Token",
+            "decimals": "18"
+          },
+          {
+            "address": "0x58538e6a46e07434d7e7375bc268d3cb839c0133",
+            "symbol": "ENA",
+            "name": "ENA",
+            "decimals": "18"
+          },
+          {
+            "address": "0xb6fe221fe9eef5aba221c348ba20a1bf5e73624c",
+            "symbol": "rETH",
+            "name": "Rocket Pool ETH",
+            "decimals": "18"
+          },
+          {
+            "address": "0x00f3c42833c3170159af4e92dbb451fb3f708917",
+            "symbol": "ICP",
+            "name": "ICP",
+            "decimals": "8"
+          },
+          {
+            "address": "0xb29749498954a3a821ec37bde86e386df3ce30b6",
+            "symbol": "LsETH",
+            "name": "Liquid Staked ETH",
+            "decimals": "18"
+          },
+          {
+            "address": "0xecac9c5f704e954931349da37f60e39f515c11c1",
+            "symbol": "LBTC",
+            "name": "Lombard Staked Bitcoin",
+            "decimals": "8"
+          },
+          {
+            "address": "0x2416092f143378750bb29b79ed961ab195cceea5",
+            "symbol": "ezETH",
+            "name": "Renzo Restaked ETH",
+            "decimals": "18"
+          },
+          {
+            "address": "0x3b86ad95859b6ab773f55f8d94b4b9d443ee931f",
+            "symbol": "SolvBTC",
+            "name": "Solv BTC",
+            "decimals": "18"
+          },
+          {
+            "address": "0xbaa5cc21fd487b8fcc2f632f3f4e8d37262a0842",
+            "symbol": "MORPHO",
+            "name": "Morpho Token",
+            "decimals": "18"
+          },
+          {
+            "address": "0x940181a94a35a4569e4529a3cdfb74e38fd98631",
+            "symbol": "AERO",
+            "name": "Aerodrome",
+            "decimals": "18"
+          },
+          {
+            "address": "0x0b3e328455c4059eeb9e3f84b5543f74e24e7e1b",
+            "symbol": "VIRTUAL",
+            "name": "Virtual Protocol",
+            "decimals": "18"
+          },
+          {
+            "address": "0x1045971c168b5294acbc8727a4f1c9e1af99f6d0",
+            "symbol": "FTN",
+            "name": "Bridged FTN (OrtakSea)",
+            "decimals": "18"
+          },
+          {
+            "address": "0x8d2757ea27aabf172da4cca4e5474c76016e3dc5",
+            "symbol": "clBTC",
+            "name": "clBTC",
+            "decimals": "18"
+          },
+          {
+            "address": "0x50da645f148798f68ef2d7db7c1cb22a6819bb2c",
+            "symbol": "SPX",
+            "name": "SPX6900",
+            "decimals": "8"
+          },
+          {
+            "address": "0x3055913c90fcc1a6ce9a358911721eeb942013a1",
+            "symbol": "Cake",
+            "name": "PancakeSwap Token",
+            "decimals": "18"
+          },
+          {
+            "address": "0xf587b7116879a529353cc71ee959cd69fd5cae48",
+            "symbol": "cgETH.hashkey",
+            "name": "cgETH Hashkey Cloud",
+            "decimals": "18"
+          },
+          {
+            "address": "0x8ee73c484a26e0a5df2ee2a4960b789967dd0415",
+            "symbol": "CRV",
+            "name": "Curve DAO Token",
+            "decimals": "18"
+          },
+          {
+            "address": "0xf3527ef8de265eaa3716fb312c12847bfba66cef",
+            "symbol": "USDX",
+            "name": "Wrapped USDX",
+            "decimals": "18"
+          },
+          {
+            "address": "0x236aa50979d5f3de3bd1eeb40e81137f22ab794b",
+            "symbol": "tBTC",
+            "name": "Base tBTC v2",
+            "decimals": "18"
+          },
+          {
+            "address": "0x758a3e0b1f842c9306b783f8a4078c6c8c03a270",
+            "symbol": "USD0",
+            "name": "Usual USD",
+            "decimals": "18"
+          },
+          {
+            "address": "0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22",
+            "symbol": "cbETH",
+            "name": "Coinbase Wrapped Staked ETH",
+            "decimals": "18"
+          },
+          {
+            "address": "0x6c240dda6b5c336df09a4d011139beaaa1ea2aa2",
+            "symbol": "ETHFI",
+            "name": "ether.fi governance token",
+            "decimals": "18"
+          },
+          {
+            "address": "0xa99f6e6785da0f5d6fb42495fe424bce029eeb3e",
+            "symbol": "PENDLE",
+            "name": "Pendle",
+            "decimals": "18"
+          },
+          {
+            "address": "0x688aee022aa544f150678b8e5720b6b96a9e9a2f",
+            "symbol": "SYRUP",
+            "name": "Syrup Token",
+            "decimals": "18"
+          },
+          {
+            "address": "0x6bb7a212910682dcfdbd5bcbb3e28fb4e8da10ee",
+            "symbol": "GHO",
+            "name": "Gho Token",
+            "decimals": "18"
+          },
+          {
+            "address": "0x2081ab0d9ec9e4303234ab26d86b20b3367946ee",
+            "symbol": "EIGEN",
+            "name": "Eigen",
+            "decimals": "18"
+          },
+          {
+            "address": "0x70654aad8b7734dc319d0c3608ec7b32e03fa162",
+            "symbol": "satUSD",
+            "name": "Satoshi Stablecoin V2",
+            "decimals": "18"
+          },
+          {
+            "address": "0x99ac4484e8a1dbd6a185380b3a811913ac884d87",
+            "symbol": "sDAI",
+            "name": "Savings Dai",
+            "decimals": "18"
+          },
+          {
+            "address": "0xa0769f7a8fc65e47de93797b4e21c073c117fc80",
+            "symbol": "EUTBL",
+            "name": "Spiko EU T-Bills Money Market Fund",
+            "decimals": "5"
+          },
+          {
+            "address": "0x060cb087a9730e13aa191f31a6d86bff8dfcdcc0",
+            "symbol": "OHM",
+            "name": "Olympus",
+            "decimals": "9"
+          },
+          {
+            "address": "0x22e6966b799c4d5b13be962e1d117b56327fda66",
+            "symbol": "SNX",
+            "name": "Synthetix Network Token",
+            "decimals": "18"
+          },
+          {
+            "address": "0xa4a2e2ca3fbfe21aed83471d28b6f65a233c6e00",
+            "symbol": "TIBBIR",
+            "name": "Ribbita by Virtuals",
+            "decimals": "18"
+          },
+          {
+            "address": "0xd09acb80c1e8f2291862c4978a008791c9167003",
+            "symbol": "tETH",
+            "name": "Treehouse ETH",
+            "decimals": "18"
+          },
+          {
+            "address": "0x61e030a56d33e8260fdd81f03b162a79fe3449cd",
+            "symbol": "FLUID",
+            "name": "Fluid",
+            "decimals": "18"
+          },
+          {
+            "address": "0x9e1028f5f1d5ede59748ffcee5532509976840e0",
+            "symbol": "COMP",
+            "name": "Compound",
+            "decimals": "18"
+          },
+          {
+            "address": "0x1111111111166b7fe7bd91427724b487980afc69",
+            "symbol": "ZORA",
+            "name": "Zora",
+            "decimals": "18"
+          },
+          {
+            "address": "0x09be1692ca16e06f536f0038ff11d1da8524adb1",
+            "symbol": "TEL",
+            "name": "Telcoin",
+            "decimals": "2"
+          },
+          {
+            "address": "0xc26c9099bd3789107888c35bb41178079b282561",
+            "symbol": "SolvBTC.BBN",
+            "name": "SolvBTC Babylon",
+            "decimals": "18"
+          }
     ]
 }
