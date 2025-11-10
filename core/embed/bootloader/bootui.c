@@ -801,8 +801,15 @@ static void draw_update_section(update_info_t update_info, int offset_y,
   int offset_x = 32;
   int offset_y_start = offset_y;
 
-  lcd_set_window(0, SUBTITLE_OFFSET_Y - bar_height / 2, MAX_DISPLAY_RESX,
-                 UPDATE_SECTION_HEIGHT);
+  int window_top = SUBTITLE_OFFSET_Y - bar_height / 2;
+  if (window_top < 0) {
+    window_top = 0;
+  }
+  int window_bottom = window_top + UPDATE_SECTION_HEIGHT - 1;
+  if (window_bottom >= MAX_DISPLAY_RESY) {
+    window_bottom = MAX_DISPLAY_RESY - 1;
+  }
+  display_set_window(0, window_top, MAX_DISPLAY_RESX - 1, window_bottom);
 
   if (update_info.boot.type == UPDATE_BOOTLOADER) {
     display_bar_radius_ex(BUTTON_LEFT_OFFSET_X, offset_y, BUTTON_FULL_WIDTH,
@@ -875,7 +882,7 @@ static void draw_update_section(update_info_t update_info, int offset_y,
   }
   update_section_height = offset_y - offset_y_start;
 
-  lcd_set_window(0, 0, MAX_DISPLAY_RESX, MAX_DISPLAY_RESY);
+  display_set_window(0, 0, MAX_DISPLAY_RESX - 1, MAX_DISPLAY_RESY - 1);
 }
 
 void ui_update_info_show(update_info_t update_info) {
