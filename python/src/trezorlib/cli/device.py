@@ -332,6 +332,7 @@ def se_read_cert(obj: "TrezorConnection") -> bytes:
 # fmt: off
 @click.option("-f", "--fullpath", help="The full path of the file to upload")
 @click.option("-z", "--zoompath", help="The zoom file of the image to upload")
+@click.option("-b", "--blurpath", help="The blur file of the wallpaper to upload")
 @click.option("-p", "--purpose", type=ChoiceType(RESOURCE_UPLOAD_PURPOSE), default="wallpaper", help="The upload file used for")
 @click.option("-m", "--metadata", help="the metadata of the nft, a json string include header, subheader, network and owner fields")
 # fmt: on
@@ -340,6 +341,7 @@ def upload_res(
     client: "TrezorClient",
     fullpath: str,
     zoompath: str,
+    blurpath: str,
     purpose: int,
     metadata: str
 ) -> None:
@@ -350,18 +352,27 @@ def upload_res(
             zoomdata = f.read()
         with open(fullpath, "rb") as f:
             data = f.read()
+        
+        # Read blur data if provided
+        blurdata = None
+        if blurpath:
+            with open(blurpath, "rb") as f:
+                blurdata = f.read()
+        
         try:
             click.echo("Please confirm the action on your Trezor device")
 
             click.echo("Uploading...\r", nl=False)
+            total_size = len(data) + len(zoomdata) + (len(blurdata) if blurdata else 0)
             with click.progressbar(
-                label="Uploading", length=len(data) + len(zoomdata), show_eta=False
+                label="Uploading", length=total_size, show_eta=False
             ) as bar:
                 device.upload_res(
                     client,
                     ext,
                     data,
                     zoomdata,
+                    blurdata,
                     progress_update=bar.update,
                     res_type=purpose,
                     nft_metadata=metadata if metadata else None,

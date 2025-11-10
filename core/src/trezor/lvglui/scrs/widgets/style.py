@@ -202,6 +202,10 @@ class StyleWrapper(lv.style_t):
         self.set_clip_corner(clip_corner)
         return self
 
+    def shadow_width(self, width) -> "StyleWrapper":
+        self.set_shadow_width(width)
+        return self
+
     # def size(self, width=lv.pct(100), height=lv.SIZE.CONTENT) -> "StyleWrapper":
     #     self.set_size(width, height)
     #     return self

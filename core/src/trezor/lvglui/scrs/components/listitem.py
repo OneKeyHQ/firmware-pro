@@ -280,29 +280,112 @@ class ImgGridItem(lv.img):
         row_num,
         file_name: str,
         path_dir: str,
-        img_path_other: str = "A:/res/checked-solid.png",
+        img_path_selected: str = "A:/res/selected.png",
+        img_path_unselected: str | None = "A:/res/unselect.png",
         is_internal: bool = False,
+        style_type: str = "wallpaper",  # "wallpaper" or "nft"
     ):
         super().__init__(parent)
         self.set_grid_cell(
-            lv.GRID_ALIGN.CENTER, col_num, 1, lv.GRID_ALIGN.CENTER, row_num, 1
+            lv.GRID_ALIGN.CENTER, col_num, 1, lv.GRID_ALIGN.START, row_num, 1
         )
         self.is_internal = is_internal
         self.file_name = file_name
         self.zoom_path = path_dir + file_name
+        self.style_type = style_type
+        self.selected_indicator_src = img_path_selected if style_type != "nft" else None
+        self.unselected_indicator_src = (
+            img_path_unselected if style_type != "nft" else None
+        )
+
+        # Set up the container first before loading image
+        self._setup_styles()
+
+        # Set image source after styles are applied
         self.set_src(self.zoom_path)
-        self.set_style_radius(40, 0)
-        # self.set_style_clip_corner(True, 0)
+
+        # Ensure consistent image scaling and positioning
+        self.set_style_img_recolor_opa(lv.OPA.TRANSP, 0)  # No color overlay
+
+        # Ensure consistent image rendering
+        try:
+            # Set default zoom and opacity for proper display
+            self.set_zoom(256)  # Default zoom (256 = 100%)
+            self.set_style_img_opa(lv.OPA.COVER, 0)  # Ensure image is fully opaque
+            self.set_antialias(True)  # Enable anti-aliasing for smooth scaling
+        except (AttributeError, TypeError):
+            pass
+
+        # Force a refresh to ensure proper initial rendering
+        self.invalidate()
+
         self.img_path = self.zoom_path.replace("zoom-", "")
-        self.check = lv.img(self)
-        self.check.set_src(img_path_other)
-        self.check.center()
-        self.set_checked(False)
+
+        # Keep A:1:/res/wallpapers/ path for custom wallpapers (don't convert it)
+
+        # Create selection indicator overlay (wallpapers only)
+        self.check = None
+        if self.selected_indicator_src:
+            self.check = lv.img(self)
+            initial_src = self.unselected_indicator_src or self.selected_indicator_src
+            try:
+                self.check.set_src(initial_src)
+            except Exception:
+                # Fallback to legacy indicator if the new assets are missing
+                fallback_src = "A:/res/checked-solid.png"
+                self.check.set_src(fallback_src)
+                self.selected_indicator_src = fallback_src
+                self.unselected_indicator_src = None
+            self.check.clear_flag(lv.obj.FLAG.CLICKABLE)
+            self.check.align(lv.ALIGN.TOP_RIGHT, -12, 12)
+            self.set_checked(False)
         self.add_flag(lv.obj.FLAG.CLICKABLE)
         self.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
 
+    def _setup_styles(self):
+        """Set up all styles before loading the image"""
+        if self.style_type == "nft":
+            # NFT Gallery style - square thumbnail, subtle radius, no clipping
+            self.set_size(226, 226)
+            self.set_style_radius(8, 0)
+            self.set_style_clip_corner(False, 0)
+            self.set_style_pad_all(0, 0)
+            self.set_style_border_width(1, 0)
+            self.set_style_border_color(lv.color_hex(0x666666), 0)
+            self.set_style_border_opa(lv.OPA._30, 0)
+        else:
+            # Wallpaper thumbnails: match upstream HomeScreenSetting formatting
+            # Do not force size; zoom- assets are already 144x240
+            # Apply only radius; no manual clip_corner to avoid double rounding
+            self.set_style_radius(40, 0)
+            self.set_style_clip_corner(False, 0)
+            self.set_style_pad_all(0, 0)
+            self.set_style_border_width(0, 0)
+            self.set_style_border_opa(lv.OPA.TRANSP, 0)
+
+        # Common styles for both types
+        self.set_style_bg_opa(lv.OPA.TRANSP, 0)
+        self.set_style_img_opa(lv.OPA.COVER, 0)
+        self.set_style_img_recolor_opa(lv.OPA.TRANSP, 0)
+        try:
+            if hasattr(self, "set_style_transform_angle"):
+                self.set_style_transform_angle(0, 0)
+        except (AttributeError, TypeError):
+            pass
+
     def set_checked(self, checked: bool):
-        if checked:
+        if not self.check or not self.selected_indicator_src:
+            return
+
+        if self.unselected_indicator_src:
+            self.check.set_src(
+                self.selected_indicator_src
+                if checked
+                else self.unselected_indicator_src
+            )
+            self.check.clear_flag(lv.obj.FLAG.HIDDEN)
+        elif checked:
+            self.check.set_src(self.selected_indicator_src)
             self.check.clear_flag(lv.obj.FLAG.HIDDEN)
         else:
             self.check.add_flag(lv.obj.FLAG.HIDDEN)

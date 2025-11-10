@@ -56,6 +56,12 @@ def apply_animations(targets, back=False, exclude_types=()):
 class AnimScreen(lv.obj):
     """Singleton screen object."""
 
+    def __new__(cls, pre_scr=None, *args, **kwargs):
+        if not hasattr(cls, "_instance"):
+            cls._instance = super(lv.obj, cls).__new__(cls)
+            utils.SCREENS.append(cls._instance)
+        return cls._instance
+
     def __init__(self, prev_scr=None, **kwargs):
         super().__init__()
         self.prev_scr = prev_scr or lv.scr_act()
@@ -176,14 +182,6 @@ class AnimScreen(lv.obj):
             scr.set_pos(0, 0)
             lv.scr_load(scr)
 
-    # NOTE:====================Functional Code Don't Edit========================
-
-    def __new__(cls, pre_scr=None, *args, **kwargs):
-        if not hasattr(cls, "_instance"):
-            cls._instance = super(lv.obj, cls).__new__(cls)
-            utils.SCREENS.append(cls._instance)
-        return cls._instance
-
     def load_screen(self, scr, destroy_self: bool = False):
         if destroy_self:
             self._load_scr(scr.__class__(), back=True)
@@ -191,21 +189,22 @@ class AnimScreen(lv.obj):
             self.del_delayed(1000)
             del self.__class__._instance
             del self
+            gc.collect()
+            gc.threshold(gc.mem_free() // 4 + gc.mem_alloc())  # type: ignore[is not a known member of module]
         else:
             self._load_scr(scr)
-
-    def __del__(self):
-        """Micropython doesn't support user defined __del__ now, so this not work at all."""
-        try:
-            self.delete()
-        except BaseException:
-            pass
 
     # NOTE:====================Functional Code Don't Edit========================
 
 
 class Screen(lv.obj):
     """Singleton screen object."""
+
+    def __new__(cls, pre_scr=None, *args, **kwargs):
+        if not hasattr(cls, "_instance"):
+            cls._instance = super(lv.obj, cls).__new__(cls)
+            utils.SCREENS.append(cls._instance)
+        return cls._instance
 
     def __init__(self, prev_scr=None, **kwargs):
         super().__init__()
@@ -319,14 +318,6 @@ class Screen(lv.obj):
         # """Load a screen with animation."""
         scr.set_pos(0, 0)
         lv.scr_load(scr)
-
-    # NOTE:====================Functional Code Don't Edit========================
-
-    def __new__(cls, pre_scr=None, *args, **kwargs):
-        if not hasattr(cls, "_instance"):
-            cls._instance = super(lv.obj, cls).__new__(cls)
-            utils.SCREENS.append(cls._instance)
-        return cls._instance
 
     def load_screen(self, scr, destroy_self: bool = False):
         if destroy_self:

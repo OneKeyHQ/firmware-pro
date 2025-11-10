@@ -35,6 +35,39 @@ file_operation_t file_operation = {
     .mode = JPEG_FILE_LVGL,
 };
 
+typedef struct {
+  uint8_t mode;
+  uint32_t output_buffer;
+  uint32_t output_offset;
+  int decoding_end;
+  int decoding_error;
+} jpeg_decoder_state_t;
+
+static jpeg_decoder_state_t saved_state = {0};
+static bool state_saved = false;
+
+void jpeg_save_state(void) {
+  if (!state_saved) {
+    saved_state.mode = file_operation.mode;
+    saved_state.output_buffer = (uint32_t)g_outputBuffer;
+    saved_state.output_offset = g_outputBufferOffset;
+    saved_state.decoding_end = Jpeg_HWDecodingEnd;
+    saved_state.decoding_error = Jpeg_HWDecodingError;
+    state_saved = true;
+  }
+}
+
+void jpeg_restore_state(void) {
+  if (state_saved) {
+    file_operation.mode = saved_state.mode;
+    g_outputBuffer = (uint8_t *)saved_state.output_buffer;
+    g_outputBufferOffset = saved_state.output_offset;
+    Jpeg_HWDecodingEnd = saved_state.decoding_end;
+    Jpeg_HWDecodingError = saved_state.decoding_error;
+    state_saved = false;
+  }
+}
+
 void jpeg_decode_file_operation(uint8_t mode) { file_operation.mode = mode; }
 
 int jpeg_decode_file_open(const char *path) {
@@ -312,9 +345,28 @@ int jped_decode(char *path, uint32_t address) {
   if (jpeg_decode_start(path) == 0) {
     HAL_JPEG_GetInfo(&JPEG_Handle, &JPEG_Info);
 
-    dma2d_copy_ycbcr_to_rgb((uint32_t *)address, (uint32_t *)lcd_get_src_addr(),
+    dma2d_copy_ycbcr_to_rgb(
+        (uint32_t *)address, (uint32_t *)lcd_get_src_addr(),
+        JPEG_Info.ImageWidth, JPEG_Info.ImageHeight,
+        JPEG_Info.ChromaSubsampling, JPEG_Info.ImageWidth,
+        JPEG_Info.ImageWidth);  // No width adjustment needed
+    return 0;
+  }
+  return -1;
+}
+
+int jped_decode_to_address(char *path, uint32_t src_address,
+                           uint32_t dst_address) {
+  jpeg_decode_init(src_address);
+  jpeg_decode_file_operation(JPEG_FILE_FATFS);
+
+  if (jpeg_decode_start(path) == 0) {
+    HAL_JPEG_GetInfo(&JPEG_Handle, &JPEG_Info);
+
+    dma2d_copy_ycbcr_to_rgb((uint32_t *)src_address, (uint32_t *)dst_address,
                             JPEG_Info.ImageWidth, JPEG_Info.ImageHeight,
-                            JPEG_Info.ChromaSubsampling);
+                            JPEG_Info.ChromaSubsampling, JPEG_Info.ImageWidth,
+                            JPEG_Info.ImageWidth);
     return 0;
   }
   return -1;

@@ -202,7 +202,8 @@ static lv_res_t decoder_open(lv_img_decoder_t *decoder,
       }
       dma2d_copy_ycbcr_to_rgb(
           (uint32_t *)FMC_SDRAM_JPEG_OUTPUT_DATA_BUFFER_ADDRESS,
-          (uint32_t *)img_data, width, height, subsampling);
+          (uint32_t *)img_data, width, height, subsampling, width,
+          width);  // No width adjustment needed for LVGL images
 
       // uint32_t addr = (uint32_t)img_data;
       // uint32_t end = addr + width * height * 2;

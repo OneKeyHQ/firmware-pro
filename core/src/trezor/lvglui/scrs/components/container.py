@@ -121,6 +121,7 @@ class ContainerGrid(lv.obj):
         align_type=lv.ALIGN.OUT_BOTTOM_LEFT,
         pos: tuple = (0, 40),
         pad_gap=16,
+        pad_hor=10,
     ) -> None:
         super().__init__(parent)
         self.set_size(lv.pct(100), lv.SIZE.CONTENT)
@@ -134,7 +135,7 @@ class ContainerGrid(lv.obj):
             .bg_color(lv_colors.ONEKEY_GREEN_1)
             .radius(0)
             .bg_opa(lv.OPA.TRANSP)
-            .pad_hor(10)
+            .pad_hor(pad_hor)
             .pad_top(0)
             .pad_gap(pad_gap)
             .pad_bottom(24)

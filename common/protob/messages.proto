@@ -600,6 +600,7 @@ enum MessageType {
     // MessageType_NFTWriteData = 10015 [deprecated = true];
     MessageType_ResourceUpload = 10018 [(bitcoin_only) = true,(wire_in) = true];
     MessageType_ZoomRequest = 10019 [(wire_out) = true];
+    MessageType_BlurRequest = 10032 [(wire_out) = true];
     MessageType_ResourceRequest = 10020 [(wire_out) = true];
     MessageType_ResourceAck = 10021 [(wire_in) = true];
     MessageType_ResourceUpdate = 10022 [(bitcoin_only) = true,(wire_in) = true];

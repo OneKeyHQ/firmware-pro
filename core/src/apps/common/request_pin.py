@@ -368,7 +368,7 @@ async def passphrase_pin_used(ctx: wire.Context):
 #         ctx,
 #         "warning_wrong_pin",
 #         header=_(i18n_keys.PASSPHRASE__PIN_USED),
-#         content=_(i18n_keys.PASSPHRASE__PIN_USED_DESC),  #i18n待更改
+#         content=_(i18n_keys.PASSPHRASE__PIN_USED_DESC),  #i18n to be updated
 #         red=True,
 #         exc=wire.PinInvalid,
 #     )

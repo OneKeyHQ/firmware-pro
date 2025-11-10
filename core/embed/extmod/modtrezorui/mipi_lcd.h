@@ -87,12 +87,40 @@ void fb_draw_vline(uint32_t x_pos, uint32_t y_pos, uint32_t len,
                    uint32_t color);
 void dma2d_copy_buffer(uint32_t *pSrc, uint32_t *pDst, uint16_t x, uint16_t y,
                        uint16_t xsize, uint16_t ysize);
-void dma2d_copy_ycbcr_to_rgb(uint32_t *pSrc, uint32_t *pDst, uint16_t xsize,
-                             uint16_t ysize, uint32_t ChromaSampling);
+void dma2d_copy_ycbcr_to_rgb(uint32_t *pSrc, uint32_t *pDst,
+                             uint16_t copy_width, uint16_t copy_height,
+                             uint32_t ChromaSampling,
+                             uint16_t output_line_width,
+                             uint16_t input_line_width);
 
 void lcd_set_src_addr(uint32_t addr);
 uint32_t lcd_get_src_addr(void);
-void lcd_set_window(uint16_t x0, uint16_t y0, uint16_t w, uint16_t h);
+
+// Second layer functions
+void lcd_add_second_layer(void);
+// void lcd_clear_layer2_memory(void);
+void lcd_ensure_second_layer(void);
+void lcd_animation_init(void);
+
+// CoverBackground hardware layer functions - simplified version (transparent
+// status bar feature removed)
+void lcd_cover_background_init(void);
+void lcd_cover_background_show(void);
+void lcd_cover_background_hide(void);
+void lcd_cover_background_set_visible(bool visible);
+void lcd_cover_background_set_image(const void *image_data,
+                                    uint32_t image_size);
+void lcd_cover_background_load_jpeg(const char *jpeg_path);
+void lcd_cover_background_move_to_y(int16_t y_position);
+void lcd_cover_background_animate_to_y(int16_t target_y, uint16_t duration_ms);
+bool lcd_cover_background_is_visible(void);
+bool lcd_cover_background_update_animation(void);
+bool lcd_cover_background_is_animating(void);
+bool lcd_cover_background_has_active_animation(void);
+void lcd_cover_background_stop_animation(void);
+void lcd_cover_background_start_animation(int16_t target_y,
+                                          uint16_t duration_ms);
+uint8_t lcd_cover_background_get_opacity(void);
 
 // #ifdef __cplusplus
 // }

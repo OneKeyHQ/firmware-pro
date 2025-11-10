@@ -3819,6 +3819,7 @@ if TYPE_CHECKING:
         nft_meta_data: "bytes | None"
         zoom_data_length: "int"
         file_name_no_ext: "str | None"
+        blur_data_length: "int | None"
 
         def __init__(
             self,
@@ -3829,6 +3830,7 @@ if TYPE_CHECKING:
             zoom_data_length: "int",
             nft_meta_data: "bytes | None" = None,
             file_name_no_ext: "str | None" = None,
+            blur_data_length: "int | None" = None,
         ) -> None:
             pass
 
@@ -3850,6 +3852,22 @@ if TYPE_CHECKING:
 
         @classmethod
         def is_type_of(cls, msg: Any) -> TypeGuard["ZoomRequest"]:
+            return isinstance(msg, cls)
+
+    class BlurRequest(protobuf.MessageType):
+        offset: "int | None"
+        data_length: "int"
+
+        def __init__(
+            self,
+            *,
+            data_length: "int",
+            offset: "int | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["BlurRequest"]:
             return isinstance(msg, cls)
 
     class ResourceRequest(protobuf.MessageType):
