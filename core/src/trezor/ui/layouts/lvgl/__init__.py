@@ -91,6 +91,7 @@ __all__ = (
     "confirm_safe_approve_hash",
     "confirm_safe_exec_transaction",
     "should_show_details_eip7702",
+    "request_pin_onboarding",
 )
 
 
@@ -1359,9 +1360,9 @@ async def request_pin_on_device(
 
 
 async def request_pin_tips(ctx: wire.GenericContext) -> None:
-    from trezor.lvglui.scrs.pinscreen import PinTip
+    from trezor.lvglui.scrs.pinscreen import EnablePinConfirm
 
-    tipscreen = PinTip()
+    tipscreen = EnablePinConfirm()
     await raise_if_cancelled(
         interact(ctx, tipscreen, "set_pin", ButtonRequestType.Other)
     )

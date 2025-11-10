@@ -40,7 +40,9 @@ async def request_pin(
     )
 
 
-async def request_pin_confirm(ctx: wire.Context, *args: Any, **kwargs: Any) -> str:
+async def request_pin_confirm(
+    ctx: wire.GenericContext, *args: Any, **kwargs: Any
+) -> str:
     while True:
         if kwargs.get("show_tip", True):
             from trezor.ui.layouts import request_pin_tips
@@ -57,6 +59,18 @@ async def request_pin_confirm(ctx: wire.Context, *args: Any, **kwargs: Any) -> s
         await pin_mismatch(ctx)
 
 
+async def show_pin_set_success(ctx: wire.GenericContext) -> None:
+    from trezor.ui.layouts import show_success
+
+    await show_success(
+        ctx,
+        "pin_success",
+        header=_(i18n_keys.TITLE__PIN_SET),
+        content=_(i18n_keys.TITLE__PIN_SET_DESC),
+        button=_(i18n_keys.BUTTON__CONTINUE),
+    )
+
+
 async def pin_mismatch(ctx) -> None:
     from trezor.ui.layouts import show_warning
 
@@ -71,7 +85,7 @@ async def pin_mismatch(ctx) -> None:
 
 
 async def request_pin_and_sd_salt(
-    ctx: wire.Context,
+    ctx: wire.GenericContext,
     prompt: str = "",
     allow_cancel: bool = True,
     allow_fingerprint: bool = True,
@@ -268,7 +282,7 @@ async def verify_user_fingerprint(
         _set_last_unlock_time
 
 
-async def error_pin_invalid(ctx: wire.Context) -> NoReturn:
+async def error_pin_invalid(ctx: wire.GenericContext) -> NoReturn:
     from trezor.ui.layouts import show_error_and_raise
 
     await show_error_and_raise(

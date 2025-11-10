@@ -64,7 +64,10 @@ class InitScreen(Screen):
         global language
         language = langs_keys[self.choices.get_selected_index()]
         i18n_refresh(language)
-        QuickStart()
+        # QuickStart()
+        workflow.spawn(
+            setup_onboarding(language),
+        )
 
     def on_crt_btn(self, _event_obj):
         from .template import CertificationInfo
@@ -73,6 +76,123 @@ class InitScreen(Screen):
 
     def _load_scr(self, scr: "Screen", back: bool = False) -> None:
         lv.scr_load(scr)
+
+
+async def setup_onboarding(lang: str) -> None:
+
+    utils.mark_initialization_processing()
+    if lang is not None:
+        i18n_refresh(lang)
+
+    utils.play_dead()
+
+    try:
+        from apps.common.request_pin import request_pin_confirm
+        from trezor import config, wire
+
+        # request and set new PIN
+        newpin = await request_pin_confirm(DUMMY_CONTEXT)
+        if not config.change_pin("", newpin, None, None):
+            raise wire.ProcessError("Failed to set PIN")
+        from apps.common.request_pin import show_pin_set_success
+
+        await show_pin_set_success(DUMMY_CONTEXT)
+        if not __debug__:
+            from trezor.lvglui.scrs import fingerprints
+
+            await fingerprints.request_add_fingerprint()
+
+        # create wallet or recovery wallet
+        while True:
+            screen = SetupDevice()
+            result = await screen.request()
+            if isinstance(result, tuple):  # create wallet with custom backup type
+                backup_type, strength = result
+                await reset_device(
+                    DUMMY_CONTEXT,
+                    ResetDevice(
+                        strength=strength,
+                        language=language,
+                        backup_type=backup_type,
+                    ),
+                )
+                break
+            elif result is None:
+                screen.destroy(10)
+                continue
+            elif result == 0:  # recovery wallet
+                recovery_type = await SelectImportType().request()
+                try:
+                    if recovery_type == 0:
+                        await recovery_device(
+                            DUMMY_CONTEXT,
+                            RecoveryDevice(
+                                enforce_wordlist=True,
+                                language=language,
+                            ),
+                            "phrase",
+                        )
+                    elif recovery_type == 1:
+                        await recovery_device(
+                            DUMMY_CONTEXT,
+                            RecoveryDevice(
+                                enforce_wordlist=True,
+                                language=language,
+                            ),
+                            "lite",
+                        )
+                except BaseException:
+                    continue
+                else:
+                    break
+            elif result == 1:  # create wallet with default backup type
+                await reset_device(
+                    DUMMY_CONTEXT,
+                    ResetDevice(
+                        strength=128,
+                        language=language,
+                    ),
+                )
+                break
+        from trezor.ui.layouts import show_onekey_app_guide
+
+        await show_onekey_app_guide()
+    except BaseException as e:
+        raise e
+    finally:
+        utils.mark_initialization_done()
+        from trezor import loop
+
+        loop.clear()
+
+
+class SetupDevice(FullSizeWindow):
+    def __init__(self):
+        super().__init__(
+            _(i18n_keys.TITLE__SET_YOUR_WALLET),
+            _(i18n_keys.TITLE__SET_YOUR_WALLET_DESC),
+            confirm_text=_(i18n_keys.BUTTON__CREATE_NEW_WALLET),
+            cancel_text=_(i18n_keys.BUTTON__IMPORT_WALLET),
+            anim_dir=0,
+        )
+        self.add_nav_back_right(btn_bg_img="A:/res/nav-options-icon.png")
+        self.btn_layout_ver()
+        self.add_event_cb(self.on_nav_back, lv.EVENT.CLICKED, None)
+
+    def destroy(self, delay_ms=50):
+        try:
+            self.del_delayed(delay_ms)
+        except Exception:
+            pass
+
+    def on_nav_back(self, event_obj):
+        code = event_obj.code
+        target = event_obj.get_target()
+        if code == lv.EVENT.CLICKED:
+            if target == self.nav_back.nav_btn:
+                from .reset_device import BackupTypeSelector
+
+                BackupTypeSelector(self)
 
 
 class QuickStart(FullSizeWindow):
@@ -103,7 +223,6 @@ class QuickStart(FullSizeWindow):
                 return
             if target == self.btn_yes:
 
-                # pyright: off
                 workflow.spawn(
                     reset_device(
                         DUMMY_CONTEXT,
@@ -132,19 +251,18 @@ class SelectImportType(FullSizeWindow):
             _(i18n_keys.CONTENT__SELECT_THE_WAY_YOU_WANT_TO_IMPORT),
             anim_dir=0,
         )
-        self.add_nav_back()
         optional_str = _(i18n_keys.TITLE__RECOVERY_PHRASE) + "\n" + "OneKey Lite"
         self.choices = RadioTrigger(self, optional_str)
         self.add_event_cb(self.on_ready, lv.EVENT.READY, None)
-        self.add_event_cb(self.on_back, lv.EVENT.CLICKED, None)
-        self.add_event_cb(self.on_nav_back, lv.EVENT.GESTURE, None)
+        # self.add_event_cb(self.on_back, lv.EVENT.CLICKED, None)
+        # self.add_event_cb(self.on_nav_back, lv.EVENT.GESTURE, None)
 
-    def on_nav_back(self, event_obj):
-        code = event_obj.code
-        if code == lv.EVENT.GESTURE:
-            _dir = lv.indev_get_act().get_gesture_dir()
-            if _dir == lv.DIR.RIGHT:
-                lv.event_send(self.nav_back.nav_btn, lv.EVENT.CLICKED, None)
+    # def on_nav_back(self, event_obj):
+    #     code = event_obj.code
+    #     if code == lv.EVENT.GESTURE:
+    #         _dir = lv.indev_get_act().get_gesture_dir()
+    #         if _dir == lv.DIR.RIGHT:
+    #             lv.event_send(self.nav_back.nav_btn, lv.EVENT.CLICKED, None)
 
     def on_ready(self, event_obj):
         code = event_obj.code
@@ -153,33 +271,34 @@ class SelectImportType(FullSizeWindow):
                 return
         self.show_dismiss_anim()
         selected_index = self.choices.get_selected_index()
-        if selected_index == 0:
-            workflow.spawn(
-                recovery_device(
-                    DUMMY_CONTEXT,
-                    RecoveryDevice(
-                        enforce_wordlist=True,
-                        language=language,
-                        pin_protection=True,
-                    ),
-                    "phrase",
-                )
-            )
-        elif selected_index == 1:
-            workflow.spawn(
-                recovery_device(
-                    DUMMY_CONTEXT,
-                    RecoveryDevice(
-                        enforce_wordlist=True,
-                        language=language,
-                        pin_protection=True,
-                    ),
-                    "lite",
-                )
-            )
+        self.channel.publish(selected_index)
+        # if selected_index == 0:
+        #     workflow.spawn(
+        #         recovery_device(
+        #             DUMMY_CONTEXT,
+        #             RecoveryDevice(
+        #                 enforce_wordlist=True,
+        #                 language=language,
+        #                 pin_protection=True,
+        #             ),
+        #             "phrase",
+        #         )
+        #     )
+        # elif selected_index == 1:
+        #     workflow.spawn(
+        #         recovery_device(
+        #             DUMMY_CONTEXT,
+        #             RecoveryDevice(
+        #                 enforce_wordlist=True,
+        #                 language=language,
+        #                 pin_protection=True,
+        #             ),
+        #             "lite",
+        #         )
+        #     )
 
-    def on_back(self, event_obj):
-        target = event_obj.get_target()
-        if target == self.nav_back.nav_btn:
-            self.channel.publish(0)
-            self.show_dismiss_anim()
+    # def on_back(self, event_obj):
+    #     target = event_obj.get_target()
+    #     if target == self.nav_back.nav_btn:
+    #         self.channel.publish(0)
+    #         self.show_dismiss_anim()

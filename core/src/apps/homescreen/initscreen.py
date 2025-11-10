@@ -13,7 +13,7 @@ async def initscreen() -> None:
     num = await SelectMnemonicNum().request()
     if __debug__:
         print("Number:", num)
-    # pyright: off
+
     if type_init in TYPE_NEW_WALLET:
         from ..management.reset_device import reset_device
         from trezor.messages import ResetDevice

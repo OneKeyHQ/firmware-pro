@@ -698,6 +698,7 @@ class Capability(IntEnum):
     ShamirGroups = 16
     PassphraseEntry = 17
     AttachToPin = 18
+    EthereumTypedData = 1000
 
 
 class SdProtectOperationType(IntEnum):

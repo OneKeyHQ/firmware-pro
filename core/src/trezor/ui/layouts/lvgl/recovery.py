@@ -141,7 +141,7 @@ async def continue_recovery(
         confirm_text=button_label,
         anim_dir=0,
     )
-    screen.add_nav_back_right()
+    screen.add_nav_back()
     return await interact(
         ctx,
         screen,

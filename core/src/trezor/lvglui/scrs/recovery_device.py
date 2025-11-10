@@ -64,7 +64,7 @@ class SelectWordCounter(FullSizeWindow):
         super().__init__(
             title, _(i18n_keys.SUBTITLE__DEVICE_RECOVER_READY_TO_RESTORE), anim_dir=0
         )
-        self.add_nav_back_right()
+        self.add_nav_back()
         self.choices = RadioTrigger(self, optional_str)
         self.add_event_cb(self.on_ready, lv.EVENT.READY, None)
         self.add_event_cb(self.on_back, lv.EVENT.CLICKED, None)

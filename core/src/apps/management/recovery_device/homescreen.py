@@ -46,8 +46,9 @@ async def recovery_process(ctx: wire.GenericContext, type: str = "phrase") -> Su
         if dry_run:
             storage_recovery.end_progress()
         else:
-            await show_popup(_(i18n_keys.TITLE__PLEASE_WAIT))
-            storage.wipe()
+            if not isinstance(ctx, wire.DummyContext):
+                await show_popup(_(i18n_keys.TITLE__PLEASE_WAIT))
+                storage.wipe()
         raise wire.ActionCancelled
 
 

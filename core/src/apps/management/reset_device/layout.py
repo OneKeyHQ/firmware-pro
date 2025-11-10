@@ -141,7 +141,7 @@ async def show_check_word_tips(ctx):
 
 async def bip39_show_and_confirm_mnemonic(
     ctx: wire.GenericContext, mnemonic: str, skip_backup_warning: bool = False
-) -> tuple[int, int] | None:
+) -> None:
     # warn user about mnemonic safety
     if not skip_backup_warning:
         await show_backup_warning(ctx)
@@ -149,9 +149,7 @@ async def bip39_show_and_confirm_mnemonic(
 
     while True:
         # display paginated mnemonic on the screen
-        result = await show_share_words(ctx, share_words=words)
-        if result is not None and isinstance(result, tuple):
-            return result
+        await show_share_words(ctx, share_words=words)
         try:
             await show_check_word_tips(ctx)
         except wire.ActionCancelled:
@@ -172,7 +170,7 @@ async def slip39_basic_show_and_confirm_shares(
     ctx: wire.GenericContext,
     shares: Sequence[str],
     skip_backup_warning: bool = False,
-) -> tuple[int, int] | None:
+) -> None:
     # warn user about mnemonic safety
     if not skip_backup_warning:
         await show_backup_warning(ctx, slip39=True)
@@ -182,11 +180,7 @@ async def slip39_basic_show_and_confirm_shares(
         share_words = share.split(" ")
         while True:
             # display paginated share on the screen
-            result = await show_share_words(
-                ctx, share_words, index, share_count=share_count
-            )
-            if result is not None and isinstance(result, tuple):
-                return result
+            await show_share_words(ctx, share_words, index, share_count=share_count)
             # description before check word
             try:
                 await show_check_word_tips(ctx)
@@ -205,7 +199,7 @@ async def slip39_basic_show_and_confirm_shares(
 
 async def slip39_advanced_show_and_confirm_shares(
     ctx: wire.GenericContext, shares: Sequence[Sequence[str]]
-) -> tuple[int, int] | None:
+) -> None:
     # warn user about mnemonic safety
     await show_backup_warning(ctx, slip39=True)
 
@@ -214,15 +208,13 @@ async def slip39_advanced_show_and_confirm_shares(
             share_words = share.split(" ")
             while True:
                 # display paginated share on the screen
-                result = await show_share_words(
+                await show_share_words(
                     ctx,
                     share_words,
                     share_index,
                     share_count=len(group),
                     group_index=group_index,
                 )
-                if result is not None and isinstance(result, tuple):
-                    return result
                 # make the user confirm words from the share
                 if await _confirm_share_words(
                     ctx, share_index, share_words, group_index

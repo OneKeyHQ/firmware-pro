@@ -9,9 +9,9 @@ lvgl_task = lvgl_tick()
 def clear() -> None:
     """if device is not initialized, pin is needless, so clear it"""
     if not storage.device.is_initialized() and config.has_pin():
-        storage.wipe()
+        storage.reset()
     if config.has_pin() and config.get_pin_rem() == 0:
-        storage.wipe()
+        storage.reset()
     if not utils.EMULATOR:
         if storage.device.get_wp_cnts() == 0:
             for _size, _attrs, name in io.fatfs.listdir("1:/res/wallpapers"):
