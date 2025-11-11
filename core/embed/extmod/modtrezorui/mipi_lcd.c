@@ -9,6 +9,13 @@
 #include "sdram.h"
 #include "systick.h"
 
+typedef struct {
+  uint32_t start_x;
+  uint32_t start_y;
+  uint32_t end_x;
+  uint32_t end_y;
+} lcd_window_t;
+
 #define LAYER2_MEMORY_BASE \
   (FMC_SDRAM_LTDC_BUFFER_ADDRESS + MB(1) + KB(512))  // 1.5MB offset
 
@@ -67,6 +74,13 @@ const DisplayParam_t lcd_params = {
 #else
 #error "display selection not defined!"
 #endif
+
+static lcd_window_t lcd_window = {
+    .start_x = 0,
+    .start_y = 0,
+    .end_x = lcd_params.hres - 1,
+    .end_y = lcd_params.vres - 1,
+};
 
 #define LED_PWM_TIM_PERIOD (50)
 
@@ -393,6 +407,10 @@ static HAL_StatusTypeDef dsi_host_init(DSI_HandleTypeDef* hdsi) {
 
 // Write pixel value to specified coordinates (x_pos, y_pos)
 void fb_write_pixel(uint32_t x_pos, uint32_t y_pos, uint32_t color) {
+  if (x_pos < lcd_window.start_x || x_pos > lcd_window.end_x ||
+      y_pos < lcd_window.start_y || y_pos > lcd_window.end_y) {
+    return;
+  }
   if (lcd_params.pixel_format_ltdc == LTDC_PIXEL_FORMAT_ARGB8888) {
     *(uint32_t*)(lcd_params.fb_base +
                  (lcd_params.bbp * (lcd_params.hres * y_pos + x_pos))) = color;
@@ -442,13 +460,41 @@ static void fb_fill_buffer(uint32_t* dest, uint32_t x_size, uint32_t y_size,
 // Fill rectangular area
 void fb_fill_rect(uint32_t x_pos, uint32_t y_pos, uint32_t width,
                   uint32_t height, uint32_t color) {
-  /* Get rectangle start address */
+  uint32_t start_x, start_y, end_x, end_y;
+  if (x_pos + width < lcd_window.start_x || x_pos > lcd_window.end_x) {
+    return;
+  }
+  if (y_pos + height < lcd_window.start_y || y_pos > lcd_window.end_y) {
+    return;
+  }
+  start_x = x_pos < lcd_window.start_x ? lcd_window.start_x : x_pos;
+  start_y = y_pos < lcd_window.start_y ? lcd_window.start_y : y_pos;
+  end_x = x_pos + width > lcd_window.end_x ? lcd_window.end_x : x_pos + width;
+  end_y = y_pos + height > lcd_window.end_y ? lcd_window.end_y : y_pos + height;
+  /* Get the rectangle start address */
+  uint32_t address = lcd_params.fb_base +
+                     ((lcd_params.bbp) * (lcd_params.hres * start_y + start_x));
+
+  /* Fill the rectangle */
+  fb_fill_buffer((uint32_t*)address, end_x - start_x, end_y - start_y,
+                 (lcd_params.hres - (end_x - start_x)), color);
+}
+
+void fb_draw_hline(uint32_t x_pos, uint32_t y_pos, uint32_t len,
+                   uint32_t color) {
+  if (y_pos > lcd_window.end_y || y_pos < lcd_window.start_y) {
+    return;
+  }
   uint32_t address = lcd_params.fb_base +
                      ((lcd_params.bbp) * (lcd_params.hres * y_pos + x_pos));
+  fb_fill_buffer((uint32_t*)address, len, 1, 0, color);
+}
 
-  /* Fill rectangle */
-  fb_fill_buffer((uint32_t*)address, width, height, (lcd_params.hres - width),
-                 color);
+void fb_draw_vline(uint32_t x_pos, uint32_t y_pos, uint32_t len,
+                   uint32_t color) {
+  uint32_t address = lcd_params.fb_base +
+                     ((lcd_params.bbp) * (lcd_params.hres * y_pos + x_pos));
+  fb_fill_buffer((uint32_t*)address, 1, len, lcd_params.hres - 1, color);
 }
 
 // Copy buffer using DMA2D
@@ -1456,4 +1502,11 @@ __attribute__((used)) void lcd_ensure_second_layer(void) {
     __HAL_LTDC_LAYER_ENABLE(&hlcd_ltdc, 1);
     layer_enabled = true;
   }
+}
+
+void lcd_set_window(uint16_t x0, uint16_t y0, uint16_t w, uint16_t h) {
+  lcd_window.start_x = x0;
+  lcd_window.start_y = y0;
+  lcd_window.end_x = x0 + w - 1;
+  lcd_window.end_y = y0 + h - 1;
 }

@@ -900,7 +900,7 @@ static void draw_update_section(update_info_t update_info, int offset_y,
   }
   update_section_height = offset_y - offset_y_start;
 
-  display_set_window(0, 0, MAX_DISPLAY_RESX - 1, MAX_DISPLAY_RESY - 1);
+  lcd_set_window(0, 0, MAX_DISPLAY_RESX, MAX_DISPLAY_RESY);
 }
 
 void ui_update_info_show(update_info_t update_info) {

@@ -122,6 +122,8 @@ void lcd_cover_background_start_animation(int16_t target_y,
                                           uint16_t duration_ms);
 uint8_t lcd_cover_background_get_opacity(void);
 
+void lcd_set_window(uint16_t x0, uint16_t y0, uint16_t w, uint16_t h);
+
 // #ifdef __cplusplus
 // }
 // #endif
