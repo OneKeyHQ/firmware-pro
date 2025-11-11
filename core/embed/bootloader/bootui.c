@@ -313,6 +313,27 @@ void ui_screen_install_confirm_newvendor_or_downgrade_wipe(char* new_version) {
   ui_confirm_cancel_buttons("Cancel", "Install", COLOR_BL_DARK, COLOR_BL_FAIL);
 }
 
+void ui_screen_install_confirm_purpose_change(void) {
+  display_clear();
+  ui_statusbar_update();
+  int y = 252;
+  display_text(12, y, "Change firmware type will", -1, FONT_PJKS_BOLD_38,
+               COLOR_BL_FG, COLOR_BL_BG);
+  y += 38;
+  display_text(12, y, " erase seed.", -1, FONT_PJKS_BOLD_38, COLOR_BL_FG,
+               COLOR_BL_BG);
+  y += 38;
+  display_text(12, y, "Please keep your Secret Recovery", -1, FONT_NORMAL,
+               COLOR_BL_SUBTITLE, COLOR_BL_BG);
+  y += 38;
+  display_text(12, y, "Phrase handy to recover access to", -1, FONT_NORMAL,
+               COLOR_BL_SUBTITLE, COLOR_BL_BG);
+  y += 38;
+  display_text(12, y, "your wallet.", -1, FONT_NORMAL, COLOR_BL_SUBTITLE,
+               COLOR_BL_BG);
+  ui_confirm_cancel_buttons("Cancel", "Continue", COLOR_BL_DARK, COLOR_BL_FAIL);
+}
+
 void ui_screen_confirm(char* title, char* note_l1, char* note_l2, char* note_l3,
                        char* note_l4) {
   if (title != NULL)
@@ -720,12 +741,14 @@ void ui_screen_install_title_clear(void) {
 }
 
 void ui_show_version_info(int y, char* current_ver, char* new_ver) {
-  display_text_right(3 * DISPLAY_RESX / 4 - 15, y, current_ver, -1, FONT_NORMAL,
-                     COLOR_WHITE, COLOR_BL_PANEL);
-  display_text(3 * DISPLAY_RESX / 4 + 20, y, new_ver, -1, FONT_NORMAL,
+  int current_ver_width = display_text_width(current_ver, -1, FONT_NORMAL);
+  int new_ver_width = display_text_width(new_ver, -1, FONT_NORMAL);
+  display_text(DISPLAY_RESX - new_ver_width - 20, y, new_ver, -1, FONT_NORMAL,
                COLOR_WHITE, COLOR_BL_PANEL);
-  display_image(350, y - 20, 25, 23, toi_icon_arrow_right + 12,
-                sizeof(toi_icon_arrow_right) - 12);
+  display_image(DISPLAY_RESX - new_ver_width - 20 - 25, y - 20, 25, 23,
+                toi_icon_arrow_right + 12, sizeof(toi_icon_arrow_right) - 12);
+  display_text(DISPLAY_RESX - new_ver_width - 20 - 25 - current_ver_width, y,
+               current_ver, -1, FONT_NORMAL, COLOR_WHITE, COLOR_BL_PANEL);
 }
 
 void ui_install_confirm(image_header* current_hdr,
@@ -793,23 +816,18 @@ void ui_install_thd89_confirm(const char* old_ver, const char* boot_ver) {
   ui_confirm_cancel_buttons("Cancel", "Install", COLOR_BL_DARK, COLOR_BL_DONE);
 }
 
-#define UPDATE_SECTION_HEIGHT 340
 static int update_section_height = 0;
+static int update_section_max_height = 340;
+static int update_section_extra_height = 0;
 
 static void draw_update_section(update_info_t update_info, int offset_y,
                                 int bar_height, int font_offset) {
   int offset_x = 32;
   int offset_y_start = offset_y;
 
-  int window_top = SUBTITLE_OFFSET_Y - bar_height / 2;
-  if (window_top < 0) {
-    window_top = 0;
-  }
-  int window_bottom = window_top + UPDATE_SECTION_HEIGHT - 1;
-  if (window_bottom >= MAX_DISPLAY_RESY) {
-    window_bottom = MAX_DISPLAY_RESY - 1;
-  }
-  display_set_window(0, window_top, MAX_DISPLAY_RESX - 1, window_bottom);
+  lcd_set_window(
+      0, SUBTITLE_OFFSET_Y + update_section_extra_height - bar_height / 2,
+      MAX_DISPLAY_RESX, update_section_max_height);
 
   if (update_info.boot.type == UPDATE_BOOTLOADER) {
     display_bar_radius_ex(BUTTON_LEFT_OFFSET_X, offset_y, BUTTON_FULL_WIDTH,
@@ -882,7 +900,7 @@ static void draw_update_section(update_info_t update_info, int offset_y,
   }
   update_section_height = offset_y - offset_y_start;
 
-  display_set_window(0, 0, MAX_DISPLAY_RESX - 1, MAX_DISPLAY_RESY - 1);
+  lcd_set_window(0, 0, MAX_DISPLAY_RESX, MAX_DISPLAY_RESY);
 }
 
 void ui_update_info_show(update_info_t update_info) {
@@ -891,15 +909,27 @@ void ui_update_info_show(update_info_t update_info) {
 
   ui_statusbar_update();
   ui_logo_onekey();
-  display_text_center(DISPLAY_RESX / 2, TITLE_OFFSET_Y, "Update Firmware", -1,
-                      FONT_PJKS_BOLD_38, COLOR_BL_FG, COLOR_BL_BG);
+  if (update_info.mcu_update_info.purpose == FIRMWARE_PURPOSE_BTC_ONLY) {
+    display_text_center(DISPLAY_RESX / 2, TITLE_OFFSET_Y, "Update Bitcoin-only",
+                        -1, FONT_PJKS_BOLD_38, COLOR_BL_FG, COLOR_BL_BG);
+    display_text_center(DISPLAY_RESX / 2, TITLE_OFFSET_Y + 40, "Firmware", -1,
+                        FONT_PJKS_BOLD_38, COLOR_BL_SUBTITLE, COLOR_BL_BG);
+    offset_y += 40;
+    update_section_max_height = 300;
+    update_section_extra_height = 40;
+  } else {
+    display_text_center(DISPLAY_RESX / 2, TITLE_OFFSET_Y, "Update Firmware", -1,
+                        FONT_PJKS_BOLD_38, COLOR_BL_FG, COLOR_BL_BG);
+    update_section_max_height = 340;
+    update_section_extra_height = 0;
+  }
   ui_confirm_cancel_buttons("Cancel", "Install", COLOR_BL_DARK, COLOR_BL_DONE);
 
   draw_update_section(update_info, offset_y, bar_height, 40);
 }
 
 void ui_update_info_show_update(update_info_t update_info, int* offset_view) {
-  if (update_section_height < UPDATE_SECTION_HEIGHT) {
+  if (update_section_height < update_section_max_height) {
     return;
   }
 
@@ -910,12 +940,15 @@ void ui_update_info_show_update(update_info_t update_info, int* offset_view) {
 
   int space_ex = abs(*offset_view);
 
-  if (UPDATE_SECTION_HEIGHT + space_ex >= update_section_height) {
-    *offset_view = UPDATE_SECTION_HEIGHT - update_section_height;
+  if (update_section_max_height + space_ex >= update_section_height) {
+    *offset_view = update_section_max_height - update_section_height;
   }
 
   int bar_height = 66;
   int offset_y = SUBTITLE_OFFSET_Y + *offset_view - bar_height / 2;
+  if (update_info.mcu_update_info.purpose == FIRMWARE_PURPOSE_BTC_ONLY) {
+    offset_y += update_section_extra_height;
+  }
 
   if (offset_y_last != offset_y) {
     offset_y_last = offset_y;
@@ -923,8 +956,9 @@ void ui_update_info_show_update(update_info_t update_info, int* offset_view) {
     return;
   }
 
-  display_bar(0, SUBTITLE_OFFSET_Y - bar_height / 2, MAX_DISPLAY_RESX,
-              UPDATE_SECTION_HEIGHT, COLOR_BL_BG);
+  display_bar(0,
+              SUBTITLE_OFFSET_Y + update_section_extra_height - bar_height / 2,
+              MAX_DISPLAY_RESX, update_section_max_height, COLOR_BL_BG);
   draw_update_section(update_info, offset_y, bar_height, 40);
 }
 
@@ -1047,7 +1081,11 @@ void ui_bootloader_view_details(const image_header* const hdr) {
                COLOR_BL_TAGVALUE, COLOR_BL_PANEL);
   offset_y += offset_line;
   if (hdr && hdr->onekey_version != 0) {
-    ver_str = format_ver("%d.%d.%d", (hdr->onekey_version));
+    if (hdr->purpose == FIRMWARE_PURPOSE_BTC_ONLY) {
+      ver_str = format_ver("%d.%d.%d(Bitcoin-only)", (hdr->onekey_version));
+    } else {
+      ver_str = format_ver("%d.%d.%d", (hdr->onekey_version));
+    }
     display_text(offset_x, offset_y, ver_str, -1, FONT_NORMAL, COLOR_BL_FG,
                  COLOR_BL_PANEL);
   } else {

@@ -83,6 +83,9 @@ secbool load_image_header(const uint8_t* const data, const uint32_t magic,
 
   memcpy(hdr->hashes, data + 32, 512);
 
+  memcpy(&hdr->purpose, data + 544, 4);
+  memcpy(&hdr->se_minimum_version, data + 548, 4);
+
   memcpy(&hdr->sigmask, data + IMAGE_HEADER_SIZE - IMAGE_SIG_SIZE, 1);
 
   memcpy(hdr->sig, data + IMAGE_HEADER_SIZE - IMAGE_SIG_SIZE + 1,

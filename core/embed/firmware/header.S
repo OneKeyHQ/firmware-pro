@@ -32,7 +32,14 @@ g_header:
 
 #if !defined TREZOR_MODEL_1
 // trezor-core header style
-    . = . + 415                      // reserved
+    
+#if BITCOIN_ONLY
+    .word 1                          // purpose (bitcoin-only firmware)
+#else
+    .word 0                          // purpose (general firmware)
+#endif
+    .word SE_MINIMUM_VERSION_UINT32  // se_minimum_version
+    . = . + 407                      // reserved (remaining)
     .byte 0                          // sigmask
     . = . + 64                       // sig
 #else
