@@ -366,7 +366,12 @@ static void send_msg_features(uint8_t iface_num,
       MSG_SEND_ASSIGN_VALUE(fw_major, (hdr->version & 0xFF));
       MSG_SEND_ASSIGN_VALUE(fw_minor, ((hdr->version >> 8) & 0xFF));
       MSG_SEND_ASSIGN_VALUE(fw_patch, ((hdr->version >> 16) & 0xFF));
-      MSG_SEND_ASSIGN_STRING_LEN(fw_vendor, vhdr->vstr, vhdr->vstr_len);
+      if (hdr->purpose == FIRMWARE_PURPOSE_BTC_ONLY) {
+        MSG_SEND_ASSIGN_STRING_LEN(fw_vendor, "OneKey Bitcoin-only",
+                                   strlen("OneKey Bitcoin-only"));
+      } else {
+        MSG_SEND_ASSIGN_STRING_LEN(fw_vendor, vhdr->vstr, vhdr->vstr_len);
+      }
       const char *ver_str = format_ver("%d.%d.%d", hdr->onekey_version);
       MSG_SEND_ASSIGN_STRING_LEN(onekey_version, ver_str, strlen(ver_str));
       MSG_SEND_ASSIGN_STRING_LEN(onekey_firmware_version, ver_str,

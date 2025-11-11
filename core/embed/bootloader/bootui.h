@@ -45,6 +45,7 @@ void ui_screen_firmware_fingerprint(const image_header* const hdr);
 void ui_screen_install_confirm_upgrade(const vendor_header* const vhdr,
                                        const image_header* const hdr);
 void ui_screen_install_confirm_newvendor_or_downgrade_wipe(char* new_version);
+void ui_screen_install_confirm_purpose_change(void);
 void ui_screen_install_start(void);
 void ui_screen_install_progress_erase(int pos, int len);
 void ui_screen_install_progress_upload(int pos);

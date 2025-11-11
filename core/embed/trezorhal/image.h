@@ -53,6 +53,9 @@
 
 #define IMAGE_UTIL_ERROR_MSG_BUFFER_SIZE_MIN 64
 
+#define FIRMWARE_PURPOSE_GENERAL 0x00000000   // General
+#define FIRMWARE_PURPOSE_BTC_ONLY 0x00000001  // Bitcoin-Only
+
 typedef struct {
   uint32_t magic;
   uint32_t hdrlen;
@@ -63,7 +66,11 @@ typedef struct {
   uint32_t onekey_version;
   uint32_t hash_block;
   uint8_t hashes[512];
-  uint8_t reserved[399];
+  uint32_t purpose;
+  uint32_t
+      se_minimum_version;  // Minimum SE version required for upgrade (uint32_t
+                           // format: major | (minor << 8) | (patch << 16))
+  uint8_t reserved[391];
   uint8_t build_id[16];
   uint8_t sigmask;
   uint8_t sig[64];
@@ -103,8 +110,8 @@ typedef struct {
   update_item_type_t type;
   uint32_t offset;
   uint32_t length;
-  char current_version[16];
-  char new_version[16];
+  char current_version[32];
+  char new_version[32];
 } update_item_t;
 
 // MCU, 4 SE, BLE
@@ -115,6 +122,9 @@ typedef struct {
   secbool new_version_valid;
   secbool vendor_changed;
   secbool wipe_required;
+  secbool purpose_changed;
+  uint8_t purpose;
+  uint32_t se_minimum_version;
 } mcu_update_info_t;
 typedef struct {
   update_item_t items[UPDATE_ITEM_COUNT];
@@ -126,6 +136,7 @@ typedef struct {
   uint8_t se_address[4];
   uint8_t ble_location;
   mcu_update_info_t mcu_update_info;
+  uint32_t se_new_version;
 } update_info_t;
 
 #define MAX_VENDOR_PUBLIC_KEYS 8

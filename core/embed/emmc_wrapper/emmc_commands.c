@@ -541,6 +541,44 @@ update_info_t update_info = {0};
 
 #define UPDATE_INFO_FILE "0:update_res"
 
+static secbool check_se_version(void)
+{
+
+    if ( update_info.mcu_update_info.se_minimum_version != 0 )
+    {
+        char* se_version = se01_get_version();
+
+        // SE have new version
+        if ( update_info.se_new_version != 0 )
+        {
+            const char* se_new_version = format_ver("%d.%d.%d", update_info.se_new_version);
+
+            // check SE new version is greater than current version
+            if ( compare_str_version(se_new_version, se_version) < 0 )
+            {
+                return secfalse;
+            }
+
+            if ( version_compare(update_info.se_new_version, update_info.mcu_update_info.se_minimum_version) <
+                 0 )
+            {
+                return secfalse;
+            }
+        }
+        else
+        {
+            const char* se_minimum_version =
+                format_ver("%d.%d.%d", update_info.mcu_update_info.se_minimum_version);
+
+            if ( compare_str_version(se_version, se_minimum_version) < 0 )
+            {
+                return secfalse;
+            }
+        }
+    }
+    return sectrue;
+}
+
 static int check_file_contents(uint8_t iface_num, const uint8_t* buffer, uint32_t buffer_len)
 {
     vendor_header file_vhdr;
@@ -631,7 +669,7 @@ static int check_file_contents(uint8_t iface_num, const uint8_t* buffer, uint32_
 
             update_info.mcu_update_info.vendor_changed = sectrue;
             update_info.mcu_update_info.wipe_required = sectrue;
-
+            update_info.mcu_update_info.purpose_changed = secfalse;
             // vhdr
             if ( load_vendor_header(
                      (const uint8_t*)FIRMWARE_START, FW_KEY_M, FW_KEY_N, FW_KEYS, &current_vhdr
@@ -650,20 +688,43 @@ static int check_file_contents(uint8_t iface_num, const uint8_t* buffer, uint32_
                     {
                         // vendor identity match
                         update_info.mcu_update_info.vendor_changed = secfalse;
+                        update_info.mcu_update_info.se_minimum_version = file_hdr.se_minimum_version;
 
-                        // compare version
-                        if ( (version_compare(current_hdr.onekey_version, file_hdr.onekey_version) > 0) )
+                        if ( current_hdr.purpose != file_hdr.purpose )
                         {
-                            // new firwmare have lower version
-                            char desc[64] = "Firmware downgrade not allowed! Current version is: ";
-                            const char* ver_str = format_ver("%d.%d.%d", current_hdr.onekey_version);
-                            strcat(desc, ver_str);
-                            send_failure(iface_num, FailureType_Failure_ProcessError, desc);
-                            return -1;
+                            update_info.mcu_update_info.purpose_changed = sectrue;
+                            update_info.mcu_update_info.wipe_required = sectrue;
+
+                            if ( file_hdr.purpose == FIRMWARE_PURPOSE_GENERAL )
+                            {
+                                if ( (version_compare(current_hdr.onekey_version, file_hdr.onekey_version) > 0
+                                     ) )
+                                {
+                                    // new firwmare have lower version
+                                    char desc[64] = "Firmware downgrade not allowed! Current version is: ";
+                                    const char* ver_str = format_ver("%d.%d.%d", current_hdr.onekey_version);
+                                    strcat(desc, ver_str);
+                                    send_failure(iface_num, FailureType_Failure_ProcessError, desc);
+                                    return -1;
+                                }
+                            }
                         }
                         else
                         {
-                            update_info.mcu_update_info.wipe_required = secfalse;
+                            // compare version
+                            if ( (version_compare(current_hdr.onekey_version, file_hdr.onekey_version) > 0) )
+                            {
+                                // new firwmare have lower version
+                                char desc[64] = "Firmware downgrade not allowed! Current version is: ";
+                                const char* ver_str = format_ver("%d.%d.%d", current_hdr.onekey_version);
+                                strcat(desc, ver_str);
+                                send_failure(iface_num, FailureType_Failure_ProcessError, desc);
+                                return -1;
+                            }
+                            else
+                            {
+                                update_info.mcu_update_info.wipe_required = secfalse;
+                            }
                         }
                     }
                 }
@@ -685,6 +746,7 @@ static int check_file_contents(uint8_t iface_num, const uint8_t* buffer, uint32_
                 file_vhdr.hdrlen + file_hdr.hdrlen + file_hdr.codelen;
             update_info.item_count++;
             update_info.mcu_location = update_info.item_count;
+            update_info.mcu_update_info.purpose = file_hdr.purpose;
 
             p_data += file_vhdr.hdrlen + file_hdr.hdrlen + file_hdr.codelen;
             buffer_len -= file_vhdr.hdrlen + file_hdr.hdrlen + file_hdr.codelen;
@@ -719,6 +781,7 @@ static int check_file_contents(uint8_t iface_num, const uint8_t* buffer, uint32_
             switch ( thd89_hdr.i2c_address << 1 )
             {
             case THD89_1ST_ADDRESS:
+                update_info.se_new_version = thd89_hdr.version;
                 se_version = se01_get_version();
                 index = 0;
                 break;
@@ -826,6 +889,11 @@ static int check_file_contents(uint8_t iface_num, const uint8_t* buffer, uint32_
         send_failure(iface_num, FailureType_Failure_ProcessError, "Update file unknown type!");
         return -1;
     }
+    if ( !check_se_version() )
+    {
+        send_failure(iface_num, FailureType_Failure_ProcessError, "SE version mismatch!");
+        return -1;
+    }
     return 0;
 }
 
@@ -855,7 +923,7 @@ int check_bootloader_update(image_header* file_hdr)
         new_bootloader_path_p = new_bootloader_path_legacy;
     }
     if ( new_bootloader_path_p == NULL )
-        return -1;
+        return 2;
 
     // check file size
     EMMC_PATH_INFO file_info;
@@ -894,6 +962,36 @@ int check_bootloader_update(image_header* file_hdr)
 
 extern void enable_usb_tiny_task(bool init_usb);
 extern void disable_usb_tiny_task(void);
+
+static secbool firmware_install_confirm_vendor_or_purpose_change(void)
+{
+    // ui confirm
+    if ( update_info.mcu_update_info.vendor_changed )
+    {
+        ui_fadeout();
+        ui_screen_install_confirm_newvendor_or_downgrade_wipe(
+            update_info.items[update_info.mcu_location - 1].new_version
+        );
+        ui_fadein();
+        int response = ui_input_poll(INPUT_CONFIRM | INPUT_CANCEL, true);
+        if ( INPUT_CONFIRM != response )
+        {
+            return secfalse;
+        }
+    }
+    else if ( update_info.mcu_update_info.purpose_changed )
+    {
+        ui_fadeout();
+        ui_screen_install_confirm_purpose_change();
+        ui_fadein();
+        int response = ui_input_poll(INPUT_CONFIRM | INPUT_CANCEL, true);
+        if ( INPUT_CONFIRM != response )
+        {
+            return secfalse;
+        }
+    }
+    return sectrue;
+}
 
 static secbool firmware_install_confirm(void)
 {
@@ -1115,6 +1213,11 @@ static int update_firmware_from_file(uint8_t iface_num, const char* path, bool c
 
     if ( iface_num != USB_IFACE_NULL )
     {
+        if ( !firmware_install_confirm_vendor_or_purpose_change() )
+        {
+            send_user_abort_nocheck(iface_num, "Firmware install cancelled");
+            return -1;
+        }
         if ( !firmware_install_confirm() )
         {
             send_user_abort_nocheck(iface_num, "Firmware install cancelled");
@@ -1307,29 +1410,6 @@ static int update_firmware_from_file(uint8_t iface_num, const char* path, bool c
 
         uint32_t firmware_file_size = update_info.items[update_info.mcu_location - 1].length;
 
-        // ui confirm
-        if ( update_info.mcu_update_info.vendor_changed )
-        {
-            ui_fadeout();
-            ui_screen_install_confirm_newvendor_or_downgrade_wipe(
-                update_info.items[update_info.mcu_location - 1].new_version
-            );
-            ui_fadein();
-            int response = ui_input_poll(INPUT_CONFIRM | INPUT_CANCEL, true);
-            if ( INPUT_CONFIRM != response )
-            {
-                // We could but should not remove the file if user cancels
-                // emmc_fs_file_delete(msg_recv.path);
-                ui_fadeout();
-                ui_bootloader_first(NULL);
-                ui_fadein();
-                send_user_abort_nocheck(iface_num, "Firmware install cancelled");
-                return -4;
-            }
-            display_clear();
-            ui_statusbar_update();
-        }
-
         // ui start install
         ui_screen_install_title_clear();
         ui_screen_progress_bar_init("System Firmware", NULL, current_percent);
@@ -1418,6 +1498,7 @@ int process_msg_FirmwareUpdateEmmc(uint8_t iface_num, uint32_t msg_size, uint8_t
         ret = update_firmware_from_file(iface_num, msg_recv.path, true);
         if ( ret != 0 )
         {
+            delete_bootloader_update();
             return ret;
         }
 
@@ -1431,6 +1512,12 @@ int process_msg_FirmwareUpdateEmmc(uint8_t iface_num, uint32_t msg_size, uint8_t
             sizeof(update_info.boot.new_version)
         );
 
+        if ( !firmware_install_confirm_vendor_or_purpose_change() )
+        {
+            delete_bootloader_update();
+            send_user_abort_nocheck(iface_num, "Firmware install cancelled");
+            return -1;
+        }
         if ( !firmware_install_confirm() )
         {
             delete_bootloader_update();
@@ -1454,7 +1541,14 @@ int process_msg_FirmwareUpdateEmmc(uint8_t iface_num, uint32_t msg_size, uint8_t
     }
     else if ( ret == 1 )
     {
+        delete_bootloader_update();
         send_failure(iface_num, FailureType_Failure_ProcessError, "Bootloader downgrade!");
+        return -1;
+    }
+    else if ( ret == -1 )
+    {
+        delete_bootloader_update();
+        send_failure(iface_num, FailureType_Failure_ProcessError, "Bootloader file verify failed!");
         return -1;
     }
 

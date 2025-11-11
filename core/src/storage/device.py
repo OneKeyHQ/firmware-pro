@@ -441,7 +441,10 @@ def set_version(version: bytes) -> None:
 
 
 def get_firmware_version() -> str:
-    return utils.ONEKEY_VERSION
+    if utils.BITCOIN_ONLY:
+        return utils.ONEKEY_VERSION + "(Bitcoin-only)"
+    else:
+        return utils.ONEKEY_VERSION
 
 
 def get_storage() -> str:
