@@ -1,4 +1,4 @@
-from trezor.messages import EthereumSignMessage
+from trezor.messages import EthereumSignMessageOneKey
 
 from .eth_sign_request import EthSignRequest
 
@@ -10,14 +10,14 @@ class EthereumPersonalMessageTransacion:
         self.encoder = None
 
     def gen_request(self):
-        return EthereumSignMessage(
+        return EthereumSignMessageOneKey(
             address_n=self.req.get_address_n(),
             message=self.req.get_sign_data(),
         )
 
     async def run(self):
         from trezor import wire
-        from apps.ethereum.sign_message import sign_message
+        from apps.ethereum.onekey.sign_message import sign_message
         from apps.ur_registry.chains.ethereum.eth_signature import EthSignature
         from apps.ur_registry.ur_py.ur.ur_encoder import UREncoder
 

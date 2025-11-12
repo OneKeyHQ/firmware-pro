@@ -71,6 +71,31 @@ class PinTip(FullSizeWindow):
                 self.btn.disable()
 
 
+class EnablePinConfirm(FullSizeWindow):
+    def __init__(self):
+        super().__init__(
+            _(i18n_keys.TITLE__SET_PIN),
+            _(i18n_keys.TITLE__SET_PIN_DESC),
+            confirm_text=_(i18n_keys.BUTTON__CONTINUE),
+            icon_path="A:/res/pin-dot-icon.png",
+            anim_dir=0,
+        )
+        self.add_nav_back()
+        self.add_event_cb(self.on_nav_back, lv.EVENT.GESTURE, None)
+        self.add_event_cb(self.on_nav_back, lv.EVENT.CLICKED, None)
+
+    def on_nav_back(self, event_obj):
+        code = event_obj.code
+        target = event_obj.get_target()
+        if code == lv.EVENT.GESTURE:
+            _dir = lv.indev_get_act().get_gesture_dir()
+            if _dir == lv.DIR.RIGHT:
+                lv.event_send(self.nav_back.nav_btn, lv.EVENT.CLICKED, None)
+        elif target == self.nav_back.nav_btn:
+            self.destroy(10)
+            self.channel.publish(0)
+
+
 class InputNum(FullSizeWindow):
     _instance = None
 

@@ -51,7 +51,7 @@ if __debug__:
     LAYOUT_WATCHER_LAYOUT = 2
 
     try:
-        import trezorui2
+        # import trezorui2
 
         UI2 = True
     except ImportError:
@@ -69,38 +69,39 @@ if __debug__:
             layout_change_chan.publish(storage.current_content)
 
     async def dispatch_debuglink_decision(msg: DebugLinkDecision) -> None:
-        from trezor.enums import DebugButton, DebugSwipeDirection
-        from trezor.ui import Result
-        from trezor.ui.components.common import (
-            SWIPE_UP,
-            SWIPE_DOWN,
-            SWIPE_LEFT,
-            SWIPE_RIGHT,
-        )
+        # from trezor.enums import DebugButton, DebugSwipeDirection
+        # from trezor.ui import Result
+        # from trezor.ui.components.common import (
+        #     SWIPE_UP,
+        #     SWIPE_DOWN,
+        #     SWIPE_LEFT,
+        #     SWIPE_RIGHT,
+        # )
 
-        if UI2:
-            confirm = trezorui2
-        else:
-            from trezor.ui.components.tt import confirm
+        # if UI2:
+        #     confirm = trezorui2
+        # else:
+        #     from trezor.ui.components.tt import confirm
 
-        if msg.button is not None:
-            if msg.button == DebugButton.NO:
-                await confirm_chan.put(Result(confirm.CANCELLED))
-            elif msg.button == DebugButton.YES:
-                await confirm_chan.put(Result(confirm.CONFIRMED))
-            elif msg.button == DebugButton.INFO:
-                await confirm_chan.put(Result(confirm.INFO))
-        if msg.swipe is not None:
-            if msg.swipe == DebugSwipeDirection.UP:
-                await swipe_chan.put(SWIPE_UP)
-            elif msg.swipe == DebugSwipeDirection.DOWN:
-                await swipe_chan.put(SWIPE_DOWN)
-            elif msg.swipe == DebugSwipeDirection.LEFT:
-                await swipe_chan.put(SWIPE_LEFT)
-            elif msg.swipe == DebugSwipeDirection.RIGHT:
-                await swipe_chan.put(SWIPE_RIGHT)
-        if msg.input is not None:
-            await input_chan.put(Result(msg.input))
+        # if msg.button is not None:
+        #     if msg.button == DebugButton.NO:
+        #         await confirm_chan.put(Result(confirm.CANCELLED))
+        #     elif msg.button == DebugButton.YES:
+        #         await confirm_chan.put(Result(confirm.CONFIRMED))
+        #     elif msg.button == DebugButton.INFO:
+        #         await confirm_chan.put(Result(confirm.INFO))
+        # if msg.swipe is not None:
+        #     if msg.swipe == DebugSwipeDirection.UP:
+        #         await swipe_chan.put(SWIPE_UP)
+        #     elif msg.swipe == DebugSwipeDirection.DOWN:
+        #         await swipe_chan.put(SWIPE_DOWN)
+        #     elif msg.swipe == DebugSwipeDirection.LEFT:
+        #         await swipe_chan.put(SWIPE_LEFT)
+        #     elif msg.swipe == DebugSwipeDirection.RIGHT:
+        #         await swipe_chan.put(SWIPE_RIGHT)
+        # if msg.input is not None:
+        #     await input_chan.put(Result(msg.input))
+        pass
 
     async def debuglink_decision_dispatcher() -> None:
         while True:

@@ -2,7 +2,7 @@ import re
 from typing import Any, Optional
 
 from trezor import messages
-from trezor.enums import EthereumDataType, FailureType
+from trezor.enums import EthereumDataTypeOneKey, FailureType
 from trezor.wire import QR_CONTEXT
 
 from .eth_sign_request import EthSignRequest
@@ -57,49 +57,49 @@ class EthereumTypedDataTransacion:
         return int(type_name[start_idx:-1])
 
     @staticmethod
-    def get_field_type(type_name: str, types: dict) -> messages.EthereumFieldType:
+    def get_field_type(type_name: str, types: dict) -> messages.EthereumFieldTypeOneKey:
         data_type = None
         size = None
         entry_type = None
         struct_name = None
 
         if EthereumTypedDataTransacion.is_array(type_name):
-            data_type = EthereumDataType.ARRAY
+            data_type = EthereumDataTypeOneKey.ARRAY
             size = EthereumTypedDataTransacion.parse_array_n(type_name)
             member_typename = EthereumTypedDataTransacion.typeof_array(type_name)
             entry_type = EthereumTypedDataTransacion.get_field_type(
                 member_typename, types
             )
             # Not supporting nested arrays currently
-            if entry_type.data_type == EthereumDataType.ARRAY:
+            if entry_type.data_type == EthereumDataTypeOneKey.ARRAY:
                 raise NotImplementedError("Nested arrays are not supported")
         elif type_name.startswith("uint"):
-            data_type = EthereumDataType.UINT
+            data_type = EthereumDataTypeOneKey.UINT
             size = EthereumTypedDataTransacion.get_byte_size_for_int_type(type_name)
         elif type_name.startswith("int"):
-            data_type = EthereumDataType.INT
+            data_type = EthereumDataTypeOneKey.INT
             size = EthereumTypedDataTransacion.get_byte_size_for_int_type(type_name)
         elif type_name.startswith("bytes"):
-            data_type = EthereumDataType.BYTES
+            data_type = EthereumDataTypeOneKey.BYTES
             size = (
                 None
                 if type_name == "bytes"
                 else EthereumTypedDataTransacion.parse_type_n(type_name)
             )
         elif type_name == "string":
-            data_type = EthereumDataType.STRING
+            data_type = EthereumDataTypeOneKey.STRING
         elif type_name == "bool":
-            data_type = EthereumDataType.BOOL
+            data_type = EthereumDataTypeOneKey.BOOL
         elif type_name == "address":
-            data_type = EthereumDataType.ADDRESS
+            data_type = EthereumDataTypeOneKey.ADDRESS
         elif type_name in types:
-            data_type = EthereumDataType.STRUCT
+            data_type = EthereumDataTypeOneKey.STRUCT
             size = len(types[type_name])
             struct_name = type_name
         else:
             raise ValueError(f"Unsupported type name: {type_name}")
 
-        return messages.EthereumFieldType(
+        return messages.EthereumFieldTypeOneKey(
             data_type=data_type,
             size=size,
             entry_type=entry_type,
@@ -147,14 +147,13 @@ class EthereumTypedDataTransacion:
         msg = json.loads(self.get_data())
         data = EthereumTypedDataTransacion.sanitize_typed_data(msg)
 
-        request = messages.EthereumSignTypedData(
+        request = messages.EthereumSignTypedDataOneKey(
             address_n=self.req.get_address_n(),
             primary_type=data["primaryType"],
             metamask_v4_compat=True,
-            definitions=None,
         )
 
-        from apps.ethereum.sign_typed_data import sign_typed_data
+        from apps.ethereum.onekey.sign_typed_data import sign_typed_data
         from trezor import loop
         from apps.ur_registry.chains.ethereum.eth_signature import EthSignature
         from apps.ur_registry.ur_py.ur.ur_encoder import UREncoder
@@ -194,21 +193,23 @@ class EthereumTypedDataTransacion:
                     print("eth sign type data interaction finished")
                 break
             try:
-                if messages.EthereumTypedDataStructRequest.is_type_of(response):
+                if messages.EthereumTypedDataStructRequestOneKey.is_type_of(response):
                     struct_name = response.name
-                    members: list["messages.EthereumStructMember"] = []
+                    members: list["messages.EthereumStructMemberOneKey"] = []
                     for field in types[struct_name]:
                         field_type = EthereumTypedDataTransacion.get_field_type(
                             field["type"], types
                         )
-                        struct_member = messages.EthereumStructMember(
+                        struct_member = messages.EthereumStructMemberOneKey(
                             type=field_type,
                             name=field["name"],
                         )
                         members.append(struct_member)
 
-                    response = messages.EthereumTypedDataStructAck(members=members)
-                elif messages.EthereumTypedDataValueRequest.is_type_of(response):
+                    response = messages.EthereumTypedDataStructAckOneKey(
+                        members=members
+                    )
+                elif messages.EthereumTypedDataValueRequestOneKey.is_type_of(response):
                     root_index = response.member_path[0]
                     # Index 0 is for the domain data, 1 is for the actual message
                     if root_index == 0:
@@ -239,7 +240,9 @@ class EthereumTypedDataTransacion:
                             member_data, member_typename
                         )
 
-                    response = messages.EthereumTypedDataValueAck(value=encoded_data)
+                    response = messages.EthereumTypedDataValueAckOneKey(
+                        value=encoded_data
+                    )
                 elif messages.ButtonRequest.is_type_of(response):
                     response = messages.ButtonAck()
                 elif messages.EthereumGnosisSafeTxRequest.is_type_of(response):
@@ -253,6 +256,19 @@ class EthereumTypedDataTransacion:
                         operation = EthereumGnosisSafeTxOperation.DELEGATE_CALL
                     else:
                         raise ValueError(f"Invalid operation: {operation}")
+                    chain_id_origin = data["domain"]["chainId"]
+                    if isinstance(chain_id_origin, str):
+                        if chain_id_origin.startswith(("0x", "0X")):
+                            chain_id = int.from_bytes(
+                                EthereumTypedDataTransacion.decode_hex(chain_id_origin),
+                                "big",
+                            )
+                        else:
+                            chain_id = int(chain_id_origin)
+                    elif isinstance(chain_id_origin, int):
+                        chain_id = chain_id_origin
+                    else:
+                        raise ValueError(f"Invalid chain id: {chain_id_origin}")
                     response = messages.EthereumGnosisSafeTxAck(
                         to=message["to"],
                         value=int(message["value"]).to_bytes(32, "big"),
@@ -264,12 +280,7 @@ class EthereumTypedDataTransacion:
                         gasToken=message["gasToken"],
                         refundReceiver=message["refundReceiver"],
                         nonce=int(message["nonce"]).to_bytes(32, "big"),
-                        chain_id=int.from_bytes(
-                            EthereumTypedDataTransacion.decode_hex(
-                                data["domain"]["chainId"]
-                            ),
-                            "big",
-                        ),
+                        chain_id=chain_id,
                         verifyingContract=data["domain"]["verifyingContract"],
                     )
                 else:

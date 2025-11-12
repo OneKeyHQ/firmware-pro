@@ -132,6 +132,7 @@ message Features {
         Capability_ShamirGroups = 16 [(bitcoin_only) = true];
         Capability_PassphraseEntry = 17 [(bitcoin_only) = true];  // the device is capable of passphrase entry directly on the device
         Capability_AttachToPin = 18 [(bitcoin_only) = true];  // OneKey: Attach passphrase to PIN feature
+        Capability_EthereumTypedData = 1000;  // the capability of handling EIP-712 typed data
     }
     optional BackupType backup_type = 31;       // type of device backup (BIP-39 / SLIP-39 basic / SLIP-39 advanced)
     optional bool sd_card_present = 32;         // is SD card present

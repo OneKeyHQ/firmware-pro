@@ -813,38 +813,6 @@ if FROZEN:
     SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'trezor/ui/components/common/*.py'))
     SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'trezor/ui/constants/__init__.py'))
     SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'trezor/ui/layouts/__init__.py'))
-    SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'trezor/ui/layouts/common.py'))
-    SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'trezor/ui/layouts/reset.py'))
-    SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'trezor/ui/layouts/recovery.py'))
-    SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'trezor/ui/layouts/lite.py'))
-    if EVERYTHING:
-        SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'trezor/ui/layouts/altcoin.py'))
-        SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'trezor/ui/layouts/webauthn.py'))
-    if TREZOR_MODEL in ('T',) and UI2:
-        SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'trezor/ui/constants/tt.py'))
-        SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'trezor/ui/layouts/tt_v2/__init__.py'))
-        SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'trezor/ui/layouts/tt_v2/reset.py'))
-        SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'trezor/ui/layouts/tt_v2/recovery.py'))
-        if EVERYTHING:
-            SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'trezor/ui/layouts/tt_v2/altcoin.py'))
-            SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'trezor/ui/layouts/tt_v2/webauthn.py'))
-    elif TREZOR_MODEL in ('T',):
-        SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'trezor/ui/components/tt/*.py'))
-        SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'trezor/ui/constants/tt.py'))
-        SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'trezor/ui/layouts/tt/__init__.py'))
-        SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'trezor/ui/layouts/tt/reset.py'))
-        SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'trezor/ui/layouts/tt/recovery.py'))
-        if EVERYTHING:
-            SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'trezor/ui/layouts/tt/altcoin.py'))
-            SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'trezor/ui/layouts/tt/webauthn.py'))
-    elif TREZOR_MODEL in ('1',):
-        SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'trezor/ui/constants/t1.py'))
-        SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'trezor/ui/layouts/t1.py'))
-    elif TREZOR_MODEL in ('R',):
-        SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'trezor/ui/constants/tr.py'))
-        SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'trezor/ui/layouts/tr/__init__.py'))
-    else:
-        raise ValueError('Unknown Trezor model')
 
     if LVGL_UI == '1':
         SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'trezor/ui/layouts/lvgl/*.py'))
@@ -880,7 +848,6 @@ if FROZEN:
     SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'apps/common/*.py'))
     SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'apps/common/*/*.py'))
     SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'apps/debug/*.py'))
-    SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'apps/homescreen/*.py'))
     SOURCE_PY.extend(Glob(SOURCE_PY_DIR + 'apps/management/*.py',
         exclude=[
             SOURCE_PY_DIR + 'apps/management/sd_protect.py',

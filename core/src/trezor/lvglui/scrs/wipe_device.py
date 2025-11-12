@@ -117,10 +117,6 @@ class WipeDeviceSuccess(FullSizeWindow):
         if code == lv.EVENT.CLICKED:
             if target == self.btn_yes:
                 self.channel.publish(1)
-            self.destroy()
-            from apps.base import set_homescreen
-
-            set_homescreen()
 
 
 class WipeLiteCardTips(FullSizeWindow):

@@ -1025,7 +1025,7 @@ class Fido2ConfirmGetAssertion(Fido2State, ConfirmInfo, Pageable):
         return len(self._creds)
 
     async def confirm_dialog(self) -> bool:
-        if not await confirm_webauthn(None, self, pageable=self):
+        if not await confirm_webauthn(None, self):
             return False
         if self._user_verification:
             return await verify_user(KeepaliveCallback(self.cid, self.iface))

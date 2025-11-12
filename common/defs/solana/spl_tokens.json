@@ -1,0 +1,302 @@
+[
+    {
+        "address": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+        "symbol": "USDT",
+        "name": "USDT",
+        "decimals": "6"
+    },
+    {
+        "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "symbol": "USDC",
+        "name": "USD Coin",
+        "decimals": "6"
+    },
+    {
+        "address": "5XZw2LKTyrfvfiskJ78AMpackRjPcyCif1WhUsPDuVqQ",
+        "symbol": "WBTC",
+        "name": "Wrapped BTC",
+        "decimals": "8"
+    },
+    {
+        "address": "LinkhB3afbBKb2EQQu7s7umdZceV3wcvAUJhQAfQ23L",
+        "symbol": "LINK",
+        "name": "Chainlink Token",
+        "decimals": "9"
+    },
+    {
+        "address": "DEkqHyPN7GMRJ5cArtQFAWefqbZb33Hyf6s5iCwjEonT",
+        "symbol": "USDe",
+        "name": "USDe",
+        "decimals": "9"
+    },
+    {
+        "address": "USDSwr9ApdHk5bvJKMjzff41FfuX8bSxdKcR81vTwcA",
+        "symbol": "USDS",
+        "name": "USDS",
+        "decimals": "6"
+    },
+    {
+        "address": "cbbtcf3aa214zXHbiAZQwf4122FBYbraNdFqgw4iMij",
+        "symbol": "cbBTC",
+        "name": "Coinbase Wrapped BTC",
+        "decimals": "8"
+    },
+    {
+        "address": "Eh6XEPhSwoLv5wFApukmnaVSHQ6sAnoD9BmgmwQoN2sN",
+        "symbol": "sUSDe",
+        "name": "Staked USDe",
+        "decimals": "9"
+    },
+    {
+        "address": "WLFinEv6ypjkczcS83FZqFpgFZYwQXutRbxGe7oC16g",
+        "symbol": "WLFI",
+        "name": "World Liberty Financial",
+        "decimals": "6"
+    },
+    {
+        "address": "USD1ttGY1N17NEEHLmELoaybftRBUSErhqYiQzvEmuB",
+        "symbol": "USD1",
+        "name": "World Liberty Financial USD",
+        "decimals": "6"
+    },
+    {
+        "address": "2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo",
+        "symbol": "PYUSD",
+        "name": "PayPal USD",
+        "decimals": "6"
+    },
+    {
+        "address": "J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn",
+        "symbol": "JitoSOL",
+        "name": "Jito Staked SOL",
+        "decimals": "9"
+    },
+    {
+        "address": "So11111111111111111111111111111111111111112",
+        "symbol": "wSOL",
+        "name": "Wrapped SOL",
+        "decimals": "9"
+    },
+    {
+        "address": "27G8MtK7VtTcCHkpASjSDdkWWYfoqT6ggEuKidVJidD4",
+        "symbol": "JLP",
+        "name": "Jupiter Perps LP",
+        "decimals": "6"
+    },
+    {
+        "address": "BNso1VUJnh4zcfpZa6986Ea66P6TCp59hvtNJ8b1X85",
+        "symbol": "BNSOL",
+        "name": "Binance Staked SOL",
+        "decimals": "9"
+    },
+    {
+        "address": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+        "symbol": "TRUMP",
+        "name": "OFFICIAL TRUMP",
+        "decimals": "6"
+    },
+    {
+        "address": "pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn",
+        "symbol": "PUMP",
+        "name": "Pump",
+        "decimals": "6"
+    },
+    {
+        "address": "AvZZF1YaZDziPY2RCK4oJrRVrbN3mTD9NL24hPeaZeUj",
+        "symbol": "syrupUSDC",
+        "name": "Syrup USDC",
+        "decimals": "6"
+    },
+    {
+        "address": "LBTCgU4b3wsFKsPwBn1rRZDx5DoFutM6RPiEt1TPDsY",
+        "symbol": "LBTC",
+        "name": "Lombard Staked BTC",
+        "decimals": "8"
+    },
+    {
+        "address": "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN",
+        "symbol": "JUP",
+        "name": "Jupiter",
+        "decimals": "6"
+    },
+    {
+        "address": "2zMMhcVQEXDtdE6vsFS7S7D5oUodfJHE8vd1gnBouauv",
+        "symbol": "PENGU",
+        "name": "Pudgy Penguins",
+        "decimals": "6"
+    },
+    {
+        "address": "rndrizKT3MK1iimdxRdWabcF7Zg7AR5T4nud4EkHBof",
+        "symbol": "RENDER",
+        "name": "Render Token",
+        "decimals": "8"
+    },
+    {
+        "address": "SoLvHDFVstC74Jr9eNLTDoG4goSUsn1RENmjNtFKZvW",
+        "symbol": "SolvBTC",
+        "name": "SolvBTC",
+        "decimals": "8"
+    },
+    {
+        "address": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+        "symbol": "Bonk",
+        "name": "Bonk",
+        "decimals": "5"
+    },
+    {
+        "address": "9zNQRsGLjNKwCUU5Gq5LR8beUCPzQMVMqKAi3SSZh54u",
+        "symbol": "FDUSD",
+        "name": "First Digital USD",
+        "decimals": "6"
+    },
+    {
+        "address": "2u1tszSeqZ3qBWF3uNGPFc8TzMk2tdiwknnRMWGWjGWH",
+        "symbol": "USDG",
+        "name": "Global Dollar",
+        "decimals": "6"
+    },
+    {
+        "address": "3iQL8BFS2vE7mww4ehAqQHAsbmRNCrPxizWAT2Zfyr9y",
+        "symbol": "VIRTUAL",
+        "name": "Virtual Protocol",
+        "decimals": "9"
+    },
+    {
+        "address": "jupSoLaHXQiZZTSfEWMTRRgpnyFm8f6sZdosWBjx93v",
+        "symbol": "JupSOL",
+        "name": "Jupiter Staked SOL",
+        "decimals": "9"
+    },
+    {
+        "address": "J3NKxxXZcnNiMjKw9hYb2K4LUxgwB6t1FtPtQVsv3KFr",
+        "symbol": "SPX",
+        "name": "SPX6900 (Wormhole)",
+        "decimals": "8"
+    },
+    {
+        "address": "4qQeZ5LwSz6HuupUu8jCtgXyW1mYQcNbFAW1sWZp89HL",
+        "symbol": "Cake",
+        "name": "PancakeSwap Token",
+        "decimals": "9"
+    },
+    {
+        "address": "i7u4r16TcsJTgq1kAG8opmVZyVnAKBwLKu6ZPMwzxNc",
+        "symbol": "OUSG",
+        "name": "Ondo Short-Term US Gov Bond Fund",
+        "decimals": "6"
+    },
+    {
+        "address": "mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So",
+        "symbol": "mSOL",
+        "name": "Marinade staked SOL (mSOL)",
+        "decimals": "9"
+    },
+    {
+        "address": "A1KLoBrKBde8Ty9qtNQUtq3C2ortoC3u7twggz7sEto6",
+        "symbol": "USDY",
+        "name": "Ondo US Dollar Yield",
+        "decimals": "6"
+    },
+    {
+        "address": "6DNSN2BJsaPFdFFc1zP37kkeNe4Usc1Sqkzr9C9vPWcU",
+        "symbol": "tBTC",
+        "name": "tBTC v2",
+        "decimals": "8"
+    },
+    {
+        "address": "J6pQQ3FAcJQeWPPGppWRb4nM8jU3wLyYbRrLh7feMfvd",
+        "symbol": "2Z",
+        "name": "DoubleZero",
+        "decimals": "8"
+    },
+    {
+        "address": "HZ1JovNiVvGrGNiiYvEozEVgZ58xaU3RKwX8eACQBCt3",
+        "symbol": "PYTH",
+        "name": "Pyth Network",
+        "decimals": "6"
+    },
+    {
+        "address": "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm",
+        "symbol": "$WIF",
+        "name": "dogwifhat",
+        "decimals": "6"
+    },
+    {
+        "address": "hntyVP6YFm1Hg25TN9WGLqM12b8TQmcknKrdu1oxWux",
+        "symbol": "HNT",
+        "name": "Helium Network Token",
+        "decimals": "8"
+    },
+    {
+        "address": "4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R",
+        "symbol": "RAY",
+        "name": "Raydium",
+        "decimals": "6"
+    },
+    {
+        "address": "3dQTr7ror2QPKQ3GbBCokJUmjErGg8kTJzdnYjNfvi3Z",
+        "symbol": "BORG",
+        "name": "SwissBorg Token",
+        "decimals": "9"
+    },
+    {
+        "address": "Dm5BxyMetG3Aq5PaG1BrG7rBYqEMtnkjvPNMExfacVk7",
+        "symbol": "ATH",
+        "name": "Aethir Token",
+        "decimals": "9"
+    },
+    {
+        "address": "4TaBYbgQyErDQx67rJRnbABd2tqHCzBvMN1a2M4vY8fc",
+        "symbol": "AXYC",
+        "name": "AxyCoin",
+        "decimals": "9"
+    },
+    {
+        "address": "jtojtomepa8beP8AuQc6eXt5FriJwfFMwQx2v2f9mCL",
+        "symbol": "JTO",
+        "name": "JITO",
+        "decimals": "9"
+    },
+    {
+        "address": "ZBCNpuD7YMXzTHB2fhGkGi78MNsHGLRXUhRewNRm9RU",
+        "symbol": "ZBCN",
+        "name": "Zebec Network",
+        "decimals": "6"
+    },
+    {
+        "address": "DuEy8wWrzCUun5ZbbG9hkVqXqqicpTQw8gB7nEAzpCHQ",
+        "symbol": "FLUID",
+        "name": "FLUID",
+        "decimals": "9"
+    },
+    {
+        "address": "Bybit2vBJGhPF52GBdNaQfUJ6ZpThSgHBobjWZpLPb4B",
+        "symbol": "bbSOL",
+        "name": "BybitSOL",
+        "decimals": "9"
+    },
+    {
+        "address": "9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump",
+        "symbol": "Fartcoin ",
+        "name": "Fartcoin ",
+        "decimals": "6"
+    },
+    {
+        "address": "7kN5FQMD8ja4bzysEgc5FXmryKd6gCgjiWnhksjHCFb3",
+        "symbol": "LION",
+        "name": "Loaded Lions",
+        "decimals": "9"
+    },
+    {
+        "address": "Dso1bDeDjCQxTrWHqUUi63oBvV7Mdm6WaobLbQ7gnPQ",
+        "symbol": "dSOL",
+        "name": "Drift Staked Sol",
+        "decimals": "9"
+    },
+    {
+        "address": "85VBFQZC9TZkfaptBWjvUw7YbZjy52A6mjtPGjstQAmQ",
+        "symbol": "W",
+        "name": "Wormhole Token",
+        "decimals": "6"
+    }
+]

@@ -11,14 +11,12 @@ from trezor.ui.layouts import (
     show_success,
     show_warning,
 )
-from trezor.ui.layouts.common import button_request
+from trezor.ui.layouts.lvgl.common import button_request
 from trezor.ui.layouts.lvgl.lite import backup_with_lite
 from trezor.ui.layouts.lvgl.recovery import (  # noqa: F401
     continue_recovery,
     request_word,
     request_word_count,
-    show_group_share_success,
-    show_remaining_shares,
 )
 
 from apps.common import backup_types

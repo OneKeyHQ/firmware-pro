@@ -43,64 +43,76 @@ def token_by_chain_address(chain_id: int, address: bytes) -> EthereumTokenInfo:
 def _token_iterator(chain_id: int) -> Iterator[tuple[bytes, str, int, str]]:
     if chain_id == 1:  # ETH
         yield (  # address, symbol, decimals, name
-            b"\x11\x11\x11\x11\x11\x17\xdc\x0a\xa7\x8b\x77\x0f\xa6\xa7\x38\x03\x41\x20\xc3\x02",
-            "1INCH",
-            18,
-            "1INCH Token",
-        )
-        yield (  # address, symbol, decimals, name
             b"\x7f\xc6\x65\x00\xc8\x4a\x76\xad\x7e\x9c\x93\x43\x7b\xfc\x5a\xc3\x3e\x2d\xda\xe9",
             "AAVE",
             18,
             "Aave Token",
         )
         yield (  # address, symbol, decimals, name
-            b"\x82\x90\x33\x3c\xef\x9e\x6d\x52\x8d\xd5\x61\x8f\xb9\x7a\x76\xf2\x68\xf3\xed\xd4",
-            "ANKR",
+            b"\xb5\x07\x21\xbc\xf8\xd6\x64\xc3\x04\x12\xcf\xbc\x6c\xf7\xa1\x51\x45\x23\x4a\xd1",
+            "ARB",
             18,
-            "Ankr Network",
+            "Arbitrum",
         )
         yield (  # address, symbol, decimals, name
-            b"\x4d\x22\x44\x52\x80\x1a\xce\xd8\xb2\xf0\xae\xbe\x15\x53\x79\xbb\x5d\x59\x43\x81",
-            "APE",
+            b"\x54\xd2\x25\x27\x57\xe1\x67\x2e\xea\xd2\x34\xd2\x7b\x12\x70\x72\x8f\xf9\x05\x81",
+            "BGB",
             18,
-            "ApeCoin",
+            "BitgetToken",
         )
         yield (  # address, symbol, decimals, name
-            b"\xbb\x0e\x17\xef\x65\xf8\x2a\xb0\x18\xd8\xed\xd7\x76\xe8\xdd\x94\x03\x27\xb2\x8b",
-            "AXS",
+            b"\xb8\xc7\x74\x82\xe4\x5f\x1f\x44\xde\x17\x45\xf5\x2c\x74\x42\x6c\x63\x1b\xdd\x52",
+            "BNB",
             18,
-            "Axie Infinity Shard",
+            "BNB",
         )
         yield (  # address, symbol, decimals, name
-            b"\xba\x10\x00\x00\x62\x5a\x37\x54\x42\x39\x78\xa6\x0c\x93\x17\xc5\x8a\x42\x4e\x3d",
-            "BAL",
-            18,
-            "Balancer",
+            b"\x11\x51\xcb\x3d\x86\x19\x20\xe0\x7a\x38\xe0\x3e\xea\xd1\x2c\x32\x17\x85\x67\xf6",
+            "Bonk",
+            5,
+            "Bonk",
         )
         yield (  # address, symbol, decimals, name
-            b"\x0d\x87\x75\xf6\x48\x43\x06\x79\xa7\x09\xe9\x8d\x2b\x0c\xb6\x25\x0d\x28\x87\xef",
-            "BAT",
+            b"\xc6\x69\x92\x81\x85\xdb\xce\x49\xd2\x23\x0c\xc9\xb0\x97\x9b\xe6\xdc\x79\x79\x57",
+            "BTT",
             18,
-            "Basic Attention Token",
+            "BitTorrent",
         )
         yield (  # address, symbol, decimals, name
-            b"\x1a\x4b\x46\x69\x6b\x2b\xb4\x79\x4e\xb3\xd4\xc2\x6f\x1c\x55\xf9\x17\x0f\xa4\xc5",
-            "BIT",
+            b"\x15\x26\x49\xea\x73\xbe\xab\x28\xc5\xb4\x9b\x26\xeb\x48\xf7\xea\xd6\xd4\xc8\x98",
+            "Cake",
             18,
-            "BitDAO",
+            "PancakeSwap Token",
         )
         yield (  # address, symbol, decimals, name
-            b"\x4f\xab\xb1\x45\xd6\x46\x52\xa9\x48\xd7\x25\x33\x02\x3f\x6e\x7a\x62\x3c\x7c\x53",
-            "BUSD",
-            18,
-            "Binance USD",
+            b"\xcb\xb7\xc0\x00\x0a\xb8\x8b\x47\x3b\x1f\x5a\xfd\x9e\xf8\x08\x44\x0e\xed\x33\xbf",
+            "cbBTC",
+            8,
+            "Coinbase Wrapped BTC",
         )
         yield (  # address, symbol, decimals, name
-            b"\xc0\x0e\x94\xcb\x66\x2c\x35\x20\x28\x2e\x6f\x57\x17\x21\x40\x04\xa7\xf2\x68\x88",
-            "COMP",
+            b"\xbe\x98\x95\x14\x6f\x7a\xf4\x30\x49\xca\x1c\x1a\xe3\x58\xb0\x54\x1e\xa4\x97\x04",
+            "cbETH",
             18,
-            "Compound",
+            "Coinbase Wrapped Staked ETH",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xc6\x0a\x91\x45\xd9\xe9\xf1\x15\x22\x18\xe7\xda\x6d\xf6\x34\xb7\xa7\x4a\xe4\x44",
+            "cgETH.hashkey",
+            18,
+            "cgETH Hashkey Cloud",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xe7\xae\x30\xc0\x33\x95\xd6\x6f\x30\xa2\x6c\x49\xc9\x1e\xda\xe1\x51\x74\x79\x11",
+            "clBTC",
+            18,
+            "clBTC",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xa0\xb7\x3e\x1f\xf0\xb8\x09\x14\xab\x6f\xe0\x44\x4e\x65\x84\x8c\x4c\x34\x45\x0b",
+            "CRO",
+            8,
+            "CRO",
         )
         yield (  # address, symbol, decimals, name
             b"\xd5\x33\xa9\x49\x74\x0b\xb3\x30\x6d\x11\x9c\xc7\x77\xfa\x90\x0b\xa0\x34\xcd\x52",
@@ -115,22 +127,22 @@ def _token_iterator(chain_id: int) -> Iterator[tuple[bytes, str, int, str]]:
             "Dai Stablecoin",
         )
         yield (  # address, symbol, decimals, name
-            b"\x0f\x51\xbb\x10\x11\x97\x27\xa7\xe5\xea\x35\x38\x07\x4f\xb3\x41\xf5\x6b\x09\xad",
-            "DAO",
-            18,
-            "DAO Maker",
+            b"\x19\x6c\x20\xda\x81\xfb\xc3\x24\xec\xdf\x55\x50\x1e\x95\xce\x9f\x0b\xd8\x4d\x14",
+            "DOT",
+            10,
+            "Polkadot",
         )
         yield (  # address, symbol, decimals, name
-            b"\x92\xd6\xc1\xe3\x1e\x14\x52\x0e\x67\x6a\x68\x7f\x0a\x93\x78\x8b\x71\x6b\xef\xf5",
-            "DYDX",
+            b"\x35\xfa\x16\x47\x35\x18\x2d\xe5\x08\x11\xe8\xe2\xe8\x24\xcf\xb9\xb6\x11\x8a\xc2",
+            "eETH",
             18,
-            "dYdX",
+            "ether.fi ETH",
         )
         yield (  # address, symbol, decimals, name
-            b"\xf6\x29\xcb\xd9\x4d\x37\x91\xc9\x25\x01\x52\xbd\x8d\xfb\xdf\x38\x0e\x2a\x3b\x9c",
-            "ENJ",
+            b"\x57\xe1\x14\xb6\x91\xdb\x79\x0c\x35\x20\x7b\x2e\x68\x5d\x4a\x43\x18\x1e\x60\x61",
+            "ENA",
             18,
-            "Enjin Coin",
+            "ENA",
         )
         yield (  # address, symbol, decimals, name
             b"\xc1\x83\x60\x21\x7d\x8f\x7a\xb5\xe7\xc5\x16\x56\x67\x61\xea\x12\xce\x7f\x9d\x72",
@@ -139,22 +151,52 @@ def _token_iterator(chain_id: int) -> Iterator[tuple[bytes, str, int, str]]:
             "Ethereum Name Service",
         )
         yield (  # address, symbol, decimals, name
-            b"\x4e\x15\x36\x1f\xd6\xb4\xbb\x60\x9f\xa6\x3c\x81\xa2\xbe\x19\xd8\x73\x71\x78\x70",
-            "FTM",
+            b"\xfe\x0c\x30\x06\x5b\x38\x4f\x05\x76\x1f\x15\xd0\xcc\x89\x9d\x4f\x9f\x9c\xc0\xeb",
+            "ETHFI",
             18,
-            "Fantom",
+            "ether.fi governance token",
         )
         yield (  # address, symbol, decimals, name
-            b"\x50\xd1\xc9\x77\x19\x02\x47\x60\x76\xec\xfc\x8b\x2a\x83\xad\x6b\x93\x55\xa4\xc9",
-            "FTX Token",
+            b"\xa3\x5b\x1b\x31\xce\x00\x2f\xbf\x20\x58\xd2\x2f\x30\xf9\x5d\x40\x52\x00\xa1\x5b",
+            "ETHx",
             18,
-            "FTT",
+            "ETHx",
         )
         yield (  # address, symbol, decimals, name
-            b"\x68\x10\xe7\x76\x88\x0c\x02\x93\x3d\x47\xdb\x1b\x9f\xc0\x59\x08\xe5\x38\x6b\x96",
-            "GNO",
+            b"\xbf\x54\x95\xef\xe5\xdb\x9c\xe0\x0f\x80\x36\x4c\x8b\x42\x35\x67\xe5\x8d\x21\x10",
+            "ezETH",
             18,
-            "Gnosis Token",
+            "Renzo Restaked ETH",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xc5\xf0\xf7\xb6\x67\x64\xf6\xec\x8c\x8d\xff\x7b\xa6\x83\x10\x22\x95\xe1\x64\x09",
+            "FDUSD",
+            18,
+            "First Digital USD",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xae\xa4\x6a\x60\x36\x8a\x7b\xd0\x60\xee\xc7\xdf\x8c\xba\x43\xb7\xef\x41\xad\x85",
+            "FET",
+            18,
+            "Fetch",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xcf\x0c\x12\x2c\x6b\x73\xff\x80\x9c\x69\x3d\xb7\x61\xe7\xba\xeb\xe6\x2b\x6a\x2e",
+            "FLOKI",
+            9,
+            "FLOKI",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xae\xdf\x38\x6b\x75\x54\x65\x87\x1f\xf8\x74\xe3\xe3\x7a\xf5\x97\x6e\x24\x70\x64",
+            "FTN",
+            18,
+            "Fasttoken",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xd1\xd2\xeb\x1b\x1e\x90\xb6\x38\x58\x87\x28\xb4\x13\x01\x37\xd2\x62\xc8\x7c\xae",
+            "GALA",
+            8,
+            "Gala",
         )
         yield (  # address, symbol, decimals, name
             b"\xc9\x44\xe9\x0c\x64\xb2\xc0\x76\x62\xa2\x92\xbe\x62\x44\xbd\xf0\x5c\xda\x44\xa7",
@@ -163,34 +205,52 @@ def _token_iterator(chain_id: int) -> Iterator[tuple[bytes, str, int, str]]:
             "Graph Token",
         )
         yield (  # address, symbol, decimals, name
-            b"\x05\x6f\xd4\x09\xe1\xd7\xa1\x24\xbd\x70\x17\x45\x9d\xfe\xa2\xf3\x87\xb6\xd5\xcd",
-            "GUSD",
-            2,
-            "Gemini dollar",
+            b"\xe6\x67\x47\xa1\x01\xbf\xf2\xdb\xa3\x69\x71\x99\xdc\xce\x5b\x74\x3b\x45\x47\x59",
+            "GT",
+            18,
+            "GateChainToken",
         )
         yield (  # address, symbol, decimals, name
-            b"\x03\x16\xeb\x71\x48\x5b\x0a\xb1\x41\x03\x30\x7b\xf6\x5a\x02\x10\x42\xc6\xd3\x80",
-            "HBTC",
+            b"\xcf\x51\x04\xd0\x94\xe3\x86\x4c\xfc\xbd\xa4\x3b\x82\xe1\xce\xfd\x26\xa0\x16\xeb",
+            "H",
             18,
-            "Huobi BTC",
+            "Humanity",
         )
         yield (  # address, symbol, decimals, name
-            b"\xe7\xc6\xbf\x46\x9e\x97\xee\xb0\xbf\xb7\x4c\x8d\xbf\xf5\xbd\x47\xd4\xc1\xc9\x8a",
-            "HSK",
+            b"\x61\xec\x85\xab\x89\x37\x7d\xb6\x57\x62\xe2\x34\xc9\x46\xb5\xc2\x5a\x56\xe9\x9e",
+            "HTX",
             18,
-            "HashKey Platform Token",
+            "HTX",
         )
         yield (  # address, symbol, decimals, name
-            b"\x6f\x25\x96\x37\xdc\xd7\x4c\x76\x77\x81\xe3\x7b\xc6\x13\x3c\xd6\xa6\x8a\xa1\x61",
-            "HT",
-            18,
-            "HuobiToken",
+            b"\x00\xf3\xc4\x28\x33\xc3\x17\x01\x59\xaf\x4e\x92\xdb\xb4\x51\xfb\x3f\x70\x89\x17",
+            "ICP",
+            8,
+            "ICP",
         )
         yield (  # address, symbol, decimals, name
-            b"\x6f\xb3\xe0\xa2\x17\x40\x7e\xff\xf7\xca\x06\x2d\x46\xc2\x6e\x5d\x60\xa1\x4d\x69",
-            "IOTX",
+            b"\xf5\x7e\x7e\x7c\x23\x97\x8c\x3c\xae\xc3\xc3\x54\x8e\x3d\x61\x5c\x34\x6e\x79\xff",
+            "IMX",
             18,
-            "IoTeX Network",
+            "Immutable X",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xe2\x8b\x3b\x32\xb6\xc3\x45\xa3\x4f\xf6\x46\x74\x60\x61\x24\xdd\x5a\xce\xca\x30",
+            "INJ",
+            18,
+            "Injective Token",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x74\x20\xb4\xb9\xa0\x11\x0c\xdc\x71\xfb\x72\x09\x08\x34\x0c\x03\xf9\xbc\x03\xec",
+            "JASMY",
+            18,
+            "JasmyCoin",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x82\x36\xa8\x70\x84\xf8\xb8\x43\x06\xf7\x20\x07\xf3\x6f\x26\x18\xa5\x63\x44\x94",
+            "LBTC",
+            8,
+            "Lombard Staked Bitcoin",
         )
         yield (  # address, symbol, decimals, name
             b"\x5a\x98\xfc\xbe\xa5\x16\xcf\x06\x85\x72\x15\x77\x9f\xd8\x12\xca\x3b\xef\x1b\x32",
@@ -199,34 +259,52 @@ def _token_iterator(chain_id: int) -> Iterator[tuple[bytes, str, int, str]]:
             "Lido DAO Token",
         )
         yield (  # address, symbol, decimals, name
+            b"\x2a\xf5\xd2\xad\x76\x74\x11\x91\xd1\x5d\xfe\x7b\xf6\xac\x92\xd4\xbd\x91\x2c\xa3",
+            "LEO",
+            18,
+            "Bitfinex LEO Token",
+        )
+        yield (  # address, symbol, decimals, name
             b"\x51\x49\x10\x77\x1a\xf9\xca\x65\x6a\xf8\x40\xdf\xf8\x3e\x82\x64\xec\xf9\x86\xca",
             "LINK",
             18,
             "ChainLink Token",
         )
         yield (  # address, symbol, decimals, name
-            b"\xbb\xbb\xca\x6a\x90\x1c\x92\x6f\x24\x0b\x89\xea\xcb\x64\x1d\x8a\xec\x7a\xea\xfd",
-            "LRC",
+            b"\xf0\xbb\x20\x86\x52\x77\xab\xd6\x41\xa3\x07\xec\xe5\xee\x04\xe7\x90\x73\x41\x6c",
+            "liquidETH",
             18,
-            "LoopringCoin V2",
+            "Ether.Fi Liquid ETH",
         )
         yield (  # address, symbol, decimals, name
-            b"\x7d\x1a\xfa\x7b\x71\x8f\xb8\x93\xdb\x30\xa3\xab\xc0\xcf\xc6\x08\xaa\xcf\xeb\xb0",
-            "MATIC",
+            b"\x8c\x1b\xed\x5b\x9a\x09\x28\x46\x7c\x9b\x13\x41\xda\x1d\x7b\xd5\xe1\x0b\x65\x49",
+            "LsETH",
             18,
-            "Polygon",
+            "Liquid Staked ETH",
         )
         yield (  # address, symbol, decimals, name
-            b"\x99\xd8\xa9\xc4\x5b\x2e\xca\x88\x64\x37\x3a\x26\xd1\x45\x9e\x3d\xff\x1e\x17\xf3",
-            "MIM",
+            b"\xd5\xf7\x83\x8f\x5c\x46\x1f\xef\xf7\xfe\x49\xea\x5e\xba\xf7\x72\x8b\xb0\xad\xfa",
+            "mETH",
             18,
-            "Magic Internet Money",
+            "mETH",
         )
         yield (  # address, symbol, decimals, name
-            b"\x9f\x8f\x72\xaa\x93\x04\xc8\xb5\x93\xd5\x55\xf1\x2e\xf6\x58\x9c\xc3\xa5\x79\xa2",
-            "MKR",
+            b"\x3c\x3a\x81\xe8\x1d\xc4\x9a\x52\x2a\x59\x2e\x76\x22\xa7\xe7\x11\xc0\x6b\xf3\x54",
+            "MNT",
             18,
-            "Maker",
+            "Mantle",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x58\xd9\x7b\x57\xbb\x95\x32\x0f\x9a\x05\xdc\x91\x8a\xef\x65\x43\x49\x69\xc2\xb2",
+            "MORPHO",
+            18,
+            "Morpho Token",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x85\xf1\x7c\xf9\x97\x93\x4a\x59\x70\x31\xb2\xe1\x8a\x9a\xb6\xeb\xd4\xb9\xf6\xa4",
+            "NEAR",
+            24,
+            "NEAR",
         )
         yield (  # address, symbol, decimals, name
             b"\xb6\x21\x32\xe3\x5a\x6c\x13\xee\x1e\xe0\xf8\x4d\xc5\xd4\x0b\xad\x8d\x81\x52\x06",
@@ -235,34 +313,100 @@ def _token_iterator(chain_id: int) -> Iterator[tuple[bytes, str, int, str]]:
             "Nexo",
         )
         yield (  # address, symbol, decimals, name
-            b"\x4f\xe8\x32\x13\xd5\x63\x08\x33\x0e\xc3\x02\xa8\xbd\x64\x1f\x1d\x01\x13\xa4\xcc",
-            "NU",
-            18,
-            "NuCypher",
-        )
-        yield (  # address, symbol, decimals, name
-            b"\x64\xaa\x33\x64\xf1\x7a\x4d\x01\xc6\xf1\x75\x1f\xd9\x7c\x2b\xd3\xd7\xe7\xf1\xd5",
-            "OHM",
-            9,
-            "Olympus",
-        )
-        yield (  # address, symbol, decimals, name
             b"\x75\x23\x1f\x58\xb4\x32\x40\xc9\x71\x8d\xd5\x8b\x49\x67\xc5\x11\x43\x42\xa8\x6c",
             "OKB",
             18,
             "OKB",
         )
         yield (  # address, symbol, decimals, name
-            b"\xd2\x61\x14\xcd\x6e\xe2\x89\xac\xcf\x82\x35\x0c\x8d\x84\x87\xfe\xdb\x8a\x0c\x07",
-            "OMG",
+            b"\xfa\xba\x6f\x8e\x4a\x5e\x8a\xb8\x2f\x62\xfe\x7c\x39\x85\x9f\xa5\x77\x26\x9b\xe3",
+            "ONDO",
             18,
-            "OMGToken",
+            "Ondo",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xf1\xc9\xac\xdc\x66\x97\x4d\xfb\x6d\xec\xb1\x2a\xa3\x85\xb9\xcd\x01\x19\x0e\x38",
+            "osETH",
+            18,
+            "Staked ETH",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x1b\x19\xc1\x93\x93\xe2\xd0\x34\xd8\xff\x31\xff\x34\xc8\x12\x52\xfc\xbb\xee\x92",
+            "OUSG",
+            18,
+            "Ondo Short-Term U.S. Government Bond Fund",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x45\x80\x48\x80\xde\x22\x91\x3d\xaf\xe0\x9f\x49\x80\x84\x8e\xce\x6e\xcb\xaf\x78",
+            "PAXG",
+            18,
+            "Paxos Gold",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x80\x85\x07\x12\x1b\x80\xc0\x23\x88\xfa\xd1\x47\x26\x48\x2e\x06\x1b\x8d\xa8\x27",
+            "PENDLE",
+            18,
+            "Pendle",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x64\x18\xc0\xdd\x09\x9a\x9f\xda\x39\x7c\x76\x63\x04\xcd\xd9\x18\x23\x3e\x88\x47",
+            "PENGU",
+            18,
+            "Pudgy Penguins",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x69\x82\x50\x81\x45\x45\x4c\xe3\x25\xdd\xbe\x47\xa2\x5d\x4e\xc3\xd2\x31\x19\x33",
+            "PEPE",
+            18,
+            "Pepe",
         )
         yield (  # address, symbol, decimals, name
             b"\x45\x5e\x53\xcb\xb8\x60\x18\xac\x2b\x80\x92\xfd\xcd\x39\xd8\x44\x4a\xff\xc3\xf6",
             "POL",
             18,
-            "Polygon",
+            "Polygon Ecosystem Token",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x6c\x3e\xa9\x03\x64\x06\x85\x20\x06\x29\x07\x70\xbe\xdf\xca\xba\x0e\x23\xa0\xe8",
+            "PYUSD",
+            6,
+            "PayPal USD",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x4a\x22\x0e\x60\x96\xb2\x5e\xad\xb8\x83\x58\xcb\x44\x06\x8a\x32\x48\x25\x46\x75",
+            "QNT",
+            18,
+            "Quant",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xae\x78\x73\x6c\xd6\x15\xf3\x74\xd3\x08\x51\x23\xa2\x10\x44\x8e\x74\xfc\x63\x93",
+            "rETH",
+            18,
+            "Rocket Pool ETH",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x82\x92\xbb\x45\xbf\x1e\xe4\xd1\x40\x12\x70\x49\x75\x7c\x2e\x0f\xf0\x63\x17\xed",
+            "RLUSD",
+            18,
+            "RLUSD",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x6d\xe0\x37\xef\x9a\xd2\x72\x5e\xb4\x01\x18\xbb\x17\x02\xeb\xb2\x7e\x4a\xeb\x24",
+            "RNDR",
+            18,
+            "Render Token",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xa1\x29\x0d\x69\xc6\x5a\x6f\xe4\xdf\x75\x2f\x95\x82\x3f\xae\x25\xcb\x99\xe5\xa7",
+            "rsETH",
+            18,
+            "rsETH",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x38\x45\xba\xda\xde\x8e\x6d\xff\x04\x98\x20\x68\x0d\x1f\x14\xbd\x39\x03\xa5\xd0",
+            "SAND",
+            18,
+            "SAND",
         )
         yield (  # address, symbol, decimals, name
             b"\x95\xad\x61\xb0\xa1\x50\xd7\x92\x19\xdc\xf6\x4e\x1e\x6c\xc0\x1f\x0b\x64\xc4\xce",
@@ -271,22 +415,88 @@ def _token_iterator(chain_id: int) -> Iterator[tuple[bytes, str, int, str]]:
             "SHIBA INU",
         )
         yield (  # address, symbol, decimals, name
-            b"\xc0\x11\xa7\x3e\xe8\x57\x6f\xb4\x6f\x5e\x1c\x57\x51\xca\x3b\x9f\xe0\xaf\x2a\x6f",
-            "SNX",
+            b"\x56\x07\x2c\x95\xfa\xa7\x01\x25\x60\x59\xaa\x12\x26\x97\xb1\x33\xad\xed\x92\x79",
+            "SKY",
             18,
-            "Synthetix Network Token",
+            "SKY Governance Token",
         )
         yield (  # address, symbol, decimals, name
-            b"\x6b\x35\x95\x06\x87\x78\xdd\x59\x2e\x39\xa1\x22\xf4\xf5\xa5\xcf\x09\xc9\x0f\xe2",
-            "SUSHI",
+            b"\x7a\x56\xe1\xc5\x7c\x74\x75\xcc\xf7\x42\xa1\x83\x2b\x02\x8f\x04\x56\x65\x2f\x97",
+            "SolvBTC",
             18,
-            "SushiToken",
+            "Solv BTC",
         )
         yield (  # address, symbol, decimals, name
-            b"\x8c\xe9\x13\x7d\x39\x32\x6a\xd0\xcd\x64\x91\xfb\x5c\xc0\xcb\xa0\xe0\x89\xb6\xa9",
-            "SXP",
+            b"\xe0\xf6\x3a\x42\x4a\x44\x39\xcb\xe4\x57\xd8\x0e\x4f\x4b\x51\xad\x25\xb2\xc5\x6c",
+            "SPX",
+            8,
+            "SPX6900",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xbe\xef\x01\x73\x5c\x13\x2a\xda\x46\xaa\x9a\xa4\xc5\x46\x23\xca\xa9\x2a\x64\xcb",
+            "steakUSDC",
             18,
-            "Swipe",
+            "Steakhouse USDC",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xae\x7a\xb9\x65\x20\xde\x3a\x18\xe5\xe1\x11\xb5\xea\xab\x09\x53\x12\xd7\xfe\x84",
+            "stETH",
+            18,
+            "Liquid staked Ether 2.0",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xca\x14\x00\x7e\xff\x0d\xb1\xf8\x13\x5f\x4c\x25\xb3\x4d\xe4\x9a\xb0\xd4\x27\x66",
+            "STRK",
+            18,
+            "StarkNet Token",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x9d\x39\xa5\xde\x30\xe5\x74\x43\xbf\xf2\xa8\x30\x7a\x42\x56\xc8\x79\x7a\x34\x97",
+            "sUSDe",
+            18,
+            "Staked USDe",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xa3\x93\x1d\x71\x87\x7c\x0e\x7a\x31\x48\xcb\x7e\xb4\x46\x35\x24\xfe\xc2\x7f\xbd",
+            "sUSDS",
+            18,
+            "Savings USDS",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xf9\x51\xe3\x35\xaf\xb2\x89\x35\x3d\xc2\x49\xe8\x29\x26\x17\x8e\xac\x7d\xed\x78",
+            "swETH",
+            18,
+            "swETH",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x64\x3c\x4e\x15\xd7\xd6\x2a\xd0\xab\xec\x4a\x9b\xd4\xb0\x01\xaa\x3e\xf5\x2d\x66",
+            "SYRUP",
+            18,
+            "Syrup Token",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x80\xac\x24\xaa\x92\x9e\xaf\x50\x13\xf6\x43\x6c\xda\x2a\x7b\xa1\x90\xf5\xcc\x0b",
+            "syrupUSDC",
+            6,
+            "Syrup USDC",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x35\x6b\x8d\x89\xc1\xe1\x23\x9c\xbb\xb9\xde\x48\x15\xc3\x9a\x14\x74\xd5\xba\x7d",
+            "syrupUSDT",
+            6,
+            "Syrup USDT",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x18\x08\x4f\xba\x66\x6a\x33\xd3\x75\x92\xfa\x26\x33\xfd\x49\xa7\x4d\xd9\x3a\x88",
+            "tBTC",
+            18,
+            "tBTC v2",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x58\x2d\x87\x2a\x1b\x09\x4f\xc4\x8f\x5d\xe3\x1d\x3b\x73\xf2\xd9\xbe\x47\xde\xf1",
+            "TONCOIN",
+            9,
+            "Wrapped TON Coin",
         )
         yield (  # address, symbol, decimals, name
             b"\x00\x00\x00\x00\x00\x08\x5d\x47\x80\xb7\x31\x19\xb6\x44\xae\x5e\xcd\x22\xb3\x76",
@@ -301,34 +511,94 @@ def _token_iterator(chain_id: int) -> Iterator[tuple[bytes, str, int, str]]:
             "Uniswap",
         )
         yield (  # address, symbol, decimals, name
+            b"\x73\xa1\x5f\xed\x60\xbf\x67\x63\x1d\xc6\xcd\x7b\xc5\xb6\xe8\xda\x81\x90\xac\xf5",
+            "USD0",
+            18,
+            "Usual USD",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x8d\x0d\x00\x0e\xe4\x49\x48\xfc\x98\xc9\xb9\x8a\x4f\xa4\x92\x14\x76\xf0\x8b\x0d",
+            "USD1",
+            18,
+            "World Liberty Financial USD",
+        )
+        yield (  # address, symbol, decimals, name
             b"\xa0\xb8\x69\x91\xc6\x21\x8b\x36\xc1\xd1\x9d\x4a\x2e\x9e\xb0\xce\x36\x06\xeb\x48",
             "USDC",
             6,
             "USD Coin",
         )
         yield (  # address, symbol, decimals, name
-            b"\x67\x4c\x6a\xd9\x2f\xd0\x80\xe4\x00\x4b\x23\x12\xb4\x5f\x79\x6a\x19\x2d\x27\xa0",
-            "USDN",
+            b"\x4c\x9e\xdd\x58\x52\xcd\x90\x5f\x08\x6c\x75\x9e\x83\x83\xe0\x9b\xff\x1e\x68\xb3",
+            "USDe",
             18,
-            "Neutrino USD",
+            "USDe",
         )
         yield (  # address, symbol, decimals, name
-            b"\x8e\x87\x0d\x67\xf6\x60\xd9\x5d\x5b\xe5\x30\x38\x0d\x0e\xc0\xbd\x38\x82\x89\xe1",
-            "USDP",
+            b"\xfa\x2b\x94\x7e\xec\x36\x8f\x42\x19\x5f\x24\xf3\x6d\x2a\xf2\x9f\x7c\x24\xce\xc2",
+            "USDf",
             18,
-            "Pax Dollar",
+            "Falcon USD",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xe3\x43\x16\x76\x31\xd8\x9b\x6f\xfc\x58\xb8\x8d\x6b\x7f\xb0\x22\x87\x95\x49\x1d",
+            "USDG",
+            6,
+            "Global Dollar",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xdc\x03\x5d\x45\xd9\x73\xe3\xec\x16\x9d\x22\x76\xdd\xab\x16\xf1\xe4\x07\x38\x4f",
+            "USDS",
+            18,
+            "USDS Stablecoin",
         )
         yield (  # address, symbol, decimals, name
             b"\xda\xc1\x7f\x95\x8d\x2e\xe5\x23\xa2\x20\x62\x06\x99\x45\x97\xc1\x3d\x83\x1e\xc7",
             "USDT",
             6,
-            "Tether",
+            "Tether USD",
         )
         yield (  # address, symbol, decimals, name
-            b"\x1c\xf4\x59\x2e\xbf\xfd\x73\x0c\x7d\xc9\x2c\x1b\xdf\xfd\xfc\x3b\x9e\xfc\xf2\x9a",
-            "WAVES",
+            b"\xc1\x39\x19\x0f\x44\x7e\x92\x9f\x09\x0e\xde\xb5\x54\xd9\x5a\xbb\x8b\x18\xac\x1c",
+            "USDtb",
             18,
-            "WAVES",
+            "USDtb",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xf3\x52\x7e\xf8\xde\x26\x5e\xaa\x37\x16\xfb\x31\x2c\x12\x84\x7b\xfb\xa6\x6c\xef",
+            "USDX",
+            18,
+            "USDX",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x96\xf6\xef\x95\x18\x40\x72\x1a\xdb\xf4\x6a\xc9\x96\xb5\x9e\x02\x35\xcb\x98\x5c",
+            "USDY",
+            18,
+            "Ondo U.S. Dollar Yield",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x43\x41\x5e\xb6\xff\x9d\xb7\xe2\x6a\x15\xb7\x04\xe7\xa3\xed\xce\x97\xd3\x1c\x4e",
+            "USTB",
+            6,
+            "Superstate Short Duration US Government Securities Fund",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x44\xff\x86\x20\xb8\xca\x30\x90\x23\x95\xa7\xbd\x3f\x24\x07\xe1\xa0\x91\xbf\x73",
+            "VIRTUAL",
+            18,
+            "Virtual Protocol",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xa2\xe3\x35\x66\x10\x84\x07\x01\xbd\xf5\x61\x1a\x53\x97\x45\x10\xae\x27\xe2\xe1",
+            "wBETH",
+            18,
+            "Wrapped Binance Beacon ETH",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x92\x52\x06\xb8\xa7\x07\x09\x6e\xd2\x6a\xe4\x7c\x84\x74\x7f\xe0\xbb\x73\x4f\x59",
+            "WBT",
+            8,
+            "WBT",
         )
         yield (  # address, symbol, decimals, name
             b"\x22\x60\xfa\xc5\xe5\x54\x2a\x77\x3a\xa4\x4f\xbc\xfe\xdf\x7c\x19\x3b\xc2\xc5\x99",
@@ -337,28 +607,40 @@ def _token_iterator(chain_id: int) -> Iterator[tuple[bytes, str, int, str]]:
             "Wrapped BTC",
         )
         yield (  # address, symbol, decimals, name
+            b"\xcd\x5f\xe2\x3c\x85\x82\x0f\x7b\x72\xd0\x92\x6f\xc9\xb0\x5b\x43\xe3\x59\xb7\xee",
+            "weETH",
+            18,
+            "Wrapped eETH",
+        )
+        yield (  # address, symbol, decimals, name
             b"\xc0\x2a\xaa\x39\xb2\x23\xfe\x8d\x0a\x0e\x5c\x4f\x27\xea\xd9\x08\x3c\x75\x6c\xc2",
             "WETH",
             18,
             "Wrapped Ether",
         )
         yield (  # address, symbol, decimals, name
-            b"\x46\x91\x93\x7a\x75\x08\x86\x0f\x87\x6c\x9c\x0a\x2a\x61\x7e\x7d\x9e\x94\x5d\x4b",
-            "WOO",
+            b"\x16\x3f\x8c\x24\x67\x92\x4b\xe0\xae\x7b\x53\x47\x22\x8c\xab\xf2\x60\x31\x87\x53",
+            "WLD",
             18,
-            "Wootrade Network",
+            "Worldcoin",
         )
         yield (  # address, symbol, decimals, name
-            b"\x0b\xc5\x29\xc0\x0c\x64\x01\xae\xf6\xd2\x20\xbe\x8c\x6e\xa1\x66\x7f\x6a\xd9\x3e",
-            "YFI",
+            b"\xda\x5e\x19\x88\x09\x72\x97\xdc\xdc\x1f\x90\xd4\xdf\xe7\x90\x9e\x84\x7c\xbe\xf6",
+            "WLFI",
             18,
-            "yearn.finance",
+            "World Liberty Financial",
         )
         yield (  # address, symbol, decimals, name
-            b"\xe4\x1d\x24\x89\x57\x1d\x32\x21\x89\x24\x6d\xaf\xa5\xeb\xde\x1f\x46\x99\xf4\x98",
-            "ZRX",
+            b"\x7f\x39\xc5\x81\xf5\x95\xb5\x3c\x5c\xb1\x9b\xd0\xb3\xf8\xda\x6c\x93\x5e\x2c\xa0",
+            "wstETH",
             18,
-            "0x Protocol Token",
+            "Wrapped liquid staked Ether 2.0",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x68\x74\x96\x65\xff\x8d\x2d\x11\x2f\xa8\x59\xaa\x29\x3f\x07\xa6\x22\x78\x2f\x38",
+            "XAUt",
+            6,
+            "Tether Gold",
         )
     if chain_id == 10:  # OPT
         yield (  # address, symbol, decimals, name
@@ -569,28 +851,28 @@ def _token_iterator(chain_id: int) -> Iterator[tuple[bytes, str, int, str]]:
         )
     if chain_id == 56:  # BSC
         yield (  # address, symbol, decimals, name
-            b"\xfe\xea\x0b\xdd\x3d\x07\xeb\x6f\xe3\x05\x93\x88\x78\xc0\xca\xdb\xfa\x16\x90\x42",
-            "8PAY",
+            b"\xfb\x61\x15\x44\x5b\xff\x7b\x52\xfe\xb9\x86\x50\xc8\x7f\x44\x90\x7e\x58\xf8\x02",
+            "AAVE",
             18,
-            "8PAY Network",
+            "Aave Token",
         )
         yield (  # address, symbol, decimals, name
-            b"\x3e\xe2\x20\x0e\xfb\x34\x00\xfa\xbb\x9a\xac\xf3\x12\x97\xcb\xdd\x1d\x43\x5d\x47",
-            "ADA",
+            b"\x95\x03\x4f\x65\x3d\x5d\x16\x18\x90\x83\x6a\xd2\xb6\xb8\xcc\x49\xd1\x4e\x02\x9a",
+            "AB",
             18,
-            "Cardano Token",
+            "AB",
         )
         yield (  # address, symbol, decimals, name
-            b"\x8f\x05\x28\xce\x5e\xf7\xb5\x11\x52\xa5\x97\x45\xbe\xfd\xd9\x1d\x97\x09\x1d\x2f",
-            "ALPACA",
+            b"\x77\x73\x4e\x70\xb6\xe8\x8b\x4d\x82\xfe\x63\x2a\x16\x8e\xdf\x6e\x70\x09\x12\xb6",
+            "asBNB",
             18,
-            "AlpacaToken",
+            "Astherus BNB",
         )
         yield (  # address, symbol, decimals, name
-            b"\xa1\xfa\xa1\x13\xcb\xe5\x34\x36\xdf\x28\xff\x0a\xee\x54\x27\x5c\x13\xb4\x09\x75",
-            "ALPHA",
+            b"\x00\x0a\xe3\x14\xe2\xa2\x17\x2a\x03\x9b\x26\x37\x88\x14\xc2\x52\x73\x4f\x55\x6a",
+            "ASTER",
             18,
-            "AlphaToken",
+            "Aster",
         )
         yield (  # address, symbol, decimals, name
             b"\x0e\xb3\xa7\x05\xfc\x54\x72\x50\x37\xcc\x9e\x00\x8b\xde\xde\x69\x7f\x62\xf3\x35",
@@ -599,16 +881,10 @@ def _token_iterator(chain_id: int) -> Iterator[tuple[bytes, str, int, str]]:
             "Cosmos Token",
         )
         yield (  # address, symbol, decimals, name
-            b"\x71\x5d\x40\x0f\x88\xc1\x67\x88\x4b\xbc\xc4\x1c\x5f\xea\x40\x7e\xd4\xd2\xf8\xa0",
-            "AXS",
+            b"\x1c\xe0\xc2\x82\x7e\x2e\xf1\x4d\x5c\x4f\x29\xa0\x91\xd7\x35\xa2\x04\x79\x40\x41",
+            "AVAX",
             18,
-            "Axie Infinity Shard",
-        )
-        yield (  # address, symbol, decimals, name
-            b"\xe0\x2d\xf9\xe3\xe6\x22\xde\xbd\xd6\x9f\xb8\x38\xbb\x79\x9e\x3f\x16\x89\x02\xc5",
-            "BAKE",
-            18,
-            "BakeryToken",
+            "Avalanche",
         )
         yield (  # address, symbol, decimals, name
             b"\x8f\xf7\x95\xa6\xf4\xd9\x7e\x78\x87\xc7\x9b\xea\x79\xab\xa5\xcc\x76\x44\x4a\xdf",
@@ -617,28 +893,16 @@ def _token_iterator(chain_id: int) -> Iterator[tuple[bytes, str, int, str]]:
             "Bitcoin Cash Token",
         )
         yield (  # address, symbol, decimals, name
-            b"\xf8\x59\xbf\x77\xcb\xe8\x69\x90\x13\xd6\xdb\xc7\xc2\xb9\x26\xaa\xf3\x07\xf8\x30",
-            "BRY",
-            18,
-            "Berry Tributes",
+            b"\xa6\x97\xe2\x72\xa7\x37\x44\xb3\x43\x52\x8c\x3b\xc4\x70\x2f\x25\x65\xb2\xf4\x22",
+            "Bonk",
+            5,
+            "Bonk",
         )
         yield (  # address, symbol, decimals, name
-            b"\x71\x30\xd2\xa1\x2b\x9b\xcb\xfa\xe4\xf2\x63\x4d\x86\x4a\x1e\xe1\xce\x3e\xad\x9c",
-            "BTCB",
+            b"\x35\x2c\xb5\xe1\x9b\x12\xfc\x21\x65\x48\xa2\x67\x7b\xd0\xfc\xe8\x3b\xae\x43\x4b",
+            "BTT",
             18,
-            "BTCB Token",
-        )
-        yield (  # address, symbol, decimals, name
-            b"\xc9\x84\x9e\x6f\xdb\x74\x3d\x08\xfa\xee\x3e\x34\xdd\x2d\x1b\xc6\x9e\xa1\x1a\x51",
-            "BUNNY",
-            18,
-            "Bunny Token",
-        )
-        yield (  # address, symbol, decimals, name
-            b"\xe9\xe7\xce\xa3\xde\xdc\xa5\x98\x47\x80\xba\xfc\x59\x9b\xd6\x9a\xdd\x08\x7d\x56",
-            "BUSD",
-            18,
-            "BUSD Token",
+            "BitTorrent",
         )
         yield (  # address, symbol, decimals, name
             b"\x0e\x09\xfa\xbb\x73\xbd\x3a\xde\x0a\x17\xec\xc3\x21\xfd\x13\xa1\x9e\x81\xce\x82",
@@ -647,52 +911,22 @@ def _token_iterator(chain_id: int) -> Iterator[tuple[bytes, str, int, str]]:
             "PancakeSwap Token",
         )
         yield (  # address, symbol, decimals, name
-            b"\x00\x7e\xa5\xc0\xea\x75\xa8\xdf\x45\xd2\x88\xa4\xde\xbd\xd5\xbb\x63\x3f\x9e\x56",
-            "CAN",
-            18,
-            "CanYaCoin",
+            b"\xba\x2a\xe4\x24\xd9\x60\xc2\x62\x47\xdd\x6c\x32\xed\xc7\x0b\x29\x5c\x74\x4c\x43",
+            "DOGE",
+            8,
+            "Dogecoin",
         )
         yield (  # address, symbol, decimals, name
-            b"\x20\xde\x22\x02\x9a\xb6\x3c\xf9\xa7\xcf\x5f\xeb\x2b\x73\x7c\xa1\xee\x4c\x82\xa6",
-            "CHESS",
+            b"\x70\x83\x60\x9f\xce\x4d\x1d\x8d\xc0\xc9\x79\xaa\xb8\xc8\x69\xea\x2c\x87\x34\x02",
+            "DOT",
             18,
-            "Chess",
+            "Polkadot Token",
         )
         yield (  # address, symbol, decimals, name
-            b"\x52\xce\x07\x1b\xd9\xb1\xc4\xb0\x0a\x0b\x92\xd2\x98\xc5\x12\x47\x8c\xad\x67\xe8",
-            "COMP",
+            b"\x8d\x01\x0b\xf9\xc2\x68\x81\x78\x8b\x4e\x6b\xf5\xfd\x1b\xdc\x35\x8c\x8f\x90\xb8",
+            "DOT",
             18,
-            "Compound Coin",
-        )
-        yield (  # address, symbol, decimals, name
-            b"\x1a\xf3\xf3\x29\xe8\xbe\x15\x40\x74\xd8\x76\x9d\x1f\xfa\x4e\xe0\x58\xb1\xdb\xc3",
-            "DAI",
-            18,
-            "Dai Token",
-        )
-        yield (  # address, symbol, decimals, name
-            b"\x23\x3d\x91\xa0\x71\x31\x55\x00\x3f\xc4\xdc\xe0\xaf\xa8\x71\xb5\x08\xb3\xb7\x15",
-            "DITTO",
-            9,
-            "Ditto",
-        )
-        yield (  # address, symbol, decimals, name
-            b"\x67\xee\x3c\xb0\x86\xf8\xa1\x6f\x34\xbe\xe3\xca\x72\xfa\xd3\x6f\x7d\xb9\x29\xe2",
-            "DODO",
-            18,
-            "DODO bird",
-        )
-        yield (  # address, symbol, decimals, name
-            b"\x56\xb6\xfb\x70\x8f\xc5\x73\x2d\xec\x1a\xfc\x8d\x85\x56\x42\x3a\x2e\xdc\xcb\xd6",
-            "EOS",
-            18,
-            "EOS Token",
-        )
-        yield (  # address, symbol, decimals, name
-            b"\xa7\xf5\x52\x07\x8d\xcc\x24\x7c\x26\x84\x33\x60\x20\xc0\x36\x48\x50\x0c\x6d\x9f",
-            "EPS",
-            18,
-            "Ellipsis",
+            "Polkadot Token (Relay Chain)",
         )
         yield (  # address, symbol, decimals, name
             b"\x21\x70\xed\x08\x80\xac\x9a\x75\x5f\xd2\x9b\x26\x88\x95\x6b\xd9\x59\xf9\x33\xf8",
@@ -701,40 +935,58 @@ def _token_iterator(chain_id: int) -> Iterator[tuple[bytes, str, int, str]]:
             "Ethereum Token",
         )
         yield (  # address, symbol, decimals, name
-            b"\x4e\x64\x15\xa5\x72\x7e\xa0\x8a\xae\x45\x80\x05\x71\x87\x92\x3a\xec\x33\x12\x27",
-            "FINE",
+            b"\x24\x16\x09\x2f\x14\x33\x78\x75\x0b\xb2\x9b\x79\xed\x96\x1a\xb1\x95\xcc\xee\xa5",
+            "ezETH",
             18,
-            "Refinable",
+            "Renzo Restaked ETH",
         )
         yield (  # address, symbol, decimals, name
-            b"\x65\x8a\x10\x9c\x59\x00\xbc\x6d\x23\x57\xc8\x75\x49\xb6\x51\x67\x0e\x5b\x05\x39",
-            "FOR",
+            b"\xc5\xf0\xf7\xb6\x67\x64\xf6\xec\x8c\x8d\xff\x7b\xa6\x83\x10\x22\x95\xe1\x64\x09",
+            "FDUSD",
             18,
-            "The Force Token",
+            "First Digital USD",
         )
         yield (  # address, symbol, decimals, name
-            b"\xe3\x69\xfe\xc2\x33\x80\xf9\xf1\x4f\xfd\x07\xa1\xdc\x4b\x7c\x1a\x9f\xdd\x81\xc9",
-            "Froyo",
+            b"\x03\x1b\x41\xe5\x04\x67\x78\x79\x37\x0e\x9d\xbc\xf9\x37\x28\x3a\x86\x91\xfa\x7f",
+            "FET",
             18,
-            "Froyo",
+            "Fetch",
         )
         yield (  # address, symbol, decimals, name
-            b"\xf5\xd8\xa0\x96\xcc\xcb\x31\xb9\xd7\xbc\xe5\xaf\xe8\x12\xbe\x23\xe3\xd4\x69\x0d",
-            "HAPPY",
-            18,
-            "HappyFans",
+            b"\xfb\x5b\x83\x8b\x6c\xfe\xed\xc2\x87\x3a\xb2\x78\x66\x07\x9a\xc5\x53\x63\xd3\x7e",
+            "FLOKI",
+            9,
+            "FLOKI",
         )
         yield (  # address, symbol, decimals, name
-            b"\x94\x8d\x2a\x81\x08\x6a\x07\x5b\x31\x30\xba\xc1\x9e\x4c\x6d\xee\x1d\x2e\x3f\xe8",
-            "Helmet",
+            b"\x10\x45\x97\x1c\x16\x8b\x52\x94\xac\xbc\x87\x27\xa4\xf1\xc9\xe1\xaf\x99\xf6\xd0",
+            "FTN",
             18,
-            "Helmet.insure Governance Token",
+            "Bridged FTN (OrtakSea)",
         )
         yield (  # address, symbol, decimals, name
-            b"\xc0\xef\xf7\x74\x9b\x12\x54\x44\x95\x3e\xf8\x96\x82\x20\x1f\xb8\xc6\xa9\x17\xcd",
-            "HZN",
+            b"\x44\xf1\x61\xae\x29\x36\x1e\x33\x2d\xea\x03\x9d\xfa\x2f\x40\x4e\x0b\xc5\xb5\xcc",
+            "H",
             18,
-            "Horizon Protocol",
+            "Humanity",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x61\xec\x85\xab\x89\x37\x7d\xb6\x57\x62\xe2\x34\xc9\x46\xb5\xc2\x5a\x56\xe9\x9e",
+            "HTX",
+            18,
+            "HTX",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xa2\xb7\x26\xb1\x14\x5a\x47\x73\xf6\x85\x93\xcf\x17\x11\x87\xd8\xeb\xe4\xd4\x95",
+            "INJ",
+            18,
+            "Injective Protocol",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xec\xac\x9c\x5f\x70\x4e\x95\x49\x31\x34\x9d\xa3\x7f\x60\xe3\x9f\x51\x5c\x11\xc1",
+            "LBTC",
+            8,
+            "Lombard Staked Bitcoin",
         )
         yield (  # address, symbol, decimals, name
             b"\xf8\xa0\xbf\x9c\xf5\x4b\xb9\x2f\x17\x37\x4d\x9e\x9a\x32\x1e\x6a\x11\x1a\x51\xbd",
@@ -749,61 +1001,55 @@ def _token_iterator(chain_id: int) -> Iterator[tuple[bytes, str, int, str]]:
             "Litecoin Token",
         )
         yield (  # address, symbol, decimals, name
-            b"\x85\x7b\x22\x2f\xc7\x9e\x1c\xbb\xf8\xca\x5f\x78\xcb\x13\x3d\x1b\x7c\xf3\x4b\xbd",
-            "LTO",
+            b"\x22\xb1\x45\x8e\x78\x0f\x8f\xa7\x1e\x2f\x84\x50\x2c\xee\x8b\x5a\x3c\xc7\x31\xfa",
+            "M",
             18,
-            "LTO Network",
+            "MemeCore",
         )
         yield (  # address, symbol, decimals, name
-            b"\xee\x98\x01\x66\x9c\x61\x38\xe8\x4b\xd5\x0d\xeb\x50\x08\x27\xb7\x76\x77\x7d\x28",
-            "O3",
+            b"\xd8\x25\x44\xbf\x0d\xfe\x83\x85\xef\x8f\xa3\x4d\x67\xe6\xe4\x94\x0c\xc6\x3e\x16",
+            "MYX",
             18,
-            "O3 Swap Token",
+            "MYX",
         )
         yield (  # address, symbol, decimals, name
-            b"\xfd\x7b\x3a\x77\x84\x8f\x1c\x2d\x67\xe0\x5e\x54\xd7\x8d\x17\x4a\x0c\x85\x03\x35",
-            "ONT",
+            b"\xb3\xed\x0a\x42\x61\x55\xb7\x9b\x89\x88\x49\x80\x3e\x3b\x36\x55\x2f\x7e\xd5\x07",
+            "PENDLE",
             18,
-            "Ontology Token",
+            "Pendle",
         )
         yield (  # address, symbol, decimals, name
-            b"\xed\x28\xa4\x57\xa5\xa7\x65\x96\xac\x48\xd8\x7c\x0f\x57\x70\x20\xf6\xea\x1c\x4c",
-            "pBTC",
+            b"\x64\x18\xc0\xdd\x09\x9a\x9f\xda\x39\x7c\x76\x63\x04\xcd\xd9\x18\x23\x3e\x88\x47",
+            "PENGU",
             18,
-            "pTokens BTC",
+            "Pudgy Penguins",
         )
         yield (  # address, symbol, decimals, name
-            b"\xaf\x53\xd5\x6f\xf9\x9f\x13\x22\x51\x5e\x54\xfd\xde\x93\xff\x8b\x3b\x7d\xaf\xd5",
-            "PROM",
+            b"\x25\xd8\x87\xce\x7a\x35\x17\x2c\x62\xfe\xbf\xd6\x7a\x18\x56\xf2\x0f\xae\xbb\x00",
+            "PEPE",
             18,
-            "Prometeus",
+            "Pepe",
         )
         yield (  # address, symbol, decimals, name
-            b"\xed\x8c\x8a\xa8\x29\x9c\x10\xf0\x67\x49\x6b\xb6\x6f\x8c\xc7\xfb\x33\x8a\x34\x05",
-            "PROS",
+            b"\x4a\xae\x82\x3a\x6a\x0b\x37\x6d\xe6\xa7\x8e\x74\xec\xc5\xb0\x79\xd3\x8c\xbc\xf7",
+            "SolvBTC",
             18,
-            "Prosper",
+            "Solv BTC",
         )
         yield (  # address, symbol, decimals, name
-            b"\xd4\x1f\xdb\x03\xba\x84\x76\x2d\xd6\x6a\x0a\xf1\xa6\xc8\x54\x0f\xf1\xba\x5d\xfb",
-            "SFP",
+            b"\x21\x1c\xc4\xdd\x07\x37\x34\xda\x05\x5f\xbf\x44\xa2\xb4\x66\x7d\x5e\x5f\xe5\xd2",
+            "sUSDe",
             18,
-            "SafePal Token",
+            "Staked USDe",
         )
         yield (  # address, symbol, decimals, name
-            b"\x47\x7b\xc8\xd2\x3c\x63\x4c\x15\x40\x61\x86\x94\x78\xbc\xe9\x6b\xe6\x04\x5d\x12",
-            "SFUND",
-            18,
-            "SeedifyFund",
+            b"\x76\xa7\x97\xa5\x9b\xa2\xc1\x77\x26\x89\x69\x76\xb7\xb3\x74\x7b\xfd\x1d\x22\x0f",
+            "TONCOIN",
+            9,
+            "Wrapped TON Coin",
         )
         yield (  # address, symbol, decimals, name
-            b"\x22\x22\x22\x7e\x22\x10\x2f\xe3\x32\x20\x98\xe4\xcb\xfe\x18\xcf\xeb\xd5\x7c\x95",
-            "TLM",
-            4,
-            "Alien Worlds Trilium",
-        )
-        yield (  # address, symbol, decimals, name
-            b"\x14\x01\x6e\x85\xa2\x5a\xeb\x13\x06\x56\x88\xca\xfb\x43\x04\x4c\x2e\xf8\x67\x84",
+            b"\x40\xaf\x38\x27\xf3\x9d\x0e\xac\xbf\x4a\x16\x8f\x8d\x4e\xe6\x7c\x12\x1d\x11\xc9",
             "TUSD",
             18,
             "TrueUSD",
@@ -821,22 +1067,58 @@ def _token_iterator(chain_id: int) -> Iterator[tuple[bytes, str, int, str]]:
             "Uniswap",
         )
         yield (  # address, symbol, decimals, name
+            b"\x75\x8a\x3e\x0b\x1f\x84\x2c\x93\x06\xb7\x83\xf8\xa4\x07\x8c\x6c\x8c\x03\xa2\x70",
+            "USD0",
+            18,
+            "Usual USD",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x8d\x0d\x00\x0e\xe4\x49\x48\xfc\x98\xc9\xb9\x8a\x4f\xa4\x92\x14\x76\xf0\x8b\x0d",
+            "USD1",
+            18,
+            "World Liberty Financial USD",
+        )
+        yield (  # address, symbol, decimals, name
             b"\x8a\xc7\x6a\x51\xcc\x95\x0d\x98\x22\xd6\x8b\x83\xfe\x1a\xd9\x7b\x32\xcd\x58\x0d",
             "USDC",
             18,
             "USD Coin",
         )
         yield (  # address, symbol, decimals, name
+            b"\x39\x20\x04\xbe\xe2\x13\xf1\xff\x58\x0c\x86\x73\x59\xc2\x46\x92\x4f\x21\xe6\xad",
+            "USDD",
+            18,
+            "Decentralized USD",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x5d\x3a\x1f\xf2\xb6\xba\xb8\x3b\x63\xcd\x9a\xd0\x78\x70\x74\x08\x1a\x52\xef\x34",
+            "USDe",
+            18,
+            "USDe",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xb3\xb0\x2e\x4a\x9f\xb2\xbd\x28\xcc\x2f\xf9\x7b\x0a\xb3\xf6\xb3\xec\x1e\xe9\xd2",
+            "USDf",
+            18,
+            "Falcon USD",
+        )
+        yield (  # address, symbol, decimals, name
             b"\x55\xd3\x98\x32\x6f\x99\x05\x9f\xf7\x75\x48\x52\x46\x99\x90\x27\xb3\x19\x79\x55",
             "USDT",
             18,
-            "Tether",
+            "Tether USD",
         )
         yield (  # address, symbol, decimals, name
-            b"\x4b\xd1\x70\x03\x47\x33\x89\xa4\x2d\xaf\x6a\x0a\x72\x9f\x6f\xdb\x32\x8b\xbb\xd7",
-            "VAI",
+            b"\xf3\x52\x7e\xf8\xde\x26\x5e\xaa\x37\x16\xfb\x31\x2c\x12\x84\x7b\xfb\xa6\x6c\xef",
+            "USDX",
             18,
-            "VAI Stablecoin",
+            "USDX",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xa2\xe3\x35\x66\x10\x84\x07\x01\xbd\xf5\x61\x1a\x53\x97\x45\x10\xae\x27\xe2\xe1",
+            "wBETH",
+            18,
+            "Wrapped Binance Beacon ETH",
         )
         yield (  # address, symbol, decimals, name
             b"\xbb\x4c\xdb\x9c\xbd\x36\xb0\x1b\xd1\xcb\xae\xbf\x2d\xe0\x8d\x91\x73\xbc\x09\x5c",
@@ -845,34 +1127,28 @@ def _token_iterator(chain_id: int) -> Iterator[tuple[bytes, str, int, str]]:
             "Wrapped BNB",
         )
         yield (  # address, symbol, decimals, name
-            b"\x8b\x30\x3d\x5b\xbf\xbb\xf4\x6f\x1a\x4d\x97\x41\xe4\x91\xe0\x69\x86\x89\x4e\x18",
-            "WOOP",
-            18,
-            "Woonkly Power",
+            b"\x05\x55\xe3\x0d\xa8\xf9\x83\x08\xed\xb9\x60\xaa\x94\xc0\xdb\x47\x23\x0d\x2b\x9c",
+            "WBTC",
+            8,
+            "Wrapped BTC",
         )
         yield (  # address, symbol, decimals, name
-            b"\x4d\xa9\x96\xc5\xfe\x84\x75\x5c\x80\xe1\x08\xcf\x96\xfe\x70\x51\x74\xc5\xe3\x6a",
-            "WOW",
+            b"\x04\xc0\x59\x9a\xe5\xa4\x47\x57\xc0\xaf\x6f\x9e\xc3\xb9\x3d\xa8\x97\x6c\x15\x0a",
+            "weETH",
             18,
-            "WOWswap",
+            "Wrapped eETH",
         )
         yield (  # address, symbol, decimals, name
-            b"\x78\x59\xb0\x1b\xbf\x67\x5d\x67\xda\x8c\xd1\x28\xa5\x0d\x15\x5c\xd8\x81\xb5\x76",
-            "XMS",
+            b"\x47\x47\x47\x47\x47\x7b\x19\x92\x88\xbf\x72\xa1\xd7\x02\xf7\xfe\x0f\xb1\xde\xea",
+            "WLFI",
             18,
-            "Mars Ecosystem Token",
+            "World Liberty Financial",
         )
         yield (  # address, symbol, decimals, name
-            b"\x1d\x2f\x0d\xa1\x69\xce\xb9\xfc\x7b\x31\x44\x62\x8d\xb1\x56\xf3\xf6\xc6\x0d\xbe",
-            "XRP",
+            b"\x40\x5f\xbc\x90\x04\xd8\x57\x90\x3b\xfd\x6b\x33\x57\x79\x2d\x71\xa5\x07\x26\xb0",
+            "XPL",
             18,
-            "XRP Token",
-        )
-        yield (  # address, symbol, decimals, name
-            b"\xcf\x6b\xb5\x38\x9c\x92\xbd\xda\x8a\x37\x47\xdd\xb4\x54\xcb\x7a\x64\x62\x6c\x63",
-            "XVS",
-            18,
-            "Venus",
+            "Plasma",
         )
     if chain_id == 66:  # okexchain
         yield (  # address, symbol, decimals, name
@@ -1365,28 +1641,40 @@ def _token_iterator(chain_id: int) -> Iterator[tuple[bytes, str, int, str]]:
         )
     if chain_id == 137:  # Polygon
         yield (  # address, symbol, decimals, name
-            b"\x9c\x2c\x5f\xd7\xb0\x7e\x95\xee\x04\x4d\xde\xba\x0e\x97\xa6\x65\xf1\x42\x39\x4f",
-            "1INCH",
-            18,
-            "1Inch (PoS)",
-        )
-        yield (  # address, symbol, decimals, name
             b"\xd6\xdf\x93\x2a\x45\xc0\xf2\x55\xf8\x51\x45\xf2\x86\xea\x0b\x29\x2b\x21\xc9\x0b",
             "AAVE",
             18,
             "Aave (PoS)",
         )
         yield (  # address, symbol, decimals, name
-            b"\xdf\xce\x1e\x99\xa3\x1c\x45\x97\xa3\xf8\xa8\x94\x5c\xbf\xa9\x03\x76\x55\xe3\x35",
-            "ASTRAFER",
-            18,
-            "Astrafer",
+            b"\xfc\xe6\x0b\xbc\x52\xa5\x70\x5c\xec\x5b\x44\x55\x01\xfb\xaf\x32\x74\xdc\x43\xd0",
+            "ACRED",
+            6,
+            "Apollo Diversified Credit Securitize Fund",
         )
         yield (  # address, symbol, decimals, name
-            b"\x9a\x71\x01\x2b\x13\xca\x4d\x3d\x0c\xdc\x72\xa1\x77\xdf\x3e\xf0\x3b\x0e\x76\xa3",
-            "BAL",
+            b"\xa3\xf7\x51\x66\x2e\x28\x2e\x83\xec\x3c\xbc\x38\x7d\x22\x5c\xa5\x6d\xd6\x3d\x3a",
+            "APEPE",
             18,
-            "Balancer (PoS)",
+            "Ape and Pepe",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x00\x00\x00\x00\xef\xe3\x02\xbe\xaa\x2b\x3e\x6e\x1b\x18\xd0\x8d\x69\xa9\x01\x2a",
+            "AUSD",
+            6,
+            "AUSD",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x2c\x89\xbb\xc9\x2b\xd8\x6f\x80\x75\xd1\xde\xcc\x58\xc7\xf4\xe0\x10\x7f\x28\x6b",
+            "AVAX",
+            18,
+            "Avalanche Token",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x6e\x4e\x62\x41\x06\xcb\x12\xe1\x68\xe6\x53\x3f\x8e\xc7\xc8\x22\x63\x35\x89\x40",
+            "AXL",
+            6,
+            "Axelar",
         )
         yield (  # address, symbol, decimals, name
             b"\x3c\xef\x98\xbb\x43\xd7\x32\xe2\xf2\x85\xee\x60\x5a\x81\x58\xcd\xe9\x67\xd2\x19",
@@ -1395,16 +1683,10 @@ def _token_iterator(chain_id: int) -> Iterator[tuple[bytes, str, int, str]]:
             "Basic Attention Token (PoS)",
         )
         yield (  # address, symbol, decimals, name
-            b"\x92\x46\xa5\xf1\x0a\x79\xa5\xa9\x39\xb0\xc2\xa7\x5a\x3a\xd1\x96\xaa\xfd\xb4\x3b",
-            "BETS",
-            18,
-            "BetSwirl Token",
-        )
-        yield (  # address, symbol, decimals, name
-            b"\xda\xb5\x29\xf4\x0e\x67\x1a\x1d\x4b\xf9\x13\x61\xc2\x1b\xf9\xf0\xc9\x71\x2a\xb7",
-            "BUSD",
-            18,
-            "Binance-Peg BUSD Token",
+            b"\xe5\xb4\x98\x20\xe5\xa1\x06\x3f\x6f\x4d\xdf\x85\x13\x27\xb5\xe8\xb2\x30\x10\x48",
+            "Bonk",
+            5,
+            "Bonk",
         )
         yield (  # address, symbol, decimals, name
             b"\x85\x05\xb9\xd2\x25\x4a\x7a\xe4\x68\xc0\xe9\xdd\x10\xcc\xea\x3a\x83\x7a\xef\x5c",
@@ -1413,10 +1695,22 @@ def _token_iterator(chain_id: int) -> Iterator[tuple[bytes, str, int, str]]:
             "(PoS) Compound",
         )
         yield (  # address, symbol, decimals, name
+            b"\x2f\x4e\xfd\x3a\xa4\x2e\x15\xa1\xec\x61\x14\x54\x71\x51\xb6\x3e\xe5\xd3\x99\x58",
+            "COW",
+            18,
+            "CoW Protocol Token(PoS)",
+        )
+        yield (  # address, symbol, decimals, name
             b"\x17\x23\x70\xd5\xcd\x63\x27\x9e\xfa\x6d\x50\x2d\xab\x29\x17\x19\x33\xa6\x10\xaf",
             "CRV",
             18,
             "CRV (PoS)",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xc4\xce\x1d\x6f\x5d\x98\xd6\x5e\xe2\x5c\xf8\x5e\x9f\x2e\x9d\xcf\xee\x6c\xb5\xd6",
+            "crvUSD",
+            18,
+            "Curve.Fi USD Stablecoin(PoS)",
         )
         yield (  # address, symbol, decimals, name
             b"\x8f\x3c\xf7\xad\x23\xcd\x3c\xad\xbd\x97\x35\xaf\xf9\x58\x02\x32\x39\xc6\xa0\x63",
@@ -1425,52 +1719,46 @@ def _token_iterator(chain_id: int) -> Iterator[tuple[bytes, str, int, str]]:
             "(PoS) Dai Stablecoin",
         )
         yield (  # address, symbol, decimals, name
-            b"\xa0\xe3\x90\xe9\xce\xa0\xd0\xe8\xcd\x40\x04\x8c\xed\x9f\xa9\xea\x10\xd7\x16\x39",
-            "DSLA",
-            18,
-            "DSLA (PoS)",
+            b"\xe1\x11\x17\x8a\x87\xa3\xbf\xf0\xc8\xd1\x8d\xec\xba\x57\x98\x82\x75\x39\xae\x99",
+            "EURS",
+            2,
+            "STASIS EURS Token (PoS)",
         )
         yield (  # address, symbol, decimals, name
-            b"\x51\xde\x72\xb1\x7c\x7b\xd1\x2e\x9e\x6d\x69\xeb\x50\x6a\x66\x9e\xb6\xb5\x24\x9e",
-            "EGG",
-            18,
-            "Waves Ducks",
+            b"\xa0\x76\x9f\x7a\x8f\xc6\x5e\x47\xde\x93\x79\x7b\x4e\x21\xc0\x73\xc1\x17\xfc\x80",
+            "EUTBL",
+            5,
+            "Spiko EU T-Bills Money Market Fund",
         )
         yield (  # address, symbol, decimals, name
-            b"\x34\xc1\xb2\x99\xa7\x45\x88\xd6\xab\xdc\x1b\x85\xa5\x33\x45\xa4\x84\x28\xa5\x21",
-            "EZ",
+            b"\x45\xc3\x2f\xa6\xdf\x82\xea\xd1\xe2\xef\x74\xd1\x7b\x76\x54\x7e\xdd\xfa\xff\x89",
+            "FRAX",
             18,
-            "EASY V2",
+            "Frax",
         )
         yield (  # address, symbol, decimals, name
-            b"\x22\xe3\xf0\x2f\x86\xbc\x8e\xa0\xd7\x37\x18\xa2\xae\x88\x51\x85\x4e\x62\xad\xc5",
-            "FLAME",
+            b"\xee\x32\x7f\x88\x9d\x59\x47\xc1\xdc\x19\x34\xbb\x20\x8a\x1e\x79\x2f\x95\x3e\x96",
+            "frxETH",
             18,
-            "FireStarter",
+            "Frax Ether",
         )
         yield (  # address, symbol, decimals, name
-            b"\x3b\x56\xa7\x04\xc0\x1d\x65\x01\x47\xad\xe2\xb8\xce\xe5\x94\x06\x6b\x3f\x94\x21",
-            "FYN",
+            b"\x80\xee\xde\x49\x66\x55\xfb\x90\x47\xdd\x39\xd9\xf4\x18\xd5\x48\x3e\xd6\x00\xdf",
+            "frxUSD",
             18,
-            "Affyn",
+            "Frax USD",
         )
         yield (  # address, symbol, decimals, name
-            b"\x72\x3b\x17\x71\x82\x89\xa9\x1a\xf2\x52\xd6\x16\xde\x2c\x77\x94\x49\x62\xd1\x22",
-            "GAIA",
+            b"\x4b\x43\x27\xdb\x16\x00\xb8\xb1\x44\x01\x63\xf6\x67\xe1\x99\xce\xf3\x53\x85\xf5",
+            "fxcbETH",
             18,
-            "GAIA Everworld",
+            "Coinbase Wrapped Staked ETH (FXERC20)",
         )
         yield (  # address, symbol, decimals, name
-            b"\x38\x01\xc3\xb3\xb5\xc9\x8f\x88\xa9\xc9\x00\x59\x66\xaa\x96\xaa\x44\x0b\x9a\xfc",
-            "GLTR",
+            b"\x1a\x3a\xcf\x6d\x19\x26\x7e\x2d\x3e\x7f\x89\x8f\x42\x80\x3e\x90\xc9\x21\x90\x62",
+            "FXS",
             18,
-            "GAX Liquidity Token Reward",
-        )
-        yield (  # address, symbol, decimals, name
-            b"\xdd\x2a\xf2\xe7\x23\x54\x70\x88\xd3\x84\x68\x41\xfb\xdc\xc6\xa8\x09\x33\x13\xd6",
-            "GOGO",
-            18,
-            "GOGOcoin",
+            "Frax Share",
         )
         yield (  # address, symbol, decimals, name
             b"\x5f\xe2\xb5\x8c\x01\x3d\x76\x01\x14\x7d\xcd\xd6\x8c\x14\x3a\x77\x49\x9f\x55\x31",
@@ -1479,22 +1767,16 @@ def _token_iterator(chain_id: int) -> Iterator[tuple[bytes, str, int, str]]:
             "Graph Token (PoS)",
         )
         yield (  # address, symbol, decimals, name
-            b"\x8a\x0e\x8b\x4b\x09\x03\x92\x9f\x47\xc3\xea\x30\x97\x39\x40\xd4\xa9\x70\x20\x67",
-            "INSUR",
+            b"\xf5\x0d\x05\xa1\x40\x2d\x0a\xda\xfa\x88\x0d\x36\x05\x07\x36\xf9\xf6\xee\x7d\xee",
+            "INST",
             18,
-            "InsurAce (PoS)",
+            "Instadapp (PoS)",
         )
         yield (  # address, symbol, decimals, name
-            b"\xe0\x6b\xd4\xf5\xaa\xc8\xd0\xaa\x33\x7d\x13\xec\x88\xdb\x6d\xef\xc6\xea\xee\xfe",
-            "IXT",
+            b"\xc3\xc7\xd4\x22\x80\x98\x52\x03\x1b\x44\xab\x29\xee\xc9\xf1\xef\xf2\xa5\x87\x56",
+            "LDO",
             18,
-            "PlanetIX",
-        )
-        yield (  # address, symbol, decimals, name
-            b"\x13\x74\x8d\x54\x8d\x95\xd7\x8a\x3c\x83\xfe\x3f\x32\x60\x4b\x47\x96\xcf\xfa\x23",
-            "KOGECOIN",
-            9,
-            "kogecoin.io",
+            "Lido DAO Token (PoS)",
         )
         yield (  # address, symbol, decimals, name
             b"\x53\xe0\xbc\xa3\x5e\xc3\x56\xbd\x5d\xdd\xfe\xbb\xd1\xfc\x0f\xd0\x3f\xab\xad\x39",
@@ -1509,82 +1791,40 @@ def _token_iterator(chain_id: int) -> Iterator[tuple[bytes, str, int, str]]:
             "(PoS) Decentraland MANA",
         )
         yield (  # address, symbol, decimals, name
-            b"\x2b\x9e\x7c\xcd\xf0\xf4\xe5\xb2\x47\x57\xc1\xe1\xa8\x0e\x31\x1e\x34\xcb\x10\xc7",
-            "MASK",
+            b"\x41\xb3\x96\x6b\x4f\xf7\xb4\x27\x96\x9d\xdf\x5d\xa3\x62\x7d\x6a\xea\xe9\xa4\x8e",
+            "NEXO",
             18,
-            "Mask Network (PoS)",
+            "Nexo (PoS)",
         )
         yield (  # address, symbol, decimals, name
-            b"\xa2\x56\x10\xa7\x70\x77\x39\x0a\x75\xad\x90\x72\xa0\x84\xc5\xfb\xc7\xd4\x3a\x0d",
-            "MCASH",
+            b"\xc3\xec\x80\x34\x3d\x2b\xae\x2f\x8e\x68\x0f\xda\xdd\xe7\xc1\x7e\x71\xe1\x14\xea",
+            "OM",
             18,
-            "Monsoon Finance",
+            "MANTRA DAO (PoS)",
         )
         yield (  # address, symbol, decimals, name
-            b"\x88\xc9\x49\xb4\xeb\x85\xa9\x00\x71\xf2\xc0\xbe\xf8\x61\xbd\xde\xe1\xa7\x47\x9d",
-            "mSHEESHA",
+            b"\xba\x11\xc5\xef\xfa\x33\xc4\xd6\xf8\xf5\x93\xcf\xa3\x94\x24\x1c\xfe\x92\x58\x11",
+            "OUSG",
             18,
-            "SHEESHA POLYGON",
+            "Ondo Short-Term U.S. Government Bond Fund",
         )
         yield (  # address, symbol, decimals, name
-            b"\x8f\x00\x6d\x1e\x1d\x9d\xc6\xc9\x89\x96\xf5\x0a\x4c\x81\x0f\x17\xa4\x7f\xbf\x19",
-            "NSFW",
+            b"\x02\x66\xf4\xf0\x8d\x82\x37\x2c\xf0\xfc\xbc\xcc\x0f\xf7\x43\x09\x08\x9c\x74\xd1",
+            "rETH",
             18,
-            "Pleasure Coin",
+            "Rocket Pool ETH (PoS)",
         )
         yield (  # address, symbol, decimals, name
-            b"\xee\x98\x01\x66\x9c\x61\x38\xe8\x4b\xd5\x0d\xeb\x50\x08\x27\xb7\x76\x77\x7d\x28",
-            "O3",
+            b"\xbb\xba\x07\x3c\x31\xbf\x03\xb8\xac\xf7\xc2\x8e\xf0\x73\x8d\xec\xf3\x69\x56\x83",
+            "SAND",
             18,
-            "O3 Swap Token",
+            "SAND",
         )
         yield (  # address, symbol, decimals, name
-            b"\x8a\x95\x3c\xfe\x44\x2c\x5e\x88\x55\xcc\x6c\x61\xb1\x29\x3f\xa6\x48\xba\xe4\x72",
-            "PolyDoge",
+            b"\x6d\x1f\xdb\xb2\x66\xfc\xc0\x9a\x16\xa2\x20\x16\x36\x92\x10\xa1\x5b\xb9\x57\x61",
+            "sfrxETH",
             18,
-            "PolyDoge",
-        )
-        yield (  # address, symbol, decimals, name
-            b"\x58\x0a\x84\xc7\x38\x11\xe1\x83\x9f\x75\xd8\x6d\x75\xd8\x8c\xca\x0c\x24\x1f\xf4",
-            "QI",
-            18,
-            "Qi Dao",
-        )
-        yield (  # address, symbol, decimals, name
-            b"\x83\x17\x53\xdd\x70\x87\xca\xc6\x1a\xb5\x64\x4b\x30\x86\x42\xcc\x1c\x33\xdc\x13",
-            "QUICK",
-            18,
-            "Quickswap",
-        )
-        yield (  # address, symbol, decimals, name
-            b"\xb5\xc0\x64\xf9\x55\xd8\xe7\xf3\x8f\xe0\x46\x0c\x55\x6a\x72\x98\x74\x94\xee\x17",
-            "QUICK",
-            18,
-            "QuickSwap",
-        )
-        yield (  # address, symbol, decimals, name
-            b"\xcd\x73\x61\xac\x33\x07\xd1\xc5\xa4\x6b\x63\x08\x6a\x90\x74\x2f\xf4\x4c\x63\xb3",
-            "RAIDER",
-            18,
-            "RaiderToken",
-        )
-        yield (  # address, symbol, decimals, name
-            b"\xae\xce\xbf\xcf\x60\x4a\xd2\x45\xea\xf0\xd5\xbd\x68\x45\x9c\x3a\x7a\x63\x99\xc2",
-            "RAMP",
-            18,
-            "RAMP (PoS)",
-        )
-        yield (  # address, symbol, decimals, name
-            b"\xdb\xf3\x1d\xf1\x4b\x66\x53\x5a\xf6\x5a\xac\x99\xc3\x2e\x9e\xa8\x44\xe1\x45\x01",
-            "renBTC",
-            8,
-            "renBTC",
-        )
-        yield (  # address, symbol, decimals, name
-            b"\xce\x82\x9a\x89\xd4\xa5\x5a\x63\x41\x8b\xcc\x43\xf0\x01\x45\xad\xef\x0e\xdb\x8e",
-            "renDOGE",
-            8,
-            "renDOGE",
+            "Staked Frax Ether",
         )
         yield (  # address, symbol, decimals, name
             b"\x50\xb7\x28\xd8\xd9\x64\xfd\x00\xc2\xd0\xaa\xd8\x17\x18\xb7\x13\x11\xfe\xf6\x8a",
@@ -1593,22 +1833,34 @@ def _token_iterator(chain_id: int) -> Iterator[tuple[bytes, str, int, str]]:
             "Synthetix Network Token (PoS)",
         )
         yield (  # address, symbol, decimals, name
-            b"\x0b\x3f\x86\x8e\x0b\xe5\x59\x7d\x5d\xb7\xfe\xb5\x9e\x1c\xad\xbb\x0f\xdd\xa5\x0a",
-            "SUSHI",
+            b"\xae\x4e\xfb\xc7\x73\x6f\x96\x39\x82\xaa\xcb\x17\xef\xa3\x7f\xcb\xab\x92\x4c\xb3",
+            "SolvBTC",
             18,
-            "SushiToken (PoS)",
+            "Solv BTC",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x2f\x6f\x07\xcd\xcf\x35\x88\x94\x4b\xf4\xc4\x2a\xc7\x4f\xf2\x4b\xf5\x6e\x75\x90",
+            "STG",
+            18,
+            "StargateToken",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xa1\x42\x81\x74\xf5\x16\xf5\x27\xfa\xfd\xd1\x46\xb8\x83\xbb\x44\x28\x68\x27\x37",
+            "SUPER",
+            18,
+            "SuperFarm (PoS)",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x23\x6a\xa5\x09\x79\xd5\xf3\xde\x3b\xd1\xee\xb4\x0e\x81\x13\x7f\x22\xab\x79\x4b",
+            "tBTC",
+            18,
+            "Polygon tBTC v2",
         )
         yield (  # address, symbol, decimals, name
             b"\xdf\x78\x37\xde\x1f\x2f\xa4\x63\x1d\x71\x6c\xf2\x50\x2f\x8b\x23\x0f\x1d\xcc\x32",
             "TEL",
             2,
             "Telcoin (PoS)",
-        )
-        yield (  # address, symbol, decimals, name
-            b"\x2e\x1a\xd1\x08\xff\x1d\x8c\x78\x2f\xcb\xbb\x89\xaa\xd7\x83\xac\x49\x58\x67\x56",
-            "TUSD",
-            18,
-            "TrueUSD (PoS)",
         )
         yield (  # address, symbol, decimals, name
             b"\xb3\x3e\xaa\xd8\xd9\x22\xb1\x08\x34\x46\xdc\x23\xf6\x10\xc2\x56\x7f\xb5\x18\x0f",
@@ -1626,19 +1878,25 @@ def _token_iterator(chain_id: int) -> Iterator[tuple[bytes, str, int, str]]:
             b"\x27\x91\xbc\xa1\xf2\xde\x46\x61\xed\x88\xa3\x0c\x99\xa7\xa9\x44\x9a\xa8\x41\x74",
             "USDC.e",
             6,
-            "USD Coin (PoS)",
+            "Bridged USDC",
         )
         yield (  # address, symbol, decimals, name
             b"\xc2\x13\x2d\x05\xd3\x1c\x91\x4a\x87\xc6\x61\x1c\x10\x74\x8a\xeb\x04\xb5\x8e\x8f",
             "USDT",
             6,
-            "(PoS) Tether USD",
+            "Tether",
         )
         yield (  # address, symbol, decimals, name
-            b"\xd0\x25\x8a\x3f\xd0\x0f\x38\xaa\x80\x90\xdf\xee\x34\x3f\x10\xa9\xd4\xd3\x0d\x3f",
-            "VOXEL",
+            b"\xe4\x88\x02\x49\x74\x5e\xac\x5f\x1e\xd9\xd8\xf7\xdf\x84\x47\x92\xd5\x60\xe7\x50",
+            "USTBL",
+            5,
+            "Spiko US T-Bills Money Market Fund",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x8a\x16\xd4\xbf\x8a\x0a\x71\x60\x17\xe8\xd2\x26\x2c\x4a\xc3\x29\x27\x79\x7a\x2f",
+            "VCNT",
             18,
-            "VOXEL Token",
+            "ViciCoin",
         )
         yield (  # address, symbol, decimals, name
             b"\x1b\xfd\x67\x03\x7b\x42\xcf\x73\xac\xf2\x04\x70\x67\xbd\x4f\x2c\x47\xd9\xbf\xd6",
@@ -1659,16 +1917,28 @@ def _token_iterator(chain_id: int) -> Iterator[tuple[bytes, str, int, str]]:
             "Wrapped Matic",
         )
         yield (  # address, symbol, decimals, name
-            b"\x8f\x18\xdc\x39\x95\x94\xb4\x51\xed\xa8\xc5\xda\x02\xd0\x56\x3c\x0b\x2d\x0f\x16",
-            "WOLF",
-            9,
-            "moonwolf.io",
+            b"\xc9\x9f\x5c\x92\x2d\xae\x05\xb6\xe2\xff\x83\x46\x3c\xe7\x05\xef\x7c\x91\xf0\x77",
+            "xSolvBTC",
+            18,
+            "xSolvBTC",
         )
         yield (  # address, symbol, decimals, name
             b"\xda\x53\x71\x04\xd6\xa5\xed\xd5\x3c\x6f\xbb\xa9\xa8\x98\x70\x8e\x46\x52\x60\xb6",
             "YFI",
             18,
             "(PoS) yearn.finance",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x7b\xeb\xd2\x26\x15\x4e\x86\x59\x54\xa8\x76\x50\xfa\xef\xa8\xf4\x85\xd3\x60\x81",
+            "ZIG",
+            18,
+            "ZigCoin",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x69\x85\x88\x4c\x43\x92\xd3\x48\x58\x7b\x19\xcb\x9e\xaa\xf1\x57\xf1\x32\x71\xcd",
+            "ZRO",
+            18,
+            "LayerZero",
         )
     if chain_id == 177:  # HashKey Chain
         yield (  # address, symbol, decimals, name
@@ -1897,10 +2167,250 @@ def _token_iterator(chain_id: int) -> Iterator[tuple[bytes, str, int, str]]:
         )
     if chain_id == 8453:  # Base
         yield (  # address, symbol, decimals, name
-            b"\x50\xc5\x72\x59\x49\xa6\xf0\xc7\x2e\x6c\x4a\x64\x1f\x24\x04\x9a\x91\x7d\xb0\xcb",
-            "DAI",
+            b"\x63\x70\x6e\x40\x1c\x06\xac\x85\x13\x14\x5b\x76\x87\xa1\x48\x04\xd1\x7f\x81\x4b",
+            "AAVE",
             18,
-            "Dai Stablecoin",
+            "Aave Token",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x94\x01\x81\xa9\x4a\x35\xa4\x56\x9e\x45\x29\xa3\xcd\xfb\x74\xe3\x8f\xd9\x86\x31",
+            "AERO",
+            18,
+            "Aerodrome",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x30\x55\x91\x3c\x90\xfc\xc1\xa6\xce\x9a\x35\x89\x11\x72\x1e\xeb\x94\x20\x13\xa1",
+            "Cake",
+            18,
+            "PancakeSwap Token",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xcb\xb7\xc0\x00\x0a\xb8\x8b\x47\x3b\x1f\x5a\xfd\x9e\xf8\x08\x44\x0e\xed\x33\xbf",
+            "cbBTC",
+            8,
+            "Coinbase Wrapped BTC",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x2a\xe3\xf1\xec\x7f\x1f\x50\x12\xcf\xea\xb0\x18\x5b\xfc\x7a\xa3\xcf\x0d\xec\x22",
+            "cbETH",
+            18,
+            "Coinbase Wrapped Staked ETH",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xf5\x87\xb7\x11\x68\x79\xa5\x29\x35\x3c\xc7\x1e\xe9\x59\xcd\x69\xfd\x5c\xae\x48",
+            "cgETH.hashkey",
+            18,
+            "cgETH Hashkey Cloud",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x8d\x27\x57\xea\x27\xaa\xbf\x17\x2d\xa4\xcc\xa4\xe5\x47\x4c\x76\x01\x6e\x3d\xc5",
+            "clBTC",
+            18,
+            "clBTC",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x9e\x10\x28\xf5\xf1\xd5\xed\xe5\x97\x48\xff\xce\xe5\x53\x25\x09\x97\x68\x40\xe0",
+            "COMP",
+            18,
+            "Compound",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x8e\xe7\x3c\x48\x4a\x26\xe0\xa5\xdf\x2e\xe2\xa4\x96\x0b\x78\x99\x67\xdd\x04\x15",
+            "CRV",
+            18,
+            "Curve DAO Token",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x8d\x01\x0b\xf9\xc2\x68\x81\x78\x8b\x4e\x6b\xf5\xfd\x1b\xdc\x35\x8c\x8f\x90\xb8",
+            "DOT",
+            18,
+            "Polkadot Token (Relay Chain)",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x20\x81\xab\x0d\x9e\xc9\xe4\x30\x32\x34\xab\x26\xd8\x6b\x20\xb3\x36\x79\x46\xee",
+            "EIGEN",
+            18,
+            "Eigen",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x58\x53\x8e\x6a\x46\xe0\x74\x34\xd7\xe7\x37\x5b\xc2\x68\xd3\xcb\x83\x9c\x01\x33",
+            "ENA",
+            18,
+            "ENA",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x6c\x24\x0d\xda\x6b\x5c\x33\x6d\xf0\x9a\x4d\x01\x11\x39\xbe\xaa\xa1\xea\x2a\xa2",
+            "ETHFI",
+            18,
+            "ether.fi governance token",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xa0\x76\x9f\x7a\x8f\xc6\x5e\x47\xde\x93\x79\x7b\x4e\x21\xc0\x73\xc1\x17\xfc\x80",
+            "EUTBL",
+            5,
+            "Spiko EU T-Bills Money Market Fund",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x24\x16\x09\x2f\x14\x33\x78\x75\x0b\xb2\x9b\x79\xed\x96\x1a\xb1\x95\xcc\xee\xa5",
+            "ezETH",
+            18,
+            "Renzo Restaked ETH",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x61\xe0\x30\xa5\x6d\x33\xe8\x26\x0f\xdd\x81\xf0\x3b\x16\x2a\x79\xfe\x34\x49\xcd",
+            "FLUID",
+            18,
+            "Fluid",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x10\x45\x97\x1c\x16\x8b\x52\x94\xac\xbc\x87\x27\xa4\xf1\xc9\xe1\xaf\x99\xf6\xd0",
+            "FTN",
+            18,
+            "Bridged FTN (OrtakSea)",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x6b\xb7\xa2\x12\x91\x06\x82\xdc\xfd\xbd\x5b\xcb\xb3\xe2\x8f\xb4\xe8\xda\x10\xee",
+            "GHO",
+            18,
+            "Gho Token",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x00\xf3\xc4\x28\x33\xc3\x17\x01\x59\xaf\x4e\x92\xdb\xb4\x51\xfb\x3f\x70\x89\x17",
+            "ICP",
+            8,
+            "ICP",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xec\xac\x9c\x5f\x70\x4e\x95\x49\x31\x34\x9d\xa3\x7f\x60\xe3\x9f\x51\x5c\x11\xc1",
+            "LBTC",
+            8,
+            "Lombard Staked Bitcoin",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x88\xfb\x15\x0b\xdc\x53\xa6\x5f\xe9\x4d\xea\x0c\x9b\xa0\xa6\xda\xf8\xc6\xe1\x96",
+            "LINK",
+            18,
+            "ChainLink Token",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xb2\x97\x49\x49\x89\x54\xa3\xa8\x21\xec\x37\xbd\xe8\x6e\x38\x6d\xf3\xce\x30\xb6",
+            "LsETH",
+            18,
+            "Liquid Staked ETH",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xba\xa5\xcc\x21\xfd\x48\x7b\x8f\xcc\x2f\x63\x2f\x3f\x4e\x8d\x37\x26\x2a\x08\x42",
+            "MORPHO",
+            18,
+            "Morpho Token",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x06\x0c\xb0\x87\xa9\x73\x0e\x13\xaa\x19\x1f\x31\xa6\xd8\x6b\xff\x8d\xfc\xdc\xc0",
+            "OHM",
+            9,
+            "Olympus",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xa9\x9f\x6e\x67\x85\xda\x0f\x5d\x6f\xb4\x24\x95\xfe\x42\x4b\xce\x02\x9e\xeb\x3e",
+            "PENDLE",
+            18,
+            "Pendle",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xb6\xfe\x22\x1f\xe9\xee\xf5\xab\xa2\x21\xc3\x48\xba\x20\xa1\xbf\x5e\x73\x62\x4c",
+            "rETH",
+            18,
+            "Rocket Pool ETH",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x70\x65\x4a\xad\x8b\x77\x34\xdc\x31\x9d\x0c\x36\x08\xec\x7b\x32\xe0\x3f\xa1\x62",
+            "satUSD",
+            18,
+            "Satoshi Stablecoin V2",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x99\xac\x44\x84\xe8\xa1\xdb\xd6\xa1\x85\x38\x0b\x3a\x81\x19\x13\xac\x88\x4d\x87",
+            "sDAI",
+            18,
+            "Savings Dai",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x22\xe6\x96\x6b\x79\x9c\x4d\x5b\x13\xbe\x96\x2e\x1d\x11\x7b\x56\x32\x7f\xda\x66",
+            "SNX",
+            18,
+            "Synthetix Network Token",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x3b\x86\xad\x95\x85\x9b\x6a\xb7\x73\xf5\x5f\x8d\x94\xb4\xb9\xd4\x43\xee\x93\x1f",
+            "SolvBTC",
+            18,
+            "Solv BTC",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xc2\x6c\x90\x99\xbd\x37\x89\x10\x78\x88\xc3\x5b\xb4\x11\x78\x07\x9b\x28\x25\x61",
+            "SolvBTC.BBN",
+            18,
+            "SolvBTC Babylon",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x50\xda\x64\x5f\x14\x87\x98\xf6\x8e\xf2\xd7\xdb\x7c\x1c\xb2\x2a\x68\x19\xbb\x2c",
+            "SPX",
+            8,
+            "SPX6900",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x21\x1c\xc4\xdd\x07\x37\x34\xda\x05\x5f\xbf\x44\xa2\xb4\x66\x7d\x5e\x5f\xe5\xd2",
+            "sUSDe",
+            18,
+            "Staked USDe",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x58\x75\xee\xe1\x1c\xf8\x39\x81\x02\xfd\xad\x70\x4c\x9e\x96\x60\x76\x75\x46\x7a",
+            "sUSDS",
+            18,
+            "Savings USDS",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x68\x8a\xee\x02\x2a\xa5\x44\xf1\x50\x67\x8b\x8e\x57\x20\xb6\xb9\x6a\x9e\x9a\x2f",
+            "SYRUP",
+            18,
+            "Syrup Token",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x23\x6a\xa5\x09\x79\xd5\xf3\xde\x3b\xd1\xee\xb4\x0e\x81\x13\x7f\x22\xab\x79\x4b",
+            "tBTC",
+            18,
+            "Base tBTC v2",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x09\xbe\x16\x92\xca\x16\xe0\x6f\x53\x6f\x00\x38\xff\x11\xd1\xda\x85\x24\xad\xb1",
+            "TEL",
+            2,
+            "Telcoin",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xd0\x9a\xcb\x80\xc1\xe8\xf2\x29\x18\x62\xc4\x97\x8a\x00\x87\x91\xc9\x16\x70\x03",
+            "tETH",
+            18,
+            "Treehouse ETH",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xa4\xa2\xe2\xca\x3f\xbf\xe2\x1a\xed\x83\x47\x1d\x28\xb6\xf6\x5a\x23\x3c\x6e\x00",
+            "TIBBIR",
+            18,
+            "Ribbita by Virtuals",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x75\x8a\x3e\x0b\x1f\x84\x2c\x93\x06\xb7\x83\xf8\xa4\x07\x8c\x6c\x8c\x03\xa2\x70",
+            "USD0",
+            18,
+            "Usual USD",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xd9\xaa\xec\x86\xb6\x5d\x86\xf6\xa7\xb5\xb1\xb0\xc4\x2f\xfa\x53\x17\x10\xb6\xca",
+            "USDbC",
+            6,
+            "USD Base Coin",
         )
         yield (  # address, symbol, decimals, name
             b"\x83\x35\x89\xfc\xd6\xed\xb6\xe0\x8f\x4c\x7c\x32\xd4\xf7\x1b\x54\xbd\xa0\x29\x13",
@@ -1909,16 +2419,52 @@ def _token_iterator(chain_id: int) -> Iterator[tuple[bytes, str, int, str]]:
             "USD Coin",
         )
         yield (  # address, symbol, decimals, name
-            b"\xfd\xe4\xc9\x6c\x85\x93\x53\x6e\x31\xf2\x29\xea\x8f\x37\xb2\xad\xa2\x69\x9b\xb2",
-            "USDT",
-            6,
-            "Bridged Tether USD",
+            b"\x5d\x3a\x1f\xf2\xb6\xba\xb8\x3b\x63\xcd\x9a\xd0\x78\x70\x74\x08\x1a\x52\xef\x34",
+            "USDe",
+            18,
+            "USDe",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x82\x0c\x13\x7f\xa7\x0c\x86\x91\xf0\xe4\x4d\xc4\x20\xa5\xe5\x3c\x16\x89\x21\xdc",
+            "USDS",
+            18,
+            "USDS Stablecoin",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xf3\x52\x7e\xf8\xde\x26\x5e\xaa\x37\x16\xfb\x31\x2c\x12\x84\x7b\xfb\xa6\x6c\xef",
+            "USDX",
+            18,
+            "Wrapped USDX",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x0b\x3e\x32\x84\x55\xc4\x05\x9e\xeb\x9e\x3f\x84\xb5\x54\x3f\x74\xe2\x4e\x7e\x1b",
+            "VIRTUAL",
+            18,
+            "Virtual Protocol",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x05\x55\xe3\x0d\xa8\xf9\x83\x08\xed\xb9\x60\xaa\x94\xc0\xdb\x47\x23\x0d\x2b\x9c",
+            "WBTC",
+            8,
+            "Wrapped BTC",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x04\xc0\x59\x9a\xe5\xa4\x47\x57\xc0\xaf\x6f\x9e\xc3\xb9\x3d\xa8\x97\x6c\x15\x0a",
+            "weETH",
+            18,
+            "Wrapped eETH",
         )
         yield (  # address, symbol, decimals, name
             b"\x42\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x06",
             "WETH",
             18,
             "Wrapped Ether",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x11\x11\x11\x11\x11\x16\x6b\x7f\xe7\xbd\x91\x42\x77\x24\xb4\x87\x98\x0a\xfc\x69",
+            "ZORA",
+            18,
+            "Zora",
         )
     if chain_id == 9798:  # Data Trade Chain
         yield (  # address, symbol, decimals, name
@@ -1977,10 +2523,10 @@ def _token_iterator(chain_id: int) -> Iterator[tuple[bytes, str, int, str]]:
         )
     if chain_id == 42161:  # Arbitrum
         yield (  # address, symbol, decimals, name
-            b"\x15\x5f\x0d\xd0\x44\x24\x93\x93\x68\x97\x2f\x4e\x18\x38\x68\x7d\x6a\x83\x11\x51",
-            "ADoge",
+            b"\xba\x5d\xdd\x1f\x9d\x7f\x57\x0d\xc9\x4a\x51\x47\x9a\x00\x0e\x3b\xce\x96\x71\x96",
+            "AAVE",
             18,
-            "ArbiDoge",
+            "Aave Token",
         )
         yield (  # address, symbol, decimals, name
             b"\x91\x2c\xe5\x91\x44\x19\x1c\x12\x04\xe6\x45\x59\xfe\x82\x53\xa0\xe4\x9e\x65\x48",
@@ -1989,46 +2535,46 @@ def _token_iterator(chain_id: int) -> Iterator[tuple[bytes, str, int, str]]:
             "Arbitrum",
         )
         yield (  # address, symbol, decimals, name
-            b"\x9f\x20\xde\x1f\xc9\xb1\x61\xb3\x40\x89\xcb\xea\xe8\x88\x16\x8b\x44\xb0\x34\x61",
-            "ARBIS",
+            b"\xc8\x7b\x37\xa5\x81\xec\x32\x57\xb7\x34\x88\x6d\x9d\x3a\x58\x1f\x5a\x9d\x05\x6c",
+            "ATH",
             18,
-            "ARBIS | We have the yields",
+            "Aethir Token",
         )
         yield (  # address, symbol, decimals, name
-            b"\x86\xa1\x01\x2d\x43\x7b\xbf\xf8\x4f\xbd\xf6\x25\x69\xd1\x2d\x4f\xd3\x39\x6f\x8c",
-            "ARBYS",
-            18,
-            "Arbys",
+            b"\x09\x19\x9d\x9a\x5f\x44\x48\xd0\x84\x8e\x43\x95\xd0\x65\xe1\xad\x9c\x4a\x1f\x74",
+            "Bonk",
+            5,
+            "Bonk",
         )
         yield (  # address, symbol, decimals, name
-            b"\xbf\xa6\x41\x05\x1b\xa0\xa0\xad\x1b\x0a\xcf\x54\x9a\x89\x53\x6a\x0d\x76\x47\x2e",
-            "BADGER",
+            b"\x1b\x89\x68\x93\xdf\xc8\x6b\xb6\x7c\xf5\x77\x67\x29\x8b\x90\x73\xd2\xc1\xba\x2c",
+            "Cake",
             18,
-            "Badger",
+            "PancakeSwap Token",
         )
         yield (  # address, symbol, decimals, name
-            b"\x04\x0d\x1e\xdc\x95\x69\xd4\xba\xb2\xd1\x52\x87\xdc\x5a\x4f\x10\xf5\x6a\x56\xb8",
-            "BAL",
-            18,
-            "Balancer",
+            b"\xcb\xb7\xc0\x00\x0a\xb8\x8b\x47\x3b\x1f\x5a\xfd\x9e\xf8\x08\x44\x0e\xed\x33\xbf",
+            "cbBTC",
+            8,
+            "Coinbase Wrapped BTC",
         )
         yield (  # address, symbol, decimals, name
-            b"\x3a\x8b\x78\x7f\x78\xd7\x75\xae\xcf\xee\xa1\x57\x06\xd4\x22\x1b\x40\xf3\x45\xab",
-            "CELR",
+            b"\x1d\xeb\xd7\x3e\x75\x2b\xea\xf7\x98\x65\xfd\x64\x46\xb0\xc9\x70\xea\xe7\x73\x2f",
+            "cbETH",
             18,
-            "CelerToken",
+            "Coinbase Wrapped Staked ETH",
         )
         yield (  # address, symbol, decimals, name
-            b"\x35\x4a\x6d\xa3\xfc\xde\x09\x8f\x83\x89\xca\xd8\x4b\x01\x82\x72\x5c\x6c\x91\xde",
-            "COMP",
+            b"\x0c\xe4\x5d\xd5\x3a\xff\xbb\x01\x18\x84\xef\x18\x66\xe0\x73\x8f\x58\xab\x79\x69",
+            "cgETH.hashkey",
             18,
-            "Compound",
+            "cgETH Hashkey Cloud",
         )
         yield (  # address, symbol, decimals, name
-            b"\xf4\xd4\x8c\xe3\xee\x1a\xc3\x65\x19\x98\x97\x15\x41\xba\xdb\xb9\xa1\x4d\x72\x34",
-            "CREAM",
+            b"\x17\x92\x86\x5d\x49\x3f\xe4\xdf\xdd\x50\x40\x10\xd3\xc0\xf6\xda\x11\xe8\x04\x6d",
+            "clBTC",
             18,
-            "Cream",
+            "clBTC",
         )
         yield (  # address, symbol, decimals, name
             b"\x11\xcd\xb4\x2b\x0e\xb4\x6d\x95\xf9\x90\xbe\xdd\x46\x95\xa6\xe3\xfa\x03\x49\x78",
@@ -2037,40 +2583,76 @@ def _token_iterator(chain_id: int) -> Iterator[tuple[bytes, str, int, str]]:
             "Curve DAO Token",
         )
         yield (  # address, symbol, decimals, name
-            b"\xda\x10\x00\x9c\xbd\x5d\x07\xdd\x0c\xec\xc6\x61\x61\xfc\x93\xd7\xc9\x00\x0d\xa1",
-            "DAI",
+            b"\x8d\x01\x0b\xf9\xc2\x68\x81\x78\x8b\x4e\x6b\xf5\xfd\x1b\xdc\x35\x8c\x8f\x90\xb8",
+            "DOT",
             18,
-            "Dai Stablecoin",
+            "Polkadot Token (Relay Chain)",
         )
         yield (  # address, symbol, decimals, name
-            b"\x69\xeb\x4f\xa4\xa2\xfb\xd4\x98\xc2\x57\xc5\x7e\xa8\xb7\x65\x5a\x25\x59\xa5\x81",
-            "DODO",
+            b"\x58\x53\x8e\x6a\x46\xe0\x74\x34\xd7\xe7\x37\x5b\xc2\x68\xd3\xcb\x83\x9c\x01\x33",
+            "ENA",
             18,
-            "DODO bird",
+            "ENA",
         )
         yield (  # address, symbol, decimals, name
-            b"\x6c\x2c\x06\x79\x0b\x3e\x3e\x3c\x38\xe1\x2e\xe2\x2f\x81\x83\xb3\x7a\x13\xee\x55",
-            "DPX",
+            b"\x71\x89\xfb\x5b\x65\x04\xbb\xff\x6a\x85\x2b\x13\xb7\xb8\x2a\x3c\x11\x8f\xdc\x27",
+            "ETHFI",
             18,
-            "Dopex Governance Token",
+            "ether.fi governance token",
         )
         yield (  # address, symbol, decimals, name
-            b"\xa0\xb8\x62\xf6\x0e\xde\xf4\x45\x2f\x25\xb4\x16\x0f\x17\x7d\xb4\x4d\xeb\x6c\xf1",
-            "GNO",
-            18,
-            "Gnosis Token",
+            b"\xcb\xeb\x19\x54\x90\x54\xcc\x0a\x62\x57\xa7\x77\x36\xfc\x78\xc3\x67\x21\x6c\xe7",
+            "EUTBL",
+            5,
+            "Spiko EU T-Bills Money Market Fund",
         )
         yield (  # address, symbol, decimals, name
-            b"\x23\xa9\x41\x03\x6a\xe7\x78\xac\x51\xab\x04\xce\xa0\x8e\xd6\xe2\xfe\x10\x36\x14",
+            b"\x24\x16\x09\x2f\x14\x33\x78\x75\x0b\xb2\x9b\x79\xed\x96\x1a\xb1\x95\xcc\xee\xa5",
+            "ezETH",
+            18,
+            "Renzo Restaked ETH",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x93\xc9\x93\x2e\x4a\xfa\x59\x20\x1f\x0b\x5e\x63\xf7\xd8\x16\x51\x6f\x16\x69\xfe",
+            "FDUSD",
+            18,
+            "First Digital USD",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x46\x85\x0a\xd6\x1c\x2b\x7d\x64\xd0\x8c\x9c\x75\x4f\x45\x25\x45\x96\x69\x69\x84",
+            "FLX",
+            6,
+            "Flux USD",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x17\x84\x12\xe7\x9c\x25\x96\x8a\x32\xe8\x9b\x11\xf6\x3b\x33\xf7\x33\x77\x0c\x2a",
+            "frxETH",
+            18,
+            "Frax Ether",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x10\x45\x97\x1c\x16\x8b\x52\x94\xac\xbc\x87\x27\xa4\xf1\xc9\xe1\xaf\x99\xf6\xd0",
+            "FTN",
+            18,
+            "Bridged FTN (OrtakSea)",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x7d\xff\x72\x69\x3f\x6a\x41\x49\xb1\x7e\x7c\x63\x14\x65\x5f\x6a\x9f\x7c\x8b\x33",
+            "GHO",
+            18,
+            "Gho Token",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x96\x23\x06\x33\x77\xad\x1b\x27\x54\x4c\x96\x5c\xcd\x73\x42\xf7\xea\x7e\x88\xc7",
             "GRT",
             18,
             "Graph Token",
         )
         yield (  # address, symbol, decimals, name
-            b"\xb4\x1b\xd4\xc9\x9d\xa7\x35\x10\xd9\xe0\x81\xc5\xfa\xdb\xe7\xa2\x7a\xc1\xf8\x14",
-            "IMO",
+            b"\x13\xad\x51\xed\x4f\x1b\x7e\x9d\xc1\x68\xd8\xa0\x0c\xb3\xf4\xdd\xd8\x5e\xfa\x60",
+            "LDO",
             18,
-            "Ideamarket",
+            "Lido DAO Token",
         )
         yield (  # address, symbol, decimals, name
             b"\xf9\x7f\x4d\xf7\x51\x17\xa7\x8c\x1a\x5a\x0d\xbb\x81\x4a\xf9\x24\x58\x53\x9f\xb4",
@@ -2079,58 +2661,100 @@ def _token_iterator(chain_id: int) -> Iterator[tuple[bytes, str, int, str]]:
             "ChainLink Token",
         )
         yield (  # address, symbol, decimals, name
-            b"\x46\xd0\xce\x7d\xe6\x24\x7b\x0a\x95\xf6\x7b\x43\xb5\x89\xb4\x04\x1b\xae\x7f\xbe",
-            "LRC",
+            b"\x40\xbd\x67\x0a\x58\x23\x8e\x6e\x23\x0c\x43\x0b\xbb\x5c\xe6\xec\x0d\x40\xdf\x48",
+            "MORPHO",
             18,
-            "LoopringCoin V2",
+            "Morpho Token",
         )
         yield (  # address, symbol, decimals, name
-            b"\x99\xf4\x0b\x01\xba\x9c\x46\x91\x93\xb3\x60\xf7\x27\x40\xe4\x16\xb1\x7a\xc3\x32",
-            "MATH",
-            18,
-            "MATH Token",
+            b"\xf0\xcb\x2d\xc0\xdb\x5e\x6c\x66\xb9\xa7\x0a\xc2\x7b\x06\xb8\x78\xda\x01\x70\x28",
+            "OHM",
+            9,
+            "Olympus",
         )
         yield (  # address, symbol, decimals, name
-            b"\xfe\xa7\xa6\xa0\xb3\x46\x36\x2b\xf8\x8a\x9e\x4a\x88\x41\x6b\x77\xa5\x7d\x6c\x2a",
-            "MIM",
+            b"\xf7\xd4\xe7\x27\x3e\x50\x15\xc9\x67\x28\xa6\xb0\x2f\x31\xc5\x05\xee\x18\x46\x03",
+            "osETH",
             18,
-            "Magic Internet Money",
+            "Staked ETH",
         )
         yield (  # address, symbol, decimals, name
-            b"\xed\x3f\xb7\x61\x41\x4d\xa7\x4b\x74\xf3\x3e\x5c\x5a\x1f\x78\x10\x4b\x18\x8d\xfc",
-            "NYAN",
+            b"\x0c\x88\x0f\x67\x61\xf1\xaf\x8d\x9a\xa9\xc4\x66\x98\x4b\x80\xda\xb9\xa8\xc9\xe8",
+            "PENDLE",
             18,
-            "ArbiNYAN",
+            "Pendle",
         )
         yield (  # address, symbol, decimals, name
-            b"\x3e\x66\x48\xc5\xa7\x0a\x15\x0a\x88\xbc\xe6\x5f\x4a\xd4\xd5\x06\xfe\x15\xd2\xaf",
-            "SPELL",
+            b"\x25\xd8\x87\xce\x7a\x35\x17\x2c\x62\xfe\xbf\xd6\x7a\x18\x56\xf2\x0f\xae\xbb\x00",
+            "PEPE",
             18,
-            "Spell Token",
+            "Pepe",
         )
         yield (  # address, symbol, decimals, name
-            b"\xa9\x70\xaf\x1a\x58\x45\x79\xb6\x18\xbe\x4d\x69\xad\x6f\x73\x45\x9d\x11\x2f\x95",
-            "sUSD",
+            b"\xec\x70\xdc\xb4\xa1\xef\xa4\x6b\x8f\x2d\x97\xc3\x10\xc9\xc4\x79\x0b\xa5\xff\xa8",
+            "rETH",
             18,
-            "Synth sUSD",
+            "Rocket Pool ETH",
         )
         yield (  # address, symbol, decimals, name
-            b"\xd4\xd4\x2f\x0b\x6d\xef\x4c\xe0\x38\x36\x36\x77\x0e\xf7\x73\x39\x0d\x85\xc6\x1a",
-            "SUSHI",
+            b"\xb4\x81\x8b\xb6\x94\x78\x73\x0e\xf4\xe3\x3c\xc0\x68\xdd\x94\x27\x8e\x27\x66\xcb",
+            "satUSD",
             18,
-            "SushiToken",
+            "Satoshi Stablecoin V2",
         )
         yield (  # address, symbol, decimals, name
-            b"\xa7\x21\x59\xfc\x39\x0f\x0e\x3c\x6d\x41\x5e\x65\x82\x64\xc7\xc4\x05\x1e\x9b\x87",
-            "TCR",
+            b"\x36\x47\xc5\x4c\x4c\x2c\x65\xbc\x7a\x2d\x63\xc0\xda\x28\x09\xb3\x99\xdb\xbd\xc0",
+            "SolvBTC",
             18,
-            "Tracer",
+            "Solv BTC",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x21\x1c\xc4\xdd\x07\x37\x34\xda\x05\x5f\xbf\x44\xa2\xb4\x66\x7d\x5e\x5f\xe5\xd2",
+            "sUSDe",
+            18,
+            "Staked USDe",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xdd\xb4\x69\x99\xf8\x89\x16\x63\xa8\xf2\x82\x8d\x25\x29\x8f\x70\x41\x6d\x76\x10",
+            "sUSDS",
+            18,
+            "Savings USDS",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\xbc\x01\x1a\x12\xda\x28\xe8\xf0\xf5\x28\xd9\xee\x5e\x70\x39\xe2\x2f\x91\xcf\x18",
+            "swETH",
+            18,
+            "swETH",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x41\xca\x75\x86\xcc\x13\x11\x80\x7b\x46\x05\xfb\xb7\x48\xa3\xb8\x86\x2b\x42\xb5",
+            "syrupUSDC",
+            6,
+            "Syrup USDC",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x6c\x84\xa8\xf1\xc2\x91\x08\xf4\x7a\x79\x96\x4b\x5f\xe8\x88\xd4\xf4\xd0\xde\x40",
+            "tBTC",
+            18,
+            "Arbitrum tBTC v2",
         )
         yield (  # address, symbol, decimals, name
             b"\xfa\x7f\x89\x80\xb0\xf1\xe6\x4a\x20\x62\x79\x1c\xc3\xb0\x87\x15\x72\xf1\xf7\xf0",
             "UNI",
             18,
             "Uniswap",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x35\xf1\xc5\xcb\x7f\xb9\x77\xe6\x69\xfd\x24\x4c\x56\x7d\xa9\x9d\x8a\x3a\x68\x50",
+            "USD0",
+            18,
+            "Usual USD",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x0a\x1a\x1a\x10\x7e\x45\xb7\xce\xd8\x68\x33\x86\x3f\x48\x2b\xc5\xf4\xed\x82\xef",
+            "USDai",
+            18,
+            "USDai",
         )
         yield (  # address, symbol, decimals, name
             b"\xaf\x88\xd0\x65\xe7\x7c\x8c\xc2\x23\x93\x27\xc5\xed\xb3\xa4\x32\x26\x8e\x58\x31",
@@ -2145,16 +2769,40 @@ def _token_iterator(chain_id: int) -> Iterator[tuple[bytes, str, int, str]]:
             "Bridged USDC",
         )
         yield (  # address, symbol, decimals, name
+            b"\x68\x04\x47\x59\x5e\x8b\x7b\x3a\xa1\xb4\x3b\xeb\x9f\x60\x98\xc7\x9a\xc2\xab\x3f",
+            "USDD",
+            18,
+            "Decentralized USD",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x5d\x3a\x1f\xf2\xb6\xba\xb8\x3b\x63\xcd\x9a\xd0\x78\x70\x74\x08\x1a\x52\xef\x34",
+            "USDe",
+            18,
+            "USDe",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x64\x91\xc0\x5a\x82\x21\x9b\x8d\x14\x79\x05\x73\x61\xff\x16\x54\x74\x9b\x87\x6b",
+            "USDS",
+            18,
+            "USDS Stablecoin",
+        )
+        yield (  # address, symbol, decimals, name
             b"\xfd\x08\x6b\xc7\xcd\x5c\x48\x1d\xcc\x9c\x85\xeb\xe4\x78\xa1\xc0\xb6\x9f\xcb\xb9",
             "USDT",
             6,
-            "Tether",
+            "Tether USD",
         )
         yield (  # address, symbol, decimals, name
-            b"\x99\x5c\x23\x55\x21\x82\x0f\x26\x37\x30\x3c\xa1\x97\x0c\x7c\x04\x45\x83\xdf\x44",
-            "VISR",
+            b"\xf3\x52\x7e\xf8\xde\x26\x5e\xaa\x37\x16\xfb\x31\x2c\x12\x84\x7b\xfb\xa6\x6c\xef",
+            "USDX",
             18,
-            "VISOR",
+            "USDX",
+        )
+        yield (  # address, symbol, decimals, name
+            b"\x35\xe0\x50\xd3\xc0\xec\x2d\x29\xd2\x69\xa8\xec\xea\x76\x3a\x18\x3b\xdf\x9a\x9d",
+            "USDY",
+            18,
+            "Ondo U.S. Dollar Yield",
         )
         yield (  # address, symbol, decimals, name
             b"\x2f\x2a\x25\x43\xb7\x6a\x41\x66\x54\x9f\x7a\xab\x2e\x75\xbe\xf0\xae\xfc\x5b\x0f",
@@ -2163,22 +2811,16 @@ def _token_iterator(chain_id: int) -> Iterator[tuple[bytes, str, int, str]]:
             "Wrapped BTC",
         )
         yield (  # address, symbol, decimals, name
+            b"\x35\x75\x10\x07\xa4\x07\xca\x6f\xef\xfe\x80\xb3\xcb\x39\x77\x36\xd2\xcf\x4d\xbe",
+            "weETH",
+            18,
+            "Wrapped eETH",
+        )
+        yield (  # address, symbol, decimals, name
             b"\x82\xaf\x49\x44\x7d\x8a\x07\xe3\xbd\x95\xbd\x0d\x56\xf3\x52\x41\x52\x3f\xba\xb1",
             "WETH",
             18,
             "Wrapped Ether",
-        )
-        yield (  # address, symbol, decimals, name
-            b"\xca\xfc\xd8\x5d\x8c\xa7\xad\x1e\x1c\x6f\x82\xf6\x51\xfa\x15\xe3\x3a\xef\xd0\x7b",
-            "WOO",
-            18,
-            "Wootrade Network",
-        )
-        yield (  # address, symbol, decimals, name
-            b"\x82\xe3\xa8\xf0\x66\xa6\x98\x96\x66\xb0\x31\xd9\x16\xc4\x36\x72\x08\x5b\x15\x82",
-            "YFI",
-            18,
-            "yearn.finance",
         )
     if chain_id == 42220:  # Celo
         yield (  # address, symbol, decimals, name

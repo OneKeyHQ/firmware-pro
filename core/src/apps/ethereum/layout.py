@@ -706,79 +706,42 @@ def format_approve_title(
     chain_id: int,
     provider_name: str | None = None,
 ) -> str:
+    # Determine token name
+    token_name = (
+        "UNKN" if approve_token == tokens.UNKNOWN_TOKEN else approve_token.symbol
+    )
 
+    # REVOKE (value == 0)
     if value == 0:
-        action_type = "REVOKE"
+        if provider_name is not None:
+            return _(i18n_keys.REVOKE_TOKEN).format(
+                token=token_name, name=provider_name
+            )
+        else:
+            return _(i18n_keys.TITLE_REVOKE).format(name=token_name)
+
+    # APPROVE_UNLIMITED (value == 2**256 - 1)
     elif value == 2**256 - 1:
-        action_type = "APPROVE_UNLIMITED"
+        if provider_name is not None:
+            return _(i18n_keys.APPROVE_UNLIMITED_TOKEN).format(
+                token=token_name, name=provider_name
+            )
+        else:
+            return _(i18n_keys.TITLE_UNLIMITED).format(name=token_name)
+
+    # APPROVE_LIMITED (other values)
     else:
-        action_type = "APPROVE_LIMITED"
-
-    token_status = "UNKNOWN" if approve_token == tokens.UNKNOWN_TOKEN else "KNOWN"
-
-    provider_status = "KNOWN" if provider_name is not None else "UNKNOWN"
-
-    combination_key = f"{action_type}_{token_status}_{provider_status}"
-
-    if token_status == "UNKNOWN":
-        token_name = "UNKN"
-    else:
-        token_name = approve_token.symbol
-
-    amount_display = ""
-    if action_type == "APPROVE_LIMITED":
+        # Only calculate amount_display when needed
         amount_display = strip_amount(
             format_ethereum_amount(value, approve_token, chain_id)
         )[0]
 
-    title_map = {
-        # Example: "Revoke UNKN for 1inch"
-        "REVOKE_UNKNOWN_KNOWN": _(i18n_keys.REVOKE_TOKEN).format(
-            token=token_name, name=provider_name
-        ),
-        # Example: "Revoke UNKN"
-        "REVOKE_UNKNOWN_UNKNOWN": _(i18n_keys.TITLE_REVOKE).format(name=token_name),
-        # Example: "Revoke USDT for 1inch"
-        "REVOKE_KNOWN_KNOWN": _(i18n_keys.REVOKE_TOKEN).format(
-            token=token_name, name=provider_name
-        ),
-        # Example: "Revoke USDT"
-        "REVOKE_KNOWN_UNKNOWN": _(i18n_keys.TITLE_REVOKE).format(name=token_name),
-        # Example: "Approve Unlimited UNKN for 1inch"
-        "APPROVE_UNLIMITED_UNKNOWN_KNOWN": _(i18n_keys.APPROVE_UNLIMITED_TOKEN).format(
-            token=token_name, name=provider_name
-        ),
-        # Example: "Approve Unlimited UNKN"
-        "APPROVE_UNLIMITED_UNKNOWN_UNKNOWN": _(i18n_keys.TITLE_UNLIMITED).format(
-            name=token_name
-        ),
-        # Example: "Approve unlimited USDT for 1inch"
-        "APPROVE_UNLIMITED_KNOWN_KNOWN": _(i18n_keys.APPROVE_UNLIMITED_TOKEN).format(
-            token=token_name, name=provider_name
-        ),
-        # Example: "Approve unlimited USDT"
-        "APPROVE_UNLIMITED_KNOWN_UNKNOWN": _(i18n_keys.TITLE_UNLIMITED).format(
-            name=token_name
-        ),
-        # Example: "Approve 10.678 UNKN for 1inch"
-        "APPROVE_LIMITED_UNKNOWN_KNOWN": _(i18n_keys.APPROVE_TOKEN_AMOUNT).format(
-            token=amount_display, name=provider_name
-        ),
-        # Example: "Approve 10.678 UNKN"
-        "APPROVE_LIMITED_UNKNOWN_UNKNOWN": _(i18n_keys.TITLE_APPROVE).format(
-            name=amount_display
-        ),
-        # Example: "Approve 10.678 USDT for 1inch"
-        "APPROVE_LIMITED_KNOWN_KNOWN": _(i18n_keys.APPROVE_TOKEN_AMOUNT).format(
-            token=amount_display, name=provider_name
-        ),
-        # Example: "Approve 10.678 USDT"
-        "APPROVE_LIMITED_KNOWN_UNKNOWN": _(i18n_keys.TITLE_APPROVE).format(
-            name=amount_display
-        ),
-    }
-
-    return title_map[combination_key]
+        if provider_name is not None:
+            return _(i18n_keys.APPROVE_TOKEN_AMOUNT).format(
+                token=amount_display, name=provider_name
+            )
+        else:
+            return _(i18n_keys.TITLE_APPROVE).format(name=amount_display)
 
 
 async def require_confirm_safe_approve_hash(

@@ -54,7 +54,7 @@ async def handle_stop_mode():
 
 
 # run main event loop and specify which screen is the default
-apps.base.set_homescreen(show_app_guide=utils.show_app_guide())
+apps.base.set_homescreen()
 
 loop.schedule(handle_fingerprint_data_init())
 loop.schedule(handle_fingerprint())

@@ -35,7 +35,6 @@ class MnemonicDisplay(FullSizeWindow):
         title: str,
         subtitle: str,
         mnemonics: Sequence[str],
-        indicator_text: str | None = None,
     ):
         word_count = len(mnemonics)
         super().__init__(
@@ -45,13 +44,6 @@ class MnemonicDisplay(FullSizeWindow):
             anim_dir=0,
         )
         self.subtitle.set_recolor(True)
-        if indicator_text:
-            self.add_indicator(indicator_text)
-        else:
-            self.add_nav_back()
-        # self.content_area.set_style_bg_color(
-        #     lv_colors.WHITE_3, lv.PART.SCROLLBAR | lv.STATE.DEFAULT
-        # )
         row_dsc = [58] * (int((word_count + 1) // 2))
         row_dsc.append(lv.GRID_TEMPLATE.LAST)
         # 2 columns
@@ -106,43 +98,9 @@ class MnemonicDisplay(FullSizeWindow):
             )
         self.content_area.add_event_cb(self.on_event, lv.EVENT.SCROLL_BEGIN, None)
 
-    def add_indicator(self, indicator_text: str):
-        self.word_count_indicator = lv.btn(self)
-        self.word_count_indicator.set_size(lv.SIZE.CONTENT, 40)
-        self.word_count_indicator.add_style(
-            StyleWrapper()
-            .bg_color(lv_colors.ONEKEY_GRAY_3)
-            .bg_opa(lv.OPA.COVER)
-            .text_font(font_GeistRegular20)
-            .radius(100)
-            .border_width(0)
-            .pad_hor(12)
-            .pad_ver(0)
-            .text_align_left()
-            .text_color(lv_colors.WHITE),
-            0,
-        )
-        self.label = lv.label(self.word_count_indicator)
-        self.label.set_long_mode(lv.label.LONG.WRAP)
-        self.label.set_text(indicator_text)
-        self.label.align(lv.ALIGN.LEFT_MID, 0, 0)
-        self.word_count_indicator.align(lv.ALIGN.TOP_RIGHT, -12, 56)
-        self.word_count_indicator.set_ext_click_area(50)
-        self.click_indicator_img = lv.img(self.word_count_indicator)
-        self.click_indicator_img.set_src("A:/res/s-arrow-down.png")
-        self.click_indicator_img.align_to(self.label, lv.ALIGN.OUT_RIGHT_MID, 4, 0)
-        self.click_indicator_img.set_size(13, 7)
-        self.word_count_indicator.add_event_cb(self.on_event, lv.EVENT.CLICKED, None)
-        self.content_area.set_style_max_height(574, 0)
-        self.content_area.align(lv.ALIGN.TOP_MID, 0, 96)
-
     def on_event(self, event_obj: lv.event_t):
         code = event_obj.code
-        target = event_obj.get_target()
-        if code == lv.EVENT.CLICKED:
-            if target == self.word_count_indicator:
-                BackupTypeSelector(self)
-        elif code == lv.EVENT.SCROLL_BEGIN:
+        if code == lv.EVENT.SCROLL_BEGIN:
             utils.lcd_resume()
         # region
         # self.panel = lv.obj(self.content_area)
@@ -290,7 +248,7 @@ class CheckWord(FullSizeWindow):
 
         self.tip_panel = lv.obj(self.content_area)
         self.tip_panel.remove_style_all()
-        self.tip_panel.set_size(lv.pct(100), lv.SIZE.CONTENT)
+        self.tip_panel.set_size(lv.pct(80), lv.SIZE.CONTENT)
         self.tip_img = lv.img(self.tip_panel)
         self.tip_img.set_align(lv.ALIGN.LEFT_MID)
         self.tip = lv.label(self.tip_panel)
@@ -357,7 +315,24 @@ class BackupTypeSelector(FullSizeWindow):
         self.bip39_choice.container.align_to(
             self.backup_types_bip39, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 8
         )
-
+        self.bip39_tips = lv.label(self.content_area)
+        self.bip39_tips.set_size(432, lv.SIZE.CONTENT)
+        self.bip39_tips.set_long_mode(lv.label.LONG.WRAP)
+        self.bip39_tips.add_style(
+            StyleWrapper()
+            .text_font(font_GeistRegular20)
+            .text_align_left()
+            .text_color(lv_colors.WHITE_2),
+            0,
+        )
+        self.bip39_tips.set_text(
+            _(
+                i18n_keys.CONTENT__THE_NUMBER_OF_WORDS_IN_YOUR_SEED_PHRASE_DOES_NOT_AFFECT_ITS_SECURITY_ALL_ARE_CRYPTOGRAPHICALLY_SECURE
+            )
+        )
+        self.bip39_tips.align_to(
+            self.bip39_choice.container, lv.ALIGN.OUT_BOTTOM_LEFT, 12, 16
+        )
         # SLIP-39
         self.backup_types_slip39 = lv.label(self.content_area)
         self.backup_types_slip39.add_style(
@@ -368,7 +343,7 @@ class BackupTypeSelector(FullSizeWindow):
             _(i18n_keys.TITLE__ADVANCED_BACKUP_TYPES_SLIP_39)
         )
         self.backup_types_slip39.align_to(
-            self.bip39_choice.container, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 24
+            self.bip39_tips, lv.ALIGN.OUT_BOTTOM_LEFT, -12, 40
         )
         optional_str_slip39 = (
             _(i18n_keys.BUTTON__SINGLE_SHARE_BACKUP)
@@ -436,8 +411,6 @@ class Slip39BasicConfig(FullSizeWindow):
             confirm_text=_(i18n_keys.BUTTON__CONTINUE),
         )
         if navigable:
-            self.add_nav_back()
-        else:
             self.add_nav_back_right()
         self.slip39_config_style = (
             StyleWrapper()
@@ -494,7 +467,7 @@ class Slip39BasicConfig(FullSizeWindow):
                 )
             elif target == self.member_threshold_groups.selected_btn:
                 self.member_threshold_groups.set_btn_selected(target)
-            elif target == self.nav_back.nav_btn:
+            elif hasattr(self, "nav_back") and target == self.nav_back.nav_btn:
                 self.destroy(50)
                 self.channel.publish((0, 0))
             elif target == self.btn_yes:

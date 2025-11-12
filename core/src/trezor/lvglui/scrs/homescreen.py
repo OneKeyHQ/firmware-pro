@@ -2137,12 +2137,6 @@ class SettingsScreen(AnimScreen):
             _(i18n_keys.ITEM__GENERAL),
             left_img_src="A:/res/general.png",
         )
-        self.air_gap = ListItemBtn(
-            self.container,
-            _(i18n_keys.ITEM__AIR_GAP_MODE),
-            left_img_src="A:/res/connect.png",
-        )
-
         self.security = ListItemBtn(
             self.container,
             _(i18n_keys.ITEM__SECURITY),
@@ -2172,7 +2166,6 @@ class SettingsScreen(AnimScreen):
     def refresh_text(self):
         self.title.set_text(_(i18n_keys.TITLE__SETTINGS))
         self.general.label_left.set_text(_(i18n_keys.ITEM__GENERAL))
-        self.air_gap.label_left.set_text(_(i18n_keys.ITEM__AIR_GAP_MODE))
         self.security.label_left.set_text(_(i18n_keys.ITEM__SECURITY))
         self.wallet.label_left.set_text(_(i18n_keys.ITEM__WALLET))
         if not utils.BITCOIN_ONLY:
@@ -2193,8 +2186,6 @@ class SettingsScreen(AnimScreen):
                 WalletScreen(self)
             elif target == self.about:
                 AboutSetting(self)
-            elif target == self.air_gap:
-                AirGapSetting(self)
             elif not utils.BITCOIN_ONLY and target == self.fido_keys:
                 FidoKeysSetting(self)
             elif not utils.PRODUCTION and target == self.fp_test:
@@ -2208,8 +2199,9 @@ class ConnectWalletWays(Screen):
             kwargs = {
                 "prev_scr": prev_scr,
                 "title": _(i18n_keys.TITLE__CONNECT_APP_WALLET),
-                "subtitle": _(i18n_keys.TITLE__CONNECT_APP_WALLET_DESC),
+                "subtitle": _(i18n_keys.CONTENT__CONNECT_APP_WALLET_DESC),
                 "nav_back": True,
+                "rti_path": "A:/res/nav-options-icon.png",
             }
             super().__init__(**kwargs)
         else:
@@ -2246,14 +2238,14 @@ class ConnectWalletWays(Screen):
             self.by_usb.disable()
             self.by_usb.img_left.set_src("A:/res/connect-way-usb-off.png")
 
-        self.by_qrcode = ListItemBtn(
-            self.container,
-            _(i18n_keys.BUTTON__QRCODE),
-            left_img_src="A:/res/connect-way-qrcode.png",
-        )
-        self.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
+        # self.by_qrcode = ListItemBtn(
+        #     self.container,
+        #     _(i18n_keys.BUTTON__QRCODE),
+        #     left_img_src="A:/res/connect-way-qrcode.png",
+        # )
+        self.add_event_cb(self.on_event, lv.EVENT.CLICKED, None)
 
-    def on_click(self, event_obj):
+    def on_event(self, event_obj):
         code = event_obj.code
         target = event_obj.get_target()
         if code == lv.EVENT.CLICKED:
@@ -2261,14 +2253,39 @@ class ConnectWalletWays(Screen):
                 ConnectWalletGuide("ble", self)
             elif target == self.by_usb:
                 ConnectWalletGuide("usb", self)
-            elif target == self.by_qrcode:
-                gc.collect()
-                WalletList(self)
+            # elif target == self.by_qrcode:
+            #     gc.collect()
+            #     WalletList(self)
             else:
                 return
 
+    def on_click_ext(self, target):
+        if target == self.rti_btn:
+            QRWalletTips(self)
+
     def _load_scr(self, scr: "Screen", back: bool = False) -> None:
         lv.scr_load(scr)
+
+
+class QRWalletTips(FullSizeWindow):
+    def __init__(self, parent):
+        super().__init__(
+            _(i18n_keys.TITLE__QR_CODE_CONNECT),
+            _(i18n_keys.TITLE__QR_CODE_CONNECT_DESC),
+            confirm_text=_(i18n_keys.BUTTON__CONTINUE_WITH_QR_CODE),
+            anim_dir=0,
+        )
+        self.parent = parent
+        self.add_nav_back()
+
+    def eventhandler(self, event_obj):
+        code = event_obj.code
+        target = event_obj.get_target()
+        if code == lv.EVENT.CLICKED:
+            if target == self.btn_yes:
+                WalletList(self.parent, callback_obj=self)
+            elif target == self.nav_back.nav_btn:
+                self.destroy(100)
 
 
 class ConnectWalletGuide(Screen):
@@ -2296,8 +2313,9 @@ class ConnectWalletGuide(Screen):
         self.onekey = ListItemBtn(
             self.container,
             _(i18n_keys.ITEM__ONEKEY_WALLET),
-            "BTC·ETH·TRON·SOL·NEAR ...",
+            _(i18n_keys.CONTENT__BTC_TRON_SOL_ETH_BNB),
             left_img_src="A:/res/ok-logo-48.png",
+            right_img_src="A:/res/support-chains-ok-normal.png",
         )
         self.onekey.text_layout_vertical(pad_top=17, pad_ver=20)
 
@@ -2306,6 +2324,7 @@ class ConnectWalletGuide(Screen):
             _(i18n_keys.ITEM__METAMASK_WALLET),
             _(i18n_keys.CONTENT__ETH_AND_EVM_POWERED_NETWORK),
             left_img_src="A:/res/mm-logo-48.png",
+            right_img_src="A:/res/chains-evm.png",
         )
         self.mm.text_layout_vertical()
         if self.connect_type == "ble":
@@ -2316,6 +2335,7 @@ class ConnectWalletGuide(Screen):
             _(i18n_keys.ITEM__OKX_WALLET),
             _(i18n_keys.CONTENT__BTC_AND_EVM_COMPATIBLE_NETWORKS),
             left_img_src="A:/res/okx-logo-48.png",
+            right_img_src="A:/res/support-chains-okx-normal.png",
         )
         self.okx.text_layout_vertical(pad_top=17, pad_ver=20)
 
@@ -2429,9 +2449,10 @@ class ConnectWalletGuide(Screen):
 
 
 class WalletList(Screen):
-    def __init__(self, prev_scr=None):
+    def __init__(self, prev_scr, callback_obj):
         if not hasattr(self, "_init"):
             self._init = True
+            self.callback_obj = callback_obj
             kwargs = {
                 "prev_scr": prev_scr,
                 "title": _(i18n_keys.TITLE__QR_CODE_CONNECT),
@@ -2451,6 +2472,7 @@ class WalletList(Screen):
             _(i18n_keys.ITEM__ONEKEY_WALLET),
             _(i18n_keys.CONTENT__BTC_SOL_ETH_N_EVM_NETWORKS),
             left_img_src="A:/res/ok-logo-48.png",
+            right_img_src="A:/res/support-chains-ok-qr.png",
         )
         self.onekey.text_layout_vertical()
 
@@ -2459,6 +2481,7 @@ class WalletList(Screen):
             _(i18n_keys.ITEM__METAMASK_WALLET),
             _(i18n_keys.CONTENT__ETH_AND_EVM_POWERED_NETWORK),
             left_img_src="A:/res/mm-logo-48.png",
+            right_img_src="A:/res/chains-evm.png",
         )
         self.mm.text_layout_vertical(pad_top=17, pad_ver=20)
 
@@ -2477,7 +2500,12 @@ class WalletList(Screen):
 
         self.okx.label_left.set_style_text_color(lv_colors.WHITE_2, 0)
         self.okx.label_right.set_style_text_color(lv_colors.ONEKEY_GRAY_1, 0)
-
+        self.warning_bar = Banner(
+            self.content_area,
+            LEVEL.DEFAULT,
+            _(i18n_keys.FORM__CAN_NOT_FIND_YOUR_CRYPTO_NETWORK),
+        )
+        self.warning_bar.align_to(self.container, lv.ALIGN.OUT_BOTTOM_MID, 0, 32)
         self.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
         self.okx.clear_flag(lv.obj.FLAG.CLICKABLE)
 
@@ -2497,6 +2525,10 @@ class WalletList(Screen):
         code = event_obj.code
         target = event_obj.get_target()
         if code == lv.EVENT.CLICKED:
+            if target == self.warning_bar:
+                self.callback_obj.delete()
+                lv.event_send(self.nav_back.nav_btn, lv.EVENT.CLICKED, None)
+                return
             if target not in [self.onekey, self.mm, self.okx]:
                 return
             gc.collect()
@@ -2506,8 +2538,12 @@ class WalletList(Screen):
                 self.connect_mm(target)
             elif target == self.okx:
                 qr_data = b""
+                wallet_name = _(i18n_keys.ITEM__OKX_WALLET)
                 ConnectWallet(
-                    _(i18n_keys.ITEM__OKX_WALLET),
+                    _(i18n_keys.TITLE__CONNECT_STR_WALLET).format(wallet_name),
+                    _(
+                        i18n_keys.CONTENT__OPEN_STR_WALLET_AND_SCAN_THE_QR_CODE_BELOW
+                    ).format(wallet_name),
                     "Ethereum, Bitcoin, Polygon, Solana, OKT Chain, TRON and other networks.",
                     qr_data,
                     "A:/res/okx-logo-96.png",
@@ -2533,11 +2569,14 @@ class WalletList(Screen):
             )
             return
         ConnectWallet(
-            None,
-            None,
+            _(i18n_keys.TITLE__CONNECT_STR_WALLET).format(
+                _(i18n_keys.ITEM__ONEKEY_WALLET)
+            ),
+            _(i18n_keys.CONTENT__OPEN_ONEKEY_SCAN_THE_QRCODE),
+            _(i18n_keys.CONTENT__BTC_SOL_ETH_N_EVM_NETWORKS),
+            "A:/res/support-chains-ok-qr.png",
             None,
             encoder=encoder,
-            subtitle=_(i18n_keys.CONTENT__OPEN_ONEKEY_SCAN_THE_QRCODE),
         )
 
     def connect_mm(self, target):
@@ -2553,9 +2592,14 @@ class WalletList(Screen):
                 gen_hd_key(lambda: lv.event_send(target, lv.EVENT.CLICKED, None))
             )
             return
+        wallet_name = _(i18n_keys.ITEM__METAMASK_WALLET)
         ConnectWallet(
-            _(i18n_keys.ITEM__METAMASK_WALLET),
+            _(i18n_keys.TITLE__CONNECT_STR_WALLET).format(wallet_name),
+            _(i18n_keys.CONTENT__OPEN_STR_WALLET_AND_SCAN_THE_QR_CODE_BELOW).format(
+                wallet_name
+            ),
             _(i18n_keys.CONTENT__ETH_AND_EVM_POWERED_NETWORK),
+            "A:/res/chains-evm.png",
             qr_data,
             "A:/res/mm-logo-96.png",
         )
@@ -2628,14 +2672,12 @@ class BackupWallet(Screen):
                     utils.set_backup_lite()
                 elif target == self.keytag:
                     utils.set_backup_keytag()
-                # pyright: off
                 workflow.spawn(
                     recovery_device(
                         DUMMY_CONTEXT,
                         RecoveryDevice(dry_run=True, enforce_wordlist=True),
                     )
                 )
-                # pyright: on
 
     def _load_scr(self, scr: "Screen", back: bool = False) -> None:
         lv.scr_load(scr)
@@ -2653,22 +2695,20 @@ class BackupWallet(Screen):
 class ConnectWallet(FullSizeWindow):
     def __init__(
         self,
-        wallet_name,
+        title,
+        subtitle,
         support_chains,
+        support_chains_icon,
         qr_data,
         icon_path=None,
         encoder=None,
-        subtitle=None,
     ):
         super().__init__(
-            _(i18n_keys.TITLE__CONNECT_STR_WALLET).format(wallet_name)
-            if wallet_name
-            else None,
-            _(i18n_keys.CONTENT__OPEN_STR_WALLET_AND_SCAN_THE_QR_CODE_BELOW).format(
-                wallet_name
-            )
-            if wallet_name
-            else subtitle,
+            title,
+            subtitle,
+            confirm_text=_(i18n_keys.BUTTON__SHOW_DYNAMIC_QR_CODE)
+            if encoder is not None
+            else "",
             anim_dir=0,
         )
         self.content_area.set_style_max_height(684, 0)
@@ -2677,21 +2717,21 @@ class ConnectWallet(FullSizeWindow):
         from trezor.lvglui.scrs.components.qrcode import QRCode
 
         self.encoder = encoder
-        data = qr_data if encoder is None else encoder.next_part()
-        self.qr = QRCode(
-            self.content_area,
-            data,
-            icon_path=icon_path,
-            size=440,
-        )
-        self.qr.align_to(self.subtitle, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 40)
+        if self.encoder is None:
+            self.qr = QRCode(
+                self.content_area,
+                qr_data,
+                icon_path=icon_path,
+                size=440,
+            )
+            self.qr.align_to(self.subtitle, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 40)
 
-        if wallet_name and support_chains:
+        if support_chains:
             self.panel = lv.obj(self.content_area)
             self.panel.set_size(456, lv.SIZE.CONTENT)
             self.panel.add_style(
                 StyleWrapper()
-                .bg_color(lv_colors.ONEKEY_GRAY_3)
+                .bg_color(lv_colors.ONEKEY_BLACK_3)
                 .bg_opa()
                 .radius(40)
                 .border_width(0)
@@ -2714,38 +2754,70 @@ class ConnectWallet(FullSizeWindow):
             )
             self.line.align_to(self.label_top, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 9)
             self.label_bottom = lv.label(self.panel)
-            self.label_bottom.set_width(408)
+            self.label_bottom.set_width(316)
             self.label_bottom.add_style(
-                StyleWrapper().text_font(font_GeistRegular26).pad_ver(12).pad_hor(0),
+                StyleWrapper()
+                .text_font(font_GeistRegular20)
+                .text_color(lv_colors.LIGHT_GRAY)
+                .pad_ver(12)
+                .pad_hor(0),
                 0,
             )
             self.content_area.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
             self.label_bottom.set_long_mode(lv.label.LONG.WRAP)
             self.label_bottom.set_text(support_chains)
+            self.img_right = lv.img(self.panel)
+            self.img_right.set_src(support_chains_icon)
             self.label_bottom.align_to(self.line, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 0)
-            self.panel.align_to(self.qr, lv.ALIGN.OUT_BOTTOM_MID, 0, 32)
-        self.nav_back.add_event_cb(self.on_nav_back, lv.EVENT.CLICKED, None)
+            self.img_right.align_to(self.line, lv.ALIGN.OUT_BOTTOM_RIGHT, 0, 12)
+            if hasattr(self, "qr"):
+                self.panel.align_to(self.qr, lv.ALIGN.OUT_BOTTOM_MID, 0, 32)
+            else:
+                self.panel.align_to(self.subtitle, lv.ALIGN.OUT_BOTTOM_MID, 0, 40)
         self.add_event_cb(self.on_nav_back, lv.EVENT.GESTURE, None)
 
-        if encoder is not None:
-            workflow.spawn(self.update_qr())
-
-    def on_nav_back(self, event_obj):
+    def eventhandler(self, event_obj):
         code = event_obj.code
         target = event_obj.get_target()
         if code == lv.EVENT.CLICKED:
-            if target == self.nav_back.nav_btn:
-                if self.encoder is not None:
-                    self.channel.publish(1)
-                else:
-                    self.destroy()
-        elif code == lv.EVENT.GESTURE:
+            if utils.lcd_resume():
+                return
+        if target == self.nav_back.nav_btn:
+            self.destroy()
+        elif hasattr(self, "btn_yes") and target == self.btn_yes:
+            DynQr(self.encoder)
+            self.destroy(100)
+
+    def on_nav_back(self, event_obj):
+        code = event_obj.code
+        if code == lv.EVENT.GESTURE:
             _dir = lv.indev_get_act().get_gesture_dir()
             if _dir == lv.DIR.RIGHT:
                 lv.event_send(self.nav_back.nav_btn, lv.EVENT.CLICKED, None)
 
-    def destroy(self, delay_ms=10):
-        self.del_delayed(delay_ms)
+
+class DynQr(FullSizeWindow):
+    def __init__(self, encoder):
+        super().__init__(
+            None,
+            None,
+            confirm_text=_(i18n_keys.BUTTON__CLOSE),
+            anim_dir=0,
+        )
+        assert encoder is not None, "missing required encoder"
+        self.btn_yes.enable(lv_colors.ONEKEY_GRAY_3, text_color=lv_colors.WHITE)
+        self.encoder = encoder
+        qr_data = encoder.next_part()
+
+        from trezor.lvglui.scrs.components.qrcode import QRCode
+
+        self.qr = QRCode(
+            self.content_area,
+            qr_data,
+            size=440,
+        )
+        self.qr.align(lv.ALIGN.TOP_MID, 0, 126)
+        workflow.spawn(self.update_qr())
 
     async def update_qr(self):
         while True:
@@ -2755,9 +2827,11 @@ class ConnectWallet(FullSizeWindow):
             if stop_single in racer.finished:
                 self.destroy()
                 return
-            assert self.encoder is not None
             qr_data = self.encoder.next_part()
             self.qr.update(qr_data, len(qr_data))
+
+    def destroy(self, delay_ms=10):
+        self.del_delayed(delay_ms)
 
 
 class ScanScreen(Screen):
@@ -5589,13 +5663,14 @@ class AboutSetting(AnimScreen):
             label_align=lv.ALIGN.LEFT_MID,
         )
         self.certification.align_to(self.container, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 8)
-        self.firmware_update = NormalButton(
-            self.content_area, _(i18n_keys.BUTTON__SYSTEM_UPDATE)
-        )
-        self.firmware_update.align_to(
-            self.certification, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 8
-        )
-        self.firmware_update.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
+        if __debug__:
+            self.firmware_update = NormalButton(
+                self.content_area, _(i18n_keys.BUTTON__SYSTEM_UPDATE)
+            )
+            self.firmware_update.align_to(
+                self.certification, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 8
+            )
+            self.firmware_update.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
 
         self.serial.add_event_cb(self.on_long_pressed, lv.EVENT.LONG_PRESSED, None)
         self.container.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
@@ -5609,7 +5684,7 @@ class AboutSetting(AnimScreen):
             from .template import CertificationInfo
 
             CertificationInfo()
-        elif target == self.firmware_update:
+        elif __debug__ and target == self.firmware_update:
             Go2UpdateMode(self)
 
     def on_long_pressed(self, event_obj):
@@ -6918,6 +6993,14 @@ class WalletScreen(AnimScreen):
             targets.append(self.container)
         if hasattr(self, "rest_device") and self.rest_device:
             targets.append(self.rest_device)
+        if hasattr(self, "advanced_zone") and self.advanced_zone:
+            targets.append(self.advanced_zone)
+        if hasattr(self, "air_gap") and self.air_gap:
+            targets.append(self.air_gap)
+        if hasattr(self, "description") and self.description:
+            targets.append(self.description)
+        if hasattr(self, "danger_zone") and self.danger_zone:
+            targets.append(self.danger_zone)
         return targets
 
     def __init__(self, prev_scr=None):
@@ -6951,13 +7034,65 @@ class WalletScreen(AnimScreen):
         self.trezor_mode.add_event_cb(
             self.on_value_changed, lv.EVENT.VALUE_CHANGED, None
         )
+
+        # Advanced Settings
+        self.advanced_zone = lv.label(self.content_area)
+        self.advanced_zone.set_size(456, lv.SIZE.CONTENT)
+        self.advanced_zone.set_long_mode(lv.label.LONG.WRAP)
+        self.advanced_zone.set_style_text_color(lv_colors.WHITE_2, lv.STATE.DEFAULT)
+        self.advanced_zone.set_style_text_font(font_GeistSemiBold30, lv.STATE.DEFAULT)
+        self.advanced_zone.set_text(_(i18n_keys.TITLE__ADVANCED))
+        self.advanced_zone.align_to(self.container, lv.ALIGN.OUT_BOTTOM_LEFT, 12, 28)
+
+        self.air_gap = ListItemBtnWithSwitch(
+            self.content_area, _(i18n_keys.ITEM__AIR_GAP_MODE)
+        )
+        self.air_gap.add_style(
+            StyleWrapper().bg_color(lv_colors.ONEKEY_BLACK_3).bg_opa(lv.OPA.COVER), 0
+        )
+        self.air_gap.set_style_radius(40, 0)
+        self.air_gap.align_to(self.advanced_zone, lv.ALIGN.OUT_BOTTOM_LEFT, -12, 16)
+
+        self.description = lv.label(self.content_area)
+        self.description.set_size(456, lv.SIZE.CONTENT)
+        self.description.set_long_mode(lv.label.LONG.WRAP)
+        self.description.set_style_text_color(lv_colors.ONEKEY_GRAY, lv.STATE.DEFAULT)
+        self.description.set_style_text_font(font_GeistRegular26, lv.STATE.DEFAULT)
+        self.description.set_style_text_line_space(3, 0)
+        self.description.align_to(self.air_gap, lv.ALIGN.OUT_BOTTOM_LEFT, 12, 16)
+        air_gap_enabled = storage_device.is_airgap_mode()
+        if air_gap_enabled:
+            self.air_gap.add_state()
+            self.description.set_text(
+                _(
+                    i18n_keys.CONTENT__BLUETOOTH_USB_AND_NFT_TRANSFER_FUNCTIONS_HAVE_BEEN_DISABLED
+                )
+            )
+        else:
+            self.air_gap.clear_state()
+            self.description.set_text(
+                _(
+                    i18n_keys.CONTENT__AFTER_ENABLING_THE_AIRGAP_BLUETOOTH_USB_AND_NFC_TRANSFER_WILL_BE_DISABLED_SIMULTANEOUSLY
+                )
+            )
+        self.air_gap.add_event_cb(self.on_event, lv.EVENT.VALUE_CHANGED, None)
+        self.air_gap.add_event_cb(self.on_event, lv.EVENT.READY, None)
+        self.air_gap.add_event_cb(self.on_event, lv.EVENT.CANCEL, None)
+        # Danger Zone: Reset Device
+        self.danger_zone = lv.label(self.content_area)
+        self.danger_zone.set_size(456, lv.SIZE.CONTENT)
+        self.danger_zone.set_long_mode(lv.label.LONG.WRAP)
+        self.danger_zone.set_style_text_color(lv_colors.WHITE_2, lv.STATE.DEFAULT)
+        self.danger_zone.set_style_text_font(font_GeistSemiBold30, lv.STATE.DEFAULT)
+        self.danger_zone.set_text(_(i18n_keys.TITLE__DANGER_ZONE))
+        self.danger_zone.align_to(self.description, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 40)
         self.rest_device = ListItemBtn(
             self.content_area,
             _(i18n_keys.ITEM__RESET_DEVICE),
             has_next=False,
         )
         self.rest_device.label_left.set_style_text_color(lv_colors.ONEKEY_RED_1, 0)
-        self.rest_device.align_to(self.trezor_mode, lv.ALIGN.OUT_BOTTOM_MID, 0, 12)
+        self.rest_device.align_to(self.danger_zone, lv.ALIGN.OUT_BOTTOM_MID, -12, 16)
         self.rest_device.set_style_radius(40, 0)
         self.rest_device.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
         self.load_screen(self)
@@ -6974,14 +7109,12 @@ class WalletScreen(AnimScreen):
                 from trezor.messages import RecoveryDevice
 
                 utils.set_backup_none()
-                # pyright: off
                 workflow.spawn(
                     recovery_device(
                         DUMMY_CONTEXT,
                         RecoveryDevice(dry_run=True, enforce_wordlist=True),
                     )
                 )
-                # pyright: on
             elif hasattr(self, "mul_share_bk") and target == self.mul_share_bk:
                 from apps.management.recovery_device.create_mul_shares import (
                     create_multi_share_backup,
@@ -7010,6 +7143,56 @@ class WalletScreen(AnimScreen):
             self.trezor_mode.add_state()
         else:
             self.trezor_mode.clear_state()
+
+    def on_event(self, event_obj):
+        code = event_obj.code
+        target = event_obj.get_target()
+        if code == lv.EVENT.VALUE_CHANGED:
+            if target == self.air_gap.switch:
+                from trezor.lvglui.scrs.template import AirGapToggleTips
+
+                if target.has_state(lv.STATE.CHECKED):
+                    AirGapToggleTips(
+                        enable=True,
+                        callback_obj=self.air_gap,
+                    )
+                else:
+                    AirGapToggleTips(
+                        enable=False,
+                        callback_obj=self.air_gap,
+                    )
+        elif code == lv.EVENT.READY:
+            if not storage_device.is_airgap_mode():
+                self.description.set_text(
+                    _(
+                        i18n_keys.CONTENT__BLUETOOTH_USB_AND_NFT_TRANSFER_FUNCTIONS_HAVE_BEEN_DISABLED
+                    )
+                )
+                self.danger_zone.align_to(
+                    self.description, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 40
+                )
+                self.rest_device.align_to(
+                    self.danger_zone, lv.ALIGN.OUT_BOTTOM_MID, -12, 16
+                )
+                utils.enable_airgap_mode()
+            else:
+                self.description.set_text(
+                    _(
+                        i18n_keys.CONTENT__AFTER_ENABLING_THE_AIRGAP_BLUETOOTH_USB_AND_NFC_TRANSFER_WILL_BE_DISABLED_SIMULTANEOUSLY
+                    )
+                )
+                self.danger_zone.align_to(
+                    self.description, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 40
+                )
+                self.rest_device.align_to(
+                    self.danger_zone, lv.ALIGN.OUT_BOTTOM_MID, -12, 16
+                )
+                utils.disable_airgap_mode()
+        elif code == lv.EVENT.CANCEL:
+            if storage_device.is_airgap_mode():
+                self.air_gap.add_state()
+            else:
+                self.air_gap.clear_state()
 
 
 class FidoKeysSetting(AnimScreen):

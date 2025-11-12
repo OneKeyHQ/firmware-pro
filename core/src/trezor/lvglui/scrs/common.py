@@ -534,7 +534,7 @@ class FullSizeWindow(lv.obj):
             self.content_area.set_style_max_height(574, 0)
         self.content_area.align_to(self.nav_back, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 0)
 
-    def add_nav_back_right(self):
+    def add_nav_back_right(self, btn_bg_img: str = "A:/res/cancel.png"):
         """
         Add a navigation back button to the screen. The nav_back button is aligned to the right of the screen.
         If added, add a event handler called <on_nav_back> or override the method <eventhandler>
@@ -542,7 +542,7 @@ class FullSizeWindow(lv.obj):
         """
         self.nav_back = Navigation(
             self,
-            btn_bg_img="A:/res/cancel.png",
+            btn_bg_img=btn_bg_img,
             nav_btn_align=lv.ALIGN.RIGHT_MID,
             align=lv.ALIGN.TOP_RIGHT,
         )

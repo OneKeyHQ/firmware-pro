@@ -279,22 +279,8 @@ trezor.lvglui.scrs.template
 import trezor.lvglui.scrs.template
 trezor.lvglui.scrs.widgets
 import trezor.lvglui.scrs.widgets
-trezor.lvglui.scrs.widgets.button
-import trezor.lvglui.scrs.widgets.button
-trezor.lvglui.scrs.widgets.img
-import trezor.lvglui.scrs.widgets.img
-trezor.lvglui.scrs.widgets.label
-import trezor.lvglui.scrs.widgets.label
-trezor.lvglui.scrs.widgets.lv_obj
-import trezor.lvglui.scrs.widgets.lv_obj
-trezor.lvglui.scrs.widgets.slider
-import trezor.lvglui.scrs.widgets.slider
 trezor.lvglui.scrs.widgets.style
 import trezor.lvglui.scrs.widgets.style
-trezor.lvglui.scrs.widgets.switch
-import trezor.lvglui.scrs.widgets.switch
-trezor.lvglui.scrs.widgets.textarea
-import trezor.lvglui.scrs.widgets.textarea
 trezor.lvglui.scrs.wipe_device
 import trezor.lvglui.scrs.wipe_device
 trezor.messages

@@ -51,9 +51,9 @@ async def show_start_screen(ctx: wire.GenericContext):
         _(i18n_keys.TITLE__GET_STARTED),
         _(i18n_keys.CONTENT__PLACE_LITE_DEVICE_FIGURE_CLICK_CONTINUE),
         confirm_text=_(i18n_keys.BUTTON__CONTINUE),
-        cancel_text=_(i18n_keys.BUTTON__BACK),
         anim_dir=0,
     )
+    screen.add_nav_back()
     screen.img = lv.img(screen.content_area)
     screen.img.set_src("A:/res/nfc-start.png")
     screen.img.align_to(screen.subtitle, lv.ALIGN.OUT_BOTTOM_MID, 0, 52)

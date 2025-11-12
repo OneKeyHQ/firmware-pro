@@ -149,9 +149,10 @@ def get_features() -> Features:
             Capability.Ripple,
             Capability.Stellar,
             Capability.Tezos,
-            # Capability.U2F,
-            # Capability.Shamir,
-            # Capability.ShamirGroups,
+            Capability.U2F,
+            Capability.Shamir,
+            Capability.ShamirGroups,
+            Capability.EthereumTypedData,
         ]
 
     # Other models are not capable of PassphraseEntry
@@ -470,9 +471,7 @@ ALLOW_WHILE_LOCKED = (
 )
 
 
-def set_homescreen(
-    show_app_guide: bool = False, prefer_appdrawer: bool = False
-) -> None:
+def set_homescreen(prefer_appdrawer: bool = False) -> None:
     import lvgl as lv  # type: ignore[Import "lvgl" could not be resolved]
 
     from trezor.lvglui.scrs import fingerprints
@@ -514,10 +513,10 @@ def set_homescreen(
                     screen.apps.clear_flag(lv.obj.FLAG.GESTURE_BUBBLE)
                     screen.apps.visible = True
 
-            if show_app_guide:
-                from trezor.lvglui.scrs import app_guide
+            # if show_app_guide:
+            #     from trezor.lvglui.scrs import app_guide
 
-                app_guide.GuideAppDownload()
+            #     app_guide.GuideAppDownload()
 
             if not first_unlock:
                 first_unlock = True

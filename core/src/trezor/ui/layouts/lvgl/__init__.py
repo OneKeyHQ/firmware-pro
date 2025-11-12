@@ -6,7 +6,6 @@ from trezor.enums import ButtonRequestType
 from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
 from trezor.lvglui.lv_colors import lv_colors
 
-from ...constants.tt import MONO_ADDR_PER_LINE
 from .common import button_request, interact, raise_if_cancelled
 
 if TYPE_CHECKING:
@@ -91,6 +90,7 @@ __all__ = (
     "confirm_safe_approve_hash",
     "confirm_safe_exec_transaction",
     "should_show_details_eip7702",
+    "request_pin_onboarding",
 )
 
 
@@ -616,8 +616,8 @@ async def confirm_output(
     color_to: int = ui.FG,  # TODO cleanup @ redesign
     to_str: str = " to\n",  # TODO cleanup @ redesign
     to_paginated: bool = False,  # TODO cleanup @ redesign
-    width: int = MONO_ADDR_PER_LINE,
-    width_paginated: int = MONO_ADDR_PER_LINE - 1,
+    width: int = 17,
+    width_paginated: int = 16,
     br_code: ButtonRequestType = ButtonRequestType.ConfirmOutput,
     icon: str = ui.ICON_SEND,
 ) -> None:
@@ -1359,9 +1359,9 @@ async def request_pin_on_device(
 
 
 async def request_pin_tips(ctx: wire.GenericContext) -> None:
-    from trezor.lvglui.scrs.pinscreen import PinTip
+    from trezor.lvglui.scrs.pinscreen import EnablePinConfirm
 
-    tipscreen = PinTip()
+    tipscreen = EnablePinConfirm()
     await raise_if_cancelled(
         interact(ctx, tipscreen, "set_pin", ButtonRequestType.Other)
     )
