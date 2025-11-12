@@ -1,17 +1,11 @@
 from typing import TYPE_CHECKING
 
-from trezor import loop, ui, utils, wire
+from trezor import loop, wire
 from trezor.crypto import random
-from trezor.enums import BackupType, ButtonRequestType
+from trezor.enums import ButtonRequestType
 from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
 from trezor.lvglui.scrs.reset_device import CheckWord
 
-from ...components.common.confirm import is_confirmed
-from ...components.tt.button import ButtonDefault
-from ...components.tt.checklist import Checklist
-from ...components.tt.confirm import Confirm
-from ...components.tt.info import InfoConfirm
-from ...components.tt.reset import Slip39NumInput
 from .common import interact, raise_if_cancelled
 
 if TYPE_CHECKING:
@@ -118,233 +112,21 @@ async def confirm_word(
     return is_correct
 
 
-def _split_share_into_pages(
-    share_words: Sequence[str],
-) -> tuple[NumberedWords, list[NumberedWords], NumberedWords]:
-    share = list(enumerate(share_words))  # we need to keep track of the word indices
-    first = share[:2]  # two words on the first page
-    length = len(share_words)
-    if length in (12, 20, 24):
-        middle = share[2:-2]
-        last = share[-2:]  # two words on the last page
-    elif length in (18, 33):
-        middle = share[2:]
-        last = []  # no words at the last page, because it does not add up
-    else:
-        # Invalid number of shares. SLIP-39 allows 20 or 33 words, BIP-39 12 or 24
-        raise RuntimeError
+# def _split_share_into_pages(
+#     share_words: Sequence[str],
+# ) -> tuple[NumberedWords, list[NumberedWords], NumberedWords]:
+#     share = list(enumerate(share_words))  # we need to keep track of the word indices
+#     first = share[:2]  # two words on the first page
+#     length = len(share_words)
+#     if length in (12, 20, 24):
+#         middle = share[2:-2]
+#         last = share[-2:]  # two words on the last page
+#     elif length in (18, 33):
+#         middle = share[2:]
+#         last = []  # no words at the last page, because it does not add up
+#     else:
+#         # Invalid number of shares. SLIP-39 allows 20 or 33 words, BIP-39 12 or 24
+#         raise RuntimeError
 
-    chunks = utils.chunks(middle, 4)  # 4 words on the middle pages
-    return first, list(chunks), last
-
-
-async def slip39_show_checklist(
-    ctx: wire.GenericContext, step: int, backup_type: BackupType
-) -> None:
-    checklist = Checklist("Backup checklist", ui.ICON_RESET)
-    if backup_type is BackupType.Slip39_Basic:
-        checklist.add("Set number of shares")
-        checklist.add("Set threshold")
-        checklist.add(("Write down and check", "all recovery shares"))
-    elif backup_type is BackupType.Slip39_Advanced:
-        checklist.add("Set number of groups")
-        checklist.add("Set group threshold")
-        checklist.add(("Set size and threshold", "for each group"))
-    checklist.select(step)
-
-    await raise_if_cancelled(
-        interact(
-            ctx,
-            Confirm(checklist, confirm="Continue", cancel=None),
-            "slip39_checklist",
-            ButtonRequestType.ResetDevice,
-        )
-    )
-
-
-async def slip39_prompt_threshold(
-    ctx: wire.GenericContext, num_of_shares: int, group_id: int | None = None
-) -> int:
-    count = num_of_shares // 2 + 1
-    # min value of share threshold is 2 unless the number of shares is 1
-    # number of shares 1 is possible in advnaced slip39
-    min_count = min(2, num_of_shares)
-    max_count = num_of_shares
-
-    while True:
-        shares = Slip39NumInput(
-            Slip39NumInput.SET_THRESHOLD, count, min_count, max_count, group_id
-        )
-        confirmed = is_confirmed(
-            await interact(
-                ctx,
-                Confirm(
-                    shares,
-                    confirm="Continue",
-                    cancel="Info",
-                    major_confirm=True,
-                    cancel_style=ButtonDefault,
-                ),
-                "slip39_threshold",
-                ButtonRequestType.ResetDevice,
-            )
-        )
-
-        count = shares.input.count
-        if confirmed:
-            break
-
-        text = "The threshold sets the number of shares "
-        if group_id is None:
-            text += "needed to recover your wallet. "
-            text += f"Set it to {count} and you will need "
-            if num_of_shares == 1:
-                text += "1 share."
-            elif num_of_shares == count:
-                text += f"all {count} of your {num_of_shares} shares."
-            else:
-                text += f"any {count} of your {num_of_shares} shares."
-        else:
-            text += "needed to form a group. "
-            text += f"Set it to {count} and you will "
-            if num_of_shares == 1:
-                text += "need 1 share "
-            elif num_of_shares == count:
-                text += f"need all {count} of {num_of_shares} shares "
-            else:
-                text += f"need any {count} of {num_of_shares} shares "
-            text += f"to form Group {group_id + 1}."
-        info = InfoConfirm(text)
-        await info
-
-    return count
-
-
-async def slip39_prompt_number_of_shares(
-    ctx: wire.GenericContext, group_id: int | None = None
-) -> int:
-    count = 5
-    min_count = 1
-    max_count = 16
-
-    while True:
-        shares = Slip39NumInput(
-            Slip39NumInput.SET_SHARES, count, min_count, max_count, group_id
-        )
-        confirmed = is_confirmed(
-            await interact(
-                ctx,
-                Confirm(
-                    shares,
-                    confirm="Continue",
-                    cancel="Info",
-                    major_confirm=True,
-                    cancel_style=ButtonDefault,
-                ),
-                "slip39_shares",
-                ButtonRequestType.ResetDevice,
-            )
-        )
-        count = shares.input.count
-        if confirmed:
-            break
-
-        if group_id is None:
-            info = InfoConfirm(
-                "Each recovery share is a "
-                "sequence of 20 words. "
-                "Next you will choose "
-                "how many shares you "
-                "need to recover your "
-                "wallet."
-            )
-        else:
-            info = InfoConfirm(
-                "Each recovery share is a "
-                "sequence of 20 words. "
-                "Next you will choose "
-                "the threshold number of "
-                "shares needed to form "
-                f"Group {group_id + 1}."
-            )
-        await info
-
-    return count
-
-
-async def slip39_advanced_prompt_number_of_groups(ctx: wire.GenericContext) -> int:
-    count = 5
-    min_count = 2
-    max_count = 16
-
-    while True:
-        shares = Slip39NumInput(Slip39NumInput.SET_GROUPS, count, min_count, max_count)
-        confirmed = is_confirmed(
-            await interact(
-                ctx,
-                Confirm(
-                    shares,
-                    confirm="Continue",
-                    cancel="Info",
-                    major_confirm=True,
-                    cancel_style=ButtonDefault,
-                ),
-                "slip39_groups",
-                ButtonRequestType.ResetDevice,
-            )
-        )
-        count = shares.input.count
-        if confirmed:
-            break
-
-        info = InfoConfirm(
-            "Each group has a set "
-            "number of shares and "
-            "its own threshold. In the "
-            "next steps you will set "
-            "the numbers of shares "
-            "and the thresholds."
-        )
-        await info
-
-    return count
-
-
-async def slip39_advanced_prompt_group_threshold(
-    ctx: wire.GenericContext, num_of_groups: int
-) -> int:
-    count = num_of_groups // 2 + 1
-    min_count = 1
-    max_count = num_of_groups
-
-    while True:
-        shares = Slip39NumInput(
-            Slip39NumInput.SET_GROUP_THRESHOLD, count, min_count, max_count
-        )
-        confirmed = is_confirmed(
-            await interact(
-                ctx,
-                Confirm(
-                    shares,
-                    confirm="Continue",
-                    cancel="Info",
-                    major_confirm=True,
-                    cancel_style=ButtonDefault,
-                ),
-                "slip39_group_threshold",
-                ButtonRequestType.ResetDevice,
-            )
-        )
-        count = shares.input.count
-        if confirmed:
-            break
-        else:
-            info = InfoConfirm(
-                "The group threshold "
-                "specifies the number of "
-                "groups required to "
-                "recover your wallet. "
-            )
-            await info
-
-    return count
+#     chunks = utils.chunks(middle, 4)  # 4 words on the middle pages
+#     return first, list(chunks), last

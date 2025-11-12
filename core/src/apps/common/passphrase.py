@@ -73,7 +73,7 @@ async def _request_on_host(ctx: wire.Context) -> str:
 
     if ack.on_device_attach_pin:
         from apps.base import unlock_device, lock_device
-        from trezor.ui.layouts.common import button_request
+        from trezor.ui.layouts.lvgl.common import button_request
         from trezor.enums import ButtonRequestType
 
         await button_request(ctx, "passphrase_device", code=ButtonRequestType.AttachPin)

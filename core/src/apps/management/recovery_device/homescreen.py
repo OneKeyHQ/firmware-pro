@@ -1,9 +1,7 @@
 import storage
 import storage.device as storage_device
 import storage.recovery as storage_recovery
-import storage.recovery_shares
-from trezor import utils, wire, workflow
-from trezor.crypto import slip39
+from trezor import utils, wire
 from trezor.crypto.hashlib import sha256
 from trezor.enums import BackupType, MessageType
 from trezor.errors import MnemonicError
@@ -14,19 +12,20 @@ from trezor.ui.layouts.lvgl.recovery import request_word
 
 from apps.base import set_homescreen
 from apps.common import backup_types, mnemonic
-from apps.homescreen.homescreen import homescreen
 
 from . import layout, recover
 
+# from apps.homescreen.homescreen import homescreen
 
-async def recovery_homescreen() -> None:
-    if not storage_recovery.is_in_progress():
-        workflow.set_default(homescreen)
-        return
 
-    # recovery process does not communicate on the wire
-    ctx = wire.DUMMY_CONTEXT
-    await recovery_process(ctx)
+# async def recovery_homescreen() -> None:
+#     if not storage_recovery.is_in_progress():
+#         workflow.set_default(homescreen)
+#         return
+
+#     # recovery process does not communicate on the wire
+#     ctx = wire.DUMMY_CONTEXT
+#     await recovery_process(ctx)
 
 
 async def recovery_process(ctx: wire.GenericContext, type: str = "phrase") -> Success:
@@ -383,35 +382,35 @@ async def _request_share_next_screen(
         )
 
 
-async def _show_remaining_groups_and_shares(ctx: wire.GenericContext) -> None:
-    """
-    Show info dialog for Slip39 Advanced - what shares are to be entered.
-    """
-    shares_remaining = storage_recovery.fetch_slip39_remaining_shares()
-    # should be stored at this point
-    assert shares_remaining
+# async def _show_remaining_groups_and_shares(ctx: wire.GenericContext) -> None:
+#     """
+#     Show info dialog for Slip39 Advanced - what shares are to be entered.
+#     """
+#     shares_remaining = storage_recovery.fetch_slip39_remaining_shares()
+#     # should be stored at this point
+#     assert shares_remaining
 
-    groups = set()
-    first_entered_index = -1
-    for i, group_count in enumerate(shares_remaining):
-        if group_count < slip39.MAX_SHARE_COUNT:
-            first_entered_index = i
+#     groups = set()
+#     first_entered_index = -1
+#     for i, group_count in enumerate(shares_remaining):
+#         if group_count < slip39.MAX_SHARE_COUNT:
+#             first_entered_index = i
 
-    share = None
-    for index, remaining in enumerate(shares_remaining):
-        if 0 <= remaining < slip39.MAX_SHARE_COUNT:
-            m = storage.recovery_shares.fetch_group(index)[0]
-            if not share:
-                share = slip39.decode_mnemonic(m)
-            identifier = m.split(" ")[0:3]
-            groups.add((remaining, tuple(identifier)))
-        elif remaining == slip39.MAX_SHARE_COUNT:  # no shares yet
-            identifier = storage.recovery_shares.fetch_group(first_entered_index)[
-                0
-            ].split(" ")[0:2]
-            groups.add((remaining, tuple(identifier)))
+#     share = None
+#     for index, remaining in enumerate(shares_remaining):
+#         if 0 <= remaining < slip39.MAX_SHARE_COUNT:
+#             m = storage.recovery_shares.fetch_group(index)[0]
+#             if not share:
+#                 share = slip39.decode_mnemonic(m)
+#             identifier = m.split(" ")[0:3]
+#             groups.add((remaining, tuple(identifier)))
+#         elif remaining == slip39.MAX_SHARE_COUNT:  # no shares yet
+#             identifier = storage.recovery_shares.fetch_group(first_entered_index)[
+#                 0
+#             ].split(" ")[0:2]
+#             groups.add((remaining, tuple(identifier)))
 
-    assert share  # share needs to be set
-    return await layout.show_remaining_shares(
-        ctx, groups, shares_remaining, share.group_threshold
-    )
+#     assert share  # share needs to be set
+#     return await layout.show_remaining_shares(
+#         ctx, groups, shares_remaining, share.group_threshold
+#     )

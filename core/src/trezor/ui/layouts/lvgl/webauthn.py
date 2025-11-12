@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+# from typing import TYPE_CHECKING
 
 from trezor import wire
 from trezor.enums import ButtonRequestType
@@ -6,14 +6,13 @@ from trezor.enums import ButtonRequestType
 from ...components.common.webauthn import ConfirmInfo
 from .common import interact
 
-if TYPE_CHECKING:
-    from ...components.tt.confirm import Pageable
+# if TYPE_CHECKING:
+#     from ...components.tt.confirm import Pageable
 
 
 async def confirm_webauthn(
     ctx: wire.GenericContext | None,
     info: ConfirmInfo,
-    pageable: Pageable | None = None,
 ) -> bool:
 
     from trezor.lvglui.scrs.webauthn import ConfirmWebauthn
