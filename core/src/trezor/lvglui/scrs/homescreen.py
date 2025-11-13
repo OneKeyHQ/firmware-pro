@@ -66,6 +66,13 @@ def _clear_preview_cache() -> None:
     gc.collect()
 
 
+def _remove_event_cb_safe(target, callback) -> None:
+    if not target or not callback:
+        return
+    if hasattr(target, "remove_event_cb"):
+        target.remove_event_cb(callback)
+
+
 def _normalize_wallpaper_src(raw, *, allow_default: bool = True, default=None) -> str:
     if isinstance(raw, bytes):
         if hasattr(raw, "decode"):
@@ -91,6 +98,17 @@ def _wallpaper_display_path() -> str:
 class Layer2Manager:
     """Encapsulate Layer2 background state and helpers to avoid scattered globals."""
 
+    _display_instance = None
+
+    @classmethod
+    def get_display(cls):
+        """Get or create a singleton Display instance to avoid repeated allocations."""
+        if cls._display_instance is None:
+            from trezorui import Display
+
+            cls._display_instance = Display()
+        return cls._display_instance
+
     @classmethod
     def is_animating(cls) -> bool:
         global _animation_in_progress
@@ -110,8 +128,15 @@ class Layer2Manager:
         path = _wallpaper_display_path()
         if _last_jpeg_loaded == path:
             return True
+
+        # Unload old background before loading new one to free memory
+        unloader = getattr(display, "cover_background_unload", None)
+        if _last_jpeg_loaded and unloader:
+            unloader()
+
         loader(path)
         _last_jpeg_loaded = path
+        gc.collect()  # Force GC after loading to reclaim old JPEG decode buffers
         return True
 
     @classmethod
@@ -152,6 +177,8 @@ class Layer2Manager:
             if timer and hasattr(timer, "delete"):
                 timer.delete()
         _active_timers.clear()
+        gc.collect()  # Force garbage collection to reclaim timer objects immediately
+        _prune_transient_screens("layer2.drawer.cleanup")
 
     @classmethod
     def schedule_once(cls, delay_ms: int, callback):
@@ -197,10 +224,78 @@ def _invalidate_image_cache(*paths):
     lv.img.cache_invalidate_src(None)
 
 
+_TRANSIENT_SCREEN_NAMES = {
+    "HomeScreenSetting",
+    "AppdrawerBackgroundSetting",
+    "WallperChange",
+    "SettingsScreen",
+    "GeneralScreen",
+    "WallpaperScreen",
+    "NftGallery",
+    "NftManager",
+    "NftHomeScreenPreview",
+    "NftLockScreenPreview",
+    "UserGuide",
+    "BaseTutorial",
+    "SecurityProtection",
+    "HelpDetails",
+}
+
+
+def _remove_screen_immediately(scr, reason: str = "") -> None:
+    if not scr:
+        return
+    if hasattr(lv, "scr_act") and scr is lv.scr_act():
+        return
+    screens = getattr(utils, "SCREENS", [])
+    for other in screens:
+        if (
+            other is not scr
+            and hasattr(other, "prev_scr")
+            and getattr(other, "prev_scr") is scr
+        ):
+            other.prev_scr = getattr(scr, "prev_scr", None)
+    if hasattr(scr, "is_visible") and scr.is_visible():
+        return
+    if hasattr(scr, "_mark_disposed"):
+        scr._mark_disposed()
+    remover = getattr(utils, "try_remove_scr", None)
+    if remover:
+        remover(scr)
+    if hasattr(scr, "del_delayed"):
+        scr.del_delayed(500)
+    if hasattr(scr, "delete"):
+        scr.delete()
+    cls = scr.__class__
+    if hasattr(cls, "_instance") and getattr(cls, "_instance") is scr:
+        del cls._instance
+
+
+def _prune_transient_screens(
+    reason: str = "", exclude: tuple | list | None = None
+) -> None:
+    screens = getattr(utils, "SCREENS", None)
+    if not screens:
+        return
+    exclude_ids = {id(item) for item in (exclude or []) if item is not None}
+    if hasattr(lv, "scr_act"):
+        current = lv.scr_act()
+        if current is not None:
+            exclude_ids.add(id(current))
+    removed = 0
+    for scr in list(screens):
+        if id(scr) in exclude_ids:
+            continue
+        if scr.__class__.__name__ in _TRANSIENT_SCREEN_NAMES:
+            _remove_screen_immediately(scr, reason or "transient")
+            removed += 1
+    if removed:
+        gc.collect()
+
+
 def apply_home_wallpaper(new_wallpaper: str | None) -> None:
     if not new_wallpaper:
         return
-
     old_wallpaper = storage_device.get_appdrawer_background()
     storage_device.set_appdrawer_background(new_wallpaper)
 
@@ -212,12 +307,12 @@ def apply_home_wallpaper(new_wallpaper: str | None) -> None:
         main_screen.apps.refresh_background()
         if main_screen.apps.has_flag(lv.obj.FLAG.HIDDEN):
             main_screen.apps.invalidate()
+    gc.collect()
 
 
 def apply_lock_wallpaper(new_wallpaper: str | None) -> None:
     if not new_wallpaper:
         return
-
     old_wallpaper = storage_device.get_homescreen()
     storage_device.set_homescreen(new_wallpaper)
 
@@ -233,6 +328,7 @@ def apply_lock_wallpaper(new_wallpaper: str | None) -> None:
     from .lockscreen import LockScreen
 
     LockScreen.invalidate("wallpaper change")
+    gc.collect()
 
 
 def replace_wallpaper_if_in_use(
@@ -242,7 +338,6 @@ def replace_wallpaper_if_in_use(
         return
 
     replacement = replacement_path or utils.get_default_wallpaper()
-
     base_name = deleted_path.split("/")[-1]
     blur_name = base_name
     lower_name = base_name.lower()
@@ -476,9 +571,7 @@ class MainScreen(Screen):
         if Layer2Manager.is_animating() or not (hasattr(self, "apps") and self.apps):
             return
 
-        from trezorui import Display
-
-        display = Display()
+        display = Layer2Manager.get_display()
         background_ready = Layer2Manager.ensure_background(display)
         can_animate = (
             background_ready
@@ -511,6 +604,7 @@ class MainScreen(Screen):
                 Layer2Manager.set_visibility(display, False)
                 Layer2Manager.set_animating(False)
                 Layer2Manager.cleanup_timers()
+                gc.collect()  # Reclaim animation callback objects
 
             Layer2Manager.schedule_once(200, on_slide_complete)
 
@@ -536,12 +630,15 @@ class MainScreen(Screen):
 
     def _show_appdrawer_contents(self):
         self._toggle_main_content(False)
-        lv.refr_now(None)
         self.apps.clear_flag(lv.obj.FLAG.HIDDEN)
         self.apps.clear_flag(lv.obj.FLAG.GESTURE_BUBBLE)
         self.apps.visible = True
         if hasattr(self.apps, "current_page"):
             self.apps.show_page(self.apps.current_page)
+        # Force a refresh only after the AppDrawer is fully visible to avoid showing
+        # the mainscreen background during the swipe-up animation.
+        self.apps.invalidate()
+        lv.refr_now(None)
 
     def restore_main_content(self):
         self._toggle_main_content(True)
@@ -1068,9 +1165,7 @@ class MainScreen(Screen):
             if Layer2Manager.is_animating():
                 return
 
-            from trezorui import Display
-
-            display = Display()
+            display = Layer2Manager.get_display()
             animate_cb = getattr(display, "cover_background_animate_to_y", None)
             move_cb = getattr(display, "cover_background_move_to_y", None)
             can_animate = bool(
@@ -1105,6 +1200,7 @@ class MainScreen(Screen):
 
                 Layer2Manager.set_animating(False)
                 Layer2Manager.cleanup_timers()
+                gc.collect()  # Reclaim animation callback objects
 
             try:
                 Layer2Manager.with_lvgl_timer_pause(animate_cb, 0, 200)
@@ -1120,9 +1216,7 @@ class MainScreen(Screen):
             self.visible = False
 
             try:
-                from trezorui import Display
-
-                display = Display()
+                display = Layer2Manager.get_display()
             except Exception:
                 display = None
 
@@ -1403,9 +1497,13 @@ class MainScreen(Screen):
 
         def on_item_click(self, name):
             handlers = {
-                "settings": lambda: SettingsScreen(self.parent),
+                "settings": lambda: SettingsScreen._dispose_existing(
+                    "appdrawer.settings"
+                )
+                or SettingsScreen(self.parent),
                 "guide": lambda: UserGuide(self.parent),
-                "nft": lambda: NftGallery(self.parent),
+                "nft": lambda: NftGallery._dispose_existing("appdrawer.nft")
+                or NftGallery(self.parent),
                 "backup": lambda: BackupWallet(self.parent),
                 "scan": lambda: ScanScreen(self.parent),
                 "connect": lambda: ConnectWalletWays(self.parent),
@@ -2109,6 +2207,13 @@ class IndexSelectionScreen(AnimScreen):
 
 
 class SettingsScreen(AnimScreen):
+    @classmethod
+    def _dispose_existing(cls, reason: str = "") -> None:
+        instance = getattr(cls, "_instance", None)
+        if not instance:
+            return
+        _remove_screen_immediately(instance, reason or "settings")
+
     def collect_animation_targets(self) -> list:
         if lv.scr_act() == MainScreen._instance:
             return []
@@ -2118,6 +2223,7 @@ class SettingsScreen(AnimScreen):
         return targets
 
     def __init__(self, prev_scr=None):
+        self._disposed = False
         if not hasattr(self, "_init"):
             self._init = True
             kwargs = {
@@ -2179,6 +2285,7 @@ class SettingsScreen(AnimScreen):
             if utils.lcd_resume():
                 return
             if target == self.general:
+                GeneralScreen._dispose_existing("settings.general")
                 GeneralScreen(self)
             elif target == self.security:
                 SecurityScreen(self)
@@ -2190,6 +2297,14 @@ class SettingsScreen(AnimScreen):
                 FidoKeysSetting(self)
             elif not utils.PRODUCTION and target == self.fp_test:
                 FingerprintTest(self)
+
+    def _mark_disposed(self):
+        if getattr(self, "_disposed", False):
+            return
+        self._disposed = True
+        _remove_event_cb_safe(
+            getattr(self, "container", None), getattr(self, "on_click", None)
+        )
 
 
 class ConnectWalletWays(Screen):
@@ -2578,6 +2693,7 @@ class WalletList(Screen):
             None,
             encoder=encoder,
         )
+        gc.collect()
 
     def connect_mm(self, target):
         qr_data = (
@@ -2603,6 +2719,7 @@ class WalletList(Screen):
             qr_data,
             "A:/res/mm-logo-96.png",
         )
+        gc.collect()
 
 
 class BackupWallet(Screen):
@@ -2908,7 +3025,6 @@ class ScanScreen(Screen):
 
         self.state = ScanScreen.SCAN_STATE_IDLE
         self._fsm_show()
-
         scan_qr(self)
 
     @classmethod
@@ -3131,6 +3247,13 @@ class FingerprintTest(Screen):
 class GeneralScreen(AnimScreen):
     cur_language = ""
 
+    @classmethod
+    def _dispose_existing(cls, reason: str = "") -> None:
+        instance = getattr(cls, "_instance", None)
+        if not instance:
+            return
+        _remove_screen_immediately(instance, reason or "general")
+
     def collect_animation_targets(self) -> list:
         targets = []
         if hasattr(self, "container") and self.container:
@@ -3142,6 +3265,7 @@ class GeneralScreen(AnimScreen):
         return targets
 
     def __init__(self, prev_scr=None):
+        self._disposed = False
         if not hasattr(self, "_init"):
             self._init = True
         else:
@@ -3198,12 +3322,21 @@ class GeneralScreen(AnimScreen):
         elif target == self.touch:
             TouchSetting(self)
         elif target == self.wallpaper:
+            WallpaperScreen._dispose_existing("settings.wallpaper")
             WallpaperScreen(self)
 
         elif target == self.rti_btn:
             PowerOff()
         else:
             pass
+
+    def _mark_disposed(self):
+        if getattr(self, "_disposed", False):
+            return
+        self._disposed = True
+        _remove_event_cb_safe(
+            getattr(self, "content_area", None), getattr(self, "on_click_event", None)
+        )
 
 
 class DisplayScreen(AnimScreen):
@@ -3530,9 +3663,14 @@ class AppdrawerBackgroundSetting(AnimScreen):
     def _dispose_existing(cls, reason=""):
         if hasattr(cls, "_instance"):
             instance = cls._instance
+            if hasattr(instance, "_mark_disposed"):
+                instance._mark_disposed()
             if hasattr(utils, "SCREENS") and instance in utils.SCREENS:
                 utils.SCREENS.remove(instance)
-            instance.delete()
+            if hasattr(instance, "_detach_events"):
+                instance._detach_events()
+            if hasattr(instance, "delete"):
+                instance.delete()
             if hasattr(instance, "_init"):
                 delattr(instance, "_init")
             del cls._instance
@@ -3544,6 +3682,7 @@ class AppdrawerBackgroundSetting(AnimScreen):
     def __init__(
         self, prev_scr=None, selected_wallpaper=None, return_from_wallpaper=False
     ):
+        self._disposed = False
         if not hasattr(self, "_init"):
             self._init = True
             AppdrawerBackgroundSetting._instance = self
@@ -3695,8 +3834,12 @@ class AppdrawerBackgroundSetting(AnimScreen):
         self.change_button_container.align_to(
             self.preview_container, lv.ALIGN.OUT_BOTTOM_MID, 0, 10
         )
+        if "home_btn_container_style" not in _cached_styles:
+            _cached_styles["home_btn_container_style"] = (
+                StyleWrapper().bg_opa(lv.OPA.TRANSP).border_width(0).pad_all(0)
+            )
         self.change_button_container.add_style(
-            StyleWrapper().bg_opa(lv.OPA.TRANSP).border_width(0).pad_all(0),
+            _cached_styles["home_btn_container_style"],
             0,
         )
         self.change_button_container.add_flag(lv.obj.FLAG.CLICKABLE)
@@ -3705,8 +3848,12 @@ class AppdrawerBackgroundSetting(AnimScreen):
         self.change_button = lv.btn(self.change_button_container)
         self.change_button.set_size(64, 64)
         self.change_button.align(lv.ALIGN.TOP_MID, 0, 0)
+        if "home_btn_style" not in _cached_styles:
+            _cached_styles["home_btn_style"] = (
+                StyleWrapper().border_width(0).radius(40).bg_opa(lv.OPA.TRANSP)
+            )
         self.change_button.add_style(
-            StyleWrapper().border_width(0).radius(40).bg_opa(lv.OPA.TRANSP),
+            _cached_styles["home_btn_style"],
             0,
         )
 
@@ -3717,11 +3864,15 @@ class AppdrawerBackgroundSetting(AnimScreen):
 
         self.change_label = lv.label(self.change_button_container)
         self.change_label.set_text(_(i18n_keys.BUTTON__CHANGE))
+        if "home_btn_label_style" not in _cached_styles:
+            _cached_styles["home_btn_label_style"] = (
+                StyleWrapper()
+                .text_font(font_GeistRegular20)
+                .text_color(lv_colors.WHITE)
+                .text_align(lv.TEXT_ALIGN.CENTER)
+            )
         self.change_label.add_style(
-            StyleWrapper()
-            .text_font(font_GeistRegular20)
-            .text_color(lv_colors.WHITE)
-            .text_align(lv.TEXT_ALIGN.CENTER),
+            _cached_styles["home_btn_label_style"],
             0,
         )
         self.change_label.align_to(self.change_button, lv.ALIGN.OUT_BOTTOM_MID, 0, 4)
@@ -3737,9 +3888,12 @@ class AppdrawerBackgroundSetting(AnimScreen):
             WallperChange(self)
 
         self.button_icon.add_flag(lv.obj.FLAG.CLICKABLE)
-        self.button_icon.add_event_cb(_on_button_icon_clicked, lv.EVENT.CLICKED, None)
+        self._button_icon_cb = _on_button_icon_clicked
+        self.button_icon.add_event_cb(self._button_icon_cb, lv.EVENT.CLICKED, None)
 
-        loop.schedule(self._first_frame_fix())
+        if not getattr(self, "_first_frame_scheduled", False):
+            self._first_frame_scheduled = True
+            loop.schedule(self._first_frame_fix())
         gc.collect()
 
     def on_select_clicked(self, event_obj):
@@ -3786,17 +3940,24 @@ class AppdrawerBackgroundSetting(AnimScreen):
 
     async def _first_frame_fix(self):
         utime.sleep_ms(100)
-
-        self.refresh()
-        if hasattr(self, "container") and self.container:
-            self.container.invalidate()
-        if hasattr(self, "preview_container") and self.preview_container:
-            self.preview_container.invalidate()
-        if hasattr(self, "lockscreen_preview") and self.lockscreen_preview:
-            self.lockscreen_preview.invalidate()
+        try:
+            if hasattr(self, "is_visible") and not self.is_visible():
+                self._first_frame_scheduled = False
+                return
+            self.refresh()
+            if hasattr(self, "container") and self.container:
+                self.container.invalidate()
+            if hasattr(self, "preview_container") and self.preview_container:
+                self.preview_container.invalidate()
+            if hasattr(self, "lockscreen_preview") and self.lockscreen_preview:
+                self.lockscreen_preview.invalidate()
+        except Exception:
+            return
+        finally:
+            self._first_frame_scheduled = False
 
     def __del__(self):
-
+        self._mark_disposed()
         if hasattr(utils, "SCREENS") and self in utils.SCREENS:
             utils.SCREENS.remove(self)
 
@@ -3845,6 +4006,7 @@ class AppdrawerBackgroundSetting(AnimScreen):
         if not self.prev_scr:
             return
         _clear_preview_cache()
+        self._mark_disposed()
         if getattr(self, "_return_to_prev_instance", False):
             try:
                 self._load_scr(self.prev_scr, back=True)
@@ -3857,10 +4019,56 @@ class AppdrawerBackgroundSetting(AnimScreen):
                 and self.__class__._instance is self
             ):
                 del self.__class__._instance
-            self.del_delayed(100)
+            self.del_delayed(500)
             gc.collect()
+            _prune_transient_screens("screen.return")
         else:
-            self.load_screen(self.prev_scr, destroy_self=True)
+            try:
+                self._load_scr(self.prev_scr, back=True)
+            except Exception:
+                self.load_screen(self.prev_scr, destroy_self=True)
+                return
+            utils.try_remove_scr(self)
+            if (
+                hasattr(self.__class__, "_instance")
+                and self.__class__._instance is self
+            ):
+                del self.__class__._instance
+            self.del_delayed(500)
+            gc.collect()
+            _prune_transient_screens("screen.return")
+
+    def _mark_disposed(self):
+        if getattr(self, "_disposed", False):
+            return
+        self._disposed = True
+        if hasattr(self, "_first_frame_scheduled"):
+            self._first_frame_scheduled = False
+        self._detach_events()
+
+    def _detach_events(self):
+        _remove_event_cb_safe(self, getattr(self, "eventhandler", None))
+        _remove_event_cb_safe(
+            getattr(self, "container", None), getattr(self, "on_click", None)
+        )
+        for name in ("change_button_container", "change_button", "change_label"):
+            _remove_event_cb_safe(
+                getattr(self, name, None), getattr(self, "on_select_clicked", None)
+            )
+        if hasattr(self, "button_icon"):
+            _remove_event_cb_safe(
+                self.button_icon, getattr(self, "_button_icon_cb", None)
+            )
+            if hasattr(self, "_button_icon_cb"):
+                self._button_icon_cb = None
+        for btn_name, cb_name in (
+            ("edit_button", "on_edit_button_clicked"),
+            ("done_button", "on_done_button_clicked"),
+            ("delete_button", "on_delete_button_clicked"),
+        ):
+            _remove_event_cb_safe(
+                getattr(self, btn_name, None), getattr(self, cb_name, None)
+            )
 
 
 class WallperChange(AnimScreen):
@@ -4182,7 +4390,9 @@ class WallperChange(AnimScreen):
         self.add_event_cb(self.eventhandler, lv.EVENT.CLICKED, None)
 
         try:
-            loop.schedule(self._refresh_previews_after_load())
+            if not getattr(self, "_refresh_after_load_scheduled", False):
+                self._refresh_after_load_scheduled = True
+                loop.schedule(self._refresh_previews_after_load())
         except (ImportError, AttributeError):
             self._refresh_previews_immediate()
 
@@ -4190,7 +4400,12 @@ class WallperChange(AnimScreen):
 
     async def _refresh_previews_after_load(self):
         utime.sleep_ms(10)
-        self._refresh_previews_immediate()
+        try:
+            if hasattr(self, "is_visible") and not self.is_visible():
+                return
+            self._refresh_previews_immediate()
+        finally:
+            self._refresh_after_load_scheduled = False
 
     def _refresh_previews_immediate(self):
         if hasattr(self, "wps"):
@@ -4254,31 +4469,22 @@ class WallperChange(AnimScreen):
                                     utils.try_remove_scr(self)
                                     if hasattr(self.__class__, "_instance"):
                                         del self.__class__._instance
-                                    self.del_delayed(100)
+                                    self.del_delayed(500)
                                 except Exception:
+                                    WallpaperScreen._dispose_existing(
+                                        "wallpaper.fallback"
+                                    )
                                     fallback_screen = WallpaperScreen()
                                     self._load_scr(fallback_screen, back=True)
                                     utils.try_remove_scr(self)
                                     if hasattr(self.__class__, "_instance"):
                                         del self.__class__._instance
-                                    self.del_delayed(100)
+                                    self.del_delayed(500)
                             else:
                                 try:
-                                    if hasattr(HomeScreenSetting, "_instance"):
-                                        old_instance = HomeScreenSetting._instance
-                                        if (
-                                            hasattr(utils, "SCREENS")
-                                            and old_instance in utils.SCREENS
-                                        ):
-                                            utils.SCREENS.remove(old_instance)
-
-                                        old_instance.delete()
-
-                                        if hasattr(old_instance, "_init"):
-                                            delattr(old_instance, "_init")
-
-                                        del HomeScreenSetting._instance
-                                        gc.collect()
+                                    HomeScreenSetting._dispose_existing(
+                                        "wallpaper selection change"
+                                    )
 
                                     new_screen = HomeScreenSetting(
                                         self.prev_scr.prev_scr,
@@ -4291,14 +4497,17 @@ class WallperChange(AnimScreen):
                                     utils.try_remove_scr(self)
                                     if hasattr(self.__class__, "_instance"):
                                         del self.__class__._instance
-                                    self.del_delayed(100)
+                                    self.del_delayed(500)
                                 except Exception:
+                                    WallpaperScreen._dispose_existing(
+                                        "wallpaper.fallback"
+                                    )
                                     fallback_screen = WallpaperScreen()
                                     self._load_scr(fallback_screen, back=True)
                                     utils.try_remove_scr(self)
                                     if hasattr(self.__class__, "_instance"):
                                         del self.__class__._instance
-                                    self.del_delayed(100)
+                                    self.del_delayed(500)
                         elif (
                             self.prev_scr.__class__.__name__
                             == "AppdrawerBackgroundSetting"
@@ -4322,7 +4531,7 @@ class WallperChange(AnimScreen):
                                 utils.try_remove_scr(self)
                                 if hasattr(self.__class__, "_instance"):
                                     del self.__class__._instance
-                                self.del_delayed(100)
+                                self.del_delayed(500)
                             except Exception:
                                 try:
                                     AppdrawerBackgroundSetting._dispose_existing(
@@ -4337,28 +4546,32 @@ class WallperChange(AnimScreen):
                                     utils.try_remove_scr(self)
                                     if hasattr(self.__class__, "_instance"):
                                         del self.__class__._instance
-                                    self.del_delayed(100)
+                                    self.del_delayed(500)
                                 except Exception:
+                                    WallpaperScreen._dispose_existing(
+                                        "wallpaper.fallback"
+                                    )
                                     fallback_screen = WallpaperScreen()
                                     self._load_scr(fallback_screen, back=True)
                                     utils.try_remove_scr(self)
                                     if hasattr(self.__class__, "_instance"):
                                         del self.__class__._instance
-                                    self.del_delayed(100)
+                                    self.del_delayed(500)
                         else:
                             try:
                                 self._load_scr(self.prev_scr, back=True)
                                 utils.try_remove_scr(self)
                                 if hasattr(self.__class__, "_instance"):
                                     del self.__class__._instance
-                                self.del_delayed(100)
+                                self.del_delayed(500)
                             except Exception:
+                                WallpaperScreen._dispose_existing("wallpaper.fallback")
                                 fallback_screen = WallpaperScreen()
                                 self._load_scr(fallback_screen, back=True)
                                 utils.try_remove_scr(self)
                                 if hasattr(self.__class__, "_instance"):
                                     del self.__class__._instance
-                                self.del_delayed(100)
+                                self.del_delayed(500)
 
     def on_select_clicked(self, event_obj):
         target = event_obj.get_target()
@@ -4575,30 +4788,22 @@ class WallperChange(AnimScreen):
                 if hasattr(self, "nav_back") and target == self.nav_back.nav_btn:
                     if self.prev_scr is not None:
                         try:
-                            if (
-                                hasattr(self.prev_scr, "__class__")
-                                and self.prev_scr.__class__.__name__
-                                == "AppdrawerBackgroundSetting"
-                            ):
-                                self.load_screen(self.prev_scr, destroy_self=True)
-                            elif (
-                                hasattr(self.prev_scr, "__class__")
-                                and self.prev_scr.__class__.__name__
-                                == "HomeScreenSetting"
-                            ):
-                                self.load_screen(self.prev_scr, destroy_self=True)
-                            else:
-                                self.load_screen(self.prev_scr, destroy_self=True)
+                            self._load_scr(self.prev_scr, back=True)
+                            utils.try_remove_scr(self)
+                            self.del_delayed(500)
                         except Exception:
                             try:
-                                self._load_scr(self.prev_scr, back=True)
-                                self.del_delayed(100)
-                            except Exception:
                                 from .homescreen import SettingsScreen
 
+                                SettingsScreen._dispose_existing(
+                                    "wallpaper.fallback.settings"
+                                )
                                 settings_screen = SettingsScreen()
                                 self._load_scr(settings_screen, back=True)
-                                self.del_delayed(100)
+                                utils.try_remove_scr(self)
+                                self.del_delayed(500)
+                            except Exception:
+                                self.load_screen(self.prev_scr, destroy_self=True)
 
                     return
                 elif hasattr(self, "rti_btn") and target == self.rti_btn:
@@ -5023,12 +5228,8 @@ class LanguageSetting(AnimScreen):
 class BacklightSetting(AnimScreen):
     @classmethod
     def page_is_visible(cls) -> bool:
-        try:
-            if cls._instance is not None and cls._instance.is_visible():
-                return True
-        except Exception:
-            pass
-        return False
+        instance = getattr(cls, "_instance", None)
+        return bool(instance and instance.is_visible())
 
     def __init__(self, prev_scr=None):
         if not hasattr(self, "_init"):
@@ -5866,6 +6067,13 @@ class ShutingDown(FullSizeWindow):
 class WallpaperScreen(AnimScreen):
     cur_language = ""
 
+    @classmethod
+    def _dispose_existing(cls, reason: str = "") -> None:
+        instance = getattr(cls, "_instance", None)
+        if not instance:
+            return
+        _remove_screen_immediately(instance, reason or "wallpaper_screen")
+
     def collect_animation_targets(self) -> list:
         targets = []
         if hasattr(self, "container") and self.container:
@@ -5873,6 +6081,7 @@ class WallpaperScreen(AnimScreen):
         return targets
 
     def __init__(self, prev_scr=None):
+        self._disposed = False
         if not hasattr(self, "_init"):
             self._init = True
         else:
@@ -5922,10 +6131,38 @@ class WallpaperScreen(AnimScreen):
                 )
             AppdrawerBackgroundSetting(self)
         elif hasattr(self, "home_screen") and target == self.home_screen:
+            HomeScreenSetting._dispose_existing("navigation from WallpaperScreen")
             HomeScreenSetting(self)
+
+    def _mark_disposed(self):
+        if getattr(self, "_disposed", False):
+            return
+        self._disposed = True
+        if hasattr(self, "content_area") and getattr(self, "_event_added", False):
+            _remove_event_cb_safe(
+                self.content_area, getattr(self, "on_click_event", None)
+            )
 
 
 class HomeScreenSetting(AnimScreen):
+    @classmethod
+    def _dispose_existing(cls, reason: str = "") -> None:
+        instance = getattr(cls, "_instance", None)
+        if not instance:
+            return
+        if hasattr(instance, "_mark_disposed"):
+            instance._mark_disposed()
+        if hasattr(utils, "SCREENS") and instance in utils.SCREENS:
+            utils.SCREENS.remove(instance)
+        if hasattr(instance, "_detach_events"):
+            instance._detach_events()
+        if hasattr(instance, "delete"):
+            instance.delete()
+        if hasattr(instance, "_init"):
+            delattr(instance, "_init")
+        del cls._instance
+        gc.collect()
+
     def collect_animation_targets(self) -> list:
         return []
 
@@ -5936,6 +6173,8 @@ class HomeScreenSetting(AnimScreen):
         preserve_blur_state=None,
         return_from_wallpaper=False,
     ):
+        # 该屏幕可能被重复进入/退出，因此维护一个标记方便异步回调判断对象是否已销毁
+        self._disposed = False
 
         if not hasattr(self, "_init"):
             self._init = True
@@ -6066,7 +6305,9 @@ class HomeScreenSetting(AnimScreen):
 
             self.app_icons.append(icon_img)
         self._create_buttons()
-        loop.schedule(self._first_frame_fix())
+        if not getattr(self, "_first_frame_scheduled", False):
+            self._first_frame_scheduled = True
+            loop.schedule(self._first_frame_fix())
         self.change_button_container.align_to(
             self.preview_container, lv.ALIGN.OUT_BOTTOM_LEFT, 50, 10
         )
@@ -6079,20 +6320,22 @@ class HomeScreenSetting(AnimScreen):
         button_container = lv.obj(self.container)
         button_container.set_size(120, 100)
         button_container.align_to(self.preview_container, lv.ALIGN.OUT_BOTTOM_MID, 0, 8)
-        button_container.add_style(
-            StyleWrapper().bg_opa(lv.OPA.TRANSP).border_width(0).pad_all(0),
-            0,
-        )
+        if "home_btn_container_style" not in _cached_styles:
+            _cached_styles["home_btn_container_style"] = (
+                StyleWrapper().bg_opa(lv.OPA.TRANSP).border_width(0).pad_all(0)
+            )
+        button_container.add_style(_cached_styles["home_btn_container_style"], 0)
         button_container.add_flag(lv.obj.FLAG.CLICKABLE)
         button_container.clear_flag(lv.obj.FLAG.SCROLLABLE)
 
         button = lv.btn(button_container)
         button.set_size(64, 64)
         button.align(lv.ALIGN.TOP_MID, 0, 0)
-        button.add_style(
-            StyleWrapper().border_width(0).radius(40).bg_opa(lv.OPA.TRANSP),
-            0,
-        )
+        if "home_btn_style" not in _cached_styles:
+            _cached_styles["home_btn_style"] = (
+                StyleWrapper().border_width(0).radius(40).bg_opa(lv.OPA.TRANSP)
+            )
+        button.add_style(_cached_styles["home_btn_style"], 0)
         button.add_flag(lv.obj.FLAG.CLICKABLE)
         button.clear_flag(lv.obj.FLAG.EVENT_BUBBLE)
 
@@ -6104,13 +6347,14 @@ class HomeScreenSetting(AnimScreen):
 
         label = lv.label(button_container)
         label.set_text(text)
-        label.add_style(
-            StyleWrapper()
-            .text_font(font_GeistRegular20)
-            .text_color(lv_colors.WHITE)
-            .text_align(lv.TEXT_ALIGN.CENTER),
-            0,
-        )
+        if "home_btn_label_style" not in _cached_styles:
+            _cached_styles["home_btn_label_style"] = (
+                StyleWrapper()
+                .text_font(font_GeistRegular20)
+                .text_color(lv_colors.WHITE)
+                .text_align(lv.TEXT_ALIGN.CENTER)
+            )
+        label.add_style(_cached_styles["home_btn_label_style"], 0)
         label.align_to(button, lv.ALIGN.OUT_BOTTOM_MID, 0, 4)
         label.add_flag(lv.obj.FLAG.CLICKABLE)
         label.add_event_cb(callback, lv.EVENT.CLICKED, None)
@@ -6145,14 +6389,23 @@ class HomeScreenSetting(AnimScreen):
 
     async def _first_frame_fix(self):
         utime.sleep_ms(100)
-
-        self.refresh()
-        if hasattr(self, "container") and self.container:
-            self.container.invalidate()
-        if hasattr(self, "preview_container") and self.preview_container:
-            self.preview_container.invalidate()
-        if hasattr(self, "homescreen_preview") and self.homescreen_preview:
-            self.homescreen_preview.invalidate()
+        try:
+            if not self._is_screen_valid():
+                return
+            if hasattr(self, "is_visible") and not self.is_visible():
+                self._first_frame_scheduled = False
+                return
+            self.refresh()
+            if hasattr(self, "container") and self.container:
+                self.container.invalidate()
+            if hasattr(self, "preview_container") and self.preview_container:
+                self.preview_container.invalidate()
+            if hasattr(self, "homescreen_preview") and self.homescreen_preview:
+                self.homescreen_preview.invalidate()
+        except Exception:
+            return
+        finally:
+            self._first_frame_scheduled = False
 
     def on_select_clicked(self, event_obj):
         WallperChange(prev_scr=self)
@@ -6181,6 +6434,7 @@ class HomeScreenSetting(AnimScreen):
             self.change_label.set_text(_(i18n_keys.BUTTON__CHANGE))
 
     def __del__(self):
+        self._mark_disposed()
         if hasattr(utils, "SCREENS") and self in utils.SCREENS:
             utils.SCREENS.remove(self)
         _clear_preview_cache()
@@ -6226,6 +6480,7 @@ class HomeScreenSetting(AnimScreen):
         if not self.prev_scr:
             return
         _clear_preview_cache()
+        self._mark_disposed()
         if getattr(self, "_return_to_prev_instance", False):
             self._load_scr(self.prev_scr, back=True)
             utils.try_remove_scr(self)
@@ -6234,10 +6489,24 @@ class HomeScreenSetting(AnimScreen):
                 and self.__class__._instance is self
             ):
                 del self.__class__._instance
-            self.del_delayed(100)
+            self.del_delayed(500)
             gc.collect()
+            _prune_transient_screens("screen.return")
         else:
-            self.load_screen(self.prev_scr, destroy_self=True)
+            try:
+                self._load_scr(self.prev_scr, back=True)
+            except Exception:
+                self.load_screen(self.prev_scr, destroy_self=True)
+                return
+            utils.try_remove_scr(self)
+            if (
+                hasattr(self.__class__, "_instance")
+                and self.__class__._instance is self
+            ):
+                del self.__class__._instance
+            self.del_delayed(500)
+            gc.collect()
+            _prune_transient_screens("screen.return")
 
     def _get_blur_wallpaper_path(self, original_path):
         if not original_path:
@@ -6380,6 +6649,53 @@ class HomeScreenSetting(AnimScreen):
             self.original_wallpaper_path = current_homescreen
             self.current_wallpaper_path = current_homescreen
             self.is_blur_active = False
+
+    def _mark_disposed(self):
+        if getattr(self, "_disposed", False):
+            return
+        self._disposed = True
+        if hasattr(self, "_first_frame_scheduled"):
+            self._first_frame_scheduled = False
+        if hasattr(self, "_refresh_after_load_scheduled"):
+            self._refresh_after_load_scheduled = False
+        self._detach_events()
+        if hasattr(self, "container") and self.container:
+            if hasattr(self.container, "clear_flag"):
+                self.container.clear_flag(lv.obj.FLAG.EVENT_BUBBLE)
+
+    def _detach_events(self):
+        _remove_event_cb_safe(self, getattr(self, "eventhandler", None))
+        for name in (
+            "change_button_container",
+            "change_button",
+            "change_label",
+        ):
+            _remove_event_cb_safe(
+                getattr(self, name, None), getattr(self, "on_select_clicked", None)
+            )
+        for name in (
+            "blur_button_container",
+            "blur_button",
+            "blur_label",
+        ):
+            _remove_event_cb_safe(
+                getattr(self, name, None), getattr(self, "on_blur_clicked", None)
+            )
+        if hasattr(self, "content_area"):
+            _remove_event_cb_safe(
+                self.content_area, getattr(self, "eventhandler", None)
+            )
+
+    def _is_screen_valid(self) -> bool:
+        if getattr(self, "_disposed", False):
+            return False
+        is_valid_fn = getattr(lv.obj, "is_valid", None)
+        if callable(is_valid_fn):
+            try:
+                return bool(is_valid_fn(self))
+            except Exception:
+                return False
+        return True
 
 
 class SecurityScreen(AnimScreen):
