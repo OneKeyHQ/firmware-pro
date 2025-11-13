@@ -1024,27 +1024,17 @@ class MainScreen(Screen):
             self.show_page(0)
 
         def init_items(self):
-            if utils.BITCOIN_ONLY:
-                items = [
-                    ("connect", "app-connect", i18n_keys.APP__CONNECT_WALLET),
-                    ("scan", "app-scan", i18n_keys.APP__SCAN),
-                    ("my_address", "app-address", i18n_keys.APP__ADDRESS),
-                    ("settings", "app-settings", i18n_keys.APP__SETTINGS),
-                    ("backup", "app-backup", i18n_keys.APP__BACK_UP),
-                    ("nft", "app-nft", i18n_keys.APP__NFT_GALLERY),
-                    ("guide", "app-tips", i18n_keys.APP__TIPS),
-                ]
-            else:
-                items = [
-                    ("connect", "app-connect", i18n_keys.APP__CONNECT_WALLET),
-                    ("scan", "app-scan", i18n_keys.APP__SCAN),
-                    ("my_address", "app-address", i18n_keys.APP__ADDRESS),
-                    ("settings", "app-settings", i18n_keys.APP__SETTINGS),
-                    ("passkey", "app-keys", i18n_keys.FIDO_FIDO_KEYS_LABEL),
-                    ("backup", "app-backup", i18n_keys.APP__BACK_UP),
-                    ("nft", "app-nft", i18n_keys.APP__NFT_GALLERY),
-                    ("guide", "app-tips", i18n_keys.APP__TIPS),
-                ]
+            items = [
+                ("connect", "app-connect", i18n_keys.APP__CONNECT_WALLET),
+                ("scan", "app-scan", i18n_keys.APP__SCAN),
+                ("my_address", "app-address", i18n_keys.APP__ADDRESS),
+                ("settings", "app-settings", i18n_keys.APP__SETTINGS),
+                ("backup", "app-backup", i18n_keys.APP__BACK_UP),
+                ("guide", "app-tips", i18n_keys.APP__TIPS),
+            ]
+            if not utils.BITCOIN_ONLY:
+                items.insert(4, ("passkey", "app-keys", i18n_keys.FIDO_FIDO_KEYS_LABEL))
+                items.insert(6, ("nft", "app-nft", i18n_keys.APP__NFT_GALLERY))
 
             items_per_page = 4
             cols = 2
@@ -2491,14 +2481,26 @@ class ConnectWalletWays(Screen):
         # )
         self.add_event_cb(self.on_event, lv.EVENT.CLICKED, None)
 
+        if (
+            storage_device.is_passphrase_enabled()
+            or passphrase.is_passphrase_pin_enabled()
+        ):
+            retrieval_encoder()
+
+    def show_connect_wallet_guide(self, connect_type):
+        if not utils.BITCOIN_ONLY:
+            ConnectWalletGuide(connect_type, self)
+        else:
+            ConnectWalletGuide.show_wallet_tutorial("onekey", connect_type)
+
     def on_event(self, event_obj):
         code = event_obj.code
         target = event_obj.get_target()
         if code == lv.EVENT.CLICKED:
             if target == self.by_ble:
-                ConnectWalletGuide("ble", self)
+                self.show_connect_wallet_guide("ble")
             elif target == self.by_usb:
-                ConnectWalletGuide("usb", self)
+                self.show_connect_wallet_guide("usb")
             # elif target == self.by_qrcode:
             #     gc.collect()
             #     WalletList(self)
@@ -2507,7 +2509,10 @@ class ConnectWalletWays(Screen):
 
     def on_click_ext(self, target):
         if target == self.rti_btn:
-            QRWalletTips(self)
+            if not utils.BITCOIN_ONLY:
+                QRWalletTips(self)
+            else:
+                WalletList.connect_onekey(target, bitcoin_only=True)
 
     def _load_scr(self, scr: "Screen", back: bool = False) -> None:
         lv.scr_load(scr)
@@ -2587,108 +2592,127 @@ class ConnectWalletGuide(Screen):
 
         self.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
 
+    @staticmethod
+    def _get_wallet_tutorial_config(wallet_type, connect_type):
+        is_ble = connect_type == "ble"
+        configs = {
+            "onekey": {
+                "title": i18n_keys.ITEM__ONEKEY_WALLET,
+                "subtitle": i18n_keys.CONTENT__IOS_ANDROID
+                if is_ble
+                else i18n_keys.CONTENT__DESKTOP_BROWSER_EXTENSION,
+                "steps": [
+                    (
+                        i18n_keys.FORM__DOWNLOAD_ONEKEY_APP,
+                        i18n_keys.FORM__DOWNLOAD_ONEKEY_APP_MOBILE
+                        if is_ble
+                        else i18n_keys.FORM__DOWNLOAD_ONEKEY_APP_DESKTOP,
+                    ),
+                    (
+                        i18n_keys.FORM__CONNECT_VIA_BLUETOOTH
+                        if is_ble
+                        else i18n_keys.FORM__CONNECT_YOUR_DEVICE,
+                        i18n_keys.FORM__CONNECT_VIA_BLUETOOTH_DESC
+                        if is_ble
+                        else i18n_keys.FORM__CONNECT_YOUR_DEVICE_DESC,
+                    ),
+                    (
+                        i18n_keys.FORM__PAIR_DEVICES
+                        if is_ble
+                        else i18n_keys.FORM__START_THE_CONNECTION,
+                        i18n_keys.FORM__PAIR_DEVICES_DESC
+                        if is_ble
+                        else i18n_keys.FORM__START_THE_CONNECTION_DESC,
+                    ),
+                ],
+                "logo": "A:/res/ok-logo-96.png",
+                "url": "https://help.onekey.so/articles/11461081"
+                if is_ble
+                else "https://help.onekey.so/articles/11461081#h_01HMWVPP85HWYTZGPQQTB300VX",
+            },
+            "metamask": {
+                "title": i18n_keys.ITEM__METAMASK_WALLET,
+                "subtitle": i18n_keys.CONTENT__BROWSER_EXTENSION,
+                "steps": [
+                    (
+                        i18n_keys.FORM__ACCESS_WALLET,
+                        i18n_keys.FORM__OPEN_METAMASK_IN_YOUR_BROWSER,
+                    ),
+                    (
+                        i18n_keys.FORM__CONNECT_HARDWARE_WALLET,
+                        i18n_keys.FORM__CONNECT_HARDWARE_WALLET_DESC,
+                    ),
+                    (
+                        i18n_keys.FORM__UNLOCK_ACCOUNT,
+                        i18n_keys.FORM__UNLOCK_ACCOUNT_DESC,
+                    ),
+                ],
+                "logo": "A:/res/mm-logo-96.png",
+                "url": "https://help.onekey.so/articles/11461106",
+            },
+            "okx": {
+                "title": i18n_keys.ITEM__OKX_WALLET,
+                "subtitle": i18n_keys.CONTENT__IOS_ANDROID
+                if is_ble
+                else i18n_keys.CONTENT__BROWSER_EXTENSION,
+                "steps": [
+                    (
+                        i18n_keys.FORM__ACCESS_WALLET,
+                        i18n_keys.FORM__ACCESS_WALLET_DESC
+                        if is_ble
+                        else i18n_keys.FORM__OPEN_THE_OKX_WALLET_EXTENSION,
+                    ),
+                    (
+                        i18n_keys.FORM__CONNECT_VIA_BLUETOOTH
+                        if is_ble
+                        else i18n_keys.FORM__INSTALL_ONEKEY_BRIDGE,
+                        i18n_keys.FORM__CONNECT_VIA_BLUETOOTH_DESC
+                        if is_ble
+                        else i18n_keys.FORM__INSTALL_ONEKEY_BRIDGE_DESC,
+                    ),
+                    (
+                        i18n_keys.FORM__IMPORT_WALLET_ACCOUNTS,
+                        i18n_keys.FORM__IMPORT_WALLET_ACCOUNTS_DESC
+                        if is_ble
+                        else i18n_keys.FORM__OKX_EXTENSION_IMPORT_WALLET_ACCOUNTS_DESC,
+                    ),
+                ],
+                "logo": "A:/res/okx-logo-96.png",
+                "url": "https://help.onekey.so/articles/11461103",
+            },
+        }
+        assert wallet_type in configs, f"Invalid wallet type: {wallet_type}"
+        return configs[wallet_type]
+
+    @staticmethod
+    def show_wallet_tutorial(wallet_type, connect_type):
+        config = ConnectWalletGuide._get_wallet_tutorial_config(
+            wallet_type, connect_type
+        )
+        from trezor.lvglui.scrs.template import ConnectWalletTutorial
+
+        ConnectWalletTutorial(
+            _(config["title"]),
+            _(config["subtitle"]),
+            [(_(step[0]), _(step[1])) for step in config["steps"]],
+            config["url"],
+            config["logo"],
+        )
+
     def on_click(self, event_obj):
         code = event_obj.code
         target = event_obj.get_target()
         if code == lv.EVENT.CLICKED:
-            if target not in [self.onekey, self.mm, self.okx]:
-                return
-            from trezor.lvglui.scrs.template import ConnectWalletTutorial
-
             if target == self.onekey:
-                title = _(i18n_keys.ITEM__ONEKEY_WALLET)
-                subtitle = (
-                    _(i18n_keys.CONTENT__IOS_ANDROID)
-                    if self.connect_type == "ble"
-                    else _(i18n_keys.CONTENT__DESKTOP_BROWSER_EXTENSION)
-                )
-                steps = [
-                    (
-                        _(i18n_keys.FORM__DOWNLOAD_ONEKEY_APP),
-                        _(i18n_keys.FORM__DOWNLOAD_ONEKEY_APP_MOBILE)
-                        if self.connect_type == "ble"
-                        else _(i18n_keys.FORM__DOWNLOAD_ONEKEY_APP_DESKTOP),
-                    ),
-                    (
-                        _(i18n_keys.FORM__CONNECT_VIA_BLUETOOTH)
-                        if self.connect_type == "ble"
-                        else _(i18n_keys.FORM__CONNECT_YOUR_DEVICE),
-                        _(i18n_keys.FORM__CONNECT_VIA_BLUETOOTH_DESC)
-                        if self.connect_type == "ble"
-                        else _(i18n_keys.FORM__CONNECT_YOUR_DEVICE_DESC),
-                    ),
-                    (
-                        _(i18n_keys.FORM__PAIR_DEVICES)
-                        if self.connect_type == "ble"
-                        else _(i18n_keys.FORM__START_THE_CONNECTION),
-                        _(i18n_keys.FORM__PAIR_DEVICES_DESC)
-                        if self.connect_type == "ble"
-                        else _(i18n_keys.FORM__START_THE_CONNECTION_DESC),
-                    ),
-                ]
-                logo = "A:/res/ok-logo-96.png"
-                url = (
-                    "https://help.onekey.so/articles/11461081"
-                    if self.connect_type == "ble"
-                    else "https://help.onekey.so/articles/11461081#h_01HMWVPP85HWYTZGPQQTB300VX"
-                )
+                wallet_type = "onekey"
             elif target == self.mm:
-                title = _(i18n_keys.ITEM__METAMASK_WALLET)
-                subtitle = _(i18n_keys.CONTENT__BROWSER_EXTENSION)
-                steps = [
-                    (
-                        _(i18n_keys.FORM__ACCESS_WALLET),
-                        _(i18n_keys.FORM__OPEN_METAMASK_IN_YOUR_BROWSER),
-                    ),
-                    (
-                        _(i18n_keys.FORM__CONNECT_HARDWARE_WALLET),
-                        _(i18n_keys.FORM__CONNECT_HARDWARE_WALLET_DESC),
-                    ),
-                    (
-                        _(i18n_keys.FORM__UNLOCK_ACCOUNT),
-                        _(i18n_keys.FORM__UNLOCK_ACCOUNT_DESC),
-                    ),
-                ]
-                logo = "A:/res/mm-logo-96.png"
-                url = "https://help.onekey.so/articles/11461106"
+                wallet_type = "metamask"
+            elif target == self.okx:
+                wallet_type = "okx"
             else:
-                title = _(i18n_keys.ITEM__OKX_WALLET)
-                subtitle = (
-                    _(i18n_keys.CONTENT__IOS_ANDROID)
-                    if self.connect_type == "ble"
-                    else _(i18n_keys.CONTENT__BROWSER_EXTENSION)
-                )
-                steps = [
-                    (
-                        _(i18n_keys.FORM__ACCESS_WALLET),
-                        _(i18n_keys.FORM__ACCESS_WALLET_DESC)
-                        if self.connect_type == "ble"
-                        else _(i18n_keys.FORM__OPEN_THE_OKX_WALLET_EXTENSION),
-                    ),
-                    (
-                        _(i18n_keys.FORM__CONNECT_VIA_BLUETOOTH)
-                        if self.connect_type == "ble"
-                        else _(i18n_keys.FORM__INSTALL_ONEKEY_BRIDGE),
-                        _(i18n_keys.FORM__CONNECT_VIA_BLUETOOTH_DESC)
-                        if self.connect_type == "ble"
-                        else _(i18n_keys.FORM__INSTALL_ONEKEY_BRIDGE_DESC),
-                    ),
-                    (
-                        _(i18n_keys.FORM__IMPORT_WALLET_ACCOUNTS),
-                        _(i18n_keys.FORM__IMPORT_WALLET_ACCOUNTS_DESC)
-                        if self.connect_type == "ble"
-                        else _(
-                            i18n_keys.FORM__OKX_EXTENSION_IMPORT_WALLET_ACCOUNTS_DESC
-                        ),
-                    ),
-                ]
-                logo = "A:/res/okx-logo-96.png"
-                url = (
-                    " https://help.onekey.so/articles/11461103"
-                    if self.connect_type == "ble"
-                    else "https://help.onekey.so/articles/11461103"
-                )
-            ConnectWalletTutorial(title, subtitle, steps, url, logo)
+                raise ValueError(f"Invalid wallet type: {target}")
+
+            ConnectWalletGuide.show_wallet_tutorial(wallet_type, self.connect_type)
 
     def _load_scr(self, scr: "Screen", back: bool = False) -> None:
         lv.scr_load(scr)
@@ -2798,7 +2822,8 @@ class WalletList(Screen):
     def _load_scr(self, scr: "Screen", back: bool = False) -> None:
         lv.scr_load(scr)
 
-    def connect_onekey(self, target):
+    @staticmethod
+    def connect_onekey(target, bitcoin_only: bool = False):
         from trezor.qr import get_encoder
 
         if passphrase.is_enabled():
@@ -2819,8 +2844,10 @@ class WalletList(Screen):
                 _(i18n_keys.ITEM__ONEKEY_WALLET)
             ),
             _(i18n_keys.CONTENT__OPEN_ONEKEY_SCAN_THE_QRCODE),
-            _(i18n_keys.CONTENT__BTC_SOL_ETH_N_EVM_NETWORKS),
-            "A:/res/support-chains-ok-qr.png",
+            _(i18n_keys.CONTENT__BTC_SOL_ETH_N_EVM_NETWORKS)
+            if not bitcoin_only
+            else None,
+            "A:/res/support-chains-ok-qr.png" if not bitcoin_only else None,
             None,
             encoder=encoder,
         )
@@ -3030,11 +3057,11 @@ class ConnectWallet(FullSizeWindow):
         if code == lv.EVENT.CLICKED:
             if utils.lcd_resume():
                 return
-        if target == self.nav_back.nav_btn:
-            self.destroy()
-        elif hasattr(self, "btn_yes") and target == self.btn_yes:
-            DynQr(self.encoder)
-            self.destroy(100)
+            if target == self.nav_back.nav_btn:
+                self.destroy()
+            elif hasattr(self, "btn_yes") and target == self.btn_yes:
+                DynQr(self.encoder)
+                self.destroy(100)
 
     def on_nav_back(self, event_obj):
         code = event_obj.code
@@ -7507,6 +7534,8 @@ class WalletScreen(AnimScreen):
             )
         self.passphrase = ListItemBtn(self.container, _(i18n_keys.ITEM__PASSPHRASE))
         self.turbo_mode = ListItemBtn(self.container, _(i18n_keys.TITLE__TURBO_MODE))
+        if utils.BITCOIN_ONLY:
+            self.turbo_mode.add_flag(lv.obj.FLAG.HIDDEN)
         self.trezor_mode = ListItemBtnWithSwitch(
             self.container, _(i18n_keys.ITEM__COMPATIBLE_WITH_TREZOR)
         )
