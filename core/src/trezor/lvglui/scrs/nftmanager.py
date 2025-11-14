@@ -47,6 +47,16 @@ def _cached_style(_name: str, factory: Callable[[], StyleWrapper]) -> StyleWrapp
     return factory()
 
 
+def _remove_event_cb_safe(target, callback) -> None:
+    if not target or not callback:
+        return
+    if hasattr(target, "remove_event_cb"):
+        try:
+            target.remove_event_cb(callback)
+        except Exception:
+            pass
+
+
 def _safe_wallpaper_src(path: str | None, context: str = "") -> str:
     if not path:
         return ""
@@ -207,8 +217,18 @@ class WallpaperPreviewBase(AnimScreen):
 
 
 class NftGallery(Screen):
+    @classmethod
+    def _dispose_existing(cls, reason: str = "") -> None:
+        instance = getattr(cls, "_instance", None)
+        if not instance:
+            return
+        from .homescreen import _remove_screen_immediately
+
+        _remove_screen_immediately(instance, reason or "nft_gallery")
+
     def __init__(self, prev_scr=None):
         is_reinit = hasattr(self, "_init")
+        self._disposed = False
 
         if not is_reinit:
             self._init = True
@@ -348,6 +368,7 @@ class NftGallery(Screen):
                         "network": "",
                         "owner": "",
                     }
+                    metadata_load = None
                     with trezor_io.fatfs.open(desc_file_path, "r") as f:
                         description = bytearray(2048)
                         n = f.read(description)
@@ -355,15 +376,34 @@ class NftGallery(Screen):
                             metadata_load = json.loads(
                                 (description[:n]).decode("utf-8")
                             )
-                            if metadata_load and all(
-                                key in metadata_load for key in metadata.keys()
-                            ):
-                                metadata = metadata_load
+                    if metadata_load and all(
+                        key in metadata_load for key in metadata.keys()
+                    ):
+                        metadata = metadata_load
+                    NftManager._dispose_existing("nft.gallery.open")
                     NftManager(self, metadata, nft.file_name)
+
+    def _mark_disposed(self):
+        if getattr(self, "_disposed", False):
+            return
+        self._disposed = True
+        _remove_event_cb_safe(
+            getattr(self, "container", None), getattr(self, "on_click", None)
+        )
 
 
 class NftManager(AnimScreen):
+    @classmethod
+    def _dispose_existing(cls, reason: str = "") -> None:
+        instance = getattr(cls, "_instance", None)
+        if not instance:
+            return
+        from .homescreen import _remove_screen_immediately
+
+        _remove_screen_immediately(instance, reason or "nft_manager")
+
     def __init__(self, prev_scr, nft_config, file_name):
+        self._disposed = False
         self.zoom_path = f"A:1:/res/nfts/zooms/{file_name}"
         self.file_name = file_name.replace("zoom-", "")
         self.img_path = f"A:1:/res/nfts/imgs/{self.file_name}"
@@ -498,13 +538,33 @@ class NftManager(AnimScreen):
                     )
             else:
                 if target == self.btn_lock_screen:
+                    NftLockScreenPreview._dispose_existing("nft.lock_preview")
                     NftLockScreenPreview(self, self.img_path, self.nft_config)
                 elif target == self.btn_home_screen:
+                    NftHomeScreenPreview._dispose_existing("nft.home_preview")
                     NftHomeScreenPreview(self, self.img_path, self.nft_config)
+
+    def _mark_disposed(self):
+        if getattr(self, "_disposed", False):
+            return
+        self._disposed = True
+        _remove_event_cb_safe(
+            getattr(self, "content_area", None), getattr(self, "eventhandler", None)
+        )
 
 
 class NftLockScreenPreview(WallpaperPreviewBase):
+    @classmethod
+    def _dispose_existing(cls, reason: str = "") -> None:
+        instance = getattr(cls, "_instance", None)
+        if not instance:
+            return
+        from .homescreen import _remove_screen_immediately
+
+        _remove_screen_immediately(instance, reason or "nft_lock_preview")
+
     def __init__(self, prev_scr, nft_path, nft_config):
+        self._disposed = False
         super().__init__(
             prev_scr=prev_scr,
             title=_(i18n_keys.TITLE__PREVIEW),
@@ -578,9 +638,25 @@ class NftLockScreenPreview(WallpaperPreviewBase):
                     self.load_screen(main_screen, destroy_self=True)
                     return
 
+    def _mark_disposed(self):
+        if getattr(self, "_disposed", False):
+            return
+        self._disposed = True
+        _remove_event_cb_safe(self, getattr(self, "eventhandler", None))
+
 
 class NftHomeScreenPreview(WallpaperPreviewBase):
+    @classmethod
+    def _dispose_existing(cls, reason: str = "") -> None:
+        instance = getattr(cls, "_instance", None)
+        if not instance:
+            return
+        from .homescreen import _remove_screen_immediately
+
+        _remove_screen_immediately(instance, reason or "nft_home_preview")
+
     def __init__(self, prev_scr, nft_path, nft_config):
+        self._disposed = False
         super().__init__(
             prev_scr=prev_scr,
             title=_(i18n_keys.TITLE__PREVIEW),
@@ -676,3 +752,9 @@ class NftHomeScreenPreview(WallpaperPreviewBase):
             else:
                 if hasattr(self, "blur_button") and target == self.blur_button:
                     self.on_blur_clicked(event_obj)
+
+    def _mark_disposed(self):
+        if getattr(self, "_disposed", False):
+            return
+        self._disposed = True
+        _remove_event_cb_safe(self, getattr(self, "eventhandler", None))
