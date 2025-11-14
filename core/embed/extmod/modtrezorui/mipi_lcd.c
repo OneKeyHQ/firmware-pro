@@ -1161,12 +1161,20 @@ void lcd_cover_background_move_to_y(int16_t y_position) {
     return;
   }
 
+  // Wait until LTDC reaches vertical blank before reconfiguring the layer to
+  // avoid partially-applied settings that show up as stripes.
+  while (lcd_ltdc_busy()) {
+    HAL_Delay(1);
+  }
+
   // Update state
   cover_bg_state.y_offset = y_position;
 
   if (y_position <= -((int16_t)lcd_params.vres)) {
     __HAL_LTDC_LAYER_DISABLE(&hlcd_ltdc, 1);
-    __HAL_LTDC_RELOAD_CONFIG(&hlcd_ltdc);
+    if (HAL_LTDC_Reload(&hlcd_ltdc, LTDC_RELOAD_VERTICAL_BLANKING) != HAL_OK) {
+      __HAL_LTDC_RELOAD_IMMEDIATE_CONFIG(&hlcd_ltdc);
+    }
     return;
   }
 
@@ -1196,48 +1204,18 @@ void lcd_cover_background_move_to_y(int16_t y_position) {
     window_y1 = lcd_params.vres;
   }
   if (g_animation_in_progress) {
-    // During animation ensure Layer1 state is stable to prevent flicker from
-    // alpha value changes
+    // During animation ensure Layer1 state is stable so blending parameters
+    // don't drift and create flicker artifacts.
     static uint32_t layer1_stabilize_counter = 0;
     layer1_stabilize_counter++;
 
-    // Stabilize Layer1 alpha value and blending parameters every 4 frames to
-    // prevent sudden darkening
     if (layer1_stabilize_counter % 4 == 0) {
-      HAL_LTDC_SetAlpha(&hlcd_ltdc, 255,
-                        1);  // Ensure Layer1 is completely opaque
-
-      // Ensure Layer1 enable state is stable
+      HAL_LTDC_SetAlpha(&hlcd_ltdc, 255, 1);
       __HAL_LTDC_LAYER_ENABLE(&hlcd_ltdc, 1);
     }
-
-    // During animation only create configuration but reduce processing overhead
-    LTDC_LAYERCONFIG config;
-    config.x0 = window_x0;
-    config.x1 = window_x1;
-    config.y0 = window_y0;
-    config.y1 = window_y1;
-    config.pixel_format = lcd_params.pixel_format_ltdc;
-    config.address = layer_address;
-
-    ltdc_layer_config(&hlcd_ltdc, 1, &config);
-
-    // Simplified processing during animation, no special status bar handling
-    // needed
-  } else {
-    // Use full layer configuration during non-animation periods to ensure all
-    // parameters are correct
-    LTDC_LAYERCONFIG config;
-    config.x0 = window_x0;
-    config.x1 = window_x1;
-    config.y0 = window_y0;
-    config.y1 = window_y1;
-    config.pixel_format = lcd_params.pixel_format_ltdc;
-    config.address = layer_address;
-    ltdc_layer_config(&hlcd_ltdc, 1, &config);
   }
 
-  // Use simplified reconfiguration method to reduce flicker
+  // Configure Layer2 window once per update, regardless of animation state.
   LTDC_LAYERCONFIG config;
   config.x0 = window_x0;
   config.x1 = window_x1;
@@ -1246,11 +1224,12 @@ void lcd_cover_background_move_to_y(int16_t y_position) {
   config.pixel_format = lcd_params.pixel_format_ltdc;
   config.address = layer_address;
 
-  // Use optimized layer configuration function
   ltdc_layer_config(&hlcd_ltdc, 1, &config);
 
-  // Always use VSync reload to ensure stability
-  __HAL_LTDC_RELOAD_CONFIG(&hlcd_ltdc);
+  // Apply the configuration on the next VBlank to avoid tearing/stripes.
+  if (HAL_LTDC_Reload(&hlcd_ltdc, LTDC_RELOAD_VERTICAL_BLANKING) != HAL_OK) {
+    __HAL_LTDC_RELOAD_IMMEDIATE_CONFIG(&hlcd_ltdc);
+  }
 }
 
 // Check if animation is in progress
@@ -1342,7 +1321,9 @@ __attribute__((used)) bool lcd_cover_background_update_animation(void) {
     lcd_cover_background_move_to_y(g_animation_state.target_y);
 
     // accurately
-    __HAL_LTDC_RELOAD_CONFIG(&hlcd_ltdc);
+    if (HAL_LTDC_Reload(&hlcd_ltdc, LTDC_RELOAD_VERTICAL_BLANKING) != HAL_OK) {
+      __HAL_LTDC_RELOAD_IMMEDIATE_CONFIG(&hlcd_ltdc);
+    }
 
     // Clear animation state
     g_animation_state.active = false;
@@ -1353,7 +1334,9 @@ __attribute__((used)) bool lcd_cover_background_update_animation(void) {
       HAL_Delay(1);
     }
 
-    __HAL_LTDC_RELOAD_CONFIG(&hlcd_ltdc);
+    if (HAL_LTDC_Reload(&hlcd_ltdc, LTDC_RELOAD_VERTICAL_BLANKING) != HAL_OK) {
+      __HAL_LTDC_RELOAD_IMMEDIATE_CONFIG(&hlcd_ltdc);
+    }
 
     return false;
   }
@@ -1421,8 +1404,10 @@ __attribute__((used)) void lcd_cover_background_animate_to_y(
   HAL_LTDC_SetAlpha(&hlcd_ltdc, 255, 1);
   cover_bg_state.opacity = 255;
 
-  // Use VSync reload consistently to ensure synchronization
-  __HAL_LTDC_RELOAD_CONFIG(&hlcd_ltdc);
+  // Use VBlank reload to ensure synchronization
+  if (HAL_LTDC_Reload(&hlcd_ltdc, LTDC_RELOAD_VERTICAL_BLANKING) != HAL_OK) {
+    __HAL_LTDC_RELOAD_IMMEDIATE_CONFIG(&hlcd_ltdc);
+  }
 
   uint32_t start_time = HAL_GetTick();
   uint32_t frame_count = 0;
@@ -1462,8 +1447,6 @@ __attribute__((used)) void lcd_cover_background_animate_to_y(
       HAL_Delay(1);
     }
 
-    __HAL_LTDC_RELOAD_CONFIG(&hlcd_ltdc);
-
     frame_count++;
 
     // 16ms delay for ~60fps
@@ -1474,7 +1457,9 @@ __attribute__((used)) void lcd_cover_background_animate_to_y(
     HAL_Delay(1);
   }
 
-  __HAL_LTDC_RELOAD_CONFIG(&hlcd_ltdc);
+  if (HAL_LTDC_Reload(&hlcd_ltdc, LTDC_RELOAD_VERTICAL_BLANKING) != HAL_OK) {
+    __HAL_LTDC_RELOAD_IMMEDIATE_CONFIG(&hlcd_ltdc);
+  }
 
   g_animation_in_progress = false;
 }
