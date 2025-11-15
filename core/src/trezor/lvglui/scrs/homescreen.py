@@ -73,6 +73,21 @@ def _remove_event_cb_safe(target, callback) -> None:
         target.remove_event_cb(callback)
 
 
+def _delete_lv_obj_safe(obj) -> None:
+    if not obj:
+        return
+    deleter = getattr(obj, "delete", None)
+    if not deleter:
+        return
+    try:
+        deleter()
+    except Exception as exc:
+        lv_ref_err = getattr(lv, "LvReferenceError", None)
+        if lv_ref_err and isinstance(exc, lv_ref_err):
+            return
+        raise
+
+
 def _unlink_if_exists(path: str | None) -> None:
     if not path:
         return
@@ -144,10 +159,23 @@ class Layer2Manager:
         if _last_jpeg_loaded and unloader:
             unloader()
 
-        loader(path)
-        _last_jpeg_loaded = path
-        gc.collect()  # Force GC after loading to reclaim old JPEG decode buffers
-        return True
+        try:
+            loader(path)
+            _last_jpeg_loaded = path
+            gc.collect()  # Force GC after loading to reclaim old JPEG decode buffers
+            return True
+        except Exception:
+            try:
+                current_lock = storage_device.get_homescreen()
+                replacement = utils.get_default_wallpaper()
+                replace_wallpaper_if_in_use(current_lock, replacement)
+                fallback_path = _wallpaper_display_path()
+                loader(fallback_path)
+                _last_jpeg_loaded = fallback_path
+                gc.collect()
+                return True
+            except Exception:
+                return False
 
     @classmethod
     def reset_background_cache(cls) -> None:
@@ -252,6 +280,28 @@ _TRANSIENT_SCREEN_NAMES = {
 }
 
 
+def _collect_nav_chain(scr) -> list:
+    chain = []
+    seen = set()
+    while scr and id(scr) not in seen:
+        chain.append(scr)
+        seen.add(id(scr))
+        scr = getattr(scr, "prev_scr", None)
+    return chain
+
+
+def _has_prev_dependency(scr, screens=None) -> bool:
+    linked = screens or getattr(utils, "SCREENS", [])
+    if not linked:
+        return False
+    for other in linked:
+        if other is scr:
+            continue
+        if getattr(other, "prev_scr", None) is scr:
+            return True
+    return False
+
+
 def _remove_screen_immediately(scr, reason: str = "") -> None:
     if not scr:
         return
@@ -288,15 +338,17 @@ def _prune_transient_screens(
     if not screens:
         return
     exclude_ids = {id(item) for item in (exclude or []) if item is not None}
-    if hasattr(lv, "scr_act"):
-        current = lv.scr_act()
-        if current is not None:
-            exclude_ids.add(id(current))
+    current = lv.scr_act() if hasattr(lv, "scr_act") else None
+    if current is not None:
+        for ancestor in _collect_nav_chain(current):
+            exclude_ids.add(id(ancestor))
     removed = 0
     for scr in list(screens):
         if id(scr) in exclude_ids:
             continue
         if scr.__class__.__name__ in _TRANSIENT_SCREEN_NAMES:
+            if _has_prev_dependency(scr, screens=screens):
+                continue
             _remove_screen_immediately(scr, reason or "transient")
             removed += 1
     if removed:
@@ -4096,9 +4148,11 @@ class WallperChange(AnimScreen):
             )
         else:
             if hasattr(self, "container"):
-                self.container.delete()
+                _delete_lv_obj_safe(self.container)
+                self.container = None
             if hasattr(self, "custom_header_container"):
-                self.custom_header_container.delete()
+                _delete_lv_obj_safe(self.custom_header_container)
+                self.custom_header_container = None
             if prev_scr is not None:
                 self.prev_scr = prev_scr
 
@@ -4422,9 +4476,16 @@ class WallperChange(AnimScreen):
             for wp in self.wps:
                 wp.invalidate()
 
-        if hasattr(self, "container"):
+        if hasattr(self, "container") and self.container is not None:
             self.container.invalidate()
             self.container.clear_flag(lv.obj.FLAG.HIDDEN)
+
+    def _cleanup_after_close(self):
+        utils.try_remove_scr(self)
+        cls = self.__class__
+        if hasattr(cls, "_instance") and getattr(cls, "_instance") is self:
+            del cls._instance
+        self.del_delayed(500)
 
     def on_click(self, event_obj):
         code = event_obj.code
@@ -4799,8 +4860,7 @@ class WallperChange(AnimScreen):
                     if self.prev_scr is not None:
                         try:
                             self._load_scr(self.prev_scr, back=True)
-                            utils.try_remove_scr(self)
-                            self.del_delayed(500)
+                            self._cleanup_after_close()
                         except Exception:
                             try:
                                 from .homescreen import SettingsScreen
@@ -4810,8 +4870,7 @@ class WallperChange(AnimScreen):
                                 )
                                 settings_screen = SettingsScreen()
                                 self._load_scr(settings_screen, back=True)
-                                utils.try_remove_scr(self)
-                                self.del_delayed(500)
+                                self._cleanup_after_close()
                             except Exception:
                                 self.load_screen(self.prev_scr, destroy_self=True)
 
@@ -4956,11 +5015,15 @@ class Autolock_and_ShutingDown(AnimScreen):
         Autolock_and_ShutingDown.cur_auto_shutdown_ms = (
             storage_device.get_autoshutdown_delay_ms()
         )
-        Autolock_and_ShutingDown.cur_auto_lock = self.get_str_from_ms(
-            Autolock_and_ShutingDown.cur_auto_lock_ms
+        Autolock_and_ShutingDown.cur_auto_lock = (
+            Autolock_and_ShutingDown.get_str_from_ms(
+                Autolock_and_ShutingDown.cur_auto_lock_ms
+            )
         )
-        Autolock_and_ShutingDown.cur_auto_shutdown = self.get_str_from_ms(
-            Autolock_and_ShutingDown.cur_auto_shutdown_ms
+        Autolock_and_ShutingDown.cur_auto_shutdown = (
+            Autolock_and_ShutingDown.get_str_from_ms(
+                Autolock_and_ShutingDown.cur_auto_shutdown_ms
+            )
         )
 
         if not hasattr(self, "_init"):
@@ -4998,7 +5061,8 @@ class Autolock_and_ShutingDown(AnimScreen):
         self.auto_lock.label_left.set_text(_(i18n_keys.ITEM__AUTO_LOCK))
         self.auto_shutdown.label_left.set_text(_(i18n_keys.ITEM__SHUTDOWN))
 
-    def get_str_from_ms(self, time_ms) -> str:
+    @staticmethod
+    def get_str_from_ms(time_ms) -> str:
 
         if time_ms == storage_device.AUTOLOCK_DELAY_MAXIMUM:
             text = _(i18n_keys.ITEM__STATUS__NEVER)
@@ -5053,10 +5117,10 @@ class AutoLockSetting(AnimScreen):
         Autolock_and_ShutingDown.cur_auto_lock_ms = (
             storage_device.get_autolock_delay_ms()
         )
-        # Create a temporary instance to use get_str_from_ms method
-        temp_instance = Autolock_and_ShutingDown.__new__(Autolock_and_ShutingDown)
-        Autolock_and_ShutingDown.cur_auto_lock = temp_instance.get_str_from_ms(
-            Autolock_and_ShutingDown.cur_auto_lock_ms
+        Autolock_and_ShutingDown.cur_auto_lock = (
+            Autolock_and_ShutingDown.get_str_from_ms(
+                Autolock_and_ShutingDown.cur_auto_lock_ms
+            )
         )
 
         if not hasattr(self, "_init"):
