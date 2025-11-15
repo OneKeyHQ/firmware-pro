@@ -27,6 +27,9 @@
 #include "rand.h"
 #include "supervise.h"
 #include "systick.h"
+#if defined(TREZOR_MODEL_T)
+#include "mipi_lcd.h"
+#endif
 #include "touch.h"
 
 #if defined(STM32F427xx) || defined(STM32F405xx)
@@ -58,6 +61,15 @@ volatile uint32_t system_reset = 0;
 
 // from util.s
 extern void shutdown_privileged(void);
+
+#if defined(TREZOR_MODEL_T)
+static void hide_cover_background_layer(void) {
+  // Prevent stale Layer2 artifacts from leaking onto critical error UI.
+  lcd_cover_background_hide();
+}
+#else
+static void hide_cover_background_layer(void) { (void)0; }
+#endif
 
 void shutdown(void) {
 #ifdef USE_SVC_SHUTDOWN
@@ -92,6 +104,8 @@ __fatal_error(const char* expr, const char* msg, const char* file, int line,
               const char* func) {
   static bool triggered = false;
   static int print_y;
+
+  hide_cover_background_layer();
 
   if (!triggered) {
     display_orientation(0);
@@ -171,6 +185,7 @@ __fatal_error(const char* expr, const char* msg, const char* file, int line,
 void __attribute__((noreturn))
 error_shutdown(const char* line1, const char* line2, const char* line3,
                const char* line4) {
+  hide_cover_background_layer();
   display_orientation(0);
   display_backlight(255);
 #ifdef TREZOR_FONT_NORMAL_ENABLE
@@ -237,6 +252,7 @@ error_shutdown(const char* line1, const char* line2, const char* line3,
 
 void error_reset(const char* line1, const char* line2, const char* line3,
                  const char* line4) {
+  hide_cover_background_layer();
   display_orientation(0);
   display_printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
   display_print_color(RGB16(0x69, 0x69, 0x69), COLOR_BLACK);
