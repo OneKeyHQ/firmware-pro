@@ -73,6 +73,16 @@ def _remove_event_cb_safe(target, callback) -> None:
         target.remove_event_cb(callback)
 
 
+def _unlink_if_exists(path: str | None) -> None:
+    if not path:
+        return
+    try:
+        io.fatfs.stat(path)
+    except BaseException:
+        return
+    io.fatfs.unlink(path)
+
+
 def _normalize_wallpaper_src(raw, *, allow_default: bool = True, default=None) -> str:
     if isinstance(raw, bytes):
         if hasattr(raw, "decode"):
@@ -4751,12 +4761,12 @@ class WallperChange(AnimScreen):
                 filename = img_path.replace("A:1:/res/wallpapers/", "")
 
                 original_path = f"1:/res/wallpapers/{filename}"
-                io.fatfs.unlink(original_path)
+                _unlink_if_exists(original_path)
 
                 zoom_filename = f"zoom-{filename}"
                 zoom_path = f"1:/res/wallpapers/{zoom_filename}"
 
-                io.fatfs.unlink(zoom_path)
+                _unlink_if_exists(zoom_path)
 
                 if "." in filename:
                     name_part, ext_part = filename.rsplit(".", 1)
@@ -4764,7 +4774,7 @@ class WallperChange(AnimScreen):
                 else:
                     blur_filename = f"{filename}-blur"
                 blur_path = f"1:/res/wallpapers/{blur_filename}"
-                io.fatfs.unlink(blur_path)
+                _unlink_if_exists(blur_path)
 
                 self.replace_if_in_use(img_path)
 
