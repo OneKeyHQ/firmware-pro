@@ -69,6 +69,7 @@ from . import (
     alephium,
     benfen,
     neo,
+	special,
 )
 
 F = TypeVar("F", bound=Callable)
@@ -480,6 +481,15 @@ cli.add_command(scdo.cli)
 cli.add_command(alephium.cli)
 cli.add_command(benfen.cli)
 cli.add_command(neo.cli)
+
+cli.add_command(special.sign_firmware)
+cli.add_command(special.export_ed25519_pubkey)
+cli.add_command(special.ed25519_test)
+cli.add_command(special.ed25519_commit)
+cli.add_command(special.ed25519_global_combine)
+cli.add_command(special.ed25519_cosign)
+cli.add_command(special.ed25519_combine_sigs)
+cli.add_command(special.ed25519_devmode_test)
 
 #
 # Main
