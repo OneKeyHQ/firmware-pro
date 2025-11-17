@@ -241,7 +241,8 @@ class Display:
         Move hardware CoverBackground layer to Y position.
         """
 
-    def cover_background_animate_to_y(self, target_y: int, duration_ms: int) -> None:
+    def cover_background_animate_to_y(self, target_y: int, duration_ms: int) ->
+    None:
         """
         Animate hardware CoverBackground layer to Y position.
         """

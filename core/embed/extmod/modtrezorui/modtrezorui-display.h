@@ -661,6 +661,9 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_2(
     mod_trezorui_Display_cover_background_set_image);
 
 /// def cover_background_load_jpeg(self, jpeg_path: str) -> None:
+///     """
+///     Load JPEG image to hardware CoverBackground layer.
+///     """
 STATIC mp_obj_t mod_trezorui_Display_cover_background_load_jpeg(
     mp_obj_t self, mp_obj_t jpeg_path) {
   const char *path = mp_obj_str_get_str(jpeg_path);
