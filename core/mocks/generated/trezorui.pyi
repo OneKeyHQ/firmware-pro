@@ -232,14 +232,16 @@ class Display:
         """
 
     def cover_background_load_jpeg(self, jpeg_path: str) -> None:
+        """
+        Load JPEG image to hardware CoverBackground layer.
+        """
 
     def cover_background_move_to_y(self, y_position: int) -> None:
         """
         Move hardware CoverBackground layer to Y position.
         """
 
-    def cover_background_animate_to_y(self, target_y: int, duration_ms: int) ->
-    None:
+    def cover_background_animate_to_y(self, target_y: int, duration_ms: int) -> None:
         """
         Animate hardware CoverBackground layer to Y position.
         """
