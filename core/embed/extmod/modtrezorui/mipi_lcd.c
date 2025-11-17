@@ -156,7 +156,6 @@ static HAL_StatusTypeDef dma2d_init(DMA2D_HandleTypeDef* hdma2d) {
 
   return HAL_OK;
 }
-
 // LTDC initialization function
 static HAL_StatusTypeDef ltdc_init(LTDC_HandleTypeDef* hltdc) {
   if (hltdc->Instance != LTDC) return HAL_ERROR;
@@ -789,6 +788,26 @@ int lcd_ltdc_busy(void) {
   return hlcd_ltdc.Instance->CDSR & 0x01 ? 0 : 1;
 }
 
+static void ltdc_reload_on_vertical_blank(void) {
+  hlcd_ltdc.Instance = LTDC;
+
+  __HAL_LTDC_VERTICAL_BLANKING_RELOAD_CONFIG(&hlcd_ltdc);
+
+  const uint32_t timeout_ms = 2;
+  uint32_t start = HAL_GetTick();
+  while ((hlcd_ltdc.Instance->SRCR & LTDC_SRCR_VBR) != 0U) {
+    if ((HAL_GetTick() - start) > timeout_ms) {
+      __HAL_LTDC_RELOAD_IMMEDIATE_CONFIG(&hlcd_ltdc);
+      break;
+    }
+  }
+}
+
+static inline void ltdc_reload_immediate(void) {
+  hlcd_ltdc.Instance = LTDC;
+  __HAL_LTDC_RELOAD_IMMEDIATE_CONFIG(&hlcd_ltdc);
+}
+
 // Disable LTDC and DSI (wait for transfer completion)
 void lcd_ltdc_dsi_disable(void) {
   hlcd_ltdc.Instance = LTDC;
@@ -1172,9 +1191,7 @@ void lcd_cover_background_move_to_y(int16_t y_position) {
 
   if (y_position <= -((int16_t)lcd_params.vres)) {
     __HAL_LTDC_LAYER_DISABLE(&hlcd_ltdc, 1);
-    if (HAL_LTDC_Reload(&hlcd_ltdc, LTDC_RELOAD_VERTICAL_BLANKING) != HAL_OK) {
-      __HAL_LTDC_RELOAD_IMMEDIATE_CONFIG(&hlcd_ltdc);
-    }
+    ltdc_reload_on_vertical_blank();
     return;
   }
 
@@ -1226,9 +1243,10 @@ void lcd_cover_background_move_to_y(int16_t y_position) {
 
   ltdc_layer_config(&hlcd_ltdc, 1, &config);
 
-  // Apply the configuration on the next VBlank to avoid tearing/stripes.
-  if (HAL_LTDC_Reload(&hlcd_ltdc, LTDC_RELOAD_VERTICAL_BLANKING) != HAL_OK) {
-    __HAL_LTDC_RELOAD_IMMEDIATE_CONFIG(&hlcd_ltdc);
+  if (g_animation_in_progress) {
+    ltdc_reload_immediate();
+  } else {
+    ltdc_reload_on_vertical_blank();
   }
 }
 
@@ -1321,9 +1339,7 @@ __attribute__((used)) bool lcd_cover_background_update_animation(void) {
     lcd_cover_background_move_to_y(g_animation_state.target_y);
 
     // accurately
-    if (HAL_LTDC_Reload(&hlcd_ltdc, LTDC_RELOAD_VERTICAL_BLANKING) != HAL_OK) {
-      __HAL_LTDC_RELOAD_IMMEDIATE_CONFIG(&hlcd_ltdc);
-    }
+    ltdc_reload_on_vertical_blank();
 
     // Clear animation state
     g_animation_state.active = false;
@@ -1334,9 +1350,7 @@ __attribute__((used)) bool lcd_cover_background_update_animation(void) {
       HAL_Delay(1);
     }
 
-    if (HAL_LTDC_Reload(&hlcd_ltdc, LTDC_RELOAD_VERTICAL_BLANKING) != HAL_OK) {
-      __HAL_LTDC_RELOAD_IMMEDIATE_CONFIG(&hlcd_ltdc);
-    }
+    ltdc_reload_on_vertical_blank();
 
     return false;
   }
@@ -1405,9 +1419,7 @@ __attribute__((used)) void lcd_cover_background_animate_to_y(
   cover_bg_state.opacity = 255;
 
   // Use VBlank reload to ensure synchronization
-  if (HAL_LTDC_Reload(&hlcd_ltdc, LTDC_RELOAD_VERTICAL_BLANKING) != HAL_OK) {
-    __HAL_LTDC_RELOAD_IMMEDIATE_CONFIG(&hlcd_ltdc);
-  }
+  ltdc_reload_on_vertical_blank();
 
   uint32_t start_time = HAL_GetTick();
   uint32_t frame_count = 0;
@@ -1457,9 +1469,7 @@ __attribute__((used)) void lcd_cover_background_animate_to_y(
     HAL_Delay(1);
   }
 
-  if (HAL_LTDC_Reload(&hlcd_ltdc, LTDC_RELOAD_VERTICAL_BLANKING) != HAL_OK) {
-    __HAL_LTDC_RELOAD_IMMEDIATE_CONFIG(&hlcd_ltdc);
-  }
+  ltdc_reload_on_vertical_blank();
 
   g_animation_in_progress = false;
 }
