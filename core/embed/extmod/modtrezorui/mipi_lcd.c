@@ -793,7 +793,7 @@ static void ltdc_reload_on_vertical_blank(void) {
 
   __HAL_LTDC_VERTICAL_BLANKING_RELOAD_CONFIG(&hlcd_ltdc);
 
-  const uint32_t timeout_ms = 5;
+  const uint32_t timeout_ms = 2;
   uint32_t start = HAL_GetTick();
   while ((hlcd_ltdc.Instance->SRCR & LTDC_SRCR_VBR) != 0U) {
     if ((HAL_GetTick() - start) > timeout_ms) {
@@ -801,6 +801,11 @@ static void ltdc_reload_on_vertical_blank(void) {
       break;
     }
   }
+}
+
+static inline void ltdc_reload_immediate(void) {
+  hlcd_ltdc.Instance = LTDC;
+  __HAL_LTDC_RELOAD_IMMEDIATE_CONFIG(&hlcd_ltdc);
 }
 
 // Disable LTDC and DSI (wait for transfer completion)
@@ -1238,8 +1243,12 @@ void lcd_cover_background_move_to_y(int16_t y_position) {
 
   ltdc_layer_config(&hlcd_ltdc, 1, &config);
 
-  // Apply the configuration on the next VBlank to avoid tearing/stripes.
-  ltdc_reload_on_vertical_blank();
+  // Animation帧优先即时重载以减少卡顿，非动画场景仍在VBlank应用以避免撕裂。
+  if (g_animation_in_progress) {
+    ltdc_reload_immediate();
+  } else {
+    ltdc_reload_on_vertical_blank();
+  }
 }
 
 // Check if animation is in progress
@@ -1461,6 +1470,7 @@ __attribute__((used)) void lcd_cover_background_animate_to_y(
     HAL_Delay(1);
   }
 
+  // 动画结束回到VBlank重载，避免最后一帧撕裂
   ltdc_reload_on_vertical_blank();
 
   g_animation_in_progress = false;
