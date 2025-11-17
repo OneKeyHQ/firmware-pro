@@ -1243,7 +1243,6 @@ void lcd_cover_background_move_to_y(int16_t y_position) {
 
   ltdc_layer_config(&hlcd_ltdc, 1, &config);
 
-  // Animation帧优先即时重载以减少卡顿，非动画场景仍在VBlank应用以避免撕裂。
   if (g_animation_in_progress) {
     ltdc_reload_immediate();
   } else {
@@ -1470,7 +1469,6 @@ __attribute__((used)) void lcd_cover_background_animate_to_y(
     HAL_Delay(1);
   }
 
-  // 动画结束回到VBlank重载，避免最后一帧撕裂
   ltdc_reload_on_vertical_blank();
 
   g_animation_in_progress = false;
