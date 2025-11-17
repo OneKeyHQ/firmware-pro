@@ -1190,6 +1190,16 @@ void lcd_cover_background_move_to_y(int16_t y_position) {
   cover_bg_state.y_offset = y_position;
 
   if (y_position <= -((int16_t)lcd_params.vres)) {
+    LTDC_LAYERCONFIG config;
+    config.x0 = 0;
+    config.x1 = lcd_params.hres;
+    config.y0 = -((int32_t)lcd_params.vres);
+    config.y1 = lcd_params.vres;
+    config.pixel_format = lcd_params.pixel_format_ltdc;
+    config.address = LAYER2_MEMORY_BASE;
+
+    ltdc_layer_config(&hlcd_ltdc, 1, &config);
+
     __HAL_LTDC_LAYER_DISABLE(&hlcd_ltdc, 1);
     ltdc_reload_on_vertical_blank();
     return;

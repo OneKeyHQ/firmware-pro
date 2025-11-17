@@ -232,6 +232,9 @@ class Display:
         """
 
     def cover_background_load_jpeg(self, jpeg_path: str) -> None:
+        """
+        Load JPEG image to hardware CoverBackground layer.
+        """
 
     def cover_background_move_to_y(self, y_position: int) -> None:
         """

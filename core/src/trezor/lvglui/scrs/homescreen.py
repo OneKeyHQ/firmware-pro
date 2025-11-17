@@ -120,19 +120,26 @@ def _wallpaper_display_path() -> str:
     return raw
 
 
+LAYER2_VISIBLE_Y = const(0)
+LAYER2_HIDDEN_Y = const(-800)
+LAYER2_ANIM_TIME_MS = const(200)
+LAYER2_ANIM_DELAY_MS = const(20)
+
+
 class Layer2Manager:
     """Encapsulate Layer2 background state and helpers to avoid scattered globals."""
 
-    _display_instance = None
+    display_instance = None
 
-    @classmethod
-    def get_display(cls):
-        """Get or create a singleton Display instance to avoid repeated allocations."""
-        if cls._display_instance is None:
-            from trezorui import Display
-
-            cls._display_instance = Display()
-        return cls._display_instance
+    def __init__(self, display_instance) -> None:
+        self.display_instance = display_instance
+        # Initialize Layer2 at -800 (off-screen) to avoid flash on first show
+        setter = getattr(display, "cover_background_set_visible", None)
+        mover = getattr(display, "cover_background_move_to_y", None)
+        if setter:
+            setter(False)
+        if mover:
+            mover(LAYER2_HIDDEN_Y)
 
     @classmethod
     def is_animating(cls) -> bool:
@@ -144,8 +151,7 @@ class Layer2Manager:
         global _animation_in_progress
         _animation_in_progress = value
 
-    @classmethod
-    def ensure_background(cls, display) -> bool:
+    def ensure_background(self) -> bool:
         global _last_jpeg_loaded
         loader = getattr(display, "cover_background_load_jpeg", None)
         if not loader:
@@ -177,39 +183,35 @@ class Layer2Manager:
             except Exception:
                 return False
 
-    @classmethod
-    def reset_background_cache(cls) -> None:
+    def reset_background_cache(self) -> None:
         global _last_jpeg_loaded
         _last_jpeg_loaded = None
 
-    @classmethod
-    def preload_background(cls, display) -> None:
+    def preload_background(self) -> None:
         """Warm up the Layer2 JPEG background if the loader is available."""
-        cls.ensure_background(display)
+        self.ensure_background()
 
-    @classmethod
-    def set_visibility(
-        cls, display, visible: bool, position: int | None = None
-    ) -> None:
+    def set_visibility(self, visible: bool, position: int | None = None) -> None:
         setter = getattr(display, "cover_background_set_visible", None)
         mover = getattr(display, "cover_background_move_to_y", None)
         shower = getattr(display, "cover_background_show", None)
         hider = getattr(display, "cover_background_hide", None)
         if visible:
+            if mover and position is not None:
+                mover(position)
             if setter:
                 setter(True)
             if shower:
                 shower()
-            if mover and position is not None:
-                mover(position)
         else:
-            if setter:
-                setter(False)
             if hider:
                 hider()
+            if setter:
+                setter(False)
+            if mover and position is not None:
+                mover(position)
 
-    @classmethod
-    def cleanup_timers(cls):
+    def cleanup_timers(self):
         global _active_timers
         for timer in _active_timers:
             if timer and hasattr(timer, "delete"):
@@ -218,8 +220,7 @@ class Layer2Manager:
         gc.collect()  # Force garbage collection to reclaim timer objects immediately
         _prune_transient_screens("layer2.drawer.cleanup")
 
-    @classmethod
-    def schedule_once(cls, delay_ms: int, callback):
+    def schedule_once(self, delay_ms: int, callback):
         global _active_timers
         timer = lv.timer_create(lambda _t: callback(), delay_ms, None)
         timer.set_repeat_count(1)
@@ -237,6 +238,10 @@ class Layer2Manager:
         finally:
             if resume_handler:
                 resume_handler()
+
+
+# Create Layer2Manager instance after the class definition
+l2_manager = Layer2Manager(display)
 
 
 def get_cached_style(image_src):
@@ -361,7 +366,7 @@ def apply_home_wallpaper(new_wallpaper: str | None) -> None:
     old_wallpaper = storage_device.get_appdrawer_background()
     storage_device.set_appdrawer_background(new_wallpaper)
 
-    Layer2Manager.reset_background_cache()
+    l2_manager.reset_background_cache()
     _invalidate_image_cache(old_wallpaper, new_wallpaper)
 
     main_screen = _get_main_screen_instance()
@@ -378,7 +383,7 @@ def apply_lock_wallpaper(new_wallpaper: str | None) -> None:
     old_wallpaper = storage_device.get_homescreen()
     storage_device.set_homescreen(new_wallpaper)
 
-    Layer2Manager.reset_background_cache()
+    l2_manager.reset_background_cache()
     _invalidate_image_cache(old_wallpaper, new_wallpaper)
 
     main_screen = _get_main_screen_instance()
@@ -612,7 +617,7 @@ class MainScreen(Screen):
         if code == lv.EVENT.GESTURE:
             if getattr(self, "_communication_hold", False):
                 return
-            if Layer2Manager.is_animating():
+            if l2_manager.is_animating():
                 return
 
             if hasattr(self, "apps") and self.apps:
@@ -630,11 +635,11 @@ class MainScreen(Screen):
     def show_appdrawer_simple(self):
         if getattr(self, "_communication_hold", False):
             return
-        if Layer2Manager.is_animating() or not (hasattr(self, "apps") and self.apps):
+        if l2_manager.is_animating() or not (hasattr(self, "apps") and self.apps):
             return
 
-        display = Layer2Manager.get_display()
-        background_ready = Layer2Manager.ensure_background(display)
+        # display is already a global variable
+        background_ready = l2_manager.ensure_background()
         can_animate = (
             background_ready
             and hasattr(display, "cover_background_animate_to_y")
@@ -642,35 +647,37 @@ class MainScreen(Screen):
         )
 
         if can_animate:
-            Layer2Manager.set_visibility(display, True, position=0)
+            l2_manager.set_visibility(True, position=LAYER2_VISIBLE_Y)
 
         self._show_appdrawer_contents()
 
         if not can_animate:
             return
 
-        Layer2Manager.set_animating(True)
+        l2_manager.set_animating(True)
 
         def start_layer2_animation():
             try:
-                Layer2Manager.with_lvgl_timer_pause(
-                    display.cover_background_animate_to_y, -800, 200  # type: ignore[is unknown]
+                l2_manager.with_lvgl_timer_pause(
+                    display.cover_background_animate_to_y,
+                    LAYER2_HIDDEN_Y,
+                    LAYER2_ANIM_TIME_MS,
                 )
             except Exception:
-                Layer2Manager.set_visibility(display, False)
-                Layer2Manager.set_animating(False)
-                Layer2Manager.cleanup_timers()
+                l2_manager.set_visibility(False, position=LAYER2_HIDDEN_Y)
+                l2_manager.set_animating(False)
+                l2_manager.cleanup_timers()
                 return
 
             def on_slide_complete():
-                Layer2Manager.set_visibility(display, False)
-                Layer2Manager.set_animating(False)
-                Layer2Manager.cleanup_timers()
+                l2_manager.set_visibility(False, position=LAYER2_HIDDEN_Y)
+                l2_manager.set_animating(False)
+                l2_manager.cleanup_timers()
                 gc.collect()  # Reclaim animation callback objects
 
-            Layer2Manager.schedule_once(200, on_slide_complete)
+            l2_manager.schedule_once(LAYER2_ANIM_TIME_MS, on_slide_complete)
 
-        Layer2Manager.schedule_once(20, start_layer2_animation)
+        l2_manager.schedule_once(LAYER2_ANIM_DELAY_MS, start_layer2_animation)
 
     def _toggle_main_content(self, visible: bool) -> None:
         self.hidden_others(not visible)
@@ -1206,7 +1213,7 @@ class MainScreen(Screen):
             code = event_obj.code
             is_hidden = self.has_flag(lv.obj.FLAG.HIDDEN)
 
-            if Layer2Manager.is_animating():
+            if l2_manager.is_animating():
                 return
 
             if code == lv.EVENT.GESTURE:
@@ -1224,23 +1231,23 @@ class MainScreen(Screen):
                     self.handle_page_gesture(_dir)
 
         def hide_to_mainscreen(self):
-            if Layer2Manager.is_animating():
+            if l2_manager.is_animating():
                 return
 
-            display = Layer2Manager.get_display()
+            # display is already a global variable
             animate_cb = getattr(display, "cover_background_animate_to_y", None)
             move_cb = getattr(display, "cover_background_move_to_y", None)
             can_animate = bool(
-                animate_cb and move_cb and Layer2Manager.ensure_background(display)
+                animate_cb and move_cb and l2_manager.ensure_background()
             )
             if not can_animate:
                 self.hide_to_mainscreen_fallback()
                 return
 
-            Layer2Manager.set_animating(True)
+            l2_manager.set_animating(True)
 
             # Keep AppDrawer visible while layer2 slides down over it.
-            move_cb(-800)  # type: ignore[cannot be called]
+            move_cb(LAYER2_HIDDEN_Y)  # type: ignore[cannot be called]
             if hasattr(display, "cover_background_set_visible"):
                 display.cover_background_set_visible(True)
 
@@ -1255,39 +1262,35 @@ class MainScreen(Screen):
 
                 lv.refr_now(None)
 
-                if hasattr(display, "cover_background_hide"):
-                    display.cover_background_hide()
+                l2_manager.set_visibility(False, position=LAYER2_HIDDEN_Y)
                 if hasattr(self.parent, "start_title_fade_in"):
                     self.parent.start_title_fade_in(duration=100)
 
-                Layer2Manager.set_animating(False)
-                Layer2Manager.cleanup_timers()
+                l2_manager.set_animating(False)
+                l2_manager.cleanup_timers()
                 gc.collect()  # Reclaim animation callback objects
 
             try:
-                Layer2Manager.with_lvgl_timer_pause(animate_cb, 0, 200)
+                l2_manager.with_lvgl_timer_pause(
+                    animate_cb, LAYER2_VISIBLE_Y, LAYER2_ANIM_TIME_MS
+                )
             except Exception:
                 self.hide_to_mainscreen_fallback()
                 return
 
-            Layer2Manager.schedule_once(200, on_layer2_covers_screen)
+            l2_manager.schedule_once(LAYER2_ANIM_TIME_MS, on_layer2_covers_screen)
 
         def hide_to_mainscreen_fallback(self):
             self.add_flag(lv.obj.FLAG.HIDDEN)
             self.add_flag(lv.obj.FLAG.GESTURE_BUBBLE)
             self.visible = False
 
-            try:
-                display = Layer2Manager.get_display()
-            except Exception:
-                display = None
-
-            if display:
-                Layer2Manager.set_visibility(display, False)
+            # display is already a global variable
+            l2_manager.set_visibility(False, position=LAYER2_HIDDEN_Y)
 
             # Ensure animation flag is properly reset
-            Layer2Manager.set_animating(False)
-            Layer2Manager.cleanup_timers()
+            l2_manager.set_animating(False)
+            l2_manager.cleanup_timers()
 
             if hasattr(self.parent, "restore_main_content"):
                 self.parent.restore_main_content()
@@ -1510,10 +1513,10 @@ class MainScreen(Screen):
                 display = None
 
             if display:
-                Layer2Manager.set_visibility(display, False)
+                l2_manager.set_visibility(False, position=LAYER2_HIDDEN_Y)
 
-            Layer2Manager.set_animating(False)
-            Layer2Manager.cleanup_timers()
+            l2_manager.set_animating(False)
+            l2_manager.cleanup_timers()
 
             lv.refr_now(None)
 
