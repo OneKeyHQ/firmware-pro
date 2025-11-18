@@ -400,9 +400,9 @@ def apply_lock_wallpaper(new_wallpaper: str | None) -> None:
 
 def replace_wallpaper_if_in_use(
     deleted_path: str | None, replacement_path: str | None = None
-) -> None:
+) -> bool:
     if not deleted_path:
-        return
+        return False
 
     replacement = replacement_path or utils.get_default_wallpaper()
     base_name = deleted_path.split("/")[-1]
@@ -415,6 +415,7 @@ def replace_wallpaper_if_in_use(
 
     current_home = storage_device.get_appdrawer_background()
     current_lock = storage_device.get_homescreen()
+    replaced = False
 
     def _matches(candidate: str | None) -> bool:
         if not candidate:
@@ -427,8 +428,11 @@ def replace_wallpaper_if_in_use(
 
     if _matches(current_home):
         apply_home_wallpaper(replacement)
+        replaced = True
     if _matches(current_lock):
         apply_lock_wallpaper(replacement)
+        replaced = True
+    return replaced
 
 
 def brightness2_percent_str(brightness: int) -> str:
@@ -4850,7 +4854,37 @@ class WallperChange(AnimScreen):
         self.__init__(self.prev_scr)
 
     def replace_if_in_use(self, deleted_path):
-        replace_wallpaper_if_in_use(deleted_path, "A:/res/wallpaper-7.jpg")
+        replacement = "A:/res/wallpaper-7.jpg"
+        was_replaced = replace_wallpaper_if_in_use(deleted_path, replacement)
+
+        if not was_replaced:
+            return
+
+        prev = getattr(self, "prev_scr", None)
+        if not prev:
+            return
+
+        if prev.__class__.__name__ == "HomeScreenSetting":
+            prev.is_blur_active = False
+            prev.original_wallpaper_path = replacement
+            prev.current_wallpaper_path = replacement
+            if hasattr(prev, "_blur_cache"):
+                prev._blur_cache.clear()
+            if hasattr(prev, "homescreen_preview"):
+                prev.homescreen_preview.set_src(replacement)
+            if hasattr(prev, "_update_blur_button_state"):
+                prev._update_blur_button_state()
+
+        if prev.__class__.__name__ == "AppdrawerBackgroundSetting":
+            prev.selected_wallpaper = replacement
+            prev.current_wallpaper_path = replacement
+            if hasattr(prev, "lockscreen_preview"):
+                prev.lockscreen_preview.set_src(replacement)
+            if hasattr(prev, "refresh_text"):
+                prev.refresh_text()
+
+        if hasattr(prev, "invalidate"):
+            prev.invalidate()
 
     def eventhandler(self, event_obj):
         event = event_obj.code
