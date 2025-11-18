@@ -341,7 +341,7 @@ def get_default_wallpaper():
     elif _COLOR_FLAG == "B":  # white shell
         return "A:/res/wallpaper-2.jpg"
     else:
-        return "A:/res/wallpaper-1.jpg"
+        return "A:/res/wallpaper-7.jpg"
 
 
 def unimport_begin() -> set[str]:
