@@ -51,6 +51,7 @@ from .preview_utils import (
     create_preview_container,
     create_preview_image,
     create_top_mask,
+    refresh_preview_device_labels,
 )
 from .widgets.style import StyleWrapper
 
@@ -3864,11 +3865,7 @@ class AppdrawerBackgroundSetting(AnimScreen):
                 self.current_wallpaper_path = "A:/res/wallpaper-7.jpg"
                 self.lockscreen_preview.set_src("A:/res/wallpaper-7.jpg")
 
-        device_name = storage_device.get_label() or "OneKey Pro"
-        ble_name = storage_device.get_ble_name() or uart.get_ble_name()
-
         self.device_name_label = lv.label(self.preview_container)
-        self.device_name_label.set_text(device_name)
 
         self.device_name_label.add_style(
             StyleWrapper()
@@ -3877,14 +3874,11 @@ class AppdrawerBackgroundSetting(AnimScreen):
             .text_align(lv.TEXT_ALIGN.CENTER),
             0,
         )
-
+        # Stretch to container width so center alignment is accurate
+        self.device_name_label.set_width(self.preview_container.get_width())
         self.device_name_label.align_to(self.preview_container, lv.ALIGN.TOP_MID, 0, 49)
 
         self.bluetooth_label = lv.label(self.preview_container)
-        if ble_name and len(ble_name) >= 4:
-            self.bluetooth_label.set_text("Pro " + ble_name[-4:])
-        else:
-            self.bluetooth_label.set_text("Pro")
 
         self.bluetooth_label.add_style(
             StyleWrapper()
@@ -3893,10 +3887,12 @@ class AppdrawerBackgroundSetting(AnimScreen):
             .text_align(lv.TEXT_ALIGN.CENTER),
             0,
         )
-
+        self.bluetooth_label.set_width(self.preview_container.get_width())
         self.bluetooth_label.align_to(
             self.device_name_label, lv.ALIGN.OUT_BOTTOM_MID, 0, 8
         )
+        # Sync visibility/text with the Display setting (model name & Bluetooth ID)
+        refresh_preview_device_labels(self.device_name_label, self.bluetooth_label)
 
         self.change_button_container = lv.obj(self.container)
         self.change_button_container.set_size(120, 100)
@@ -4006,6 +4002,7 @@ class AppdrawerBackgroundSetting(AnimScreen):
             self.container.invalidate()
 
         self.invalidate()
+        refresh_preview_device_labels(self.device_name_label, self.bluetooth_label)
 
     async def _first_frame_fix(self):
         utime.sleep_ms(100)

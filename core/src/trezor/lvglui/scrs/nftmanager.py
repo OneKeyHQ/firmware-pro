@@ -1,8 +1,7 @@
 import math
 from typing import Callable
 
-import storage.device as storage_device
-from trezor import io as trezor_io, uart, utils, workflow
+from trezor import io as trezor_io, utils, workflow
 from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
 from trezor.lvglui.lv_colors import lv_colors
 
@@ -24,6 +23,7 @@ from .preview_utils import (
     create_preview_container,
     create_preview_image,
     create_top_mask,
+    refresh_preview_device_labels,
 )
 from .widgets.style import StyleWrapper
 
@@ -577,11 +577,7 @@ class NftLockScreenPreview(WallpaperPreviewBase):
         self._create_preview_container(top_offset=118)
         self.lockscreen_preview = self._create_preview_image(nft_path)
 
-        device_name = storage_device.get_label() or "OneKey Pro"
-        ble_name = storage_device.get_ble_name() or uart.get_ble_name()
-
         self.device_name_label = lv.label(self.preview_container)
-        self.device_name_label.set_text(device_name)
         self.device_name_label.add_style(
             _cached_style(
                 _K2,
@@ -592,13 +588,11 @@ class NftLockScreenPreview(WallpaperPreviewBase):
             ),
             0,
         )
+        # Full width to ensure center alignment within the preview frame
+        self.device_name_label.set_width(self.preview_container.get_width())
         self.device_name_label.align_to(self.preview_container, lv.ALIGN.TOP_MID, 0, 49)
 
         self.bluetooth_label = lv.label(self.preview_container)
-        if ble_name and len(ble_name) >= 4:
-            self.bluetooth_label.set_text("Pro " + ble_name[-4:])
-        else:
-            self.bluetooth_label.set_text("Pro")
         self.bluetooth_label.add_style(
             _cached_style(
                 _K3,
@@ -609,8 +603,12 @@ class NftLockScreenPreview(WallpaperPreviewBase):
             ),
             0,
         )
+        self.bluetooth_label.set_width(self.preview_container.get_width())
         self.bluetooth_label.align_to(
             self.device_name_label, lv.ALIGN.OUT_BOTTOM_MID, 0, 8
+        )
+        refresh_preview_device_labels(
+            self.device_name_label, self.bluetooth_label, ble_prefix="Pro"
         )
 
     def eventhandler(self, event_obj):
@@ -637,6 +635,10 @@ class NftLockScreenPreview(WallpaperPreviewBase):
                     )
                     self.load_screen(main_screen, destroy_self=True)
                     return
+            # Sync with current Display toggle if it changed while this screen is open
+            refresh_preview_device_labels(
+                self.device_name_label, self.bluetooth_label, ble_prefix="Pro"
+            )
 
     def _mark_disposed(self):
         if getattr(self, "_disposed", False):
