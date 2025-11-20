@@ -1,5 +1,8 @@
 import math
 
+import storage.device as storage_device
+from trezor import uart
+
 from .common import lv
 
 
@@ -91,3 +94,43 @@ def create_preview_image(
         image.set_src(src)
 
     return image
+
+
+def refresh_preview_device_labels(
+    device_name_label,
+    bluetooth_label=None,
+    *,
+    show_device_names=None,
+    ble_prefix="Pro",
+):
+    """Sync preview labels with the Display toggle (model name & BLE ID)."""
+    if not device_name_label:
+        return
+
+    show_setting = (
+        storage_device.is_device_name_display_enabled()
+        if show_device_names is None
+        else show_device_names
+    )
+
+    device_name = storage_device.get_label() or "OneKey Pro"
+    ble_name = storage_device.get_ble_name() or uart.get_ble_name()
+
+    if show_setting:
+        device_name_label.set_text(device_name)
+        device_name_label.clear_flag(lv.obj.FLAG.HIDDEN)
+
+        if bluetooth_label:
+            if ble_name and len(ble_name) >= 4:
+                # pylint: disable=consider-using-f-string
+                bluetooth_label.set_text("{} {}".format(ble_prefix, ble_name[-4:]))
+            else:
+                bluetooth_label.set_text(ble_prefix)
+            bluetooth_label.clear_flag(lv.obj.FLAG.HIDDEN)
+    else:
+        device_name_label.set_text("")
+        device_name_label.add_flag(lv.obj.FLAG.HIDDEN)
+
+        if bluetooth_label:
+            bluetooth_label.set_text("")
+            bluetooth_label.add_flag(lv.obj.FLAG.HIDDEN)

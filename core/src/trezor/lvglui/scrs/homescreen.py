@@ -51,6 +51,7 @@ from .preview_utils import (
     create_preview_container,
     create_preview_image,
     create_top_mask,
+    refresh_preview_device_labels,
 )
 from .widgets.style import StyleWrapper
 
@@ -400,9 +401,9 @@ def apply_lock_wallpaper(new_wallpaper: str | None) -> None:
 
 def replace_wallpaper_if_in_use(
     deleted_path: str | None, replacement_path: str | None = None
-) -> None:
+) -> bool:
     if not deleted_path:
-        return
+        return False
 
     replacement = replacement_path or utils.get_default_wallpaper()
     base_name = deleted_path.split("/")[-1]
@@ -415,6 +416,7 @@ def replace_wallpaper_if_in_use(
 
     current_home = storage_device.get_appdrawer_background()
     current_lock = storage_device.get_homescreen()
+    replaced = False
 
     def _matches(candidate: str | None) -> bool:
         if not candidate:
@@ -427,8 +429,11 @@ def replace_wallpaper_if_in_use(
 
     if _matches(current_home):
         apply_home_wallpaper(replacement)
+        replaced = True
     if _matches(current_lock):
         apply_lock_wallpaper(replacement)
+        replaced = True
+    return replaced
 
 
 def brightness2_percent_str(brightness: int) -> str:
@@ -882,7 +887,6 @@ class MainScreen(Screen):
             self.add_flag(lv.obj.FLAG.HIDDEN)
 
     class AppDrawer(lv.obj):
-        PAGE_SIZE = 2
         PAGE_SLIDE_TIME = 300  # Animation time with ease_out for smooth feel
 
         def __init__(self, parent):
@@ -896,6 +900,10 @@ class MainScreen(Screen):
             self.communication_locked = False
 
             # Remove style and lazy loading related code to fix system freeze
+
+            # Calculate PAGE_SIZE dynamically
+            item_count = 7 if utils.BITCOIN_ONLY else 8
+            self.PAGE_SIZE = (item_count + 3) // 4
 
             self.init_ui()
             self.init_items()  # Restore original immediate creation of all items
@@ -1295,6 +1303,58 @@ class MainScreen(Screen):
             if hasattr(self.parent, "restore_main_content"):
                 self.parent.restore_main_content()
 
+        def bounce_page(self, direction):
+            if self.page_animating:
+                return
+
+            self.page_animating = True
+            current_wrap = self.page_wraps[self.current_page]
+
+            # If swiping LEFT (trying to go next), we move left (negative x) then back
+            # If swiping RIGHT (trying to go prev), we move right (positive x) then back
+            bounce_dist = 40
+            offset = -bounce_dist if direction == lv.DIR.LEFT else bounce_dist
+
+            original_x = self._page_wrap_origin_x
+            target_x = original_x + offset
+
+            anim_time = 150
+
+            def animate_x(target_obj, start_x, end_x, ready_cb=None):
+                anim = lv.anim_t()
+                anim.init()
+                anim.set_var(target_obj)
+                anim.set_values(start_x, end_x)
+                anim.set_time(anim_time)
+                anim.set_path_cb(lv.anim_t.path_ease_out)
+
+                def exec_cb(_anim, val, *, target=target_obj):
+                    target.set_x(int(val))
+
+                anim.set_custom_exec_cb(exec_cb)
+                if ready_cb:
+                    anim.set_ready_cb(ready_cb)
+                anim.set_repeat_count(1)
+                return anim
+
+            def on_bounce_back_ready(_anim):
+                self.page_animating = False
+                self._page_anim_refs = []
+                self._page_anim_handles = []
+
+            def on_bounce_out_ready(_anim):
+                anim_back = animate_x(
+                    current_wrap, target_x, original_x, on_bounce_back_ready
+                )
+                self._page_anim_refs = [anim_back]
+                self._page_anim_handles = [lv.anim_t.start(anim_back)]
+
+            anim_out = animate_x(
+                current_wrap, original_x, target_x, on_bounce_out_ready
+            )
+            self._page_anim_refs = [anim_out]
+            self._page_anim_handles = [lv.anim_t.start(anim_out)]
+
         def handle_page_gesture(self, _dir):
             if _dir not in [lv.DIR.RIGHT, lv.DIR.LEFT]:
                 return
@@ -1309,9 +1369,13 @@ class MainScreen(Screen):
                 return
 
             if _dir == lv.DIR.LEFT:
-                target_page = (self.current_page + 1) % self.PAGE_SIZE
+                target_page = self.current_page + 1
             else:
-                target_page = (self.current_page - 1 + self.PAGE_SIZE) % self.PAGE_SIZE
+                target_page = self.current_page - 1
+
+            if target_page < 0 or target_page >= self.PAGE_SIZE:
+                self.bounce_page(_dir)
+                return
 
             if target_page == self.current_page:
                 return
@@ -1369,7 +1433,7 @@ class MainScreen(Screen):
                 return
 
             # Clean up memory before starting animation to prevent GC during animation
-            gc.collect()
+            # gc.collect()  # Removed to improve start smoothness
 
             self.page_animating = True
             self._page_anim_target = target_index
@@ -1485,8 +1549,10 @@ class MainScreen(Screen):
             self._page_anim_handles = []
 
             # Clean up immediately if forced, otherwise let normal GC handle it
-            if force:
-                gc.collect()
+            # if force:
+            #    gc.collect()
+            # Always collect at the end of animation to keep memory clean for next time
+            gc.collect()
 
         def force_cleanup(self):
             self.finish_page_animation(force=True)
@@ -3860,11 +3926,7 @@ class AppdrawerBackgroundSetting(AnimScreen):
                 self.current_wallpaper_path = "A:/res/wallpaper-7.jpg"
                 self.lockscreen_preview.set_src("A:/res/wallpaper-7.jpg")
 
-        device_name = storage_device.get_label() or "OneKey Pro"
-        ble_name = storage_device.get_ble_name() or uart.get_ble_name()
-
         self.device_name_label = lv.label(self.preview_container)
-        self.device_name_label.set_text(device_name)
 
         self.device_name_label.add_style(
             StyleWrapper()
@@ -3873,14 +3935,11 @@ class AppdrawerBackgroundSetting(AnimScreen):
             .text_align(lv.TEXT_ALIGN.CENTER),
             0,
         )
-
+        # Stretch to container width so center alignment is accurate
+        self.device_name_label.set_width(self.preview_container.get_width())
         self.device_name_label.align_to(self.preview_container, lv.ALIGN.TOP_MID, 0, 49)
 
         self.bluetooth_label = lv.label(self.preview_container)
-        if ble_name and len(ble_name) >= 4:
-            self.bluetooth_label.set_text("Pro " + ble_name[-4:])
-        else:
-            self.bluetooth_label.set_text("Pro")
 
         self.bluetooth_label.add_style(
             StyleWrapper()
@@ -3889,10 +3948,12 @@ class AppdrawerBackgroundSetting(AnimScreen):
             .text_align(lv.TEXT_ALIGN.CENTER),
             0,
         )
-
+        self.bluetooth_label.set_width(self.preview_container.get_width())
         self.bluetooth_label.align_to(
             self.device_name_label, lv.ALIGN.OUT_BOTTOM_MID, 0, 8
         )
+        # Sync visibility/text with the Display setting (model name & Bluetooth ID)
+        refresh_preview_device_labels(self.device_name_label, self.bluetooth_label)
 
         self.change_button_container = lv.obj(self.container)
         self.change_button_container.set_size(120, 100)
@@ -4002,6 +4063,7 @@ class AppdrawerBackgroundSetting(AnimScreen):
             self.container.invalidate()
 
         self.invalidate()
+        refresh_preview_device_labels(self.device_name_label, self.bluetooth_label)
 
     async def _first_frame_fix(self):
         utime.sleep_ms(100)
@@ -4850,7 +4912,37 @@ class WallperChange(AnimScreen):
         self.__init__(self.prev_scr)
 
     def replace_if_in_use(self, deleted_path):
-        replace_wallpaper_if_in_use(deleted_path, "A:/res/wallpaper-7.jpg")
+        replacement = "A:/res/wallpaper-7.jpg"
+        was_replaced = replace_wallpaper_if_in_use(deleted_path, replacement)
+
+        if not was_replaced:
+            return
+
+        prev = getattr(self, "prev_scr", None)
+        if not prev:
+            return
+
+        if prev.__class__.__name__ == "HomeScreenSetting":
+            prev.is_blur_active = False
+            prev.original_wallpaper_path = replacement
+            prev.current_wallpaper_path = replacement
+            if hasattr(prev, "_blur_cache"):
+                prev._blur_cache.clear()
+            if hasattr(prev, "homescreen_preview"):
+                prev.homescreen_preview.set_src(replacement)
+            if hasattr(prev, "_update_blur_button_state"):
+                prev._update_blur_button_state()
+
+        if prev.__class__.__name__ == "AppdrawerBackgroundSetting":
+            prev.selected_wallpaper = replacement
+            prev.current_wallpaper_path = replacement
+            if hasattr(prev, "lockscreen_preview"):
+                prev.lockscreen_preview.set_src(replacement)
+            if hasattr(prev, "refresh_text"):
+                prev.refresh_text()
+
+        if hasattr(prev, "invalidate"):
+            prev.invalidate()
 
     def eventhandler(self, event_obj):
         event = event_obj.code

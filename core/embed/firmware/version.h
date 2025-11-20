@@ -10,7 +10,7 @@
 
 #define ONEKEY_VERSION_MAJOR 4
 #define ONEKEY_VERSION_MINOR 17
-#define ONEKEY_VERSION_PATCH 0
+#define ONEKEY_VERSION_PATCH 1
 #define ONEKEY_VERSION_BUILD 0
 
 // Minimum SE version required for firmware upgrade
