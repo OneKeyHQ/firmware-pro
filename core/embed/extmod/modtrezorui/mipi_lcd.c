@@ -154,16 +154,6 @@ static HAL_StatusTypeDef dma2d_init(DMA2D_HandleTypeDef* hdma2d) {
     __HAL_RCC_DMA2D_RELEASE_RESET();
   }
 
-  hdma2d->Init.Mode = DMA2D_M2M;
-  hdma2d->Init.ColorMode = DMA2D_OUTPUT_RGB565;
-  hdma2d->Init.OutputOffset = 0;
-  hdma2d->Init.AlphaInverted = DMA2D_REGULAR_ALPHA;
-  hdma2d->Init.RedBlueSwap = DMA2D_RB_REGULAR;
-  hdma2d->Instance = DMA2D;
-
-  if (HAL_DMA2D_Init(hdma2d) != HAL_OK) {
-    return HAL_ERROR;
-  }
 
   return HAL_OK;
 }
@@ -971,7 +961,7 @@ void lcd_cover_background_init(void) {  // Initialize CoverBackground content
   }
 
   // Wait for DMA2D idle to ensure previous operations are complete
-  while (HAL_DMA2D_GetState(&hlcd_dma2d) != HAL_DMA2D_STATE_READY) {
+  while (HAL_DMA2D_GetState(&hlcd_dma2d) == HAL_DMA2D_STATE_BUSY) {
     HAL_Delay(1);
   }
 
