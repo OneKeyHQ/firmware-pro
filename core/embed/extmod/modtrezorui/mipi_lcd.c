@@ -724,6 +724,8 @@ void lcd_init(void) {
     config.pixel_format = lcd_params.pixel_format_ltdc;
     config.address = DISPLAY_MEMORY_BASE;
     ltdc_layer_config(&hlcd_ltdc, 0, &config);
+    memset((void*)DISPLAY_MEMORY_BASE, 0,
+           lcd_params.hres * lcd_params.vres * 2);
   }
 
   {
@@ -956,7 +958,7 @@ void lcd_cover_background_init(void) {  // Initialize CoverBackground content
   }
 
   // Wait for DMA2D idle to ensure previous operations are complete
-  while (HAL_DMA2D_GetState(&hlcd_dma2d) != HAL_DMA2D_STATE_READY) {
+  while (HAL_DMA2D_GetState(&hlcd_dma2d) == HAL_DMA2D_STATE_BUSY) {
     HAL_Delay(1);
   }
 
