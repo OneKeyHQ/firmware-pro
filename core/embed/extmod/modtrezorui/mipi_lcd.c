@@ -154,7 +154,6 @@ static HAL_StatusTypeDef dma2d_init(DMA2D_HandleTypeDef* hdma2d) {
     __HAL_RCC_DMA2D_RELEASE_RESET();
   }
 
-
   return HAL_OK;
 }
 // LTDC initialization function
@@ -725,8 +724,6 @@ void lcd_init(void) {
     config.pixel_format = lcd_params.pixel_format_ltdc;
     config.address = DISPLAY_MEMORY_BASE;
     ltdc_layer_config(&hlcd_ltdc, 0, &config);
-
-    // Clear layer 0 buffer
     memset((void*)DISPLAY_MEMORY_BASE, 0,
            lcd_params.hres * lcd_params.vres * 2);
   }
