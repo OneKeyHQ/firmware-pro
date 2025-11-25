@@ -154,6 +154,17 @@ static HAL_StatusTypeDef dma2d_init(DMA2D_HandleTypeDef* hdma2d) {
     __HAL_RCC_DMA2D_RELEASE_RESET();
   }
 
+  hdma2d->Init.Mode = DMA2D_M2M;
+  hdma2d->Init.ColorMode = DMA2D_OUTPUT_RGB565;
+  hdma2d->Init.OutputOffset = 0;
+  hdma2d->Init.AlphaInverted = DMA2D_REGULAR_ALPHA;
+  hdma2d->Init.RedBlueSwap = DMA2D_RB_REGULAR;
+  hdma2d->Instance = DMA2D;
+
+  if (HAL_DMA2D_Init(hdma2d) != HAL_OK) {
+    return HAL_ERROR;
+  }
+
   return HAL_OK;
 }
 // LTDC initialization function
@@ -724,6 +735,10 @@ void lcd_init(void) {
     config.pixel_format = lcd_params.pixel_format_ltdc;
     config.address = DISPLAY_MEMORY_BASE;
     ltdc_layer_config(&hlcd_ltdc, 0, &config);
+
+    // Clear layer 0 buffer
+    memset((void*)DISPLAY_MEMORY_BASE, 0,
+           lcd_params.hres * lcd_params.vres * 2);
   }
 
   {
