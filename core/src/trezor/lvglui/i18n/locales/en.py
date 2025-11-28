@@ -1042,11 +1042,14 @@ translations = [
     "The number of words in your seed phrase doesn't affect its security, all are cryptographically secure.",
     "Show Dynamic QR Code",
     "BTC, TRON, SOL, ETH, BNB ...",
-    "Some crypto assets and hardware features are unavailable in QR Code communication mode. \nThis mode is intended only for a small number of users who rarely operate their hardware wallet and is not compatible with other connection methods. \nIf you wish to connect your hardware wallet via Bluetooth or USB, please re-add the wallet to switch the communication mode.",
+    "Some crypto assets and hardware features are unavailable in QR Code communication mode. \n\nThis mode is intended only for a small number of users who rarely operate their hardware wallet and is not compatible with other connection methods. \n\nIf you wish to connect your hardware wallet via Bluetooth or USB, please re-add the wallet to switch the communication mode.",
     "Select the way to connect. \nTo use the QR code connection, tap \"More\" in the top right corner.",
     "Advanced",
     "Danger Zone",
     "Continue with QR Code",
     "Connect OneKey App Wallet",
+    "Advanced Options",
+    "Use multiple sources of entropy",
+    "By default, the device uses the secure element to generate mnemonic phrases. When enabled, entropy from both the MCU and secure element will be combined. Both methods meet cryptographic security standards.",
 ]
 # fmt: on

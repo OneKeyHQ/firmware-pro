@@ -2295,10 +2295,10 @@ BUTTON__SHOW_DYNAMIC_QR_CODE = 1040
 # BTC, TRON, SOL, ETH, BNB ...
 CONTENT__BTC_TRON_SOL_ETH_BNB = 1041
 # Some crypto assets and hardware features are unavailable in QR Code communic
-# ation mode. \nThis mode is intended only for a small number of users who rar
-# ely operate their hardware wallet and is not compatible with other connectio
-# n methods. \nIf you wish to connect your hardware wallet via Bluetooth or US
-# B, please re-add the wallet to switch the communication mode.
+# ation mode. \n\nThis mode is intended only for a small number of users who r
+# arely operate their hardware wallet and is not compatible with other connect
+# ion methods. \n\nIf you wish to connect your hardware wallet via Bluetooth o
+# r USB, please re-add the wallet to switch the communication mode.
 TITLE__QR_CODE_CONNECT_DESC = 1042
 # Select the way to connect. \nTo use the QR code connection, tap "More" in th
 # e top right corner.
@@ -2311,4 +2311,12 @@ TITLE__DANGER_ZONE = 1045
 BUTTON__CONTINUE_WITH_QR_CODE = 1046
 # Connect OneKey App Wallet
 TITLE_BTC_ONLY_CONNECT_WALLET = 1047
+# Advanced Options
+TITLE__ADVANCED_OPTIONS = 1048
+# Use multiple sources of entropy
+BUTTON__USE_MULTIPLE_SOURCES_OF_ENTROPY = 1049
+# By default, the device uses the secure element to generate mnemonic phrases.
+# When enabled, entropy from both the MCU and secure element will be combined
+# . Both methods meet cryptographic security standards.
+BUTTON__USE_MULTIPLE_SOURCES_OF_ENTROPY_DESC = 1050
 # fmt: on

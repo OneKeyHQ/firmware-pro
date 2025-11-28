@@ -27,7 +27,9 @@ S39_AE = BackupType.Slip39_Advanced_Extendable
 _DEFAULT_BACKUP_TYPE = B39
 
 
-async def reset_device(ctx: wire.GenericContext, msg: ResetDevice) -> Success:
+async def reset_device(
+    ctx: wire.GenericContext, msg: ResetDevice, use_multiple_entropy: bool = False
+) -> Success:
     # validate parameters and device state
     _validate_reset_device(msg)
 
@@ -42,8 +44,13 @@ async def reset_device(ctx: wire.GenericContext, msg: ResetDevice) -> Success:
         await layout.show_internal_entropy(ctx, int_entropy)
 
     # request external entropy and compute the master secret
-    entropy_ack = await ctx.call(EntropyRequest(), EntropyAck)
-    ext_entropy = entropy_ack.entropy if entropy_ack else b""
+    if use_multiple_entropy:
+        # Use MCU random number generator (source=0) for external entropy
+        ext_entropy = random.bytes(32, 0)
+    else:
+        # Request external entropy from host
+        entropy_ack = await ctx.call(EntropyRequest(), EntropyAck)
+        ext_entropy = entropy_ack.entropy if entropy_ack else b""
     # If either of skip_backup or no_backup is specified, we are not doing backup now.
     # Otherwise, we try to do it.
     perform_backup = not msg.no_backup and not msg.skip_backup

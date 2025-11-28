@@ -1042,11 +1042,14 @@ translations = [
     "La cantidad de palabras en tu frase semilla no afecta su seguridad; todas son criptográficamente seguras.",
     "Mostrar código QR dinámico",
     "BTC, TRON, SOL, ETH, BNB ...",
-    "Algunos activos cripto y funciones de hardware no están disponibles en el modo de comunicación por código QR. \nEste modo está destinado únicamente a un pequeño número de usuarios que operan raramente su billetera de hardware y no es compatible con otros métodos de conexión. \nSi desea conectar su billetera de hardware a través de Bluetooth o USB, vuelva a agregar la billetera para cambiar el modo de comunicación.",
+    "Algunos activos cripto y funciones de hardware no están disponibles en el modo de comunicación por código QR. \n\nEste modo está destinado únicamente a un pequeño número de usuarios que operan raramente su billetera de hardware y no es compatible con otros métodos de conexión. \n\nSi desea conectar su billetera de hardware a través de Bluetooth o USB, vuelva a agregar la billetera para cambiar el modo de comunicación.",
     "Selecciona la forma de conectarte. \nPara usar la conexión mediante código QR, toca \"Más\" en la esquina superior derecha.",
     "Avanzado",
     "Zona peligrosa",
     "Continuar con código QR",
     "Conectar OneKey App Wallet",
+    "Opciones avanzadas",
+    "Usa múltiples fuentes de entropía",
+    "De forma predeterminada, el dispositivo utiliza el elemento seguro para generar frases mnemotécnicas. Cuando está habilitado, se combinará la entropía tanto del MCU como del elemento seguro. Ambos métodos cumplen con los estándares de seguridad criptográfica.",
 ]
 # fmt: on
