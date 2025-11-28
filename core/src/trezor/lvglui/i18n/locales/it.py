@@ -1042,11 +1042,14 @@ translations = [
     "Il numero di parole nella tua seed phrase non influisce sulla sua sicurezza: tutte sono crittograficamente sicure.",
     "Mostra codice QR dinamico",
     "BTC, TRON, SOL, ETH, BNB ...",
-    "Alcuni asset crypto e funzionalità hardware non sono disponibili nella modalità di comunicazione tramite codice QR. \nQuesta modalità è destinata solo a un numero limitato di utenti che utilizzano raramente il proprio portafoglio hardware e non è compatibile con altri metodi di connessione. \nSe desideri connettere il tuo portafoglio hardware tramite Bluetooth o USB, aggiungi nuovamente il portafoglio per cambiare la modalità di comunicazione.",
+    "Alcuni asset crypto e funzionalità hardware non sono disponibili nella modalità di comunicazione tramite codice QR. \n\nQuesta modalità è destinata solo a un numero limitato di utenti che utilizzano raramente il proprio portafoglio hardware e non è compatibile con altri metodi di connessione. \n\nSe desideri connettere il tuo portafoglio hardware tramite Bluetooth o USB, aggiungi nuovamente il portafoglio per cambiare la modalità di comunicazione.",
     "Seleziona il modo di connetterti. \nPer usare la connessione tramite QR code, tocca \"Altro\" nell'angolo in alto a destra.",
     "Avanzate",
     "Zona pericolosa",
     "Continua con codice QR",
     "Collega il wallet OneKey App",
+    "Opzioni avanzate",
+    "Usa più fonti di entropia",
+    "Per impostazione predefinita, il dispositivo utilizza l’elemento sicuro per generare frasi mnemoniche. Quando abilitata, l’entropia sia della MCU che dell’elemento sicuro verrà combinata. Entrambi i metodi soddisfano gli standard di sicurezza crittografica.",
 ]
 # fmt: on

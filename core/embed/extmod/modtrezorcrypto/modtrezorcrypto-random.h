@@ -44,28 +44,43 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorcrypto_random_uniform_obj,
                                  mod_trezorcrypto_random_uniform);
 
 /// import builtins
-/// def bytes(len: int) -> builtins.bytes:
+/// def bytes(len: int, source: int = 1) -> builtins.bytes:
 ///     """
 ///     Generate random bytes sequence of length len.
+///     source: 0 = use random_buffer, 1 = use se_random_encrypted (default)
 ///     """
-STATIC mp_obj_t mod_trezorcrypto_random_bytes(mp_obj_t len) {
-  uint32_t l = trezor_obj_get_uint(len);
+STATIC mp_obj_t mod_trezorcrypto_random_bytes(size_t n_args,
+                                              const mp_obj_t *args) {
+  uint32_t l = trezor_obj_get_uint(args[0]);
   if (l > 1024) {
     mp_raise_ValueError("Maximum requested size is 1024");
   }
+
+  // Default to 1 (se_random_encrypted) if source not provided
+  uint32_t source = 1;
+  if (n_args > 1) {
+    source = trezor_obj_get_uint(args[1]);
+  }
+
   vstr_t vstr = {0};
   vstr_init_len(&vstr, l);
+
+  if (source == 0) {
+    random_buffer((uint8_t *)vstr.buf, l);
+  } else {
 #if USE_THD89
-  if (sectrue != se_random_encrypted((uint8_t *)vstr.buf, l)) {
-    mp_raise_ValueError("se_random_encrypted failed");
-  }
+    if (sectrue != se_random_encrypted((uint8_t *)vstr.buf, l)) {
+      mp_raise_ValueError("se_random_encrypted failed");
+    }
 #else
-  random_buffer((uint8_t *)vstr.buf, l);
+    random_buffer((uint8_t *)vstr.buf, l);
 #endif
+  }
+
   return mp_obj_new_str_from_vstr(&mp_type_bytes, &vstr);
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorcrypto_random_bytes_obj,
-                                 mod_trezorcrypto_random_bytes);
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_trezorcrypto_random_bytes_obj, 1,
+                                           2, mod_trezorcrypto_random_bytes);
 
 /// def shuffle(data: list) -> None:
 ///     """

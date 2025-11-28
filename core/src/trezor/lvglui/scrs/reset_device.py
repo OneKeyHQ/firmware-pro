@@ -281,12 +281,13 @@ class CheckWord(FullSizeWindow):
 
 
 class BackupTypeSelector(FullSizeWindow):
-    def __init__(self, parent):
+    def __init__(self, parent, use_multiple_entropy: bool = False):
         super().__init__(
             _(i18n_keys.TITLE__RECOVERY_PHRASE_TYPES),
             _(i18n_keys.TITLE__RECOVERY_PHRASE_TYPES_DESC),
         )
         self.parent = parent
+        self.use_multiple_entropy = use_multiple_entropy
         self.add_nav_back()
         self.bkts_cls_style = (
             StyleWrapper()
@@ -373,25 +374,97 @@ class BackupTypeSelector(FullSizeWindow):
         self.slip39_tips.align_to(
             self.slip39_choice.container, lv.ALIGN.OUT_BOTTOM_LEFT, 12, 16
         )
+        # Advanced Options
+        self.use_ext_entory = lv.label(self.content_area)
+        self.use_ext_entory.add_style(
+            self.bkts_cls_style,
+            0,
+        )
+        self.use_ext_entory.set_text(_(i18n_keys.TITLE__ADVANCED_OPTIONS))
+        self.use_ext_entory.align_to(
+            self.slip39_tips, lv.ALIGN.OUT_BOTTOM_LEFT, -12, 40
+        )
+        self.entropy_checkbox = ListItemWithLeadingCheckbox(
+            self.content_area,
+            _(i18n_keys.BUTTON__USE_MULTIPLE_SOURCES_OF_ENTROPY),
+            radius=40,
+        )
+        self.entropy_checkbox.set_style_min_height(64, 0)
+        self.entropy_checkbox.align_to(
+            self.use_ext_entory, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 8
+        )
+        # Set checkbox state from parameter (default is False/unchecked)
+        if self.use_multiple_entropy:
+            self.entropy_checkbox.checkbox.add_state(lv.STATE.CHECKED)
+            self.entropy_checkbox.enable_bg_color()
+        self.entropy_tips = lv.label(self.content_area)
+        self.entropy_tips.set_size(432, lv.SIZE.CONTENT)
+        self.entropy_tips.set_long_mode(lv.label.LONG.WRAP)
+        self.entropy_tips.add_style(
+            StyleWrapper()
+            .text_font(font_GeistRegular20)
+            .text_align_left()
+            .text_color(lv_colors.WHITE_2),
+            0,
+        )
+        self.entropy_tips.set_text(
+            _(i18n_keys.BUTTON__USE_MULTIPLE_SOURCES_OF_ENTROPY_DESC)
+        )
+        self.entropy_tips.align_to(
+            self.entropy_checkbox, lv.ALIGN.OUT_BOTTOM_LEFT, 12, 16
+        )
 
+        # Listen for READY event on both self and content_area to ensure we catch it
         self.add_event_cb(self.on_ready, lv.EVENT.READY, None)
         self.add_event_cb(self.on_nav_back, lv.EVENT.CLICKED, None)
+        self.add_event_cb(
+            self.on_entropy_checkbox_changed, lv.EVENT.VALUE_CHANGED, None
+        )
 
     def on_nav_back(self, event_obj):
         code = event_obj.code
         target = event_obj.get_target()
         if code == lv.EVENT.CLICKED:
             if target == self.nav_back.nav_btn:
+                # Update entropy checkbox state before returning
+                use_multiple_entropy = (
+                    self.entropy_checkbox.checkbox.get_state() & lv.STATE.CHECKED
+                ) != 0
+                self.use_multiple_entropy = use_multiple_entropy
+                # Update parent's state
+                if hasattr(self.parent, "use_multiple_entropy"):
+                    self.parent.use_multiple_entropy = use_multiple_entropy
                 self.parent.channel.publish(None)
                 self.destroy(200)
 
+    def on_entropy_checkbox_changed(self, event_obj):
+        code = event_obj.code
+        target = event_obj.get_target()
+        if code == lv.EVENT.VALUE_CHANGED:
+            if target == self.entropy_checkbox.checkbox:
+                if target.get_state() & lv.STATE.CHECKED:
+                    self.entropy_checkbox.enable_bg_color()
+                    self.use_multiple_entropy = True
+                else:
+                    self.entropy_checkbox.enable_bg_color(False)
+                    self.use_multiple_entropy = False
+
     def on_ready(self, event_obj):
-        self.destroy(300)
+        # Get entropy checkbox state (independent of backup type selection)
+        use_multiple_entropy = (
+            self.entropy_checkbox.checkbox.get_state() & lv.STATE.CHECKED
+        ) != 0
+        # Update instance variable
+        self.use_multiple_entropy = use_multiple_entropy
+
+        # Check which choice was made - changed flag should be set when user selects
+        # Only return result if a backup type is selected
+        result = None
         if self.bip39_choice.changed:
             selected_index = self.bip39_choice.get_selected_index()
             # bip-39 12, 18, 24
             strength = (128, 192, 256)
-            self.parent.channel.publish((BackupType.Bip39, strength[selected_index]))
+            result = (BackupType.Bip39, strength[selected_index], use_multiple_entropy)
         elif self.slip39_choice.changed:
             selected_index = self.slip39_choice.get_selected_index()
             backup_type = (
@@ -399,8 +472,14 @@ class BackupTypeSelector(FullSizeWindow):
                 if selected_index == 0
                 else BackupType.Slip39_Basic_Extendable
             )
-            self.parent.channel.publish((backup_type, 128))
-        self.parent.destroy(100)
+            result = (backup_type, 128, use_multiple_entropy)
+
+        # Only publish result if backup type is selected
+        # If only entropy checkbox changed, just save the state and don't return
+        if result:
+            self.parent.channel.publish(result)
+            self.destroy(300)
+            self.parent.destroy(100)
 
 
 class Slip39BasicConfig(FullSizeWindow):

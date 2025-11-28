@@ -1042,11 +1042,14 @@ translations = [
     "Le nombre de mots dans votre phrase de récupération n'affecte pas sa sécurité, toutes sont cryptographiquement sécurisées.",
     "Code QR dynamique",
     "BTC, TRON, SOL, ETH, BNB ...",
-    "Certains actifs cryptographiques et fonctionnalités matérielles ne sont pas disponibles en mode de communication par code QR. \nCe mode est destiné uniquement à un petit nombre d'utilisateurs qui utilisent rarement leur portefeuille matériel et n'est pas compatible avec d'autres méthodes de connexion. \nSi vous souhaitez connecter votre portefeuille matériel via Bluetooth ou USB, veuillez rajouter le portefeuille pour changer le mode de communication.",
+    "Certains actifs cryptographiques et fonctionnalités matérielles ne sont pas disponibles en mode de communication par code QR. \n\nCe mode est destiné uniquement à un petit nombre d'utilisateurs qui utilisent rarement leur portefeuille matériel et n'est pas compatible avec d'autres méthodes de connexion. \n\nSi vous souhaitez connecter votre portefeuille matériel via Bluetooth ou USB, veuillez rajouter le portefeuille pour changer le mode de communication.",
     "Sélectionnez le mode de connexion. \nPour utiliser la connexion par code QR, appuyez sur « Plus » dans le coin supérieur droit.",
     "Avancé",
     "Zone de danger",
     "Continuer avec le code QR",
     "Connecter le portefeuille OneKey App",
+    "Options avancées",
+    "Utiliser plusieurs sources d'entropie",
+    "Par défaut, l'appareil utilise l'élément sécurisé pour générer des phrases mnémoniques. Lorsque cette option est activée, l'entropie du MCU et de l'élément sécurisé sera combinée. Les deux méthodes répondent aux normes de sécurité cryptographique.",
 ]
 # fmt: on
