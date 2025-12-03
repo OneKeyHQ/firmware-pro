@@ -437,11 +437,29 @@ class NftManager(AnimScreen):
         self.trash_icon.add_flag(lv.obj.FLAG.EVENT_BUBBLE)  # Enable event bubbling
 
         # Main NFT image (456x456 as requested)
-        self.nft_image = lv.img(self.content_area)
+        # Use a container with clip_corner to avoid edge artifacts on the image
+        self.nft_image_container = lv.obj(self.content_area)
+        self.nft_image_container.set_size(456, 456)
+        self.nft_image_container.align(lv.ALIGN.TOP_MID, 0, 128)
+        self.nft_image_container.add_style(
+            StyleWrapper()
+            .radius(20)
+            .clip_corner(True)
+            .bg_color(lv_colors.BLACK)
+            .bg_opa(lv.OPA.COVER)
+            .border_width(0)
+            .pad_all(0),
+            0,
+        )
+        self.nft_image_container.clear_flag(lv.obj.FLAG.SCROLLABLE)
+        self.nft_image_container.clear_flag(lv.obj.FLAG.CLICKABLE)
+        self.nft_image_container.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
+
+        self.nft_image = lv.img(self.nft_image_container)
         self.nft_image.set_src(self.img_path)
-        self.nft_image.set_size(456, 456)
-        self.nft_image.align(lv.ALIGN.TOP_MID, 0, 128)  # Position image 128px from top
-        self.nft_image.add_style(StyleWrapper().radius(20).clip_corner(True), 0)
+        # Use zoom instead of set_size to scale 480x480 -> 456x456 (zoom = 456/480*256 = 243)
+        self.nft_image.set_zoom(243)
+        self.nft_image.align(lv.ALIGN.CENTER, 0, 0)
 
         # Title text below image
         self.nft_title = lv.label(self.content_area)
@@ -455,7 +473,9 @@ class NftManager(AnimScreen):
             .text_align(lv.TEXT_ALIGN.LEFT),
             0,
         )
-        self.nft_title.align_to(self.nft_image, lv.ALIGN.OUT_BOTTOM_LEFT, 12, 12)
+        self.nft_title.align_to(
+            self.nft_image_container, lv.ALIGN.OUT_BOTTOM_LEFT, 12, 12
+        )
 
         # Description text below title
         self.nft_description = lv.label(self.content_area)
