@@ -10,9 +10,10 @@ import builtins
 
 
 # extmod/modtrezorcrypto/modtrezorcrypto-random.h
-def bytes(len: int) -> builtins.bytes:
+def bytes(len: int, source: int = 1) -> builtins.bytes:
     """
     Generate random bytes sequence of length len.
+    source: 0 = use random_buffer, 1 = use se_random_encrypted (default)
     """
 
 
