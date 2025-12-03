@@ -81,6 +81,8 @@ class InitScreen(Screen):
 async def setup_onboarding(lang: str) -> None:
 
     utils.mark_initialization_processing()
+    # Store entropy checkbox state across screen instances
+    use_multiple_entropy_state = False
     if lang is not None:
         i18n_refresh(lang)
 
@@ -105,9 +107,12 @@ async def setup_onboarding(lang: str) -> None:
         # create wallet or recovery wallet
         while True:
             screen = SetupDevice()
+            screen.use_multiple_entropy = use_multiple_entropy_state
             result = await screen.request()
             if isinstance(result, tuple):  # create wallet with custom backup type
-                backup_type, strength = result
+                # BackupTypeSelector always returns (backup_type, strength, use_multiple_entropy)
+                backup_type, strength, use_multiple_entropy = result
+                use_multiple_entropy_state = use_multiple_entropy
                 await reset_device(
                     DUMMY_CONTEXT,
                     ResetDevice(
@@ -115,9 +120,12 @@ async def setup_onboarding(lang: str) -> None:
                         language=language,
                         backup_type=backup_type,
                     ),
+                    use_multiple_entropy,
                 )
                 break
             elif result is None:
+                # Update state from screen if it was changed
+                use_multiple_entropy_state = screen.use_multiple_entropy
                 screen.destroy(10)
                 continue
             elif result == 0:  # recovery wallet
@@ -152,6 +160,7 @@ async def setup_onboarding(lang: str) -> None:
                         strength=128,
                         language=language,
                     ),
+                    use_multiple_entropy_state,
                 )
                 break
         from trezor.ui.layouts import show_onekey_app_guide
@@ -178,6 +187,8 @@ class SetupDevice(FullSizeWindow):
         self.add_nav_back_right(btn_bg_img="A:/res/nav-options-icon.png")
         self.btn_layout_ver()
         self.add_event_cb(self.on_nav_back, lv.EVENT.CLICKED, None)
+        # Store entropy checkbox state, default is False
+        self.use_multiple_entropy = False
 
     def destroy(self, delay_ms=50):
         try:
@@ -192,7 +203,7 @@ class SetupDevice(FullSizeWindow):
             if target == self.nav_back.nav_btn:
                 from .reset_device import BackupTypeSelector
 
-                BackupTypeSelector(self)
+                BackupTypeSelector(self, use_multiple_entropy=self.use_multiple_entropy)
 
 
 class QuickStart(FullSizeWindow):
