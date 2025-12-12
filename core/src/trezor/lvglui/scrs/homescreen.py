@@ -2445,6 +2445,12 @@ class ConnectWalletWays(Screen):
                 self._load_scr(self)
             return
         airgap_enabled = storage_device.is_airgap_mode()
+        usb_enabled = False
+        ble_enabled = False
+        if not airgap_enabled:
+            usb_enabled = storage_device.is_usb_enabled()
+            ble_enabled = uart.is_ble_opened()
+
         if airgap_enabled:
             self.waring_bar = Banner(
                 self.content_area,
@@ -2468,11 +2474,12 @@ class ConnectWalletWays(Screen):
             _(i18n_keys.ITEM__USB),
             left_img_src="A:/res/connect-way-usb-on.png",
         )
-        if airgap_enabled:
-            self.by_ble.disable()
-            self.by_ble.img_left.set_src("A:/res/connect-way-ble-off.png")
+        if not usb_enabled:
             self.by_usb.disable()
             self.by_usb.img_left.set_src("A:/res/connect-way-usb-off.png")
+        if not ble_enabled:
+            self.by_ble.disable()
+            self.by_ble.img_left.set_src("A:/res/connect-way-ble-off.png")
 
         # self.by_qrcode = ListItemBtn(
         #     self.container,
@@ -2962,7 +2969,7 @@ class BackupWallet(Screen):
 
         if await DUMMY_CONTEXT.wait(screen.request()):
             screen.destroy()
-            AirGapSetting(self)
+            WalletScreen(self)
         else:
             screen.destroy()
 
@@ -7509,8 +7516,12 @@ class WalletScreen(AnimScreen):
             targets.append(self.advanced_zone)
         if hasattr(self, "air_gap") and self.air_gap:
             targets.append(self.air_gap)
-        if hasattr(self, "description") and self.description:
-            targets.append(self.description)
+        if hasattr(self, "usb") and self.usb:
+            targets.append(self.usb)
+        if hasattr(self, "ble") and self.ble:
+            targets.append(self.ble)
+        # if hasattr(self, "description") and self.description:
+        #     targets.append(self.description)
         if hasattr(self, "danger_zone") and self.danger_zone:
             targets.append(self.danger_zone)
         return targets
@@ -7558,40 +7569,66 @@ class WalletScreen(AnimScreen):
         self.advanced_zone.set_text(_(i18n_keys.TITLE__ADVANCED))
         self.advanced_zone.align_to(self.container, lv.ALIGN.OUT_BOTTOM_LEFT, 12, 28)
 
+        self.container_advanced = ContainerFlexCol(
+            self.content_area,
+            self.advanced_zone,
+            align=lv.ALIGN.OUT_BOTTOM_LEFT,
+            pos=(-12, 16),
+            padding_row=2,
+        )
+        switch_style = (
+            StyleWrapper().bg_color(lv_colors.ONEKEY_BLACK_3).bg_opa(lv.OPA.COVER)
+        )
         self.air_gap = ListItemBtnWithSwitch(
-            self.content_area, _(i18n_keys.ITEM__AIR_GAP_MODE)
+            self.container_advanced, _(i18n_keys.ITEM__AIR_GAP_MODE)
         )
-        self.air_gap.add_style(
-            StyleWrapper().bg_color(lv_colors.ONEKEY_BLACK_3).bg_opa(lv.OPA.COVER), 0
+        self.air_gap.add_style(switch_style, 0)
+        self.usb = ListItemBtnWithSwitch(
+            self.container_advanced, _(i18n_keys.ITEM__USB)
         )
-        self.air_gap.set_style_radius(40, 0)
-        self.air_gap.align_to(self.advanced_zone, lv.ALIGN.OUT_BOTTOM_LEFT, -12, 16)
-
-        self.description = lv.label(self.content_area)
-        self.description.set_size(456, lv.SIZE.CONTENT)
-        self.description.set_long_mode(lv.label.LONG.WRAP)
-        self.description.set_style_text_color(lv_colors.ONEKEY_GRAY, lv.STATE.DEFAULT)
-        self.description.set_style_text_font(font_GeistRegular26, lv.STATE.DEFAULT)
-        self.description.set_style_text_line_space(3, 0)
-        self.description.align_to(self.air_gap, lv.ALIGN.OUT_BOTTOM_LEFT, 12, 16)
+        self.usb.add_style(switch_style, 0)
+        self.ble = ListItemBtnWithSwitch(
+            self.container_advanced, _(i18n_keys.ITEM__BLUETOOTH)
+        )
+        self.ble.add_style(switch_style, 0)
+        # self.description = lv.label(self.content_area)
+        # self.description.set_size(456, lv.SIZE.CONTENT)
+        # self.description.set_long_mode(lv.label.LONG.WRAP)
+        # self.description.set_style_text_color(lv_colors.ONEKEY_GRAY, lv.STATE.DEFAULT)
+        # self.description.set_style_text_font(font_GeistRegular26, lv.STATE.DEFAULT)
+        # self.description.set_style_text_line_space(3, 0)
+        # self.description.align_to(self.air_gap, lv.ALIGN.OUT_BOTTOM_LEFT, 12, 16)
         air_gap_enabled = storage_device.is_airgap_mode()
         if air_gap_enabled:
             self.air_gap.add_state()
-            self.description.set_text(
-                _(
-                    i18n_keys.CONTENT__BLUETOOTH_USB_AND_NFT_TRANSFER_FUNCTIONS_HAVE_BEEN_DISABLED
-                )
-            )
+            self.usb.disable()
+            self.ble.disable()
+            # self.description.set_text(
+            #     _(
+            #         i18n_keys.CONTENT__BLUETOOTH_USB_AND_NFT_TRANSFER_FUNCTIONS_HAVE_BEEN_DISABLED
+            #     )
+            # )
         else:
             self.air_gap.clear_state()
-            self.description.set_text(
-                _(
-                    i18n_keys.CONTENT__AFTER_ENABLING_THE_AIRGAP_BLUETOOTH_USB_AND_NFC_TRANSFER_WILL_BE_DISABLED_SIMULTANEOUSLY
-                )
-            )
-        self.air_gap.add_event_cb(self.on_event, lv.EVENT.VALUE_CHANGED, None)
-        self.air_gap.add_event_cb(self.on_event, lv.EVENT.READY, None)
-        self.air_gap.add_event_cb(self.on_event, lv.EVENT.CANCEL, None)
+            if storage_device.is_usb_enabled():
+                self.usb.add_state()
+            else:
+                self.usb.clear_state()
+            if uart.is_ble_opened():
+                self.ble.add_state()
+            else:
+                self.ble.clear_state()
+            # self.description.set_text(
+            #     _(
+            #         i18n_keys.CONTENT__AFTER_ENABLING_THE_AIRGAP_BLUETOOTH_USB_AND_NFC_TRANSFER_WILL_BE_DISABLED_SIMULTANEOUSLY
+            #     )
+            # )
+
+        self.container_advanced.add_event_cb(
+            self.on_event, lv.EVENT.VALUE_CHANGED, None
+        )
+        self.container_advanced.add_event_cb(self.on_event, lv.EVENT.READY, None)
+        self.container_advanced.add_event_cb(self.on_event, lv.EVENT.CANCEL, None)
         # Danger Zone: Reset Device
         self.danger_zone = lv.label(self.content_area)
         self.danger_zone.set_size(456, lv.SIZE.CONTENT)
@@ -7599,7 +7636,9 @@ class WalletScreen(AnimScreen):
         self.danger_zone.set_style_text_color(lv_colors.WHITE_2, lv.STATE.DEFAULT)
         self.danger_zone.set_style_text_font(font_GeistSemiBold30, lv.STATE.DEFAULT)
         self.danger_zone.set_text(_(i18n_keys.TITLE__DANGER_ZONE))
-        self.danger_zone.align_to(self.description, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 40)
+        self.danger_zone.align_to(
+            self.container_advanced, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 40
+        )
         self.rest_device = ListItemBtn(
             self.content_area,
             _(i18n_keys.ITEM__RESET_DEVICE),
@@ -7675,33 +7714,47 @@ class WalletScreen(AnimScreen):
                         enable=False,
                         callback_obj=self.air_gap,
                     )
+            elif target == self.usb.switch:
+                if target.has_state(lv.STATE.CHECKED):
+                    utils.enable_usb()
+                else:
+                    utils.disable_usb()
+            elif target == self.ble.switch:
+                if target.has_state(lv.STATE.CHECKED):
+                    utils.enable_ble()
+                else:
+                    utils.disable_ble()
         elif code == lv.EVENT.READY:
             if not storage_device.is_airgap_mode():
-                self.description.set_text(
-                    _(
-                        i18n_keys.CONTENT__BLUETOOTH_USB_AND_NFT_TRANSFER_FUNCTIONS_HAVE_BEEN_DISABLED
-                    )
-                )
-                self.danger_zone.align_to(
-                    self.description, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 40
-                )
-                self.rest_device.align_to(
-                    self.danger_zone, lv.ALIGN.OUT_BOTTOM_MID, -12, 16
-                )
+                # self.description.set_text(
+                #     _(
+                #         i18n_keys.CONTENT__BLUETOOTH_USB_AND_NFT_TRANSFER_FUNCTIONS_HAVE_BEEN_DISABLED
+                #     )
+                # )
+                # self.danger_zone.align_to(
+                #     self.description, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 40
+                # )
+                # self.rest_device.align_to(
+                #     self.danger_zone, lv.ALIGN.OUT_BOTTOM_MID, -12, 16
+                # )
                 utils.enable_airgap_mode()
+                self.usb.disable()
+                self.ble.disable()
             else:
-                self.description.set_text(
-                    _(
-                        i18n_keys.CONTENT__AFTER_ENABLING_THE_AIRGAP_BLUETOOTH_USB_AND_NFC_TRANSFER_WILL_BE_DISABLED_SIMULTANEOUSLY
-                    )
-                )
-                self.danger_zone.align_to(
-                    self.description, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 40
-                )
-                self.rest_device.align_to(
-                    self.danger_zone, lv.ALIGN.OUT_BOTTOM_MID, -12, 16
-                )
+                # self.description.set_text(
+                #     _(
+                #         i18n_keys.CONTENT__AFTER_ENABLING_THE_AIRGAP_BLUETOOTH_USB_AND_NFC_TRANSFER_WILL_BE_DISABLED_SIMULTANEOUSLY
+                #     )
+                # )
+                # self.danger_zone.align_to(
+                #     self.description, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 40
+                # )
+                # self.rest_device.align_to(
+                #     self.danger_zone, lv.ALIGN.OUT_BOTTOM_MID, -12, 16
+                # )
                 utils.disable_airgap_mode()
+                self.usb.enable()
+                self.ble.enable()
         elif code == lv.EVENT.CANCEL:
             if storage_device.is_airgap_mode():
                 self.air_gap.add_state()

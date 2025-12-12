@@ -2,7 +2,7 @@ import ustruct
 from micropython import const
 from typing import TYPE_CHECKING
 
-from storage import device
+import storage.device as storage_device
 from trezor import config, io, log, loop, motor, utils, workflow
 from trezor.lvglui import StatusBar
 from trezor.ui import display
@@ -118,8 +118,8 @@ async def handle_fingerprint():
                             warning_level = 3
                         elif isinstance(e, fingerprint.NotMatch):
                             # increase failed count
-                            device.finger_failed_count_incr()
-                            failed_count = device.finger_failed_count()
+                            storage_device.finger_failed_count_incr()
+                            failed_count = storage_device.finger_failed_count()
                             if failed_count >= utils.MAX_FP_ATTEMPTS:
                                 from trezor.lvglui.scrs.pinscreen import InputPin
 
@@ -153,8 +153,8 @@ async def handle_fingerprint():
                         if __debug__:
                             print(f"fingerprint match {match_id}")
                         # motor.vibrate(motor.SUCCESS)
-                        if device.is_passphrase_pin_enabled():
-                            device.set_passphrase_pin_enabled(False)
+                        if storage_device.is_passphrase_pin_enabled():
+                            storage_device.set_passphrase_pin_enabled(False)
                         # # 1. publish signal
                         if fingerprints.has_takers():
                             if __debug__:
@@ -181,10 +181,10 @@ async def handle_fingerprint():
 async def handle_usb_state():
     while True:
         try:
-            utils.AIRGAP_MODE_CHANGED = False
+            utils.USB_STATE_CHANGED = False
             usb_state = loop.wait(io.USB_STATE)
             state, enable = await usb_state
-            if enable is not None and not device.is_airgap_mode():
+            if enable is not None and utils.is_usb_enabled():
                 import usb
 
                 usb.bus.connect_ctrl(enable)
@@ -209,9 +209,13 @@ async def handle_usb_state():
                 if utils.BATTERY_CAP:
                     StatusBar.get_instance().set_battery_img(utils.BATTERY_CAP, False)
                     _request_charging_status()
-            if not utils.AIRGAP_MODE_CHANGED:  # not enable or disable airgap mode
-                usb_auto_lock = device.is_usb_lock_enabled()
-                if usb_auto_lock and device.is_initialized() and config.has_pin():
+            if not utils.USB_STATE_CHANGED:  # not enable or disable airgap mode
+                usb_auto_lock = storage_device.is_usb_lock_enabled()
+                if (
+                    usb_auto_lock
+                    and storage_device.is_initialized()
+                    and config.has_pin()
+                ):
                     from trezor.lvglui.scrs import fingerprints
                     from trezor.crypto import se_thd89
 
@@ -226,7 +230,7 @@ async def handle_usb_state():
                 elif not usb_auto_lock and not state:
                     await safe_reloop(ack=False)
             else:
-                utils.AIRGAP_MODE_CHANGED = False
+                utils.USB_STATE_CHANGED = False
             base.reload_settings_from_storage()
         except Exception as exec:
             if __debug__:
@@ -371,7 +375,7 @@ async def _deal_ble_pair(value):
     close_camera()
     flashled_close()
 
-    if not device.is_initialized():
+    if not storage_device.is_initialized():
         from trezor.lvglui.scrs.ble import PairForbiddenScreen
 
         PairForbiddenScreen()
@@ -418,7 +422,7 @@ async def _deal_button_press(value: bytes) -> None:
     if res == _PRESS_SHORT:
         if display.backlight():
             display.backlight(0)
-            if device.is_initialized():
+            if storage_device.is_initialized():
                 if utils.is_initialization_processing():
                     return
                 utils.AUTO_POWER_OFF = True
@@ -450,7 +454,8 @@ async def _deal_button_press(value: bytes) -> None:
         close_camera()
         PowerOff(
             True
-            if not utils.is_initialization_processing() and device.is_initialized()
+            if not utils.is_initialization_processing()
+            and storage_device.is_initialized()
             else False
         )
         await loop.sleep(200)
@@ -543,7 +548,7 @@ async def _deal_pair_res(value: bytes) -> None:
         motor.vibrate(motor.ERROR)
         StatusBar.get_instance().show_ble(StatusBar.BLE_STATE_ENABLED)
 
-        if device.is_initialized():
+        if storage_device.is_initialized():
             if PENDING_PAIR_CODE is not None:
                 PENDING_PAIR_FAILED = True
             if PAIR_ERROR_SCREEN is None or PAIR_ERROR_SCREEN.destroyed:
@@ -552,7 +557,7 @@ async def _deal_pair_res(value: bytes) -> None:
                 workflow.spawn(show_pairing_error())
     else:
         motor.vibrate(motor.SUCCESS)
-        if device.is_initialized():
+        if storage_device.is_initialized():
             from trezor.ui.layouts import show_pairing_success
 
             workflow.spawn(show_pairing_success())
@@ -578,17 +583,17 @@ async def _deal_ble_status(value: bytes) -> None:
             return
         StatusBar.get_instance().show_ble(StatusBar.BLE_STATE_ENABLED)
         if config.is_unlocked():
-            device.set_ble_status(enable=True)
+            storage_device.set_ble_status(enable=True)
     elif res == _BLE_STATUS_CLOSED:
         utils.BLE_CONNECTED = False
-        if not device.is_initialized():
+        if not storage_device.is_initialized():
             StatusBar.get_instance().show_ble(StatusBar.BLE_STATE_ENABLED)
             ctrl_ble(True)
             return
         BLE_ENABLED = False
         StatusBar.get_instance().show_ble(StatusBar.BLE_STATE_DISABLED)
         if config.is_unlocked():
-            device.set_ble_status(enable=False)
+            storage_device.set_ble_status(enable=False)
 
 
 def _retrieve_flashled_brightness(value: bytes) -> None:
@@ -731,9 +736,12 @@ def ctrl_ble(enable: bool) -> None:
     """Request to open or close ble.
     @param enable: True to open, False to close
     """
+    global BLE_ENABLED
     if enable:
+        BLE_ENABLED = True
         BLE_CTRL.ctrl(0x81, b"\x01")
     else:
+        BLE_ENABLED = False
         BLE_CTRL.ctrl(0x81, b"\x02")
 
 
@@ -849,7 +857,7 @@ def stop_mode(reset_timer: bool = False):
         wireless_charge = True
 
     utils.enter_lowpower(
-        reset_timer, device.get_autoshutdown_delay_ms(), lp_timer_enable
+        reset_timer, storage_device.get_autoshutdown_delay_ms(), lp_timer_enable
     )
     if wireless_charge:
         fetch_battery_temperature()

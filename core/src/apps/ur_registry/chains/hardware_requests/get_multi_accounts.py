@@ -28,11 +28,15 @@ class GetMultiAccountsRequest:
             root_fingerprint = None
             if any(key not in param for key in ("paths", "chain") for param in params):
                 raise ValueError("Invalid param")
+            if __debug__:
+                print(f"params: {params}")
             for param in params:
                 chain = param["chain"]
                 paths = param["paths"]
                 if utils.BITCOIN_ONLY:
                     if chain.lower() not in ("btc", "tbtc", "sbtc"):
+                        if __debug__:
+                            print(f"unsupported chain: {chain} with params: {param}")
                         raise ValueError(
                             "Only Bitcoin chains are supported in BITCOIN_ONLY mode"
                         )

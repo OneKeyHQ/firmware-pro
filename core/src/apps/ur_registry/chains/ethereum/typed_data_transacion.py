@@ -258,7 +258,9 @@ class EthereumTypedDataTransacion:
                         raise ValueError(f"Invalid operation: {operation}")
                     chain_id_origin = data["domain"]["chainId"]
                     if isinstance(chain_id_origin, str):
-                        if chain_id_origin.startswith(("0x", "0X")):
+                        if chain_id_origin.startswith(
+                            "0x"
+                        ) or chain_id_origin.startswith("0X"):
                             chain_id = int.from_bytes(
                                 EthereumTypedDataTransacion.decode_hex(chain_id_origin),
                                 "big",
@@ -292,7 +294,9 @@ class EthereumTypedDataTransacion:
                         print(f"Message error: {response}.")
             except Exception as e:
                 if __debug__:
-                    print(f"Data error: {e}")
+                    import sys
+
+                    sys.print_exception(e)  # type: ignore["print_exception" is not a known member of module]
                 response = messages.Failure(
                     code=FailureType.DataError, message=f"Error: {e}"
                 )

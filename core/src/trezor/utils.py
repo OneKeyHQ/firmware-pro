@@ -87,7 +87,7 @@ CHARGE_WIRELESS_CHARGE_STOPPING = const(3)
 CHARGE_WIRELESS_STATUS = CHARGE_WIRELESS_STOP
 CHARGE_ENABLE: bool | None = None
 CHARGING = False
-AIRGAP_MODE_CHANGED = False
+USB_STATE_CHANGED = False
 RESTART_MAIN_LOOP = False
 
 if __debug__:
@@ -167,7 +167,7 @@ def turn_on_lcd_if_possible(timeouts_ms: int | None = None) -> bool:
 
 def lcd_resume(timeouts_ms: int | None = None) -> bool:
     from trezor.ui import display
-    from storage import device
+    import storage.device as storage_device
     from apps import base
     from trezor import config, uart
 
@@ -176,12 +176,12 @@ def lcd_resume(timeouts_ms: int | None = None) -> bool:
     # if ChargingPromptScr.has_instance():
     #     ChargingPromptScr.get_instance().destroy()
     uart.ctrl_wireless_charge(False)
-    if display.backlight() != device.get_brightness() or timeouts_ms:
+    if display.backlight() != storage_device.get_brightness() or timeouts_ms:
         global AUTO_POWER_OFF
         from trezor.lvglui.scrs.homescreen import BacklightSetting
 
         if not BacklightSetting.page_is_visible():
-            display.backlight(device.get_brightness())
+            display.backlight(storage_device.get_brightness())
         AUTO_POWER_OFF = False
         from trezor.lvglui.scrs import fingerprints
 
@@ -206,14 +206,14 @@ async def internal_reloop():
 async def turn_off_lcd():
     from trezor.ui import display
     from trezor import loop, wire
-    from storage import device
+    import storage.device as storage_device
 
     if display.backlight():
         global AUTO_POWER_OFF
         display.backlight(0)
         AUTO_POWER_OFF = True
     await wire.signal_ack()
-    if device.is_initialized():
+    if storage_device.is_initialized():
         global RESTART_MAIN_LOOP
         RESTART_MAIN_LOOP = True
         loop.clear()
@@ -233,39 +233,81 @@ def is_low_battery():
     return False
 
 
-def disable_airgap_mode():
-    from storage import device
+def is_usb_enabled() -> bool:
+    import storage.device as storage_device
+
+    airgap_enabled = storage_device.is_airgap_mode()
+    if airgap_enabled:
+        return False
+
+    return storage_device.is_usb_enabled()
+
+
+def disable_usb(persist: bool = True) -> None:
+    import usb
+    import storage.device as storage_device
+
+    global USB_STATE_CHANGED
+    if persist:
+        storage_device.set_usb_status(False)
+    usb.bus.connect_ctrl(False)
+    USB_STATE_CHANGED = True
+
+
+def enable_usb(restore: bool = False) -> None:
+    import usb
+    import storage.device as storage_device
+
+    global USB_STATE_CHANGED
+
+    if restore:
+        usb.bus.connect_ctrl(storage_device.is_usb_enabled())
+    else:
+        storage_device.set_usb_status(True)
+        usb.bus.connect_ctrl(True)
+    USB_STATE_CHANGED = True
+
+
+def disable_ble(persist_backup: bool = False) -> None:
+    import storage.device as storage_device
     from trezor import uart
+
+    if persist_backup:
+        storage_device.set_ble_status_backup(uart.is_ble_opened())
+    uart.ctrl_ble(False)
+
+
+def enable_ble(restore_backup: bool = False) -> None:
+    from trezor import uart
+    import storage.device as storage_device
+
+    if restore_backup:
+        uart.ctrl_ble(storage_device.ble_enabled_backup())
+    else:
+        uart.ctrl_ble(True)
+
+
+def disable_airgap_mode():
+    import storage.device as storage_device
     from trezor.lvglui import StatusBar
 
-    global AIRGAP_MODE_CHANGED
-
-    device.enable_airgap_mode(False)
+    storage_device.enable_airgap_mode(False)
     StatusBar.get_instance().show_air_gap_mode_tips(False)
-    uart.ctrl_ble(enable=True)
-    AIRGAP_MODE_CHANGED = True
-    import usb
-
-    usb.bus.connect_ctrl(True)
+    enable_ble(restore_backup=True)
+    enable_usb(restore=True)
 
 
 def enable_airgap_mode():
-    from storage import device
-    from trezor import uart
+    import storage.device as storage_device
     from trezor.lvglui import StatusBar
 
-    global AIRGAP_MODE_CHANGED
-
-    device.enable_airgap_mode(True)
+    storage_device.enable_airgap_mode(True)
     StatusBar.get_instance().show_air_gap_mode_tips(True)
-    uart.ctrl_ble(enable=False)
+    disable_ble(persist_backup=True)
+    disable_usb(persist=False)
     from trezorio import nfc
 
     nfc.pwr_ctrl(False)
-    AIRGAP_MODE_CHANGED = True
-    import usb
-
-    usb.bus.connect_ctrl(False)
 
 
 def show_app_guide():
