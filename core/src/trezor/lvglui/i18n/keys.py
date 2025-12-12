@@ -596,7 +596,7 @@ SUBTITLE__POWER_ON_OFF__GUIDE = 273
 # What is Recovery Phrase?
 TITLE__WHAT_IS_RECOVERY_PHRASE__GUIDE = 274
 # A human-readable "private key" to generate your wallet. A key to restore all
-# your crypto asset.
+# your crypto assets.
 SUBTITLE__WHAT_IS_RECOVERY_PHRASE__GUIDE = 275
 # Enable PIN Protection
 TITLE__ENABLE_PIN_PROTECTION__GUIDE = 276
@@ -2319,4 +2319,44 @@ BUTTON__USE_MULTIPLE_SOURCES_OF_ENTROPY = 1049
 # When enabled, entropy from both the MCU and secure element will be combined
 # . Both methods meet cryptographic security standards.
 BUTTON__USE_MULTIPLE_SOURCES_OF_ENTROPY_DESC = 1050
+# Set Language
+TITLE_SET_LANGUAGE = 1051
+# Do you want to change language to {language}?
+SUBTITLE_SET_LANGUAGE = 1052
+# Set Auto-Lock
+TITLE_SET_AUTO_LOCK = 1053
+# Do you want to change Auto-Lock time to {time}?
+SUBTITLE_SET_AUTO_LOCK = 1054
+# Set Auto Shutdown
+TITLE_SET_AUTO_SHUTDOWN = 1055
+# Do you want to change Auto-Shutdown time to {time}?
+SUBTITLE_SET_AUTO_SHUTDOWN = 1056
+# Do you want to open Keyboard Haptic ?
+SUBTITLE_OPEN_VIBRATION_HAPTIC = 1057
+# Do you want to close Keyboard Haptic ?
+SUBTITLE_CLOSE_VIBRATION_HAPTIC = 1058
+# Do you want to switch PIN Keypad to default ? (The numbers on PIN keypad arr
+# anged in sequence)
+SUBTITLE_SWITCH_PIN_KEYPAD_DEFAULT = 1059
+# Do you want to switch PIN Keypad to randomized ? (The numbers on PIN keypad
+# arrange randomly)
+SUBTITLE_SWITCH_PIN_KEYPAD_RANDOM = 1060
+# Do you want to open USB Lock ? (Device will auto lock every time when USB pl
+# ug or unplug)
+SUBTITLE_OPEN_USB_LOCK = 1061
+# Do you want to close USB Lock ? (Device will remain unlocked when USB plug o
+# r unplug.)
+SUBTITLE_CLOSE_USB_LOCK = 1062
+# Does this match the code displayed on your App?
+TITLE__BLUETOOTH_PAIR_DESC = 1063
+# Yes, they match
+BUTTON__YES_THEY_MATCH = 1064
+# No, it does not
+BUTTON__NO_IT_DOES_NOT = 1065
+# Make sure your device is near your OneKey Pro, then try again.
+TITLE__PAIR_FAILED_DESC = 1066
+# Device Paired
+TITLE__DEVICE_PAIRED = 1067
+# Please continue to complete the OneKey App Check & Update.
+TITLE__ALREADY_PAIRED_DESC = 1068
 # fmt: on

@@ -43,6 +43,7 @@ __all__ = (
     "confirm_modify_fee",
     "confirm_coinjoin",
     "show_pairing_error",
+    "show_pairing_success",
     "show_popup",
     "draw_simple_text",
     "request_passphrase_on_device",
@@ -1368,13 +1369,36 @@ async def request_pin_tips(ctx: wire.GenericContext) -> None:
 
 
 async def show_pairing_error() -> None:
-    await show_popup(
-        _(i18n_keys.TITLE__PAIR_FAILED),
-        description=None,
-        subtitle=_(i18n_keys.SUBTITLE__BLUETOOTH_PAIR_PAIR_FAILED),
-        timeout_ms=2000,
-        icon="A:/res/danger.png",
-    )
+    from trezor.lvglui.scrs.ble import PairFailedScreen
+    from trezor import uart
+
+    screen = PairFailedScreen()
+    uart.PAIR_ERROR_SCREEN = screen
+    try:
+        await screen.request()
+    except Exception:
+        pass
+    if not screen.destroyed:
+        screen.destroy()
+    if uart.PAIR_ERROR_SCREEN == screen:
+        uart.PAIR_ERROR_SCREEN = None
+
+
+async def show_pairing_success() -> None:
+    from trezor.lvglui.scrs.ble import PairSuccessScreen
+    from trezor import loop
+    from trezor import uart
+
+    screen = PairSuccessScreen()
+    uart.PAIR_SUCCESS_SCREEN = screen
+    try:
+        await loop.race(screen.request(), loop.sleep(3000))
+    except Exception:
+        pass
+    if not screen.destroyed:
+        screen.destroy()
+    if uart.PAIR_SUCCESS_SCREEN == screen:
+        uart.PAIR_SUCCESS_SCREEN = None
 
 
 async def confirm_domain(ctx: wire.GenericContext, **kwargs) -> None:
