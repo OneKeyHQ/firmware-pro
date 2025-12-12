@@ -23,21 +23,26 @@ class Transaction:
         return None
 
     @staticmethod
-    def _readAccountIdLookupOfT_V15(rawtx: codec.base.ScaleBytes, address_type) -> str:
-        value = rawtx.get_next_bytes(1)[0]
-        if value == 0:  # Id
+    def _readAccountIdLookupOfT_V15(
+        rawtx: codec.base.ScaleBytes, address_type, skip_type_lookup: bool = False
+    ) -> str:
+        if not skip_type_lookup:
+            value = rawtx.get_next_bytes(1)[0]
+        else:
+            value = 0
+        if value == 0:
             accountid = helper.ss58_encode(rawtx.get_next_bytes(32), address_type)
-        elif value == 1:  # Index
+        elif value == 1:
             obj = codec.types.Compact(rawtx)
             accountid = str(obj.decode(check_remaining=False))
-        elif value == 2:  # Raw
+        elif value == 2:
             obj = codec.types.Compact(rawtx)
             value = obj.decode(check_remaining=False)
             clen = int(0 if value is None else value)
             accountid = hexlify(rawtx.get_next_bytes(clen)).decode()
-        elif value == 3:  # Address32
+        elif value == 3:
             accountid = hexlify(rawtx.get_next_bytes(32)).decode()
-        elif value == 4:  # Address20
+        elif value == 4:
             accountid = hexlify(rawtx.get_next_bytes(20)).decode()
         else:
             raise Exception("Unexpected value")
@@ -49,23 +54,23 @@ class Transaction:
         rawtx: codec.base.ScaleBytes, callPrivIdx: int
     ) -> "Transaction":
         tx = TransactionUnknown(rawtx)
-        if callPrivIdx in (1287, 1280):
+        if callPrivIdx in (1287, 1280, 2560):
             desc = Transaction._readAccountIdLookupOfT_V15(rawtx, 0)
             obj = codec.types.Compact(rawtx)
             balance = obj.decode(check_remaining=False)
             tx = BalancesTransfer(desc, balance)
-        elif callPrivIdx == 1282:
+        elif callPrivIdx in (1282, 2562):
             source = Transaction._readAccountIdLookupOfT_V15(rawtx, 0)
             dest = Transaction._readAccountIdLookupOfT_V15(rawtx, 0)
             obj = codec.types.Compact(rawtx)
             balance = obj.decode(check_remaining=False)
             tx = BalancesForceTransfer(source, dest, balance)
-        elif callPrivIdx == 1283:
+        elif callPrivIdx in (1283, 2563):
             desc = Transaction._readAccountIdLookupOfT_V15(rawtx, 0)
             obj = codec.types.Compact(rawtx)
             balance = obj.decode(check_remaining=False)
             tx = BalancesTransferKeepAlive(desc, balance)
-        elif callPrivIdx == 1284:
+        elif callPrivIdx in (1284, 2564):
             desc = Transaction._readAccountIdLookupOfT_V15(rawtx, 0)
             keep_alive = rawtx.get_next_bytes(1)[0]
             tx = BalancesTransferAll(desc, keep_alive)
@@ -77,23 +82,23 @@ class Transaction:
         rawtx: codec.base.ScaleBytes, callPrivIdx: int
     ) -> "Transaction":
         tx = TransactionUnknown(rawtx)
-        if callPrivIdx in (1031, 1024):
+        if callPrivIdx in (1031, 1024, 2560):
             desc = Transaction._readAccountIdLookupOfT_V15(rawtx, 2)
             obj = codec.types.Compact(rawtx)
             balance = obj.decode(check_remaining=False)
             tx = BalancesTransfer(desc, balance)
-        elif callPrivIdx == 1026:
+        elif callPrivIdx in (1026, 2562):
             source = Transaction._readAccountIdLookupOfT_V15(rawtx, 2)
             dest = Transaction._readAccountIdLookupOfT_V15(rawtx, 2)
             obj = codec.types.Compact(rawtx)
             balance = obj.decode(check_remaining=False)
             tx = BalancesForceTransfer(source, dest, balance)
-        elif callPrivIdx == 1027:
+        elif callPrivIdx in (1027, 2563):
             desc = Transaction._readAccountIdLookupOfT_V15(rawtx, 2)
             obj = codec.types.Compact(rawtx)
             balance = obj.decode(check_remaining=False)
             tx = BalancesTransferKeepAlive(desc, balance)
-        elif callPrivIdx == 1028:
+        elif callPrivIdx in (1028, 2564):
             desc = Transaction._readAccountIdLookupOfT_V15(rawtx, 2)
             keep_alive = rawtx.get_next_bytes(1)[0]
             tx = BalancesTransferAll(desc, keep_alive)
@@ -162,17 +167,33 @@ class Transaction:
     ) -> "Transaction":
         tx = TransactionUnknown(rawtx)
         if callPrivIdx == 1280:
-            dest = helper.ss58_encode(rawtx.get_next_bytes(32), 126)
+            dest = Transaction._readAccountIdLookupOfT_V15(
+                rawtx, 126, skip_type_lookup=True
+            )
             obj = codec.types.Compact(rawtx)
             balance = obj.decode(check_remaining=False)
             tx = BalancesTransfer(dest, balance)
+        elif callPrivIdx == 1282:
+            source = Transaction._readAccountIdLookupOfT_V15(
+                rawtx, 126, skip_type_lookup=True
+            )
+            dest = Transaction._readAccountIdLookupOfT_V15(
+                rawtx, 126, skip_type_lookup=True
+            )
+            obj = codec.types.Compact(rawtx)
+            balance = obj.decode(check_remaining=False)
+            tx = BalancesForceTransfer(source, dest, balance)
         elif callPrivIdx == 1283:
-            dest = helper.ss58_encode(rawtx.get_next_bytes(32), 126)
+            dest = Transaction._readAccountIdLookupOfT_V15(
+                rawtx, 126, skip_type_lookup=True
+            )
             obj = codec.types.Compact(rawtx)
             balance = obj.decode(check_remaining=False)
             tx = BalancesTransferKeepAlive(dest, balance)
         elif callPrivIdx == 1284:
-            dest = helper.ss58_encode(rawtx.get_next_bytes(32), 126)
+            dest = Transaction._readAccountIdLookupOfT_V15(
+                rawtx, 126, skip_type_lookup=True
+            )
             keep_alive = rawtx.get_next_bytes(1)[0]
             tx = BalancesTransferAll(dest, keep_alive)
 
@@ -180,29 +201,67 @@ class Transaction:
 
     @staticmethod
     def deserialize_manta(
-        rawtx: codec.base.ScaleBytes, callPrivIdx: int
+        rawtx: codec.base.ScaleBytes, callPrivIdx: int, address_type: int
     ) -> "Transaction":
         tx = TransactionUnknown(rawtx)
         if callPrivIdx == 2560:
-            desc = Transaction._readAccountIdLookupOfT_V15(rawtx, 77)
+            desc = Transaction._readAccountIdLookupOfT_V15(rawtx, address_type)
             obj = codec.types.Compact(rawtx)
             balance = obj.decode(check_remaining=False)
             tx = BalancesTransfer(desc, balance)
+        elif callPrivIdx == 2562:
+            source = Transaction._readAccountIdLookupOfT_V15(rawtx, address_type)
+            dest = Transaction._readAccountIdLookupOfT_V15(rawtx, address_type)
+            obj = codec.types.Compact(rawtx)
+            balance = obj.decode(check_remaining=False)
+            tx = BalancesForceTransfer(source, dest, balance)
         elif callPrivIdx == 2563:
-            desc = Transaction._readAccountIdLookupOfT_V15(rawtx, 77)
+            desc = Transaction._readAccountIdLookupOfT_V15(rawtx, address_type)
             obj = codec.types.Compact(rawtx)
             balance = obj.decode(check_remaining=False)
             tx = BalancesTransferKeepAlive(desc, balance)
         elif callPrivIdx == 2564:
-            desc = Transaction._readAccountIdLookupOfT_V15(rawtx, 77)
+            desc = Transaction._readAccountIdLookupOfT_V15(rawtx, address_type)
             keep_alive = rawtx.get_next_bytes(1)[0]
             tx = BalancesTransferAll(desc, keep_alive)
-        elif callPrivIdx == 2562:
-            source = Transaction._readAccountIdLookupOfT_V15(rawtx, 77)
-            dest = Transaction._readAccountIdLookupOfT_V15(rawtx, 77)
+
+        return tx
+
+    @staticmethod
+    def deserialize_hydration(
+        rawtx: codec.base.ScaleBytes, callPrivIdx: int
+    ) -> "Transaction":
+        tx = TransactionUnknown(rawtx)
+        if callPrivIdx == 1792:
+            desc = Transaction._readAccountIdLookupOfT_V15(
+                rawtx, 0, skip_type_lookup=True
+            )
+            obj = codec.types.Compact(rawtx)
+            balance = obj.decode(check_remaining=False)
+            tx = BalancesTransfer(desc, balance)
+        elif callPrivIdx == 1794:
+            source = Transaction._readAccountIdLookupOfT_V15(
+                rawtx, 0, skip_type_lookup=True
+            )
+            dest = Transaction._readAccountIdLookupOfT_V15(
+                rawtx, 0, skip_type_lookup=True
+            )
             obj = codec.types.Compact(rawtx)
             balance = obj.decode(check_remaining=False)
             tx = BalancesForceTransfer(source, dest, balance)
+        elif callPrivIdx == 1795:
+            desc = Transaction._readAccountIdLookupOfT_V15(
+                rawtx, 0, skip_type_lookup=True
+            )
+            obj = codec.types.Compact(rawtx)
+            balance = obj.decode(check_remaining=False)
+            tx = BalancesTransferKeepAlive(desc, balance)
+        elif callPrivIdx == 1796:
+            desc = Transaction._readAccountIdLookupOfT_V15(
+                rawtx, 0, skip_type_lookup=True
+            )
+            keep_alive = rawtx.get_next_bytes(1)[0]
+            tx = BalancesTransferAll(desc, keep_alive)
 
         return tx
 
@@ -224,8 +283,14 @@ class Transaction:
             tx = Transaction.deserialize_astar(rawtx, callPrivIdx)
         elif network == "joystream":
             tx = Transaction.deserialize_joy(rawtx, callPrivIdx)
-        elif network == "manta":
-            tx = Transaction.deserialize_manta(rawtx, callPrivIdx)
+        elif network in ("manta", "bifrost", "bifrost-ksm"):
+            if network == "manta":
+                address_type = 77
+            else:
+                address_type = 0
+            tx = Transaction.deserialize_manta(rawtx, callPrivIdx, address_type)
+        elif network == "hydration":
+            tx = Transaction.deserialize_hydration(rawtx, callPrivIdx)
         else:
             tx = TransactionUnknown(rawtx)
 
@@ -247,6 +312,9 @@ class Transaction:
         obj = codec.types.Compact(rawtx)
         tip = obj.decode(check_remaining=False)
         tx.tip = tip if tip is not None else 0
+
+        # optional: assetId(asset location if assetId is not equal to 0)
+        # optional: mode
 
         return tx
 
