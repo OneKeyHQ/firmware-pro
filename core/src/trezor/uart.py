@@ -34,7 +34,11 @@ _CMD_BLE_BUILD_ID = const(16)
 _CMD_BLE_HASH = const(17)
 _CMD_BLE_MAC = const(18)
 CHARING_TYPE = 0  # 1 VIA USB / 2 VIA WIRELESS
-SCREEN: PairCodeDisplay | None = None
+PAIR_CODE_SCREEN: PairCodeDisplay | None = None
+PAIR_ERROR_SCREEN = None
+PAIR_SUCCESS_SCREEN = None
+PENDING_PAIR_CODE: str | None = None
+PENDING_PAIR_FAILED: bool = False
 BLE_ENABLED: bool | None = None
 NRF_VERSION: str | None = None
 BLE_CTRL = io.BLE()
@@ -312,6 +316,55 @@ async def process_push() -> None:
             print("unknown or not care command:", cmd)
 
 
+def _clear_pairing_screens():
+    """Clear existing pairing-related screens."""
+    global PAIR_CODE_SCREEN, PAIR_SUCCESS_SCREEN
+
+    if PAIR_CODE_SCREEN is not None and not PAIR_CODE_SCREEN.destroyed:
+        PAIR_CODE_SCREEN.destroy()
+        PAIR_CODE_SCREEN = None
+    if PAIR_SUCCESS_SCREEN is not None and not PAIR_SUCCESS_SCREEN.destroyed:
+        PAIR_SUCCESS_SCREEN.destroy()
+        PAIR_SUCCESS_SCREEN = None
+
+
+async def _display_pair_code(pair_code: str) -> None:
+    """Display pair code screen and handle user response."""
+    global PAIR_CODE_SCREEN, BLE_PAIR_ABORT
+
+    _clear_pairing_screens()
+    utils.turn_on_lcd_if_possible()
+    from trezor.lvglui.scrs.ble import PairCodeDisplay
+
+    PAIR_CODE_SCREEN = PairCodeDisplay(pair_code)
+    result = await PAIR_CODE_SCREEN.request()
+
+    if result == 0:
+        BLE_PAIR_ABORT = True
+        _send_pair_code_response(False, None)
+    elif result == 1:
+        _send_pair_code_response(True, pair_code)
+
+
+async def _show_pending_pair_code():
+    """Display pending pair code if available and not failed."""
+    global PAIR_CODE_SCREEN, PENDING_PAIR_CODE, PENDING_PAIR_FAILED
+
+    if PENDING_PAIR_CODE is None:
+        return
+
+    if PENDING_PAIR_FAILED:
+        PENDING_PAIR_CODE = None
+        PENDING_PAIR_FAILED = False
+        return
+
+    pair_code = PENDING_PAIR_CODE
+    PENDING_PAIR_CODE = None
+    PENDING_PAIR_FAILED = False
+
+    await _display_pair_code(pair_code)
+
+
 async def _deal_ble_pair(value):
     from trezor.qr import close_camera
 
@@ -323,7 +376,8 @@ async def _deal_ble_pair(value):
 
         PairForbiddenScreen()
         return
-    global BLE_PAIR_ABORT
+
+    global BLE_PAIR_ABORT, PAIR_ERROR_SCREEN, PENDING_PAIR_CODE, PENDING_PAIR_FAILED
     BLE_PAIR_ABORT = False
 
     if not base.device_is_unlocked():
@@ -337,13 +391,22 @@ async def _deal_ble_pair(value):
             if BLE_PAIR_ABORT:
                 return
 
-    global SCREEN
-    pair_codes = value.decode("utf-8")
-    # pair_codes = "".join(list(map(lambda c: chr(c), ustruct.unpack(">6B", value))))
-    utils.turn_on_lcd_if_possible()
-    from trezor.lvglui.scrs.ble import PairCodeDisplay
+    pair_code = value.decode("utf-8")
 
-    SCREEN = PairCodeDisplay(pair_codes)
+    if PAIR_ERROR_SCREEN is not None and not PAIR_ERROR_SCREEN.destroyed:
+        PENDING_PAIR_CODE = pair_code
+        PENDING_PAIR_FAILED = False
+        return
+
+    if PENDING_PAIR_FAILED and PENDING_PAIR_CODE == pair_code:
+        PENDING_PAIR_CODE = None
+        PENDING_PAIR_FAILED = False
+        return
+
+    PENDING_PAIR_CODE = None
+    PENDING_PAIR_FAILED = False
+
+    await _display_pair_code(pair_code)
 
 
 async def _deal_button_press(value: bytes) -> None:
@@ -466,20 +529,33 @@ async def _deal_charging_state(value: bytes) -> None:
 
 async def _deal_pair_res(value: bytes) -> None:
     res = ustruct.unpack(">B", value)[0]
-    if res in [_BLE_PAIR_SUCCESS, _BLE_PAIR_FAILED]:
-        if SCREEN is not None and not SCREEN.destroyed:
-            SCREEN.destroy()
-        if res == _BLE_PAIR_FAILED:
-            global BLE_PAIR_ABORT
-            BLE_PAIR_ABORT = True
-            motor.vibrate(motor.ERROR)
-            StatusBar.get_instance().show_ble(StatusBar.BLE_STATE_ENABLED)
-            if device.is_initialized():
+    if res not in [_BLE_PAIR_SUCCESS, _BLE_PAIR_FAILED]:
+        return
+
+    global PAIR_CODE_SCREEN
+    if PAIR_CODE_SCREEN is not None and not PAIR_CODE_SCREEN.destroyed:
+        PAIR_CODE_SCREEN.destroy()
+        PAIR_CODE_SCREEN = None
+
+    if res == _BLE_PAIR_FAILED:
+        global BLE_PAIR_ABORT, PENDING_PAIR_CODE, PENDING_PAIR_FAILED, PAIR_ERROR_SCREEN
+        BLE_PAIR_ABORT = True
+        motor.vibrate(motor.ERROR)
+        StatusBar.get_instance().show_ble(StatusBar.BLE_STATE_ENABLED)
+
+        if device.is_initialized():
+            if PENDING_PAIR_CODE is not None:
+                PENDING_PAIR_FAILED = True
+            if PAIR_ERROR_SCREEN is None or PAIR_ERROR_SCREEN.destroyed:
                 from trezor.ui.layouts import show_pairing_error
 
-                await show_pairing_error()
-        else:
-            motor.vibrate(motor.SUCCESS)
+                workflow.spawn(show_pairing_error())
+    else:
+        motor.vibrate(motor.SUCCESS)
+        if device.is_initialized():
+            from trezor.ui.layouts import show_pairing_success
+
+            workflow.spawn(show_pairing_success())
 
 
 async def _deal_ble_status(value: bytes) -> None:
@@ -596,6 +672,14 @@ def _request_charging_status():
 def disconnect_ble():
     if utils.BLE_CONNECTED:
         BLE_CTRL.ctrl(0x81, b"\x03")
+
+
+def _send_pair_code_response(accepted: bool, passkey: str | None) -> None:
+    if accepted and passkey:
+        passkey_bytes = passkey.encode("utf-8")
+        BLE_CTRL.ctrl(0x81, b"\x06" + passkey_bytes)
+    else:
+        BLE_CTRL.ctrl(0x81, b"\x07")
 
 
 async def fetch_all():
