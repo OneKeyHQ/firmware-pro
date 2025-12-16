@@ -291,3 +291,41 @@ class ListItemBtnWithSwitch(lv.btn):
 
     def add_state(self) -> None:
         self.switch.add_state(lv.STATE.CHECKED)
+
+    def disable(self) -> None:
+        self.add_style(
+            StyleWrapper()
+            .bg_color(lv_colors.ONEKEY_GRAY_3)
+            .text_color(lv_colors.WHITE_2),
+            0,
+        )
+        self.switch.add_style(StyleWrapper().bg_opa(lv.OPA._40), 0)
+        self.switch.add_style(
+            StyleWrapper().bg_opa(lv.OPA._40),
+            lv.PART.INDICATOR | lv.STATE.CHECKED,
+        )
+        self.switch.add_style(
+            StyleWrapper().bg_opa(lv.OPA._40),
+            lv.PART.KNOB | lv.STATE.DEFAULT,
+        )
+        self.clear_flag(lv.obj.FLAG.CLICKABLE)
+        self.switch.clear_flag(lv.obj.FLAG.CLICKABLE)
+
+    def enable(self) -> None:
+        self.add_style(
+            StyleWrapper()
+            .bg_color(lv_colors.ONEKEY_BLACK_3)
+            .text_color(lv_colors.WHITE),
+            0,
+        )
+        self.switch.add_style(StyleWrapper().bg_opa(lv.OPA.COVER), 0)
+        self.switch.add_style(
+            StyleWrapper().bg_opa(lv.OPA.COVER),
+            lv.PART.INDICATOR | lv.STATE.CHECKED,
+        )
+        self.switch.add_style(
+            StyleWrapper().bg_opa(lv.OPA.COVER),
+            lv.PART.KNOB | lv.STATE.DEFAULT,
+        )
+        self.add_flag(lv.obj.FLAG.CLICKABLE)
+        self.switch.add_flag(lv.obj.FLAG.CLICKABLE)

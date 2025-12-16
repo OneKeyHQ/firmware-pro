@@ -93,6 +93,8 @@ _FIDO2_COUNTER_VALUE: int | None = None
 _FIDO_ENABLED_VALUE: bool | None = None
 _TURBOMODE_VALUE: bool | None = None
 _DEVICE_NAME_DISPLAY_ENABLED_VALUE: bool | None = None
+_USB_ENABLED_VALUE: bool | None = None
+_BLE_ENABLED_BACKUP_VALUE: bool | None = None
 
 if utils.USE_THD89:
     import uctypes
@@ -264,6 +266,10 @@ if utils.USE_THD89:
     offset += uctypes.sizeof(struct_bool, uctypes.LITTLE_ENDIAN)
     struct_public["lockscreen"] = (offset, struct_lockscreen)
     offset += uctypes.sizeof(struct_lockscreen, uctypes.LITTLE_ENDIAN)
+    struct_public["usb_enabled"] = (offset, struct_bool)
+    offset += uctypes.sizeof(struct_bool, uctypes.LITTLE_ENDIAN)
+    struct_public["ble_enabled_bak"] = (offset, struct_bool)
+    offset += uctypes.sizeof(struct_bool, uctypes.LITTLE_ENDIAN)
 
     # public_field = uctypes.struct(0, struct_public, uctypes.LITTLE_ENDIAN)
     assert (
@@ -329,6 +335,8 @@ if utils.USE_THD89:
     _FIDO_ENABLED = struct_public["fido_enabled"][0]
     _TURBOMODE = struct_public["turbomode"][0]
     _DEVICE_NAME_DISPLAY_ENABLED = struct_public["device_name_display_enabled"][0]
+    _USB_ENABLED = struct_public["usb_enabled"][0]
+    _BLE_ENABLED_BACKUP = struct_public["ble_enabled_bak"][0]
     U2F_COUNTER = 0x00  # u2f counter
 
     # recovery key
@@ -399,6 +407,8 @@ else:
     _FIDO_ENABLED = (0x91)  # bool
     _TURBOMODE = (0x92)  # bool
     _DEVICE_NAME_DISPLAY_ENABLED = (0x93)  # bool
+    _USB_ENABLED = (0x94)  # bool
+    _BLE_ENABLED_BACKUP = (0x95)  # bool
     # fmt: on
 SAFETY_CHECK_LEVEL_STRICT: Literal[0] = const(0)
 SAFETY_CHECK_LEVEL_PROMPT: Literal[1] = const(1)
@@ -498,6 +508,30 @@ def set_ble_status(enable: bool) -> None:
     _BLE_ENABLED_VALUE = enable
 
 
+def ble_enabled_backup() -> bool:
+    global _BLE_ENABLED_BACKUP_VALUE
+    if _BLE_ENABLED_BACKUP_VALUE is None:
+        ble_enabled = common.get(_NAMESPACE, _BLE_ENABLED_BACKUP, public=True)
+        if ble_enabled == common._FALSE_BYTE:
+            _BLE_ENABLED_BACKUP_VALUE = False
+        else:
+            _BLE_ENABLED_BACKUP_VALUE = True
+    return _BLE_ENABLED_BACKUP_VALUE
+
+
+def set_ble_status_backup(enable: bool) -> None:
+    global _BLE_ENABLED_BACKUP_VALUE
+    if _BLE_ENABLED_BACKUP_VALUE == enable:
+        return
+    common.set_bool(
+        _NAMESPACE,
+        _BLE_ENABLED_BACKUP,
+        enable,
+        public=True,
+    )
+    _BLE_ENABLED_BACKUP_VALUE = enable
+
+
 def set_ble_version(version: str) -> None:
     """Set ble firmware version."""
     if len(version.encode("utf-8")) > BLE_VERSION_MAXLENGTH:
@@ -585,6 +619,30 @@ def set_usb_lock_enable(enable: bool) -> None:
     global _USE_USB_PROTECT_VALUE
     common.set_bool(_NAMESPACE, _USE_USB_PROTECT, enable, public=True)
     _USE_USB_PROTECT_VALUE = enable
+
+
+def is_usb_enabled() -> bool:
+    global _USB_ENABLED_VALUE
+    if _USB_ENABLED_VALUE is None:
+        usb_enabled = common.get(_NAMESPACE, _USB_ENABLED, public=True)
+        if usb_enabled == common._FALSE_BYTE:
+            _USB_ENABLED_VALUE = False
+        else:
+            _USB_ENABLED_VALUE = True
+    return _USB_ENABLED_VALUE
+
+
+def set_usb_status(enable: bool) -> None:
+    global _USB_ENABLED_VALUE
+    if _USB_ENABLED_VALUE == enable:
+        return
+    common.set_bool(
+        _NAMESPACE,
+        _USB_ENABLED,
+        enable,
+        public=True,
+    )
+    _USB_ENABLED_VALUE = enable
 
 
 def enable_fingerprint_unlock(enable: bool) -> None:

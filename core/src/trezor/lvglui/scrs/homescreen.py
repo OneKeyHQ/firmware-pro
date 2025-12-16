@@ -1024,27 +1024,17 @@ class MainScreen(Screen):
             self.show_page(0)
 
         def init_items(self):
-            if utils.BITCOIN_ONLY:
-                items = [
-                    ("connect", "app-connect", i18n_keys.APP__CONNECT_WALLET),
-                    ("scan", "app-scan", i18n_keys.APP__SCAN),
-                    ("my_address", "app-address", i18n_keys.APP__ADDRESS),
-                    ("settings", "app-settings", i18n_keys.APP__SETTINGS),
-                    ("backup", "app-backup", i18n_keys.APP__BACK_UP),
-                    ("nft", "app-nft", i18n_keys.APP__NFT_GALLERY),
-                    ("guide", "app-tips", i18n_keys.APP__TIPS),
-                ]
-            else:
-                items = [
-                    ("connect", "app-connect", i18n_keys.APP__CONNECT_WALLET),
-                    ("scan", "app-scan", i18n_keys.APP__SCAN),
-                    ("my_address", "app-address", i18n_keys.APP__ADDRESS),
-                    ("settings", "app-settings", i18n_keys.APP__SETTINGS),
-                    ("passkey", "app-keys", i18n_keys.FIDO_FIDO_KEYS_LABEL),
-                    ("backup", "app-backup", i18n_keys.APP__BACK_UP),
-                    ("nft", "app-nft", i18n_keys.APP__NFT_GALLERY),
-                    ("guide", "app-tips", i18n_keys.APP__TIPS),
-                ]
+            items = [
+                ("connect", "app-connect", i18n_keys.APP__CONNECT_WALLET),
+                ("scan", "app-scan", i18n_keys.APP__SCAN),
+                ("my_address", "app-address", i18n_keys.APP__ADDRESS),
+                ("settings", "app-settings", i18n_keys.APP__SETTINGS),
+                ("backup", "app-backup", i18n_keys.APP__BACK_UP),
+                ("guide", "app-tips", i18n_keys.APP__TIPS),
+            ]
+            if not utils.BITCOIN_ONLY:
+                items.insert(4, ("passkey", "app-keys", i18n_keys.FIDO_FIDO_KEYS_LABEL))
+                items.insert(6, ("nft", "app-nft", i18n_keys.APP__NFT_GALLERY))
 
             items_per_page = 4
             cols = 2
@@ -2455,6 +2445,12 @@ class ConnectWalletWays(Screen):
                 self._load_scr(self)
             return
         airgap_enabled = storage_device.is_airgap_mode()
+        usb_enabled = False
+        ble_enabled = False
+        if not airgap_enabled:
+            usb_enabled = storage_device.is_usb_enabled()
+            ble_enabled = uart.is_ble_opened()
+
         if airgap_enabled:
             self.waring_bar = Banner(
                 self.content_area,
@@ -2478,11 +2474,12 @@ class ConnectWalletWays(Screen):
             _(i18n_keys.ITEM__USB),
             left_img_src="A:/res/connect-way-usb-on.png",
         )
-        if airgap_enabled:
-            self.by_ble.disable()
-            self.by_ble.img_left.set_src("A:/res/connect-way-ble-off.png")
+        if not usb_enabled:
             self.by_usb.disable()
             self.by_usb.img_left.set_src("A:/res/connect-way-usb-off.png")
+        if not ble_enabled:
+            self.by_ble.disable()
+            self.by_ble.img_left.set_src("A:/res/connect-way-ble-off.png")
 
         # self.by_qrcode = ListItemBtn(
         #     self.container,
@@ -2491,14 +2488,26 @@ class ConnectWalletWays(Screen):
         # )
         self.add_event_cb(self.on_event, lv.EVENT.CLICKED, None)
 
+        if (
+            storage_device.is_passphrase_enabled()
+            or passphrase.is_passphrase_pin_enabled()
+        ):
+            retrieval_encoder()
+
+    def show_connect_wallet_guide(self, connect_type):
+        if not utils.BITCOIN_ONLY:
+            ConnectWalletGuide(connect_type, self)
+        else:
+            ConnectWalletGuide.show_wallet_tutorial("onekey", connect_type)
+
     def on_event(self, event_obj):
         code = event_obj.code
         target = event_obj.get_target()
         if code == lv.EVENT.CLICKED:
             if target == self.by_ble:
-                ConnectWalletGuide("ble", self)
+                self.show_connect_wallet_guide("ble")
             elif target == self.by_usb:
-                ConnectWalletGuide("usb", self)
+                self.show_connect_wallet_guide("usb")
             # elif target == self.by_qrcode:
             #     gc.collect()
             #     WalletList(self)
@@ -2507,7 +2516,10 @@ class ConnectWalletWays(Screen):
 
     def on_click_ext(self, target):
         if target == self.rti_btn:
-            QRWalletTips(self)
+            if not utils.BITCOIN_ONLY:
+                QRWalletTips(self)
+            else:
+                WalletList.connect_onekey(target, bitcoin_only=True)
 
     def _load_scr(self, scr: "Screen", back: bool = False) -> None:
         lv.scr_load(scr)
@@ -2587,108 +2599,127 @@ class ConnectWalletGuide(Screen):
 
         self.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
 
+    @staticmethod
+    def _get_wallet_tutorial_config(wallet_type, connect_type):
+        is_ble = connect_type == "ble"
+        configs = {
+            "onekey": {
+                "title": i18n_keys.ITEM__ONEKEY_WALLET,
+                "subtitle": i18n_keys.CONTENT__IOS_ANDROID
+                if is_ble
+                else i18n_keys.CONTENT__DESKTOP_BROWSER_EXTENSION,
+                "steps": [
+                    (
+                        i18n_keys.FORM__DOWNLOAD_ONEKEY_APP,
+                        i18n_keys.FORM__DOWNLOAD_ONEKEY_APP_MOBILE
+                        if is_ble
+                        else i18n_keys.FORM__DOWNLOAD_ONEKEY_APP_DESKTOP,
+                    ),
+                    (
+                        i18n_keys.FORM__CONNECT_VIA_BLUETOOTH
+                        if is_ble
+                        else i18n_keys.FORM__CONNECT_YOUR_DEVICE,
+                        i18n_keys.FORM__CONNECT_VIA_BLUETOOTH_DESC
+                        if is_ble
+                        else i18n_keys.FORM__CONNECT_YOUR_DEVICE_DESC,
+                    ),
+                    (
+                        i18n_keys.FORM__PAIR_DEVICES
+                        if is_ble
+                        else i18n_keys.FORM__START_THE_CONNECTION,
+                        i18n_keys.FORM__PAIR_DEVICES_DESC
+                        if is_ble
+                        else i18n_keys.FORM__START_THE_CONNECTION_DESC,
+                    ),
+                ],
+                "logo": "A:/res/ok-logo-96.png",
+                "url": "https://help.onekey.so/articles/11461081"
+                if is_ble
+                else "https://help.onekey.so/articles/11461081#h_01HMWVPP85HWYTZGPQQTB300VX",
+            },
+            "metamask": {
+                "title": i18n_keys.ITEM__METAMASK_WALLET,
+                "subtitle": i18n_keys.CONTENT__BROWSER_EXTENSION,
+                "steps": [
+                    (
+                        i18n_keys.FORM__ACCESS_WALLET,
+                        i18n_keys.FORM__OPEN_METAMASK_IN_YOUR_BROWSER,
+                    ),
+                    (
+                        i18n_keys.FORM__CONNECT_HARDWARE_WALLET,
+                        i18n_keys.FORM__CONNECT_HARDWARE_WALLET_DESC,
+                    ),
+                    (
+                        i18n_keys.FORM__UNLOCK_ACCOUNT,
+                        i18n_keys.FORM__UNLOCK_ACCOUNT_DESC,
+                    ),
+                ],
+                "logo": "A:/res/mm-logo-96.png",
+                "url": "https://help.onekey.so/articles/11461106",
+            },
+            "okx": {
+                "title": i18n_keys.ITEM__OKX_WALLET,
+                "subtitle": i18n_keys.CONTENT__IOS_ANDROID
+                if is_ble
+                else i18n_keys.CONTENT__BROWSER_EXTENSION,
+                "steps": [
+                    (
+                        i18n_keys.FORM__ACCESS_WALLET,
+                        i18n_keys.FORM__ACCESS_WALLET_DESC
+                        if is_ble
+                        else i18n_keys.FORM__OPEN_THE_OKX_WALLET_EXTENSION,
+                    ),
+                    (
+                        i18n_keys.FORM__CONNECT_VIA_BLUETOOTH
+                        if is_ble
+                        else i18n_keys.FORM__INSTALL_ONEKEY_BRIDGE,
+                        i18n_keys.FORM__CONNECT_VIA_BLUETOOTH_DESC
+                        if is_ble
+                        else i18n_keys.FORM__INSTALL_ONEKEY_BRIDGE_DESC,
+                    ),
+                    (
+                        i18n_keys.FORM__IMPORT_WALLET_ACCOUNTS,
+                        i18n_keys.FORM__IMPORT_WALLET_ACCOUNTS_DESC
+                        if is_ble
+                        else i18n_keys.FORM__OKX_EXTENSION_IMPORT_WALLET_ACCOUNTS_DESC,
+                    ),
+                ],
+                "logo": "A:/res/okx-logo-96.png",
+                "url": "https://help.onekey.so/articles/11461103",
+            },
+        }
+        assert wallet_type in configs, f"Invalid wallet type: {wallet_type}"
+        return configs[wallet_type]
+
+    @staticmethod
+    def show_wallet_tutorial(wallet_type, connect_type):
+        config = ConnectWalletGuide._get_wallet_tutorial_config(
+            wallet_type, connect_type
+        )
+        from trezor.lvglui.scrs.template import ConnectWalletTutorial
+
+        ConnectWalletTutorial(
+            _(config["title"]),
+            _(config["subtitle"]),
+            [(_(step[0]), _(step[1])) for step in config["steps"]],
+            config["url"],
+            config["logo"],
+        )
+
     def on_click(self, event_obj):
         code = event_obj.code
         target = event_obj.get_target()
         if code == lv.EVENT.CLICKED:
-            if target not in [self.onekey, self.mm, self.okx]:
-                return
-            from trezor.lvglui.scrs.template import ConnectWalletTutorial
-
             if target == self.onekey:
-                title = _(i18n_keys.ITEM__ONEKEY_WALLET)
-                subtitle = (
-                    _(i18n_keys.CONTENT__IOS_ANDROID)
-                    if self.connect_type == "ble"
-                    else _(i18n_keys.CONTENT__DESKTOP_BROWSER_EXTENSION)
-                )
-                steps = [
-                    (
-                        _(i18n_keys.FORM__DOWNLOAD_ONEKEY_APP),
-                        _(i18n_keys.FORM__DOWNLOAD_ONEKEY_APP_MOBILE)
-                        if self.connect_type == "ble"
-                        else _(i18n_keys.FORM__DOWNLOAD_ONEKEY_APP_DESKTOP),
-                    ),
-                    (
-                        _(i18n_keys.FORM__CONNECT_VIA_BLUETOOTH)
-                        if self.connect_type == "ble"
-                        else _(i18n_keys.FORM__CONNECT_YOUR_DEVICE),
-                        _(i18n_keys.FORM__CONNECT_VIA_BLUETOOTH_DESC)
-                        if self.connect_type == "ble"
-                        else _(i18n_keys.FORM__CONNECT_YOUR_DEVICE_DESC),
-                    ),
-                    (
-                        _(i18n_keys.FORM__PAIR_DEVICES)
-                        if self.connect_type == "ble"
-                        else _(i18n_keys.FORM__START_THE_CONNECTION),
-                        _(i18n_keys.FORM__PAIR_DEVICES_DESC)
-                        if self.connect_type == "ble"
-                        else _(i18n_keys.FORM__START_THE_CONNECTION_DESC),
-                    ),
-                ]
-                logo = "A:/res/ok-logo-96.png"
-                url = (
-                    "https://help.onekey.so/articles/11461081"
-                    if self.connect_type == "ble"
-                    else "https://help.onekey.so/articles/11461081#h_01HMWVPP85HWYTZGPQQTB300VX"
-                )
+                wallet_type = "onekey"
             elif target == self.mm:
-                title = _(i18n_keys.ITEM__METAMASK_WALLET)
-                subtitle = _(i18n_keys.CONTENT__BROWSER_EXTENSION)
-                steps = [
-                    (
-                        _(i18n_keys.FORM__ACCESS_WALLET),
-                        _(i18n_keys.FORM__OPEN_METAMASK_IN_YOUR_BROWSER),
-                    ),
-                    (
-                        _(i18n_keys.FORM__CONNECT_HARDWARE_WALLET),
-                        _(i18n_keys.FORM__CONNECT_HARDWARE_WALLET_DESC),
-                    ),
-                    (
-                        _(i18n_keys.FORM__UNLOCK_ACCOUNT),
-                        _(i18n_keys.FORM__UNLOCK_ACCOUNT_DESC),
-                    ),
-                ]
-                logo = "A:/res/mm-logo-96.png"
-                url = "https://help.onekey.so/articles/11461106"
+                wallet_type = "metamask"
+            elif target == self.okx:
+                wallet_type = "okx"
             else:
-                title = _(i18n_keys.ITEM__OKX_WALLET)
-                subtitle = (
-                    _(i18n_keys.CONTENT__IOS_ANDROID)
-                    if self.connect_type == "ble"
-                    else _(i18n_keys.CONTENT__BROWSER_EXTENSION)
-                )
-                steps = [
-                    (
-                        _(i18n_keys.FORM__ACCESS_WALLET),
-                        _(i18n_keys.FORM__ACCESS_WALLET_DESC)
-                        if self.connect_type == "ble"
-                        else _(i18n_keys.FORM__OPEN_THE_OKX_WALLET_EXTENSION),
-                    ),
-                    (
-                        _(i18n_keys.FORM__CONNECT_VIA_BLUETOOTH)
-                        if self.connect_type == "ble"
-                        else _(i18n_keys.FORM__INSTALL_ONEKEY_BRIDGE),
-                        _(i18n_keys.FORM__CONNECT_VIA_BLUETOOTH_DESC)
-                        if self.connect_type == "ble"
-                        else _(i18n_keys.FORM__INSTALL_ONEKEY_BRIDGE_DESC),
-                    ),
-                    (
-                        _(i18n_keys.FORM__IMPORT_WALLET_ACCOUNTS),
-                        _(i18n_keys.FORM__IMPORT_WALLET_ACCOUNTS_DESC)
-                        if self.connect_type == "ble"
-                        else _(
-                            i18n_keys.FORM__OKX_EXTENSION_IMPORT_WALLET_ACCOUNTS_DESC
-                        ),
-                    ),
-                ]
-                logo = "A:/res/okx-logo-96.png"
-                url = (
-                    " https://help.onekey.so/articles/11461103"
-                    if self.connect_type == "ble"
-                    else "https://help.onekey.so/articles/11461103"
-                )
-            ConnectWalletTutorial(title, subtitle, steps, url, logo)
+                raise ValueError(f"Invalid wallet type: {target}")
+
+            ConnectWalletGuide.show_wallet_tutorial(wallet_type, self.connect_type)
 
     def _load_scr(self, scr: "Screen", back: bool = False) -> None:
         lv.scr_load(scr)
@@ -2798,7 +2829,8 @@ class WalletList(Screen):
     def _load_scr(self, scr: "Screen", back: bool = False) -> None:
         lv.scr_load(scr)
 
-    def connect_onekey(self, target):
+    @staticmethod
+    def connect_onekey(target, bitcoin_only: bool = False):
         from trezor.qr import get_encoder
 
         if passphrase.is_enabled():
@@ -2819,8 +2851,10 @@ class WalletList(Screen):
                 _(i18n_keys.ITEM__ONEKEY_WALLET)
             ),
             _(i18n_keys.CONTENT__OPEN_ONEKEY_SCAN_THE_QRCODE),
-            _(i18n_keys.CONTENT__BTC_SOL_ETH_N_EVM_NETWORKS),
-            "A:/res/support-chains-ok-qr.png",
+            _(i18n_keys.CONTENT__BTC_SOL_ETH_N_EVM_NETWORKS)
+            if not bitcoin_only
+            else None,
+            "A:/res/support-chains-ok-qr.png" if not bitcoin_only else None,
             None,
             encoder=encoder,
         )
@@ -2935,7 +2969,7 @@ class BackupWallet(Screen):
 
         if await DUMMY_CONTEXT.wait(screen.request()):
             screen.destroy()
-            AirGapSetting(self)
+            WalletScreen(self)
         else:
             screen.destroy()
 
@@ -3030,11 +3064,11 @@ class ConnectWallet(FullSizeWindow):
         if code == lv.EVENT.CLICKED:
             if utils.lcd_resume():
                 return
-        if target == self.nav_back.nav_btn:
-            self.destroy()
-        elif hasattr(self, "btn_yes") and target == self.btn_yes:
-            DynQr(self.encoder)
-            self.destroy(100)
+            if target == self.nav_back.nav_btn:
+                self.destroy()
+            elif hasattr(self, "btn_yes") and target == self.btn_yes:
+                DynQr(self.encoder)
+                self.destroy(100)
 
     def on_nav_back(self, event_obj):
         code = event_obj.code
@@ -7482,8 +7516,12 @@ class WalletScreen(AnimScreen):
             targets.append(self.advanced_zone)
         if hasattr(self, "air_gap") and self.air_gap:
             targets.append(self.air_gap)
-        if hasattr(self, "description") and self.description:
-            targets.append(self.description)
+        if hasattr(self, "usb") and self.usb:
+            targets.append(self.usb)
+        if hasattr(self, "ble") and self.ble:
+            targets.append(self.ble)
+        # if hasattr(self, "description") and self.description:
+        #     targets.append(self.description)
         if hasattr(self, "danger_zone") and self.danger_zone:
             targets.append(self.danger_zone)
         return targets
@@ -7507,6 +7545,8 @@ class WalletScreen(AnimScreen):
             )
         self.passphrase = ListItemBtn(self.container, _(i18n_keys.ITEM__PASSPHRASE))
         self.turbo_mode = ListItemBtn(self.container, _(i18n_keys.TITLE__TURBO_MODE))
+        if utils.BITCOIN_ONLY:
+            self.turbo_mode.add_flag(lv.obj.FLAG.HIDDEN)
         self.trezor_mode = ListItemBtnWithSwitch(
             self.container, _(i18n_keys.ITEM__COMPATIBLE_WITH_TREZOR)
         )
@@ -7529,40 +7569,66 @@ class WalletScreen(AnimScreen):
         self.advanced_zone.set_text(_(i18n_keys.TITLE__ADVANCED))
         self.advanced_zone.align_to(self.container, lv.ALIGN.OUT_BOTTOM_LEFT, 12, 28)
 
+        self.container_advanced = ContainerFlexCol(
+            self.content_area,
+            self.advanced_zone,
+            align=lv.ALIGN.OUT_BOTTOM_LEFT,
+            pos=(-12, 16),
+            padding_row=2,
+        )
+        switch_style = (
+            StyleWrapper().bg_color(lv_colors.ONEKEY_BLACK_3).bg_opa(lv.OPA.COVER)
+        )
         self.air_gap = ListItemBtnWithSwitch(
-            self.content_area, _(i18n_keys.ITEM__AIR_GAP_MODE)
+            self.container_advanced, _(i18n_keys.ITEM__AIR_GAP_MODE)
         )
-        self.air_gap.add_style(
-            StyleWrapper().bg_color(lv_colors.ONEKEY_BLACK_3).bg_opa(lv.OPA.COVER), 0
+        self.air_gap.add_style(switch_style, 0)
+        self.usb = ListItemBtnWithSwitch(
+            self.container_advanced, _(i18n_keys.ITEM__USB)
         )
-        self.air_gap.set_style_radius(40, 0)
-        self.air_gap.align_to(self.advanced_zone, lv.ALIGN.OUT_BOTTOM_LEFT, -12, 16)
-
-        self.description = lv.label(self.content_area)
-        self.description.set_size(456, lv.SIZE.CONTENT)
-        self.description.set_long_mode(lv.label.LONG.WRAP)
-        self.description.set_style_text_color(lv_colors.ONEKEY_GRAY, lv.STATE.DEFAULT)
-        self.description.set_style_text_font(font_GeistRegular26, lv.STATE.DEFAULT)
-        self.description.set_style_text_line_space(3, 0)
-        self.description.align_to(self.air_gap, lv.ALIGN.OUT_BOTTOM_LEFT, 12, 16)
+        self.usb.add_style(switch_style, 0)
+        self.ble = ListItemBtnWithSwitch(
+            self.container_advanced, _(i18n_keys.ITEM__BLUETOOTH)
+        )
+        self.ble.add_style(switch_style, 0)
+        # self.description = lv.label(self.content_area)
+        # self.description.set_size(456, lv.SIZE.CONTENT)
+        # self.description.set_long_mode(lv.label.LONG.WRAP)
+        # self.description.set_style_text_color(lv_colors.ONEKEY_GRAY, lv.STATE.DEFAULT)
+        # self.description.set_style_text_font(font_GeistRegular26, lv.STATE.DEFAULT)
+        # self.description.set_style_text_line_space(3, 0)
+        # self.description.align_to(self.air_gap, lv.ALIGN.OUT_BOTTOM_LEFT, 12, 16)
         air_gap_enabled = storage_device.is_airgap_mode()
         if air_gap_enabled:
             self.air_gap.add_state()
-            self.description.set_text(
-                _(
-                    i18n_keys.CONTENT__BLUETOOTH_USB_AND_NFT_TRANSFER_FUNCTIONS_HAVE_BEEN_DISABLED
-                )
-            )
+            self.usb.disable()
+            self.ble.disable()
+            # self.description.set_text(
+            #     _(
+            #         i18n_keys.CONTENT__BLUETOOTH_USB_AND_NFT_TRANSFER_FUNCTIONS_HAVE_BEEN_DISABLED
+            #     )
+            # )
         else:
             self.air_gap.clear_state()
-            self.description.set_text(
-                _(
-                    i18n_keys.CONTENT__AFTER_ENABLING_THE_AIRGAP_BLUETOOTH_USB_AND_NFC_TRANSFER_WILL_BE_DISABLED_SIMULTANEOUSLY
-                )
-            )
-        self.air_gap.add_event_cb(self.on_event, lv.EVENT.VALUE_CHANGED, None)
-        self.air_gap.add_event_cb(self.on_event, lv.EVENT.READY, None)
-        self.air_gap.add_event_cb(self.on_event, lv.EVENT.CANCEL, None)
+            if storage_device.is_usb_enabled():
+                self.usb.add_state()
+            else:
+                self.usb.clear_state()
+            if uart.is_ble_opened():
+                self.ble.add_state()
+            else:
+                self.ble.clear_state()
+            # self.description.set_text(
+            #     _(
+            #         i18n_keys.CONTENT__AFTER_ENABLING_THE_AIRGAP_BLUETOOTH_USB_AND_NFC_TRANSFER_WILL_BE_DISABLED_SIMULTANEOUSLY
+            #     )
+            # )
+
+        self.container_advanced.add_event_cb(
+            self.on_event, lv.EVENT.VALUE_CHANGED, None
+        )
+        self.container_advanced.add_event_cb(self.on_event, lv.EVENT.READY, None)
+        self.container_advanced.add_event_cb(self.on_event, lv.EVENT.CANCEL, None)
         # Danger Zone: Reset Device
         self.danger_zone = lv.label(self.content_area)
         self.danger_zone.set_size(456, lv.SIZE.CONTENT)
@@ -7570,7 +7636,9 @@ class WalletScreen(AnimScreen):
         self.danger_zone.set_style_text_color(lv_colors.WHITE_2, lv.STATE.DEFAULT)
         self.danger_zone.set_style_text_font(font_GeistSemiBold30, lv.STATE.DEFAULT)
         self.danger_zone.set_text(_(i18n_keys.TITLE__DANGER_ZONE))
-        self.danger_zone.align_to(self.description, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 40)
+        self.danger_zone.align_to(
+            self.container_advanced, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 40
+        )
         self.rest_device = ListItemBtn(
             self.content_area,
             _(i18n_keys.ITEM__RESET_DEVICE),
@@ -7646,33 +7714,47 @@ class WalletScreen(AnimScreen):
                         enable=False,
                         callback_obj=self.air_gap,
                     )
+            elif target == self.usb.switch:
+                if target.has_state(lv.STATE.CHECKED):
+                    utils.enable_usb()
+                else:
+                    utils.disable_usb()
+            elif target == self.ble.switch:
+                if target.has_state(lv.STATE.CHECKED):
+                    utils.enable_ble()
+                else:
+                    utils.disable_ble()
         elif code == lv.EVENT.READY:
             if not storage_device.is_airgap_mode():
-                self.description.set_text(
-                    _(
-                        i18n_keys.CONTENT__BLUETOOTH_USB_AND_NFT_TRANSFER_FUNCTIONS_HAVE_BEEN_DISABLED
-                    )
-                )
-                self.danger_zone.align_to(
-                    self.description, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 40
-                )
-                self.rest_device.align_to(
-                    self.danger_zone, lv.ALIGN.OUT_BOTTOM_MID, -12, 16
-                )
+                # self.description.set_text(
+                #     _(
+                #         i18n_keys.CONTENT__BLUETOOTH_USB_AND_NFT_TRANSFER_FUNCTIONS_HAVE_BEEN_DISABLED
+                #     )
+                # )
+                # self.danger_zone.align_to(
+                #     self.description, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 40
+                # )
+                # self.rest_device.align_to(
+                #     self.danger_zone, lv.ALIGN.OUT_BOTTOM_MID, -12, 16
+                # )
                 utils.enable_airgap_mode()
+                self.usb.disable()
+                self.ble.disable()
             else:
-                self.description.set_text(
-                    _(
-                        i18n_keys.CONTENT__AFTER_ENABLING_THE_AIRGAP_BLUETOOTH_USB_AND_NFC_TRANSFER_WILL_BE_DISABLED_SIMULTANEOUSLY
-                    )
-                )
-                self.danger_zone.align_to(
-                    self.description, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 40
-                )
-                self.rest_device.align_to(
-                    self.danger_zone, lv.ALIGN.OUT_BOTTOM_MID, -12, 16
-                )
+                # self.description.set_text(
+                #     _(
+                #         i18n_keys.CONTENT__AFTER_ENABLING_THE_AIRGAP_BLUETOOTH_USB_AND_NFC_TRANSFER_WILL_BE_DISABLED_SIMULTANEOUSLY
+                #     )
+                # )
+                # self.danger_zone.align_to(
+                #     self.description, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 40
+                # )
+                # self.rest_device.align_to(
+                #     self.danger_zone, lv.ALIGN.OUT_BOTTOM_MID, -12, 16
+                # )
                 utils.disable_airgap_mode()
+                self.usb.enable()
+                self.ble.enable()
         elif code == lv.EVENT.CANCEL:
             if storage_device.is_airgap_mode():
                 self.air_gap.add_state()

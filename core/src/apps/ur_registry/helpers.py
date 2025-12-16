@@ -62,6 +62,7 @@ def generate_HDKey_ED25519(
 def reveal_name(ctx, root_fingerprint: int, eth_only: bool = False) -> str:
     from apps.common import passphrase
     import storage
+    from trezor import utils
 
     device_name = "OneKey Pro"
 
@@ -71,6 +72,8 @@ def reveal_name(ctx, root_fingerprint: int, eth_only: bool = False) -> str:
 
     if serial_no:
         name_components.append(serial_no)
+    if utils.BITCOIN_ONLY:
+        name_components.append("btc")
 
     name = ":".join(name_components)
     if (passphrase.is_enabled() and ctx.passphrase) or (

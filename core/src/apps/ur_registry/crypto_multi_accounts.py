@@ -149,9 +149,6 @@ async def generate_crypto_multi_accounts(ctx: wire.Context) -> UREncoder:
     from storage import device
     from trezor import utils
 
-    eth_pub = await bitcoin_get_public_key.get_public_key(
-        ctx, GetPublicKey(address_n=paths.parse_path(helpers.ETH_STANDARD_PREFIX))
-    )
     btc_legacy_pub = await bitcoin_get_public_key.get_public_key(
         ctx, GetPublicKey(address_n=paths.parse_path(helpers.BTC_LEGACY_PREFIX))
     )
@@ -164,35 +161,47 @@ async def generate_crypto_multi_accounts(ctx: wire.Context) -> UREncoder:
     btc_taproot_pub = await bitcoin_get_public_key.get_public_key(
         ctx, GetPublicKey(address_n=paths.parse_path(helpers.BTC_TAPROOT_PREFIX))
     )
-    tron_pub = await bitcoin_get_public_key.get_public_key(
-        ctx,
-        GetPublicKey(address_n=paths.parse_path(helpers.TRON_STANDARD_PATH)),
-    )
-    sol_pubs = await misc_batch_get_pubkeys.batch_get_pubkeys(
-        ctx,
-        BatchGetPublickeys(
-            ecdsa_curve_name="ed25519",
-            paths=[
-                Path(address_n=paths.parse_path(helpers.SOL_STANDARD_PATH)),
-                Path(address_n=paths.parse_path(helpers.SOL_LEDGER_LIVE_PATH)),
-            ],
-        ),
-    )
+    keys = [
+        helpers.generate_hdkey_BTCLegacy(btc_legacy_pub),
+        helpers.generate_hdkey_BTCSegWit(btc_segwit_pub),
+        helpers.generate_hdkey_BTCNativeSegWit(btc_native_segwit_pub),
+        helpers.generate_hdkey_BTCTaproot(btc_taproot_pub),
+    ]
+    if not utils.BITCOIN_ONLY:
+        eth_pub = await bitcoin_get_public_key.get_public_key(
+            ctx, GetPublicKey(address_n=paths.parse_path(helpers.ETH_STANDARD_PREFIX))
+        )
+        tron_pub = await bitcoin_get_public_key.get_public_key(
+            ctx,
+            GetPublicKey(address_n=paths.parse_path(helpers.TRON_STANDARD_PATH)),
+        )
+        sol_pubs = await misc_batch_get_pubkeys.batch_get_pubkeys(
+            ctx,
+            BatchGetPublickeys(
+                ecdsa_curve_name="ed25519",
+                paths=[
+                    Path(address_n=paths.parse_path(helpers.SOL_STANDARD_PATH)),
+                    Path(address_n=paths.parse_path(helpers.SOL_LEDGER_LIVE_PATH)),
+                ],
+            ),
+        )
+        keys.extend(
+            [
+                helpers.generate_hdkey_ETHStandard(ctx, eth_pub, False),
+                helpers.generate_hdkey_TRONStandard(tron_pub),
+                helpers.generate_hdkey_SOLStandard(sol_pubs.public_keys[0]),
+                helpers.generate_hdkey_SOLLedgerLive(sol_pubs.public_keys[1]),
+            ]
+        )
 
-    assert eth_pub.root_fingerprint is not None, "Root fingerprint should not be None"
-    name = helpers.reveal_name(ctx, eth_pub.root_fingerprint)
+    assert (
+        btc_legacy_pub.root_fingerprint is not None
+    ), "Root fingerprint should not be None"
+    name = helpers.reveal_name(ctx, btc_legacy_pub.root_fingerprint)
+
     cma = CryptoMultiAccounts(
-        eth_pub.root_fingerprint,
-        [
-            helpers.generate_hdkey_ETHStandard(ctx, eth_pub, False),
-            helpers.generate_hdkey_BTCLegacy(btc_legacy_pub),
-            helpers.generate_hdkey_BTCSegWit(btc_segwit_pub),
-            helpers.generate_hdkey_BTCNativeSegWit(btc_native_segwit_pub),
-            helpers.generate_hdkey_BTCTaproot(btc_taproot_pub),
-            helpers.generate_hdkey_SOLStandard(sol_pubs.public_keys[0]),
-            helpers.generate_hdkey_TRONStandard(tron_pub),
-            helpers.generate_hdkey_SOLLedgerLive(sol_pubs.public_keys[1]),
-        ],
+        btc_legacy_pub.root_fingerprint,
+        keys,
         device=name,
         device_id=device.get_device_id(),
         device_version=utils.ONEKEY_VERSION,

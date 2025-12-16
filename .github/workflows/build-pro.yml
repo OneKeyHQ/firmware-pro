@@ -27,8 +27,8 @@ jobs:
             bitcoin_only: 1
             secret_key_1_name: "SECRET_KEY_1"
             secret_key_2_name: "SECRET_KEY_2"
-            output_dir: prod-bc-only
-            artifact_suffix: "prod-bc-only"
+            output_dir: prod-btc-only
+            artifact_suffix: "prod-btc-only"
           - production: 0
             bitcoin_only: 0
             secret_key_1_name: "SECRET_QA_KEY_1"
@@ -39,8 +39,8 @@ jobs:
             bitcoin_only: 1
             secret_key_1_name: "SECRET_QA_KEY_1"
             secret_key_2_name: "SECRET_QA_KEY_2"
-            output_dir: qa-bc-only
-            artifact_suffix: "qa-bc-only"
+            output_dir: qa-btc-only
+            artifact_suffix: "qa-btc-only"
 
     steps:
       - name: "Checkout"

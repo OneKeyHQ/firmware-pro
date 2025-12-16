@@ -140,7 +140,7 @@ class BaseSignRequest:
 
     @classmethod
     def decode(cls, decoder):
-        sol_sign_req = cls()
+        sign_req = cls()
         size, _ = decoder.decodeMapSize()
         for _ in range(size):
             key, _ = decoder.decodeInteger()
@@ -148,21 +148,21 @@ class BaseSignRequest:
                 tag, _ = decoder.decodeTag()
                 if tag != UUID.get_tag():
                     raise Exception(f"Expected Tag {tag}")
-                sol_sign_req.request_id, _ = decoder.decodeBytes()
+                sign_req.request_id, _ = decoder.decodeBytes()
             if key == SIGN_DATA:
-                sol_sign_req.sign_data, _ = decoder.decodeBytes()
+                sign_req.sign_data, _ = decoder.decodeBytes()
             if key == DERIVATION_PATH:
                 tag, _ = decoder.decodeTag()
                 if tag != CryptoKeyPath.get_tag():
                     raise Exception(f"Expected Tag {tag}")
-                sol_sign_req.derivation_path = CryptoKeyPath.decode(decoder)
+                sign_req.derivation_path = CryptoKeyPath.decode(decoder)
             if key == ADDRESS:
-                sol_sign_req.address, _ = decoder.decodeBytes()
+                sign_req.address, _ = decoder.decodeBytes()
             if key == ORIGIN:
-                sol_sign_req.origin, _ = decoder.decodeText()
+                sign_req.origin, _ = decoder.decodeText()
             if key == REQUEST_TYPE:
-                sol_sign_req.request_type, _ = decoder.decodeInteger()
-        return sol_sign_req
+                sign_req.request_type, _ = decoder.decodeInteger()
+        return sign_req
 
     def get_address_n(self) -> list[int]:
         path = self.derivation_path.get_path() if self.derivation_path else ""
