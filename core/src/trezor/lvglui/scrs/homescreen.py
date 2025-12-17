@@ -2597,7 +2597,7 @@ class ConnectWalletGuide(Screen):
         )
         self.okx.text_layout_vertical(pad_top=17, pad_ver=20)
 
-        self.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
+        self.container.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
 
     @staticmethod
     def _get_wallet_tutorial_config(wallet_type, connect_type):
