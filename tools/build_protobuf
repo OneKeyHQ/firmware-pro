@@ -2,7 +2,7 @@
 set -e
 cd $(dirname $0)/..
 
-PROTOB=common/protob
+PROTOB=onekey-protocol/protob
 
 # Bootloader messages cannot end up in core
 CORE_PROTOBUF_SOURCES=$(ls $PROTOB/*.proto | grep -v "bootloader")
@@ -27,7 +27,7 @@ do_rebuild() {
     fi
 
     # note $SOURCES is unquoted - we want wildcard expansion and multiple args
-    $PROTOB/pb2py "$@" $param="$OUTPUT" $SOURCES
+    $PROTOB/../binding_python/pb2py "$@" --include-deprecated $param="$OUTPUT" $SOURCES
 }
 
 do_check() {

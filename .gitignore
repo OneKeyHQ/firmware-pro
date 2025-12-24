@@ -1,3 +1,4 @@
+.DS_Store
 .attic/
 .cache/
 .venv/
@@ -8,8 +9,10 @@
 __pycache__/
 *.pyc
 /build
-proto.gv*
-.DS_Store
 crypto/tests/libtrezor-crypto.so.dSYM/
 core/lextab.py
 core/yacctab.py
+core/src/trezor/enums/*.py
+core/src/trezor/messages.py
+core/src/all_modules.py
+python/src/trezorlib/messages.py

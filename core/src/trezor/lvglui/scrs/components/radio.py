@@ -28,7 +28,6 @@ class Radio:
                 return
             last_checked = self.check_index
             for idx, item in enumerate(self.items):
-
                 if target != item and idx == last_checked:
                     item.set_uncheck(change_color_only=self.change_color_only)
                 if target == item and idx != last_checked:

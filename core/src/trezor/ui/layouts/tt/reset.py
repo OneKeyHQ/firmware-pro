@@ -75,7 +75,6 @@ async def show_share_words(
     paginated = Paginated(pages)
 
     if __debug__:
-
         word_pages = [first] + chunks + [last]
 
         def export_displayed_words() -> None:

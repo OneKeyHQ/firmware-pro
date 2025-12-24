@@ -1,6 +1,11 @@
 #!/bin/bash
 # $1 -> target (0=Normal, 1=Board, 2=Boot)
 
+set -e
+
+BASEDIR=$(dirname "$(readlink -f $0)")
+SWD_SPD=$(cat "$BASEDIR/../swd_speed.txt")
+
 case $1 in
 "0")
     export TARGET_FLAG="0x00000000"
@@ -21,7 +26,7 @@ tee TempFlashScript.jlink >/dev/null <<EOT
 usb $JLINK_SN
 device OneKeyH7
 SelectInterface swd
-speed 20000
+speed $SWD_SPD
 RSetType 0
 rx 100
 WaitHalt 100

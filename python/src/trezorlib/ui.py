@@ -62,7 +62,7 @@ WIPE_CODE_CONFIRM = PinMatrixRequestType.WipeCodeSecond
 CAN_HANDLE_HIDDEN_INPUT = sys.stdin and sys.stdin.isatty()
 
 
-class TrezorClientUI(Protocol):
+class ClientUI(Protocol):
     def button_request(self, br: messages.ButtonRequest) -> None:
         ...
 

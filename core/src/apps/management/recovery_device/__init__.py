@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 import storage
 import storage.recovery
 from trezor import config, loop, utils, wire
-from trezor.enums import ButtonRequestType
+from trezor.enums import ButtonRequestType, RecoveryType
 from trezor.lvglui.i18n import gettext as _, i18n_refresh, keys as i18n_keys
 from trezor.lvglui.scrs import fingerprints
 from trezor.messages import Success
@@ -39,7 +39,7 @@ async def recovery_device(
 
     _validate(msg)
     utils.mark_initialization_processing()
-    if not msg.dry_run:
+    if msg.type != RecoveryType.DryRun:
         from trezor.ui.layouts import show_popup
 
         if msg.language is not None:
@@ -59,7 +59,7 @@ async def recovery_device(
             utils.play_dead()
 
         # for dry run pin needs to be entered
-        if msg.dry_run:
+        if msg.type == RecoveryType.DryRun:
             curpin, salt = await request_pin_and_sd_salt(
                 ctx, _(i18n_keys.TITLE__ENTER_PIN), allow_fingerprint=False
             )
@@ -67,8 +67,7 @@ async def recovery_device(
                 await error_pin_invalid(ctx)
         newpin = None
 
-        if not msg.dry_run:
-
+        if msg.type != RecoveryType.DryRun:
             # set up pin if requested
             if msg.pin_protection:
                 newpin = await request_pin_confirm(ctx, allow_cancel=False)
@@ -82,7 +81,7 @@ async def recovery_device(
                 storage.device.set_label(msg.label)
 
         storage.recovery.set_in_progress(True)
-        storage.recovery.set_dry_run(bool(msg.dry_run))
+        storage.recovery.set_dry_run(bool(msg.type == RecoveryType.DryRun))
         # workflow.set_default(recovery_homescreen)
         result = await recovery_process(ctx, type)
     except BaseException as e:
@@ -92,16 +91,16 @@ async def recovery_device(
     finally:
         utils.mark_initialization_done()
         if isinstance(ctx, wire.DummyContext):
-            if msg.dry_run:
+            if msg.type == RecoveryType.DryRun:
                 utils.set_up()
             else:
                 loop.clear()
 
 
 def _validate(msg: RecoveryDevice) -> None:
-    if not msg.dry_run and storage.device.is_initialized():
+    if msg.type != RecoveryType.DryRun and storage.device.is_initialized():
         raise wire.UnexpectedMessage("Already initialized")
-    if msg.dry_run and not storage.device.is_initialized():
+    if msg.type == RecoveryType.DryRun and not storage.device.is_initialized():
         raise wire.NotInitialized("Device is not initialized")
 
     if msg.enforce_wordlist is False:
@@ -109,7 +108,7 @@ def _validate(msg: RecoveryDevice) -> None:
             "Value enforce_wordlist must be True, Trezor Core enforces words automatically."
         )
 
-    if msg.dry_run:
+    if msg.type == RecoveryType.DryRun:
         # check that only allowed fields are set
         for key, value in msg.__dict__.items():
             if key not in DRY_RUN_ALLOWED_FIELDS and value is not None:
@@ -117,7 +116,7 @@ def _validate(msg: RecoveryDevice) -> None:
 
 
 async def _continue_dialog(ctx: wire.Context, msg: RecoveryDevice) -> None:
-    if not msg.dry_run:
+    if msg.type != RecoveryType.DryRun:
         await confirm_reset_device(
             ctx, _(i18n_keys.SUBTITLE__DEVICE_RECOVER_RESTORE_WALLET), recovery=True
         )

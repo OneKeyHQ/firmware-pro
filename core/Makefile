@@ -15,7 +15,7 @@ RUST_BUILD_DIR        = $(BUILD_DIR)/rust
 UNAME_S := $(shell uname -s)
 CURRENT_DIR := '\"$(shell pwd)\"'
 UNIX_PORT_OPTS ?=
-CROSS_PORT_OPTS ?=
+# CROSS_PORT_OPTS ?= 'CFLAGS_EXTRA=-Wno-error=dangling-pointer= -Wno-error=enum-int-mismatch ' # new toolchain warning, need fix
 
 PRODUCTION ?= 0
 PYOPT      ?= 1
@@ -27,12 +27,9 @@ UI2 ?= 0
 PRODUCTION_MODEL = H
 USE_THD89 ?= 1
 
-# OpenOCD interface default. Alternative: ftdi/olimex-arm-usb-tiny-h
-OPENOCD_INTERFACE ?= stlink
-# OpenOCD transport default. Alternative: jtag
-OPENOCD_TRANSPORT ?= hla_swd
 OPENOCD = openocd -f interface/$(OPENOCD_INTERFACE).cfg -c "transport select $(OPENOCD_TRANSPORT)" -f target/stm32f4x.cfg
-OPENOCD_T1 = openocd -f interface/$(OPENOCD_INTERFACE).cfg -c "transport select $(OPENOCD_TRANSPORT)" -f target/stm32f2x.cfg
+OPENOCD_WRAPPER = embed/debugger_scripts/openocd_daplink/openocd_wrapper.sh
+GDB = arm-none-eabi-gdb --nx -ex 'set remotetimeout unlimited' -ex 'set confirm off' -ex 'target remote 127.0.0.1:3333' -ex 'monitor reset halt'
 
 BOARDLOADER_START   = 0x08000000
 BOOTLOADER_START    = 0x08020000
@@ -219,6 +216,8 @@ clean_cross: ## clean mpy-cross build
 
 ## flash commands:
 
+### jlink
+
 flash_boardloader_jlink: $(BOARDLOADER_BUILD_DIR)/boardloader.bin ## flash bootloader using JLink
 	embed/debugger_scripts/jlink/jlink_write.sh $(BOARDLOADER_BUILD_DIR)/boardloader.bin $(BOARDLOADER_START)
 
@@ -227,6 +226,14 @@ flash_boardloader_reflash_dev_jlink: $(BOAR_DEV_REFLASH_BUILD_DIR)/boardloader_r
 
 flash_bootloader_jlink: $(BOOTLOADER_BUILD_DIR)/bootloader.bin ## flash bootloader using JLink
 	embed/debugger_scripts/jlink/jlink_write.sh $(BOOTLOADER_BUILD_DIR)/bootloader.bin $(BOOTLOADER_START)
+
+flash_firmware_jlink: $(FIRMWARE_BUILD_DIR)/firmware.bin ## flash firmware using JLink. file names must end in .bin for JLink
+	cp -f $<.p1 $<.p1.bin
+	cp -f $<.p2 $<.p2.bin
+	embed/debugger_scripts/jlink/jlink_write.sh $<.p1.bin $(FIRMWARE_P1_START)
+	embed/debugger_scripts/jlink/jlink_write.sh $<.p2.bin $(FIRMWARE_P2_START)
+	rm $<.p1.bin
+	rm $<.p2.bin
 
 erase_board_jlink:
 	embed/debugger_scripts/jlink/jlink_erase.sh $(BOARDLOADER_START) $$(($(BOARDLOADER_START)+0x1F000))
@@ -238,26 +245,65 @@ erase_firmware_jlink:
 	embed/debugger_scripts/jlink/jlink_erase.sh $(FIRMWARE_P1_START) 0x180000
 	embed/debugger_scripts/jlink/jlink_erase.sh $(FIRMWARE_P2_START) 0x200000
 
-flash_firmware_jlink: $(FIRMWARE_BUILD_DIR)/firmware.bin ## flash firmware using JLink. file names must end in .bin for JLink
-	cp -f $<.p1 $<.p1.bin
-	cp -f $<.p2 $<.p2.bin
-	embed/debugger_scripts/jlink/jlink_write.sh $<.p1.bin $(FIRMWARE_P1_START)
-	embed/debugger_scripts/jlink/jlink_write.sh $<.p2.bin $(FIRMWARE_P2_START)
-	rm $<.p1.bin
-	rm $<.p2.bin
-
 dump_firmware_jlink:
 	embed/debugger_scripts/jlink/jlink_read.sh $(FIRMWARE_BUILD_DIR)/firmware.readback.p1.bin $(FIRMWARE_P1_START) 0x180000
 	embed/debugger_scripts/jlink/jlink_read.sh $(FIRMWARE_BUILD_DIR)/firmware.readback.p2.bin $(FIRMWARE_P2_START) 0x200000
 
-jlink_device_reboot: ## cause a system reset using JLink
+device_reboot_jlink: ## cause a system reset using JLink
 	embed/debugger_scripts/jlink/jlink_rebootDevice.sh 0
-jlink_device_enter_board:
+device_enter_board_jlink:
 	embed/debugger_scripts/jlink/jlink_rebootDevice.sh 1
-jlink_device_enter_boot:
+device_enter_boot_jlink:
 	embed/debugger_scripts/jlink/jlink_rebootDevice.sh 2
 
-GDB = arm-none-eabi-gdb --nx -ex 'set remotetimeout unlimited' -ex 'set confirm off' -ex 'target remote 127.0.0.1:3333' -ex 'monitor reset halt'
+### openocd
+
+flash_boardloader_openocd: $(BOARDLOADER_BUILD_DIR)/boardloader.bin
+	$(OPENOCD_WRAPPER) -c " \
+		flash init; \
+		flash probe 2; \
+		flash write_bank 0 $(BOARDLOADER_BUILD_DIR)/boardloader.bin $(BOARDLOADER_START);\
+		"
+
+flash_boardloader_reflash_dev_openocd: $(BOAR_DEV_REFLASH_BUILD_DIR)/boardloader_reflash_dev.bin
+	$(OPENOCD_WRAPPER) \
+		-c '\"flash write_bank 0 $(BOAR_DEV_REFLASH_BUILD_DIR)/boardloader_reflash_dev.bin $(BOOTLOADER_START)\"'
+
+flash_bootloader_openocd: $(BOOTLOADER_BUILD_DIR)/bootloader.bin
+	$(OPENOCD_WRAPPER) \
+		-c '\"flash write_bank 0 $(BOOTLOADER_BUILD_DIR)/bootloader.bin $(BOOTLOADER_START)\"'
+
+flash_firmware_openocd: $(FIRMWARE_BUILD_DIR)/firmware.bin
+	cp -f $<.p1 $<.p1.bin
+	cp -f $<.p2 $<.p2.bin
+	$(OPENOCD_WRAPPER) \
+		-c '\"flash write_bank 0$<.p1.bin $(FIRMWARE_P1_START)\"'
+	$(OPENOCD_WRAPPER) \
+		-c '\"flash write_bank 2 $<.p2.bin $(FIRMWARE_P2_START)\"'
+	rm $<.p1.bin
+	rm $<.p2.bin
+
+erase_board_openocd:
+	$(OPENOCD_WRAPPER) $(BOARDLOADER_START) $$(($(BOARDLOADER_START)+0x1F000))
+
+erase_boot_openocd:
+	$(OPENOCD_WRAPPER) $(BOOTLOADER_START) $$(($(BOOTLOADER_START)+0x3E000))
+
+erase_firmware_openocd:
+	$(OPENOCD_WRAPPER) $(FIRMWARE_P1_START) 0x180000
+	$(OPENOCD_WRAPPER) $(FIRMWARE_P2_START) 0x200000
+dump_firmware_openocd:
+	$(OPENOCD_WRAPPER) $(FIRMWARE_BUILD_DIR)/firmware.readback.p1.bin $(FIRMWARE_P1_START) 0x180000
+	$(OPENOCD_WRAPPER) $(FIRMWARE_BUILD_DIR)/firmware.readback.p2.bin $(FIRMWARE_P2_START) 0x200000
+
+device_reboot_openocd:
+	$(OPENOCD_WRAPPER) 0
+device_enter_board_openocd:
+	$(OPENOCD_WRAPPER) 1
+device_enter_boot_openocd:
+	$(OPENOCD_WRAPPER) 2
+
+### gdb
 
 gdb_boardloader: $(BOARDLOADER_BUILD_DIR)/boardloader.elf ## start remote gdb session to openocd with boardloader symbols
 	$(GDB) $<
@@ -293,3 +339,55 @@ combine: ## combine boardloader + bootloader + prodtest into one combined image
 
 coverage:  # generate coverage report
 	./tools/coverage-report
+
+# backup
+# ./tools/headertool.py -h -v $(FIRMWARE_BUILD_DIR)/firmware.bin \
+# -S 1:3d129d2202e7671dfd48a5444dea807b7f614c7fe79f83016a3b4faaee6b8e54 \
+# -S 2:ebcea0917af1eb2f0cfe8d80c005c36a50743e07ccd73283869e7a42efb635f4 \
+# -S 3:76267466cb36185cdb5b9f9d67826d45fc7b776a4f95f6e93dd863f4a8ca558f \
+# -S 4:aa44b24d8f36a607b61621624d50c82451f022e416538fa41bb1290e091e25a8
+
+sign_dev_bl:
+	./tools/headertool.py -h -v $(BOOTLOADER_BUILD_DIR)/bootloader.bin \
+	-S 1:3d129d2202e7671dfd48a5444dea807b7f614c7fe79f83016a3b4faaee6b8e54 \
+	-S 2:ebcea0917af1eb2f0cfe8d80c005c36a50743e07ccd73283869e7a42efb635f4
+
+sign_dev_board_reflash:
+	./tools/headertool.py -h -v $(BOAR_DEV_REFLASH_BUILD_DIR)/boardloader_reflash_dev.bin \
+	-S 1:3d129d2202e7671dfd48a5444dea807b7f614c7fe79f83016a3b4faaee6b8e54 \
+	-S 2:ebcea0917af1eb2f0cfe8d80c005c36a50743e07ccd73283869e7a42efb635f4
+
+sign_dev_vendor_header:
+	cp embed/vendorheader/vendorheader_onekey_test_unsigned.bin embed/vendorheader/vendorheader_onekey_test_signed.bin
+	./tools/headertool.py -h -v embed/vendorheader/vendorheader_onekey_test_signed.bin \
+	-S 1:3d129d2202e7671dfd48a5444dea807b7f614c7fe79f83016a3b4faaee6b8e54 \
+	-S 2:ebcea0917af1eb2f0cfe8d80c005c36a50743e07ccd73283869e7a42efb635f4
+
+sign_dev_fw:
+	./tools/headertool.py -h -v $(FIRMWARE_BUILD_DIR)/firmware.bin \
+	-S 1:3d129d2202e7671dfd48a5444dea807b7f614c7fe79f83016a3b4faaee6b8e54 \
+	-S 2:ebcea0917af1eb2f0cfe8d80c005c36a50743e07ccd73283869e7a42efb635f4
+	dd if=$(FIRMWARE_BUILD_DIR)/firmware.bin of=$(FIRMWARE_BUILD_DIR)/firmware.bin.p1 skip=0 bs=128k count=12
+
+# lazy_ba: clean_boardloader build_boardloader flash_boardloader_jlink
+# lazy_ba: build_boardloader flash_boardloader_jlink
+lazy_ba: build_boardloader flash_boardloader_jlink
+
+lazy_dev_ba_reflash: clean_boardloader_reflash_dev build_boardloader_reflash_dev sign_dev_board_reflash flash_boardloader_reflash_dev_jlink
+
+lazy_bl: build_bootloader sign_dev_bl flash_bootloader_jlink
+
+lazy_fw: build_firmware sign_dev_fw flash_firmware_jlink
+
+lazy_fw_usb_boot: device_enter_boot_jlink build_firmware sign_dev_fw
+	trezorctl device emmc-file-write -l ../core/build/firmware/firmware.bin -r 0:firmware.bin -f -cs 256KB
+	trezorctl device firmware-update-emmc -p 0:firmware.bin
+
+lazy_fw_usb_reboot:
+	trezorctl device reboot -t 2
+	trezorctl device emmc-file-write -l ../core/build/firmware/firmware.bin -r 0:firmware.bin -f -cs 256KB
+	trezorctl device firmware-update-emmc -p 0:firmware.bin
+
+lazy_fw_usb: build_firmware sign_dev_fw
+	trezorctl device emmc-file-write -l ../core/build/firmware/firmware.bin -r 0:firmware.bin -f -cs 256KB
+	trezorctl device firmware-update-emmc -p 0:firmware.bin

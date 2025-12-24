@@ -320,48 +320,48 @@ if utils.USE_THD89:
 else:
     # fmt: off
     # Keys:
-    DEVICE_ID                  = (0x00)  # bytes
-    _VERSION                   = (0x01)  # int
-    _MNEMONIC_SECRET           = (0x02)  # bytes
-    _LANGUAGE                  = (0x03)  # str
-    _LABEL                     = (0x04)  # str
-    _USE_PASSPHRASE            = (0x05)  # bool (0x01 or empty)
-    _HOMESCREEN                = (0x06)  # int
-    _NEEDS_BACKUP              = (0x07)  # bool (0x01 or empty)
-    _FLAGS                     = (0x08)  # int
-    U2F_COUNTER                = (0x09)  # int
-    _PASSPHRASE_ALWAYS_ON_DEVICE = (0x0A)  # bool (0x01 or empty)
-    _UNFINISHED_BACKUP         = (0x0B)  # bool (0x01 or empty)
-    _AUTOLOCK_DELAY_MS         = (0x0C)  # int
-    _NO_BACKUP                 = (0x0D)  # bool (0x01 or empty)
-    _BACKUP_TYPE               = (0x0E)  # int
-    _ROTATION                  = (0x0F)  # int
-    _SLIP39_IDENTIFIER_DEVICE  = (0x10)  # int
-    _SLIP39_ITERATION_E_DEVICE = (0x11)  # int
-    _SD_SALT_AUTH_KEY          = (0x12)  # bytes
-    INITIALIZED                = (0x13)  # bool (0x01 or empty)
-    _SAFETY_CHECK_LEVEL        = (0x14)  # int
-    _EXPERIMENTAL_FEATURES     = (0x15)  # bool (0x01 or empty)
+    DEVICE_ID                  = 0x00  # bytes
+    _VERSION                   = 0x01  # int
+    _MNEMONIC_SECRET           = 0x02  # bytes
+    _LANGUAGE                  = 0x03  # str
+    _LABEL                     = 0x04  # str
+    _USE_PASSPHRASE            = 0x05  # bool (0x01 or empty)
+    _HOMESCREEN                = 0x06  # int
+    _NEEDS_BACKUP              = 0x07  # bool (0x01 or empty)
+    _FLAGS                     = 0x08  # int
+    U2F_COUNTER                = 0x09  # int
+    _PASSPHRASE_ALWAYS_ON_DEVICE = 0x0A  # bool (0x01 or empty)
+    _UNFINISHED_BACKUP         = 0x0B  # bool (0x01 or empty)
+    _AUTOLOCK_DELAY_MS         = 0x0C  # int
+    _NO_BACKUP                 = 0x0D  # bool (0x01 or empty)
+    _BACKUP_TYPE               = 0x0E  # int
+    _ROTATION                  = 0x0F  # int
+    _SLIP39_IDENTIFIER_DEVICE  = 0x10  # int
+    _SLIP39_ITERATION_E_DEVICE = 0x11  # int
+    _SD_SALT_AUTH_KEY          = 0x12  # bytes
+    INITIALIZED                = 0x13  # bool (0x01 or empty)
+    _SAFETY_CHECK_LEVEL        = 0x14  # int
+    _EXPERIMENTAL_FEATURES     = 0x15  # bool (0x01 or empty)
 
-    _BLE_NAME = (0x80)  # bytes
-    _BLE_VERSION = (0x81)  # bytes
-    _BLE_ENABLED = (0x82)  # bool (0x01 or empty)
-    _BRIGHTNESS = (0x83)   # int
-    _AUTOSHUTDOWN_DELAY_MS = (0x84)  # int
+    _BLE_NAME = 0x80  # bytes
+    _BLE_VERSION = 0x81  # bytes
+    _BLE_ENABLED = 0x82  # bool (0x01 or empty)
+    _BRIGHTNESS = 0x83   # int
+    _AUTOSHUTDOWN_DELAY_MS = 0x84  # int
     # deprecated
-    _PIN_MAP_TYPES = (0x84)  # int
+    _PIN_MAP_TYPES = 0x84  # int
 
-    _WALLPAPER_COUNTS = (0x85)  # int
-    _USE_USB_PROTECT = (0x86)  # bool (0x01 or empty)
-    _USE_RANDOM_PIN_MAP = (0x87)  # bool (0x01 or empty)
-    _KEYBOARD_HAPTIC = (0x88)   # bool
-    _TAP_AWAKE = (0x89)  # bool
-    _ANIMATION = (0x8A)  # bool
-    _TREZOR_COMPATIBLE = (0x8B)
-    _USE_FINGERPRINT_UNLOCK = (0x8C)  # bool
-    _AIRGAP_MODE = (0x8D)  # bool
-    _HAS_PROMPTED_FINGERPRINT = (0x8E)  # bool
-    _FINGER_FAILED_COUNT = (0x8F)  # int
+    _WALLPAPER_COUNTS = 0x85  # int
+    _USE_USB_PROTECT = 0x86  # bool (0x01 or empty)
+    _USE_RANDOM_PIN_MAP = 0x87  # bool (0x01 or empty)
+    _KEYBOARD_HAPTIC = 0x88   # bool
+    _TAP_AWAKE = 0x89  # bool
+    _ANIMATION = 0x8A  # bool
+    _TREZOR_COMPATIBLE = 0x8B
+    _USE_FINGERPRINT_UNLOCK = 0x8C  # bool
+    _AIRGAP_MODE = 0x8D  # bool
+    _HAS_PROMPTED_FINGERPRINT = 0x8E  # bool
+    _FINGER_FAILED_COUNT = 0x8F  # int
     _FIDO2_COUNTER = const(0x90)  # int
     # fmt: on
 SAFETY_CHECK_LEVEL_STRICT: Literal[0] = const(0)
@@ -547,7 +547,6 @@ def set_usb_lock_enable(enable: bool) -> None:
 
 
 def enable_fingerprint_unlock(enable: bool) -> None:
-
     global _USE_FINGERPRINT_UNLOCK_VALUE
     common.set_bool(_NAMESPACE, _USE_FINGERPRINT_UNLOCK, enable, public=True)
     _USE_FINGERPRINT_UNLOCK_VALUE = enable

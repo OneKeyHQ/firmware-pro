@@ -840,7 +840,6 @@ class PSBT:
         self.explicit_version = False
 
     def deserialize(self, psbt: bytes) -> None:
-
         f = BufferReader(psbt)
         end = len(psbt)
 

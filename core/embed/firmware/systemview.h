@@ -5,6 +5,7 @@
 #ifdef SYSTEM_VIEW
 
 #include <stdint.h>
+#include "SEGGER_RTT.h"
 #include "SEGGER_SYSVIEW.h"
 
 #define DWT_CYCCNT_ADDR ((uint32_t*)(0xE0001004));

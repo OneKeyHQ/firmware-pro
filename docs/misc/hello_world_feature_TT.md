@@ -22,9 +22,9 @@ Communication between Onekey and the computer is handled by a protocol called `p
 Onekey on its own cannot send data to the computer, it can only react to a "request" message it recognizes and send a "response" message.
 Both of these messages will need to be specified, and both parts of communication will need to understand them.
 
-Protobuf messages are defined in `common/protob` directory in `.proto` files. When we are creating a brand-new feature (application), it is worth creating a new `.proto` file dedicated only for this feature. Let's call it `messages-hello.proto` and fill it with the content below.
+Protobuf messages are defined in `onekey-protocol/protob` directory in `.proto` files. When we are creating a brand-new feature (application), it is worth creating a new `.proto` file dedicated only for this feature. Let's call it `messages-hello.proto` and fill it with the content below.
 
-#### **`common/protob/messages-helloworld.proto`**
+#### **`onekey-protocol/protob/messages-helloworld.proto`**
 ```protobuf
 syntax = "proto2";
 package hw.trezor.messages.helloworld;
@@ -54,10 +54,10 @@ message HelloWorldRequest {
     required string text = 1;
 }
 ```
-There are some officialities at the top, the most important things are the `message` declarations. We are defining a `HelloWorldRequest`, that will be sent from the computer to Onekey, and `HelloWorldResponse`, that will be sent back from Onekey. There are many features and data-types `protobuf` supports - see [Google docs](https://developers.google.com/protocol-buffers) or other `common/protob/messages-*.proto` files.
+There are some officialities at the top, the most important things are the `message` declarations. We are defining a `HelloWorldRequest`, that will be sent from the computer to Onekey, and `HelloWorldResponse`, that will be sent back from Onekey. There are many features and data-types `protobuf` supports - see [Google docs](https://developers.google.com/protocol-buffers) or other `onekey-protocol/protob/messages-*.proto` files.
 
-After defining the details of communication messages, we will also need to give these messages their unique IDs and specify the direction in which they are sent (into Onekey or from Onekey). That is done in `common/protob/messages.proto` file. We will append a new block at the end of the file:
-#### **`common/protob/messages.proto`**
+After defining the details of communication messages, we will also need to give these messages their unique IDs and specify the direction in which they are sent (into Onekey or from Onekey). That is done in `onekey-protocol/protob/messages.proto` file. We will append a new block at the end of the file:
+#### **`onekey-protocol/protob/messages.proto`**
 ```protobuf
 // Hello world
 MessageType_HelloWorldRequest = 900 [(wire_in) = true];

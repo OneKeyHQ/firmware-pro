@@ -237,9 +237,11 @@ async def confirm_reset_device(
                 )
             ),
             "recover_device" if recovery else "setup_device",
-            ButtonRequestType.ProtectCall
-            if recovery
-            else ButtonRequestType.ResetDevice,
+            (
+                ButtonRequestType.ProtectCall
+                if recovery
+                else ButtonRequestType.ResetDevice
+            ),
         )
     )
 
@@ -790,7 +792,6 @@ async def confirm_total(
 async def confirm_joint_total(
     ctx: wire.GenericContext, spending_amount: str, total_amount: str
 ) -> None:
-
     await raise_if_not_confirmed(
         interact(
             ctx,

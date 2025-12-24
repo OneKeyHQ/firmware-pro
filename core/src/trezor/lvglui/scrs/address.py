@@ -670,7 +670,6 @@ class AddressManager:
         state = self.STATE.INIT
 
         while state not in (self.STATE.FINISH, self.STATE.ERROR):
-
             # pyright: off
             if state == self.STATE.INIT:
                 chain_info = self.get_chain_info(name)
@@ -698,9 +697,11 @@ class AddressManager:
 
                 self.user_interaction = await show_address_offline(
                     ctx,
-                    address=address_resp.address
-                    if chain_info["msg_type"] != MessageType.NostrGetPublicKey
-                    else address_resp.npub,
+                    address=(
+                        address_resp.address
+                        if chain_info["msg_type"] != MessageType.NostrGetPublicKey
+                        else address_resp.npub
+                    ),
                     network=self.current_chain_info["name"],
                     addr_type=self.addr_type,
                     account_name=f" Account #{self.current_index + 1}",

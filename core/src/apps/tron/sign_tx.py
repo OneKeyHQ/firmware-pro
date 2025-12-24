@@ -48,7 +48,6 @@ async def sign_tx(
 
 
 async def _require_confirm_by_type(ctx, transaction, owner_address):
-
     # Confirm transaction
     contract = transaction.contract
     skip_view_data = False

@@ -2,7 +2,6 @@ from trezor.crypto import base58
 
 
 class PublicKey:
-
     LENGTH = 32
     """Constant for standard length of a public key."""
 

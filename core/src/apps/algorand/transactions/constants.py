@@ -1,6 +1,7 @@
 """
 Contains useful constants.
 """
+
 KMD_AUTH_HEADER = "X-KMD-API-Token"
 """str: header key for kmd requests"""
 ALGOD_AUTH_HEADER = "X-Algo-API-Token"

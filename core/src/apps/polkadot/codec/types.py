@@ -58,7 +58,6 @@ class Era(ScaleType):
         super().__init__(data, **kwargs)
 
     def process(self):
-
         option_byte = self.get_next_bytes(1)[0]
         if option_byte == 0:
             self.period = None

@@ -79,9 +79,9 @@ extern void shutdown_privileged(void);
 
 static void copyflash2sdram(void) {
   extern int _flash2_load_addr, _flash2_start, _flash2_end;
-  volatile uint32_t *dst = (volatile uint32_t *)&_flash2_start;
-  volatile uint32_t *end = (volatile uint32_t *)&_flash2_end;
-  volatile uint32_t *src = (volatile uint32_t *)&_flash2_load_addr;
+  volatile uint32_t* dst = (volatile uint32_t*)&_flash2_start;
+  volatile uint32_t* end = (volatile uint32_t*)&_flash2_end;
+  volatile uint32_t* src = (volatile uint32_t*)&_flash2_load_addr;
 
   while (dst < end) {
     *dst = *src;
@@ -107,7 +107,7 @@ int main(void) {
   SystemCoreClockUpdate();
   dwt_init();
   lcd_ltdc_dsi_disable();
-  sdram_reinit();
+  // sdram_reinit();
   // lcd_para_init(DISPLAY_RESX, DISPLAY_RESY, LCD_PIXEL_FORMAT_RGB565);
   lcd_ltdc_dsi_enable();
   lcd_pwm_init();
@@ -138,8 +138,8 @@ int main(void) {
   display_clear();
   pendsv_init();
 
-  device_test(false);
-  device_burnin_test(false);
+  // device_test(false);
+  // device_burnin_test(false);
 
   device_para_init();
   ensure(se_sync_session_key(), "se start up failed");
@@ -170,11 +170,12 @@ int main(void) {
 #ifdef USE_SECP256K1_ZKP
   ensure(sectrue * (zkp_context_init() == 0), NULL);
 #endif
+
   printf("CORE: Preparing stack\n");
   // Stack limit should be less than real stack size, so we have a chance
   // to recover from limit hit.
   mp_stack_set_top(&_estack);
-  mp_stack_set_limit((char *)&_estack - (char *)&_sstack - 1024);
+  mp_stack_set_limit((char*)&_estack - (char*)&_sstack - 1024);
 
 #if MICROPY_ENABLE_PYSTACK
   static mp_obj_t pystack[1024];
@@ -206,7 +207,7 @@ int main(void) {
 
 // MicroPython default exception handler
 
-void __attribute__((noreturn)) nlr_jump_fail(void *val) {
+void __attribute__((noreturn)) nlr_jump_fail(void* val) {
   error_shutdown("Internal error", "(UE)", NULL, NULL);
 }
 
@@ -219,9 +220,10 @@ void NMI_Handler(void) {
 }
 
 // Hard fault handler
-#if defined SYSTEM_VIEW
+#if !PRODUCTION
 enum { r0, r1, r2, r3, r12, lr, pc, psr };
-void STACK_DUMP(unsigned int *stack) {
+void STACK_DUMP(unsigned int* stack) {
+  display_print_color(COLOR_RED, COLOR_BLACK);
   display_printf("[STACK DUMP]\n");
   display_printf("R0 = 0x%08x\n", stack[r0]);
   display_printf("R1 = 0x%08x\n", stack[r1]);
@@ -231,11 +233,17 @@ void STACK_DUMP(unsigned int *stack) {
   display_printf("LR = 0x%08x\n", stack[lr]);
   display_printf("PC = 0x%08x\n", stack[pc]);
   display_printf("PSR = 0x%08x\n", stack[psr]);
-  display_printf("BFAR = 0x%08x\n", (*((volatile unsigned int *)(0xE000ED38))));
-  display_printf("CFSR = 0x%08x\n", (*((volatile unsigned int *)(0xE000ED28))));
-  display_printf("HFSR = 0x%08x\n", (*((volatile unsigned int *)(0xE000ED2C))));
-  display_printf("DFSR = 0x%08x\n", (*((volatile unsigned int *)(0xE000ED30))));
-  display_printf("AFSR = 0x%08x\n", (*((volatile unsigned int *)(0xE000ED3C))));
+  display_printf("BFAR = 0x%08x\n", (*((volatile unsigned int*)(0xE000ED38))));
+  display_printf("CFSR = 0x%08x\n", (*((volatile unsigned int*)(0xE000ED28))));
+  display_printf("HFSR = 0x%08x\n", (*((volatile unsigned int*)(0xE000ED2C))));
+  display_printf("DFSR = 0x%08x\n", (*((volatile unsigned int*)(0xE000ED30))));
+  display_printf("AFSR = 0x%08x\n", (*((volatile unsigned int*)(0xE000ED3C))));
+
+#ifdef BUILD_ID
+  const uint8_t* id = (const uint8_t*)BUILD_ID;
+  display_printf("build id: %s", id);
+#endif
+
   exit(0);
   return;
 }
@@ -280,8 +288,8 @@ __attribute__((noreturn)) void reboot_to_bootloader() {
     ;
 }
 
-void SVC_C_Handler(uint32_t *stack) {
-  uint8_t svc_number = ((uint8_t *)stack[6])[-2];
+void SVC_C_Handler(uint32_t* stack) {
+  uint8_t svc_number = ((uint8_t*)stack[6])[-2];
   switch (svc_number) {
     case SVC_ENABLE_IRQ:
       HAL_NVIC_EnableIRQ(stack[0]);
@@ -327,11 +335,11 @@ __attribute__((naked)) void SVC_Handler(void) {
 
 // MicroPython builtin stubs
 
-mp_import_stat_t mp_import_stat(const char *path) {
+mp_import_stat_t mp_import_stat(const char* path) {
   return MP_IMPORT_STAT_NO_EXIST;
 }
 
-mp_obj_t mp_builtin_open(uint n_args, const mp_obj_t *args, mp_map_t *kwargs) {
+mp_obj_t mp_builtin_open(uint n_args, const mp_obj_t* args, mp_map_t* kwargs) {
   return mp_const_none;
 }
 MP_DEFINE_CONST_FUN_OBJ_KW(mp_builtin_open_obj, 1, mp_builtin_open);

@@ -104,6 +104,12 @@ static void ui_confirm_cancel_buttons(const char* cancel_text,
                       FONT_PJKS_BOLD_26, COLOR_BL_BG, confirm_bg_color);
 }
 
+uint32_t parse_ver(const char* version_str) {
+  int major = 0, minor = 0, patch = 0;
+  sscanf(version_str, "%d.%d.%d", &major, &minor, &patch);
+  return ((major & 0xFF)) | ((minor & 0xFF) << 8) | ((patch & 0xFF) << 16);
+}
+
 const char* format_ver(const char* format, uint32_t version) {
   static char ver_str[64];
   mini_snprintf(ver_str, sizeof(ver_str), format, (int)(version & 0xFF),
@@ -891,6 +897,39 @@ void ui_bootloader_factory(void) {
   ui_logo_onekey();
   display_text_center(DISPLAY_RESX / 2, TITLE_OFFSET_Y, "Factory Mode", -1,
                       FONT_PJKS_BOLD_38, COLOR_BL_FG, COLOR_BL_BG);
+}
+
+void ui_bootloader_factory_refresh(void) {
+  static struct {
+    struct {
+      bool name;
+      bool mac;
+    } bt;
+  } ui_element_shown = {0};
+
+  static char bt_status[32];
+
+  if (ble_name_state() && !ui_element_shown.bt.name) {
+    strlcpy(bt_status, ble_get_name(), sizeof(bt_status));
+
+    display_bar(0, SUBTITLE_OFFSET_Y - 26, DISPLAY_RESX, 26 * 2,
+                COLOR_BL_BG);  // 26 is DISPLAY_CHAR_HEIGHT
+    display_text_center(DISPLAY_RESX / 2, SUBTITLE_OFFSET_Y, bt_status, -1,
+                        FONT_NORMAL, COLOR_BL_SUBTITLE, COLOR_BL_BG);
+    ui_element_shown.bt.name = true;
+  }
+
+  if (ble_mac_state() && !ui_element_shown.bt.mac) {
+    sprintf(bt_status + strlen(bt_status), " (%X:%X:%X:%X:%X:%X)",
+            ble_get_mac()[0], ble_get_mac()[1], ble_get_mac()[2],
+            ble_get_mac()[3], ble_get_mac()[4], ble_get_mac()[5]);
+
+    display_bar(0, SUBTITLE_OFFSET_Y - 26, DISPLAY_RESX, 26 * 2,
+                COLOR_BL_BG);  // 26 is DISPLAY_CHAR_HEIGHT
+    display_text_center(DISPLAY_RESX / 2, SUBTITLE_OFFSET_Y, bt_status, -1,
+                        FONT_NORMAL, COLOR_BL_SUBTITLE, COLOR_BL_BG);
+    ui_element_shown.bt.mac = true;
+  }
 }
 
 void ui_bootloader_device_test(void) {

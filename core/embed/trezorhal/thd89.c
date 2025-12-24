@@ -70,7 +70,7 @@ void thd89_reset(void) {
 
 void thd89_init(void) { i2c_init_by_device(I2C_SE); }
 
-static uint8_t xor_check(uint8_t init, uint8_t *data, uint16_t len) {
+static uint8_t xor_check(uint8_t init, uint8_t* data, uint16_t len) {
   uint16_t i;
   uint8_t xor ;
 
@@ -84,7 +84,7 @@ static uint8_t xor_check(uint8_t init, uint8_t *data, uint16_t len) {
 #define I2C_TIMEOUT_BUSY (25U) /*!< 25 ms */
 #define MAX_NBYTE_SIZE 255U
 
-static HAL_StatusTypeDef I2C_WaitOnFlagUntilTimeout(I2C_HandleTypeDef *hi2c,
+static HAL_StatusTypeDef I2C_WaitOnFlagUntilTimeout(I2C_HandleTypeDef* hi2c,
                                                     uint32_t Flag,
                                                     FlagStatus Status,
                                                     uint32_t Timeout,
@@ -108,7 +108,7 @@ static HAL_StatusTypeDef I2C_WaitOnFlagUntilTimeout(I2C_HandleTypeDef *hi2c,
   return HAL_OK;
 }
 
-static HAL_StatusTypeDef I2C_IsAcknowledgeFailed(I2C_HandleTypeDef *hi2c,
+static HAL_StatusTypeDef I2C_IsAcknowledgeFailed(I2C_HandleTypeDef* hi2c,
                                                  uint32_t Timeout,
                                                  uint32_t Tickstart) {
   uint32_t timeout_counter = Timeout * 1000;
@@ -153,7 +153,7 @@ static HAL_StatusTypeDef I2C_IsAcknowledgeFailed(I2C_HandleTypeDef *hi2c,
   return HAL_OK;
 }
 
-static HAL_StatusTypeDef I2C_WaitOnRXNEFlagUntilTimeout(I2C_HandleTypeDef *hi2c,
+static HAL_StatusTypeDef I2C_WaitOnRXNEFlagUntilTimeout(I2C_HandleTypeDef* hi2c,
                                                         uint32_t Timeout,
                                                         uint32_t Tickstart) {
   uint32_t timeout_counter = Timeout * 1000;
@@ -206,7 +206,7 @@ static HAL_StatusTypeDef I2C_WaitOnRXNEFlagUntilTimeout(I2C_HandleTypeDef *hi2c,
   return HAL_OK;
 }
 
-static HAL_StatusTypeDef I2C_WaitOnSTOPFlagUntilTimeout(I2C_HandleTypeDef *hi2c,
+static HAL_StatusTypeDef I2C_WaitOnSTOPFlagUntilTimeout(I2C_HandleTypeDef* hi2c,
                                                         uint32_t Timeout,
                                                         uint32_t Tickstart) {
   uint32_t timeout_counter = Timeout * 1000;
@@ -232,7 +232,7 @@ static HAL_StatusTypeDef I2C_WaitOnSTOPFlagUntilTimeout(I2C_HandleTypeDef *hi2c,
   return HAL_OK;
 }
 
-static HAL_StatusTypeDef I2C_WaitOnTXISFlagUntilTimeout(I2C_HandleTypeDef *hi2c,
+static HAL_StatusTypeDef I2C_WaitOnTXISFlagUntilTimeout(I2C_HandleTypeDef* hi2c,
                                                         uint32_t Timeout,
                                                         uint32_t Tickstart) {
   uint32_t timeout_counter = Timeout * 1000;
@@ -260,7 +260,7 @@ static HAL_StatusTypeDef I2C_WaitOnTXISFlagUntilTimeout(I2C_HandleTypeDef *hi2c,
   return HAL_OK;
 }
 
-static void I2C_TransferConfig(I2C_HandleTypeDef *hi2c, uint16_t DevAddress,
+static void I2C_TransferConfig(I2C_HandleTypeDef* hi2c, uint16_t DevAddress,
                                uint8_t Size, uint32_t Mode, uint32_t Request) {
   /* Check the parameters */
   assert_param(IS_I2C_ALL_INSTANCE(hi2c->Instance));
@@ -278,8 +278,8 @@ static void I2C_TransferConfig(I2C_HandleTypeDef *hi2c, uint16_t DevAddress,
                  (uint32_t)Mode | (uint32_t)Request));
 }
 
-HAL_StatusTypeDef i2c_master_send(I2C_HandleTypeDef *hi2c, uint16_t DevAddress,
-                                  uint8_t *pData, uint16_t Size,
+HAL_StatusTypeDef i2c_master_send(I2C_HandleTypeDef* hi2c, uint16_t DevAddress,
+                                  uint8_t* pData, uint16_t Size,
                                   uint32_t Timeout) {
   uint32_t tickstart;
   uint8_t data[2];
@@ -408,12 +408,12 @@ HAL_StatusTypeDef i2c_master_send(I2C_HandleTypeDef *hi2c, uint16_t DevAddress,
 #define I2C_RECV_BUFFER_TOO_SMALL (0x80)
 #define I2C_RECV_TIMEOUT (5 * 1000)  // 5s
 
-int i2c_master_recive(I2C_HandleTypeDef *hi2c, uint16_t DevAddress,
-                      uint8_t *pData, uint16_t *Size, uint32_t Timeout) {
+int i2c_master_recive(I2C_HandleTypeDef* hi2c, uint16_t DevAddress,
+                      uint8_t* pData, uint16_t* Size, uint32_t Timeout) {
   // uint32_t tickstart, tickstart1;
   uint8_t data[4];
   uint16_t temp_len, data_len;
-  uint8_t *data_ptr = pData;
+  uint8_t* data_ptr = pData;
   uint8_t xor = 0x00;
   sw1 = sw2 = 0;
 
@@ -538,8 +538,8 @@ int i2c_master_recive(I2C_HandleTypeDef *hi2c, uint16_t DevAddress,
   }
 }
 
-secbool thd89_transmit_ex(uint8_t addr, uint8_t *cmd, uint16_t len,
-                          uint8_t *resp, uint16_t *resp_len) {
+secbool thd89_transmit_ex(uint8_t addr, uint8_t* cmd, uint16_t len,
+                          uint8_t* resp, uint16_t* resp_len) {
   int ret = 0;
   char err_info[64] = {0};
   uint32_t irq = disable_irq();
@@ -577,13 +577,13 @@ secbool thd89_transmit_ex(uint8_t addr, uint8_t *cmd, uint16_t len,
   return sectrue;
 }
 
-secbool thd89_transmit(uint8_t *cmd, uint16_t len, uint8_t *resp,
-                       uint16_t *resp_len) {
+secbool thd89_transmit(uint8_t* cmd, uint16_t len, uint8_t* resp,
+                       uint16_t* resp_len) {
   return thd89_transmit_ex(THD89_MASTER_ADDRESS, cmd, len, resp, resp_len);
 }
 
-secbool thd89_fp_transmit(uint8_t *cmd, uint16_t len, uint8_t *resp,
-                          uint16_t *resp_len) {
+secbool thd89_fp_transmit(uint8_t* cmd, uint16_t len, uint8_t* resp,
+                          uint16_t* resp_len) {
   return thd89_transmit_ex(THD89_FINGER_ADDRESS, cmd, len, resp, resp_len);
 }
 

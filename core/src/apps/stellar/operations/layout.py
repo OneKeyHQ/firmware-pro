@@ -140,9 +140,11 @@ async def _confirm_manage_offer_op_common(
 async def _confirm_offer(
     ctx: Context,
     title: str,
-    op: StellarCreatePassiveSellOfferOp
-    | StellarManageSellOfferOp
-    | StellarManageBuyOfferOp,
+    op: (
+        StellarCreatePassiveSellOfferOp
+        | StellarManageSellOfferOp
+        | StellarManageBuyOfferOp
+    ),
 ) -> None:
     if StellarManageBuyOfferOp.is_type_of(op):
         buying = ("Buying:", format_amount(op.amount, op.buying_asset))

@@ -159,7 +159,6 @@ async def show_script_hash(
     script_hash: bytes,
     display_format: CardanoNativeScriptHashDisplayFormat,
 ) -> None:
-
     assert display_format in (
         CardanoNativeScriptHashDisplayFormat.BECH32,
         CardanoNativeScriptHashDisplayFormat.POLICY_ID,
@@ -664,7 +663,6 @@ async def confirm_stake_pool_owner(
     protocol_magic: int,
     network_id: int,
 ) -> None:
-
     props: list[tuple[str, str | None]] = []
     if owner.staking_key_path:
         props.append(("Pool owner:", address_n_to_str(owner.staking_key_path)))

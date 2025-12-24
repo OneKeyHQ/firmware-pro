@@ -22,7 +22,6 @@ def bytes_from_address(address: str) -> bytes:
 
 
 def address_from_public_key(pubkey: bytes, shard=1) -> str:
-
     sha = HashWriter(sha3_256(keccak=True))
     rlp.write(sha, pubkey)
 

@@ -22,7 +22,7 @@ def test_features(client: Client):
     f0 = client.features
     # client erases session_id from its features
     f0.session_id = client.session_id
-    f1 = client.call(messages.Initialize(session_id=f0.session_id))
+    f1 = client.call(messages.StartSession(session_id=f0.session_id))
     assert f0 == f1
 
 

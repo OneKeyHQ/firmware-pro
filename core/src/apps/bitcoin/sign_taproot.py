@@ -167,9 +167,9 @@ async def sign_taproot(
                     amount=out.nValue,
                     address=out_address,
                     op_return_data=op_return_data if op_return_data else None,
-                    script_type=OutputScriptType.PAYTOOPRETURN
-                    if op_return_data
-                    else None,
+                    script_type=(
+                        OutputScriptType.PAYTOOPRETURN if op_return_data else None
+                    ),
                 ),
                 coin,
                 AmountUnit.BITCOIN,

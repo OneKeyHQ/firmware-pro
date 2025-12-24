@@ -15,7 +15,6 @@ from .helper import TRANSACTION_PREFIX, aptos_address_from_pubkey
 async def sign_tx(
     ctx: wire.Context, msg: AptosSignTx, keychain: Keychain
 ) -> AptosSignedTx:
-
     await paths.validate_path(ctx, keychain, msg.address_n)
 
     node = keychain.derive(msg.address_n)

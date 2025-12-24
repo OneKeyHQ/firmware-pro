@@ -20,7 +20,7 @@ If the coin you are adding is a fork of Bitcoin or other cryptocurrency we alrea
 #### Misc
 
 You can add a new coin to misc.json by following the steps below
-1. [Protobuf Definitions](https://github.com/OneKeyHQ/firmware/blob/master/common/protob)
+1. [Protobuf Definitions](https://github.com/OneKeyHQ/firmware/blob/master/onekey-protocol/protob)
 2. Implementation of user-facing features [app](https://github.com/OneKeyHQ/firmware/blob/master/core/src/apps)
 3. [Command line client](https://github.com/OneKeyHQ/firmware/blob/master/python/src/trezorlib)
 4. [Unit tests](https://github.com/OneKeyHQ/firmware/blob/master/core/tests)

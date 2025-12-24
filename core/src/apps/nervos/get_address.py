@@ -97,7 +97,6 @@ def bech32_create_checksum(hrp, data):
 async def get_address(
     ctx: wire.Context, msg: NervosGetAddress, keychain
 ) -> NervosAddress:
-
     if msg.network not in ["ckb", "ckt"]:
         raise ValueError(f"Invalid network: {msg.network}")
     await paths.validate_path(ctx, keychain, msg.address_n)

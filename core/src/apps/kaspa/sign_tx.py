@@ -29,7 +29,6 @@ async def sign_tx(
     msg: KaspaSignTx,
     keychain: Keychain,
 ) -> KaspaSignedTx:
-
     if msg.scheme not in ALLOWED_SCHEMES:
         raise wire.DataError("Invalid signature scheme provided.")
 

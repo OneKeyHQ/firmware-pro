@@ -43,9 +43,9 @@ def halt(msg: str | None = None) -> None:
 
 
 # extmod/modtrezorutils/modtrezorutils.c
-def reset() -> None:
+def reboot() -> None:
     """
-    Reset system.
+    reboot system.
     """
 
 
@@ -82,7 +82,7 @@ def reboot_to_bootloader() -> None:
 
 
 # extmod/modtrezorutils/modtrezorutils.c
-def reboot2boardloader() -> None:
+def reboot_to_boardloader() -> None:
     """
     Reboots to boardloader.
     """

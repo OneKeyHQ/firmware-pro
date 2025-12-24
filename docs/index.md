@@ -6,7 +6,7 @@ Welcome to the Onekey Firmware repository. This repository is so called _monorep
 
 * **[`ci`](https://github.com/OneKeyHQ/firmware/tree/master/ci/)**: [Gitlab CI](https://gitlab.com/OneKeyHQ/firmware) configuration files
 * **[`common/defs`](https://github.com/OneKeyHQ/firmware/tree/master/common/defs/)**: JSON coin definitions and support tables
-* **[`common/protob`](https://github.com/OneKeyHQ/firmware/tree/master/common/protob/)**: Common protobuf definitions for the Onekey protocol
+* **[`onekey-protocol/protob`](https://github.com/OneKeyHQ/firmware/tree/master/onekey-protocol/protob/)**: Common protobuf definitions for the Onekey protocol
 * **[`common/tools`](https://github.com/OneKeyHQ/firmware/tree/master/common/tools/)**: Tools for managing coin definitions and related data
 * **[`core`](https://github.com/OneKeyHQ/firmware/tree/master/core/)**: Onekey Core, firmware implementation for Onekey T
 * **[`crypto`](https://github.com/OneKeyHQ/firmware/tree/master/crypto/)**: Stand-alone cryptography library used by both Onekey Core and the Onekey One firmware

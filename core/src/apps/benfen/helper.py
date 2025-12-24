@@ -14,7 +14,6 @@ def benfen_address_from_pubkey(pub_key_bytes: bytes) -> str:
 
 
 def try_convert_to_bfc_address(benfen_addr: str) -> str | None:
-
     if len(benfen_addr) < 3 or not (benfen_addr[0] == "0" and (benfen_addr[1] in "xX")):
         return None
 
@@ -51,7 +50,6 @@ def uleb_encode(num: int) -> bytes:
 
 
 def format_benfen_amount(amount: int, currency_symbol: str = "BFC") -> str:
-
     decimals = 9
     formatted = format_amount(amount, decimals)
     return f"{formatted} {currency_symbol}"

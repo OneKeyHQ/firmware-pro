@@ -21,7 +21,7 @@ import time
 from typing import Iterable, List, Optional
 
 from ..log import DUMP_PACKETS
-from ..models import TREZORS, TrezorModel
+from ..models import ONEKEYS, TrezorModel
 from . import UDEV_RULES_STR, DeviceIsBusy, TransportException
 from .protocol import ProtocolBasedTransport, ProtocolV1
 
@@ -127,7 +127,7 @@ class WebUsbTransport(ProtocolBasedTransport):
             atexit.register(cls.context.close)  # type: ignore [Param spec "_P@register" has no bound value]
 
         if models is None:
-            models = TREZORS
+            models = ONEKEYS
         usb_ids = [id for model in models for id in model.usb_ids]
         devices: List["WebUsbTransport"] = []
         for dev in cls.context.getDeviceIterator(skip_on_error=True):

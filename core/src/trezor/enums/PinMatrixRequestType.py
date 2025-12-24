@@ -7,3 +7,5 @@ NewFirst = 2
 NewSecond = 3
 WipeCodeFirst = 4
 WipeCodeSecond = 5
+BackupFirst = 6
+BackupSecond = 7

@@ -24,6 +24,7 @@ For serializing (dumping) protobuf types, object with `Writer` interface is requ
 
 import logging
 import warnings
+import struct
 from dataclasses import dataclass
 from enum import IntEnum
 from io import BytesIO
@@ -53,14 +54,14 @@ class Writer(Protocol):
         ...
 
 
-_UVARINT_BUFFER = bytearray(1)
-
 LOG = logging.getLogger(__name__)
 
 
 def safe_issubclass(value: Any, cls: Union[T, Tuple[T, ...]]) -> TypeGuard[T]:
     return isinstance(value, type) and issubclass(value, cls)
 
+
+_UVARINT_BUFFER = bytearray(1)
 
 def load_uvarint(reader: Reader) -> int:
     buffer = _UVARINT_BUFFER
@@ -92,6 +93,22 @@ def dump_uvarint(writer: Writer, n: int) -> None:
         writer.write(buffer)
         n = shifted
 
+_FIXED32BITS_BUFFER = bytearray(4)
+FLOAT_MAX = struct.unpack('>f', b'\x7f\x7f\xff\xff')[0]
+FLOAT_MIN = struct.unpack('>f', b'\xff\x7f\xff\xff')[0]
+DOUBLE_MAX = struct.unpack('>d', b'\x7f\xef\xff\xff\xff\xff\xff\xff')[0]
+DOUBLE_MIN = struct.unpack('>d', b'\xff\xef\xff\xff\xff\xff\xff\xff')[0]
+
+def load_fixed32bits(reader: Reader) -> float:
+    buffer = _FIXED32BITS_BUFFER
+    if reader.readinto(buffer) == 0:
+            raise IOError("Interrupted Fixed32Bits")
+    return struct.unpack('f', buffer)[0]
+
+def dump_fixed32bits(writer: Writer, n: float) -> None:
+    buffer = _FIXED32BITS_BUFFER
+    buffer = bytearray(struct.pack("f", n))  
+    writer.write(buffer)
 
 # protobuf interleaved signed encoding:
 # https://developers.google.com/protocol-buffers/docs/encoding#structure
@@ -129,7 +146,9 @@ def uint_to_sint(uint: int) -> int:
 
 
 WIRE_TYPE_INT = 0
+WIRE_TYPE_FIXED64BITS = 1
 WIRE_TYPE_LENGTH = 2
+WIRE_TYPE_FIXED32BITS = 5
 
 WIRE_TYPES = {
     "uint32": WIRE_TYPE_INT,
@@ -137,6 +156,8 @@ WIRE_TYPES = {
     "sint32": WIRE_TYPE_INT,
     "sint64": WIRE_TYPE_INT,
     "bool": WIRE_TYPE_INT,
+    "float": WIRE_TYPE_FIXED32BITS,
+    "double": WIRE_TYPE_FIXED64BITS,
     "bytes": WIRE_TYPE_LENGTH,
     "string": WIRE_TYPE_LENGTH,
 }
@@ -164,7 +185,7 @@ class Field:
         if safe_issubclass(field_type_object, IntEnum):
             return WIRE_TYPE_INT
 
-        raise ValueError(f"Unrecognized type for field {self.name}")
+        raise ValueError(f"Unrecognized type {self.type} for field {self.name}")
 
     def value_fits(self, value: int) -> bool:
         if self.type == "uint32":
@@ -175,6 +196,8 @@ class Field:
             return -(2**31) <= value < 2**31
         if self.type == "sint64":
             return -(2**63) <= value < 2**63
+        if self.type == "float":
+            return FLOAT_MIN <= value < FLOAT_MAX
 
         raise ValueError(f"Cannot check range bounds for {self.type}")
 
@@ -296,6 +319,27 @@ def decode_packed_array_field(field: Field, reader: Reader) -> List[Any]:
         pass
     return values
 
+def decode_float_field(field: Field, reader: Reader) -> Union[int, bool, IntEnum]:
+    assert field.wire_type == WIRE_TYPE_FIXED32BITS , f"Field {field.name} is not float-encoded"
+    value = load_fixed32bits(reader)
+
+    field_type_object = get_field_type_object(field)
+    if safe_issubclass(field_type_object, IntEnum):
+        try:
+            return field_type_object(value)
+        except ValueError as e:
+            # treat enum errors as warnings
+            LOG.info(f"On field {field.name}: {e}")
+            return value
+    
+    if field.type == "float":
+        if not field.value_fits(value):
+            LOG.info(
+                f"On field {field.name}: value {value} out of range for {field.type}"
+            )
+        return value
+
+    raise TypeError  # not a fixed32bits field or unknown type
 
 def decode_varint_field(field: Field, reader: Reader) -> Union[int, bool, IntEnum]:
     assert field.wire_type == WIRE_TYPE_INT, f"Field {field.name} is not varint-encoded"
@@ -391,13 +435,16 @@ def load_message(reader: Reader, msg_type: Type[MT]) -> MT:
             fvalues = decode_packed_array_field(field, reader)
 
         elif wtype != field.wire_type:
-            raise ValueError(f"Field {field.name} received value does not match schema")
+            raise ValueError(f"Field {field.name} received value {wtype} does not match schema {field.wire_type}")
 
         elif wtype == WIRE_TYPE_LENGTH:
             fvalues = [decode_length_delimited_field(field, reader)]
 
         elif wtype == WIRE_TYPE_INT:
             fvalues = [decode_varint_field(field, reader)]
+
+        elif wtype == WIRE_TYPE_FIXED32BITS:
+            fvalues = [decode_float_field(field, reader)]
 
         else:
             raise TypeError  # unknown wire type
@@ -472,6 +519,9 @@ def dump_message(writer: Writer, msg: "MessageType") -> None:
 
             elif field.type == "bool":
                 dump_uvarint(writer, int(svalue))
+
+            elif field.type == "float":
+                dump_fixed32bits(writer, float(svalue))
 
             elif field.type == "bytes":
                 assert isinstance(svalue, (bytes, bytearray))
@@ -551,8 +601,9 @@ def format_message(
 
     try:
         byte_size = str(pb.ByteSize()) + " bytes"
-    except Exception:
+    except Exception as ex:
         byte_size = "encoding failed"
+        print(ex)
     return "{name} ({size}) {content}".format(
         name=pb.__class__.__name__,
         size=byte_size,

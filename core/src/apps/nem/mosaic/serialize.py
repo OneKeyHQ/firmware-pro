@@ -99,12 +99,12 @@ def _write_property(w: Writer, name: str, value: int | bool | str | None) -> Non
             value = 0
         elif name in ("supplyMutable", "transferable"):
             value = False
-    if type(value) == bool:
+    if value is bool:
         if value:
             value = "true"
         else:
             value = "false"
-    elif type(value) == int:
+    elif value is int:
         value = str(value)
     if not isinstance(value, str):
         raise ValueError("Incompatible value type")

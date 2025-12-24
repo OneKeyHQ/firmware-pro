@@ -336,7 +336,6 @@ async def parse(ctx: wire.Context, accounts: list[PublicKey], data: bytes) -> No
             from_owner=parsed_data.from_owner,
         )
     else:
-
         raise wire.DataError(f"Unknown instruction type: {instruction_type}")
 
 

@@ -126,8 +126,9 @@ SOURCE_BOOTLOADER = [
     'embed/bootloader/bootui.c',
     'embed/bootloader/main.c',
     'embed/bootloader/messages.c',
-    'embed/bootloader/protob/messages.pb.c',
 ]
+
+SOURCE_BOOTLOADER.extend(Glob('/home/adam/Desktop/project_onekey/onekey-firmware-pro/onekey-protocol/binding_c/gen/*.c'))
 
 SOURCE_NANOPB = [
     'vendor/nanopb/pb_common.c',
@@ -243,9 +244,8 @@ env.Replace(
     LINKFLAGS='-T embed/bootloader/memory.ld -Wl,--gc-sections -Wl,-Map=build/bootloader/bootloader.map -Wl,--warn-common '
     '-Wl,-L embed/fp_sensor_wrapper -Wl,-whole-archive -Wl,-no-whole-archive',
     CPPPATH=[
+        '/home/adam/Desktop/project_onekey/onekey-firmware-pro/onekey-protocol/binding_c/gen',
         'embed/bootloader',
-        'embed/bootloader/nanopb',
-        'embed/bootloader/protob',
         'embed/trezorhal',
         'embed/trezorhal/fatfs',
         'embed/extmod/modtrezorui',

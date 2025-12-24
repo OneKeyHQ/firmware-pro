@@ -89,7 +89,6 @@ def require_confirm_change_pin(ctx: wire.Context, msg: ChangePin) -> Awaitable[N
         )
 
     if not msg.remove:  # changing pin
-
         return confirm_action(
             ctx,
             "set_pin",

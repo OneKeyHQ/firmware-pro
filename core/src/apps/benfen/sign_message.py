@@ -21,7 +21,6 @@ from .helper import (
 async def sign_message(
     ctx: wire.Context, msg: BenfenSignMessage, keychain: Keychain
 ) -> BenfenMessageSignature:
-
     await paths.validate_path(ctx, keychain, msg.address_n)
 
     node = keychain.derive(msg.address_n)

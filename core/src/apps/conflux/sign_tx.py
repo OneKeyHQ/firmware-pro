@@ -23,7 +23,6 @@ from .layout import (
 async def sign_tx(
     ctx: wire.Context, msg: ConfluxSignTx, keychain: Keychain
 ) -> ConfluxTxRequest:
-
     data_total = msg.data_length if msg.data_length is not None else 0
 
     await paths.validate_path(ctx, keychain, msg.address_n)

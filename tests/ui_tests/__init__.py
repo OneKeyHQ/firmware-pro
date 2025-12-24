@@ -145,7 +145,7 @@ def screen_recording(
         client.debug.start_recording(str(screen_path))
         yield
     finally:
-        # Wait for response to Initialize, which gives the emulator time to catch up
+        # Wait for response to StartSession, which gives the emulator time to catch up
         # and redraw the homescreen. Otherwise there's a race condition between that
         # and stopping recording.
         client.init_device()

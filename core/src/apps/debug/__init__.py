@@ -111,11 +111,11 @@ if __debug__:
         content = await layout_change_chan.take()
         assert DEBUG_CONTEXT is not None
         if storage.layout_watcher is LAYOUT_WATCHER_LAYOUT:
-            await DEBUG_CONTEXT.write(DebugLinkLayout(lines=content))
+            await DEBUG_CONTEXT.write(DebugLinkLayout(tokens=content))
         else:
             from trezor.messages import DebugLinkState
 
-            await DEBUG_CONTEXT.write(DebugLinkState(layout_lines=content))
+            await DEBUG_CONTEXT.write(DebugLinkState(tokens=content))
         storage.layout_watcher = LAYOUT_WATCHER_NONE
 
     async def touch_hold(x: int, y: int, duration_ms: int) -> None:
@@ -178,7 +178,7 @@ if __debug__:
             loop.schedule(return_layout_change())
             return None
         else:
-            m.layout_lines = storage.current_content
+            m.tokens = storage.current_content
 
         if msg.wait_word_pos:
             m.reset_word_pos = await reset_word_index.take()

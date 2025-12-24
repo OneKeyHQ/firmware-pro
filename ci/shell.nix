@@ -56,13 +56,9 @@ in
 with nixpkgs;
 stdenvNoCC.mkDerivation ({
   name = "trezor-firmware-env";
-  buildInputs = lib.optionals fullDeps [
+  buildInputs = [
     bitcoind
-    # install other python versions for tox testing
-    # NOTE: running e.g. "python3" in the shell runs the first version in the following list,
-    #       and poetry uses the default version (currently 3.10)
-    python310
-  ] ++ [
+    python312
     sdlnixpkgs.SDL2
     sdlnixpkgs.SDL2_image
     bash

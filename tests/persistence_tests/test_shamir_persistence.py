@@ -107,7 +107,7 @@ def test_recovery_on_old_wallet(emulator: Emulator):
 
     While Suite will send a RecoveryDevice message and hook into the running recovery
     flow, old Wallet can't do that and instead must repeatedly ask for features (via
-    Initialize+GetFeatures). At minimum, these two messages must not interrupt the
+    StartSession+GetFeatures). At minimum, these two messages must not interrupt the
     running recovery.
     """
     device_handler = BackgroundDeviceHandler(emulator.client)
@@ -143,7 +143,7 @@ def test_recovery_on_old_wallet(emulator: Emulator):
     debug.input(words[0])
     layout = debug.wait_layout()
 
-    # while keyboard is open, hit the device with Initialize/GetFeatures
+    # while keyboard is open, hit the device with StartSession/GetFeatures
     device_handler.client.init_device()
     device_handler.client.refresh_features()
 

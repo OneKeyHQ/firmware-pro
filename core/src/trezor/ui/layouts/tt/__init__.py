@@ -169,9 +169,11 @@ async def confirm_reset_device(
             ctx,
             Confirm(text, major_confirm=not recovery),
             "recover_device" if recovery else "setup_device",
-            ButtonRequestType.ProtectCall
-            if recovery
-            else ButtonRequestType.ResetDevice,
+            (
+                ButtonRequestType.ProtectCall
+                if recovery
+                else ButtonRequestType.ResetDevice
+            ),
         )
     )
 

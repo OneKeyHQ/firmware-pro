@@ -116,11 +116,13 @@ async def confirm_action(
         title,
         f"{description or ''}{' ' + (action or '')}",
         verb if verb else _(i18n_keys.BUTTON__CONFIRM),
-        cancel_text=verb_cancel
-        if verb_cancel
-        else _(i18n_keys.BUTTON__REJECT)
-        if hold
-        else _(i18n_keys.BUTTON__CANCEL),
+        cancel_text=(
+            verb_cancel
+            if verb_cancel
+            else _(i18n_keys.BUTTON__REJECT)
+            if hold
+            else _(i18n_keys.BUTTON__CANCEL)
+        ),
         icon_path=icon,
         hold_confirm=hold,
         anim_dir=anim_dir,
@@ -159,9 +161,11 @@ async def confirm_reset_device(
             ctx,
             restscreen,
             "recover_device" if recovery else "setup_device",
-            ButtonRequestType.ProtectCall
-            if recovery
-            else ButtonRequestType.ResetDevice,
+            (
+                ButtonRequestType.ProtectCall
+                if recovery
+                else ButtonRequestType.ResetDevice
+            ),
         )
     )
 
@@ -1408,7 +1412,6 @@ async def confirm_password_input(ctx: wire.Context) -> None:
 async def confirm_blind_sign_common(
     ctx: wire.Context, signer: str, raw_message: bytes
 ) -> None:
-
     from trezor.lvglui.scrs.template import BlindingSignCommon
 
     screen = BlindingSignCommon(signer, ctx.primary_color, ctx.icon_path)
@@ -1456,9 +1459,11 @@ async def confirm_set_homescreen(ctx, replace: bool = False):
         ctx=ctx,
         br_type="confirm_homescreen",
         title=_(i18n_keys.TITLE__SET_AS_HOMESCREEN),
-        description=_(i18n_keys.SUBTITLE__SET_AS_HOMESCREEN)
-        if not replace
-        else _(i18n_keys.SUBTITLE__SET_HOMESCREEN_AND_DELETE),
+        description=(
+            _(i18n_keys.SUBTITLE__SET_AS_HOMESCREEN)
+            if not replace
+            else _(i18n_keys.SUBTITLE__SET_HOMESCREEN_AND_DELETE)
+        ),
         icon=None,
         anim_dir=2,
     )
@@ -1469,9 +1474,11 @@ async def confirm_collect_nft(ctx, replace: bool = False):
         ctx=ctx,
         br_type="confirm_collect_nft",
         title=_(i18n_keys.TITLE__COLLECT_NFT),
-        description=_(i18n_keys.SUBTITLE__COLLECT_NFT)
-        if not replace
-        else _(i18n_keys.SUBTITLE__COLLECT_NFT_AND_DELETE),
+        description=(
+            _(i18n_keys.SUBTITLE__COLLECT_NFT)
+            if not replace
+            else _(i18n_keys.SUBTITLE__COLLECT_NFT_AND_DELETE)
+        ),
         icon=None,
         anim_dir=2,
     )
@@ -1481,12 +1488,16 @@ async def confirm_update_res(ctx, update_boot: bool = False):
     from trezor.lvglui.scrs.template import Modal
 
     confirm_screen = Modal(
-        title=_(i18n_keys.TITLE__BOOTLOADER_UPDATE)
-        if update_boot
-        else _(i18n_keys.TITLE__RESOURCE_UPDATE),
-        subtitle=_(i18n_keys.SUBTITLE__BOOTLOADER_UPDATE)
-        if update_boot
-        else _(i18n_keys.SUBTITLE__RESOURCE_UPDATE),
+        title=(
+            _(i18n_keys.TITLE__BOOTLOADER_UPDATE)
+            if update_boot
+            else _(i18n_keys.TITLE__RESOURCE_UPDATE)
+        ),
+        subtitle=(
+            _(i18n_keys.SUBTITLE__BOOTLOADER_UPDATE)
+            if update_boot
+            else _(i18n_keys.SUBTITLE__RESOURCE_UPDATE)
+        ),
         confirm_text=_(i18n_keys.BUTTON__UPDATE),
         cancel_text=_(i18n_keys.BUTTON__CANCEL),
         anim_dir=2,
@@ -1741,7 +1752,6 @@ async def confirm_algo_keyregOnline(
 
 
 async def confirm_algo_app(ctx: wire.Context, signer: str, raw_message: bytes) -> None:
-
     from trezor.lvglui.scrs.template import AlgoApplication
 
     screen = AlgoApplication(signer, ctx.primary_color, ctx.icon_path)

@@ -113,7 +113,7 @@ def recover(
     label: Optional[str] = None,
     language: str = "en-US",
     input_callback: Optional[Callable] = None,
-    type: messages.RecoveryDeviceType = messages.RecoveryDeviceType.ScrambledWords,
+    type: messages.RecoveryDeviceInputMethod = messages.RecoveryDeviceInputMethod.ScrambledWords,
     dry_run: bool = False,
     u2f_counter: Optional[int] = None,
 ) -> "MessageType":
@@ -233,13 +233,6 @@ def unlock_path(client: "TrezorClient", n: "Address") -> "MessageType":
     else:
         raise TrezorException("Unexpected response in UnlockPath flow")
 
-
-@session
-@expect(messages.Success, field="message", ret_type=str)
-def reboot(client: "TrezorClient", boot: bool=True) -> "MessageType":
-    return client.call(messages.RebootToBootloader() if boot else messages.RebootToBoardloader())
-
-
 @expect(messages.SEPublicCert)
 def se_read_cert(client: "TrezorClient") -> "MessageType":
     out = client.call(messages.ReadSEPublicCert())
@@ -355,11 +348,13 @@ def set_busy(client: "TrezorClient", expiry_ms: Optional[int]) -> "MessageType":
     return ret
 
 # new feautres
-# Reboot
+
+# OneKeyReboot
 @session
-def reboot(client: "TrezorClient", reboot_type:messages.RebootType) -> "MessageType":
-    resp = client.call(messages.Reboot(reboot_type))
-    return resp
+@expect(messages.Success, field="message", ret_type=str)
+def reboot(client: "TrezorClient", reboot_type: messages.OneKeyRebootType = messages.OneKeyRebootType.Normal) -> "MessageType":
+    return client.call(messages.OneKeyReboot(reboot_type=reboot_type))
+
 
 # FirmwareUpdateEmmc
 @session

@@ -165,7 +165,6 @@ class InputNum(FullSizeWindow):
 
 
 class InputPin(FullSizeWindow):
-
     _instance = None
 
     @classmethod

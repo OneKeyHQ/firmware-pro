@@ -19,9 +19,11 @@ class Bip39DotMap(FullSizeWindow):
         super().__init__(
             _(i18n_keys.TITLE__KEYTAG),
             None,
-            _(i18n_keys.BUTTON__VIEW_BACKSIDE)
-            if word_count > 12
-            else _(i18n_keys.BUTTON__DONE),
+            (
+                _(i18n_keys.BUTTON__VIEW_BACKSIDE)
+                if word_count > 12
+                else _(i18n_keys.BUTTON__DONE)
+            ),
             anim_dir=0,
         )
         assert (

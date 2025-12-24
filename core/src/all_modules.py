@@ -91,26 +91,40 @@ trezor.crypto.slip39
 import trezor.crypto.slip39
 trezor.enums.AmountUnit
 import trezor.enums.AmountUnit
+trezor.enums.BackupAvailability
+import trezor.enums.BackupAvailability
 trezor.enums.BackupType
 import trezor.enums.BackupType
+trezor.enums.BootCommand
+import trezor.enums.BootCommand
 trezor.enums.ButtonRequestType
 import trezor.enums.ButtonRequestType
 trezor.enums.Capability
 import trezor.enums.Capability
 trezor.enums.DebugButton
 import trezor.enums.DebugButton
+trezor.enums.DebugPhysicalButton
+import trezor.enums.DebugPhysicalButton
 trezor.enums.DebugSwipeDirection
 import trezor.enums.DebugSwipeDirection
+trezor.enums.DebugWaitType
+import trezor.enums.DebugWaitType
 trezor.enums.DecredStakingSpendType
 import trezor.enums.DecredStakingSpendType
+trezor.enums.DisplayRotation
+import trezor.enums.DisplayRotation
 trezor.enums.FailureType
 import trezor.enums.FailureType
+trezor.enums.HomescreenFormat
+import trezor.enums.HomescreenFormat
 trezor.enums.InputScriptType
 import trezor.enums.InputScriptType
 trezor.enums.MessageType
 import trezor.enums.MessageType
 trezor.enums.OneKeyDeviceType
 import trezor.enums.OneKeyDeviceType
+trezor.enums.OneKeyRebootType
+import trezor.enums.OneKeyRebootType
 trezor.enums.OneKeySEState
 import trezor.enums.OneKeySEState
 trezor.enums.OneKeySeType
@@ -119,8 +133,12 @@ trezor.enums.OutputScriptType
 import trezor.enums.OutputScriptType
 trezor.enums.PinMatrixRequestType
 import trezor.enums.PinMatrixRequestType
-trezor.enums.RecoveryDeviceType
-import trezor.enums.RecoveryDeviceType
+trezor.enums.RecoveryDeviceInputMethod
+import trezor.enums.RecoveryDeviceInputMethod
+trezor.enums.RecoveryStatus
+import trezor.enums.RecoveryStatus
+trezor.enums.RecoveryType
+import trezor.enums.RecoveryType
 trezor.enums.RequestType
 import trezor.enums.RequestType
 trezor.enums.ResourceType
@@ -129,6 +147,8 @@ trezor.enums.SafetyCheckLevel
 import trezor.enums.SafetyCheckLevel
 trezor.enums.SdProtectOperationType
 import trezor.enums.SdProtectOperationType
+trezor.enums.SeedRequestType
+import trezor.enums.SeedRequestType
 trezor.enums.SolanaOffChainMessageFormat
 import trezor.enums.SolanaOffChainMessageFormat
 trezor.enums.SolanaOffChainMessageVersion
@@ -139,6 +159,8 @@ trezor.enums.TonWorkChain
 import trezor.enums.TonWorkChain
 trezor.enums.TronResourceCode
 import trezor.enums.TronResourceCode
+trezor.enums.WL_OperationType
+import trezor.enums.WL_OperationType
 trezor.enums.WordRequestType
 import trezor.enums.WordRequestType
 trezor.enums
@@ -697,8 +719,6 @@ apps.management.se_sign_message
 import apps.management.se_sign_message
 apps.management.set_u2f_counter
 import apps.management.set_u2f_counter
-apps.management.update_res
-import apps.management.update_res
 apps.management.upload_res
 import apps.management.upload_res
 apps.management.wipe_device
@@ -1025,14 +1045,14 @@ if not utils.BITCOIN_ONLY:
     import trezor.enums.BinanceTimeInForce
     trezor.enums.CardanoAddressType
     import trezor.enums.CardanoAddressType
-    trezor.enums.CardanoCVoteRegistrationFormat
-    import trezor.enums.CardanoCVoteRegistrationFormat
     trezor.enums.CardanoCertificateType
     import trezor.enums.CardanoCertificateType
     trezor.enums.CardanoDRepType
     import trezor.enums.CardanoDRepType
     trezor.enums.CardanoDerivationType
     import trezor.enums.CardanoDerivationType
+    trezor.enums.CardanoGovernanceRegistrationFormat
+    import trezor.enums.CardanoGovernanceRegistrationFormat
     trezor.enums.CardanoNativeScriptHashDisplayFormat
     import trezor.enums.CardanoNativeScriptHashDisplayFormat
     trezor.enums.CardanoNativeScriptType

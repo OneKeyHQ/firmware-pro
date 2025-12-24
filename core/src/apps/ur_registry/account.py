@@ -62,9 +62,11 @@ class Account:
             public_key if public_key is not None else public_key,
             name if name is not None else name,
             chain_code if chain_code is not None else chain_code,
-            extended_public_key
-            if extended_public_key is not None
-            else extended_public_key,
+            (
+                extended_public_key
+                if extended_public_key is not None
+                else extended_public_key
+            ),
             note if note is not None else note,
             xfp if xfp is not None else xfp,
             extra,

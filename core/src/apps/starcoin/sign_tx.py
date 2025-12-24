@@ -15,7 +15,6 @@ from .helper import TRANSACTION_PREFIX, get_address_from_public_key
 async def sign_tx(
     ctx: wire.Context, msg: StarcoinSignTx, keychain: Keychain
 ) -> StarcoinSignedTx:
-
     await paths.validate_path(ctx, keychain, msg.address_n)
 
     node = keychain.derive(msg.address_n)

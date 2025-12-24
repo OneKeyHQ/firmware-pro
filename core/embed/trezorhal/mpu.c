@@ -53,7 +53,7 @@
 #define MPU_SUBREGION_MASK_BK1_FW (uint8_t)(~0b11111000U)
 #define MPU_SUBREGION_MASK_BK2_FW (uint8_t)(~0b01111111U)
 #define MPU_SUBREGION_MASK_BK2_OTP (uint8_t)(~0b10000000U)
-#define MPU_SUBREGION_MASK_NONE 0xffU
+#define MPU_SUBREGION_MASK_NONE (uint8_t)(0x00U)
 
 void mpu_ctrl(secbool mpu_enable) {
   if (mpu_enable != secfalse)  // doing in this way as secfase is just zero

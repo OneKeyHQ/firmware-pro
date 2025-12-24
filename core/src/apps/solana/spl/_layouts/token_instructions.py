@@ -1,4 +1,5 @@
 """Byte layouts for token instruction layouts."""
+
 import ustruct as struct
 from collections import namedtuple
 

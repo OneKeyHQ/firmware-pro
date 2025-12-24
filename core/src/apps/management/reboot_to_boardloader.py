@@ -25,5 +25,5 @@ async def reboot_to_boardloader(
     await ctx.write(Success(message="Rebooting"))
     # make sure the outgoing USB buffer is flushed
     await loop.wait(ctx.iface.iface_num() | io.POLL_WRITE)
-    utils.reboot2boardloader()
+    utils.reboot_to_boardloader()
     raise RuntimeError

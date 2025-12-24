@@ -19,13 +19,13 @@ if utils.USE_THD89:
     )
 else:
     # Keys:
-    _IN_PROGRESS                = (0x00)  # bool
-    _DRY_RUN                    = (0x01)  # bool
-    _SLIP39_IDENTIFIER_RECOVER  = (0x03)  # bytes
-    _SLIP39_THRESHOLD           = (0x04)  # int
-    _REMAINING                  = (0x05)  # int
-    _SLIP39_ITERATION_E_RECOVER = (0x06)  # int
-    _SLIP39_GROUP_COUNT         = (0x07)  # int
+    _IN_PROGRESS                = 0x00  # bool
+    _DRY_RUN                    = 0x01  # bool
+    _SLIP39_IDENTIFIER_RECOVER  = 0x03  # bytes
+    _SLIP39_THRESHOLD           = 0x04  # int
+    _REMAINING                  = 0x05  # int
+    _SLIP39_ITERATION_E_RECOVER = 0x06  # int
+    _SLIP39_GROUP_COUNT         = 0x07  # int
 
 # Deprecated Keys:
 # _WORD_COUNT                = const(0x02)  # int

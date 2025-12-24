@@ -25,7 +25,6 @@ from .layout import (
 async def sign_tx(
     ctx: wire.Context, msg: ScdoSignTx, keychain: Keychain
 ) -> ScdoSignedTx:
-
     data_total = msg.data_length if msg.data_length is not None else 0
 
     await paths.validate_path(ctx, keychain, msg.address_n)
@@ -134,7 +133,6 @@ def get_total_length(
     from_addr: str,
     data_total: int,
 ) -> int:
-
     length = 0
 
     fields: tuple[rlp.RLPItem, ...] = (

@@ -24,9 +24,9 @@ from trezorutils import (  # noqa: F401; FIRMWARE_SECTORS_COUNT,; firmware_secto
     firmware_vendor,
     halt,
     memcpy,
-    reboot2boardloader,
+    reboot,
+    reboot_to_boardloader,
     reboot_to_bootloader,
-    reset,
     usb_data_connected,
     board_hash,
     board_build_id,
@@ -188,9 +188,11 @@ def lcd_resume(timeouts_ms: int | None = None) -> bool:
             fingerprints.is_available() and fingerprints.is_unlocked()
         )
         base.reload_settings_from_storage(
-            timeout_ms=(SHORT_AUTO_LOCK_TIME_MS if not timeouts_ms else timeouts_ms)
-            if not is_device_unlocked
-            else None
+            timeout_ms=(
+                (SHORT_AUTO_LOCK_TIME_MS if not timeouts_ms else timeouts_ms)
+                if not is_device_unlocked
+                else None
+            )
         )
         return True
     return False
@@ -678,11 +680,11 @@ if __debug__:
 
         yield line_start + msg.MESSAGE_NAME + " {"
         for key, val in msg_dict.items():
-            if type(val) == type(msg):
+            if val is type(msg):
                 sublines = dump_protobuf_lines(val, line_start=key + ": ")
                 for subline in sublines:
                     yield "    " + subline
-            elif val and isinstance(val, list) and type(val[0]) == type(msg):
+            elif val and isinstance(val, list) and val[0] is type(msg):
                 # non-empty list of protobuf messages
                 yield f"    {key}: ["
                 for subval in val:

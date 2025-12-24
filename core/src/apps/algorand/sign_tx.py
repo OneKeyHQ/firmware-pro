@@ -17,7 +17,6 @@ from . import ICON, PRIMARY_COLOR, encoding, tokens, transactions
 async def sign_tx(
     ctx: wire.Context, msg: AlgorandSignTx, keychain: Keychain
 ) -> AlgorandSignedTx:
-
     await paths.validate_path(ctx, keychain, msg.address_n)
     node = keychain.derive(msg.address_n)
     public_key = node.public_key()[1:]
@@ -29,7 +28,7 @@ async def sign_tx(
     fee = txn.fee if txn is not None else 0
     note = txn.note if txn is not None else None
     ctx.primary_color, ctx.icon_path = lv.color_hex(PRIMARY_COLOR), ICON
-    if type(txn) == transactions.transaction.AssetFreezeTxn:
+    if txn is transactions.transaction.AssetFreezeTxn:
         from trezor.ui.layouts.lvgl import confirm_algo_asset_freeze
 
         fee = f"{format_amount(fee, transactions.constants.COIN_DECIMALS)} {transactions.constants.COIN_SUFFIX}"
@@ -38,17 +37,21 @@ async def sign_tx(
             sender,
             txn.rekey_to if txn is not None else None,
             fee,
-            str(txn.index)
-            if type(txn) is transactions.transaction.AssetFreezeTxn
-            else "",
+            (
+                str(txn.index)
+                if type(txn) is transactions.transaction.AssetFreezeTxn
+                else ""
+            ),
             txn.target if type(txn) is transactions.transaction.AssetFreezeTxn else "",
-            txn.new_freeze_state
-            if type(txn) is transactions.transaction.AssetFreezeTxn
-            else False,
+            (
+                txn.new_freeze_state
+                if type(txn) is transactions.transaction.AssetFreezeTxn
+                else False
+            ),
             txn.genesis_id if txn is not None else None,
             note,
         )
-    elif type(txn) == transactions.transaction.PaymentTxn:
+    elif txn is transactions.transaction.PaymentTxn:
         from trezor.ui.layouts.lvgl import confirm_algo_payment
 
         fee = f"{format_amount(fee, transactions.constants.COIN_DECIMALS)} {transactions.constants.COIN_SUFFIX}"
@@ -73,7 +76,7 @@ async def sign_tx(
             fee,
             amount,
         )
-    elif type(txn) == transactions.transaction.AssetTransferTxn:
+    elif txn is transactions.transaction.AssetTransferTxn:
         from trezor.ui.layouts.lvgl import confirm_algo_asset_xfer
 
         fee = f"{format_amount(fee, transactions.constants.COIN_DECIMALS)} {transactions.constants.COIN_SUFFIX}"
@@ -102,17 +105,21 @@ async def sign_tx(
             str(index),
             fee,
             amount,
-            txn.close_assets_to
-            if type(txn) is transactions.transaction.AssetTransferTxn
-            else None,
-            txn.revocation_target
-            if type(txn) is transactions.transaction.AssetTransferTxn
-            else None,
+            (
+                txn.close_assets_to
+                if type(txn) is transactions.transaction.AssetTransferTxn
+                else None
+            ),
+            (
+                txn.revocation_target
+                if type(txn) is transactions.transaction.AssetTransferTxn
+                else None
+            ),
             txn.rekey_to if txn is not None else None,
             txn.genesis_id if txn is not None else None,
             note,
         )
-    elif type(txn) == transactions.transaction.AssetConfigTxn:
+    elif txn is transactions.transaction.AssetConfigTxn:
         from trezor.ui.layouts.lvgl import confirm_algo_asset_cfg
 
         fee = f"{format_amount(fee, transactions.constants.COIN_DECIMALS)} {transactions.constants.COIN_SUFFIX}"
@@ -129,39 +136,57 @@ async def sign_tx(
             sender,
             str(index),
             str(total),
-            txn.default_frozen
-            if type(txn) is transactions.transaction.AssetConfigTxn
-            else None,
-            txn.unit_name
-            if type(txn) is transactions.transaction.AssetConfigTxn
-            else None,
-            txn.asset_name
-            if type(txn) is transactions.transaction.AssetConfigTxn
-            else None,
-            str(txn.decimals)
-            if type(txn) is transactions.transaction.AssetConfigTxn
-            else None,
-            txn.manager
-            if type(txn) is transactions.transaction.AssetConfigTxn
-            else None,
-            txn.reserve
-            if type(txn) is transactions.transaction.AssetConfigTxn
-            else None,
-            txn.freeze
-            if type(txn) is transactions.transaction.AssetConfigTxn
-            else None,
-            txn.clawback
-            if type(txn) is transactions.transaction.AssetConfigTxn
-            else None,
+            (
+                txn.default_frozen
+                if type(txn) is transactions.transaction.AssetConfigTxn
+                else None
+            ),
+            (
+                txn.unit_name
+                if type(txn) is transactions.transaction.AssetConfigTxn
+                else None
+            ),
+            (
+                txn.asset_name
+                if type(txn) is transactions.transaction.AssetConfigTxn
+                else None
+            ),
+            (
+                str(txn.decimals)
+                if type(txn) is transactions.transaction.AssetConfigTxn
+                else None
+            ),
+            (
+                txn.manager
+                if type(txn) is transactions.transaction.AssetConfigTxn
+                else None
+            ),
+            (
+                txn.reserve
+                if type(txn) is transactions.transaction.AssetConfigTxn
+                else None
+            ),
+            (
+                txn.freeze
+                if type(txn) is transactions.transaction.AssetConfigTxn
+                else None
+            ),
+            (
+                txn.clawback
+                if type(txn) is transactions.transaction.AssetConfigTxn
+                else None
+            ),
             txn.url if type(txn) is transactions.transaction.AssetConfigTxn else None,
-            b2a_base64(metadata_hash)[:-1].decode()
-            if metadata_hash is not None
-            else None,
+            (
+                b2a_base64(metadata_hash)[:-1].decode()
+                if metadata_hash is not None
+                else None
+            ),
             txn.rekey_to if txn is not None else None,
             txn.genesis_id if txn is not None else None,
             note,
         )
-    elif type(txn) == transactions.transaction.KeyregNonparticipatingTxn:
+    elif txn is transactions.transaction.KeyregNonparticipatingTxn:
         from trezor.ui.layouts.lvgl import confirm_algo_keyregNonparticipating
 
         fee = f"{format_amount(fee, transactions.constants.COIN_DECIMALS)} {transactions.constants.COIN_SUFFIX}"
@@ -179,7 +204,7 @@ async def sign_tx(
             txn.genesis_id if txn is not None else None,
             note,
         )
-    elif type(txn) == transactions.transaction.KeyregOfflineTxn:
+    elif txn is transactions.transaction.KeyregOfflineTxn:
         from trezor.ui.layouts.lvgl import confirm_algo_keyregOnline
 
         fee = f"{format_amount(fee, transactions.constants.COIN_DECIMALS)} {transactions.constants.COIN_SUFFIX}"
@@ -195,7 +220,7 @@ async def sign_tx(
             txn.genesis_id if txn is not None else None,
             note,
         )
-    elif type(txn) == transactions.transaction.KeyregOnlineTxn:
+    elif txn is transactions.transaction.KeyregOnlineTxn:
         from trezor.ui.layouts.lvgl import confirm_algo_keyregOnline
 
         fee = f"{format_amount(fee, transactions.constants.COIN_DECIMALS)} {transactions.constants.COIN_SUFFIX}"
@@ -206,14 +231,16 @@ async def sign_tx(
             fee,
             txn.votepk if type(txn) is transactions.transaction.KeyregOnlineTxn else "",
             txn.selkey if type(txn) is transactions.transaction.KeyregOnlineTxn else "",
-            txn.sprfkey
-            if type(txn) is transactions.transaction.KeyregOnlineTxn
-            else None,
+            (
+                txn.sprfkey
+                if type(txn) is transactions.transaction.KeyregOnlineTxn
+                else None
+            ),
             txn.rekey_to if txn is not None else None,
             txn.genesis_id if txn is not None else None,
             note,
         )
-    elif type(txn) == transactions.transaction.ApplicationCallTxn:
+    elif txn is transactions.transaction.ApplicationCallTxn:
         from trezor.ui.layouts.lvgl import confirm_algo_app
 
         await confirm_algo_app(ctx, address, msg.raw_tx)

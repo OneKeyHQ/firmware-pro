@@ -280,7 +280,6 @@ def encode_streamed(value: Value) -> Iterator[bytes]:
 
 
 def decode(cbor: bytes, offset: int = 0) -> Value:
-
     r = BufferReader(cbor)
     r.seek(offset)
     res = _cbor_decode(r)

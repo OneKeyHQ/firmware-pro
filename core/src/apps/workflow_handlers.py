@@ -51,14 +51,10 @@ def find_message_handler_module(msg_type: int) -> str:
         return "apps.management.get_nonce"
     elif msg_type == MessageType.SESignMessage:
         return "apps.management.se_sign_message"
-    elif msg_type == MessageType.RebootToBootloader:
-        return "apps.management.reboot_to_bootloader"
-    elif msg_type == MessageType.DeviceBackToBoot:
-        return "apps.management.reboot_to_bootloader"
-    elif msg_type == MessageType.RebootToBoardloader:
-        return "apps.management.reboot_to_boardloader"
     elif msg_type == MessageType.ReadSEPublicCert:
         return "apps.management.se_read_cert"
+    elif msg_type == MessageType.OneKeyReboot:
+        return "apps.onekey.onekey_reboot"
 
     if utils.MODEL in ("T",) and msg_type == MessageType.SdProtect:
         return "apps.management.sd_protect"
@@ -66,10 +62,6 @@ def find_message_handler_module(msg_type: int) -> str:
         if utils.EMULATOR:
             raise ValueError
         return "apps.management.upload_res"
-    if utils.MODEL == "T" and msg_type == MessageType.ResourceUpdate:
-        if utils.EMULATOR:
-            raise ValueError
-        return "apps.management.update_res"
     if utils.MODEL == "T" and msg_type == MessageType.ListResDir:
         if utils.EMULATOR:
             raise ValueError

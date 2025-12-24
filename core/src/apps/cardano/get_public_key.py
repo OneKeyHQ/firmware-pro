@@ -17,7 +17,6 @@ if TYPE_CHECKING:
 async def get_public_key(
     ctx: wire.Context, msg: CardanoGetPublicKey, keychain: seed.Keychain
 ) -> CardanoPublicKey:
-
     from trezor.ui.layouts import show_pubkey
 
     from apps.common import paths

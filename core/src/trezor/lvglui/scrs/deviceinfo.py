@@ -154,5 +154,4 @@ class DeviceInfoManager:
         return cls._instance
 
     def get_info(self):
-
         return self.preloaded_info

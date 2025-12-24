@@ -1,5 +1,4 @@
 class LV_SYMBOLS:
-
     LV_SYMBOL_ANGLE_DOUBLE_DOWN = "\uf103"
     LV_SYMBOL_LIGHTBULB = "\uf0eb"
     LV_SYMBOL_TRASH = "\uf1f8"

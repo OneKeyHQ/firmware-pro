@@ -46,9 +46,9 @@ SESSIONS_STORED = 10
 
 
 def _init_session(client: Client, session_id=None, derive_cardano=False):
-    """Call Initialize, check and return the session ID."""
+    """Call StartSession, check and return the session ID."""
     response = client.call(
-        messages.Initialize(session_id=session_id, derive_cardano=derive_cardano)
+        messages.StartSession(session_id=session_id, derive_cardano=derive_cardano)
     )
     assert isinstance(response, messages.Features)
     assert len(response.session_id) == 32
@@ -75,21 +75,21 @@ def _get_xpub(client: Client, passphrase=None):
 
 @pytest.mark.setup_client(passphrase=True)
 def test_session_with_passphrase(client: Client):
-    # Let's start the communication by calling Initialize.
+    # Let's start the communication by calling StartSession.
     session_id = _init_session(client)
 
     # GetPublicKey requires passphrase and since it is not cached,
     # Trezor will prompt for it.
     assert _get_xpub(client, passphrase="A") == XPUB_PASSPHRASES["A"]
 
-    # Call Initialize again, this time with the received session id and then call
+    # Call StartSession again, this time with the received session id and then call
     # GetPublicKey. The passphrase should be cached now so Trezor must
     # not ask for it again, whilst returning the same xpub.
     new_session_id = _init_session(client, session_id=session_id)
     assert new_session_id == session_id
     assert _get_xpub(client, passphrase=None) == XPUB_PASSPHRASES["A"]
 
-    # If we set session id in Initialize to None, the cache will be cleared
+    # If we set session id in StartSession to None, the cache will be cleared
     # and Trezor will ask for the passphrase again.
     new_session_id = _init_session(client)
     assert new_session_id != session_id
@@ -215,7 +215,7 @@ def test_max_sessions_with_passphrases(client: Client):
 
 
 def test_session_enable_passphrase(client: Client):
-    # Let's start the communication by calling Initialize.
+    # Let's start the communication by calling StartSession.
     session_id = _init_session(client)
 
     # Trezor will not prompt for passphrase because it is turned off.
@@ -282,7 +282,7 @@ def test_passphrase_on_device(client: Client):
 @pytest.mark.skip_t1
 @pytest.mark.setup_client(passphrase=True)
 def test_passphrase_always_on_device(client: Client):
-    # Let's start the communication by calling Initialize.
+    # Let's start the communication by calling StartSession.
     session_id = _init_session(client)
 
     # Force passphrase entry on Trezor.
@@ -416,7 +416,7 @@ def test_cardano_passphrase(client: Client):
     # The passphrase should be cached for Cardano as well
     assert _get_xpub_cardano(client, passphrase=None) == XPUB_CARDANO_PASSPHRASE_B
 
-    # Initialize with the session id does not destroy the state
+    # StartSession with the session id does not destroy the state
     _init_session(client, session_id=session_id, derive_cardano=True)
     assert _get_xpub(client, passphrase=None) == XPUB_PASSPHRASES["B"]
     assert _get_xpub_cardano(client, passphrase=None) == XPUB_CARDANO_PASSPHRASE_B

@@ -33,7 +33,8 @@ sram_end = ORIGIN(SRAM) + LENGTH(SRAM);
 _ram_start = sram_start;
 _ram_end = sram_end;
 
-_codelen = LENGTH(FLASH) - SIZEOF(.vendorheader) - SIZEOF(.header) + SIZEOF(.flash2);
+_codelen = LENGTH(FLASH) - (SIZEOF(.vendorheader) + SIZEOF(.header)) + SIZEOF(.flash2);
+_flash_start = ORIGIN(FLASH);
 _flash_start = ORIGIN(FLASH);
 _flash_end = ORIGIN(FLASH) + LENGTH(FLASH);
 _heap_start = ADDR(.heap);
@@ -68,10 +69,14 @@ SECTIONS {
     . = ALIGN(4);
     *(.rodata*);
     . = ALIGN(4);
-    /* KEEP(*(.bootloader)); */
-    /* *(.bootloader*); */
-    /*. = ALIGN(512); */
   } >FLASH AT>FLASH
+
+  .ARM : ALIGN(4)
+  {
+    __exidx_start = .;
+    *(.ARM.exidx*)
+    __exidx_end = .;
+  } >FLASH
 
   .data : ALIGN(4) {
     *(.data*);

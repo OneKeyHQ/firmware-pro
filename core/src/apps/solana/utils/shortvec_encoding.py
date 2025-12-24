@@ -1,4 +1,5 @@
 """Library for ShortVec encoding."""
+
 from typing import Tuple
 
 

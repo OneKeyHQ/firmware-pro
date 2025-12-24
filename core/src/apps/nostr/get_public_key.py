@@ -23,7 +23,6 @@ if TYPE_CHECKING:
 async def get_public_key(
     ctx: Context, msg: NostrGetPublicKey, keychain: Keychain
 ) -> NostrPublicKey:
-
     await paths.validate_path(ctx, keychain, msg.address_n)
 
     node = keychain.derive(msg.address_n)

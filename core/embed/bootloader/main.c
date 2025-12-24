@@ -130,9 +130,50 @@ static void set_handle_flash_ecc_error(secbool val) {
 }
 
 // fault handlers
+#if !PRODUCTION
+enum { r0, r1, r2, r3, r12, lr, pc, psr };
+void STACK_DUMP(unsigned int* stack) {
+  display_print_color(COLOR_RED, COLOR_BLACK);
+  display_printf("[STACK DUMP]\n");
+  display_printf("R0 = 0x%08x\n", stack[r0]);
+  display_printf("R1 = 0x%08x\n", stack[r1]);
+  display_printf("R2 = 0x%08x\n", stack[r2]);
+  display_printf("R3 = 0x%08x\n", stack[r3]);
+  display_printf("R12 = 0x%08x\n", stack[r12]);
+  display_printf("LR = 0x%08x\n", stack[lr]);
+  display_printf("PC = 0x%08x\n", stack[pc]);
+  display_printf("PSR = 0x%08x\n", stack[psr]);
+  display_printf("BFAR = 0x%08x\n", (*((volatile unsigned int*)(0xE000ED38))));
+  display_printf("CFSR = 0x%08x\n", (*((volatile unsigned int*)(0xE000ED28))));
+  display_printf("HFSR = 0x%08x\n", (*((volatile unsigned int*)(0xE000ED2C))));
+  display_printf("DFSR = 0x%08x\n", (*((volatile unsigned int*)(0xE000ED30))));
+  display_printf("AFSR = 0x%08x\n", (*((volatile unsigned int*)(0xE000ED3C))));
+
+#ifdef BUILD_ID
+  const uint8_t* id = (const uint8_t*)BUILD_ID;
+  display_printf("build id: %s", id);
+#endif
+
+  exit(0);
+  return;
+}
+
+__attribute__((naked)) void HardFault_Handler(void) {
+  __asm volatile(
+      " tst lr, #4    \n"  // Test Bit 3 to see which stack pointer we should
+                           // use.
+      " ite eq        \n"  // Tell the assembler that the nest 2 instructions
+                           // are if-then-else
+      " mrseq r0, msp \n"  // Make R0 point to main stack pointer
+      " mrsne r0, psp \n"  // Make R0 point to process stack pointer
+      " b STACK_DUMP \n"   // Off to C land
+  );
+}
+#else
 void HardFault_Handler(void) {
   error_shutdown("Internal error", "(HF)", NULL, NULL);
 }
+#endif
 
 void MemManage_Handler_MM(void) {
   error_shutdown("Internal error", "(MM)", NULL, NULL);
@@ -294,7 +335,7 @@ static void charge_switch(void) {
     return;
   }
 
-  if (ble_get_charge_type() == CHARGE_BY_USB) {
+  if (ble_get_charge_type() == CHARGE_TYPE_USB) {
     if (!charge_enabled || !charge_configured) {
       charge_configured = true;
       charge_enabled = true;
@@ -338,8 +379,9 @@ static secbool bootloader_usb_loop(const vendor_header* const vhdr,
         break;
       }
       // no packet, check if power button pressed
-      // else if ( ble_power_button_state() == 1 ) // short press
-      else if (ble_power_button_state() == 2)  // long press
+      // else if ( ble_power_button_state() == BLE_KEY_SHORT_PRESS ) // short
+      // press
+      else if (ble_power_button_state() == BLE_KEY_LONG_PRESS)  // long press
       {
         // give a way to go back to bootloader home page
         if (get_ui_bootloader_page_current() != 0) {
@@ -372,8 +414,8 @@ static secbool bootloader_usb_loop(const vendor_header* const vhdr,
     }
 
     switch (msg_id) {
-      case MSG_NAME_TO_ID(Initialize):  // Initialize
-        process_msg_Initialize(USB_IFACE_NUM, msg_size, buf, vhdr, hdr);
+      case MSG_NAME_TO_ID(StartSession):  // StartSession
+        process_msg_StartSession(USB_IFACE_NUM, msg_size, buf, vhdr, hdr);
         break;
       case MSG_NAME_TO_ID(Ping):  // Ping
         process_msg_Ping(USB_IFACE_NUM, msg_size, buf);
@@ -419,8 +461,8 @@ static secbool bootloader_usb_loop(const vendor_header* const vhdr,
       case MSG_NAME_TO_ID(GetFeatures):  // GetFeatures
         process_msg_GetFeatures(USB_IFACE_NUM, msg_size, buf, vhdr, hdr);
         break;
-      case MSG_NAME_TO_ID(Reboot):  // Reboot
-        process_msg_Reboot(USB_IFACE_NUM, msg_size, buf);
+      case MSG_NAME_TO_ID(OneKeyReboot):  // OneKeyReboot
+        process_msg_OneKeyReboot(USB_IFACE_NUM, msg_size, buf);
         break;
       case MSG_NAME_TO_ID(FirmwareUpdateEmmc):  // FirmwareUpdateEmmc
         r = process_msg_FirmwareUpdateEmmc(USB_IFACE_NUM, msg_size, buf);
@@ -463,9 +505,6 @@ static secbool bootloader_usb_loop(const vendor_header* const vhdr,
       case MSG_NAME_TO_ID(EmmcDirRemove):  // EmmcDirRemove
         process_msg_EmmcDirRemove(USB_IFACE_NUM, msg_size, buf);
         break;
-      case MSG_NAME_TO_ID(OnekeyGetFeatures):  // OnekeyGetFeatures
-        process_msg_OnekeyGetFeatures(USB_IFACE_NUM, msg_size, buf, vhdr, hdr);
-        break;
       default:
         process_msg_unknown(USB_IFACE_NUM, msg_size, buf);
         break;
@@ -485,6 +524,10 @@ secbool bootloader_usb_loop_factory(const vendor_header* const vhdr,
   int r;
 
   for (;;) {
+    // ble_get_dev_info();
+    // ble_uart_poll();
+    // ui_bootloader_factory_refresh();
+
     r = usb_webusb_read_blocking(USB_IFACE_NUM, buf, USB_PACKET_SIZE,
                                  USB_TIMEOUT);
     if (r != USB_PACKET_SIZE) {
@@ -499,9 +542,14 @@ secbool bootloader_usb_loop_factory(const vendor_header* const vhdr,
       continue;
     }
 
+    // init_state????
+    // init_state |= device_serial_set() ? 1 : 0;
+    // init_state |= se_has_cerrificate() ? (1 << 2) : 0;
+    // #warning "TODO: Adapt to new proto!!!"
+
     switch (msg_id) {
-      case MSG_NAME_TO_ID(Initialize):  // Initialize
-        process_msg_Initialize(USB_IFACE_NUM, msg_size, buf, vhdr, hdr);
+      case MSG_NAME_TO_ID(StartSession):  // StartSession
+        process_msg_StartSession(USB_IFACE_NUM, msg_size, buf, vhdr, hdr);
         break;
       case MSG_NAME_TO_ID(Ping):  // Ping
         process_msg_Ping(USB_IFACE_NUM, msg_size, buf);
@@ -530,8 +578,8 @@ secbool bootloader_usb_loop_factory(const vendor_header* const vhdr,
       case MSG_NAME_TO_ID(SESignMessage):  // SESignMessage
         process_msg_SESignMessage(USB_IFACE_NUM, msg_size, buf);
         break;
-      case MSG_NAME_TO_ID(Reboot):  // Reboot
-        process_msg_Reboot(USB_IFACE_NUM, msg_size, buf);
+      case MSG_NAME_TO_ID(OneKeyReboot):  // Reboot
+        process_msg_OneKeyReboot(USB_IFACE_NUM, msg_size, buf);
         break;
       case MSG_NAME_TO_ID(FirmwareUpdateEmmc):  // FirmwareUpdateEmmc
         process_msg_FirmwareUpdateEmmc(USB_IFACE_NUM, msg_size, buf);
@@ -696,14 +744,15 @@ int main(void) {
     device_para_init();
   }
 
-  if ((!device_serial_set() || !se_has_cerrificate()) && se_mode == 0) {
-    display_clear();
-    device_set_factory_mode(true);
-    ui_bootloader_factory();
-    if (bootloader_usb_loop_factory(NULL, NULL) != sectrue) {
-      return 1;
-    }
-  }
+  // if ( (!device_serial_set() || !se_has_cerrificate()) && se_mode == 0 )
+  // {
+  //   display_clear();
+  //   device_set_factory_mode(true);
+  //   ui_bootloader_factory();
+  //   if (bootloader_usb_loop_factory(NULL, NULL) != sectrue) {
+  //     return 1;
+  //   }
+  // }
 
 #if !PRODUCTION
 
@@ -717,9 +766,34 @@ int main(void) {
   // }
   UNUSED(write_dev_dummy_cert);
 
-  // if(!device_overwrite_serial("PRA50I0000 QA"))
+  // Note: serial compare depends on device_para_init
+  // bool skip_serial_compare = false;
+  // char overwrite_serial[] = "PRB31B0149A";
+  // // char overwrite_serial[] = "PRB31I0000X AXP2101";
+  // char* device_serial = NULL;
+  // if ( skip_serial_compare || device_get_serial(&device_serial) )
   // {
-  //   dbgprintf_Wait("serial overwrite failed!");
+  //     if ( skip_serial_compare || strncmp(device_serial, overwrite_serial,
+  //     strlen(overwrite_serial)) == 0 )
+  //     {
+  //         dbgprintf_Wait("serial overwrite skipped! (%s)", overwrite_serial);
+  //     }
+  //     else
+  //     {
+  //         if ( device_overwrite_serial(overwrite_serial) )
+  //         {
+  //             dbgprintf_Wait("serial overwrite succeed! (%s)",
+  //             overwrite_serial);
+  //         }
+  //         else
+  //         {
+  //             dbgprintf_Wait("serial overwrite failed!");
+  //         }
+  //     }
+  // }
+  // else
+  // {
+  //     dbgprintf_Wait("serial overwrite aborted!");
   // }
 
   // device_test(true);
@@ -762,31 +836,31 @@ int main(void) {
     }
   } else if (boot_target == BOOT_TARGET_NORMAL) {
     // check bluetooth key
-    device_verify_ble();
+    // device_verify_ble();
 
-    // if all VTRUST flags are unset = ultimate trust => skip the procedure
-    if ((vhdr.vtrust & VTRUST_ALL) != VTRUST_ALL) {
-      // ui_fadeout();  // no fadeout - we start from black screen
-      ui_screen_boot(&vhdr, &hdr);
-      ui_fadein();
+    // // if all VTRUST flags are unset = ultimate trust => skip the procedure
+    // if ((vhdr.vtrust & VTRUST_ALL) != VTRUST_ALL) {
+    //   // ui_fadeout();  // no fadeout - we start from black screen
+    //   ui_screen_boot(&vhdr, &hdr);
+    //   ui_fadein();
 
-      int delay = (vhdr.vtrust & VTRUST_WAIT) ^ VTRUST_WAIT;
-      if (delay > 1) {
-        while (delay > 0) {
-          ui_screen_boot_wait(delay);
-          hal_delay(1000);
-          delay--;
-        }
-      } else if (delay == 1) {
-        hal_delay(1000);
-      }
+    //   int delay = (vhdr.vtrust & VTRUST_WAIT) ^ VTRUST_WAIT;
+    //   if (delay > 1) {
+    //     while (delay > 0) {
+    //       ui_screen_boot_wait(delay);
+    //       hal_delay(1000);
+    //       delay--;
+    //     }
+    //   } else if (delay == 1) {
+    //     hal_delay(1000);
+    //   }
 
-      if ((vhdr.vtrust & VTRUST_CLICK) == 0) {
-        ui_screen_boot_click();
-        while (touch_read() == 0)
-          ;
-      }
-    }
+    //   if ((vhdr.vtrust & VTRUST_CLICK) == 0) {
+    //     ui_screen_boot_click();
+    //     while (touch_read() == 0)
+    //       ;
+    //   }
+    // }
 
     display_clear();
 
@@ -798,6 +872,9 @@ int main(void) {
 
     // enable firmware region
     mpu_config_firmware(sectrue, sectrue);
+
+    // SCB_DisableICache();
+    // SCB_InvalidateICache();
 
     jump_to(FIRMWARE_START + vhdr.hdrlen + hdr.hdrlen);
   }

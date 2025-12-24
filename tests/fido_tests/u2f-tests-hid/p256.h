@@ -55,7 +55,7 @@ extern const p256_int SECP256r1_n;  // Curve order
 extern const p256_int SECP256r1_p;  // Curve prime
 extern const p256_int SECP256r1_b;  // Curve param
 
-// Initialize a p256_int to zero.
+// StartSession a p256_int to zero.
 void p256_init(p256_int* a);
 
 // Clear a p256_int to zero.

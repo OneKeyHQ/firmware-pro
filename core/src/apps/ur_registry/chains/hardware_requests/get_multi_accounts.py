@@ -32,12 +32,16 @@ class GetMultiAccountsRequest:
                 paths = param["paths"]
                 if chain in ("ETH", "BTC", "TBTC", "SBTC"):
                     coin_info = crypto_coin_info.CryptoCoinInfo(
-                        crypto_coin_info.Bitcoin
-                        if chain in ["BTC", "TBTC", "SBTC"]
-                        else crypto_coin_info.Ethereum,
-                        crypto_coin_info.MainNet
-                        if chain in ["BTC", "ETH"]
-                        else crypto_coin_info.TestNet,
+                        (
+                            crypto_coin_info.Bitcoin
+                            if chain in ["BTC", "TBTC", "SBTC"]
+                            else crypto_coin_info.Ethereum
+                        ),
+                        (
+                            crypto_coin_info.MainNet
+                            if chain in ["BTC", "ETH"]
+                            else crypto_coin_info.TestNet
+                        ),
                     )
                     for path in paths:
                         # pyright: off
@@ -45,9 +49,9 @@ class GetMultiAccountsRequest:
                             wire.QR_CONTEXT,
                             GetPublicKey(
                                 address_n=paths_utils.parse_path(path),
-                                coin_name="Bitcoin"
-                                if chain in ["BTC", "ETH"]
-                                else "Testnet",
+                                coin_name=(
+                                    "Bitcoin" if chain in ["BTC", "ETH"] else "Testnet"
+                                ),
                             ),
                         )
                         # pyright: on

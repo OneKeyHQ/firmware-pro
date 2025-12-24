@@ -19,7 +19,6 @@ from .transaction import Transaction
 async def sign_tx(
     ctx: wire.Context, msg: FilecoinSignTx, keychain: Keychain
 ) -> FilecoinSignedTx:
-
     await paths.validate_path(ctx, keychain, msg.address_n)
     node = keychain.derive(msg.address_n)
     ctx.primary_color, ctx.icon_path = lv.color_hex(PRIMARY_COLOR), ICON

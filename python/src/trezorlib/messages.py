@@ -28,422 +28,6 @@ class BinanceTimeInForce(IntEnum):
     IOC = 3
 
 
-class MessageType(IntEnum):
-    Initialize = 0
-    Ping = 1
-    Success = 2
-    Failure = 3
-    ChangePin = 4
-    WipeDevice = 5
-    GetEntropy = 9
-    Entropy = 10
-    LoadDevice = 13
-    ResetDevice = 14
-    SetBusy = 16
-    Features = 17
-    PinMatrixRequest = 18
-    PinMatrixAck = 19
-    Cancel = 20
-    LockDevice = 24
-    ApplySettings = 25
-    ButtonRequest = 26
-    ButtonAck = 27
-    ApplyFlags = 28
-    GetNonce = 31
-    Nonce = 33
-    BackupDevice = 34
-    EntropyRequest = 35
-    EntropyAck = 36
-    PassphraseRequest = 41
-    PassphraseAck = 42
-    RecoveryDevice = 45
-    WordRequest = 46
-    WordAck = 47
-    GetFeatures = 55
-    SdProtect = 79
-    ChangeWipeCode = 82
-    EndSession = 83
-    DoPreauthorized = 84
-    PreauthorizedRequest = 85
-    CancelAuthorization = 86
-    RebootToBootloader = 87
-    GetFirmwareHash = 88
-    FirmwareHash = 89
-    UnlockPath = 93
-    UnlockedPathRequest = 94
-    SetU2FCounter = 63
-    GetNextU2FCounter = 80
-    NextU2FCounter = 81
-    Deprecated_PassphraseStateRequest = 77
-    Deprecated_PassphraseStateAck = 78
-    FirmwareErase = 6
-    FirmwareUpload = 7
-    FirmwareRequest = 8
-    FirmwareErase_ex = 16
-    SelfTest = 32
-    Reboot = 30000
-    FirmwareUpdateEmmc = 30001
-    GetPublicKey = 11
-    PublicKey = 12
-    SignTx = 15
-    TxRequest = 21
-    TxAck = 22
-    GetAddress = 29
-    Address = 30
-    TxAckPaymentRequest = 37
-    SignMessage = 38
-    VerifyMessage = 39
-    MessageSignature = 40
-    GetOwnershipId = 43
-    OwnershipId = 44
-    GetOwnershipProof = 49
-    OwnershipProof = 50
-    AuthorizeCoinJoin = 51
-    SignPsbt = 10052
-    SignedPsbt = 10053
-    CipherKeyValue = 23
-    CipheredKeyValue = 48
-    SignIdentity = 53
-    SignedIdentity = 54
-    GetECDHSessionKey = 61
-    ECDHSessionKey = 62
-    CosiCommit = 71
-    CosiCommitment = 72
-    CosiSign = 73
-    CosiSignature = 74
-    BatchGetPublickeys = 10016
-    EcdsaPublicKeys = 10017
-    DebugLinkDecision = 100
-    DebugLinkGetState = 101
-    DebugLinkState = 102
-    DebugLinkStop = 103
-    DebugLinkLog = 104
-    DebugLinkMemoryRead = 110
-    DebugLinkMemory = 111
-    DebugLinkMemoryWrite = 112
-    DebugLinkFlashErase = 113
-    DebugLinkLayout = 9001
-    DebugLinkReseedRandom = 9002
-    DebugLinkRecordScreen = 9003
-    DebugLinkEraseSdCard = 9005
-    DebugLinkWatchLayout = 9006
-    EmmcFixPermission = 30100
-    EmmcPath = 30101
-    EmmcPathInfo = 30102
-    EmmcFile = 30103
-    EmmcFileRead = 30104
-    EmmcFileWrite = 30105
-    EmmcFileDelete = 30106
-    EmmcDir = 30107
-    EmmcDirList = 30108
-    EmmcDirMake = 30109
-    EmmcDirRemove = 30110
-    EthereumGetPublicKey = 450
-    EthereumPublicKey = 451
-    EthereumGetAddress = 56
-    EthereumAddress = 57
-    EthereumSignTx = 58
-    EthereumSignTxEIP1559 = 452
-    EthereumTxRequest = 59
-    EthereumTxAck = 60
-    EthereumSignMessage = 64
-    EthereumVerifyMessage = 65
-    EthereumMessageSignature = 66
-    EthereumSignTypedData = 464
-    EthereumTypedDataStructRequest = 465
-    EthereumTypedDataStructAck = 466
-    EthereumTypedDataValueRequest = 467
-    EthereumTypedDataValueAck = 468
-    EthereumTypedDataSignature = 469
-    EthereumSignTypedHash = 470
-    EthereumGetPublicKeyOneKey = 20100
-    EthereumPublicKeyOneKey = 20101
-    EthereumGetAddressOneKey = 20102
-    EthereumAddressOneKey = 20103
-    EthereumSignTxOneKey = 20104
-    EthereumSignTxEIP1559OneKey = 20105
-    EthereumTxRequestOneKey = 20106
-    EthereumTxAckOneKey = 20107
-    EthereumSignMessageOneKey = 20108
-    EthereumVerifyMessageOneKey = 20109
-    EthereumMessageSignatureOneKey = 20110
-    EthereumSignTypedDataOneKey = 20111
-    EthereumTypedDataStructRequestOneKey = 20112
-    EthereumTypedDataStructAckOneKey = 20113
-    EthereumTypedDataValueRequestOneKey = 20114
-    EthereumTypedDataValueAckOneKey = 20115
-    EthereumTypedDataSignatureOneKey = 20116
-    EthereumSignTypedHashOneKey = 20117
-    NEMGetAddress = 67
-    NEMAddress = 68
-    NEMSignTx = 69
-    NEMSignedTx = 70
-    NEMDecryptMessage = 75
-    NEMDecryptedMessage = 76
-    TezosGetAddress = 150
-    TezosAddress = 151
-    TezosSignTx = 152
-    TezosSignedTx = 153
-    TezosGetPublicKey = 154
-    TezosPublicKey = 155
-    StellarSignTx = 202
-    StellarTxOpRequest = 203
-    StellarGetAddress = 207
-    StellarAddress = 208
-    StellarCreateAccountOp = 210
-    StellarPaymentOp = 211
-    StellarPathPaymentStrictReceiveOp = 212
-    StellarManageSellOfferOp = 213
-    StellarCreatePassiveSellOfferOp = 214
-    StellarSetOptionsOp = 215
-    StellarChangeTrustOp = 216
-    StellarAllowTrustOp = 217
-    StellarAccountMergeOp = 218
-    StellarManageDataOp = 220
-    StellarBumpSequenceOp = 221
-    StellarManageBuyOfferOp = 222
-    StellarPathPaymentStrictSendOp = 223
-    StellarSignedTx = 230
-    CardanoGetPublicKey = 305
-    CardanoPublicKey = 306
-    CardanoGetAddress = 307
-    CardanoAddress = 308
-    CardanoTxItemAck = 313
-    CardanoTxAuxiliaryDataSupplement = 314
-    CardanoTxWitnessRequest = 315
-    CardanoTxWitnessResponse = 316
-    CardanoTxHostAck = 317
-    CardanoTxBodyHash = 318
-    CardanoSignTxFinished = 319
-    CardanoSignTxInit = 320
-    CardanoTxInput = 321
-    CardanoTxOutput = 322
-    CardanoAssetGroup = 323
-    CardanoToken = 324
-    CardanoTxCertificate = 325
-    CardanoTxWithdrawal = 326
-    CardanoTxAuxiliaryData = 327
-    CardanoPoolOwner = 328
-    CardanoPoolRelayParameters = 329
-    CardanoGetNativeScriptHash = 330
-    CardanoNativeScriptHash = 331
-    CardanoTxMint = 332
-    CardanoTxCollateralInput = 333
-    CardanoTxRequiredSigner = 334
-    CardanoTxInlineDatumChunk = 335
-    CardanoTxReferenceScriptChunk = 336
-    CardanoTxReferenceInput = 337
-    CardanoSignMessage = 350
-    CardanoMessageSignature = 351
-    RippleGetAddress = 400
-    RippleAddress = 401
-    RippleSignTx = 402
-    RippleSignedTx = 403
-    MoneroTransactionInitRequest = 501
-    MoneroTransactionInitAck = 502
-    MoneroTransactionSetInputRequest = 503
-    MoneroTransactionSetInputAck = 504
-    MoneroTransactionInputViniRequest = 507
-    MoneroTransactionInputViniAck = 508
-    MoneroTransactionAllInputsSetRequest = 509
-    MoneroTransactionAllInputsSetAck = 510
-    MoneroTransactionSetOutputRequest = 511
-    MoneroTransactionSetOutputAck = 512
-    MoneroTransactionAllOutSetRequest = 513
-    MoneroTransactionAllOutSetAck = 514
-    MoneroTransactionSignInputRequest = 515
-    MoneroTransactionSignInputAck = 516
-    MoneroTransactionFinalRequest = 517
-    MoneroTransactionFinalAck = 518
-    MoneroKeyImageExportInitRequest = 530
-    MoneroKeyImageExportInitAck = 531
-    MoneroKeyImageSyncStepRequest = 532
-    MoneroKeyImageSyncStepAck = 533
-    MoneroKeyImageSyncFinalRequest = 534
-    MoneroKeyImageSyncFinalAck = 535
-    MoneroGetAddress = 540
-    MoneroAddress = 541
-    MoneroGetWatchKey = 542
-    MoneroWatchKey = 543
-    DebugMoneroDiagRequest = 546
-    DebugMoneroDiagAck = 547
-    MoneroGetTxKeyRequest = 550
-    MoneroGetTxKeyAck = 551
-    MoneroLiveRefreshStartRequest = 552
-    MoneroLiveRefreshStartAck = 553
-    MoneroLiveRefreshStepRequest = 554
-    MoneroLiveRefreshStepAck = 555
-    MoneroLiveRefreshFinalRequest = 556
-    MoneroLiveRefreshFinalAck = 557
-    EosGetPublicKey = 600
-    EosPublicKey = 601
-    EosSignTx = 602
-    EosTxActionRequest = 603
-    EosTxActionAck = 604
-    EosSignedTx = 605
-    BinanceGetAddress = 700
-    BinanceAddress = 701
-    BinanceGetPublicKey = 702
-    BinancePublicKey = 703
-    BinanceSignTx = 704
-    BinanceTxRequest = 705
-    BinanceTransferMsg = 706
-    BinanceOrderMsg = 707
-    BinanceCancelMsg = 708
-    BinanceSignedTx = 709
-    StarcoinGetAddress = 10300
-    StarcoinAddress = 10301
-    StarcoinGetPublicKey = 10302
-    StarcoinPublicKey = 10303
-    StarcoinSignTx = 10304
-    StarcoinSignedTx = 10305
-    StarcoinSignMessage = 10306
-    StarcoinMessageSignature = 10307
-    StarcoinVerifyMessage = 10308
-    ConfluxGetAddress = 10112
-    ConfluxAddress = 10113
-    ConfluxSignTx = 10114
-    ConfluxTxRequest = 10115
-    ConfluxTxAck = 10116
-    ConfluxSignMessage = 10117
-    ConfluxSignMessageCIP23 = 10118
-    ConfluxMessageSignature = 10119
-    TronGetAddress = 10501
-    TronAddress = 10502
-    TronSignTx = 10503
-    TronSignedTx = 10504
-    TronSignMessage = 10505
-    TronMessageSignature = 10506
-    NearGetAddress = 10701
-    NearAddress = 10702
-    NearSignTx = 10703
-    NearSignedTx = 10704
-    AptosGetAddress = 10600
-    AptosAddress = 10601
-    AptosSignTx = 10602
-    AptosSignedTx = 10603
-    AptosSignMessage = 10604
-    AptosMessageSignature = 10605
-    WebAuthnListResidentCredentials = 800
-    WebAuthnCredentials = 801
-    WebAuthnAddResidentCredential = 802
-    WebAuthnRemoveResidentCredential = 803
-    SolanaGetAddress = 10100
-    SolanaAddress = 10101
-    SolanaSignTx = 10102
-    SolanaSignedTx = 10103
-    SolanaSignOffChainMessage = 10104
-    SolanaMessageSignature = 10105
-    SolanaSignUnsafeMessage = 10106
-    CosmosGetAddress = 10800
-    CosmosAddress = 10801
-    CosmosSignTx = 10802
-    CosmosSignedTx = 10803
-    AlgorandGetAddress = 10900
-    AlgorandAddress = 10901
-    AlgorandSignTx = 10902
-    AlgorandSignedTx = 10903
-    PolkadotGetAddress = 11000
-    PolkadotAddress = 11001
-    PolkadotSignTx = 11002
-    PolkadotSignedTx = 11003
-    SuiGetAddress = 11100
-    SuiAddress = 11101
-    SuiSignTx = 11102
-    SuiSignedTx = 11103
-    SuiSignMessage = 11104
-    SuiMessageSignature = 11105
-    SuiTxRequest = 11106
-    SuiTxAck = 11107
-    FilecoinGetAddress = 11200
-    FilecoinAddress = 11201
-    FilecoinSignTx = 11202
-    FilecoinSignedTx = 11203
-    KaspaGetAddress = 11300
-    KaspaAddress = 11301
-    KaspaSignTx = 11302
-    KaspaSignedTx = 11303
-    KaspaTxInputRequest = 11304
-    KaspaTxInputAck = 11305
-    NexaGetAddress = 11400
-    NexaAddress = 11401
-    NexaSignTx = 11402
-    NexaSignedTx = 11403
-    NexaTxInputRequest = 11404
-    NexaTxInputAck = 11405
-    NostrGetPublicKey = 11500
-    NostrPublicKey = 11501
-    NostrSignEvent = 11502
-    NostrSignedEvent = 11503
-    NostrEncryptMessage = 11504
-    NostrEncryptedMessage = 11505
-    NostrDecryptMessage = 11506
-    NostrDecryptedMessage = 11507
-    NostrSignSchnorr = 11508
-    NostrSignedSchnorr = 11509
-    LnurlAuth = 11600
-    LnurlAuthResp = 11601
-    NervosGetAddress = 11701
-    NervosAddress = 11702
-    NervosSignTx = 11703
-    NervosSignedTx = 11704
-    NervosTxRequest = 11705
-    NervosTxAck = 11706
-    TonGetAddress = 11901
-    TonAddress = 11902
-    TonSignMessage = 11903
-    TonSignedMessage = 11904
-    TonSignProof = 11905
-    TonSignedProof = 11906
-    ScdoGetAddress = 12001
-    ScdoAddress = 12002
-    ScdoSignTx = 12003
-    ScdoSignedTx = 12004
-    ScdoTxAck = 12005
-    ScdoSignMessage = 12006
-    ScdoSignedMessage = 12007
-    AlephiumGetAddress = 12101
-    AlephiumAddress = 12102
-    AlephiumSignTx = 12103
-    AlephiumSignedTx = 12104
-    AlephiumTxRequest = 12105
-    AlephiumTxAck = 12106
-    AlephiumBytecodeRequest = 12107
-    AlephiumBytecodeAck = 12108
-    AlephiumSignMessage = 12109
-    AlephiumMessageSignature = 12110
-    BenfenGetAddress = 12201
-    BenfenAddress = 12202
-    BenfenSignTx = 12203
-    BenfenSignedTx = 12204
-    BenfenSignMessage = 12205
-    BenfenMessageSignature = 12206
-    BenfenTxRequest = 12207
-    BenfenTxAck = 12208
-    DeviceBackToBoot = 903
-    RebootToBoardloader = 904
-    DeviceInfoSettings = 10001
-    GetDeviceInfo = 10002
-    DeviceInfo = 10003
-    ReadSEPublicKey = 10004
-    SEPublicKey = 10005
-    WriteSEPublicCert = 10006
-    ReadSEPublicCert = 10007
-    SEPublicCert = 10008
-    SESignMessage = 10012
-    SEMessageSignature = 10013
-    ResourceUpload = 10018
-    ZoomRequest = 10019
-    ResourceRequest = 10020
-    ResourceAck = 10021
-    ResourceUpdate = 10022
-    ListResDir = 10023
-    FileInfoList = 10024
-    OnekeyGetFeatures = 10025
-    OnekeyFeatures = 10026
-    WriteSEPrivateKey = 10027
-
-
 class FailureType(IntEnum):
     UnexpectedMessage = 1
     ButtonExpected = 2
@@ -459,6 +43,7 @@ class FailureType(IntEnum):
     PinMismatch = 12
     WipeCodeMismatch = 13
     InvalidSession = 14
+    BatteryLow = 30
     FirmwareError = 99
 
 
@@ -491,6 +76,8 @@ class PinMatrixRequestType(IntEnum):
     NewSecond = 3
     WipeCodeFirst = 4
     WipeCodeSecond = 5
+    BackupFirst = 6
+    BackupSecond = 7
 
 
 class InputScriptType(IntEnum):
@@ -535,10 +122,16 @@ class RequestType(IntEnum):
     TXPAYMENTREQ = 7
 
 
-class RebootType(IntEnum):
-    Normal = 0
-    Boardloader = 1
-    BootLoader = 2
+class SeedRequestType(IntEnum):
+    Gen = 0
+    EncExport = 1
+    EncImport = 2
+
+
+class WL_OperationType(IntEnum):
+    Add = 0
+    Delete = 1
+    Inquire = 2
 
 
 class CardanoDerivationType(IntEnum):
@@ -606,10 +199,10 @@ class CardanoPoolRelayType(IntEnum):
 
 class CardanoTxAuxiliaryDataSupplementType(IntEnum):
     NONE = 0
-    CVOTE_REGISTRATION_SIGNATURE = 1
+    GOVERNANCE_REGISTRATION_SIGNATURE = 1
 
 
-class CardanoCVoteRegistrationFormat(IntEnum):
+class CardanoGovernanceRegistrationFormat(IntEnum):
     CIP15 = 0
     CIP36 = 1
 
@@ -626,16 +219,10 @@ class CardanoTxWitnessType(IntEnum):
     SHELLEY_WITNESS = 1
 
 
-class BackupType(IntEnum):
-    Bip39 = 0
-    Slip39_Basic = 1
-    Slip39_Advanced = 2
-
-
-class SafetyCheckLevel(IntEnum):
-    Strict = 0
-    PromptAlways = 1
-    PromptTemporarily = 2
+class OneKeyRebootType(IntEnum):
+    Normal = 0
+    Boardloader = 1
+    BootLoader = 2
 
 
 class OneKeyDeviceType(IntEnum):
@@ -653,7 +240,54 @@ class OneKeySeType(IntEnum):
 
 class OneKeySEState(IntEnum):
     BOOT = 0
-    APP = 1
+    APP_FACTORY = 51
+    APP = 85
+
+
+class BackupType(IntEnum):
+    Bip39 = 0
+    Slip39_Basic = 1
+    Slip39_Advanced = 2
+    Slip39_Single_Extendable = 3
+    Slip39_Basic_Extendable = 4
+    Slip39_Advanced_Extendable = 5
+
+
+class SafetyCheckLevel(IntEnum):
+    Strict = 0
+    PromptAlways = 1
+    PromptTemporarily = 2
+
+
+class DisplayRotation(IntEnum):
+    North = 0
+    East = 90
+    South = 180
+    West = 270
+
+
+class HomescreenFormat(IntEnum):
+    Toif = 1
+    Jpeg = 2
+    ToiG = 3
+
+
+class RecoveryType(IntEnum):
+    NormalRecovery = 0
+    DryRun = 1
+    UnlockRepeatedBackup = 2
+
+
+class BackupAvailability(IntEnum):
+    NotAvailable = 0
+    Required = 1
+    Available = 2
+
+
+class RecoveryStatus(IntEnum):
+    Nothing = 0
+    Recovery = 1
+    Backup = 2
 
 
 class Capability(IntEnum):
@@ -661,7 +295,6 @@ class Capability(IntEnum):
     Bitcoin_like = 2
     Binance = 3
     Cardano = 4
-    Crypto = 5
     EOS = 6
     Ethereum = 7
     Lisk = 8
@@ -674,6 +307,7 @@ class Capability(IntEnum):
     Shamir = 15
     ShamirGroups = 16
     PassphraseEntry = 17
+    Solana = 18
 
 
 class SdProtectOperationType(IntEnum):
@@ -682,7 +316,7 @@ class SdProtectOperationType(IntEnum):
     REFRESH = 2
 
 
-class RecoveryDeviceType(IntEnum):
+class RecoveryDeviceInputMethod(IntEnum):
     ScrambledWords = 0
     Matrix = 1
 
@@ -691,6 +325,11 @@ class WordRequestType(IntEnum):
     Plain = 0
     Matrix9 = 1
     Matrix6 = 2
+
+
+class BootCommand(IntEnum):
+    STOP_AND_WAIT = 0
+    INSTALL_UPGRADE = 1
 
 
 class ResourceType(IntEnum):
@@ -709,6 +348,18 @@ class DebugButton(IntEnum):
     NO = 0
     YES = 1
     INFO = 2
+
+
+class DebugPhysicalButton(IntEnum):
+    LEFT_BTN = 0
+    MIDDLE_BTN = 1
+    RIGHT_BTN = 2
+
+
+class DebugWaitType(IntEnum):
+    IMMEDIATE = 0
+    NEXT_LAYOUT = 1
+    CURRENT_LAYOUT = 2
 
 
 class EthereumDefinitionType(IntEnum):
@@ -817,6 +468,467 @@ class TonWorkChain(IntEnum):
 class TronResourceCode(IntEnum):
     BANDWIDTH = 0
     ENERGY = 1
+
+
+class MessageType(IntEnum):
+    StartSession = 0
+    Ping = 1
+    Success = 2
+    Failure = 3
+    ChangePin = 4
+    WipeDevice = 5
+    GetEntropy = 9
+    Entropy = 10
+    LoadDevice = 13
+    ResetDevice = 14
+    SetBusy = 16
+    Features = 17
+    PinMatrixRequest = 18
+    PinMatrixAck = 19
+    Cancel = 20
+    LockDevice = 24
+    ApplySettings = 25
+    ButtonRequest = 26
+    ButtonAck = 27
+    ApplyFlags = 28
+    GetNonce = 31
+    Nonce = 33
+    BackupDevice = 34
+    EntropyRequest = 35
+    EntropyAck = 36
+    PassphraseRequest = 41
+    PassphraseAck = 42
+    RecoveryDevice = 45
+    WordRequest = 46
+    WordAck = 47
+    GetFeatures = 55
+    SdProtect = 79
+    ChangeWipeCode = 82
+    EndSession = 83
+    DoPreauthorized = 84
+    PreauthorizedRequest = 85
+    CancelAuthorization = 86
+    GetFirmwareHash = 88
+    FirmwareHash = 89
+    UnlockPath = 93
+    UnlockedPathRequest = 94
+    ShowDeviceTutorial = 95
+    UnlockBootloader = 96
+    AuthenticateDevice = 97
+    AuthenticityProof = 98
+    ChangeLanguage = 990
+    TranslationDataRequest = 991
+    TranslationDataAck = 992
+    SetBrightness = 993
+    SetU2FCounter = 63
+    GetNextU2FCounter = 80
+    NextU2FCounter = 81
+    Deprecated_PassphraseStateRequest = 77
+    Deprecated_PassphraseStateAck = 78
+    FirmwareErase = 6
+    FirmwareUpload = 7
+    FirmwareRequest = 8
+    FirmwareErase_ex = 16
+    SelfTest = 32
+    FirmwareUpdateEmmc = 30001
+    GetPublicKey = 11
+    PublicKey = 12
+    SignTx = 15
+    TxRequest = 21
+    TxAck = 22
+    GetAddress = 29
+    Address = 30
+    TxAckPaymentRequest = 37
+    SignMessage = 38
+    VerifyMessage = 39
+    MessageSignature = 40
+    GetOwnershipId = 43
+    OwnershipId = 44
+    GetOwnershipProof = 49
+    OwnershipProof = 50
+    AuthorizeCoinJoin = 51
+    SignPsbt = 10052
+    SignedPsbt = 10053
+    CipherKeyValue = 23
+    CipheredKeyValue = 48
+    SignIdentity = 53
+    SignedIdentity = 54
+    GetECDHSessionKey = 61
+    ECDHSessionKey = 62
+    CosiCommit = 71
+    CosiCommitment = 72
+    CosiSign = 73
+    CosiSignature = 74
+    BatchGetPublickeys = 10016
+    EcdsaPublicKeys = 10017
+    DebugLinkDecision = 100
+    DebugLinkGetState = 101
+    DebugLinkState = 102
+    DebugLinkStop = 103
+    DebugLinkLog = 104
+    DebugLinkMemoryRead = 110
+    DebugLinkMemory = 111
+    DebugLinkMemoryWrite = 112
+    DebugLinkFlashErase = 113
+    DebugLinkLayout = 9001
+    DebugLinkReseedRandom = 9002
+    DebugLinkRecordScreen = 9003
+    DebugLinkEraseSdCard = 9005
+    DebugLinkWatchLayout = 9006
+    DebugLinkResetDebugEvents = 9007
+    DebugLinkOptigaSetSecMax = 9008
+    EmmcFixPermission = 30100
+    EmmcPath = 30101
+    EmmcPathInfo = 30102
+    EmmcFile = 30103
+    EmmcFileRead = 30104
+    EmmcFileWrite = 30105
+    EmmcFileDelete = 30106
+    EmmcDir = 30107
+    EmmcDirList = 30108
+    EmmcDirMake = 30109
+    EmmcDirRemove = 30110
+    EthereumGetPublicKey = 450
+    EthereumPublicKey = 451
+    EthereumGetAddress = 56
+    EthereumAddress = 57
+    EthereumSignTx = 58
+    EthereumSignTxEIP1559 = 452
+    EthereumTxRequest = 59
+    EthereumTxAck = 60
+    EthereumSignMessage = 64
+    EthereumVerifyMessage = 65
+    EthereumMessageSignature = 66
+    EthereumSignTypedData = 464
+    EthereumTypedDataStructRequest = 465
+    EthereumTypedDataStructAck = 466
+    EthereumTypedDataValueRequest = 467
+    EthereumTypedDataValueAck = 468
+    EthereumTypedDataSignature = 469
+    EthereumSignTypedHash = 470
+    EthereumGetPublicKeyOneKey = 20100
+    EthereumPublicKeyOneKey = 20101
+    EthereumGetAddressOneKey = 20102
+    EthereumAddressOneKey = 20103
+    EthereumSignTxOneKey = 20104
+    EthereumSignTxEIP1559OneKey = 20105
+    EthereumTxRequestOneKey = 20106
+    EthereumTxAckOneKey = 20107
+    EthereumSignMessageOneKey = 20108
+    EthereumVerifyMessageOneKey = 20109
+    EthereumMessageSignatureOneKey = 20110
+    EthereumSignTypedDataOneKey = 20111
+    EthereumTypedDataStructRequestOneKey = 20112
+    EthereumTypedDataStructAckOneKey = 20113
+    EthereumTypedDataValueRequestOneKey = 20114
+    EthereumTypedDataValueAckOneKey = 20115
+    EthereumTypedDataSignatureOneKey = 20116
+    EthereumSignTypedHashOneKey = 20117
+    EthereumSignMessageEIP712 = 10200
+    NEMGetAddress = 67
+    NEMAddress = 68
+    NEMSignTx = 69
+    NEMSignedTx = 70
+    NEMDecryptMessage = 75
+    NEMDecryptedMessage = 76
+    TezosGetAddress = 150
+    TezosAddress = 151
+    TezosSignTx = 152
+    TezosSignedTx = 153
+    TezosGetPublicKey = 154
+    TezosPublicKey = 155
+    StellarSignTx = 202
+    StellarTxOpRequest = 203
+    StellarGetAddress = 207
+    StellarAddress = 208
+    StellarCreateAccountOp = 210
+    StellarPaymentOp = 211
+    StellarPathPaymentStrictReceiveOp = 212
+    StellarManageSellOfferOp = 213
+    StellarCreatePassiveSellOfferOp = 214
+    StellarSetOptionsOp = 215
+    StellarChangeTrustOp = 216
+    StellarAllowTrustOp = 217
+    StellarAccountMergeOp = 218
+    StellarManageDataOp = 220
+    StellarBumpSequenceOp = 221
+    StellarManageBuyOfferOp = 222
+    StellarPathPaymentStrictSendOp = 223
+    StellarClaimClaimableBalanceOp = 225
+    StellarSignedTx = 230
+    CardanoGetPublicKey = 305
+    CardanoPublicKey = 306
+    CardanoGetAddress = 307
+    CardanoAddress = 308
+    CardanoTxItemAck = 313
+    CardanoTxAuxiliaryDataSupplement = 314
+    CardanoTxWitnessRequest = 315
+    CardanoTxWitnessResponse = 316
+    CardanoTxHostAck = 317
+    CardanoTxBodyHash = 318
+    CardanoSignTxFinished = 319
+    CardanoSignTxInit = 320
+    CardanoTxInput = 321
+    CardanoTxOutput = 322
+    CardanoAssetGroup = 323
+    CardanoToken = 324
+    CardanoTxCertificate = 325
+    CardanoTxWithdrawal = 326
+    CardanoTxAuxiliaryData = 327
+    CardanoPoolOwner = 328
+    CardanoPoolRelayParameters = 329
+    CardanoGetNativeScriptHash = 330
+    CardanoNativeScriptHash = 331
+    CardanoTxMint = 332
+    CardanoTxCollateralInput = 333
+    CardanoTxRequiredSigner = 334
+    CardanoTxInlineDatumChunk = 335
+    CardanoTxReferenceScriptChunk = 336
+    CardanoTxReferenceInput = 337
+    CardanoSignMessage = 350
+    CardanoMessageSignature = 351
+    RippleGetAddress = 400
+    RippleAddress = 401
+    RippleSignTx = 402
+    RippleSignedTx = 403
+    MoneroTransactionInitRequest = 501
+    MoneroTransactionInitAck = 502
+    MoneroTransactionSetInputRequest = 503
+    MoneroTransactionSetInputAck = 504
+    MoneroTransactionInputsPermutationRequest = 505
+    MoneroTransactionInputsPermutationAck = 506
+    MoneroTransactionInputViniRequest = 507
+    MoneroTransactionInputViniAck = 508
+    MoneroTransactionAllInputsSetRequest = 509
+    MoneroTransactionAllInputsSetAck = 510
+    MoneroTransactionSetOutputRequest = 511
+    MoneroTransactionSetOutputAck = 512
+    MoneroTransactionAllOutSetRequest = 513
+    MoneroTransactionAllOutSetAck = 514
+    MoneroTransactionSignInputRequest = 515
+    MoneroTransactionSignInputAck = 516
+    MoneroTransactionFinalRequest = 517
+    MoneroTransactionFinalAck = 518
+    MoneroKeyImageExportInitRequest = 530
+    MoneroKeyImageExportInitAck = 531
+    MoneroKeyImageSyncStepRequest = 532
+    MoneroKeyImageSyncStepAck = 533
+    MoneroKeyImageSyncFinalRequest = 534
+    MoneroKeyImageSyncFinalAck = 535
+    MoneroGetAddress = 540
+    MoneroAddress = 541
+    MoneroGetWatchKey = 542
+    MoneroWatchKey = 543
+    DebugMoneroDiagRequest = 546
+    DebugMoneroDiagAck = 547
+    MoneroGetTxKeyRequest = 550
+    MoneroGetTxKeyAck = 551
+    MoneroLiveRefreshStartRequest = 552
+    MoneroLiveRefreshStartAck = 553
+    MoneroLiveRefreshStepRequest = 554
+    MoneroLiveRefreshStepAck = 555
+    MoneroLiveRefreshFinalRequest = 556
+    MoneroLiveRefreshFinalAck = 557
+    EosGetPublicKey = 600
+    EosPublicKey = 601
+    EosSignTx = 602
+    EosTxActionRequest = 603
+    EosTxActionAck = 604
+    EosSignedTx = 605
+    BinanceGetAddress = 700
+    BinanceAddress = 701
+    BinanceGetPublicKey = 702
+    BinancePublicKey = 703
+    BinanceSignTx = 704
+    BinanceTxRequest = 705
+    BinanceTransferMsg = 706
+    BinanceOrderMsg = 707
+    BinanceCancelMsg = 708
+    BinanceSignedTx = 709
+    StarcoinGetAddress = 10300
+    StarcoinAddress = 10301
+    StarcoinGetPublicKey = 10302
+    StarcoinPublicKey = 10303
+    StarcoinSignTx = 10304
+    StarcoinSignedTx = 10305
+    StarcoinSignMessage = 10306
+    StarcoinMessageSignature = 10307
+    StarcoinVerifyMessage = 10308
+    BixinSeedOperate = 901
+    BixinMessageSE = 902
+    BixinReboot = 903
+    BixinOutMessageSE = 904
+    BixinBackupRequest = 905
+    BixinBackupAck = 906
+    BixinRestoreRequest = 907
+    BixinRestoreAck = 908
+    BixinVerifyDeviceRequest = 909
+    BixinVerifyDeviceAck = 910
+    BixinWhiteListRequest = 911
+    BixinWhiteListAck = 912
+    BixinLoadDevice = 913
+    BixinBackupDevice = 914
+    BixinBackupDeviceAck = 915
+    BixinPinInputOnDevice = 10000
+    Deprecated_EthereumSignMessageEIP712 = 10200
+    GetPublicKeyMultiple = 10210
+    PublicKeyMultiple = 10211
+    ConfluxGetAddress = 10112
+    ConfluxAddress = 10113
+    ConfluxSignTx = 10114
+    ConfluxTxRequest = 10115
+    ConfluxTxAck = 10116
+    ConfluxSignMessage = 10117
+    ConfluxSignMessageCIP23 = 10118
+    ConfluxMessageSignature = 10119
+    TronGetAddress = 10501
+    TronAddress = 10502
+    TronSignTx = 10503
+    TronSignedTx = 10504
+    TronSignMessage = 10505
+    TronMessageSignature = 10506
+    NearGetAddress = 10701
+    NearAddress = 10702
+    NearSignTx = 10703
+    NearSignedTx = 10704
+    AptosGetAddress = 10600
+    AptosAddress = 10601
+    AptosSignTx = 10602
+    AptosSignedTx = 10603
+    AptosSignMessage = 10604
+    AptosMessageSignature = 10605
+    WebAuthnListResidentCredentials = 800
+    WebAuthnCredentials = 801
+    WebAuthnAddResidentCredential = 802
+    WebAuthnRemoveResidentCredential = 803
+    SolanaGetAddress = 10100
+    SolanaAddress = 10101
+    SolanaSignTx = 10102
+    SolanaSignedTx = 10103
+    SolanaSignOffChainMessage = 10104
+    SolanaMessageSignature = 10105
+    SolanaSignUnsafeMessage = 10106
+    CosmosGetAddress = 10800
+    CosmosAddress = 10801
+    CosmosSignTx = 10802
+    CosmosSignedTx = 10803
+    AlgorandGetAddress = 10900
+    AlgorandAddress = 10901
+    AlgorandSignTx = 10902
+    AlgorandSignedTx = 10903
+    PolkadotGetAddress = 11000
+    PolkadotAddress = 11001
+    PolkadotSignTx = 11002
+    PolkadotSignedTx = 11003
+    SuiGetAddress = 11100
+    SuiAddress = 11101
+    SuiSignTx = 11102
+    SuiSignedTx = 11103
+    SuiSignMessage = 11104
+    SuiMessageSignature = 11105
+    SuiTxRequest = 11106
+    SuiTxAck = 11107
+    FilecoinGetAddress = 11200
+    FilecoinAddress = 11201
+    FilecoinSignTx = 11202
+    FilecoinSignedTx = 11203
+    KaspaGetAddress = 11300
+    KaspaAddress = 11301
+    KaspaSignTx = 11302
+    KaspaSignedTx = 11303
+    KaspaTxInputRequest = 11304
+    KaspaTxInputAck = 11305
+    NexaGetAddress = 11400
+    NexaAddress = 11401
+    NexaSignTx = 11402
+    NexaSignedTx = 11403
+    NexaTxInputRequest = 11404
+    NexaTxInputAck = 11405
+    NostrGetPublicKey = 11500
+    NostrPublicKey = 11501
+    NostrSignEvent = 11502
+    NostrSignedEvent = 11503
+    NostrEncryptMessage = 11504
+    NostrEncryptedMessage = 11505
+    NostrDecryptMessage = 11506
+    NostrDecryptedMessage = 11507
+    NostrSignSchnorr = 11508
+    NostrSignedSchnorr = 11509
+    LnurlAuth = 11600
+    LnurlAuthResp = 11601
+    NervosGetAddress = 11701
+    NervosAddress = 11702
+    NervosSignTx = 11703
+    NervosSignedTx = 11704
+    NervosTxRequest = 11705
+    NervosTxAck = 11706
+    DnxGetAddress = 11800
+    DnxAddress = 11801
+    DnxSignTx = 11802
+    DnxInputRequest = 11803
+    DnxInputAck = 11804
+    DnxRTSigsRequest = 11805
+    DnxSignedTx = 11806
+    TonGetAddress = 11901
+    TonAddress = 11902
+    TonSignMessage = 11903
+    TonSignedMessage = 11904
+    TonSignProof = 11905
+    TonSignedProof = 11906
+    ScdoGetAddress = 12001
+    ScdoAddress = 12002
+    ScdoSignTx = 12003
+    ScdoSignedTx = 12004
+    ScdoTxAck = 12005
+    ScdoSignMessage = 12006
+    ScdoSignedMessage = 12007
+    AlephiumGetAddress = 12101
+    AlephiumAddress = 12102
+    AlephiumSignTx = 12103
+    AlephiumSignedTx = 12104
+    AlephiumTxRequest = 12105
+    AlephiumTxAck = 12106
+    AlephiumBytecodeRequest = 12107
+    AlephiumBytecodeAck = 12108
+    AlephiumSignMessage = 12109
+    AlephiumMessageSignature = 12110
+    BenfenGetAddress = 12201
+    BenfenAddress = 12202
+    BenfenSignTx = 12203
+    BenfenSignedTx = 12204
+    BenfenSignMessage = 12205
+    BenfenMessageSignature = 12206
+    BenfenTxRequest = 12207
+    BenfenTxAck = 12208
+    BenchmarkListNames = 9100
+    BenchmarkNames = 9101
+    BenchmarkRun = 9102
+    BenchmarkResult = 9103
+    OneKeyReboot = 30000
+    DeviceInfoSettings = 10001
+    GetDeviceInfo = 10002
+    DeviceInfo = 10003
+    ReadSEPublicKey = 10004
+    SEPublicKey = 10005
+    WriteSEPublicCert = 10006
+    ReadSEPublicCert = 10007
+    SEPublicCert = 10008
+    SpiFlashWrite = 10009
+    SpiFlashRead = 10010
+    SpiFlashData = 10011
+    SESignMessage = 10012
+    SEMessageSignature = 10013
+    NFTWriteInfo = 10014
+    NFTWriteData = 10015
+    ResourceUpload = 10018
+    ZoomRequest = 10019
+    ResourceRequest = 10020
+    ResourceAck = 10021
+    ResourceUpdate = 10022
+    ListResDir = 10023
+    FileInfoList = 10024
+    DeviceEraseSector = 10026
+    WriteSEPrivateKey = 10027
 
 
 class AlephiumGetAddress(protobuf.MessageType):
@@ -1189,6 +1301,55 @@ class AptosMessagePayload(protobuf.MessageType):
         self.address = address
         self.chain_id = chain_id
         self.application = application
+
+
+class BenchmarkListNames(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 9100
+
+
+class BenchmarkNames(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 9101
+    FIELDS = {
+        1: protobuf.Field("names", "string", repeated=True, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        names: Optional[Sequence["str"]] = None,
+    ) -> None:
+        self.names: Sequence["str"] = names if names is not None else []
+
+
+class BenchmarkRun(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 9102
+    FIELDS = {
+        1: protobuf.Field("name", "string", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        name: Optional["str"] = None,
+    ) -> None:
+        self.name = name
+
+
+class BenchmarkResult(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 9103
+    FIELDS = {
+        1: protobuf.Field("value", "string", repeated=False, required=False),
+        3: protobuf.Field("unit", "string", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        value: Optional["str"] = None,
+        unit: Optional["str"] = None,
+    ) -> None:
+        self.value = value
+        self.unit = unit
 
 
 class BenfenGetAddress(protobuf.MessageType):
@@ -1590,6 +1751,7 @@ class ButtonRequest(protobuf.MessageType):
     FIELDS = {
         1: protobuf.Field("code", "ButtonRequestType", repeated=False, required=False),
         2: protobuf.Field("pages", "uint32", repeated=False, required=False),
+        4: protobuf.Field("name", "string", repeated=False, required=False),
     }
 
     def __init__(
@@ -1597,9 +1759,11 @@ class ButtonRequest(protobuf.MessageType):
         *,
         code: Optional["ButtonRequestType"] = None,
         pages: Optional["int"] = None,
+        name: Optional["str"] = None,
     ) -> None:
         self.code = code
         self.pages = pages
+        self.name = name
 
 
 class ButtonAck(protobuf.MessageType):
@@ -1624,14 +1788,17 @@ class PinMatrixAck(protobuf.MessageType):
     MESSAGE_WIRE_TYPE = 19
     FIELDS = {
         1: protobuf.Field("pin", "string", repeated=False, required=True),
+        2: protobuf.Field("new_pin", "string", repeated=False, required=False),
     }
 
     def __init__(
         self,
         *,
         pin: "str",
+        new_pin: Optional["str"] = None,
     ) -> None:
         self.pin = pin
+        self.new_pin = new_pin
 
 
 class PassphraseRequest(protobuf.MessageType):
@@ -1776,6 +1943,7 @@ class PublicKey(protobuf.MessageType):
         1: protobuf.Field("node", "HDNodeType", repeated=False, required=True),
         2: protobuf.Field("xpub", "string", repeated=False, required=True),
         3: protobuf.Field("root_fingerprint", "uint32", repeated=False, required=False),
+        4: protobuf.Field("descriptor", "string", repeated=False, required=False),
     }
 
     def __init__(
@@ -1784,10 +1952,12 @@ class PublicKey(protobuf.MessageType):
         node: "HDNodeType",
         xpub: "str",
         root_fingerprint: Optional["int"] = None,
+        descriptor: Optional["str"] = None,
     ) -> None:
         self.node = node
         self.xpub = xpub
         self.root_fingerprint = root_fingerprint
+        self.descriptor = descriptor
 
 
 class GetAddress(protobuf.MessageType):
@@ -2407,6 +2577,49 @@ class AuthorizeCoinJoin(protobuf.MessageType):
         self.amount_unit = amount_unit
 
 
+class GetPublicKeyMultiple(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 10210
+    FIELDS = {
+        1: protobuf.Field("addresses", "BIP32Address", repeated=True, required=False),
+        2: protobuf.Field("ecdsa_curve_name", "string", repeated=False, required=False),
+        3: protobuf.Field("show_display", "bool", repeated=False, required=False),
+        4: protobuf.Field("coin_name", "string", repeated=False, required=False),
+        5: protobuf.Field("script_type", "InputScriptType", repeated=False, required=False),
+        6: protobuf.Field("ignore_xpub_magic", "bool", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        addresses: Optional[Sequence["BIP32Address"]] = None,
+        ecdsa_curve_name: Optional["str"] = None,
+        show_display: Optional["bool"] = None,
+        coin_name: Optional["str"] = 'Bitcoin',
+        script_type: Optional["InputScriptType"] = InputScriptType.SPENDADDRESS,
+        ignore_xpub_magic: Optional["bool"] = None,
+    ) -> None:
+        self.addresses: Sequence["BIP32Address"] = addresses if addresses is not None else []
+        self.ecdsa_curve_name = ecdsa_curve_name
+        self.show_display = show_display
+        self.coin_name = coin_name
+        self.script_type = script_type
+        self.ignore_xpub_magic = ignore_xpub_magic
+
+
+class PublicKeyMultiple(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 10211
+    FIELDS = {
+        1: protobuf.Field("xpubs", "string", repeated=True, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        xpubs: Optional[Sequence["str"]] = None,
+    ) -> None:
+        self.xpubs: Sequence["str"] = xpubs if xpubs is not None else []
+
+
 class SignPsbt(protobuf.MessageType):
     MESSAGE_WIRE_TYPE = 10052
     FIELDS = {
@@ -2841,6 +3054,267 @@ class TxAckPrevExtraDataWrapper(protobuf.MessageType):
         self.extra_data_chunk = extra_data_chunk
 
 
+class BIP32Address(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = None
+    FIELDS = {
+        1: protobuf.Field("address_n", "uint32", repeated=True, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        address_n: Optional[Sequence["int"]] = None,
+    ) -> None:
+        self.address_n: Sequence["int"] = address_n if address_n is not None else []
+
+
+class BixinPinInputOnDevice(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 10000
+
+
+class ApplySettingsBixin(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = None
+    FIELDS = {
+        100: protobuf.Field("use_ble", "bool", repeated=False, required=False),
+        101: protobuf.Field("use_se", "bool", repeated=False, required=False),
+        102: protobuf.Field("is_bixinapp", "bool", repeated=False, required=False),
+        103: protobuf.Field("fastpay_pin", "bool", repeated=False, required=False),
+        104: protobuf.Field("fastpay_confirm", "bool", repeated=False, required=False),
+        105: protobuf.Field("fastpay_money_limit", "uint64", repeated=False, required=False),
+        106: protobuf.Field("fastpay_times", "uint32", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        use_ble: Optional["bool"] = None,
+        use_se: Optional["bool"] = None,
+        is_bixinapp: Optional["bool"] = None,
+        fastpay_pin: Optional["bool"] = None,
+        fastpay_confirm: Optional["bool"] = None,
+        fastpay_money_limit: Optional["int"] = None,
+        fastpay_times: Optional["int"] = None,
+    ) -> None:
+        self.use_ble = use_ble
+        self.use_se = use_se
+        self.is_bixinapp = is_bixinapp
+        self.fastpay_pin = fastpay_pin
+        self.fastpay_confirm = fastpay_confirm
+        self.fastpay_money_limit = fastpay_money_limit
+        self.fastpay_times = fastpay_times
+
+
+class BixinSeedOperate(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 901
+    FIELDS = {
+        1: protobuf.Field("type", "SeedRequestType", repeated=False, required=True),
+        2: protobuf.Field("seed_importData", "bytes", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        type: "SeedRequestType",
+        seed_importData: Optional["bytes"] = None,
+    ) -> None:
+        self.type = type
+        self.seed_importData = seed_importData
+
+
+class BixinMessageSE(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 902
+    FIELDS = {
+        1: protobuf.Field("inputmessage", "bytes", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        inputmessage: "bytes",
+    ) -> None:
+        self.inputmessage = inputmessage
+
+
+class BixinOutMessageSE(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 904
+    FIELDS = {
+        1: protobuf.Field("outmessage", "bytes", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        outmessage: Optional["bytes"] = None,
+    ) -> None:
+        self.outmessage = outmessage
+
+
+class BixinReboot(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 903
+
+
+class DeviceBackToBoot(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = None
+
+
+class BixinBackupRequest(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 905
+
+
+class BixinBackupAck(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 906
+    FIELDS = {
+        1: protobuf.Field("data", "bytes", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        data: "bytes",
+    ) -> None:
+        self.data = data
+
+
+class BixinRestoreRequest(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 907
+    FIELDS = {
+        1: protobuf.Field("data", "bytes", repeated=False, required=True),
+        2: protobuf.Field("language", "string", repeated=False, required=False),
+        3: protobuf.Field("label", "string", repeated=False, required=False),
+        4: protobuf.Field("passphrase_protection", "bool", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        data: "bytes",
+        language: Optional["str"] = None,
+        label: Optional["str"] = None,
+        passphrase_protection: Optional["bool"] = None,
+    ) -> None:
+        self.data = data
+        self.language = language
+        self.label = label
+        self.passphrase_protection = passphrase_protection
+
+
+class BixinRestoreAck(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 908
+    FIELDS = {
+        1: protobuf.Field("data", "bytes", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        data: "bytes",
+    ) -> None:
+        self.data = data
+
+
+class BixinVerifyDeviceRequest(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 909
+    FIELDS = {
+        1: protobuf.Field("data", "bytes", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        data: "bytes",
+    ) -> None:
+        self.data = data
+
+
+class BixinVerifyDeviceAck(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 910
+    FIELDS = {
+        1: protobuf.Field("cert", "bytes", repeated=False, required=True),
+        2: protobuf.Field("signature", "bytes", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        cert: "bytes",
+        signature: "bytes",
+    ) -> None:
+        self.cert = cert
+        self.signature = signature
+
+
+class BixinWhiteListRequest(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 911
+    FIELDS = {
+        1: protobuf.Field("type", "WL_OperationType", repeated=False, required=True),
+        2: protobuf.Field("addr_in", "string", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        type: "WL_OperationType",
+        addr_in: Optional["str"] = None,
+    ) -> None:
+        self.type = type
+        self.addr_in = addr_in
+
+
+class BixinWhiteListAck(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 912
+    FIELDS = {
+        1: protobuf.Field("address", "string", repeated=True, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        address: Optional[Sequence["str"]] = None,
+    ) -> None:
+        self.address: Sequence["str"] = address if address is not None else []
+
+
+class BixinLoadDevice(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 913
+    FIELDS = {
+        1: protobuf.Field("mnemonics", "string", repeated=False, required=True),
+        5: protobuf.Field("language", "string", repeated=False, required=False),
+        6: protobuf.Field("label", "string", repeated=False, required=False),
+        7: protobuf.Field("skip_checksum", "bool", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        mnemonics: "str",
+        language: Optional["str"] = 'en-US',
+        label: Optional["str"] = None,
+        skip_checksum: Optional["bool"] = None,
+    ) -> None:
+        self.mnemonics = mnemonics
+        self.language = language
+        self.label = label
+        self.skip_checksum = skip_checksum
+
+
+class BixinBackupDevice(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 914
+
+
+class BixinBackupDeviceAck(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 915
+    FIELDS = {
+        1: protobuf.Field("mnemonics", "string", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        mnemonics: "str",
+    ) -> None:
+        self.mnemonics = mnemonics
+
+
 class FirmwareErase(protobuf.MessageType):
     MESSAGE_WIRE_TYPE = 6
     FIELDS = {
@@ -2915,20 +3389,6 @@ class SelfTest(protobuf.MessageType):
         payload: Optional["bytes"] = None,
     ) -> None:
         self.payload = payload
-
-
-class Reboot(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = 30000
-    FIELDS = {
-        1: protobuf.Field("reboot_type", "RebootType", repeated=False, required=True),
-    }
-
-    def __init__(
-        self,
-        *,
-        reboot_type: "RebootType",
-    ) -> None:
-        self.reboot_type = reboot_type
 
 
 class FirmwareUpdateEmmc(protobuf.MessageType):
@@ -3522,32 +3982,32 @@ class CardanoTxWithdrawal(protobuf.MessageType):
         self.key_hash = key_hash
 
 
-class CardanoCVoteRegistrationDelegation(protobuf.MessageType):
+class CardanoGovernanceRegistrationDelegation(protobuf.MessageType):
     MESSAGE_WIRE_TYPE = None
     FIELDS = {
-        1: protobuf.Field("vote_public_key", "bytes", repeated=False, required=True),
+        1: protobuf.Field("voting_public_key", "bytes", repeated=False, required=True),
         2: protobuf.Field("weight", "uint32", repeated=False, required=True),
     }
 
     def __init__(
         self,
         *,
-        vote_public_key: "bytes",
+        voting_public_key: "bytes",
         weight: "int",
     ) -> None:
-        self.vote_public_key = vote_public_key
+        self.voting_public_key = voting_public_key
         self.weight = weight
 
 
-class CardanoCVoteRegistrationParametersType(protobuf.MessageType):
+class CardanoGovernanceRegistrationParametersType(protobuf.MessageType):
     MESSAGE_WIRE_TYPE = None
     FIELDS = {
-        1: protobuf.Field("vote_public_key", "bytes", repeated=False, required=False),
+        1: protobuf.Field("voting_public_key", "bytes", repeated=False, required=False),
         2: protobuf.Field("staking_path", "uint32", repeated=True, required=False),
-        3: protobuf.Field("payment_address_parameters", "CardanoAddressParametersType", repeated=False, required=False),
+        3: protobuf.Field("payment_address_parameters", "CardanoAddressParametersType", repeated=False, required=True),
         4: protobuf.Field("nonce", "uint64", repeated=False, required=True),
-        5: protobuf.Field("format", "CardanoCVoteRegistrationFormat", repeated=False, required=False),
-        6: protobuf.Field("delegations", "CardanoCVoteRegistrationDelegation", repeated=True, required=False),
+        5: protobuf.Field("format", "CardanoGovernanceRegistrationFormat", repeated=False, required=False),
+        6: protobuf.Field("delegations", "CardanoGovernanceRegistrationDelegation", repeated=True, required=False),
         7: protobuf.Field("voting_purpose", "uint64", repeated=False, required=False),
         8: protobuf.Field("payment_address", "string", repeated=False, required=False),
     }
@@ -3555,20 +4015,20 @@ class CardanoCVoteRegistrationParametersType(protobuf.MessageType):
     def __init__(
         self,
         *,
+        payment_address_parameters: "CardanoAddressParametersType",
         nonce: "int",
         staking_path: Optional[Sequence["int"]] = None,
-        delegations: Optional[Sequence["CardanoCVoteRegistrationDelegation"]] = None,
-        vote_public_key: Optional["bytes"] = None,
-        payment_address_parameters: Optional["CardanoAddressParametersType"] = None,
-        format: Optional["CardanoCVoteRegistrationFormat"] = CardanoCVoteRegistrationFormat.CIP15,
+        delegations: Optional[Sequence["CardanoGovernanceRegistrationDelegation"]] = None,
+        voting_public_key: Optional["bytes"] = None,
+        format: Optional["CardanoGovernanceRegistrationFormat"] = CardanoGovernanceRegistrationFormat.CIP15,
         voting_purpose: Optional["int"] = None,
         payment_address: Optional["str"] = None,
     ) -> None:
         self.staking_path: Sequence["int"] = staking_path if staking_path is not None else []
-        self.delegations: Sequence["CardanoCVoteRegistrationDelegation"] = delegations if delegations is not None else []
-        self.nonce = nonce
-        self.vote_public_key = vote_public_key
+        self.delegations: Sequence["CardanoGovernanceRegistrationDelegation"] = delegations if delegations is not None else []
         self.payment_address_parameters = payment_address_parameters
+        self.nonce = nonce
+        self.voting_public_key = voting_public_key
         self.format = format
         self.voting_purpose = voting_purpose
         self.payment_address = payment_address
@@ -3577,17 +4037,17 @@ class CardanoCVoteRegistrationParametersType(protobuf.MessageType):
 class CardanoTxAuxiliaryData(protobuf.MessageType):
     MESSAGE_WIRE_TYPE = 327
     FIELDS = {
-        1: protobuf.Field("cvote_registration_parameters", "CardanoCVoteRegistrationParametersType", repeated=False, required=False),
+        1: protobuf.Field("governance_registration_parameters", "CardanoGovernanceRegistrationParametersType", repeated=False, required=False),
         2: protobuf.Field("hash", "bytes", repeated=False, required=False),
     }
 
     def __init__(
         self,
         *,
-        cvote_registration_parameters: Optional["CardanoCVoteRegistrationParametersType"] = None,
+        governance_registration_parameters: Optional["CardanoGovernanceRegistrationParametersType"] = None,
         hash: Optional["bytes"] = None,
     ) -> None:
-        self.cvote_registration_parameters = cvote_registration_parameters
+        self.governance_registration_parameters = governance_registration_parameters
         self.hash = hash
 
 
@@ -3665,7 +4125,7 @@ class CardanoTxAuxiliaryDataSupplement(protobuf.MessageType):
     FIELDS = {
         1: protobuf.Field("type", "CardanoTxAuxiliaryDataSupplementType", repeated=False, required=True),
         2: protobuf.Field("auxiliary_data_hash", "bytes", repeated=False, required=False),
-        3: protobuf.Field("cvote_registration_signature", "bytes", repeated=False, required=False),
+        3: protobuf.Field("governance_signature", "bytes", repeated=False, required=False),
     }
 
     def __init__(
@@ -3673,11 +4133,11 @@ class CardanoTxAuxiliaryDataSupplement(protobuf.MessageType):
         *,
         type: "CardanoTxAuxiliaryDataSupplementType",
         auxiliary_data_hash: Optional["bytes"] = None,
-        cvote_registration_signature: Optional["bytes"] = None,
+        governance_signature: Optional["bytes"] = None,
     ) -> None:
         self.type = type
         self.auxiliary_data_hash = auxiliary_data_hash
-        self.cvote_registration_signature = cvote_registration_signature
+        self.governance_signature = governance_signature
 
 
 class CardanoTxWitnessRequest(protobuf.MessageType):
@@ -4191,15 +4651,15 @@ class CosiCommit(protobuf.MessageType):
 class CosiCommitment(protobuf.MessageType):
     MESSAGE_WIRE_TYPE = 72
     FIELDS = {
-        1: protobuf.Field("commitment", "bytes", repeated=False, required=False),
-        2: protobuf.Field("pubkey", "bytes", repeated=False, required=False),
+        1: protobuf.Field("commitment", "bytes", repeated=False, required=True),
+        2: protobuf.Field("pubkey", "bytes", repeated=False, required=True),
     }
 
     def __init__(
         self,
         *,
-        commitment: Optional["bytes"] = None,
-        pubkey: Optional["bytes"] = None,
+        commitment: "bytes",
+        pubkey: "bytes",
     ) -> None:
         self.commitment = commitment
         self.pubkey = pubkey
@@ -4209,18 +4669,18 @@ class CosiSign(protobuf.MessageType):
     MESSAGE_WIRE_TYPE = 73
     FIELDS = {
         1: protobuf.Field("address_n", "uint32", repeated=True, required=False),
-        2: protobuf.Field("data", "bytes", repeated=False, required=False),
-        3: protobuf.Field("global_commitment", "bytes", repeated=False, required=False),
-        4: protobuf.Field("global_pubkey", "bytes", repeated=False, required=False),
+        2: protobuf.Field("data", "bytes", repeated=False, required=True),
+        3: protobuf.Field("global_commitment", "bytes", repeated=False, required=True),
+        4: protobuf.Field("global_pubkey", "bytes", repeated=False, required=True),
     }
 
     def __init__(
         self,
         *,
+        data: "bytes",
+        global_commitment: "bytes",
+        global_pubkey: "bytes",
         address_n: Optional[Sequence["int"]] = None,
-        data: Optional["bytes"] = None,
-        global_commitment: Optional["bytes"] = None,
-        global_pubkey: Optional["bytes"] = None,
     ) -> None:
         self.address_n: Sequence["int"] = address_n if address_n is not None else []
         self.data = data
@@ -4287,41 +4747,309 @@ class Path(protobuf.MessageType):
         self.address_n: Sequence["int"] = address_n if address_n is not None else []
 
 
-class Initialize(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = 0
+class OneKeyReboot(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 30000
     FIELDS = {
-        1: protobuf.Field("session_id", "bytes", repeated=False, required=False),
-        2: protobuf.Field("_skip_passphrase", "bool", repeated=False, required=False),
-        3: protobuf.Field("derive_cardano", "bool", repeated=False, required=False),
+        1: protobuf.Field("reboot_type", "OneKeyRebootType", repeated=False, required=True),
     }
 
     def __init__(
         self,
         *,
-        session_id: Optional["bytes"] = None,
-        _skip_passphrase: Optional["bool"] = None,
-        derive_cardano: Optional["bool"] = None,
+        reboot_type: "OneKeyRebootType",
     ) -> None:
-        self.session_id = session_id
-        self._skip_passphrase = _skip_passphrase
-        self.derive_cardano = derive_cardano
+        self.reboot_type = reboot_type
+
+
+class OneKeyFactoryStatus(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = None
+    FIELDS = {
+        10: protobuf.Field("device_sn_set", "bool", repeated=False, required=False),
+        11: protobuf.Field("se_cert_set", "bool", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        device_sn_set: Optional["bool"] = None,
+        se_cert_set: Optional["bool"] = None,
+    ) -> None:
+        self.device_sn_set = device_sn_set
+        self.se_cert_set = se_cert_set
+
+
+class OneKeyStatus(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = None
+    FIELDS = {
+        100: protobuf.Field("language", "string", repeated=False, required=False),
+        101: protobuf.Field("bt_enable", "bool", repeated=False, required=False),
+        102: protobuf.Field("init_states", "bool", repeated=False, required=False),
+        200: protobuf.Field("backup_required", "bool", repeated=False, required=False),
+        201: protobuf.Field("passphrase_protection", "bool", repeated=False, required=False),
+        300: protobuf.Field("lable", "string", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        language: Optional["str"] = None,
+        bt_enable: Optional["bool"] = None,
+        init_states: Optional["bool"] = None,
+        backup_required: Optional["bool"] = None,
+        passphrase_protection: Optional["bool"] = None,
+        lable: Optional["str"] = None,
+    ) -> None:
+        self.language = language
+        self.bt_enable = bt_enable
+        self.init_states = init_states
+        self.backup_required = backup_required
+        self.passphrase_protection = passphrase_protection
+        self.lable = lable
+
+
+class OneKeyFwImgInfo(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = None
+    FIELDS = {
+        10: protobuf.Field("version", "string", repeated=False, required=False),
+        20: protobuf.Field("build_id", "string", repeated=False, required=False),
+        30: protobuf.Field("hash", "bytes", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        version: Optional["str"] = None,
+        build_id: Optional["str"] = None,
+        hash: Optional["bytes"] = None,
+    ) -> None:
+        self.version = version
+        self.build_id = build_id
+        self.hash = hash
+
+
+class OneKeyHardwareInfo(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = None
+    FIELDS = {
+        10: protobuf.Field("device_type", "OneKeyDeviceType", repeated=False, required=False),
+        11: protobuf.Field("serial_no", "string", repeated=False, required=False),
+        100: protobuf.Field("hardware_version", "string", repeated=False, required=False),
+        101: protobuf.Field("hardware_version_raw_adc", "uint32", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        device_type: Optional["OneKeyDeviceType"] = None,
+        serial_no: Optional["str"] = None,
+        hardware_version: Optional["str"] = None,
+        hardware_version_raw_adc: Optional["int"] = None,
+    ) -> None:
+        self.device_type = device_type
+        self.serial_no = serial_no
+        self.hardware_version = hardware_version
+        self.hardware_version_raw_adc = hardware_version_raw_adc
+
+
+class OneKeyMainMcuInfo(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = None
+    FIELDS = {
+        10: protobuf.Field("board", "OneKeyFwImgInfo", repeated=False, required=False),
+        20: protobuf.Field("boot", "OneKeyFwImgInfo", repeated=False, required=False),
+        30: protobuf.Field("app", "OneKeyFwImgInfo", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        board: Optional["OneKeyFwImgInfo"] = None,
+        boot: Optional["OneKeyFwImgInfo"] = None,
+        app: Optional["OneKeyFwImgInfo"] = None,
+    ) -> None:
+        self.board = board
+        self.boot = boot
+        self.app = app
+
+
+class OneKeyBluetoothInfo(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = None
+    FIELDS = {
+        20: protobuf.Field("boot", "OneKeyFwImgInfo", repeated=False, required=False),
+        30: protobuf.Field("app", "OneKeyFwImgInfo", repeated=False, required=False),
+        100: protobuf.Field("adv_name", "string", repeated=False, required=False),
+        110: protobuf.Field("mac", "bytes", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        boot: Optional["OneKeyFwImgInfo"] = None,
+        app: Optional["OneKeyFwImgInfo"] = None,
+        adv_name: Optional["str"] = None,
+        mac: Optional["bytes"] = None,
+    ) -> None:
+        self.boot = boot
+        self.app = app
+        self.adv_name = adv_name
+        self.mac = mac
+
+
+class OneKeySEInfo(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = None
+    FIELDS = {
+        20: protobuf.Field("boot", "OneKeyFwImgInfo", repeated=False, required=False),
+        30: protobuf.Field("app", "OneKeyFwImgInfo", repeated=False, required=False),
+        100: protobuf.Field("type", "OneKeySeType", repeated=False, required=False),
+        110: protobuf.Field("state", "OneKeySEState", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        boot: Optional["OneKeyFwImgInfo"] = None,
+        app: Optional["OneKeyFwImgInfo"] = None,
+        type: Optional["OneKeySeType"] = None,
+        state: Optional["OneKeySEState"] = None,
+    ) -> None:
+        self.boot = boot
+        self.app = app
+        self.type = type
+        self.state = state
+
+
+class OneKeyInfoTargets(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = None
+    FIELDS = {
+        100: protobuf.Field("hw", "bool", repeated=False, required=False),
+        200: protobuf.Field("fw", "bool", repeated=False, required=False),
+        300: protobuf.Field("bt", "bool", repeated=False, required=False),
+        400: protobuf.Field("se1", "bool", repeated=False, required=False),
+        410: protobuf.Field("se2", "bool", repeated=False, required=False),
+        420: protobuf.Field("se3", "bool", repeated=False, required=False),
+        430: protobuf.Field("se4", "bool", repeated=False, required=False),
+        10000: protobuf.Field("status", "bool", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        hw: Optional["bool"] = None,
+        fw: Optional["bool"] = None,
+        bt: Optional["bool"] = None,
+        se1: Optional["bool"] = None,
+        se2: Optional["bool"] = None,
+        se3: Optional["bool"] = None,
+        se4: Optional["bool"] = None,
+        status: Optional["bool"] = None,
+    ) -> None:
+        self.hw = hw
+        self.fw = fw
+        self.bt = bt
+        self.se1 = se1
+        self.se2 = se2
+        self.se3 = se3
+        self.se4 = se4
+        self.status = status
+
+
+class OneKeyInfoTypes(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = None
+    FIELDS = {
+        10: protobuf.Field("version", "bool", repeated=False, required=False),
+        20: protobuf.Field("build_id", "bool", repeated=False, required=False),
+        30: protobuf.Field("hash", "bool", repeated=False, required=False),
+        40: protobuf.Field("specific", "bool", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        version: Optional["bool"] = None,
+        build_id: Optional["bool"] = None,
+        hash: Optional["bool"] = None,
+        specific: Optional["bool"] = None,
+    ) -> None:
+        self.version = version
+        self.build_id = build_id
+        self.hash = hash
+        self.specific = specific
+
+
+class OneKeyInfoReq(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = None
+    FIELDS = {
+        1: protobuf.Field("targets", "OneKeyInfoTargets", repeated=False, required=False),
+        2: protobuf.Field("types", "OneKeyInfoTypes", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        targets: Optional["OneKeyInfoTargets"] = None,
+        types: Optional["OneKeyInfoTypes"] = None,
+    ) -> None:
+        self.targets = targets
+        self.types = types
+
+
+class OneKeyInfoResp(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = None
+    FIELDS = {
+        1: protobuf.Field("protocol_version", "float", repeated=False, required=True),
+        100: protobuf.Field("hw", "OneKeyHardwareInfo", repeated=False, required=False),
+        200: protobuf.Field("fw", "OneKeyMainMcuInfo", repeated=False, required=False),
+        300: protobuf.Field("bt", "OneKeyBluetoothInfo", repeated=False, required=False),
+        400: protobuf.Field("se1", "OneKeySEInfo", repeated=False, required=False),
+        410: protobuf.Field("se2", "OneKeySEInfo", repeated=False, required=False),
+        420: protobuf.Field("se3", "OneKeySEInfo", repeated=False, required=False),
+        430: protobuf.Field("se4", "OneKeySEInfo", repeated=False, required=False),
+        10000: protobuf.Field("status", "OneKeyStatus", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        protocol_version: "float",
+        hw: Optional["OneKeyHardwareInfo"] = None,
+        fw: Optional["OneKeyMainMcuInfo"] = None,
+        bt: Optional["OneKeyBluetoothInfo"] = None,
+        se1: Optional["OneKeySEInfo"] = None,
+        se2: Optional["OneKeySEInfo"] = None,
+        se3: Optional["OneKeySEInfo"] = None,
+        se4: Optional["OneKeySEInfo"] = None,
+        status: Optional["OneKeyStatus"] = None,
+    ) -> None:
+        self.protocol_version = protocol_version
+        self.hw = hw
+        self.fw = fw
+        self.bt = bt
+        self.se1 = se1
+        self.se2 = se2
+        self.se3 = se3
+        self.se4 = se4
+        self.status = status
 
 
 class GetFeatures(protobuf.MessageType):
     MESSAGE_WIRE_TYPE = 55
+    FIELDS = {
+        9999: protobuf.Field("ok_dev_info_req", "OneKeyInfoReq", repeated=False, required=False),
+    }
 
-
-class OnekeyGetFeatures(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = 10025
+    def __init__(
+        self,
+        *,
+        ok_dev_info_req: Optional["OneKeyInfoReq"] = None,
+    ) -> None:
+        self.ok_dev_info_req = ok_dev_info_req
 
 
 class Features(protobuf.MessageType):
     MESSAGE_WIRE_TYPE = 17
     FIELDS = {
         1: protobuf.Field("vendor", "string", repeated=False, required=False),
-        2: protobuf.Field("major_version", "uint32", repeated=False, required=True),
-        3: protobuf.Field("minor_version", "uint32", repeated=False, required=True),
-        4: protobuf.Field("patch_version", "uint32", repeated=False, required=True),
+        2: protobuf.Field("major_version", "uint32", repeated=False, required=False),
+        3: protobuf.Field("minor_version", "uint32", repeated=False, required=False),
+        4: protobuf.Field("patch_version", "uint32", repeated=False, required=False),
         5: protobuf.Field("bootloader_mode", "bool", repeated=False, required=False),
         6: protobuf.Field("device_id", "string", repeated=False, required=False),
         7: protobuf.Field("pin_protection", "bool", repeated=False, required=False),
@@ -4335,7 +5063,7 @@ class Features(protobuf.MessageType):
         16: protobuf.Field("unlocked", "bool", repeated=False, required=False),
         17: protobuf.Field("_passphrase_cached", "bool", repeated=False, required=False),
         18: protobuf.Field("firmware_present", "bool", repeated=False, required=False),
-        19: protobuf.Field("needs_backup", "bool", repeated=False, required=False),
+        19: protobuf.Field("backup_availability", "BackupAvailability", repeated=False, required=False),
         20: protobuf.Field("flags", "uint32", repeated=False, required=False),
         21: protobuf.Field("model", "string", repeated=False, required=False),
         22: protobuf.Field("fw_major", "uint32", repeated=False, required=False),
@@ -4344,7 +5072,7 @@ class Features(protobuf.MessageType):
         25: protobuf.Field("fw_vendor", "string", repeated=False, required=False),
         27: protobuf.Field("unfinished_backup", "bool", repeated=False, required=False),
         28: protobuf.Field("no_backup", "bool", repeated=False, required=False),
-        29: protobuf.Field("recovery_mode", "bool", repeated=False, required=False),
+        29: protobuf.Field("recovery_status", "RecoveryStatus", repeated=False, required=False),
         30: protobuf.Field("capabilities", "Capability", repeated=True, required=False),
         31: protobuf.Field("backup_type", "BackupType", repeated=False, required=False),
         32: protobuf.Field("sd_card_present", "bool", repeated=False, required=False),
@@ -4354,63 +5082,36 @@ class Features(protobuf.MessageType):
         36: protobuf.Field("passphrase_always_on_device", "bool", repeated=False, required=False),
         37: protobuf.Field("safety_checks", "SafetyCheckLevel", repeated=False, required=False),
         38: protobuf.Field("auto_lock_delay_ms", "uint32", repeated=False, required=False),
-        39: protobuf.Field("display_rotation", "uint32", repeated=False, required=False),
+        39: protobuf.Field("display_rotation", "DisplayRotation", repeated=False, required=False),
         40: protobuf.Field("experimental_features", "bool", repeated=False, required=False),
-        500: protobuf.Field("offset", "uint32", repeated=False, required=False),
-        501: protobuf.Field("ble_name", "string", repeated=False, required=False),
-        502: protobuf.Field("ble_ver", "string", repeated=False, required=False),
-        503: protobuf.Field("ble_enable", "bool", repeated=False, required=False),
-        504: protobuf.Field("se_enable", "bool", repeated=False, required=False),
-        506: protobuf.Field("se_ver", "string", repeated=False, required=False),
-        507: protobuf.Field("backup_only", "bool", repeated=False, required=False),
-        508: protobuf.Field("onekey_version", "string", repeated=False, required=False),
-        509: protobuf.Field("onekey_serial", "string", repeated=False, required=False),
-        510: protobuf.Field("bootloader_version", "string", repeated=False, required=False),
-        511: protobuf.Field("serial_no", "string", repeated=False, required=False),
-        512: protobuf.Field("spi_flash", "string", repeated=False, required=False),
-        513: protobuf.Field("initstates", "uint32", repeated=False, required=False),
-        514: protobuf.Field("NFT_voucher", "bytes", repeated=False, required=False),
-        515: protobuf.Field("cpu_info", "string", repeated=False, required=False),
-        516: protobuf.Field("pre_firmware", "string", repeated=False, required=False),
-        517: protobuf.Field("coin_switch", "uint32", repeated=False, required=False),
-        518: protobuf.Field("build_id", "bytes", repeated=False, required=False),
-        519: protobuf.Field("boardloader_version", "string", repeated=False, required=False),
         41: protobuf.Field("busy", "bool", repeated=False, required=False),
+        42: protobuf.Field("homescreen_format", "HomescreenFormat", repeated=False, required=False),
+        43: protobuf.Field("hide_passphrase_from_host", "bool", repeated=False, required=False),
+        44: protobuf.Field("internal_model", "string", repeated=False, required=False),
+        45: protobuf.Field("unit_color", "uint32", repeated=False, required=False),
+        46: protobuf.Field("unit_btconly", "bool", repeated=False, required=False),
+        47: protobuf.Field("homescreen_width", "uint32", repeated=False, required=False),
+        48: protobuf.Field("homescreen_height", "uint32", repeated=False, required=False),
+        49: protobuf.Field("bootloader_locked", "bool", repeated=False, required=False),
+        50: protobuf.Field("language_version_matches", "bool", repeated=False, required=False),
+        51: protobuf.Field("unit_packaging", "uint32", repeated=False, required=False),
+        52: protobuf.Field("haptic_feedback", "bool", repeated=False, required=False),
+        53: protobuf.Field("recovery_type", "RecoveryType", repeated=False, required=False),
+        54: protobuf.Field("optiga_sec", "uint32", repeated=False, required=False),
+        9999: protobuf.Field("ok_dev_info_resp", "OneKeyInfoResp", repeated=False, required=False),
+        6666: protobuf.Field("ok_factory_status", "OneKeyFactoryStatus", repeated=False, required=False),
         600: protobuf.Field("onekey_device_type", "OneKeyDeviceType", repeated=False, required=False),
-        601: protobuf.Field("onekey_se_type", "OneKeySeType", repeated=False, required=False),
-        602: protobuf.Field("onekey_board_version", "string", repeated=False, required=False),
-        603: protobuf.Field("onekey_board_hash", "bytes", repeated=False, required=False),
-        604: protobuf.Field("onekey_boot_version", "string", repeated=False, required=False),
-        605: protobuf.Field("onekey_boot_hash", "bytes", repeated=False, required=False),
-        606: protobuf.Field("onekey_se01_version", "string", repeated=False, required=False),
-        607: protobuf.Field("onekey_se01_hash", "bytes", repeated=False, required=False),
-        608: protobuf.Field("onekey_se01_build_id", "string", repeated=False, required=False),
-        609: protobuf.Field("onekey_firmware_version", "string", repeated=False, required=False),
-        610: protobuf.Field("onekey_firmware_hash", "bytes", repeated=False, required=False),
-        611: protobuf.Field("onekey_firmware_build_id", "string", repeated=False, required=False),
         612: protobuf.Field("onekey_serial_no", "string", repeated=False, required=False),
-        613: protobuf.Field("onekey_boot_build_id", "string", repeated=False, required=False),
-        614: protobuf.Field("onekey_ble_name", "string", repeated=False, required=False),
-        615: protobuf.Field("onekey_ble_version", "string", repeated=False, required=False),
-        616: protobuf.Field("onekey_ble_build_id", "string", repeated=False, required=False),
-        617: protobuf.Field("onekey_ble_hash", "bytes", repeated=False, required=False),
-        618: protobuf.Field("onekey_se02_version", "string", repeated=False, required=False),
-        619: protobuf.Field("onekey_se03_version", "string", repeated=False, required=False),
-        620: protobuf.Field("onekey_se04_version", "string", repeated=False, required=False),
-        621: protobuf.Field("onekey_se01_state", "OneKeySEState", repeated=False, required=False),
-        622: protobuf.Field("onekey_se02_state", "OneKeySEState", repeated=False, required=False),
-        623: protobuf.Field("onekey_se03_state", "OneKeySEState", repeated=False, required=False),
-        624: protobuf.Field("onekey_se04_state", "OneKeySEState", repeated=False, required=False),
     }
 
     def __init__(
         self,
         *,
-        major_version: "int",
-        minor_version: "int",
-        patch_version: "int",
         capabilities: Optional[Sequence["Capability"]] = None,
         vendor: Optional["str"] = None,
+        major_version: Optional["int"] = None,
+        minor_version: Optional["int"] = None,
+        patch_version: Optional["int"] = None,
         bootloader_mode: Optional["bool"] = None,
         device_id: Optional["str"] = None,
         pin_protection: Optional["bool"] = None,
@@ -4424,7 +5125,7 @@ class Features(protobuf.MessageType):
         unlocked: Optional["bool"] = None,
         _passphrase_cached: Optional["bool"] = None,
         firmware_present: Optional["bool"] = None,
-        needs_backup: Optional["bool"] = None,
+        backup_availability: Optional["BackupAvailability"] = None,
         flags: Optional["int"] = None,
         model: Optional["str"] = None,
         fw_major: Optional["int"] = None,
@@ -4433,7 +5134,7 @@ class Features(protobuf.MessageType):
         fw_vendor: Optional["str"] = None,
         unfinished_backup: Optional["bool"] = None,
         no_backup: Optional["bool"] = None,
-        recovery_mode: Optional["bool"] = None,
+        recovery_status: Optional["RecoveryStatus"] = None,
         backup_type: Optional["BackupType"] = None,
         sd_card_present: Optional["bool"] = None,
         sd_protection: Optional["bool"] = None,
@@ -4442,59 +5143,32 @@ class Features(protobuf.MessageType):
         passphrase_always_on_device: Optional["bool"] = None,
         safety_checks: Optional["SafetyCheckLevel"] = None,
         auto_lock_delay_ms: Optional["int"] = None,
-        display_rotation: Optional["int"] = None,
+        display_rotation: Optional["DisplayRotation"] = None,
         experimental_features: Optional["bool"] = None,
-        offset: Optional["int"] = None,
-        ble_name: Optional["str"] = None,
-        ble_ver: Optional["str"] = None,
-        ble_enable: Optional["bool"] = None,
-        se_enable: Optional["bool"] = None,
-        se_ver: Optional["str"] = None,
-        backup_only: Optional["bool"] = None,
-        onekey_version: Optional["str"] = None,
-        onekey_serial: Optional["str"] = None,
-        bootloader_version: Optional["str"] = None,
-        serial_no: Optional["str"] = None,
-        spi_flash: Optional["str"] = None,
-        initstates: Optional["int"] = None,
-        NFT_voucher: Optional["bytes"] = None,
-        cpu_info: Optional["str"] = None,
-        pre_firmware: Optional["str"] = None,
-        coin_switch: Optional["int"] = None,
-        build_id: Optional["bytes"] = None,
-        boardloader_version: Optional["str"] = None,
         busy: Optional["bool"] = None,
+        homescreen_format: Optional["HomescreenFormat"] = None,
+        hide_passphrase_from_host: Optional["bool"] = None,
+        internal_model: Optional["str"] = None,
+        unit_color: Optional["int"] = None,
+        unit_btconly: Optional["bool"] = None,
+        homescreen_width: Optional["int"] = None,
+        homescreen_height: Optional["int"] = None,
+        bootloader_locked: Optional["bool"] = None,
+        language_version_matches: Optional["bool"] = True,
+        unit_packaging: Optional["int"] = None,
+        haptic_feedback: Optional["bool"] = None,
+        recovery_type: Optional["RecoveryType"] = None,
+        optiga_sec: Optional["int"] = None,
+        ok_dev_info_resp: Optional["OneKeyInfoResp"] = None,
+        ok_factory_status: Optional["OneKeyFactoryStatus"] = None,
         onekey_device_type: Optional["OneKeyDeviceType"] = None,
-        onekey_se_type: Optional["OneKeySeType"] = None,
-        onekey_board_version: Optional["str"] = None,
-        onekey_board_hash: Optional["bytes"] = None,
-        onekey_boot_version: Optional["str"] = None,
-        onekey_boot_hash: Optional["bytes"] = None,
-        onekey_se01_version: Optional["str"] = None,
-        onekey_se01_hash: Optional["bytes"] = None,
-        onekey_se01_build_id: Optional["str"] = None,
-        onekey_firmware_version: Optional["str"] = None,
-        onekey_firmware_hash: Optional["bytes"] = None,
-        onekey_firmware_build_id: Optional["str"] = None,
         onekey_serial_no: Optional["str"] = None,
-        onekey_boot_build_id: Optional["str"] = None,
-        onekey_ble_name: Optional["str"] = None,
-        onekey_ble_version: Optional["str"] = None,
-        onekey_ble_build_id: Optional["str"] = None,
-        onekey_ble_hash: Optional["bytes"] = None,
-        onekey_se02_version: Optional["str"] = None,
-        onekey_se03_version: Optional["str"] = None,
-        onekey_se04_version: Optional["str"] = None,
-        onekey_se01_state: Optional["OneKeySEState"] = None,
-        onekey_se02_state: Optional["OneKeySEState"] = None,
-        onekey_se03_state: Optional["OneKeySEState"] = None,
-        onekey_se04_state: Optional["OneKeySEState"] = None,
     ) -> None:
         self.capabilities: Sequence["Capability"] = capabilities if capabilities is not None else []
+        self.vendor = vendor
         self.major_version = major_version
         self.minor_version = minor_version
         self.patch_version = patch_version
-        self.vendor = vendor
         self.bootloader_mode = bootloader_mode
         self.device_id = device_id
         self.pin_protection = pin_protection
@@ -4508,7 +5182,7 @@ class Features(protobuf.MessageType):
         self.unlocked = unlocked
         self._passphrase_cached = _passphrase_cached
         self.firmware_present = firmware_present
-        self.needs_backup = needs_backup
+        self.backup_availability = backup_availability
         self.flags = flags
         self.model = model
         self.fw_major = fw_major
@@ -4517,7 +5191,7 @@ class Features(protobuf.MessageType):
         self.fw_vendor = fw_vendor
         self.unfinished_backup = unfinished_backup
         self.no_backup = no_backup
-        self.recovery_mode = recovery_mode
+        self.recovery_status = recovery_status
         self.backup_type = backup_type
         self.sd_card_present = sd_card_present
         self.sd_protection = sd_protection
@@ -4528,194 +5202,24 @@ class Features(protobuf.MessageType):
         self.auto_lock_delay_ms = auto_lock_delay_ms
         self.display_rotation = display_rotation
         self.experimental_features = experimental_features
-        self.offset = offset
-        self.ble_name = ble_name
-        self.ble_ver = ble_ver
-        self.ble_enable = ble_enable
-        self.se_enable = se_enable
-        self.se_ver = se_ver
-        self.backup_only = backup_only
-        self.onekey_version = onekey_version
-        self.onekey_serial = onekey_serial
-        self.bootloader_version = bootloader_version
-        self.serial_no = serial_no
-        self.spi_flash = spi_flash
-        self.initstates = initstates
-        self.NFT_voucher = NFT_voucher
-        self.cpu_info = cpu_info
-        self.pre_firmware = pre_firmware
-        self.coin_switch = coin_switch
-        self.build_id = build_id
-        self.boardloader_version = boardloader_version
         self.busy = busy
+        self.homescreen_format = homescreen_format
+        self.hide_passphrase_from_host = hide_passphrase_from_host
+        self.internal_model = internal_model
+        self.unit_color = unit_color
+        self.unit_btconly = unit_btconly
+        self.homescreen_width = homescreen_width
+        self.homescreen_height = homescreen_height
+        self.bootloader_locked = bootloader_locked
+        self.language_version_matches = language_version_matches
+        self.unit_packaging = unit_packaging
+        self.haptic_feedback = haptic_feedback
+        self.recovery_type = recovery_type
+        self.optiga_sec = optiga_sec
+        self.ok_dev_info_resp = ok_dev_info_resp
+        self.ok_factory_status = ok_factory_status
         self.onekey_device_type = onekey_device_type
-        self.onekey_se_type = onekey_se_type
-        self.onekey_board_version = onekey_board_version
-        self.onekey_board_hash = onekey_board_hash
-        self.onekey_boot_version = onekey_boot_version
-        self.onekey_boot_hash = onekey_boot_hash
-        self.onekey_se01_version = onekey_se01_version
-        self.onekey_se01_hash = onekey_se01_hash
-        self.onekey_se01_build_id = onekey_se01_build_id
-        self.onekey_firmware_version = onekey_firmware_version
-        self.onekey_firmware_hash = onekey_firmware_hash
-        self.onekey_firmware_build_id = onekey_firmware_build_id
         self.onekey_serial_no = onekey_serial_no
-        self.onekey_boot_build_id = onekey_boot_build_id
-        self.onekey_ble_name = onekey_ble_name
-        self.onekey_ble_version = onekey_ble_version
-        self.onekey_ble_build_id = onekey_ble_build_id
-        self.onekey_ble_hash = onekey_ble_hash
-        self.onekey_se02_version = onekey_se02_version
-        self.onekey_se03_version = onekey_se03_version
-        self.onekey_se04_version = onekey_se04_version
-        self.onekey_se01_state = onekey_se01_state
-        self.onekey_se02_state = onekey_se02_state
-        self.onekey_se03_state = onekey_se03_state
-        self.onekey_se04_state = onekey_se04_state
-
-
-class OnekeyFeatures(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = 10026
-    FIELDS = {
-        1: protobuf.Field("onekey_device_type", "OneKeyDeviceType", repeated=False, required=False),
-        2: protobuf.Field("onekey_board_version", "string", repeated=False, required=False),
-        3: protobuf.Field("onekey_boot_version", "string", repeated=False, required=False),
-        4: protobuf.Field("onekey_firmware_version", "string", repeated=False, required=False),
-        5: protobuf.Field("onekey_board_hash", "bytes", repeated=False, required=False),
-        6: protobuf.Field("onekey_boot_hash", "bytes", repeated=False, required=False),
-        7: protobuf.Field("onekey_firmware_hash", "bytes", repeated=False, required=False),
-        8: protobuf.Field("onekey_board_build_id", "string", repeated=False, required=False),
-        9: protobuf.Field("onekey_boot_build_id", "string", repeated=False, required=False),
-        10: protobuf.Field("onekey_firmware_build_id", "string", repeated=False, required=False),
-        11: protobuf.Field("onekey_serial_no", "string", repeated=False, required=False),
-        12: protobuf.Field("onekey_ble_name", "string", repeated=False, required=False),
-        13: protobuf.Field("onekey_ble_version", "string", repeated=False, required=False),
-        14: protobuf.Field("onekey_ble_build_id", "string", repeated=False, required=False),
-        15: protobuf.Field("onekey_ble_hash", "bytes", repeated=False, required=False),
-        16: protobuf.Field("onekey_se_type", "OneKeySeType", repeated=False, required=False),
-        17: protobuf.Field("onekey_se01_state", "OneKeySEState", repeated=False, required=False),
-        18: protobuf.Field("onekey_se02_state", "OneKeySEState", repeated=False, required=False),
-        19: protobuf.Field("onekey_se03_state", "OneKeySEState", repeated=False, required=False),
-        20: protobuf.Field("onekey_se04_state", "OneKeySEState", repeated=False, required=False),
-        21: protobuf.Field("onekey_se01_version", "string", repeated=False, required=False),
-        22: protobuf.Field("onekey_se02_version", "string", repeated=False, required=False),
-        23: protobuf.Field("onekey_se03_version", "string", repeated=False, required=False),
-        24: protobuf.Field("onekey_se04_version", "string", repeated=False, required=False),
-        25: protobuf.Field("onekey_se01_hash", "bytes", repeated=False, required=False),
-        26: protobuf.Field("onekey_se02_hash", "bytes", repeated=False, required=False),
-        27: protobuf.Field("onekey_se03_hash", "bytes", repeated=False, required=False),
-        28: protobuf.Field("onekey_se04_hash", "bytes", repeated=False, required=False),
-        29: protobuf.Field("onekey_se01_build_id", "string", repeated=False, required=False),
-        30: protobuf.Field("onekey_se02_build_id", "string", repeated=False, required=False),
-        31: protobuf.Field("onekey_se03_build_id", "string", repeated=False, required=False),
-        32: protobuf.Field("onekey_se04_build_id", "string", repeated=False, required=False),
-        33: protobuf.Field("onekey_se01_boot_version", "string", repeated=False, required=False),
-        34: protobuf.Field("onekey_se02_boot_version", "string", repeated=False, required=False),
-        35: protobuf.Field("onekey_se03_boot_version", "string", repeated=False, required=False),
-        36: protobuf.Field("onekey_se04_boot_version", "string", repeated=False, required=False),
-        37: protobuf.Field("onekey_se01_boot_hash", "bytes", repeated=False, required=False),
-        38: protobuf.Field("onekey_se02_boot_hash", "bytes", repeated=False, required=False),
-        39: protobuf.Field("onekey_se03_boot_hash", "bytes", repeated=False, required=False),
-        40: protobuf.Field("onekey_se04_boot_hash", "bytes", repeated=False, required=False),
-        41: protobuf.Field("onekey_se01_boot_build_id", "string", repeated=False, required=False),
-        42: protobuf.Field("onekey_se02_boot_build_id", "string", repeated=False, required=False),
-        43: protobuf.Field("onekey_se03_boot_build_id", "string", repeated=False, required=False),
-        44: protobuf.Field("onekey_se04_boot_build_id", "string", repeated=False, required=False),
-    }
-
-    def __init__(
-        self,
-        *,
-        onekey_device_type: Optional["OneKeyDeviceType"] = None,
-        onekey_board_version: Optional["str"] = None,
-        onekey_boot_version: Optional["str"] = None,
-        onekey_firmware_version: Optional["str"] = None,
-        onekey_board_hash: Optional["bytes"] = None,
-        onekey_boot_hash: Optional["bytes"] = None,
-        onekey_firmware_hash: Optional["bytes"] = None,
-        onekey_board_build_id: Optional["str"] = None,
-        onekey_boot_build_id: Optional["str"] = None,
-        onekey_firmware_build_id: Optional["str"] = None,
-        onekey_serial_no: Optional["str"] = None,
-        onekey_ble_name: Optional["str"] = None,
-        onekey_ble_version: Optional["str"] = None,
-        onekey_ble_build_id: Optional["str"] = None,
-        onekey_ble_hash: Optional["bytes"] = None,
-        onekey_se_type: Optional["OneKeySeType"] = None,
-        onekey_se01_state: Optional["OneKeySEState"] = None,
-        onekey_se02_state: Optional["OneKeySEState"] = None,
-        onekey_se03_state: Optional["OneKeySEState"] = None,
-        onekey_se04_state: Optional["OneKeySEState"] = None,
-        onekey_se01_version: Optional["str"] = None,
-        onekey_se02_version: Optional["str"] = None,
-        onekey_se03_version: Optional["str"] = None,
-        onekey_se04_version: Optional["str"] = None,
-        onekey_se01_hash: Optional["bytes"] = None,
-        onekey_se02_hash: Optional["bytes"] = None,
-        onekey_se03_hash: Optional["bytes"] = None,
-        onekey_se04_hash: Optional["bytes"] = None,
-        onekey_se01_build_id: Optional["str"] = None,
-        onekey_se02_build_id: Optional["str"] = None,
-        onekey_se03_build_id: Optional["str"] = None,
-        onekey_se04_build_id: Optional["str"] = None,
-        onekey_se01_boot_version: Optional["str"] = None,
-        onekey_se02_boot_version: Optional["str"] = None,
-        onekey_se03_boot_version: Optional["str"] = None,
-        onekey_se04_boot_version: Optional["str"] = None,
-        onekey_se01_boot_hash: Optional["bytes"] = None,
-        onekey_se02_boot_hash: Optional["bytes"] = None,
-        onekey_se03_boot_hash: Optional["bytes"] = None,
-        onekey_se04_boot_hash: Optional["bytes"] = None,
-        onekey_se01_boot_build_id: Optional["str"] = None,
-        onekey_se02_boot_build_id: Optional["str"] = None,
-        onekey_se03_boot_build_id: Optional["str"] = None,
-        onekey_se04_boot_build_id: Optional["str"] = None,
-    ) -> None:
-        self.onekey_device_type = onekey_device_type
-        self.onekey_board_version = onekey_board_version
-        self.onekey_boot_version = onekey_boot_version
-        self.onekey_firmware_version = onekey_firmware_version
-        self.onekey_board_hash = onekey_board_hash
-        self.onekey_boot_hash = onekey_boot_hash
-        self.onekey_firmware_hash = onekey_firmware_hash
-        self.onekey_board_build_id = onekey_board_build_id
-        self.onekey_boot_build_id = onekey_boot_build_id
-        self.onekey_firmware_build_id = onekey_firmware_build_id
-        self.onekey_serial_no = onekey_serial_no
-        self.onekey_ble_name = onekey_ble_name
-        self.onekey_ble_version = onekey_ble_version
-        self.onekey_ble_build_id = onekey_ble_build_id
-        self.onekey_ble_hash = onekey_ble_hash
-        self.onekey_se_type = onekey_se_type
-        self.onekey_se01_state = onekey_se01_state
-        self.onekey_se02_state = onekey_se02_state
-        self.onekey_se03_state = onekey_se03_state
-        self.onekey_se04_state = onekey_se04_state
-        self.onekey_se01_version = onekey_se01_version
-        self.onekey_se02_version = onekey_se02_version
-        self.onekey_se03_version = onekey_se03_version
-        self.onekey_se04_version = onekey_se04_version
-        self.onekey_se01_hash = onekey_se01_hash
-        self.onekey_se02_hash = onekey_se02_hash
-        self.onekey_se03_hash = onekey_se03_hash
-        self.onekey_se04_hash = onekey_se04_hash
-        self.onekey_se01_build_id = onekey_se01_build_id
-        self.onekey_se02_build_id = onekey_se02_build_id
-        self.onekey_se03_build_id = onekey_se03_build_id
-        self.onekey_se04_build_id = onekey_se04_build_id
-        self.onekey_se01_boot_version = onekey_se01_boot_version
-        self.onekey_se02_boot_version = onekey_se02_boot_version
-        self.onekey_se03_boot_version = onekey_se03_boot_version
-        self.onekey_se04_boot_version = onekey_se04_boot_version
-        self.onekey_se01_boot_hash = onekey_se01_boot_hash
-        self.onekey_se02_boot_hash = onekey_se02_boot_hash
-        self.onekey_se03_boot_hash = onekey_se03_boot_hash
-        self.onekey_se04_boot_hash = onekey_se04_boot_hash
-        self.onekey_se01_boot_build_id = onekey_se01_boot_build_id
-        self.onekey_se02_boot_build_id = onekey_se02_boot_build_id
-        self.onekey_se03_boot_build_id = onekey_se03_boot_build_id
-        self.onekey_se04_boot_build_id = onekey_se04_boot_build_id
 
 
 class LockDevice(protobuf.MessageType):
@@ -4736,6 +5240,29 @@ class SetBusy(protobuf.MessageType):
         self.expiry_ms = expiry_ms
 
 
+class StartSession(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 0
+    FIELDS = {
+        1: protobuf.Field("session_id", "bytes", repeated=False, required=False),
+        2: protobuf.Field("_skip_passphrase", "bool", repeated=False, required=False),
+        3: protobuf.Field("derive_cardano", "bool", repeated=False, required=False),
+        9999: protobuf.Field("ok_dev_info_req", "OneKeyInfoReq", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        session_id: Optional["bytes"] = None,
+        _skip_passphrase: Optional["bool"] = None,
+        derive_cardano: Optional["bool"] = None,
+        ok_dev_info_req: Optional["OneKeyInfoReq"] = None,
+    ) -> None:
+        self.session_id = session_id
+        self._skip_passphrase = _skip_passphrase
+        self.derive_cardano = derive_cardano
+        self.ok_dev_info_req = ok_dev_info_req
+
+
 class EndSession(protobuf.MessageType):
     MESSAGE_WIRE_TYPE = 83
 
@@ -4749,10 +5276,12 @@ class ApplySettings(protobuf.MessageType):
         4: protobuf.Field("homescreen", "bytes", repeated=False, required=False),
         5: protobuf.Field("_passphrase_source", "uint32", repeated=False, required=False),
         6: protobuf.Field("auto_lock_delay_ms", "uint32", repeated=False, required=False),
-        7: protobuf.Field("display_rotation", "uint32", repeated=False, required=False),
+        7: protobuf.Field("display_rotation", "DisplayRotation", repeated=False, required=False),
         8: protobuf.Field("passphrase_always_on_device", "bool", repeated=False, required=False),
         9: protobuf.Field("safety_checks", "SafetyCheckLevel", repeated=False, required=False),
         10: protobuf.Field("experimental_features", "bool", repeated=False, required=False),
+        11: protobuf.Field("hide_passphrase_from_host", "bool", repeated=False, required=False),
+        13: protobuf.Field("haptic_feedback", "bool", repeated=False, required=False),
     }
 
     def __init__(
@@ -4764,10 +5293,12 @@ class ApplySettings(protobuf.MessageType):
         homescreen: Optional["bytes"] = None,
         _passphrase_source: Optional["int"] = None,
         auto_lock_delay_ms: Optional["int"] = None,
-        display_rotation: Optional["int"] = None,
+        display_rotation: Optional["DisplayRotation"] = None,
         passphrase_always_on_device: Optional["bool"] = None,
         safety_checks: Optional["SafetyCheckLevel"] = None,
         experimental_features: Optional["bool"] = None,
+        hide_passphrase_from_host: Optional["bool"] = None,
+        haptic_feedback: Optional["bool"] = None,
     ) -> None:
         self.language = language
         self.label = label
@@ -4779,6 +5310,56 @@ class ApplySettings(protobuf.MessageType):
         self.passphrase_always_on_device = passphrase_always_on_device
         self.safety_checks = safety_checks
         self.experimental_features = experimental_features
+        self.hide_passphrase_from_host = hide_passphrase_from_host
+        self.haptic_feedback = haptic_feedback
+
+
+class ChangeLanguage(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 990
+    FIELDS = {
+        1: protobuf.Field("data_length", "uint32", repeated=False, required=True),
+        2: protobuf.Field("show_display", "bool", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        data_length: "int",
+        show_display: Optional["bool"] = None,
+    ) -> None:
+        self.data_length = data_length
+        self.show_display = show_display
+
+
+class TranslationDataRequest(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 991
+    FIELDS = {
+        1: protobuf.Field("data_length", "uint32", repeated=False, required=True),
+        2: protobuf.Field("data_offset", "uint32", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        data_length: "int",
+        data_offset: "int",
+    ) -> None:
+        self.data_length = data_length
+        self.data_offset = data_offset
+
+
+class TranslationDataAck(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 992
+    FIELDS = {
+        1: protobuf.Field("data_chunk", "bytes", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        data_chunk: "bytes",
+    ) -> None:
+        self.data_chunk = data_chunk
 
 
 class ApplyFlags(protobuf.MessageType):
@@ -4914,6 +5495,37 @@ class FirmwareHash(protobuf.MessageType):
         self.hash = hash
 
 
+class AuthenticateDevice(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 97
+    FIELDS = {
+        1: protobuf.Field("challenge", "bytes", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        challenge: "bytes",
+    ) -> None:
+        self.challenge = challenge
+
+
+class AuthenticityProof(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 98
+    FIELDS = {
+        1: protobuf.Field("certificates", "bytes", repeated=True, required=False),
+        2: protobuf.Field("signature", "bytes", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        signature: "bytes",
+        certificates: Optional[Sequence["bytes"]] = None,
+    ) -> None:
+        self.certificates: Sequence["bytes"] = certificates if certificates is not None else []
+        self.signature = signature
+
+
 class WipeDevice(protobuf.MessageType):
     MESSAGE_WIRE_TYPE = 5
 
@@ -4938,7 +5550,7 @@ class LoadDevice(protobuf.MessageType):
         mnemonics: Optional[Sequence["str"]] = None,
         pin: Optional["str"] = None,
         passphrase_protection: Optional["bool"] = None,
-        language: Optional["str"] = 'en-US',
+        language: Optional["str"] = None,
         label: Optional["str"] = None,
         skip_checksum: Optional["bool"] = None,
         u2f_counter: Optional["int"] = None,
@@ -4978,7 +5590,7 @@ class ResetDevice(protobuf.MessageType):
         strength: Optional["int"] = 256,
         passphrase_protection: Optional["bool"] = None,
         pin_protection: Optional["bool"] = None,
-        language: Optional["str"] = 'en-US',
+        language: Optional["str"] = None,
         label: Optional["str"] = None,
         u2f_counter: Optional["int"] = None,
         skip_backup: Optional["bool"] = None,
@@ -4999,6 +5611,19 @@ class ResetDevice(protobuf.MessageType):
 
 class BackupDevice(protobuf.MessageType):
     MESSAGE_WIRE_TYPE = 34
+    FIELDS = {
+        1: protobuf.Field("group_threshold", "uint32", repeated=False, required=False),
+        2: protobuf.Field("groups", "Slip39Group", repeated=True, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        groups: Optional[Sequence["Slip39Group"]] = None,
+        group_threshold: Optional["int"] = None,
+    ) -> None:
+        self.groups: Sequence["Slip39Group"] = groups if groups is not None else []
+        self.group_threshold = group_threshold
 
 
 class EntropyRequest(protobuf.MessageType):
@@ -5028,9 +5653,9 @@ class RecoveryDevice(protobuf.MessageType):
         4: protobuf.Field("language", "string", repeated=False, required=False),
         5: protobuf.Field("label", "string", repeated=False, required=False),
         6: protobuf.Field("enforce_wordlist", "bool", repeated=False, required=False),
-        8: protobuf.Field("type", "RecoveryDeviceType", repeated=False, required=False),
+        8: protobuf.Field("input_method", "RecoveryDeviceInputMethod", repeated=False, required=False),
         9: protobuf.Field("u2f_counter", "uint32", repeated=False, required=False),
-        10: protobuf.Field("dry_run", "bool", repeated=False, required=False),
+        10: protobuf.Field("type", "RecoveryType", repeated=False, required=False),
     }
 
     def __init__(
@@ -5042,9 +5667,9 @@ class RecoveryDevice(protobuf.MessageType):
         language: Optional["str"] = None,
         label: Optional["str"] = None,
         enforce_wordlist: Optional["bool"] = None,
-        type: Optional["RecoveryDeviceType"] = None,
+        input_method: Optional["RecoveryDeviceInputMethod"] = None,
         u2f_counter: Optional["int"] = None,
-        dry_run: Optional["bool"] = None,
+        type: Optional["RecoveryType"] = RecoveryType.NormalRecovery,
     ) -> None:
         self.word_count = word_count
         self.passphrase_protection = passphrase_protection
@@ -5052,9 +5677,9 @@ class RecoveryDevice(protobuf.MessageType):
         self.language = language
         self.label = label
         self.enforce_wordlist = enforce_wordlist
-        self.type = type
+        self.input_method = input_method
         self.u2f_counter = u2f_counter
-        self.dry_run = dry_run
+        self.type = type
 
 
 class WordRequest(protobuf.MessageType):
@@ -5130,11 +5755,23 @@ class CancelAuthorization(protobuf.MessageType):
 
 
 class RebootToBootloader(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = 87
+    MESSAGE_WIRE_TYPE = None
+    FIELDS = {
+        1: protobuf.Field("boot_command", "BootCommand", repeated=False, required=False),
+        2: protobuf.Field("firmware_header", "bytes", repeated=False, required=False),
+        3: protobuf.Field("language_data_length", "uint32", repeated=False, required=False),
+    }
 
-
-class RebootToBoardloader(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = 904
+    def __init__(
+        self,
+        *,
+        boot_command: Optional["BootCommand"] = BootCommand.STOP_AND_WAIT,
+        firmware_header: Optional["bytes"] = None,
+        language_data_length: Optional["int"] = 0,
+    ) -> None:
+        self.boot_command = boot_command
+        self.firmware_header = firmware_header
+        self.language_data_length = language_data_length
 
 
 class GetNonce(protobuf.MessageType):
@@ -5155,8 +5792,57 @@ class Nonce(protobuf.MessageType):
         self.nonce = nonce
 
 
-class DeviceBackToBoot(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = 903
+class UnlockPath(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 93
+    FIELDS = {
+        1: protobuf.Field("address_n", "uint32", repeated=True, required=False),
+        2: protobuf.Field("mac", "bytes", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        address_n: Optional[Sequence["int"]] = None,
+        mac: Optional["bytes"] = None,
+    ) -> None:
+        self.address_n: Sequence["int"] = address_n if address_n is not None else []
+        self.mac = mac
+
+
+class UnlockedPathRequest(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 94
+    FIELDS = {
+        1: protobuf.Field("mac", "bytes", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        mac: Optional["bytes"] = None,
+    ) -> None:
+        self.mac = mac
+
+
+class ShowDeviceTutorial(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 95
+
+
+class UnlockBootloader(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 96
+
+
+class SetBrightness(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 993
+    FIELDS = {
+        1: protobuf.Field("value", "uint32", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        value: Optional["int"] = None,
+    ) -> None:
+        self.value = value
 
 
 class DeviceInfoSettings(protobuf.MessageType):
@@ -5274,6 +5960,54 @@ class SEPublicCert(protobuf.MessageType):
         public_cert: "bytes",
     ) -> None:
         self.public_cert = public_cert
+
+
+class SpiFlashWrite(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 10009
+    FIELDS = {
+        1: protobuf.Field("address", "uint32", repeated=False, required=True),
+        2: protobuf.Field("data", "bytes", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        address: "int",
+        data: "bytes",
+    ) -> None:
+        self.address = address
+        self.data = data
+
+
+class SpiFlashRead(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 10010
+    FIELDS = {
+        1: protobuf.Field("address", "uint32", repeated=False, required=True),
+        2: protobuf.Field("len", "uint32", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        address: "int",
+        len: "int",
+    ) -> None:
+        self.address = address
+        self.len = len
+
+
+class SpiFlashData(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 10011
+    FIELDS = {
+        1: protobuf.Field("data", "bytes", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        data: "bytes",
+    ) -> None:
+        self.data = data
 
 
 class SESignMessage(protobuf.MessageType):
@@ -5407,6 +6141,52 @@ class ResourceUpdate(protobuf.MessageType):
         self.hash = hash
 
 
+class NFTWriteInfo(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 10014
+    FIELDS = {
+        1: protobuf.Field("index", "uint32", repeated=False, required=True),
+        2: protobuf.Field("width", "uint32", repeated=False, required=True),
+        3: protobuf.Field("height", "uint32", repeated=False, required=True),
+        4: protobuf.Field("name_zh", "string", repeated=False, required=False),
+        5: protobuf.Field("name_en", "string", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        index: "int",
+        width: "int",
+        height: "int",
+        name_zh: Optional["str"] = None,
+        name_en: Optional["str"] = None,
+    ) -> None:
+        self.index = index
+        self.width = width
+        self.height = height
+        self.name_zh = name_zh
+        self.name_en = name_en
+
+
+class NFTWriteData(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 10015
+    FIELDS = {
+        1: protobuf.Field("index", "uint32", repeated=False, required=True),
+        2: protobuf.Field("data", "bytes", repeated=False, required=True),
+        3: protobuf.Field("offset", "uint32", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        index: "int",
+        data: "bytes",
+        offset: "int",
+    ) -> None:
+        self.index = index
+        self.data = data
+        self.offset = offset
+
+
 class ListResDir(protobuf.MessageType):
     MESSAGE_WIRE_TYPE = 10023
     FIELDS = {
@@ -5435,35 +6215,25 @@ class FileInfoList(protobuf.MessageType):
         self.files: Sequence["FileInfo"] = files if files is not None else []
 
 
-class UnlockPath(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = 93
+class DeviceEraseSector(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 10026
+
+
+class Slip39Group(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = None
     FIELDS = {
-        1: protobuf.Field("address_n", "uint32", repeated=True, required=False),
-        2: protobuf.Field("mac", "bytes", repeated=False, required=False),
+        1: protobuf.Field("member_threshold", "uint32", repeated=False, required=True),
+        2: protobuf.Field("member_count", "uint32", repeated=False, required=True),
     }
 
     def __init__(
         self,
         *,
-        address_n: Optional[Sequence["int"]] = None,
-        mac: Optional["bytes"] = None,
+        member_threshold: "int",
+        member_count: "int",
     ) -> None:
-        self.address_n: Sequence["int"] = address_n if address_n is not None else []
-        self.mac = mac
-
-
-class UnlockedPathRequest(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = 94
-    FIELDS = {
-        1: protobuf.Field("mac", "bytes", repeated=False, required=False),
-    }
-
-    def __init__(
-        self,
-        *,
-        mac: Optional["bytes"] = None,
-    ) -> None:
-        self.mac = mac
+        self.member_threshold = member_threshold
+        self.member_count = member_count
 
 
 class FileInfo(protobuf.MessageType):
@@ -5493,6 +6263,7 @@ class DebugLinkDecision(protobuf.MessageType):
         5: protobuf.Field("y", "uint32", repeated=False, required=False),
         6: protobuf.Field("wait", "bool", repeated=False, required=False),
         7: protobuf.Field("hold_ms", "uint32", repeated=False, required=False),
+        8: protobuf.Field("physical_button", "DebugPhysicalButton", repeated=False, required=False),
     }
 
     def __init__(
@@ -5505,6 +6276,7 @@ class DebugLinkDecision(protobuf.MessageType):
         y: Optional["int"] = None,
         wait: Optional["bool"] = None,
         hold_ms: Optional["int"] = None,
+        physical_button: Optional["DebugPhysicalButton"] = None,
     ) -> None:
         self.button = button
         self.swipe = swipe
@@ -5513,20 +6285,21 @@ class DebugLinkDecision(protobuf.MessageType):
         self.y = y
         self.wait = wait
         self.hold_ms = hold_ms
+        self.physical_button = physical_button
 
 
 class DebugLinkLayout(protobuf.MessageType):
     MESSAGE_WIRE_TYPE = 9001
     FIELDS = {
-        1: protobuf.Field("lines", "string", repeated=True, required=False),
+        1: protobuf.Field("tokens", "string", repeated=True, required=False),
     }
 
     def __init__(
         self,
         *,
-        lines: Optional[Sequence["str"]] = None,
+        tokens: Optional[Sequence["str"]] = None,
     ) -> None:
-        self.lines: Sequence["str"] = lines if lines is not None else []
+        self.tokens: Sequence["str"] = tokens if tokens is not None else []
 
 
 class DebugLinkReseedRandom(protobuf.MessageType):
@@ -5547,14 +6320,17 @@ class DebugLinkRecordScreen(protobuf.MessageType):
     MESSAGE_WIRE_TYPE = 9003
     FIELDS = {
         1: protobuf.Field("target_directory", "string", repeated=False, required=False),
+        2: protobuf.Field("refresh_index", "uint32", repeated=False, required=False),
     }
 
     def __init__(
         self,
         *,
         target_directory: Optional["str"] = None,
+        refresh_index: Optional["int"] = 0,
     ) -> None:
         self.target_directory = target_directory
+        self.refresh_index = refresh_index
 
 
 class DebugLinkGetState(protobuf.MessageType):
@@ -5562,7 +6338,7 @@ class DebugLinkGetState(protobuf.MessageType):
     FIELDS = {
         1: protobuf.Field("wait_word_list", "bool", repeated=False, required=False),
         2: protobuf.Field("wait_word_pos", "bool", repeated=False, required=False),
-        3: protobuf.Field("wait_layout", "bool", repeated=False, required=False),
+        3: protobuf.Field("wait_layout", "DebugWaitType", repeated=False, required=False),
     }
 
     def __init__(
@@ -5570,7 +6346,7 @@ class DebugLinkGetState(protobuf.MessageType):
         *,
         wait_word_list: Optional["bool"] = None,
         wait_word_pos: Optional["bool"] = None,
-        wait_layout: Optional["bool"] = None,
+        wait_layout: Optional["DebugWaitType"] = DebugWaitType.IMMEDIATE,
     ) -> None:
         self.wait_word_list = wait_word_list
         self.wait_word_pos = wait_word_pos
@@ -5592,13 +6368,13 @@ class DebugLinkState(protobuf.MessageType):
         10: protobuf.Field("recovery_word_pos", "uint32", repeated=False, required=False),
         11: protobuf.Field("reset_word_pos", "uint32", repeated=False, required=False),
         12: protobuf.Field("mnemonic_type", "BackupType", repeated=False, required=False),
-        13: protobuf.Field("layout_lines", "string", repeated=True, required=False),
+        13: protobuf.Field("tokens", "string", repeated=True, required=False),
     }
 
     def __init__(
         self,
         *,
-        layout_lines: Optional[Sequence["str"]] = None,
+        tokens: Optional[Sequence["str"]] = None,
         layout: Optional["bytes"] = None,
         pin: Optional["str"] = None,
         matrix: Optional["str"] = None,
@@ -5612,7 +6388,7 @@ class DebugLinkState(protobuf.MessageType):
         reset_word_pos: Optional["int"] = None,
         mnemonic_type: Optional["BackupType"] = None,
     ) -> None:
-        self.layout_lines: Sequence["str"] = layout_lines if layout_lines is not None else []
+        self.tokens: Sequence["str"] = tokens if tokens is not None else []
         self.layout = layout
         self.pin = pin
         self.matrix = matrix
@@ -5742,6 +6518,172 @@ class DebugLinkWatchLayout(protobuf.MessageType):
         watch: Optional["bool"] = None,
     ) -> None:
         self.watch = watch
+
+
+class DebugLinkResetDebugEvents(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 9007
+
+
+class DebugLinkOptigaSetSecMax(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 9008
+
+
+class DnxGetAddress(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 11800
+    FIELDS = {
+        1: protobuf.Field("address_n", "uint32", repeated=True, required=False),
+        2: protobuf.Field("show_display", "bool", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        address_n: Optional[Sequence["int"]] = None,
+        show_display: Optional["bool"] = None,
+    ) -> None:
+        self.address_n: Sequence["int"] = address_n if address_n is not None else []
+        self.show_display = show_display
+
+
+class DnxAddress(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 11801
+    FIELDS = {
+        1: protobuf.Field("address", "string", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        address: Optional["str"] = None,
+    ) -> None:
+        self.address = address
+
+
+class DnxSignTx(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 11802
+    FIELDS = {
+        1: protobuf.Field("address_n", "uint32", repeated=True, required=False),
+        2: protobuf.Field("inputs_count", "uint32", repeated=False, required=True),
+        3: protobuf.Field("to_address", "string", repeated=False, required=True),
+        4: protobuf.Field("amount", "uint64", repeated=False, required=True),
+        5: protobuf.Field("fee", "uint64", repeated=False, required=True),
+        6: protobuf.Field("payment_id", "bytes", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        inputs_count: "int",
+        to_address: "str",
+        amount: "int",
+        fee: "int",
+        address_n: Optional[Sequence["int"]] = None,
+        payment_id: Optional["bytes"] = None,
+    ) -> None:
+        self.address_n: Sequence["int"] = address_n if address_n is not None else []
+        self.inputs_count = inputs_count
+        self.to_address = to_address
+        self.amount = amount
+        self.fee = fee
+        self.payment_id = payment_id
+
+
+class DnxInputRequest(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 11803
+    FIELDS = {
+        1: protobuf.Field("request_index", "uint32", repeated=False, required=False),
+        2: protobuf.Field("tx_key", "DnxTxKey", repeated=False, required=False),
+        3: protobuf.Field("computed_key_image", "DnxComputedKeyImage", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        request_index: Optional["int"] = None,
+        tx_key: Optional["DnxTxKey"] = None,
+        computed_key_image: Optional["DnxComputedKeyImage"] = None,
+    ) -> None:
+        self.request_index = request_index
+        self.tx_key = tx_key
+        self.computed_key_image = computed_key_image
+
+
+class DnxInputAck(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 11804
+    FIELDS = {
+        1: protobuf.Field("prev_index", "uint32", repeated=False, required=True),
+        2: protobuf.Field("global_index", "uint32", repeated=False, required=True),
+        3: protobuf.Field("tx_pubkey", "bytes", repeated=False, required=True),
+        4: protobuf.Field("prev_out_pubkey", "bytes", repeated=False, required=True),
+        5: protobuf.Field("amount", "uint64", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        prev_index: "int",
+        global_index: "int",
+        tx_pubkey: "bytes",
+        prev_out_pubkey: "bytes",
+        amount: "int",
+    ) -> None:
+        self.prev_index = prev_index
+        self.global_index = global_index
+        self.tx_pubkey = tx_pubkey
+        self.prev_out_pubkey = prev_out_pubkey
+        self.amount = amount
+
+
+class DnxRTSigsRequest(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 11805
+
+
+class DnxSignedTx(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 11806
+    FIELDS = {
+        1: protobuf.Field("signatures", "bytes", repeated=True, required=False),
+        2: protobuf.Field("output_keys", "bytes", repeated=True, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        signatures: Optional[Sequence["bytes"]] = None,
+        output_keys: Optional[Sequence["bytes"]] = None,
+    ) -> None:
+        self.signatures: Sequence["bytes"] = signatures if signatures is not None else []
+        self.output_keys: Sequence["bytes"] = output_keys if output_keys is not None else []
+
+
+class DnxTxKey(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = None
+    FIELDS = {
+        1: protobuf.Field("ephemeral_tx_sec_key", "bytes", repeated=False, required=False),
+        2: protobuf.Field("ephemeral_tx_pub_key", "bytes", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        ephemeral_tx_sec_key: Optional["bytes"] = None,
+        ephemeral_tx_pub_key: Optional["bytes"] = None,
+    ) -> None:
+        self.ephemeral_tx_sec_key = ephemeral_tx_sec_key
+        self.ephemeral_tx_pub_key = ephemeral_tx_pub_key
+
+
+class DnxComputedKeyImage(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = None
+    FIELDS = {
+        1: protobuf.Field("key_image", "bytes", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        key_image: Optional["bytes"] = None,
+    ) -> None:
+        self.key_image = key_image
 
 
 class EmmcFixPermission(protobuf.MessageType):
@@ -7153,6 +8095,26 @@ class EthereumTypedDataSignatureOneKey(protobuf.MessageType):
         self.address = address
 
 
+class EthereumSignMessageEIP712(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 10200
+    FIELDS = {
+        1: protobuf.Field("address_n", "uint32", repeated=True, required=False),
+        2: protobuf.Field("domain_hash", "bytes", repeated=False, required=False),
+        3: protobuf.Field("message_hash", "bytes", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        address_n: Optional[Sequence["int"]] = None,
+        domain_hash: Optional["bytes"] = None,
+        message_hash: Optional["bytes"] = None,
+    ) -> None:
+        self.address_n: Sequence["int"] = address_n if address_n is not None else []
+        self.domain_hash = domain_hash
+        self.message_hash = message_hash
+
+
 class EthereumAccessListOneKey(protobuf.MessageType):
     MESSAGE_WIRE_TYPE = None
     FIELDS = {
@@ -7956,6 +8918,24 @@ class MoneroTransactionSetInputAck(protobuf.MessageType):
         self.pseudo_out_hmac = pseudo_out_hmac
         self.pseudo_out_alpha = pseudo_out_alpha
         self.spend_key = spend_key
+
+
+class MoneroTransactionInputsPermutationRequest(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 505
+    FIELDS = {
+        1: protobuf.Field("perm", "uint32", repeated=True, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        perm: Optional[Sequence["int"]] = None,
+    ) -> None:
+        self.perm: Sequence["int"] = perm if perm is not None else []
+
+
+class MoneroTransactionInputsPermutationAck(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 506
 
 
 class MoneroTransactionInputViniRequest(protobuf.MessageType):
@@ -10505,6 +11485,23 @@ class StellarBumpSequenceOp(protobuf.MessageType):
         self.source_account = source_account
 
 
+class StellarClaimClaimableBalanceOp(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 225
+    FIELDS = {
+        1: protobuf.Field("source_account", "string", repeated=False, required=False),
+        2: protobuf.Field("balance_id", "bytes", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        balance_id: "bytes",
+        source_account: Optional["str"] = None,
+    ) -> None:
+        self.balance_id = balance_id
+        self.source_account = source_account
+
+
 class StellarSignedTx(protobuf.MessageType):
     MESSAGE_WIRE_TYPE = 230
     FIELDS = {
@@ -11013,6 +12010,54 @@ class TezosManagerTransfer(protobuf.MessageType):
     ) -> None:
         self.destination = destination
         self.amount = amount
+
+
+class ThpCredentialMetadata(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = None
+    FIELDS = {
+        1: protobuf.Field("host_name", "string", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        host_name: Optional["str"] = None,
+    ) -> None:
+        self.host_name = host_name
+
+
+class ThpPairingCredential(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = None
+    FIELDS = {
+        1: protobuf.Field("cred_metadata", "ThpCredentialMetadata", repeated=False, required=False),
+        2: protobuf.Field("mac", "bytes", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        cred_metadata: Optional["ThpCredentialMetadata"] = None,
+        mac: Optional["bytes"] = None,
+    ) -> None:
+        self.cred_metadata = cred_metadata
+        self.mac = mac
+
+
+class ThpAuthenticatedCredentialData(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = None
+    FIELDS = {
+        1: protobuf.Field("host_static_pubkey", "bytes", repeated=False, required=False),
+        2: protobuf.Field("cred_metadata", "ThpCredentialMetadata", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        host_static_pubkey: Optional["bytes"] = None,
+        cred_metadata: Optional["ThpCredentialMetadata"] = None,
+    ) -> None:
+        self.host_static_pubkey = host_static_pubkey
+        self.cred_metadata = cred_metadata
 
 
 class TonGetAddress(protobuf.MessageType):

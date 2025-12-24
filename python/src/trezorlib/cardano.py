@@ -607,9 +607,9 @@ def parse_auxiliary_data(
     # include all provided fields so we can test validation in FW
     hash = parse_optional_bytes(auxiliary_data.get("hash"))
 
-    cvote_registration_parameters = None
-    if "cvote_registration_parameters" in auxiliary_data:
-        cvote_registration = auxiliary_data["cvote_registration_parameters"]
+    governance_registration_parameters = None
+    if "governance_registration_parameters" in auxiliary_data:
+        cvote_registration = auxiliary_data["governance_registration_parameters"]
         if not all(k in cvote_registration for k in REQUIRED_FIELDS_CVOTE_REGISTRATION):
             raise AUXILIARY_DATA_MISSING_FIELDS_ERROR
 
@@ -627,10 +627,10 @@ def parse_auxiliary_data(
             )
 
         voting_purpose = None
-        if serialization_format == messages.CardanoCVoteRegistrationFormat.CIP36:
+        if serialization_format == messages.CardanoGovernanceRegistrationFormat.CIP36:
             voting_purpose = cvote_registration.get("voting_purpose")
 
-        cvote_registration_parameters = messages.CardanoCVoteRegistrationParametersType(
+        governance_registration_parameters = messages.CardanoCVoteRegistrationParametersType(
             vote_public_key=parse_optional_bytes(
                 cvote_registration.get("vote_public_key")
             ),
@@ -650,12 +650,12 @@ def parse_auxiliary_data(
             voting_purpose=voting_purpose,
         )
 
-    if hash is None and cvote_registration_parameters is None:
+    if hash is None and governance_registration_parameters is None:
         raise AUXILIARY_DATA_MISSING_FIELDS_ERROR
 
     return messages.CardanoTxAuxiliaryData(
         hash=hash,
-        cvote_registration_parameters=cvote_registration_parameters,
+        governance_registration_parameters=governance_registration_parameters,
     )
 
 

@@ -66,7 +66,6 @@ def derive_pub_key_for_group(keychain, address_n: list[int], target_group: int):
 async def get_address(
     ctx: wire.Context, msg: AlephiumGetAddress, keychain
 ) -> AlephiumAddress:
-
     await paths.validate_path(ctx, keychain, msg.address_n)
     node = keychain.derive(msg.address_n)
 

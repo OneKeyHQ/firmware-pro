@@ -56,7 +56,7 @@ def test_reset_device_skip_backup(client: Client):
     assert isinstance(ret, messages.Success)
 
     # Check if device is properly initialized
-    ret = client.call_raw(messages.Initialize())
+    ret = client.call_raw(messages.StartSession())
     assert ret.initialized is True
     assert ret.needs_backup is True
     assert ret.unfinished_backup is False
@@ -124,7 +124,7 @@ def test_reset_device_skip_backup_break(client: Client):
     assert isinstance(ret, messages.Success)
 
     # Check if device is properly initialized
-    ret = client.call_raw(messages.Initialize())
+    ret = client.call_raw(messages.StartSession())
     assert ret.initialized is True
     assert ret.needs_backup is True
     assert ret.unfinished_backup is False
@@ -133,8 +133,8 @@ def test_reset_device_skip_backup_break(client: Client):
     # start Backup workflow
     ret = client.call_raw(messages.BackupDevice())
 
-    # send Initialize -> break workflow
-    ret = client.call_raw(messages.Initialize())
+    # send StartSession -> break workflow
+    ret = client.call_raw(messages.StartSession())
     assert isinstance(ret, messages.Features)
     assert ret.initialized is True
     assert ret.needs_backup is False
@@ -146,7 +146,7 @@ def test_reset_device_skip_backup_break(client: Client):
     assert isinstance(ret, messages.Failure)
 
     # read Features again
-    ret = client.call_raw(messages.Initialize())
+    ret = client.call_raw(messages.StartSession())
     assert isinstance(ret, messages.Features)
     assert ret.initialized is True
     assert ret.needs_backup is False

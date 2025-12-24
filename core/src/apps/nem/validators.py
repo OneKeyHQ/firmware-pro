@@ -116,7 +116,6 @@ def _validate_multisig(multisig: NEMTransactionCommon, network: int) -> None:
 def _validate_aggregate_modification(
     aggregate_modification: NEMAggregateModification, creation: bool = False
 ) -> None:
-
     if creation and not aggregate_modification.modifications:
         raise ProcessError("No modifications provided")
 

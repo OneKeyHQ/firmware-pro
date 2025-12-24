@@ -14,7 +14,6 @@ if TYPE_CHECKING:
 
 
 class DefaultInfoConfirm:
-
     fg_color = ui.LIGHT_GREY
     bg_color = ui.BLACKISH
 

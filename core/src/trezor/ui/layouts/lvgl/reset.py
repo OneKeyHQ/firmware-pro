@@ -29,7 +29,6 @@ async def show_share_words(
     share_index: int | None = None,
     group_index: int | None = None,
 ) -> None:
-
     if share_index is None:
         header_title = _(i18n_keys.TITLE__RECOVERY_PHRASE)
     elif group_index is None:

@@ -17,7 +17,6 @@ from .transaction import Action_Transfer, Transaction
 async def sign_tx(
     ctx: wire.Context, msg: NearSignTx, keychain: Keychain
 ) -> NearSignedTx:
-
     await paths.validate_path(ctx, keychain, msg.address_n)
     node = keychain.derive(msg.address_n)
     pubkey = node.public_key()[1:]

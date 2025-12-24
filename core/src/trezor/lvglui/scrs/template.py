@@ -48,9 +48,11 @@ class Address(FullSizeWindow):
             title,
             None,
             confirm_text=_(i18n_keys.BUTTON__DONE),
-            cancel_text=_(i18n_keys.BUTTON__QRCODE)
-            if not qr_first
-            else _(i18n_keys.BUTTON__ADDRESS),
+            cancel_text=(
+                _(i18n_keys.BUTTON__QRCODE)
+                if not qr_first
+                else _(i18n_keys.BUTTON__ADDRESS)
+            ),
             anim_dir=0,
             primary_color=primary_color,
         )
@@ -119,9 +121,11 @@ class Address(FullSizeWindow):
         for i, xpub in enumerate(self.xpubs or []):
             self.item3 = CardItem(
                 self.xpub_group,
-                _(i18n_keys.LIST_KEY__XPUB_STR_MINE__COLON).format(i + 1)
-                if i == self.multisig_index
-                else _(i18n_keys.LIST_KEY__XPUB_STR_COSIGNER__COLON).format(i + 1),
+                (
+                    _(i18n_keys.LIST_KEY__XPUB_STR_MINE__COLON).format(i + 1)
+                    if i == self.multisig_index
+                    else _(i18n_keys.LIST_KEY__XPUB_STR_COSIGNER__COLON).format(i + 1)
+                ),
                 xpub,
                 "A:/res/group-icon-more.png",
             )
@@ -356,9 +360,11 @@ class AddressOffline(FullSizeWindow):
             title,
             None,
             confirm_text=_(i18n_keys.BUTTON__DONE),
-            cancel_text=_(i18n_keys.BUTTON__QRCODE)
-            if not qr_first
-            else _(i18n_keys.BUTTON__ADDRESS),
+            cancel_text=(
+                _(i18n_keys.BUTTON__QRCODE)
+                if not qr_first
+                else _(i18n_keys.BUTTON__ADDRESS)
+            ),
             anim_dir=0,
             primary_color=primary_color,
         )
@@ -530,9 +536,11 @@ class XpubOrPub(FullSizeWindow):
         self.title.add_style(StyleWrapper().text_color(primary_color), 0)
         self.item_xpub_or_pub = CardItem(
             self.content_area,
-            _(i18n_keys.LIST_KEY__XPUB__COLON)
-            if xpub
-            else _(i18n_keys.LIST_KEY__PUBLIC_KEY__COLON),
+            (
+                _(i18n_keys.LIST_KEY__XPUB__COLON)
+                if xpub
+                else _(i18n_keys.LIST_KEY__PUBLIC_KEY__COLON)
+            ),
             xpub or pubkey,
             "A:/res/group-icon-more.png",
         )
@@ -622,9 +630,11 @@ class Message(FullSizeWindow):
             )
         self.item_addr = DisplayItem(
             self.container,
-            _(i18n_keys.LIST_KEY__ADDRESS__COLON)
-            if not item_addr_title
-            else item_addr_title,
+            (
+                _(i18n_keys.LIST_KEY__ADDRESS__COLON)
+                if not item_addr_title
+                else item_addr_title
+            ),
             address,
         )
         self.container.add_dummy()
@@ -2209,13 +2219,17 @@ class TransactionDetailsTON(FullSizeWindow):
                 self.data = self.data_str
             self.item_data = CardItem(
                 self.container,
-                _(i18n_keys.LIST_KEY__DATA__COLON)
-                if self.data.startswith("b5ee9c72")
-                else _(i18n_keys.LIST_KEY__MEMO__COLON),
+                (
+                    _(i18n_keys.LIST_KEY__DATA__COLON)
+                    if self.data.startswith("b5ee9c72")
+                    else _(i18n_keys.LIST_KEY__MEMO__COLON)
+                ),
                 self.data,
-                "A:/res/group-icon-data.png"
-                if self.data.startswith("b5ee9c72")
-                else "A:/res/group-icon-more.png",
+                (
+                    "A:/res/group-icon-data.png"
+                    if self.data.startswith("b5ee9c72")
+                    else "A:/res/group-icon-more.png"
+                ),
             )
 
             if self.long_data:
@@ -2947,9 +2961,11 @@ class AlgoAssetFreeze(FullSizeWindow):
         self.item_group_body_asset_freeze_state = DisplayItem(
             self.group_more,
             _(i18n_keys.LIST_KEY__FREEZE_ASSET_ID__COLON),
-            _(i18n_keys.LIST_VALUE__TRUE)
-            if new_freeze_state is True
-            else _(i18n_keys.LIST_VALUE__FALSE),
+            (
+                _(i18n_keys.LIST_VALUE__TRUE)
+                if new_freeze_state is True
+                else _(i18n_keys.LIST_VALUE__FALSE)
+            ),
         )
         self.item_group_freeze_account = DisplayItem(
             self.group_more, _(i18n_keys.LIST_KEY__FREEZE_ACCOUNT__COLON), target
@@ -3218,9 +3234,11 @@ class AlgoAssetCfg(FullSizeWindow):
                 self.item_group_body_default_frozen = DisplayItem(
                     self.group_more,
                     _(i18n_keys.LIST_KEY__FREEZE_ADDRESS__QUESTION),
-                    _(i18n_keys.LIST_VALUE__TRUE)
-                    if default_frozen is True
-                    else _(i18n_keys.LIST_VALUE__FALSE),
+                    (
+                        _(i18n_keys.LIST_VALUE__TRUE)
+                        if default_frozen is True
+                        else _(i18n_keys.LIST_VALUE__FALSE)
+                    ),
                 )
             if freeze is not None:
                 self.item_group_body_freeze_addr = DisplayItem(
@@ -3403,9 +3421,11 @@ class AlgoKeyregNonp(FullSizeWindow):
         self.item_group_body_nonpart = DisplayItem(
             self.group_more,
             _(i18n_keys.LIST_KEY__NONPARTICIPATION__COLON),
-            _(i18n_keys.LIST_VALUE__FALSE)
-            if nonpart is True
-            else _(i18n_keys.LIST_VALUE__TRUE),
+            (
+                _(i18n_keys.LIST_VALUE__FALSE)
+                if nonpart is True
+                else _(i18n_keys.LIST_VALUE__TRUE)
+            ),
         )
         if rekey_to is not None:
             self.item_rekey_to = DisplayItem(
@@ -4438,15 +4458,19 @@ class AirgapMode(FullSizeWindow):
 class AirGapToggleTips(FullSizeWindow):
     def __init__(self, enable, callback_obj=None):
         super().__init__(
-            title=_(i18n_keys.TITLE__ENABLE_AIR_GAP)
-            if enable
-            else _(i18n_keys.TITLE__DISABLE_AIR_GAP),
-            subtitle=_(i18n_keys.CONTENT__ARE_YOU_SURE_TO_ENABLE_AIRGAP_MODE)
-            if enable
-            else _(i18n_keys.CONTENT__ARE_YOU_SURE_TO_DISABLE_AIRGAP_MODE),
-            confirm_text=_(i18n_keys.BUTTON__ENABLE)
-            if enable
-            else _(i18n_keys.BUTTON__DISABLE),
+            title=(
+                _(i18n_keys.TITLE__ENABLE_AIR_GAP)
+                if enable
+                else _(i18n_keys.TITLE__DISABLE_AIR_GAP)
+            ),
+            subtitle=(
+                _(i18n_keys.CONTENT__ARE_YOU_SURE_TO_ENABLE_AIRGAP_MODE)
+                if enable
+                else _(i18n_keys.CONTENT__ARE_YOU_SURE_TO_DISABLE_AIRGAP_MODE)
+            ),
+            confirm_text=(
+                _(i18n_keys.BUTTON__ENABLE) if enable else _(i18n_keys.BUTTON__DISABLE)
+            ),
             cancel_text=_(i18n_keys.BUTTON__CANCEL),
             anim_dir=0,
         )
@@ -4508,7 +4532,7 @@ class ConnectWalletTutorial(FullSizeWindow):
             self.item_group_header = CardHeader(
                 self.group,
                 step[0],
-                f"A:/res/group-icon-num-{i+1}.png",
+                f"A:/res/group-icon-num-{i + 1}.png",
             )
             self.item_group_body = DisplayItem(
                 self.group,

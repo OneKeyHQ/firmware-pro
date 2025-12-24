@@ -136,7 +136,7 @@ class Cell:
         s_bytes = max(math.ceil(s / 8), 1)
         full_size = 0
         cell_sizes = {}
-        for (_hash, subcell) in topological_order:
+        for _hash, subcell in topological_order:
             cell_sizes[_hash] = subcell.boc_serialization_size(cells_index, s_bytes)
             full_size += cell_sizes[_hash]
 
@@ -160,7 +160,7 @@ class Cell:
         serialization.write_uint(0, s_bytes * 8)  # Root shoulh have index 0
 
         if has_idx:
-            for (_hash, subcell) in topological_order:
+            for _hash, subcell in topological_order:
                 serialization.write_uint(cell_sizes[_hash], offset_bytes * 8)
 
         for cell_info in topological_order:
@@ -315,7 +315,7 @@ def parse_boc_header(serialized_boc):
 
 
 def deserialize_boc(serialized_boc):
-    if type(serialized_boc) == str:
+    if serialized_boc is str:
         serialized_boc = unhexlify(serialized_boc)
 
     header = parse_boc_header(serialized_boc)

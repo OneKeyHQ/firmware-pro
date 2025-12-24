@@ -31,7 +31,7 @@ async def recovery_homescreen() -> None:
 
 async def recovery_process(ctx: wire.GenericContext, type: str = "phrase") -> Success:
     wire.AVOID_RESTARTING_FOR = (
-        MessageType.Initialize,
+        MessageType.StartSession,
         MessageType.GetFeatures,
     )
     try:
@@ -53,7 +53,6 @@ async def recovery_process(ctx: wire.GenericContext, type: str = "phrase") -> Su
 async def _continue_recovery_process_lite(
     ctx: wire.GenericContext,
 ) -> Success:
-
     from trezor.ui.layouts.lvgl.lite import backup_with_lite_import
 
     words_length = 0

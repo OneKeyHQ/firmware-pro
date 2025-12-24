@@ -2,6 +2,7 @@
 The components/common module contains code that is used by both components/tt
 and components/t1.
 """
+
 from micropython import const
 
 SWIPE_UP = const(0x01)

@@ -51,7 +51,7 @@ SECTIONS {
   .padding : {
     KEEP(*(.padding));
     FILL(0xDEADBEEF); /* fill pattern */
-    . = LENGTH(FLASH) - SIZEOF(.header) - SIZEOF(.flash) - SIZEOF(.data) - 1 - 8;
+    . = LENGTH(FLASH) - SIZEOF(.header) - SIZEOF(.flash) - SIZEOF(.data) - 1 ;
     BYTE(0x00); /* needed to keep this section without references in .s or .c */
   } >FLASH AT>FLASH
 

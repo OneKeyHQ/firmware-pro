@@ -77,7 +77,7 @@ void SysTick_Handler(void) {
 
 // clang-format off
 #define DEMCR                     (*(volatile uint32_t*) (0xE000EDFCuL))   // Debug Exception and Monitor Control Register
-#define TRACEENA_BIT              (1uL << 24)                                   // Trace enable bit
+#define TRACEENA_BIT              (1uL << 24)                              // Trace enable bit
 #define DWT_CTRL                  (*(volatile uint32_t*) (0xE0001000uL))   // DWT Control Register
 #define CYCCNTENA_BIT             (1uL << 0)
 #define DWT_CYCCNT                (*(volatile uint32_t*) (0xE0001004uL))

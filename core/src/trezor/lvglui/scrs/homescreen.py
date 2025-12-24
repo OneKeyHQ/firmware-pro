@@ -375,17 +375,19 @@ class MainScreen(Screen):
                 delay=15 if not __debug__ else APP_DRAWER_UP_DELAY,
                 del_cb=self.show_anim_del_cb,
                 time=130 if not __debug__ else APP_DRAWER_UP_TIME,
-                path_cb=lv.anim_t.path_ease_in
-                if not __debug__
-                else APP_DRAWER_UP_PATH_CB,
+                path_cb=(
+                    lv.anim_t.path_ease_in if not __debug__ else APP_DRAWER_UP_PATH_CB
+                ),
             )
             self.dismiss_anim = Anim(
                 0,
                 800,
                 self.set_position,
-                path_cb=lv.anim_t.path_ease_out
-                if not __debug__
-                else APP_DRAWER_DOWN_PATH_CB,
+                path_cb=(
+                    lv.anim_t.path_ease_out
+                    if not __debug__
+                    else APP_DRAWER_DOWN_PATH_CB
+                ),
                 time=50 if not __debug__ else APP_DRAWER_DOWN_TIME,
                 start_cb=self.dismiss_anim_start_cb,
                 del_cb=self.dismiss_anim_del_cb,
@@ -1280,9 +1282,11 @@ class IndexSelectionScreen(AnimScreen):
         while True:
             numscreen = InputNum(
                 title=_(i18n_keys.TITLE__SET_INITIAL_ACCOUNT),
-                subtitle=_(i18n_keys.TITLE__SET_INITIAL_ACCOUNT_ERROR)
-                if result is not None
-                else "",
+                subtitle=(
+                    _(i18n_keys.TITLE__SET_INITIAL_ACCOUNT_ERROR)
+                    if result is not None
+                    else ""
+                ),
                 is_pin=False,
             )
             result = await numscreen.request()
@@ -1385,7 +1389,6 @@ class NftGallery(Screen):
             self.container.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
 
     def empty(self):
-
         self.empty_tips = lv.label(self.content_area)
         self.empty_tips.set_text(_(i18n_keys.CONTENT__NO_ITEMS))
         self.empty_tips.add_style(
@@ -1727,9 +1730,11 @@ class ConnectWalletGuide(Screen):
             self.connect_type = c_type
             kwargs = {
                 "prev_scr": prev_scr,
-                "title": _(i18n_keys.TITLE__BLUETOOTH_CONNECT)
-                if c_type == "ble"
-                else _(i18n_keys.TITLE__USB_CONNECT),
+                "title": (
+                    _(i18n_keys.TITLE__BLUETOOTH_CONNECT)
+                    if c_type == "ble"
+                    else _(i18n_keys.TITLE__USB_CONNECT)
+                ),
                 "subtitle": _(i18n_keys.CONTENT__SELECT_THE_WALLET_YOU_WANT_TO_CONNECT),
                 "nav_back": True,
             }
@@ -1787,25 +1792,35 @@ class ConnectWalletGuide(Screen):
                 steps = [
                     (
                         _(i18n_keys.FORM__DOWNLOAD_ONEKEY_APP),
-                        _(i18n_keys.FORM__DOWNLOAD_ONEKEY_APP_MOBILE)
-                        if self.connect_type == "ble"
-                        else _(i18n_keys.FORM__DOWNLOAD_ONEKEY_APP_DESKTOP),
+                        (
+                            _(i18n_keys.FORM__DOWNLOAD_ONEKEY_APP_MOBILE)
+                            if self.connect_type == "ble"
+                            else _(i18n_keys.FORM__DOWNLOAD_ONEKEY_APP_DESKTOP)
+                        ),
                     ),
                     (
-                        _(i18n_keys.FORM__CONNECT_VIA_BLUETOOTH)
-                        if self.connect_type == "ble"
-                        else _(i18n_keys.FORM__CONNECT_YOUR_DEVICE),
-                        _(i18n_keys.FORM__CONNECT_VIA_BLUETOOTH_DESC)
-                        if self.connect_type == "ble"
-                        else _(i18n_keys.FORM__CONNECT_YOUR_DEVICE_DESC),
+                        (
+                            _(i18n_keys.FORM__CONNECT_VIA_BLUETOOTH)
+                            if self.connect_type == "ble"
+                            else _(i18n_keys.FORM__CONNECT_YOUR_DEVICE)
+                        ),
+                        (
+                            _(i18n_keys.FORM__CONNECT_VIA_BLUETOOTH_DESC)
+                            if self.connect_type == "ble"
+                            else _(i18n_keys.FORM__CONNECT_YOUR_DEVICE_DESC)
+                        ),
                     ),
                     (
-                        _(i18n_keys.FORM__PAIR_DEVICES)
-                        if self.connect_type == "ble"
-                        else _(i18n_keys.FORM__START_THE_CONNECTION),
-                        _(i18n_keys.FORM__PAIR_DEVICES_DESC)
-                        if self.connect_type == "ble"
-                        else _(i18n_keys.FORM__START_THE_CONNECTION_DESC),
+                        (
+                            _(i18n_keys.FORM__PAIR_DEVICES)
+                            if self.connect_type == "ble"
+                            else _(i18n_keys.FORM__START_THE_CONNECTION)
+                        ),
+                        (
+                            _(i18n_keys.FORM__PAIR_DEVICES_DESC)
+                            if self.connect_type == "ble"
+                            else _(i18n_keys.FORM__START_THE_CONNECTION_DESC)
+                        ),
                     ),
                 ]
                 logo = "A:/res/ok-logo-96.png"
@@ -1843,24 +1858,32 @@ class ConnectWalletGuide(Screen):
                 steps = [
                     (
                         _(i18n_keys.FORM__ACCESS_WALLET),
-                        _(i18n_keys.FORM__ACCESS_WALLET_DESC)
-                        if self.connect_type == "ble"
-                        else _(i18n_keys.FORM__OPEN_THE_OKX_WALLET_EXTENSION),
+                        (
+                            _(i18n_keys.FORM__ACCESS_WALLET_DESC)
+                            if self.connect_type == "ble"
+                            else _(i18n_keys.FORM__OPEN_THE_OKX_WALLET_EXTENSION)
+                        ),
                     ),
                     (
-                        _(i18n_keys.FORM__CONNECT_VIA_BLUETOOTH)
-                        if self.connect_type == "ble"
-                        else _(i18n_keys.FORM__INSTALL_ONEKEY_BRIDGE),
-                        _(i18n_keys.FORM__CONNECT_VIA_BLUETOOTH_DESC)
-                        if self.connect_type == "ble"
-                        else _(i18n_keys.FORM__INSTALL_ONEKEY_BRIDGE_DESC),
+                        (
+                            _(i18n_keys.FORM__CONNECT_VIA_BLUETOOTH)
+                            if self.connect_type == "ble"
+                            else _(i18n_keys.FORM__INSTALL_ONEKEY_BRIDGE)
+                        ),
+                        (
+                            _(i18n_keys.FORM__CONNECT_VIA_BLUETOOTH_DESC)
+                            if self.connect_type == "ble"
+                            else _(i18n_keys.FORM__INSTALL_ONEKEY_BRIDGE_DESC)
+                        ),
                     ),
                     (
                         _(i18n_keys.FORM__IMPORT_WALLET_ACCOUNTS),
-                        _(i18n_keys.FORM__IMPORT_WALLET_ACCOUNTS_DESC)
-                        if self.connect_type == "ble"
-                        else _(
-                            i18n_keys.FORM__OKX_EXTENSION_IMPORT_WALLET_ACCOUNTS_DESC
+                        (
+                            _(i18n_keys.FORM__IMPORT_WALLET_ACCOUNTS_DESC)
+                            if self.connect_type == "ble"
+                            else _(
+                                i18n_keys.FORM__OKX_EXTENSION_IMPORT_WALLET_ACCOUNTS_DESC
+                            )
                         ),
                     ),
                 ]
@@ -2086,14 +2109,18 @@ class ConnectWallet(FullSizeWindow):
         subtitle=None,
     ):
         super().__init__(
-            _(i18n_keys.TITLE__CONNECT_STR_WALLET).format(wallet_name)
-            if wallet_name
-            else None,
-            _(i18n_keys.CONTENT__OPEN_STR_WALLET_AND_SCAN_THE_QR_CODE_BELOW).format(
-                wallet_name
-            )
-            if wallet_name
-            else subtitle,
+            (
+                _(i18n_keys.TITLE__CONNECT_STR_WALLET).format(wallet_name)
+                if wallet_name
+                else None
+            ),
+            (
+                _(i18n_keys.CONTENT__OPEN_STR_WALLET_AND_SCAN_THE_QR_CODE_BELOW).format(
+                    wallet_name
+                )
+                if wallet_name
+                else subtitle
+            ),
             anim_dir=0,
         )
         self.content_area.set_style_max_height(684, 0)
@@ -3672,7 +3699,6 @@ class ConnectSetting(Screen):
         code = event_obj.code
         target = event_obj.get_target()
         if code == lv.EVENT.VALUE_CHANGED:
-
             if target == self.ble.switch:
                 if target.has_state(lv.STATE.CHECKED):
                     self.description.set_text(
@@ -3972,7 +3998,7 @@ class GO2BoardLoader(FullSizeWindow):
             if utils.lcd_resume():
                 return
             if target == self.btn_yes:
-                utils.reboot2boardloader()
+                utils.reboot_to_boardloader()
             elif target == self.btn_no:
                 self.destroy(100)
 
@@ -4016,9 +4042,11 @@ class PowerOff(FullSizeWindow):
             title=_(i18n_keys.TITLE__POWER_OFF),
             confirm_text=_(i18n_keys.BUTTON__POWER_OFF),
             cancel_text=_(i18n_keys.BUTTON__CANCEL),
-            subtitle=_(i18n_keys.CONTENT__POWER_OFF_LOW_BATTERY_DESC)
-            if utils.is_low_battery()
-            else None,
+            subtitle=(
+                _(i18n_keys.CONTENT__POWER_OFF_LOW_BATTERY_DESC)
+                if utils.is_low_battery()
+                else None
+            ),
         )
         self.btn_yes.enable(lv_colors.ONEKEY_RED_1, text_color=lv_colors.BLACK)
         self.re_loop = re_loop
@@ -4131,7 +4159,7 @@ class HomeScreenSetting(AnimScreen):
         self.wps = []
         for i in range(internal_wp_nums):
             path_dir = "A:/res/"
-            file_name = f"zoom-wallpaper-{i+1}.jpg"
+            file_name = f"zoom-wallpaper-{i + 1}.jpg"
 
             current_wp = ImgGridItem(
                 self.container,
@@ -4490,7 +4518,7 @@ class DeviceAuthTutorial(AnimScreen):
             self.item_group_header = CardHeader(
                 self.group,
                 step[0],
-                f"A:/res/group-icon-num-{i+1}.png",
+                f"A:/res/group-icon-num-{i + 1}.png",
             )
             self.item_group_body = DisplayItem(
                 self.group,
@@ -4669,9 +4697,11 @@ class FingerprintSetting(AnimScreen):
             if target == self.add_fingerprint:
                 workflow.spawn(
                     fingerprints.add_fingerprint(
-                        self.fingerprint_list.index(None)
-                        if self.fingerprint_list
-                        else 0,
+                        (
+                            self.fingerprint_list.index(None)
+                            if self.fingerprint_list
+                            else 0
+                        ),
                         callback=lambda: self.fresh_show(),
                     )
                 )
@@ -4695,7 +4725,6 @@ class FingerprintSetting(AnimScreen):
         target = event_obj.get_target()
         if code == lv.EVENT.VALUE_CHANGED:
             if target == self.unlock.switch:
-
                 if target.has_state(lv.STATE.CHECKED):
                     device.enable_fingerprint_unlock(True)
                 else:

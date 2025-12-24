@@ -392,7 +392,6 @@ class SignPsbt:
                 if our_keys > passes:
                     passes = our_keys
                 if not found:  # None of our keys were in hd_keypaths or in partial_sigs
-
                     # This input is not one of ours
                     raise Exception("Invalid input params")
                 # append to inputs
@@ -569,7 +568,6 @@ class SignPsbt:
             self.qr = None
 
     async def interact(self):
-
         assert self.tx is not None, "transaction should not be None"
         current_tx = TransactionType(
             inputs=self.inputs,

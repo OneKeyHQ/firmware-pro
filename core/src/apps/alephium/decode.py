@@ -113,7 +113,6 @@ def decode_u256(data):
 
 
 def decode_tx(encoded_tx):
-
     if isinstance(encoded_tx, str):
         try:
             data = binascii.unhexlify(encoded_tx)

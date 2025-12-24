@@ -14,6 +14,7 @@
 # You should have received a copy of the License along with this library.
 # If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.
 
+from datetime import datetime
 import logging
 import os
 import warnings
@@ -21,18 +22,18 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from mnemonic import Mnemonic
 
-from . import exceptions, mapping, messages, models
+from . import exceptions, mapping, messages, models, protobuf
 from .log import DUMP_BYTES
 from .messages import Capability
 from .tools import expect, parse_path, session
 
 if TYPE_CHECKING:
     from .protobuf import MessageType
-    from .ui import TrezorClientUI
+    from .ui import ClientUI
     from .transport import Transport
 
 LOG = logging.getLogger(__name__)
-
+logging.basicConfig(level=logging.DEBUG,format='%(message)s')
 MAX_PASSPHRASE_LENGTH = 50
 MAX_PIN_LENGTH = 50
 
@@ -47,7 +48,7 @@ Or visit https://suite.trezor.io/
 
 
 def get_default_client(
-    path: Optional[str] = None, ui: Optional["TrezorClientUI"] = None, **kwargs: Any
+    path: Optional[str] = None, ui: Optional["ClientUI"] = None, **kwargs: Any
 ) -> "TrezorClient":
     """Get a client for a connected Trezor device.
 
@@ -69,7 +70,6 @@ def get_default_client(
 
     return TrezorClient(transport, ui, **kwargs)
 
-
 class TrezorClient:
     """Trezor client, a connection to a Trezor device.
 
@@ -81,7 +81,7 @@ class TrezorClient:
     def __init__(
         self,
         transport: "Transport",
-        ui: "TrezorClientUI",
+        ui: "ClientUI",
         session_id: Optional[bytes] = None,
         derive_cardano: Optional[bool] = None,
         model: Optional[models.TrezorModel] = None,
@@ -243,7 +243,6 @@ class TrezorClient:
 
     @session
     def call(self, msg: "MessageType") -> "MessageType":
-        self.check_firmware_version()
         resp = self.call_raw(msg)
         while True:
             if isinstance(resp, messages.PinMatrixRequest):
@@ -259,52 +258,67 @@ class TrezorClient:
             else:
                 return resp
 
-    def _refresh_features(self, features: messages.Features) -> None:
+    def _cache_features(self, features: messages.Features) -> None:
         """Update internal fields based on passed-in Features message."""
 
-        if not self.model:
-            # Trezor Model One bootloader 1.8.0 or older does not send model name
-            self.model = models.by_name(features.model or "1")
-            if self.model is None:
-                raise RuntimeError("Unsupported Trezor model")
-
-        if features.vendor not in self.model.vendors:
-            raise RuntimeError("Unsupported device")
-
         self.features = features
-        self.version = (
-            self.features.major_version,
-            self.features.minor_version,
-            self.features.patch_version,
-        )
-        self.check_firmware_version(warn_only=True)
+
         if self.features.session_id is not None:
             self.session_id = self.features.session_id
             self.features.session_id = None
 
     @session
-    def refresh_features(self) -> messages.Features:
+    def refresh_features(self, onekey_full = True) -> messages.Features:
         """Reload features from the device.
 
         Should be called after changing settings or performing operations that affect
         device state.
         """
-        resp = self.call_raw(messages.GetFeatures())
+
+        if onekey_full:
+            req= messages.GetFeatures(
+                ok_dev_info_req=messages.OneKeyInfoReq(
+                    targets=messages.OneKeyInfoTargets(
+                        hw=True,
+                        fw=True,
+                        bt=True,
+                        se1=True,
+                        se2=True,
+                        se3=True,
+                        se4=True,
+                        status=True,
+                    ),
+                    types=messages.OneKeyInfoTypes(
+                        version=True,
+                        build_id=True,
+                        hash=True,
+                        specific=True,
+                    )
+                )
+            )
+        else:
+            req = messages.GetFeatures()
+
+        print("-----------> Send")
+        print(protobuf.format_message(req))
+
+        time_send = datetime.now()
+        resp = self.call_raw(req)
+        time_receive = datetime.now()
+        print(f"process time {(time_receive-time_send).microseconds/1000} ms")
+        
+        print("<----------- Receive")
+        print(protobuf.format_message(resp))
+
         if not isinstance(resp, messages.Features):
             raise exceptions.TrezorException("Unexpected response to GetFeatures")
-        self._refresh_features(resp)
-        return resp
 
-    @session
-    def refresh_onekey_features(self) -> messages.OnekeyFeatures:
-        """Reload features from the device.
+        if not isinstance(resp.ok_dev_info_resp, messages.OneKeyInfoResp):
+            print("Warning: Legacy protocol detected, likely due to an old firmware")
+            
+        
+        self._cache_features(resp)
 
-        Should be called after changing settings or performing operations that affect
-        device state.
-        """
-        resp = self.call_raw(messages.OnekeyGetFeatures())
-        if not isinstance(resp, messages.OnekeyFeatures):
-            raise exceptions.TrezorException("Unexpected response to GetFeatures")
         return resp
 
     @session
@@ -348,12 +362,30 @@ class TrezorClient:
         elif session_id is not None:
             self.session_id = session_id
 
-        resp = self.call_raw(
-            messages.Initialize(
+        req = messages.StartSession(
                 session_id=self.session_id,
                 derive_cardano=derive_cardano,
+                ok_dev_info_req=messages.OneKeyInfoReq(
+                    # targets=messages.OneKeyInfoTargets(
+                    #     status=True,
+                    # ),
+                )
             )
-        )
+        
+        for r in range(1):
+            # print(f"-----------> TEST {r} <-----------")
+
+            print("-----------> Send")
+            print(protobuf.format_message(req))
+
+            time_send = datetime.now()
+            resp = self.call_raw(req)
+            time_receive = datetime.now()
+            print(f"process time {(time_receive-time_send).microseconds/1000} ms")
+            
+            print("<----------- Receive")
+            print(protobuf.format_message(resp))
+        
         if isinstance(resp, messages.Failure):
             # can happen if `derive_cardano` does not match the current session
             raise exceptions.TrezorFailure(resp)
@@ -372,23 +404,10 @@ class TrezorClient:
         # Older TT FW does not report session_id in Features and self.session_id might
         # be invalid because TT will not allocate a session_id until a passphrase
         # exchange happens.
-        reported_session_id = resp.session_id
-        self._refresh_features(resp)
-        return reported_session_id
+        self._cache_features(resp)
+        # self.refresh_features()
 
-    def is_outdated(self) -> bool:
-        if self.features.bootloader_mode:
-            return False
-
-        assert self.model is not None  # should happen in _refresh_features
-        return self.version < self.model.minimum_version
-
-    def check_firmware_version(self, warn_only: bool = False) -> None:
-        if self.is_outdated():
-            if warn_only:
-                warnings.warn("Firmware is out of date", stacklevel=2)
-            else:
-                raise exceptions.OutdatedFirmwareError(OUTDATED_FIRMWARE_ERROR)
+        return resp.session_id
 
     @expect(messages.Success, field="message", ret_type=str)
     def ping(

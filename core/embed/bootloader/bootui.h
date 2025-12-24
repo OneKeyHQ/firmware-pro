@@ -24,6 +24,7 @@
 #include "secbool.h"
 #include "stdbool.h"
 
+uint32_t parse_ver(const char* version_str);
 const char* format_ver(const char* format, uint32_t version);
 void ui_screen_boot(const vendor_header* const vhdr,
                     const image_header* const hdr);
@@ -35,6 +36,7 @@ void ui_screen_welcome_second(void);
 void ui_screen_welcome_third(void);
 
 void ui_bootloader_factory(void);
+void ui_bootloader_factory_refresh(void);
 
 void ui_screen_firmware_info(const vendor_header* const vhdr,
                              const image_header* const hdr);

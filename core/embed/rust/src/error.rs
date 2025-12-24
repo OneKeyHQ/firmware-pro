@@ -12,6 +12,8 @@ use crate::micropython::{ffi, obj::Obj, qstr::Qstr};
 #[derive(Clone, Copy, Debug)]
 pub enum Error {
     TypeError,
+    // #[cfg(feature = "micropython")]
+    // TypeError(&'static CStr),
     OutOfRange,
     MissingKwargs,
     AllocationFailed,
@@ -39,6 +41,13 @@ impl Error {
             // EXCEPTION: Sensibly, `new_exception_*` does not raise.
             match self {
                 Error::TypeError => ffi::mp_obj_new_exception(&ffi::mp_type_TypeError),
+                // Error::TypeError(msg) => {
+                //     if let Ok(msg) = msg.try_into() {
+                //         ffi::mp_obj_new_exception_args(&ffi::mp_type_TypeError, 1, &msg)
+                //     } else {
+                //         ffi::mp_obj_new_exception(&ffi::mp_type_TypeError)
+                //     }
+                // }
                 Error::OutOfRange => ffi::mp_obj_new_exception(&ffi::mp_type_OverflowError),
                 Error::MissingKwargs => ffi::mp_obj_new_exception(&ffi::mp_type_TypeError),
                 Error::AllocationFailed => ffi::mp_obj_new_exception(&ffi::mp_type_MemoryError),

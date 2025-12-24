@@ -30,7 +30,10 @@ fn generate_qstr_bindings() {
     bindgen::Builder::default()
         .header("qstr.h")
         // Build the Qstr enum as a newtype so we can define method on it.
-        .default_enum_style(bindgen::EnumVariation::NewType { is_bitfield: false })
+        .default_enum_style(bindgen::EnumVariation::NewType {
+            is_global: false,
+            is_bitfield: false,
+        })
         // Pass in correct include paths.
         .clang_args(&[
             "-I",
@@ -46,7 +49,7 @@ fn generate_qstr_bindings() {
         .size_t_is_usize(true)
         // Tell cargo to invalidate the built crate whenever any of the
         // included header files change.
-        .parse_callbacks(Box::new(bindgen::CargoCallbacks))
+        .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .generate()
         .expect("Unable to generate Rust QSTR bindings")
         .write_to_file(PathBuf::from(out_path).join("qstr.rs"))
@@ -123,7 +126,7 @@ fn prepare_bindings() -> bindgen::Builder {
         .layout_tests(false)
         // Tell cargo to invalidate the built crate whenever any of the
         // included header files change.
-        .parse_callbacks(Box::new(bindgen::CargoCallbacks))
+        .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
 }
 
 #[cfg(feature = "micropython")]

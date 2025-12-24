@@ -32,7 +32,6 @@ async def process_transaction(
 async def sign_tx(
     ctx: wire.Context, msg: BenfenSignTx, keychain: Keychain
 ) -> BenfenSignedTx:
-
     await paths.validate_path(ctx, keychain, msg.address_n)
 
     node = keychain.derive(msg.address_n)
@@ -142,7 +141,6 @@ def parse_transaction(parsed_tx: dict) -> Tuple[int | str, str, str, int]:
 
 
 def validate_transaction(parsed_tx: dict) -> bool:
-
     if "V1" not in parsed_tx:
         return False
     tx_data = parsed_tx["V1"]

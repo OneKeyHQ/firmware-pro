@@ -32,7 +32,6 @@ async def sign_tx(
     msg: AlephiumSignTx,
     keychain: Keychain,
 ) -> AlephiumSignedTx:
-
     await paths.validate_path(ctx, keychain, msg.address_n)
     node = keychain.derive(msg.address_n)
     public_key = node.public_key()

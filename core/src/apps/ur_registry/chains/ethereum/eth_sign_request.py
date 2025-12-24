@@ -199,16 +199,16 @@ class EthSignRequest:
         if not self.get_address_n():
             raise Exception("Invalid derivation path")
 
-        from trezor.messages import GetPublicKey, Initialize
+        from trezor.messages import GetPublicKey, StartSession
         from apps.bitcoin import get_public_key as bitcoin_get_public_key
         from trezor.wire import QR_CONTEXT
-        from apps.base import handle_Initialize
+        from apps.base import handle_StartSession
         from apps.common import passphrase
 
         if passphrase.is_enabled():
             QR_CONTEXT.passphrase = None
         # pyright: off
-        await handle_Initialize(QR_CONTEXT, Initialize())
+        await handle_StartSession(QR_CONTEXT, StartSession())
         btc_pubkey_msg = GetPublicKey(address_n=[2147483692, 2147483708, 2147483648])
         resp = await bitcoin_get_public_key.get_public_key(QR_CONTEXT, btc_pubkey_msg)
         # pyright: on

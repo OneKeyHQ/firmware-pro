@@ -271,6 +271,7 @@ def cli(
     if updated_data == firmware_data:
         click.echo("No changes made", err=True)
     elif dry_run:
+        print(type(fw))
         click.echo("Not saving changes", err=True)
     else:
         firmware_file.seek(0)

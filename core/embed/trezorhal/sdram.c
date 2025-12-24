@@ -30,7 +30,7 @@ static int sdram_init_sequence(void) {
 
   /* Step 2: Insert 100 us minimum delay */
   /* Inserted delay is equal to 1 ms due to systick time base unit (ms) */
-  sdram_delay(1);
+  sdram_delay(10);
 
   /* Step 3: Configure a PALL (precharge all) command */
   Command.CommandMode = FMC_SDRAM_DEVICE_PALL_CMD;
@@ -86,8 +86,33 @@ static int sdram_init_sequence(void) {
 int sdram_init(void) {
   GPIO_InitTypeDef gpio_init_structure;
 
+  RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
+
+  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_FMC;
+  PeriphClkInitStruct.PLL2.PLL2M = 4;
+  // PeriphClkInitStruct.PLL2.PLL2N = 64; // 200Mhz for FMC_KERNEL (PLL2M=4)
+  PeriphClkInitStruct.PLL2.PLL2N = 80;  // 250Mhz for FMC_KERNEL (PLL2M=4)
+  // PeriphClkInitStruct.PLL2.PLL2N = 96; // 300Mhz for FMC_KERNEL (PLL2M=4)
+  // PeriphClkInitStruct.PLL2.PLL2M = 5;
+  // PeriphClkInitStruct.PLL2.PLL2N = 80;  // 200Mhz for FMC_KERNEL (PLL2M=5)
+  // PeriphClkInitStruct.PLL2.PLL2N = 100; // 250Mhz for FMC_KERNEL (PLL2M=5)
+  // PeriphClkInitStruct.PLL2.PLL2N = 120; // 300Mhz for FMC_KERNEL (PLL2M=5)
+  PeriphClkInitStruct.PLL2.PLL2P = 4;
+  PeriphClkInitStruct.PLL2.PLL2Q = 9;
+  PeriphClkInitStruct.PLL2.PLL2R = 2;  // actually used by FMC
+  PeriphClkInitStruct.PLL2.PLL2RGE = RCC_PLL2VCIRANGE_2;
+  PeriphClkInitStruct.PLL2.PLL2VCOSEL = RCC_PLL2VCOWIDE;
+  PeriphClkInitStruct.FmcClockSelection = RCC_FMCCLKSOURCE_PLL2;
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK) {
+    return HAL_ERROR;
+  }
+
   /* Enable FMC clock */
+  __HAL_RCC_FMC_CLK_DISABLE();
   __HAL_RCC_FMC_CLK_ENABLE();
+  __HAL_RCC_FMC_FORCE_RESET();
+  __HAL_RCC_FMC_RELEASE_RESET();
+
   __FMC_NORSRAM_DISABLE(FMC_NORSRAM_DEVICE, FMC_NORSRAM_BANK1);
 
   /* Enable GPIOs clock */
@@ -127,7 +152,7 @@ int sdram_init(void) {
   /* GPIOG configuration */
   gpio_init_structure.Pin = GPIO_PIN_0 | GPIO_PIN_1 |
                             GPIO_PIN_2 /*| GPIO_PIN_3 */ | GPIO_PIN_4 |
-                            GPIO_PIN_5 | GPIO_PIN_15;
+                            GPIO_PIN_5 /* | GPIO_PIN_8*/ | GPIO_PIN_15;
   HAL_GPIO_Init(GPIOG, &gpio_init_structure);
 
   /* GPIOH configuration */
@@ -145,7 +170,7 @@ int sdram_init(void) {
 
   HAL_GPIO_Init(GPIOI, &gpio_init_structure);
 
-  gpio_init_structure.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  gpio_init_structure.Speed = GPIO_SPEED_FREQ_MEDIUM;
   gpio_init_structure.Pull = GPIO_PULLDOWN;
   gpio_init_structure.Pin = GPIO_PIN_8;
 
@@ -162,20 +187,48 @@ int sdram_init(void) {
   hsdram[0].Init.RowBitsNumber = FMC_SDRAM_ROW_BITS_NUM_12;
   hsdram[0].Init.MemoryDataWidth = FMC_SDRAM_MEM_BUS_WIDTH_32;
   hsdram[0].Init.InternalBankNumber = FMC_SDRAM_INTERN_BANKS_NUM_4;
-  hsdram[0].Init.CASLatency = FMC_SDRAM_CAS_LATENCY_2;
   hsdram[0].Init.WriteProtection = FMC_SDRAM_WRITE_PROTECTION_DISABLE;
-  hsdram[0].Init.SDClockPeriod = FMC_SDRAM_CLOCK_PERIOD_2;
   hsdram[0].Init.ReadBurst = FMC_SDRAM_RBURST_ENABLE;
   hsdram[0].Init.ReadPipeDelay = FMC_SDRAM_RPIPE_DELAY_0;
 
-  /* Timing configuration for 100Mhz as SDRAM clock frequency (System clock is
-   * up to 200Mhz) */
+  hsdram[0].Init.SDClockPeriod = FMC_SDRAM_CLOCK_PERIOD_2;
+
+  // old config
+  // hsdram[0].Init.CASLatency = FMC_SDRAM_CAS_LATENCY_3;
+  // sdram_timing.LoadToActiveDelay = 3;
+  // sdram_timing.ExitSelfRefreshDelay = 12;
+  // sdram_timing.SelfRefreshTime = 8;
+  // sdram_timing.RowCycleDelay = 10;
+  // sdram_timing.WriteRecoveryTime = 3;
+  // sdram_timing.RPDelay = 3;
+  // sdram_timing.RCDDelay = 3;
+
+  // from HH
+  // hsdram[0].Init.CASLatency = FMC_SDRAM_CAS_LATENCY_2;
+  // sdram_timing.LoadToActiveDelay = 2;
+  // sdram_timing.ExitSelfRefreshDelay = 7;
+  // sdram_timing.SelfRefreshTime = 4;
+  // sdram_timing.RowCycleDelay = 7;
+  // sdram_timing.WriteRecoveryTime = 2;
+  // sdram_timing.RPDelay = 2;
+  // sdram_timing.RCDDelay = 2;
+
+  // 125Mhz -> 8ns per clock
+  // TCAC 3
+  hsdram[0].Init.CASLatency = FMC_SDRAM_CAS_LATENCY_3;
+  // TMRD
   sdram_timing.LoadToActiveDelay = 2;
-  sdram_timing.ExitSelfRefreshDelay = 7;
-  sdram_timing.SelfRefreshTime = 4;
-  sdram_timing.RowCycleDelay = 7;
-  sdram_timing.WriteRecoveryTime = 2;
+  // TXSR
+  sdram_timing.ExitSelfRefreshDelay = 10;  // 80ns
+  // TRAS
+  sdram_timing.SelfRefreshTime = 6;
+  // TRC
+  sdram_timing.RowCycleDelay = 9;
+  // TWR(TRAS-TRCD)
+  sdram_timing.WriteRecoveryTime = 4;
+  // TRP
   sdram_timing.RPDelay = 2;
+  // TRCD
   sdram_timing.RCDDelay = 2;
 
   /* SDRAM controller initialization */

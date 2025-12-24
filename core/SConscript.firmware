@@ -13,7 +13,7 @@ LVGL_UI = '1'
 USE_THD89 = ARGUMENTS.get('USE_THD89', '0')
 
 FEATURE_FLAGS = {
-    "RDI": True,
+    "RDI": False,
     "SECP256K1_ZKP": True,  # required for trezor.crypto.curve.bip340 (BIP340/Taproot)
     "SYSTEM_VIEW": False,
 }
@@ -23,7 +23,8 @@ CPPPATH_MOD = []
 CPPDEFINES_MOD = []
 SOURCE_MOD = []
 
-PYOPT = ARGUMENTS.get('PYOPT', '0')
+# PYOPT = ARGUMENTS.get('PYOPT', '0')
+PYOPT = '1'
 FROZEN = True
 
 if TREZOR_MODEL in ('1', 'R'):
@@ -628,6 +629,7 @@ if FEATURE_FLAGS["SYSTEM_VIEW"]:
         'embed/segger/SEGGER/SEGGER_SYSVIEW_Config_NoOS.c',
         'embed/segger/SEGGER/SEGGER_SYSVIEW.c',
         'embed/segger/SEGGER/SEGGER_RTT.c',
+        'embed/segger/SEGGER/SEGGER_RTT_printf.c',
         'embed/segger/SEGGER/SEGGER_RTT_ASM_ARMv7M.S',
         'embed/segger/SEGGER/Syscalls/SEGGER_RTT_Syscalls_GCC.c',
         'embed/firmware/systemview.c',
@@ -670,7 +672,7 @@ env.Replace(
     MAKEMODULEDEFS='$PYTHON vendor/micropython/py/makemoduledefs.py',
     MPY_TOOL='$PYTHON vendor/micropython/tools/mpy-tool.py',
     MPY_CROSS='vendor/micropython/mpy-cross/mpy-cross -O' + PYOPT,
-    PB2PY='$PYTHON ../common/protob/pb2py',
+    PB2PY='$PYTHON ../onekey-protocol/binding_python/pb2py',
 )
 
 if PRODUCTION_MODEL == 'H':
@@ -741,7 +743,7 @@ else:
 # Qstrings
 #
 
-PROTO_SOURCES_DIR = '../../../common/protob/'
+PROTO_SOURCES_DIR = '../../../onekey-protocol/protob/'
 PROTO_SOURCES = Glob(PROTO_SOURCES_DIR + '*.proto',
     exclude=[PROTO_SOURCES_DIR + 'messages-bootloader.proto']
 )
@@ -1022,6 +1024,7 @@ protobuf_blobs = env.Command(
 env.Depends(protobuf_blobs, qstr_generated)
 
 RUST_PROFILE = 'release'
+# RUST_PROFILE = 'debug'
 RUST_LIB = 'trezor_lib'
 RUST_LIBDIR = f'build/firmware/rust/{RUST_TARGET}/{RUST_PROFILE}'
 RUST_LIBPATH = f'{RUST_LIBDIR}/lib{RUST_LIB}.a'
@@ -1078,6 +1081,7 @@ if FEATURE_FLAGS["SECP256K1_ZKP"]:
     obj_program.extend(env.Object(source=SOURCE_MOD_SECP256K1_ZKP, CCFLAGS='$CCFLAGS -Wno-unused-function'))
 obj_program.extend(env.Object(source=SOURCE_FIRMWARE))
 obj_program.extend(env.Object(source=SOURCE_MICROPYTHON))
+# obj_program.extend(env.Object(source=SOURCE_MICROPYTHON,CCFLAGS='$CCFLAGS -Wno-error=dangling-pointer= -Wno-error=enum-int-mismatch')) # new toolchain warning, need fix
 obj_program.extend(env.Object(source=SOURCE_MICROPYTHON_SPEED, COPT='-O3'))
 obj_program.extend(env.Object(source=SOURCE_STMHAL))
 obj_program.extend(env.Object(source=SOURCE_LVGL))

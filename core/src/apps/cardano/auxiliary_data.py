@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 from trezor import messages, wire
 from trezor.crypto import hashlib
-from trezor.enums import CardanoAddressType, CardanoCVoteRegistrationFormat
+from trezor.enums import CardanoAddressType, CardanoGovernanceRegistrationFormat
 
 from apps.common import cbor
 
@@ -23,7 +23,7 @@ _CVOTE_PUBLIC_KEY_LENGTH = const(32)
 _CVOTE_REGISTRATION_HASH_SIZE = const(32)
 
 _METADATA_KEY_CVOTE_REGISTRATION = const(61284)
-_METADATA_KEY_CVOTE_REGISTRATION_SIGNATURE = const(61285)
+_METADATA_KEY_GOVERNANCE_REGISTRATION_SIGNATURE = const(61285)
 
 _MAX_DELEGATION_COUNT = const(32)
 _DEFAULT_VOTING_PURPOSE = const(0)
@@ -44,10 +44,10 @@ def validate(
         fields_provided += 1
         # _validate_hash
         assert_cond(len(auxiliary_data.hash) == _AUXILIARY_DATA_HASH_SIZE)
-    if auxiliary_data.cvote_registration_parameters:
+    if auxiliary_data.governance_registration_parameters:
         fields_provided += 1
         _validate_cvote_registration_parameters(
-            auxiliary_data.cvote_registration_parameters,
+            auxiliary_data.governance_registration_parameters,
             protocol_magic,
             network_id,
         )
@@ -65,7 +65,7 @@ def _validate_cvote_registration_parameters(
         _validate_vote_public_key(parameters.vote_public_key)
     if parameters.delegations:
         vote_key_fields_provided += 1
-        assert_cond(parameters.format == CardanoCVoteRegistrationFormat.CIP36)
+        assert_cond(parameters.format == CardanoGovernanceRegistrationFormat.CIP36)
         _validate_delegations(parameters.delegations)
     assert_cond(vote_key_fields_provided == 1)
 
@@ -85,7 +85,7 @@ def _validate_cvote_registration_parameters(
     assert_cond(payment_address_fields_provided == 1)
 
     if parameters.voting_purpose is not None:
-        assert_cond(parameters.format == CardanoCVoteRegistrationFormat.CIP36)
+        assert_cond(parameters.format == CardanoGovernanceRegistrationFormat.CIP36)
 
 
 def _validate_vote_public_key(key: bytes) -> None:
@@ -103,7 +103,7 @@ def _validate_delegations(
 def _get_voting_purpose_to_serialize(
     parameters: messages.CardanoCVoteRegistrationParametersType,
 ) -> int | None:
-    if parameters.format == CardanoCVoteRegistrationFormat.CIP15:
+    if parameters.format == CardanoGovernanceRegistrationFormat.CIP15:
         return None
     if parameters.voting_purpose is None:
         return _DEFAULT_VOTING_PURPOSE
@@ -209,20 +209,20 @@ def get_hash_and_supplement(
 ) -> tuple[bytes, messages.CardanoTxAuxiliaryDataSupplement]:
     from trezor.enums import CardanoTxAuxiliaryDataSupplementType
 
-    if parameters := auxiliary_data.cvote_registration_parameters:
+    if parameters := auxiliary_data.governance_registration_parameters:
         (
             cvote_registration_payload,
-            cvote_registration_signature,
+            governance_signature,
         ) = _get_signed_cvote_registration_payload(
             keychain, parameters, protocol_magic, network_id
         )
         auxiliary_data_hash = _get_cvote_registration_hash(
-            cvote_registration_payload, cvote_registration_signature
+            cvote_registration_payload, governance_signature
         )
         auxiliary_data_supplement = messages.CardanoTxAuxiliaryDataSupplement(
-            type=CardanoTxAuxiliaryDataSupplementType.CVOTE_REGISTRATION_SIGNATURE,
+            type=CardanoTxAuxiliaryDataSupplementType.GOVERNANCE_REGISTRATION_SIGNATURE,
             auxiliary_data_hash=auxiliary_data_hash,
-            cvote_registration_signature=cvote_registration_signature,
+            governance_signature=governance_signature,
         )
         return auxiliary_data_hash, auxiliary_data_supplement
     else:
@@ -237,10 +237,10 @@ def _get_cvote_registration_hash(
     cvote_registration_payload_signature: bytes,
 ) -> bytes:
     # _cborize_catalyst_registration
-    cvote_registration_signature = {1: cvote_registration_payload_signature}
+    governance_signature = {1: cvote_registration_payload_signature}
     cborized_catalyst_registration = {
         _METADATA_KEY_CVOTE_REGISTRATION: cvote_registration_payload,
-        _METADATA_KEY_CVOTE_REGISTRATION_SIGNATURE: cvote_registration_signature,
+        _METADATA_KEY_GOVERNANCE_REGISTRATION_SIGNATURE: governance_signature,
     }
 
     # _get_hash

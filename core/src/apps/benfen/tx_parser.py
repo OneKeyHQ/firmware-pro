@@ -224,7 +224,6 @@ class BCSParser:
         }
 
     def read_merge_coins_command(self) -> dict | None:
-
         to_coin = self.read_argument()
         if to_coin is None:
             return None

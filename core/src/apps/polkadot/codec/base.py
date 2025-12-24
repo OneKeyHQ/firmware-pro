@@ -50,12 +50,12 @@ class ScaleBytes:
         return f"<{self.__class__.__name__}(data=0x{hexlify(self.data).decode()})>"
 
     def __add__(self, data):
-        if type(data) == ScaleBytes:
+        if data is ScaleBytes:
             return ScaleBytes(self.data + data.data)
 
-        if type(data) == bytes:
+        if data is bytes:
             data = bytearray(data)
-        elif type(data) == str and data[0:2] == "0x":
+        elif data is str and data[0:2] == "0x":
             data = unhexlify(data[2:].lower())
 
         return ScaleBytes(self.data + data)
@@ -65,7 +65,6 @@ class ScaleBytes:
 
 
 class ScaleDecoder:
-
     type_string = None
 
     type_mapping = None
@@ -77,7 +76,6 @@ class ScaleDecoder:
     runtime_config = None
 
     def __init__(self, data: ScaleBytes, sub_type: str = None, runtime_config=None):
-
         if sub_type:
             self.sub_type = sub_type
 
@@ -85,7 +83,7 @@ class ScaleDecoder:
         #     self.build_type_mapping()
 
         if data:
-            assert type(data) == ScaleBytes
+            assert data is ScaleBytes
 
         if runtime_config:
             self.runtime_config = runtime_config
@@ -168,7 +166,6 @@ class ScaleDecoder:
             self.data = data
 
         if not self.decoded:
-
             self.data_start_offset = self.data.offset
             self.value_serialized = self.process()  # # pylint: disable=E1128
             self.decoded = True
@@ -205,7 +202,6 @@ class ScaleDecoder:
 
 
 class ScaleType(ScaleDecoder):
-
     # scale_info_type: 'GenericRegistryType' = None
 
     def __init__(self, data=None, sub_type=None, metadata=None, runtime_config=None):

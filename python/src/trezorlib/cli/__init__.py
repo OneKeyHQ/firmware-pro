@@ -27,7 +27,7 @@ from ..ui import ClickUI, ScriptUI
 
 if TYPE_CHECKING:
     from ..transport import Transport
-    from ..ui import TrezorClientUI
+    from ..ui import ClientUI
 
     # Needed to enforce a return value from decorators
     # More details: https://www.python.org/dev/peps/pep-0612/
@@ -75,10 +75,10 @@ class TrezorConnection:
         # if this fails, we want the exception to bubble up to the caller
         return transport.get_transport(self.path, prefix_search=True)
 
-    def get_ui(self) -> "TrezorClientUI":
+    def get_ui(self) -> "ClientUI":
         if self.script:
             # It is alright to return just the class object instead of instance,
-            # as the ScriptUI class object itself is the implementation of TrezorClientUI
+            # as the ScriptUI class object itself is the implementation of ClientUI
             # (ScriptUI is just a set of staticmethods)
             return ScriptUI
         else:

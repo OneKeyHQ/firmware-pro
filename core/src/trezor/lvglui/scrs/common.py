@@ -325,7 +325,6 @@ class Screen(lv.obj):
 
 
 class ANIM_DIRS:
-
     NONE = 0
     HOR = 1
     VER = 2

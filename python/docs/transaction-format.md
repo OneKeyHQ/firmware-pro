@@ -25,7 +25,7 @@ The root is an object with the following attributes:
 See definition of the respective object types in [messages-bitcoin.proto] for
 descriptions of individual fields.
 
-[messages-bitcoin.proto]: ../../common/protob/messages-bitcoin.proto
+[messages-bitcoin.proto]: ../../onekey-protocol/protob/messages-bitcoin.proto
 [coin defs]: ../../common/defs/bitcoin
 
 **Please note** that the `optional` keyword in the protobuf definition does _not_

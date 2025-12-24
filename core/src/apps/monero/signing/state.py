@@ -16,7 +16,6 @@ if TYPE_CHECKING:
 
 
 class State:
-
     STEP_INIT = const(0)
     STEP_INP = const(100)
     STEP_VINI = const(300)

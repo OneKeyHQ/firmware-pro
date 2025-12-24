@@ -36,9 +36,9 @@ async def get_address(
             address=address,
             address_n=path,
             network=get_display_network_name(defs.network),
-            evm_chain_id=defs.chain_id
-            if defs.network is networks.UNKNOWN_NETWORK
-            else None,
+            evm_chain_id=(
+                defs.chain_id if defs.network is networks.UNKNOWN_NETWORK else None
+            ),
         )
 
     return EthereumAddress(address=address)

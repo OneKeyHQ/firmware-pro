@@ -17,7 +17,7 @@ static bool adc_device_initialized[ADC_DEVICE_INVALID_MAX] = {0};
 static ADC_HandleTypeDef adc_handles[ADC_DEVICE_INVALID_MAX] = {0};
 
 static bool adc_init_device_hw_ver() {
-  if (adc_device_initialized[ADC_DEVICE_HW_VER]) return false;
+  if (adc_device_initialized[ADC_DEVICE_HW_VER]) return true;
 
   // GPIO INIT
 
@@ -96,7 +96,7 @@ static bool adc_init_device_hw_ver() {
 }
 
 static bool adc_deinit_device_hw_ver() {
-  if (!adc_device_initialized[ADC_DEVICE_HW_VER]) return false;
+  if (!adc_device_initialized[ADC_DEVICE_HW_VER]) return true;
 
   __HAL_RCC_ADC12_FORCE_RESET();
   __HAL_RCC_ADC12_RELEASE_RESET();

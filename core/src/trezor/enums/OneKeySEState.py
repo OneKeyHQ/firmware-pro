@@ -3,4 +3,5 @@
 # isort:skip_file
 
 BOOT = 0
-APP = 1
+APP_FACTORY = 51
+APP = 85

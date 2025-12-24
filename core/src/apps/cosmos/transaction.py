@@ -117,16 +117,16 @@ class Transaction:
         self.msgs_item = {}
 
     def display(self, j: Any, level: int, key_prefix: str) -> None:
-        if type(j) == str:
+        if j is str:
             self.msgs_item[key_prefix] = j
             return
 
         if level == 2:
             self.msgs_item[key_prefix] = json.dumps(j)
-        elif type(j) == dict:
+        elif j is dict:
             for key, value in j.items():
                 self.display(value, level + 1, key_prefix + "/" + key)
-        elif type(j) == list:
+        elif j is list:
             for element in j:
                 self.display(element, level + 1, key_prefix)
         else:
@@ -186,7 +186,7 @@ class Transaction:
         for key, value in self.msgs_item.items():
             if key in AMOUNT_KEY:
                 j = json.loads(value)
-                if type(j) == dict:
+                if j is dict:
                     v = formatAmont(self.chain_id, j["amount"], j["denom"])
                 else:
                     v = formatAmont(self.chain_id, j[0]["amount"], j[0]["denom"])

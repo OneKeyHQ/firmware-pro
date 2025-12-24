@@ -16,7 +16,6 @@ from .helper import PERSONALMESSAGE_INTENT_BYTES, sui_address_from_pubkey, uleb_
 async def sign_message(
     ctx: wire.Context, msg: SuiSignMessage, keychain: Keychain
 ) -> SuiMessageSignature:
-
     await paths.validate_path(ctx, keychain, msg.address_n)
 
     node = keychain.derive(msg.address_n)

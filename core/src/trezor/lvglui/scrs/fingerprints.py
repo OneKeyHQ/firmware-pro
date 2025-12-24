@@ -207,7 +207,6 @@ class CollectFingerprintProgress(FullSizeWindow):
 
 
 async def request_enroll(i) -> None:
-
     while fingerprint.detect():
         if i != 0:
             if __debug__:
@@ -259,7 +258,6 @@ async def request_add_fingerprint() -> None:
 
 
 async def add_fingerprint(ids, callback=None) -> bool:
-
     processes = [12.5, 25, 50, 75, 87.5, 100]
     utils.mark_collecting_fingerprint()
     while True:
@@ -267,7 +265,6 @@ async def add_fingerprint(ids, callback=None) -> bool:
         success = True
         scr = CollectFingerprintStart()
         while True:
-
             if fingerprint.detect():
                 motor.vibrate(weak=True)
                 scr.destroy(50)

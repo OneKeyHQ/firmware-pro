@@ -69,7 +69,7 @@ def encode(receivers: dict[Typecode, bytes], coin: CoinInfo) -> str:
     receivers_list = list(receivers.items())
     receivers_list.sort()
 
-    for (typecode, raw_bytes) in receivers_list:
+    for typecode, raw_bytes in receivers_list:
         length = receiver_length(typecode) or len(raw_bytes)
         write_compact_size(w, typecode)
         write_compact_size(w, length)

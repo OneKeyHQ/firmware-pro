@@ -13,7 +13,6 @@ from .helper import INTENT_BYTES, sui_address_from_pubkey
 
 @auto_keychain(__name__)
 async def sign_tx(ctx: wire.Context, msg: SuiSignTx, keychain: Keychain) -> SuiSignedTx:
-
     await paths.validate_path(ctx, keychain, msg.address_n)
 
     node = keychain.derive(msg.address_n)

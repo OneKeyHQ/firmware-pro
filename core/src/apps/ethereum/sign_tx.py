@@ -88,13 +88,15 @@ async def sign_tx(
             token,
             from_address=from_str,
             to_address=recipient_str,
-            contract_addr=address_from_bytes(address_bytes, network)
-            if token_id is not None
-            else None,
+            contract_addr=(
+                address_from_bytes(address_bytes, network)
+                if token_id is not None
+                else None
+            ),
             token_id=token_id,
-            evm_chain_id=None
-            if network is not networks.UNKNOWN_NETWORK
-            else msg.chain_id,
+            evm_chain_id=(
+                None if network is not networks.UNKNOWN_NETWORK else msg.chain_id
+            ),
             raw_data=msg.data_initial_chunk if has_raw_data else None,
         )
 
@@ -162,7 +164,6 @@ async def handle_erc20(
 async def handle_erc_721_or_1155(
     ctx: wire.Context, msg: EthereumSignTxAny
 ) -> None | tuple[bytes, bytes, int, int]:
-
     from_addr = recipient = None
     token_id = 0
     value = 0

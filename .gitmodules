@@ -30,3 +30,6 @@
 [submodule "vendor/lvgl_mp"]
 	path = vendor/lvgl_mp
 	url = https://github.com/OneKeyHQ/lv_binding_micropython.git
+[submodule "onekey-protocol"]
+	path = onekey-protocol
+	url = git@github.com:OneKeyHQ/onekey-protocol.git

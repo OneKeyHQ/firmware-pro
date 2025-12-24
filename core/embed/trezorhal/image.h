@@ -20,6 +20,7 @@
 #ifndef __TREZORHAL_IMAGE_H__
 #define __TREZORHAL_IMAGE_H__
 
+#include <stddef.h>
 #include <stdint.h>
 #include "secbool.h"
 
@@ -59,10 +60,11 @@ typedef struct {
   uint8_t reserved_1[4];
   uint8_t hashes[512];
   uint8_t reserved[399];
-  uint8_t build_id[16];
+  uint8_t build_id[8];
+  uint8_t reserved_2[4];
   uint8_t sigmask;
   uint8_t sig[64];
-  uint8_t fingerprint[32];
+  uint8_t fingerprint[32]; // not actually in header
 } image_header;
 
 typedef struct {
@@ -103,7 +105,7 @@ typedef struct {
   uint8_t vsig_m;
   uint8_t vsig_n;
   uint16_t vtrust;
-  // uint8_t reserved[14];
+  uint8_t reserved[14];
   const uint8_t* vpub[MAX_VENDOR_PUBLIC_KEYS];
   uint8_t vstr_len;
   const char* vstr;

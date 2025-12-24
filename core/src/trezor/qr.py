@@ -331,11 +331,11 @@ async def gen_hd_key(callback=None):
     global qr_task
     if qr_task.hd_key is not None:
         return
-    from apps.base import handle_Initialize
+    from apps.base import handle_StartSession
     from apps.ur_registry.crypto_hd_key import genCryptoHDKeyForETHStandard
 
     # pyright: off
-    await handle_Initialize(wire.QR_CONTEXT, messages.Initialize())
+    await handle_StartSession(wire.QR_CONTEXT, messages.StartSession())
     ur = await genCryptoHDKeyForETHStandard(wire.QR_CONTEXT)
     # pyright: on
     qr_task.set_hd_key(ur)
@@ -344,7 +344,7 @@ async def gen_hd_key(callback=None):
 
 
 async def gen_multi_accounts(callback=None):
-    from apps.base import handle_Initialize
+    from apps.base import handle_StartSession
     from apps.ur_registry.crypto_multi_accounts import generate_crypto_multi_accounts
 
     from apps.common import passphrase
@@ -352,7 +352,7 @@ async def gen_multi_accounts(callback=None):
     if passphrase.is_enabled():
         wire.QR_CONTEXT.passphrase = None
     # pyright: off
-    await handle_Initialize(wire.QR_CONTEXT, messages.Initialize())
+    await handle_StartSession(wire.QR_CONTEXT, messages.StartSession())
     ur = await generate_crypto_multi_accounts(wire.QR_CONTEXT)
     # pyright: on
     qr_task.set_encoder(ur)
@@ -369,10 +369,10 @@ async def handle_qr_task():
                 gc.threshold(gc.mem_free() // 4 + gc.mem_alloc())
                 # pyright: on
                 mods = utils.unimport_begin()
-                from apps.base import handle_Initialize
+                from apps.base import handle_StartSession
 
-                await handle_Initialize(wire.QR_CONTEXT, messages.Initialize())
-                del handle_Initialize
+                await handle_StartSession(wire.QR_CONTEXT, messages.StartSession())
+                del handle_StartSession
                 # if __debug__:
                 #     utils.mem_trace(__name__, 6)
                 await qr_task.run()

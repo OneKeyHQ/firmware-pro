@@ -54,12 +54,12 @@ def address_from_bytes(address_bytes: bytes, network: None = None) -> str:
 
 
 def eth_address_to_cfx(address: str):
-    assert type(address) == str
+    assert address is str
     return "0x1" + address.lower()[3:]
 
 
 def hex_address_bytes(hex_address: str):
-    assert type(hex_address) == str
+    assert hex_address is str
     return binascii.unhexlify(hex_address.lower().replace("0x", ""))
 
 
@@ -82,7 +82,7 @@ def _poly_mod(v):
     :param v: bytes
     :return: int64
     """
-    assert type(v) == bytes or type(v) == bytearray
+    assert v is bytes or v is bytearray
     c = 1
     for d in v:
         c0 = c >> 35
@@ -174,7 +174,7 @@ def bytes_from_address(address: str) -> bytes:
 
 
 def decode_hex_address(base32_address):
-    assert type(base32_address) == str
+    assert base32_address is str
     parts = base32_address.split(":")
     assert len(parts) >= 2, "invalid base32 address"
 

@@ -16,7 +16,6 @@ if TYPE_CHECKING:
 async def get_address(
     ctx: wire.Context, msg: CardanoGetAddress, keychain: seed.Keychain
 ) -> CardanoAddress:
-
     from . import addresses
     from .helpers.credential import Credential, should_show_credentials
     from .helpers.utils import validate_network_info

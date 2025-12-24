@@ -82,8 +82,8 @@ defs_check: ## check validity of coin definitions and protobuf files
 	jsonlint common/defs/*.json common/defs/*/*.json
 	python3 common/tools/cointool.py check
 	python3 common/tools/support.py check -m
-	python3 common/protob/check.py
-	python3 common/protob/graph.py common/protob/*.proto
+	python3 onekey-protocol/protob/check.py
+	python3 onekey-protocol/protob/graph.py onekey-protocol/protob/*.proto
 
 ruststyle:
 	@echo [RUSTFMT]
@@ -120,7 +120,7 @@ icons_check: ## generate FIDO service icons
 
 protobuf: ## generate python protobuf headers
 	./tools/build_protobuf
-	make -C core/embed/bootloader/protob/
+	onekey-protocol/build.sh
 
 protobuf_check: ## check that generated protobuf headers are up to date
 	./tools/build_protobuf --check
@@ -131,6 +131,6 @@ ci_docs: ## generate CI documentation
 ci_docs_check: ## check that generated CI documentation is up to date
 	./tools/generate_ci_docs.py --check
 
-gen:  mocks icons templates protobuf ## regenerate auto-generated files from sources
+gen: protobuf mocks icons templates  ## regenerate auto-generated files from sources
 
 gen_check: mocks_check icons_check templates_check protobuf_check ## check validity of auto-generated files

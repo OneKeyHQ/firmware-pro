@@ -104,7 +104,7 @@ extern uint8_t dev_pwr_err;
 
 bool ble_connect_state(void);
 void ble_cmd_req(uint8_t cmd, uint8_t value);
-void ble_cmd_req_ex(uint8_t cmd, const uint8_t *value, uint32_t value_len);
+void ble_cmd_req_ex(uint8_t cmd, const uint8_t* value, uint32_t value_len);
 void ble_uart_poll(void);
 
 #define ble_disconnect() ble_cmd_req(BLE_BT, BLE_BT_DISCON)
@@ -121,26 +121,26 @@ bool ble_battery_state(void);
 bool ble_charging_state(void);
 uint32_t ble_power_button_state(void);
 void ble_power_button_state_clear(void);
-char *ble_get_name(void);
-char *ble_get_ver(void);
-uint8_t *ble_get_build(void);
-uint8_t *ble_get_hash(void);
-uint8_t *ble_get_mac(void);
+char* ble_get_name(void);
+char* ble_get_ver(void);
+uint8_t* ble_get_build(void);
+uint8_t* ble_get_hash(void);
+uint8_t* ble_get_mac(void);
 bool ble_switch_state(void);
 void ble_set_switch(bool flag);
 bool ble_get_switch(void);
 void ble_get_dev_info(void);
 void ble_refresh_dev_info(void);
 void ble_set_flashled(uint8_t value);
-bool ble_get_version(char **ver);
-bool ble_get_pubkey(uint8_t *pubkey);
+bool ble_get_version(char** ver);
+bool ble_get_pubkey(uint8_t* pubkey);
 bool ble_lock_pubkey(void);
-bool ble_sign_msg(uint8_t *msg, uint32_t msg_len, uint8_t *sign);
+bool ble_sign_msg(uint8_t* msg, uint32_t msg_len, uint8_t* sign);
 uint8_t ble_get_charge_type(void);
-bool ble_get_battery_voltage(uint16_t *voltage);
-bool ble_get_battery_charging_current(uint16_t *current);
-bool ble_get_battery_discharging_current(uint16_t *current);
-bool ble_get_battery_inner_temp(uint16_t *temp);
+bool ble_get_battery_voltage(uint16_t* voltage);
+bool ble_get_battery_charging_current(uint16_t* current);
+bool ble_get_battery_discharging_current(uint16_t* current);
+bool ble_get_battery_inner_temp(uint16_t* temp);
 void ble_reset(void);
 
 #else

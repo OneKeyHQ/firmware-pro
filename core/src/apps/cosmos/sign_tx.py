@@ -27,7 +27,6 @@ from .transaction import DelegateTxn, SendTxn, Transaction
 async def sign_tx(
     ctx: wire.Context, msg: CosmosSignTx, keychain: Keychain
 ) -> CosmosSignedTx:
-
     await paths.validate_path(ctx, keychain, msg.address_n)
     node = keychain.derive(msg.address_n)
     public_key = node.public_key()
@@ -57,7 +56,7 @@ async def sign_tx(
         tx.display(tx.msgs[0], 0, "msgs")
         tx.tx_display_make_friendly()
 
-        if type(tx.tx) == SendTxn:
+        if tx.tx is SendTxn:
             to = tx.tx.to if type(tx.tx) is SendTxn else ""
             from_addr = tx.tx.from_address if type(tx.tx) is SendTxn else ""
             amount = tx.tx.amount if type(tx.tx) is SendTxn else ""
@@ -72,7 +71,7 @@ async def sign_tx(
                     to,
                     tx.memo,
                 )
-        elif type(tx.tx) == DelegateTxn:
+        elif tx.tx is DelegateTxn:
             delegator = tx.tx.delegator if type(tx.tx) is DelegateTxn else ""
             validator = tx.tx.validator if type(tx.tx) is DelegateTxn else ""
             amount = tx.tx.amount if type(tx.tx) is DelegateTxn else ""

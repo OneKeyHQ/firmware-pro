@@ -2,6 +2,7 @@
 Output destinations are streamed one by one.
 Computes destination one-time address, amount key, range proof + HMAC, out_pk, ecdh_info.
 """
+
 import gc
 from typing import TYPE_CHECKING
 

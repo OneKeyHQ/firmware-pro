@@ -63,7 +63,7 @@ def test_cancel_message_via_initialize(client: Client, message):
     assert isinstance(resp, m.ButtonRequest)
 
     client._raw_write(m.ButtonAck())
-    client._raw_write(m.Initialize())
+    client._raw_write(m.StartSession())
 
     resp = client._raw_read()
 

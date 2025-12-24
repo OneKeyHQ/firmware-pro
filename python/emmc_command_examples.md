@@ -37,4 +37,8 @@ trezorctl device firmware-update-emmc -p 0:bluetooth.bin
 # update main firmware
 trezorctl device emmc-file-write -l ../core/build/firmware/firmware.bin -r 0:firmware.bin -f
 trezorctl device firmware-update-emmc -p 0:firmware.bin
+
+# update se firmware
+trezorctl device emmc-file-write -l /home/adam/Downloads/se_fw_xx.enc -r 0:se.enc -f
+trezorctl device firmware-update-emmc -p 0:se.enc
 ```

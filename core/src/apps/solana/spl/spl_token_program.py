@@ -320,9 +320,11 @@ async def parse(ctx: wire.Context, accounts: list[PublicKey], data: bytes) -> No
             mint=accounts[0],
             decimals=parsed_data.decimals,
             authority=parsed_data.mint_authority,
-            freeze_authority=parsed_data.freeze_authority
-            if parsed_data.freeze_authority_option
-            else None,
+            freeze_authority=(
+                parsed_data.freeze_authority
+                if parsed_data.freeze_authority_option
+                else None
+            ),
         )
     elif instruction_type == InstructionType.INITIALIZE_ACCOUNT:
         params = InitializeAccountParams(
@@ -380,9 +382,9 @@ async def parse(ctx: wire.Context, accounts: list[PublicKey], data: bytes) -> No
             current_authority=accounts[1],
             signers=accounts[2:] if len(accounts) > 2 else [],
             authority=parsed_data.authority_type,
-            new_authority=parsed_data.new_authority
-            if parsed_data.new_authority_option
-            else None,
+            new_authority=(
+                parsed_data.new_authority if parsed_data.new_authority_option else None
+            ),
         )
     elif instruction_type == InstructionType.MINT_TO:
         parsed_data = AMOUNT_LAYOUT.parse(data)
@@ -484,7 +486,6 @@ async def parse(ctx: wire.Context, accounts: list[PublicKey], data: bytes) -> No
         )
     # pyright: on
     else:
-
         raise wire.DataError(
             f"Unknown spl-token program instruction type {instruction_type}"
         )

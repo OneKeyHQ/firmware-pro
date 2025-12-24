@@ -257,7 +257,6 @@ class StatusBar(lv.obj):
 
 
 def retrieve_icon_path(value: int, charging: bool) -> str:
-
     if value >= 95:
         return (
             "A:/res/battery-100-green.png"

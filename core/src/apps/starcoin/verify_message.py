@@ -16,7 +16,6 @@ from .helper import get_address_from_public_key, serialize_u32_as_uleb128
 async def verify_message(
     ctx: wire.Context, msg: StarcoinVerifyMessage, keychain: Keychain
 ) -> Success:
-
     prefix = sha3_256(b"STARCOIN::SigningMessage", keccak=False).digest()
     msg_data = msg.message if msg.message is not None else b""
     msg_len = len(msg_data)

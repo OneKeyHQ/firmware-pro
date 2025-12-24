@@ -167,7 +167,6 @@ async def _get_keychain_bip39(
         raise wire.NotInitialized("Device is not initialized")
 
     if not utils.USE_THD89:
-
         if derivation_type == CardanoDerivationType.LEDGER:
             seed = await get_seed(ctx)
             return Keychain(cardano.from_seed_ledger(seed))

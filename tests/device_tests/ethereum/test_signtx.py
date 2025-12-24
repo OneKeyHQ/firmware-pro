@@ -175,7 +175,6 @@ def test_data_streaming(client: Client):
 
 def test_signtx_eip1559_access_list(client: Client):
     with client:
-
         sig_v, sig_r, sig_s = ethereum.sign_tx_eip1559(
             client,
             n=parse_path("m/44h/60h/0h/0/100"),
@@ -214,7 +213,6 @@ def test_signtx_eip1559_access_list(client: Client):
 
 def test_signtx_eip1559_access_list_larger(client: Client):
     with client:
-
         sig_v, sig_r, sig_s = ethereum.sign_tx_eip1559(
             client,
             n=parse_path("m/44h/60h/0h/0/100"),

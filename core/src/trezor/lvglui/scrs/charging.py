@@ -93,7 +93,6 @@ class ChargingPromptScr(lv.obj):
             pass
 
     def show(self):
-
         ui.display.backlight(storage.device.get_brightness() - 10)
 
     def on_event(self, event_obj: lv.event_t):

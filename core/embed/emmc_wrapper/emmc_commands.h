@@ -31,7 +31,7 @@
 #include "usb.h"
 
 // protobuf
-#include "messages.pb.h"
+#include "boot_msg_pb.h"
 #include <pb.h>
 #include <pb_decode.h>
 #include <pb_encode.h>

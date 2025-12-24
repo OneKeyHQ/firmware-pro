@@ -29,7 +29,6 @@ async def sign_tx(
     msg: NexaSignTx,
     keychain: Keychain,
 ) -> NexaSignedTx:
-
     if not Prefix.is_valid(msg.prefix):
         raise wire.DataError("Invalid prefix provided.")
 

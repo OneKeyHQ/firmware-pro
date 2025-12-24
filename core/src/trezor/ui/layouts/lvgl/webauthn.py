@@ -15,7 +15,6 @@ async def confirm_webauthn(
     info: ConfirmInfo,
     pageable: Pageable | None = None,
 ) -> bool:
-
     from trezor.lvglui.scrs.webauthn import ConfirmWebauthn
 
     title = info.get_header()

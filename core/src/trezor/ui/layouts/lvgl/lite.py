@@ -103,7 +103,6 @@ async def backup_with_lite(
                         trash_scr.set_pin_mnemonicmphrase(pin, card_num, mnemonics)
                         final_status_code = await ctx.wait(trash_scr.request())
                         if final_status_code == LITE_CARD_OPERATE_SUCCESS:
-
                             from trezor.ui.layouts import show_success
 
                             await show_success(

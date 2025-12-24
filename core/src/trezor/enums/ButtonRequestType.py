@@ -15,6 +15,7 @@ Address = 10
 PublicKey = 11
 MnemonicWordCount = 12
 MnemonicInput = 13
+_Deprecated_ButtonRequest_PassphraseType = 14
 UnknownDerivationPath = 15
 RecoveryHomepage = 16
 Success = 17

@@ -475,7 +475,7 @@ if ARGUMENTS.get('TREZOR_EMULATOR_DEBUGGABLE', '0') == '1':
 
 if ARGUMENTS.get('TREZOR_MEMPERF', '0') == '1':
     CPPDEFINES_MOD += [
-        ('MICROPY_TREZOR_MEMPERF', '\(1\)')
+        ('MICROPY_TREZOR_MEMPERF', '(1)')
     ]
 
 env.Replace(
@@ -524,14 +524,14 @@ env.Replace(
     MAKEMODULEDEFS='$PYTHON vendor/micropython/py/makemoduledefs.py',
     MPY_TOOL='$PYTHON vendor/micropython/tools/mpy-tool.py',
     MPY_CROSS='vendor/micropython/mpy-cross/mpy-cross -O' + PYOPT,
-    PB2PY='$PYTHON ../common/protob/pb2py',
+    PB2PY='$PYTHON ../onekey-protocol/binding_python/pb2py',
 )
 
 #
 # Qstrings
 #
 
-PROTO_SOURCES_DIR = '../../../common/protob/'
+PROTO_SOURCES_DIR = '../../../onekey-protocol/protob/'
 PROTO_SOURCES = Glob(PROTO_SOURCES_DIR + '*.proto',
     exclude=[PROTO_SOURCES_DIR + 'messages-bootloader.proto']
 )

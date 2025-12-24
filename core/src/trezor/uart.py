@@ -18,7 +18,7 @@ _FORMAT = ">HHB"
 _HEADER_LEN = const(5)
 # fmt: off
 _CMD_BLE_NAME = _PRESS_SHORT = _USB_STATUS_PLUG_IN = _BLE_STATUS_CONNECTED = _BLE_PAIR_SUCCESS = CHARGE_START = const(1)
-_PRESS_LONG = _USB_STATUS_PLUG_OUT = _BLE_STATUS_DISCONNECTED = _BLE_PAIR_FAILED = _CMD_BLE_STATUS = CHARGE_BY_WIRELESS = const(2)
+_PRESS_LONG = _USB_STATUS_PLUG_OUT = _BLE_STATUS_DISCONNECTED = _BLE_PAIR_FAILED = _CMD_BLE_STATUS = CHARGE_TYPE_WIRELESS = const(2)
 _BTN_PRESS = const(0x20)
 _BTN_RELEASE = const(0x40)
 # fmt: on
@@ -220,7 +220,6 @@ async def handle_ble_info():
 
 
 async def process_push() -> None:
-
     uart = loop.wait(io.UART | io.POLL_READ)
 
     response = await uart
@@ -378,8 +377,7 @@ async def _deal_charging_state(value: bytes) -> None:
         StatusBar.get_instance().show_charging(True)
         if utils.BATTERY_CAP:
             StatusBar.get_instance().set_battery_img(utils.BATTERY_CAP, True)
-        if CHARING_TYPE == CHARGE_BY_WIRELESS:
-
+        if CHARING_TYPE == CHARGE_TYPE_WIRELESS:
             if utils.CHARGE_WIRELESS_STATUS == utils.CHARGE_WIRELESS_STOP:
                 utils.CHARGE_WIRELESS_STATUS = utils.CHARGE_WIRELESS_CHARGE_STARTING
                 fetch_battery_temperature()

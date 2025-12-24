@@ -68,7 +68,7 @@ class MnemonicDisplay(FullSizeWindow):
             word.add_style(word_style, 0)
             word_label = lv.label(word)
             word_label.set_align(lv.ALIGN.LEFT_MID)
-            word_label.set_text(f"{i+1:>2}. {mnemonics[i]}")
+            word_label.set_text(f"{i + 1:>2}. {mnemonics[i]}")
             word.set_grid_cell(
                 lv.GRID_ALIGN.STRETCH, col, 1, lv.GRID_ALIGN.STRETCH, row, 1
             )

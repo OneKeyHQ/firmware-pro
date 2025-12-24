@@ -1,0 +1,32 @@
+# Global options
+auto_unlock: false
+connect_mode: halt
+dap_protocol: swd
+enable_multicore_debug: true
+frequency: 50000000 # Set 50 MHz SWD default for all probes
+# use "pack install stm32h747xihx" instead
+# pack:
+#   - Keil.STM32H7xx_DFP_3.1.1.pack
+primary_core: 0
+reset_type: sw
+smart_flash: true
+reset.post_delay: 0.5
+
+# jlink options
+# jlink.device: 174310284
+# jlink.non_interactive: false
+# jlink.power: false
+
+# stlink options
+# stlink.v3_prescaler: 4
+
+# cmsis-dap options
+cmsis_dap.prefer_v1: false
+cmsis_dap.deferred_transfers: true
+
+# gdb
+enable_semihosting: true
+
+# job
+user_script: pyocd_user.py
+target_override: stm32h747xihx

@@ -1516,7 +1516,6 @@ def basic_attestation_sign(data: Iterable[bytes]) -> bytes:
 
 
 def msg_register_sign(challenge: bytes, cred: U2fCredential) -> bytes:
-
     pubkey = cred.public_key()
 
     sig = basic_attestation_sign((b"\x00", cred.rp_id_hash, challenge, cred.id, pubkey))
@@ -1886,7 +1885,6 @@ def cbor_make_credential_sign(
 
 
 def cbor_get_assertion(req: Cmd, dialog_mgr: DialogManager) -> Cmd | None:
-
     resp = Fido2Unlock(cbor_get_assertion_process, req, dialog_mgr)
 
     if isinstance(resp, State):

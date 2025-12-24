@@ -149,9 +149,11 @@ def require_confirm_unfreeze(
         "UnFreeze",
         signer,
         res,
-        format_amount_trx(unfrozen_balance, None)
-        if unfrozen_balance is not None
-        else None,
+        (
+            format_amount_trx(unfrozen_balance, None)
+            if unfrozen_balance is not None
+            else None
+        ),
         None,
         receiver_address,
     )
@@ -176,9 +178,11 @@ def require_confirm_unfreeze_v2(
         "UnFreeze Balance V2 Contract",
         signer,
         res,
-        format_amount_trx(unfrozen_balance, None)
-        if unfrozen_balance is not None
-        else None,
+        (
+            format_amount_trx(unfrozen_balance, None)
+            if unfrozen_balance is not None
+            else None
+        ),
     )
 
 

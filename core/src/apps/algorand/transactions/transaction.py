@@ -273,13 +273,15 @@ class PaymentTxn(Transaction):
     @staticmethod
     def _undictify(d):
         args = {
-            "close_remainder_to": encoding.encode_address(d["close"])
-            if "close" in d
-            else None,
+            "close_remainder_to": (
+                encoding.encode_address(d["close"]) if "close" in d else None
+            ),
             "amt": d["amt"] if "amt" in d else 0,
-            "receiver": encoding.encode_address(d["rcv"])
-            if "rcv" in d
-            else constants.ZERO_ADDRESS,
+            "receiver": (
+                encoding.encode_address(d["rcv"])
+                if "rcv" in d
+                else constants.ZERO_ADDRESS
+            ),
         }
         return args
 
@@ -878,7 +880,6 @@ class AssetConfigTxn(Transaction):
 
 
 class AssetFreezeTxn(Transaction):
-
     """
     Represents a transaction for freezing or unfreezing an account's asset
     holdings. Must be issued by the asset's freeze manager.
@@ -1038,17 +1039,19 @@ class AssetTransferTxn(Transaction):
     @staticmethod
     def _undictify(d):
         args = {
-            "receiver": encoding.encode_address(d["arcv"])
-            if "arcv" in d
-            else constants.ZERO_ADDRESS,
+            "receiver": (
+                encoding.encode_address(d["arcv"])
+                if "arcv" in d
+                else constants.ZERO_ADDRESS
+            ),
             "amt": d["aamt"] if "aamt" in d else 0,
             "index": d["xaid"] if "xaid" in d else None,
-            "close_assets_to": encoding.encode_address(d["aclose"])
-            if "aclose" in d
-            else None,
-            "revocation_target": encoding.encode_address(d["asnd"])
-            if "asnd" in d
-            else None,
+            "close_assets_to": (
+                encoding.encode_address(d["aclose"]) if "aclose" in d else None
+            ),
+            "revocation_target": (
+                encoding.encode_address(d["asnd"]) if "asnd" in d else None
+            ),
         }
 
         return args
@@ -1234,12 +1237,12 @@ class ApplicationCallTxn(Transaction):
         args = {
             "index": d["apid"] if "apid" in d else None,
             "on_complete": d["apan"] if "apan" in d else None,
-            "local_schema": StateSchema(**StateSchema.undictify(d["apls"]))
-            if "apls" in d
-            else None,
-            "global_schema": StateSchema(**StateSchema.undictify(d["apgs"]))
-            if "apgs" in d
-            else None,
+            "local_schema": (
+                StateSchema(**StateSchema.undictify(d["apls"])) if "apls" in d else None
+            ),
+            "global_schema": (
+                StateSchema(**StateSchema.undictify(d["apgs"])) if "apgs" in d else None
+            ),
             "approval_program": d["apap"] if "apap" in d else None,
             "clear_program": d["apsu"] if "apsu" in d else None,
             "app_args": d["apaa"] if "apaa" in d else None,

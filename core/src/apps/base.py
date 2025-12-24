@@ -3,15 +3,15 @@ from typing import TYPE_CHECKING
 import storage.cache
 import storage.device
 from trezor import config, loop, protobuf, ui, utils, wire, workflow
-from trezor.enums import MessageType
-from trezor.messages import Success, UnlockPath
+from trezor.enums import MessageType, OneKeyRebootType
+from trezor.messages import OneKeyReboot, OneKeyInfoReq, OneKeyInfoResp, Success, Failure, UnlockPath
 
 from . import workflow_handlers
 
 if TYPE_CHECKING:
     from trezor.messages import (
         Features,
-        Initialize,
+        StartSession,
         EndSession,
         GetFeatures,
         Cancel,
@@ -20,8 +20,6 @@ if TYPE_CHECKING:
         DoPreauthorized,
         CancelAuthorization,
         SetBusy,
-        OnekeyGetFeatures,
-        OnekeyFeatures,
     )
 
 
@@ -44,220 +42,416 @@ def busy_expiry_ms() -> int:
     return expiry_ms if expiry_ms > 0 else 0
 
 
-def get_features() -> Features:
+async def handle_OneKeyReboot(ctx: wire.Context, req: OneKeyReboot) -> Success | Failure :
+
+    if req.reboot_type == OneKeyRebootType.Normal:
+            utils.reboot()
+            return Success()
+    if req.reboot_type == OneKeyRebootType.Boardloader:
+            utils.reboot_to_boardloader()
+            return Success()
+    if req.reboot_type == OneKeyRebootType.BootLoader:
+            utils.reboot_to_bootloader()
+            return Success()
+    
+    return Failure("Reboot target incorrect!")
+    
+def process_OneKeyInfo(req: OneKeyInfoReq) -> OneKeyInfoResp | None:
+    from trezor import uart  # for bluetooth
+    from trezorio import hwinfo  # for hardware version
+
+    # onekey specific
+    from trezor.enums import (
+        OneKeyDeviceType,
+        OneKeySeType,
+        OneKeySEState,
+    )
+
+    from trezor.messages import (
+        OneKeyFwImgInfo,
+        OneKeyMainMcuInfo,
+        OneKeyBluetoothInfo,
+        OneKeySEInfo,
+        OneKeyHardwareInfo,
+        # OneKeyInfoTargets,
+        OneKeyInfoTypes,
+        # OneKeyInfoReq,
+        # OneKeyInfoResp,
+        OneKeyStatus,
+    )
+
+    assert req is not None
+
+    def process_OneKeyStatus(info_type: OneKeyInfoTypes) -> OneKeyStatus:
+        assert info_type is not None
+
+        status = OneKeyStatus()
+
+        status.language = storage.device.get_language()
+        status.bt_enable = uart.is_ble_opened()
+        status.init_states = storage.device.is_initialized()
+
+        if device_is_unlocked():
+            status.backup_required = storage.device.no_backup()
+            status.passphrase_protection = storage.device.is_passphrase_enabled()
+
+        status.lable = storage.device.get_label()
+
+        return status
+
+    def process_OneKeyHardwareInfo(
+        info_type: OneKeyInfoTypes,
+    ) -> OneKeyHardwareInfo:
+        assert info_type is not None
+
+        hw_info = OneKeyHardwareInfo()
+
+        hw_info.device_type = OneKeyDeviceType.PRO
+        hw_info.serial_no = storage.device.get_serial()
+
+        if info_type.version:
+            hw_info.hardware_version = hwinfo.ver()
+        if info_type.specific:
+            hw_info.hardware_version_raw_adc = hwinfo.ver_adc()
+
+        return hw_info
+
+    def process_OneKeyMainMcuInfo(
+        info_type: OneKeyInfoTypes,
+    ) -> OneKeyMainMcuInfo:
+        assert info_type is not None
+
+        fw_info = OneKeyMainMcuInfo()
+
+        fw_info.board = OneKeyFwImgInfo()
+        fw_info.boot = OneKeyFwImgInfo()
+        fw_info.app = OneKeyFwImgInfo()
+
+        if info_type.version:
+            fw_info.board.version = utils.board_version()
+            fw_info.boot.version = utils.boot_version()
+            fw_info.app.version = utils.ONEKEY_VERSION
+
+        if info_type.build_id:
+            fw_info.board.build_id = utils.board_build_id()
+            fw_info.boot.build_id = utils.boot_build_id()
+            fw_info.app.build_id = (utils.BUILD_ID[-7:]).decode("utf-8")
+
+        if info_type.hash:
+            fw_info.board.hash = utils.board_hash()
+            fw_info.boot.hash = utils.boot_hash()
+            fw_info.app.hash = utils.onekey_firmware_hash()
+
+        # if info_type.specific:
+        # N/A
+
+        return fw_info
+
+    def process_OneKeyBluetoothInfo(
+        info_type: OneKeyInfoTypes,
+    ) -> OneKeyBluetoothInfo:
+        # Note:
+        # we do not consider the "SE in boot, while device in main firmware" condition
+        # because if so the device will stay in bootloader
+
+        assert info_type is not None
+
+        bt_info = OneKeyBluetoothInfo()
+
+        # bt_info.boot = OneKeyFwImgInfo() # not implemented
+        bt_info.app = OneKeyFwImgInfo()
+
+        if info_type.version:
+            bt_info.app.version = uart.get_ble_version()
+
+        if info_type.build_id:
+            bt_info.app.build_id = uart.get_ble_build_id()
+
+        if info_type.hash:
+            bt_info.app.hash = uart.get_ble_hash()
+
+        if info_type.specific:
+            bt_info.adv_name = uart.get_ble_name()
+            bt_info.mac = uart.get_ble_mac()
+
+        return bt_info
+
+    def process_OneKeySEInfo(
+        func_boot_get_version,
+        func_boot_get_build_id,
+        func_boot_get_hash,
+        func_app_get_version,
+        func_app_get_build_id,
+        func_app_get_hash,
+        info_type: OneKeyInfoTypes,
+    ) -> OneKeySEInfo:
+        assert func_boot_get_version is not None
+        assert func_boot_get_build_id is not None
+        assert func_boot_get_hash is not None
+        assert func_app_get_version is not None
+        assert func_app_get_build_id is not None
+        assert func_app_get_hash is not None
+        assert info_type is not None
+
+        se_info = OneKeySEInfo()
+
+        se_info.boot = OneKeyFwImgInfo()
+        se_info.app = OneKeyFwImgInfo()
+
+        if info_type.version:
+            se_info.boot.version = func_boot_get_version()
+            se_info.app.version = func_app_get_version()
+
+        if info_type.build_id:
+            se_info.boot.build_id = func_boot_get_build_id()
+            se_info.app.build_id = func_app_get_build_id()
+
+        if info_type.hash:
+            se_info.boot.hash = func_boot_get_hash()
+            se_info.app.hash = func_app_get_hash()
+
+        if info_type.specific:
+            se_info.state = OneKeySEState.APP
+            se_info.type = OneKeySeType.THD89
+
+        return se_info
+
+    if (req.targets is not None) and (req.types is not None):
+        resp = OneKeyInfoResp(protocol_version=1.0)
+
+        if req.targets.status:
+            resp.status = process_OneKeyStatus(
+                info_type=req.types,
+            )
+
+        if req.targets.hw:
+            resp.hw = process_OneKeyHardwareInfo(
+                info_type=req.types,
+            )
+
+        if req.targets.fw:
+            resp.fw = process_OneKeyMainMcuInfo(
+                info_type=req.types,
+            )
+
+        if req.targets.bt:
+            resp.bt = process_OneKeyBluetoothInfo(
+                info_type=req.types,
+            )
+
+        if req.targets.se1:
+            resp.se1 = process_OneKeySEInfo(
+                func_boot_get_version=storage.device.get_se01_boot_version,
+                func_boot_get_build_id=storage.device.get_se01_boot_build_id,
+                func_boot_get_hash=storage.device.get_se01_boot_hash,
+                func_app_get_version=storage.device.get_se01_version,
+                func_app_get_build_id=storage.device.get_se01_build_id,
+                func_app_get_hash=storage.device.get_se01_hash,
+                info_type=req.types,
+            )
+        if req.targets.se2:
+            resp.se2 = process_OneKeySEInfo(
+                func_boot_get_version=storage.device.get_se02_boot_version,
+                func_boot_get_build_id=storage.device.get_se02_boot_build_id,
+                func_boot_get_hash=storage.device.get_se02_boot_hash,
+                func_app_get_version=storage.device.get_se02_version,
+                func_app_get_build_id=storage.device.get_se02_build_id,
+                func_app_get_hash=storage.device.get_se02_hash,
+                info_type=req.types,
+            )
+        if req.targets.se3:
+            resp.se3 = process_OneKeySEInfo(
+                func_boot_get_version=storage.device.get_se03_boot_version,
+                func_boot_get_build_id=storage.device.get_se03_boot_build_id,
+                func_boot_get_hash=storage.device.get_se03_boot_hash,
+                func_app_get_version=storage.device.get_se03_version,
+                func_app_get_build_id=storage.device.get_se03_build_id,
+                func_app_get_hash=storage.device.get_se03_hash,
+                info_type=req.types,
+            )
+        if req.targets.se4:
+            resp.se4 = process_OneKeySEInfo(
+                func_boot_get_version=storage.device.get_se04_boot_version,
+                func_boot_get_build_id=storage.device.get_se04_boot_build_id,
+                func_boot_get_hash=storage.device.get_se04_boot_hash,
+                func_app_get_version=storage.device.get_se04_version,
+                func_app_get_build_id=storage.device.get_se04_build_id,
+                func_app_get_hash=storage.device.get_se04_hash,
+                info_type=req.types,
+            )
+
+        return resp
+
+    else:
+        return None
+
+
+def get_features(msg: "GetFeatures | StartSession | None") -> Features:
     import storage.recovery
     import storage.sd_salt
     import storage  # workaround for https://github.com/microsoft/pyright/issues/2685
 
     from trezor import sdcard
-    from trezor.enums import Capability, OneKeyDeviceType, OneKeySeType
+    from trezor.enums import (
+        Capability,
+        BackupAvailability,
+        RecoveryStatus,
+        DisplayRotation,
+        OneKeyDeviceType,
+    )
     from trezor.messages import Features
-    from trezor import uart
     from apps.common import mnemonic, safety_checks
 
-    storage_serial_no = storage.device.get_serial()
-    serial_no = storage_serial_no
-    if serial_no[0:2] == "PR":
-        serial_no = "TC" + serial_no[2:]
-    f = Features(
-        vendor=get_vendor(),
-        language=storage.device.get_language(),
-        major_version=utils.VERSION_MAJOR,
-        minor_version=utils.VERSION_MINOR,
-        patch_version=utils.VERSION_PATCH,
-        onekey_version=utils.ONEKEY_VERSION,
-        revision=utils.SCM_REVISION,
-        model=utils.MODEL,
-        device_id=storage.device.get_device_id(),
-        label=storage.device.get_label(),
-        pin_protection=config.has_pin(),
-        unlocked=config.is_unlocked(),
-        ble_name=uart.get_ble_name(),
-        ble_ver=uart.get_ble_version(),
-        ble_enable=storage.device.ble_enabled(),
-        serial_no=serial_no,
-        build_id=utils.BUILD_ID[-7:],
-        bootloader_version=utils.boot_version(),
-        boardloader_version=utils.board_version(),
-        busy=busy_expiry_ms() > 0,
-        onekey_device_type=OneKeyDeviceType.PRO,
-        onekey_se_type=OneKeySeType.THD89,
-        onekey_board_version=utils.board_version(),
-        onekey_boot_version=utils.boot_version(),
-        onekey_se01_version=storage.device.get_se01_version(),
-        onekey_se02_version=storage.device.get_se02_version(),
-        onekey_se03_version=storage.device.get_se03_version(),
-        onekey_se04_version=storage.device.get_se04_version(),
-        onekey_firmware_version=utils.ONEKEY_VERSION,
-        onekey_serial_no=storage_serial_no,
-        onekey_ble_name=uart.get_ble_name(),
-        onekey_ble_version=uart.get_ble_version(),
-    )
+    if (msg is not None) and (msg.ok_dev_info_req is not None):
+        # onekey mode
+        # Very frequently used status goes to Feature message
+        # Less frequently used status goes to OneKeyStatus message, populate on request
 
-    if utils.BITCOIN_ONLY:
-        f.capabilities = [
-            Capability.Bitcoin,
-            Capability.Crypto,
-            Capability.Shamir,
-            Capability.ShamirGroups,
-        ]
+        f = Features(
+            busy=busy_expiry_ms() > 0,
+            unlocked=device_is_unlocked(),
+        )
+
+        f.ok_dev_info_resp = process_OneKeyInfo(msg.ok_dev_info_req)
+
     else:
-        f.capabilities = [
-            Capability.Bitcoin,
-            Capability.Bitcoin_like,
-            Capability.Binance,
-            Capability.Cardano,
-            Capability.Crypto,
-            Capability.EOS,
-            Capability.Ethereum,
-            # Capability.Monero,
-            Capability.NEM,
-            Capability.Ripple,
-            Capability.Stellar,
-            Capability.Tezos,
-            # Capability.U2F,
-            # Capability.Shamir,
-            # Capability.ShamirGroups,
-        ]
+        # trezor mode
+        # This mode is only for compatible with Trezor, all OneKey specific fields won't be here
+        # Some data may not be actual value (e.g. versions), it's by design, not a bug
 
-    # Other models are not capable of PassphraseEntry
-    if utils.MODEL in ("T",):
-        f.capabilities.append(Capability.PassphraseEntry)
+        f = Features(
+            vendor=get_vendor(),
+            major_version=2,  # fake version
+            minor_version=99,  # fake version
+            patch_version=99,  # fake version
+            # bootloader_mode=False, # bootloader mode only, not needed under firmware
+            device_id=storage.device.get_device_id(),
+            pin_protection=config.has_pin(),
+            # passphrase_protection -- private
+            language=storage.device.get_language(),
+            label=storage.device.get_label(),
+            initialized=storage.device.is_initialized(),
+            revision=utils.SCM_REVISION,
+            # bootloader_hash # not used under bootloader and firmware
+            # imported # not used under bootloader and firmware
+            unlocked=config.is_unlocked(),
+            # _passphrase_cached # not used under bootloader and firmware
+            # firmware_present=True, # bootloader mode only
+            # backup_availability -- private
+            # flags -- private
+            model=utils.MODEL,
+            # fw_major=2, # bootloader mode only, fake version
+            # fw_minor=99, # bootloader mode only, fake version
+            # fw_patch=99, # bootloader mode only, fake version
+            # fw_vendor=99, # bootloader mode only, fake version
+            # unfinished_backup -- private
+            # no_backup -- private
+            # recovery_status -- private
+            capabilities=[
+                Capability.Bitcoin,
+                Capability.Bitcoin_like,
+                Capability.Binance,
+                Capability.Cardano,
+                # Capability.Crypto,
+                Capability.EOS,
+                Capability.Ethereum,
+                # Capability.Monero,
+                Capability.NEM,
+                Capability.Ripple,
+                Capability.Stellar,
+                Capability.Tezos,
+                Capability.PassphraseEntry,
+                # Capability.U2F,
+                # Capability.Shamir,
+                # Capability.ShamirGroups,
+                # Capability.Haptic,
+            ],
+            # backup_type -- private
+            sd_card_present=sdcard.is_present(),
+            # sd_protection -- private
+            # wipe_code_protection -- private
+            # session_id # only populate under StartSession message
+            # passphrase_always_on_device -- private
+            # safety_checks -- private
+            # auto_lock_delay_ms -- private
+            display_rotation=(
+                DisplayRotation.North
+            ),  # we don't support rotate, original function storage.device.get_rotation()
+            # experimental_features -- private
+            busy=busy_expiry_ms() > 0,
+            # homescreen_format # used only by Trezor Suite
+            # hide_passphrase_from_host -- private
+            # internal_model # used only by Trezor Suite
+            # unit_color # used only by Trezor Suite
+            unit_btconly=False,
+            # homescreen_width=480,
+            # homescreen_height=800,
+            bootloader_locked=True,
+            language_version_matches=True,
+            # unit_packaging # used only by Trezor Suite
+            haptic_feedback=False,  # we have, but won't expose it to host
+            # recovery_type # no impl.
+            # optiga_sec # no impl.
+        )
 
-    f.sd_card_present = sdcard.is_present()
-    f.initialized = storage.device.is_initialized()
+        # private fields:
+        if device_is_unlocked():
+            # passphrase_protection is private, see #1807
+            f.passphrase_protection = storage.device.is_passphrase_enabled()
+            f.backup_availability = (
+                BackupAvailability.NotAvailable,
+                BackupAvailability.Required,
+            )[storage.device.needs_backup()]
+            f.flags = storage.device.get_flags()
+            f.unfinished_backup = storage.device.unfinished_backup()
+            f.no_backup = storage.device.no_backup()
+            f.recovery_status = (
+                RecoveryStatus.Nothing
+            )  # storage.recovery.is_in_progress()
+            f.backup_type = mnemonic.get_type()
+            f.sd_protection = storage.sd_salt.is_enabled()
+            f.wipe_code_protection = config.has_wipe_code()
+            f.passphrase_always_on_device = (
+                storage.device.get_passphrase_always_on_device()
+            )
+            f.safety_checks = safety_checks.read_setting()
+            f.auto_lock_delay_ms = storage.device.get_autolock_delay_ms()
+            f.experimental_features = storage.device.get_experimental_features()
+            # f.hide_passphrase_from_host # no impl.
 
-    # private fields:
-    if config.is_unlocked():
-        # passphrase_protection is private, see #1807
-        f.passphrase_protection = storage.device.is_passphrase_enabled()
-        f.needs_backup = storage.device.needs_backup()
-        f.unfinished_backup = storage.device.unfinished_backup()
-        f.no_backup = storage.device.no_backup()
-        f.flags = storage.device.get_flags()
-        f.recovery_mode = False  # storage.recovery.is_in_progress()
-        f.backup_type = mnemonic.get_type()
-        f.sd_protection = storage.sd_salt.is_enabled()
-        f.wipe_code_protection = config.has_wipe_code()
-        f.passphrase_always_on_device = storage.device.get_passphrase_always_on_device()
-        f.safety_checks = safety_checks.read_setting()
-        f.auto_lock_delay_ms = storage.device.get_autolock_delay_ms()
-        f.display_rotation = storage.device.get_rotation()
-        f.experimental_features = storage.device.get_experimental_features()
+        # legacy compatibility
+        f.onekey_device_type = OneKeyDeviceType.PRO
+        f.onekey_serial_no = storage.device.get_serial()
 
     return f
 
 
-def get_onekey_features() -> OnekeyFeatures:
-    from trezor.enums import OneKeyDeviceType, OneKeySeType
-    from trezor.messages import OnekeyFeatures
-    from trezor import uart
-
-    storage_serial_no = storage.device.get_serial()
-    serial_no = storage_serial_no
-    if serial_no[0:2] == "PR":
-        serial_no = "TC" + serial_no[2:]
-    f = OnekeyFeatures(
-        onekey_device_type=OneKeyDeviceType.PRO,
-        onekey_serial_no=storage_serial_no,
-        onekey_se_type=OneKeySeType.THD89,
-        onekey_board_version=utils.board_version(),
-        onekey_board_hash=utils.board_hash(),
-        onekey_board_build_id=utils.board_build_id(),
-        onekey_boot_version=utils.boot_version(),
-        onekey_boot_hash=utils.boot_hash(),
-        onekey_boot_build_id=utils.boot_build_id(),
-        onekey_firmware_version=utils.ONEKEY_VERSION,
-        onekey_firmware_build_id=utils.BUILD_ID[-7:].decode(),
-        onekey_firmware_hash=utils.onekey_firmware_hash(),
-        onekey_ble_name=uart.get_ble_name(),
-        onekey_ble_version=uart.get_ble_version(),
-        onekey_ble_build_id=uart.get_ble_build_id(),
-        onekey_ble_hash=uart.get_ble_hash(),
-        onekey_se01_version=storage.device.get_se01_version(),
-        onekey_se01_hash=storage.device.get_se01_hash(),
-        onekey_se01_build_id=storage.device.get_se01_build_id(),
-        onekey_se01_boot_version=storage.device.get_se01_boot_version(),
-        onekey_se01_boot_hash=storage.device.get_se01_boot_hash(),
-        onekey_se01_boot_build_id=storage.device.get_se01_boot_build_id(),
-        onekey_se02_version=storage.device.get_se02_version(),
-        onekey_se02_hash=storage.device.get_se02_hash(),
-        onekey_se02_build_id=storage.device.get_se02_build_id(),
-        onekey_se02_boot_version=storage.device.get_se02_boot_version(),
-        onekey_se02_boot_hash=storage.device.get_se02_boot_hash(),
-        onekey_se02_boot_build_id=storage.device.get_se02_boot_build_id(),
-        onekey_se03_version=storage.device.get_se03_version(),
-        onekey_se03_hash=storage.device.get_se03_hash(),
-        onekey_se03_build_id=storage.device.get_se03_build_id(),
-        onekey_se03_boot_version=storage.device.get_se03_boot_version(),
-        onekey_se03_boot_hash=storage.device.get_se03_boot_hash(),
-        onekey_se03_boot_build_id=storage.device.get_se03_boot_build_id(),
-        onekey_se04_version=storage.device.get_se04_version(),
-        onekey_se04_hash=storage.device.get_se04_hash(),
-        onekey_se04_build_id=storage.device.get_se04_build_id(),
-        onekey_se04_boot_version=storage.device.get_se04_boot_version(),
-        onekey_se04_boot_hash=storage.device.get_se04_boot_hash(),
-        onekey_se04_boot_build_id=storage.device.get_se04_boot_build_id(),
-    )
-
-    return f
-
-
-async def handle_Initialize(
-    ctx: wire.Context | wire.QRContext, msg: Initialize
+async def handle_StartSession(
+    ctx: wire.Context | wire.QRContext, msg: StartSession
 ) -> Features:
     session_id = storage.cache.start_session(msg.session_id)
 
-    if not utils.BITCOIN_ONLY:
-        if utils.USE_THD89:
-            if msg.derive_cardano is not None and msg.derive_cardano:
-                # THD89 is not capable of Cardano
-                from trezor.crypto import se_thd89
+    if msg.derive_cardano is not None and msg.derive_cardano:
+        # THD89 is not capable of Cardano
+        from trezor.crypto import se_thd89
 
-                state = se_thd89.get_session_state()
-                if state[0] & 0x80 and not state[0] & 0x40:
-                    storage.cache.end_current_session()
-                    session_id = storage.cache.start_session()
+        state = se_thd89.get_session_state()
+        if state[0] & 0x80 and not state[0] & 0x40:
+            storage.cache.end_current_session()
+            session_id = storage.cache.start_session()
 
-                storage.cache.SESSION_DIRIVE_CARDANO = True
-            else:
-                storage.cache.SESSION_DIRIVE_CARDANO = False
+        storage.cache.SESSION_DIRIVE_CARDANO = True
+    else:
+        storage.cache.SESSION_DIRIVE_CARDANO = False
 
-        else:
-            derive_cardano = storage.cache.get(storage.cache.APP_COMMON_DERIVE_CARDANO)
-            have_seed = storage.cache.is_set(storage.cache.APP_COMMON_SEED)
-
-            if (
-                have_seed
-                and msg.derive_cardano is not None
-                and msg.derive_cardano != bool(derive_cardano)
-            ):
-                # seed is already derived, and host wants to change derive_cardano setting
-                # => create a new session
-                storage.cache.end_current_session()
-                session_id = storage.cache.start_session()
-                have_seed = False
-
-            if not have_seed:
-                storage.cache.set(
-                    storage.cache.APP_COMMON_DERIVE_CARDANO,
-                    b"\x01" if msg.derive_cardano else b"",
-                )
-
-    features = get_features()
+    features = get_features(msg)
     features.session_id = session_id
     storage.cache.update_res_confirm_refresh()
     return features
 
 
 async def handle_GetFeatures(ctx: wire.Context, msg: GetFeatures) -> Features:
-    return get_features()
-
-
-async def handle_OnekeyGetFeatures(
-    ctx: wire.Context, msg: OnekeyGetFeatures
-) -> OnekeyFeatures:
-    return get_onekey_features()
+    return get_features(msg)
 
 
 async def handle_Cancel(ctx: wire.Context, msg: Cancel) -> Success:
@@ -382,10 +576,9 @@ async def handle_CancelAuthorization(
 
 
 ALLOW_WHILE_LOCKED = (
-    MessageType.Initialize,
+    MessageType.StartSession,
     MessageType.EndSession,
     MessageType.GetFeatures,
-    MessageType.OnekeyGetFeatures,
     MessageType.Cancel,
     MessageType.LockDevice,
     MessageType.DoPreauthorized,
@@ -606,9 +799,11 @@ def reload_settings_from_storage(timeout_ms: int | None = None) -> None:
     if not storage.device.is_initialized():
         return
     workflow.idle_timer.set(
-        timeout_ms
-        if timeout_ms is not None
-        else storage.device.get_autolock_delay_ms(),
+        (
+            timeout_ms
+            if timeout_ms is not None
+            else storage.device.get_autolock_delay_ms()
+        ),
         screen_off_if_possible,
     )
     if utils.AUTO_POWER_OFF:
@@ -622,9 +817,9 @@ def reload_settings_from_storage(timeout_ms: int | None = None) -> None:
 
 
 def boot() -> None:
-    workflow_handlers.register(MessageType.Initialize, handle_Initialize)
+    workflow_handlers.register(MessageType.OneKeyReboot, handle_OneKeyReboot)
+    workflow_handlers.register(MessageType.StartSession, handle_StartSession)
     workflow_handlers.register(MessageType.GetFeatures, handle_GetFeatures)
-    workflow_handlers.register(MessageType.OnekeyGetFeatures, handle_OnekeyGetFeatures)
     workflow_handlers.register(MessageType.Cancel, handle_Cancel)
     workflow_handlers.register(MessageType.LockDevice, handle_LockDevice)
     workflow_handlers.register(MessageType.EndSession, handle_EndSession)

@@ -109,9 +109,11 @@ def require_confirm_fee(
         format_ethereum_amount(fee_max, None, chain_id),
         from_address,
         to_address,
-        format_ethereum_amount(spending + fee_max, None, chain_id)
-        if (token is None and contract_addr is None)
-        else None,
+        (
+            format_ethereum_amount(spending + fee_max, None, chain_id)
+            if (token is None and contract_addr is None)
+            else None
+        ),
         contract_addr,
         token_id,
         evm_chain_id=evm_chain_id,
@@ -134,7 +136,6 @@ async def require_confirm_eip1559_fee(
     evm_chain_id: int | None = None,
     raw_data: bytes | None = None,
 ) -> None:
-
     fee_max = max_gas_fee * gas_limit
     await confirm_total_ethereum_eip1559(
         ctx,
@@ -146,9 +147,11 @@ async def require_confirm_eip1559_fee(
         format_ethereum_amount(fee_max, None, chain_id),
         from_address,
         to_address,
-        format_ethereum_amount(spending + fee_max, None, chain_id)
-        if (token is None and contract_addr is None)
-        else None,
+        (
+            format_ethereum_amount(spending + fee_max, None, chain_id)
+            if (token is None and contract_addr is None)
+            else None
+        ),
         contract_addr,
         token_id,
         evm_chain_id=evm_chain_id,
@@ -288,7 +291,7 @@ async def should_show_struct(
         (ui.BOLD, description),
         (
             ui.NORMAL,
-            _(i18n_keys.LIST_KEY__CONTAINS_STR_KEY).format(len(data_members))
+            _(i18n_keys.LIST_KEY__CONTAINS_STR_KEY).format(len(data_members)),
             # format_plural("Contains {count} {plural}", len(data_members), "key"),
         ),
         (ui.NORMAL, ", ".join(field.name for field in data_members)),

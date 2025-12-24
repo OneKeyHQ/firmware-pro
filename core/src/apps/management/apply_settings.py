@@ -145,9 +145,11 @@ async def require_confirm_change_passphrase(
     await confirm_action(
         ctx,
         "set_passphrase",
-        _(i18n_keys.TITLE__ENABLE_PASSPHRASE)
-        if use
-        else _(i18n_keys.TITLE__DISABLE_PASSPHRASE),
+        (
+            _(i18n_keys.TITLE__ENABLE_PASSPHRASE)
+            if use
+            else _(i18n_keys.TITLE__DISABLE_PASSPHRASE)
+        ),
         description=description,
         br_code=ButtonRequestType.ProtectCall,
         anim_dir=2,

@@ -22,7 +22,6 @@ if TYPE_CHECKING:
 async def sign_message(
     ctx: Context, msg: AlephiumSignMessage, keychain: Keychain
 ) -> AlephiumMessageSignature:
-
     message = msg.message or b""
     alephium_max_message_length = 1024 * 30
     validate_message_with_custom_limit(message, alephium_max_message_length)

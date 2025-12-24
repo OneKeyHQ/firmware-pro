@@ -14,7 +14,6 @@ from .helper import aptos_address_from_pubkey
 async def sign_message(
     ctx: wire.Context, msg: AptosSignMessage, keychain: Keychain
 ) -> AptosMessageSignature:
-
     await paths.validate_path(ctx, keychain, msg.address_n)
 
     node = keychain.derive(msg.address_n)

@@ -45,7 +45,7 @@ struct U2Fob* device;
 #define SEND(f) CHECK_EQ(0, U2Fob_sendHidFrame(device, &f))
 #define RECV(f, t) CHECK_EQ(0, U2Fob_receiveHidFrame(device, &f, t))
 
-// Initialize a frame with |len| random payload, or data.
+// StartSession a frame with |len| random payload, or data.
 void initFrame(U2FHID_FRAME* f, uint32_t cid, uint8_t cmd,
                size_t len, const void* data = NULL) {
   memset(f, 0, sizeof(U2FHID_FRAME));
@@ -58,7 +58,7 @@ void initFrame(U2FHID_FRAME* f, uint32_t cid, uint8_t cmd,
   }
 }
 
-// Initialize a continue frame
+// StartSession a continue frame
 void contFrame(U2FHID_FRAME* f, uint32_t cid, uint8_t seqno, uint8_t val) {
   memset(f, val, sizeof(U2FHID_FRAME));
   f->cid = cid;

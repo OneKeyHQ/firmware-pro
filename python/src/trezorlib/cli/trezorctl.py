@@ -303,12 +303,24 @@ def stop_recording_action(obj: TrezorConnection, *args: Any, **kwargs: Any) -> N
 
 
 def format_device_name(features: messages.Features) -> str:
-    model = features.model or "1"
-    if features.bootloader_mode:
-        return f"Trezor {model} bootloader"
 
-    label = features.label or "(unnamed)"
-    return f"{label} [Trezor {model}, {features.device_id}]"
+    protocol_ver = None
+    model = None
+    hwver = None
+    if features.ok_dev_info_resp :
+        protocol_ver = features.ok_dev_info_resp.protocol_version
+        if features.ok_dev_info_resp.hw:
+            model = features.ok_dev_info_resp.hw.device_type
+            hwver = features.ok_dev_info_resp.hw.hardware_version
+
+    device_name = f'OneKey {(model and model.name) or 'unknown model'}, protocol version: {protocol_ver or 'unknown'}, hardware version: {hwver or 'unknown'}'
+
+    # if features.bootloader_mode:
+    #     device_name+= ", bootloader mode"
+    # else:
+    #     device_name+= ", id: {features.device_id}, lable: {features.label or '(unnamed)'}"
+        
+    return device_name
 
 
 #
@@ -330,8 +342,9 @@ def list_devices(no_resolve: bool) -> Optional[Iterable["Transport"]]:
             client.end_session()
         except DeviceIsBusy:
             description = "Device is in use by another process"
-        except Exception:
+        except Exception as ex:
             description = "Failed to read details"
+            print(ex)
         click.echo(f"{transport} - {description}")
     return None
 

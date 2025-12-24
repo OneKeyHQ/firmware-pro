@@ -1,4 +1,5 @@
 """Byte layouts for system program instructions."""
+
 import ustruct as struct
 from collections import namedtuple
 
@@ -26,6 +27,7 @@ class InstructionType:
 # RUST_STRING_LAYOUT:
 #     "length" / Int64ul,
 #     "chars" / bytes,
+
 
 # CREATE_ACCOUNT_LAYOUT:
 #     "lamports" / Int64ul,

@@ -40,7 +40,8 @@ bool buffer_to_hex_string(const void* buff, size_t buff_len, char* str, size_t s
     {
         snprintf(string_p, byte_str_len + 1, "%02X", *((uint8_t*)(buff) + i));
         string_p += byte_str_len;
-        *processed = i + 1;
+        if(processed != NULL)
+            *processed = i + 1;
     }
 
     return true;

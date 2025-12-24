@@ -31,8 +31,8 @@ if TYPE_CHECKING:
     from ..protobuf import MessageType
 
 RECOVERY_TYPE = {
-    "scrambled": messages.RecoveryDeviceType.ScrambledWords,
-    "matrix": messages.RecoveryDeviceType.Matrix,
+    "scrambled": messages.RecoveryDeviceInputMethod.ScrambledWords,
+    "matrix": messages.RecoveryDeviceInputMethod.Matrix,
 }
 
 BACKUP_TYPE = {
@@ -178,11 +178,11 @@ def recover(
     passphrase_protection: bool,
     label: Optional[str],
     u2f_counter: int,
-    rec_type: messages.RecoveryDeviceType,
+    rec_type: messages.RecoveryDeviceInputMethod,
     dry_run: bool,
 ) -> "MessageType":
     """Start safe recovery workflow."""
-    if rec_type == messages.RecoveryDeviceType.ScrambledWords:
+    if rec_type == messages.RecoveryDeviceInputMethod.ScrambledWords:
         input_callback = ui.mnemonic_words(expand)
     else:
         input_callback = ui.matrix_words
@@ -368,33 +368,6 @@ def upload_res(
             click.echo(f"Upload failed: {e}")
             sys.exit(3)
 
-
-@cli.command()
-# fmt: off
-@click.option("-f", "--fullpath", help="The full path of the file to update")
-# fmt: on
-@with_client
-def update_res(
-    client: "TrezorClient",
-    fullpath: str,
-) -> None:
-    """Update internal static resource(internal icons)."""
-    if fullpath:
-        file_name = fullpath.split("/")[-1]
-        with open(fullpath, "rb") as f:
-            data = f.read()
-        try:
-            click.echo("Uploading...\r", nl=False)
-            with click.progressbar(
-                label="Uploading", length=len(data), show_eta=False
-            ) as bar:
-                device.update_res(client, file_name, data, progress_update=bar.update)
-        except exceptions.Cancelled:
-            click.echo("Upload aborted on device.")
-        except exceptions.TrezorException as e:
-            click.echo(f"Update failed: {e}")
-            sys.exit(3)
-
 @cli.command()
 # fmt: off
 @click.option("-p", "--path_dir", help="The path of dir to enum")
@@ -475,7 +448,7 @@ LINE_CLEAR = '\x1b[2K'
 # fmt: on
 @with_client
 def reboot(client: "TrezorClient", reboot_type: int) -> None:
-    result = device.reboot(client, reboot_type=reboot_type)
+    result = device.reboot(client, reboot_type=messages.OneKeyRebootType(reboot_type))
     print(result.message)
 
 # FirmwareUpdateEmmc

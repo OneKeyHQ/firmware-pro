@@ -72,7 +72,6 @@ class QuickStart(FullSizeWindow):
             if utils.lcd_resume():
                 return
             if target == self.btn_yes:
-
                 # pyright: off
                 workflow.spawn(
                     reset_device(
@@ -85,7 +84,6 @@ class QuickStart(FullSizeWindow):
                     ),
                 )
             elif target == self.btn_no:
-
                 SelectImportType()
 
             elif target == self.nav_back.nav_btn:

@@ -229,7 +229,7 @@ class Transaction:
         else:
             tx = TransactionUnknown(rawtx)
 
-        if type(tx) == TransactionUnknown:
+        if tx is TransactionUnknown:
             return tx
 
         # Era
@@ -293,9 +293,11 @@ class BalancesTransfer(Transaction):
             dest=self.dest,
             source=None,
             balance=f"{format_amount(balance, decimal)} {symbol}",
-            tip=f"{format_amount(self.tip, decimal)} {symbol}"
-            if self.tip != 0
-            else None,
+            tip=(
+                f"{format_amount(self.tip, decimal)} {symbol}"
+                if self.tip != 0
+                else None
+            ),
             keep_alive=None,
         )
 
@@ -328,9 +330,11 @@ class BalancesForceTransfer(Transaction):
             dest=self.dest,
             source=self.source,
             balance=f"{format_amount(balance, decimal)} {symbol}",
-            tip=f"{format_amount(self.tip, decimal)} {symbol}"
-            if self.tip != 0
-            else None,
+            tip=(
+                f"{format_amount(self.tip, decimal)} {symbol}"
+                if self.tip != 0
+                else None
+            ),
             keep_alive=None,
         )
 
@@ -361,9 +365,11 @@ class BalancesTransferKeepAlive(Transaction):
             dest=self.dest,
             source=None,
             balance=f"{format_amount(balance, decimal)} {symbol}",
-            tip=f"{format_amount(self.tip, decimal)} {symbol}"
-            if self.tip != 0
-            else None,
+            tip=(
+                f"{format_amount(self.tip, decimal)} {symbol}"
+                if self.tip != 0
+                else None
+            ),
             keep_alive=None,
         )
 
@@ -397,8 +403,10 @@ class BalancesTransferAll(Transaction):
             dest=self.dest,
             source=None,
             balance="All",
-            tip=f"{format_amount(self.tip, decimal)} {symbol}"
-            if self.tip != 0
-            else None,
+            tip=(
+                f"{format_amount(self.tip, decimal)} {symbol}"
+                if self.tip != 0
+                else None
+            ),
             keep_alive=keep_alive,
         )

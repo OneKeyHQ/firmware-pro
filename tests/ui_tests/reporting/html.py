@@ -42,9 +42,11 @@ def image(src: Path, image_width: Optional[int] = None) -> None:
             # img(src=src.relative_to(fixture_test_path))
             img(
                 src="data:image/png;base64, " + image,
-                style=f"width: {image_width}px; image-rendering: pixelated;"
-                if image_width
-                else "",
+                style=(
+                    f"width: {image_width}px; image-rendering: pixelated;"
+                    if image_width
+                    else ""
+                ),
             )
         else:
             i("missing")

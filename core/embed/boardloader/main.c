@@ -92,7 +92,7 @@ static const uint8_t toi_icon_safeos[] = {
 extern volatile uint32_t system_reset;
 
 // axi ram 512k
-uint8_t *boardloader_buf = (uint8_t *)0x24000000;
+uint8_t* boardloader_buf = (uint8_t*)0x24000000;
 
 // this is mainly for ignore/supress faults during flash read (for check
 // purpose). if bus fault enabled, it will catched by BusFault_Handler, then we
@@ -153,7 +153,7 @@ void UsageFault_Handler(void) {
   error_shutdown("Internal error", "(UF)", NULL, NULL);
 }
 
-const char *const STAY_REASON_str[] = {
+const char* const STAY_REASON_str[] = {
     ENUM_NAME_ARRAY_ITEM(STAY_REASON_NONE),
     ENUM_NAME_ARRAY_ITEM(STAY_REASON_REQUIRED_BY_FLAG),
     ENUM_NAME_ARRAY_ITEM(STAY_REASON_MANUAL_OVERRIDE),
@@ -162,7 +162,7 @@ const char *const STAY_REASON_str[] = {
     ENUM_NAME_ARRAY_ITEM(STAY_REASON_UPDATE_NEXT_TARGET),
     ENUM_NAME_ARRAY_ITEM(STAY_REASON_UNKNOWN),
 };
-static inline void display_boardloader_title(char *message,
+static inline void display_boardloader_title(char* message,
                                              STAY_REASON stay_reason) {
   if ((stay_reason < STAY_REASON_NONE) || (stay_reason > STAY_REASON_UNKNOWN))
     stay_reason = STAY_REASON_UNKNOWN;
@@ -230,7 +230,7 @@ static secbool try_bootloader_update(bool do_update, bool auto_reboot) {
   char new_bootloader_path_legacy[] = "0:boot/bootloader.bin";
   char new_bootloader_path[] = "0:updates/bootloader.bin";
 
-  char *new_bootloader_path_p = NULL;
+  char* new_bootloader_path_p = NULL;
 
   // check file exists
   if (emmc_fs_path_exist(new_bootloader_path)) {
@@ -353,7 +353,7 @@ typedef enum {
   TOUCH_AREA_BR,         //
 } TOUCH_AREA;
 
-const char *TOUCH_AREA_str[] = {
+const char* TOUCH_AREA_str[] = {
     ENUM_NAME_ARRAY_ITEM(TOUCH_AREA_OTHER),  //
     ENUM_NAME_ARRAY_ITEM(TOUCH_AREA_C),      //
     ENUM_NAME_ARRAY_ITEM(TOUCH_AREA_TL),     //
@@ -477,9 +477,9 @@ static void touch_area_test()
 }
 #endif
 
-static BOOT_TARGET decide_boot_target(STAY_REASON *stay_reason,
-                                      image_header *const hdr,
-                                      secbool *hdr_valid, secbool *code_valid) {
+static BOOT_TARGET decide_boot_target(STAY_REASON* stay_reason,
+                                      image_header* const hdr,
+                                      secbool* hdr_valid, secbool* code_valid) {
   // get boot target flag
   BOOT_TARGET boot_target = *BOOT_TARGET_FLAG_ADDR;  // cache flag
   *BOOT_TARGET_FLAG_ADDR = BOOT_TARGET_NORMAL;       // consume(reset) flag
@@ -506,7 +506,7 @@ static BOOT_TARGET decide_boot_target(STAY_REASON *stay_reason,
   TOUCH_AREA ta_end = TOUCH_AREA_OTHER;
   bool touch_center_cross = false;
 
-  for (int timer = 0; timer < 1600; timer++) {
+  for (int timer = 0; timer < 160; timer++) {
     // display bar
     if (timer % 8 == 0) {
       show_poweron_bar();
@@ -594,7 +594,7 @@ static BOOT_TARGET decide_boot_target(STAY_REASON *stay_reason,
   return boot_target;
 }
 
-static secbool get_device_serial(char *serial, size_t len) {
+static secbool get_device_serial(char* serial, size_t len) {
   // init
   uint8_t otp_serial[FLASH_OTP_BLOCK_SIZE] = {0};
   memzero(otp_serial, sizeof(otp_serial));

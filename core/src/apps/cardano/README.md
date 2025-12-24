@@ -45,7 +45,7 @@ prolongs Trezor's first-response time by 2 seconds, plus additional 2 seconds fo
 Icarus-Trezor if the seed phrase is 24 words long.
 
 Since firmware version 2.4.3, wallets that require the Cardano-derived seed must specify
-`derive_cardano=true` in the `Initialize` call. Otherwise an error will be returned when
+`derive_cardano=true` in the `StartSession` call. Otherwise an error will be returned when
 performing any Cardano call with an Icarus-like derivation.
 
 Ledger derivation scheme is compatible with BIP-39 and does not require the separate

@@ -23,7 +23,8 @@ g_header:
     . = . + 8                        // reserved
     . = . + 512                      // hash1 ... hash16
     . = . + 399                      // reserved
-    .string  BUILD_COMMIT            // commit_id
+    .string BUILD_COMMIT             // commit_id (7+1 bytes)
+    . = . + 8                        // reserved
     .byte 0                          // sigmask
     . = . + 64                       // sig
 g_header_end:

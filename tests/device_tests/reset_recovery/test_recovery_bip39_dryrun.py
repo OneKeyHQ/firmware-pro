@@ -36,7 +36,7 @@ def do_recover_legacy(client: Client, mnemonic, **kwargs):
         client,
         dry_run=True,
         word_count=len(mnemonic),
-        type=messages.RecoveryDeviceType.ScrambledWords,
+        type=messages.RecoveryDeviceInputMethod.ScrambledWords,
         input_callback=input_callback,
         **kwargs
     )
@@ -204,7 +204,7 @@ def test_bad_parameters(client: Client, field_name, field_value):
         dry_run=True,
         word_count=12,
         enforce_wordlist=True,
-        type=messages.RecoveryDeviceType.ScrambledWords,
+        type=messages.RecoveryDeviceInputMethod.ScrambledWords,
     )
     setattr(msg, field_name, field_value)
     with pytest.raises(

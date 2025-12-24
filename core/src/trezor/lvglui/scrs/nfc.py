@@ -109,7 +109,6 @@ def get_card_type(card_num_str):
 
 
 async def check_card_data(self):
-
     card_num, status = await get_card_num(self)
     if status == LITE_CARD_ERROR_REPONSE:
         return
@@ -139,7 +138,6 @@ async def check_best_try_restcard(self):
         return LITE_CARD_ERROR_REPONSE
 
     if numresp in [b"\x01", b"\x00"] and numsw1sw2 == LITE_CARD_SUCCESS_STATUS:
-
         _, restsw1sw2 = nfc.send_recv(CMD_RESET_CARD, True)
         if restsw1sw2 == LITE_CARD_DISCONECT_STATUS:
             await handle_sw1sw2_connect_error(self)
@@ -150,7 +148,6 @@ async def check_best_try_restcard(self):
 
 
 async def start_import_pin_mnemonicmphrase(self, pin):
-
     card_num, status = await get_card_num(self)
     if status == LITE_CARD_ERROR_REPONSE:
         return
@@ -236,7 +233,6 @@ async def start_import_pin_mnemonicmphrase(self, pin):
 
 
 async def start_check_pin_mnemonicmphrase(self, pin, mnemonic, card_num):
-
     card_num_again, status = await get_card_num(self)
     if status == LITE_CARD_ERROR_REPONSE:
         return
@@ -333,7 +329,6 @@ async def start_check_pin_mnemonicmphrase(self, pin, mnemonic, card_num):
 
 
 async def start_set_pin_mnemonicmphrase(self, pin, mnemonic, card_num):
-
     card_num_again, status = await get_card_num(self)
     if status == LITE_CARD_ERROR_REPONSE:
         return
@@ -456,7 +451,6 @@ class MnemonicEncoder:
         return " ".join(words)
 
     def parse_card_data(self, data):
-
         encoded_mnemonic_bytes = data[:-4]
         version_bytes = data[-4:-3]
         lang_bytes = data[-3:-2]
@@ -526,11 +520,9 @@ class TransferDataScreen(FullSizeWindow):
         self.searching = False
 
     def set_pin_mnemonicmphrase(self, pin, card_num, mnemonics):
-
         loop.schedule(start_set_pin_mnemonicmphrase(self, pin, mnemonics, card_num))
 
     def check_pin_mnemonicmphrase(self, pin, card_num, mnemonics):
-
         loop.schedule(start_check_pin_mnemonicmphrase(self, pin, mnemonics, card_num))
 
     def import_pin_mnemonicmphrase(self, pin):

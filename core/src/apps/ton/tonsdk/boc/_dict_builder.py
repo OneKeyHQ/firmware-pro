@@ -10,10 +10,10 @@ class DictBuilder:
 
     def store_cell(self, index, value: Cell):
         assert self.ended is False, "Already ended"
-        if type(index) == bytes:
+        if index is bytes:
             index = int(index.hex(), 16)
 
-        assert type(index) == int, "Invalid index type"
+        assert index is int, "Invalid index type"
         assert not (index in self.items), f"Item {index} already exist"
         self.items[index] = value
         return self
