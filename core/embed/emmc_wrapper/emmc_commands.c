@@ -1,6 +1,7 @@
 #include "emmc_commands.h"
 #include "emmc_commands_macros.h"
 
+#include "bootui.h"
 #include "fw_keys.h"
 #include "se_thd89.h"
 #include "thd89_boot.h"
@@ -8,14 +9,44 @@
 // ######## global vars ########
 // SDRAM BUFFER
 bootloader_buffer* bl_buffer = (bootloader_buffer*)FMC_SDRAM_BOOLOADER_BUFFER_ADDRESS;
-// UI progesss
-bool ui_progress_bar_visible = false;
 
-// ######## helpers ########
-
-void ui_progress_bar_visible_clear()
+static int ui_progress_bar_handle_update(int percentage, const char* title)
 {
-    ui_progress_bar_visible = false;
+    static uint32_t ui_percentage_last = 0xff;
+    char* progress_title = (char*)((title != NULL) ? title : "Transferring Data");
+
+    if ( (percentage < 0) || (percentage > 100) )
+    {
+        return -1;
+    }
+
+    if ( ui_percentage_last == (uint32_t)percentage )
+    {
+        return 0;
+    }
+
+    ui_percentage_last = (uint32_t)percentage;
+
+    if ( percentage < 100 )
+    {
+        ui_screen_progress_bar_update(progress_title, NULL, percentage);
+    }
+    else
+    {
+        ui_screen_progress_bar_update(progress_title, NULL, percentage);
+        ui_fadeout();
+        ui_bootloader_first(NULL);
+        ui_fadein();
+    }
+
+    return 0;
+}
+
+static void ui_progress_bar_handle_clear(void)
+{
+    ui_progress_bar_visible_clear();
+    display_clear();
+    ui_bootloader_first(NULL);
 }
 
 static void packet_generate_first(
@@ -1701,58 +1732,16 @@ int process_msg_EmmcFileRead(uint8_t iface_num, uint32_t msg_size, uint8_t* buf)
     // (requester intersted) size
     if ( msg_recv.has_ui_percentage )
     {
-        char ui_progress_title[] = "Transferring Data";
-
-        // sanity check
-        if ( (msg_recv.ui_percentage < 0) || (msg_recv.ui_percentage > 100) )
+        const char* progress_title = "Transferring Data";
+        if ( ui_progress_bar_handle_update(msg_recv.ui_percentage, progress_title) != 0 )
         {
             send_failure(iface_num, FailureType_Failure_ProcessError, "Percentage invalid!");
             return -1;
         }
-
-        else if ( msg_recv.ui_percentage < 100 )
-        {
-            if ( !ui_progress_bar_visible )
-            {
-                ui_fadeout();
-                ui_screen_progress_bar_prepare(ui_progress_title, NULL);
-                ui_fadein();
-                ui_screen_progress_bar_update(NULL, NULL, msg_recv.ui_percentage);
-                ui_progress_bar_visible = true;
-            }
-            else
-                ui_screen_progress_bar_update(NULL, NULL, msg_recv.ui_percentage);
-        }
-        else if ( msg_recv.ui_percentage == 100 )
-        {
-            if ( !ui_progress_bar_visible )
-            {
-                // this is for the instant 100% case, which happens if the file is too
-                // small
-                ui_fadeout();
-                ui_screen_progress_bar_prepare(ui_progress_title, NULL);
-                ui_screen_progress_bar_update(NULL, NULL, msg_recv.ui_percentage);
-                ui_fadein();
-            }
-            else
-            {
-                // normal path
-                ui_screen_progress_bar_update(NULL, NULL, msg_recv.ui_percentage);
-                ui_progress_bar_visible = false;
-            }
-            ui_fadeout();
-            ui_bootloader_first(NULL);
-            ui_fadein();
-        }
     }
     else
     {
-        if ( ui_progress_bar_visible )
-        {
-            ui_progress_bar_visible = false;
-            display_clear();
-            ui_bootloader_first(NULL);
-        }
+        ui_progress_bar_handle_clear();
     }
 
     // get file info
@@ -1853,69 +1842,16 @@ int process_msg_EmmcFileWrite(uint8_t iface_num, uint32_t msg_size, uint8_t* buf
     // (requester intersted) size
     if ( msg_recv.has_ui_percentage )
     {
-        char ui_progress_title[] = "Transferring Data";
-
-        static uint32_t ui_percentage_last = 0xff;
-
-        // sanity check
-        if ( (msg_recv.ui_percentage < 0) || (msg_recv.ui_percentage > 100) )
+        const char* progress_title = "Transferring Data";
+        if ( ui_progress_bar_handle_update(msg_recv.ui_percentage, progress_title) != 0 )
         {
             send_failure(iface_num, FailureType_Failure_ProcessError, "Percentage invalid!");
             return -1;
         }
-        else if ( msg_recv.ui_percentage < 100 )
-        {
-            if ( ui_percentage_last != msg_recv.ui_percentage )
-            {
-                ui_percentage_last = msg_recv.ui_percentage;
-                if ( !ui_progress_bar_visible )
-                {
-                    ui_fadeout();
-                    ui_screen_progress_bar_prepare(ui_progress_title, NULL);
-                    ui_fadein();
-                    ui_screen_progress_bar_update(NULL, NULL, msg_recv.ui_percentage);
-                    ui_progress_bar_visible = true;
-                }
-                else
-                {
-                    ui_screen_progress_bar_update(NULL, NULL, msg_recv.ui_percentage);
-                }
-            }
-        }
-        else if ( msg_recv.ui_percentage == 100 )
-        {
-            if ( ui_percentage_last != msg_recv.ui_percentage )
-            {
-                ui_percentage_last = msg_recv.ui_percentage;
-                if ( !ui_progress_bar_visible )
-                {
-                    // this is for the instant 100% case, which happens if the file is too
-                    // small
-                    ui_fadeout();
-                    ui_screen_progress_bar_prepare(ui_progress_title, NULL);
-                    ui_screen_progress_bar_update(NULL, NULL, msg_recv.ui_percentage);
-                    ui_fadein();
-                }
-                else
-                {
-                    // normal path
-                    ui_screen_progress_bar_update(NULL, NULL, msg_recv.ui_percentage);
-                    ui_progress_bar_visible = false;
-                }
-                ui_fadeout();
-                ui_bootloader_first(NULL);
-                ui_fadein();
-            }
-        }
     }
     else
     {
-        if ( ui_progress_bar_visible )
-        {
-            ui_progress_bar_visible = false;
-            display_clear();
-            ui_bootloader_first(NULL);
-        }
+        ui_progress_bar_handle_clear();
     }
 
     // get file info
