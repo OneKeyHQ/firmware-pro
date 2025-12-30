@@ -468,15 +468,17 @@ void fb_fill_rect(uint32_t x_pos, uint32_t y_pos, uint32_t width,
   }
   start_x = x_pos < lcd_window.start_x ? lcd_window.start_x : x_pos;
   start_y = y_pos < lcd_window.start_y ? lcd_window.start_y : y_pos;
-  end_x = x_pos + width > lcd_window.end_x ? lcd_window.end_x : x_pos + width;
-  end_y = y_pos + height > lcd_window.end_y ? lcd_window.end_y : y_pos + height;
+  end_x = x_pos + width - 1;
+  end_y = y_pos + height - 1;
+  end_x = end_x > lcd_window.end_x ? lcd_window.end_x : end_x;
+  end_y = end_y > lcd_window.end_y ? lcd_window.end_y : end_y;
   /* Get the rectangle start address */
   uint32_t address = lcd_params.fb_base +
                      ((lcd_params.bbp) * (lcd_params.hres * start_y + start_x));
 
   /* Fill the rectangle */
-  fb_fill_buffer((uint32_t*)address, end_x - start_x, end_y - start_y,
-                 (lcd_params.hres - (end_x - start_x)), color);
+  fb_fill_buffer((uint32_t*)address, end_x - start_x + 1, end_y - start_y + 1,
+                 (lcd_params.hres - (end_x - start_x + 1)), color);
 }
 
 void fb_draw_hline(uint32_t x_pos, uint32_t y_pos, uint32_t len,
