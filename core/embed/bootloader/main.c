@@ -388,7 +388,6 @@ static secbool bootloader_usb_loop(const vendor_header* const vhdr,
         // give a way to go back to bootloader home page
         if (get_ui_bootloader_page_current() != 0) {
           ble_power_button_state_clear();
-          ui_progress_bar_visible_clear();
           ui_fadeout();
           ui_bootloader_first(NULL);
           ui_fadein();

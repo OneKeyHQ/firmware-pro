@@ -55,6 +55,7 @@ void ui_screen_confirm(char* title, char* note_l1, char* note_l2, char* note_l3,
 void ui_screen_progress_bar_init(char* title, char* notes, int progress);
 void ui_screen_progress_bar_prepare(char* title, char* notes);
 void ui_screen_progress_bar_update(char* msg_status, char* notes, int progress);
+void ui_progress_bar_visible_clear(void);
 
 void ui_screen_wipe_confirm(void);
 void ui_screen_wipe(void);

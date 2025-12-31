@@ -360,6 +360,8 @@ void ui_screen_confirm(char* title, char* note_l1, char* note_l2, char* note_l3,
   ui_confirm_cancel_buttons("Back", "OK", COLOR_BL_DARK, COLOR_BL_FAIL);
 }
 
+static bool ui_progress_bar_visible = false;
+
 void ui_screen_progress_bar_init(char* title, char* notes, int progress) {
   ui_statusbar_update();
   ui_logo_onekey();
@@ -373,16 +375,30 @@ void ui_screen_progress_bar_init(char* title, char* notes, int progress) {
 void ui_screen_progress_bar_prepare(char* title, char* notes) {
   ui_statusbar_update();
   ui_logo_onekey();
-  ui_screen_progress_bar_update(title, notes, -1);
+  ui_progress_bar_visible = true;
+  if (title != NULL) {
+    display_text_center(DISPLAY_RESX / 2, TITLE_OFFSET_Y, title, -1,
+                        FONT_PJKS_BOLD_38, COLOR_BL_FG, COLOR_BL_BG);
+  }
+  display_progress(notes ? notes : "Keep connected.", 0);
 }
 
 void ui_screen_progress_bar_update(char* title, char* notes, int progress) {
+  if (!ui_progress_bar_visible) {
+    ui_fadeout();
+    ui_statusbar_update();
+    ui_logo_onekey();
+    display_progress(notes ? notes : "Keep connected.", 0);
+    ui_fadein();
+    ui_progress_bar_visible = true;
+  }
+
   if (title != NULL) {
     display_text_center(DISPLAY_RESX / 2, TITLE_OFFSET_Y, title, -1,
                         FONT_PJKS_BOLD_38, COLOR_BL_FG, COLOR_BL_BG);
   }
 
-  if ((progress >= 0) && (progress <= 100)) {
+  if (progress >= 0 && progress <= 100) {
     if (progress > 0) {
       display_progress(NULL, progress);
     }
@@ -390,6 +406,8 @@ void ui_screen_progress_bar_update(char* title, char* notes, int progress) {
     display_progress(notes ? notes : "Keep connected.", 0);
   }
 }
+
+void ui_progress_bar_visible_clear(void) { ui_progress_bar_visible = false; }
 
 void ui_screen_install_start(void) {
   ui_statusbar_update();
@@ -967,6 +985,8 @@ void ui_bootloader_first(const image_header* const hdr) {
   uint8_t se_state;
   char se_info[64] = {0};
 
+  ui_progress_bar_visible_clear();
+
   static image_header* current_hdr = NULL;
 
   if (current_hdr == NULL && hdr) {
@@ -1289,11 +1309,11 @@ void ui_bootloader_page_switch(const image_header* const hdr) {
       }
     }
   } else if (ui_bootloader_page_current == 2) {
-    response = ui_input_poll(INPUT_PREVIOUS | INPUT_RESTART, false);
-    if (INPUT_PREVIOUS == response) {
+    response = ui_input_poll(INPUT_CANCEL | INPUT_CONFIRM, false);
+    if (INPUT_CANCEL == response) {
       display_clear();
       ui_bootloader_first(hdr);
-    } else if (INPUT_RESTART == response) {
+    } else if (INPUT_CONFIRM == response) {
       device_burnin_test_clear_flag();
     }
     click_now = HAL_GetTick();

@@ -143,11 +143,7 @@ typedef struct
 
 // ######## global vars ########
 
-extern bool ui_progress_bar_visible;
-
 // ######## functions ########
-
-void ui_progress_bar_visible_clear();
 
 // void packet_generate_first(
 //     uint16_t msg_id, uint32_t msg_size, uint8_t* desc_buff, size_t desc_buff_offset, const uint8_t*
