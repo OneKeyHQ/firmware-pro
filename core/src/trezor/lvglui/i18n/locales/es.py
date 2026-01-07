@@ -1057,8 +1057,8 @@ translations = [
     "¿Quieres cambiar el tiempo de Bloqueo automático a {time}?",
     "Configurar apagado automático",
     "¿Deseas cambiar el tiempo de apagado automático a {time}?",
-    "¿Quieres activar la respuesta háptica del teclado?",
-    "¿Quieres desactivar la respuesta háptica del teclado?",
+    "¿Quieres abrir la respuesta háptica?",
+    "¿Quieres cerrar la respuesta háptica?",
     "¿Deseas cambiar el teclado PIN al predeterminado? (Los números en el teclado PIN están ordenados en secuencia)",
     "¿Deseas cambiar el teclado PIN a aleatorio? (Los números del teclado PIN se disponen de forma aleatoria)",
     "¿Quieres abrir USB Lock? (El dispositivo se bloqueará automáticamente cada vez que se conecte o desconecte un USB)",
@@ -1069,5 +1069,9 @@ translations = [
     "Asegúrate de que tu dispositivo esté cerca de tu OneKey Pro y vuelve a intentarlo.",
     "Dispositivo emparejado",
     "Por favor, continúa para completar la comprobación y actualización de OneKey App.",
+    "Configurado correctamente",
+    "Aplicar",
+    "Abrir",
+    "Establecer brillo",
 ]
 # fmt: on

@@ -1057,8 +1057,8 @@ translations = [
     "Voulez-vous modifier le délai de verrouillage automatique à {time} ?",
     "Définir l'arrêt automatique",
     "Voulez-vous modifier l'heure d'arrêt automatique à {time} ?",
-    "Voulez-vous ouvrir le retour haptique du clavier ?",
-    "Voulez-vous fermer le retour haptique du clavier ?",
+    "Voulez-vous ouvrir le retour haptique ?",
+    "Voulez-vous fermer le retour haptique ?",
     "Voulez-vous rétablir le clavier PIN par défaut ? (Les chiffres du clavier PIN sont disposés en séquence)",
     "Voulez-vous activer le clavier PIN aléatoire ? (Les chiffres du clavier PIN sont disposés de manière aléatoire)",
     "Voulez-vous activer le verrouillage USB ? (L'appareil se verrouillera automatiquement à chaque branchement ou débranchement USB)",
@@ -1069,5 +1069,9 @@ translations = [
     "Assurez-vous que votre appareil est à proximité de votre OneKey Pro, puis réessayez.",
     "Appareil jumelé",
     "Veuillez continuer pour terminer la vérification et la mise à jour de OneKey App.",
+    "Défini avec succès",
+    "Appliquer",
+    "Ouvrir",
+    "Régler la luminosité",
 ]
 # fmt: on

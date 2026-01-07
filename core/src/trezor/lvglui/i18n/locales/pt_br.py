@@ -1057,8 +1057,8 @@ translations = [
     "Deseja alterar o tempo de Bloqueio Automático para {time}?",
     "Definir Desligamento Automático",
     "Deseja alterar o tempo de Desligamento Automático para {time}?",
-    "Deseja abrir o Teclado Háptico?",
-    "Deseja fechar o Teclado Háptico?",
+    "Deseja abrir o Háptico?",
+    "Deseja fechar o Háptico?",
     "Deseja alternar o Teclado de PIN para o padrão? (Os números no teclado de PIN organizados em sequência)",
     "Deseja alternar o Teclado de PIN para aleatório? (Os números no teclado de PIN são organizados aleatoriamente)",
     "Deseja abrir o Bloqueio USB? (O dispositivo será bloqueado automaticamente toda vez que o USB for conectado ou desconectado)",
@@ -1069,5 +1069,9 @@ translations = [
     "Certifique-se de que seu dispositivo esteja próximo ao seu OneKey Pro e tente novamente.",
     "Dispositivo Pareado",
     "Continue para concluir a Verificação e Atualização do OneKey App.",
+    "Definido com Sucesso",
+    "Aplicar",
+    "Abrir",
+    "Definir Brilho",
 ]
 # fmt: on

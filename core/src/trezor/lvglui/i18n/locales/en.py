@@ -1057,8 +1057,8 @@ translations = [
     "Do you want to change Auto-Lock time to {time}?",
     "Set Auto Shutdown",
     "Do you want to change Auto-Shutdown time to {time}?",
-    "Do you want to open Keyboard Haptic ?",
-    "Do you want to close Keyboard Haptic ?",
+    "Do you want to open Haptic ?",
+    "Do you want to close Haptic ?",
     "Do you want to switch PIN Keypad to default ? (The numbers on PIN keypad arranged in sequence)",
     "Do you want to switch PIN Keypad to randomized ? (The numbers on PIN keypad arrange randomly)",
     "Do you want to open USB Lock ? (Device will auto lock every time when USB plug or unplug)",
@@ -1069,5 +1069,9 @@ translations = [
     "Make sure your device is near your OneKey Pro, then try again.",
     "Device Paired",
     "Please continue to complete the OneKey App Check & Update.",
+    "Set Successfully",
+    "Apply",
+    "Open",
+    "Set Brightness",
 ]
 # fmt: on
