@@ -14,7 +14,7 @@ from . import (
     font_GeistSemiBold38,
     font_GeistSemiBold48,
 )
-from .common import AnimScreen, Screen, lv
+from .common import AnimScreen, FullSizeWindow, Screen, lv
 from .components.banner import LEVEL, Banner
 from .components.button import NormalButton
 from .components.container import ContainerGrid
@@ -41,6 +41,25 @@ _P13 = "A:/res/blur_selected.png"
 _K1 = "nft_preview_container"
 _K2 = "nft_device_name"
 _K3 = "nft_bluetooth_name"
+_SUCCESS_ICON = "A:/res/success.png"
+
+
+def _show_set_success_and_return(callback: Callable[[], None]) -> None:
+    from trezor import loop
+
+    success_screen = FullSizeWindow(
+        _(i18n_keys.TITLE__SET_SUCCESSFULLY),
+        None,
+        icon_path=_SUCCESS_ICON,
+        anim_dir=0,
+    )
+
+    async def _delayed_callback():
+        await loop.sleep(1400)
+        success_screen.destroy(delay_ms=100)
+        callback()
+
+    workflow.spawn(_delayed_callback())
 
 
 def _cached_style(_name: str, factory: Callable[[], StyleWrapper]) -> StyleWrapper:
@@ -647,13 +666,16 @@ class NftLockScreenPreview(WallpaperPreviewBase):
 
                     apply_lock_wallpaper(self.nft_path)
 
-                    MainScreen = _get_main_screen_cls()
-                    main_screen = (
-                        MainScreen._instance
-                        if hasattr(MainScreen, "_instance") and MainScreen._instance
-                        else MainScreen()
-                    )
-                    self.load_screen(main_screen, destroy_self=True)
+                    def _return_to_main():
+                        MainScreen = _get_main_screen_cls()
+                        main_screen = (
+                            MainScreen._instance
+                            if hasattr(MainScreen, "_instance") and MainScreen._instance
+                            else MainScreen()
+                        )
+                        self.load_screen(main_screen, destroy_self=True)
+
+                    _show_set_success_and_return(_return_to_main)
                     return
             # Sync with current Display toggle if it changed while this screen is open
             refresh_preview_device_labels(
@@ -763,13 +785,16 @@ class NftHomeScreenPreview(WallpaperPreviewBase):
 
                     apply_home_wallpaper(self.current_wallpaper_path)
 
-                    MainScreen = _get_main_screen_cls()
-                    main_screen = (
-                        MainScreen._instance
-                        if hasattr(MainScreen, "_instance") and MainScreen._instance
-                        else MainScreen()
-                    )
-                    self.load_screen(main_screen, destroy_self=True)
+                    def _return_to_main():
+                        MainScreen = _get_main_screen_cls()
+                        main_screen = (
+                            MainScreen._instance
+                            if hasattr(MainScreen, "_instance") and MainScreen._instance
+                            else MainScreen()
+                        )
+                        self.load_screen(main_screen, destroy_self=True)
+
+                    _show_set_success_and_return(_return_to_main)
                     return
             else:
                 if hasattr(self, "blur_button") and target == self.blur_button:

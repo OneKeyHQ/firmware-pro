@@ -2320,9 +2320,9 @@ BUTTON__USE_MULTIPLE_SOURCES_OF_ENTROPY = 1049
 # . Both methods meet cryptographic security standards.
 BUTTON__USE_MULTIPLE_SOURCES_OF_ENTROPY_DESC = 1050
 # Set Language
-TITLE_SET_LANGUAGE = 1051
+TITLE__SET_LANGUAGE = 1051
 # Do you want to change language to {language}?
-SUBTITLE_SET_LANGUAGE = 1052
+SUBTITLE__SET_LANGUAGE = 1052
 # Set Auto-Lock
 TITLE_SET_AUTO_LOCK = 1053
 # Do you want to change Auto-Lock time to {time}?
@@ -2331,9 +2331,9 @@ SUBTITLE_SET_AUTO_LOCK = 1054
 TITLE_SET_AUTO_SHUTDOWN = 1055
 # Do you want to change Auto-Shutdown time to {time}?
 SUBTITLE_SET_AUTO_SHUTDOWN = 1056
-# Do you want to open Keyboard Haptic ?
+# Do you want to open Haptic ?
 SUBTITLE_OPEN_VIBRATION_HAPTIC = 1057
-# Do you want to close Keyboard Haptic ?
+# Do you want to close Haptic ?
 SUBTITLE_CLOSE_VIBRATION_HAPTIC = 1058
 # Do you want to switch PIN Keypad to default ? (The numbers on PIN keypad arr
 # anged in sequence)
@@ -2359,4 +2359,12 @@ TITLE__PAIR_FAILED_DESC = 1066
 TITLE__DEVICE_PAIRED = 1067
 # Please continue to complete the OneKey App Check & Update.
 TITLE__ALREADY_PAIRED_DESC = 1068
+# Set Successfully
+TITLE__SET_SUCCESSFULLY = 1069
+# Apply
+BUTTON__APPLY = 1070
+# Open
+BUTTON_OPEN = 1071
+# Set Brightness
+TITLE__SET_BRIGHTNESS = 1072
 # fmt: on

@@ -99,6 +99,25 @@ def _unlink_if_exists(path: str | None) -> None:
     io.fatfs.unlink(path)
 
 
+_SUCCESS_ICON = "A:/res/success.png"
+
+
+def _show_set_success_and_return(callback) -> None:
+    success_screen = FullSizeWindow(
+        _(i18n_keys.TITLE__SET_SUCCESSFULLY),
+        None,
+        icon_path=_SUCCESS_ICON,
+        anim_dir=0,
+    )
+
+    async def _delayed_callback():
+        await loop.sleep(1400)
+        success_screen.destroy(delay_ms=100)
+        callback()
+
+    workflow.spawn(_delayed_callback())
+
+
 def _normalize_wallpaper_src(raw, *, allow_default: bool = True, default=None) -> str:
     if isinstance(raw, bytes):
         if hasattr(raw, "decode"):
@@ -4160,8 +4179,11 @@ class AppdrawerBackgroundSetting(AnimScreen):
             if current_wallpaper:
                 apply_lock_wallpaper(current_wallpaper)
 
-            if self.prev_scr is not None:
-                self._return_to_previous_screen()
+            def _do_return():
+                if self.prev_scr is not None:
+                    self._return_to_previous_screen()
+
+            _show_set_success_and_return(_do_return)
 
     def _return_to_previous_screen(self):
         if not self.prev_scr:
@@ -6676,8 +6698,11 @@ class HomeScreenSetting(AnimScreen):
             if current_wallpaper:
                 apply_home_wallpaper(current_wallpaper)
 
-            if self.prev_scr is not None:
-                self._return_to_previous_screen()
+            def _do_return():
+                if self.prev_scr is not None:
+                    self._return_to_previous_screen()
+
+            _show_set_success_and_return(_do_return)
 
     def _return_to_previous_screen(self):
         if not self.prev_scr:

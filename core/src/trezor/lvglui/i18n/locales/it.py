@@ -1057,8 +1057,8 @@ translations = [
     "Vuoi cambiare il tempo di Blocco automatico a {time}?",
     "Imposta spegnimento automatico",
     "Vuoi cambiare il tempo di spegnimento automatico a {time}?",
-    "Vuoi attivare il feedback aptico della tastiera?",
-    "Vuoi disattivare il feedback aptico della tastiera?",
+    "Vuoi aprire il feedback aptico?",
+    "Vuoi chiudere il feedback aptico?",
     "Vuoi ripristinare il tastierino PIN alle impostazioni predefinite? (I numeri sul tastierino PIN sono disposti in sequenza)",
     "Vuoi impostare il tastierino PIN su modalità casuale? (I numeri sul tastierino PIN sono disposti in modo casuale)",
     "Vuoi aprire Blocco USB? (Il dispositivo si bloccherà automaticamente ogni volta che la USB viene collegata o scollegata)",
@@ -1069,5 +1069,9 @@ translations = [
     "Assicurati che il tuo dispositivo sia vicino al tuo OneKey Pro, quindi riprova.",
     "Dispositivo associato",
     "Continua per completare il controllo e l’aggiornamento di OneKey App.",
+    "Impostazione riuscita",
+    "Fare domanda a",
+    "Apri",
+    "Imposta luminosità",
 ]
 # fmt: on

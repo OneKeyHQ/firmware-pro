@@ -1057,8 +1057,8 @@ translations = [
     "Möchtest du die Auto-Sperrzeit auf {time} ändern?",
     "Automatische Abschaltung festlegen",
     "Möchten Sie die automatische Abschaltzeit auf {time} ändern?",
-    "Möchten Sie die Tastaturhaptik öffnen?",
-    "Möchtest du die Tastaturhaptik deaktivieren?",
+    "Möchten Sie die Haptik öffnen?",
+    "Möchten Sie die Haptik schließen?",
     "Möchten Sie die PIN-Tastatur auf die Standardeinstellung umstellen? (Die Zahlen auf der PIN-Tastatur sind der Reihe nach angeordnet)",
     "Möchten Sie die PIN-Tastatur auf zufällige Anordnung umstellen? (Die Zahlen auf der PIN-Tastatur werden zufällig angeordnet)",
     "Möchten Sie die USB-Sperre öffnen? (Das Gerät wird bei jedem Ein- oder Ausstecken eines USB-Geräts automatisch gesperrt)",
@@ -1069,5 +1069,9 @@ translations = [
     "Stellen Sie sicher, dass Ihr Gerät in der Nähe Ihres OneKey Pro ist, und versuchen Sie es dann erneut.",
     "Gerät gekoppelt",
     "Bitte fahre fort, um die OneKey App-Prüfung und -Aktualisierung abzuschließen.",
+    "Erfolgreich festgelegt",
+    "Anwenden",
+    "Öffnen",
+    "Helligkeit einstellen",
 ]
 # fmt: on
