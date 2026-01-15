@@ -687,11 +687,11 @@ SUBTITLE__USE_THIS_PASSPHRASE = 310
 TITLE__STR_TRANSFER = 311
 # Fee Payer
 LIST_KEY__FEE_PAYER__COLON = 312
-# New Token Account:
+# New Token Account
 LIST_KEY__NEW_TOKEN_ACCOUNT = 313
-# Mint Address:
+# Mint Address
 LIST_KEY__MINT_ADDRESS = 314
-# Owner:
+# Owner
 LIST_KEY__OWNER = 315
 # Funded by
 LIST_KEY__FUNDED_BY__COLON = 316
@@ -2321,20 +2321,20 @@ BUTTON__USE_MULTIPLE_SOURCES_OF_ENTROPY = 1049
 BUTTON__USE_MULTIPLE_SOURCES_OF_ENTROPY_DESC = 1050
 # Set Language
 TITLE__SET_LANGUAGE = 1051
-# Do you want to change language to {language}?
+# Do you want to change language to {}?
 SUBTITLE__SET_LANGUAGE = 1052
 # Set Auto-Lock
-TITLE_SET_AUTO_LOCK = 1053
-# Do you want to change Auto-Lock time to {time}?
-SUBTITLE_SET_AUTO_LOCK = 1054
+TITLE__SET_AUTO_LOCK = 1053
+# Do you want to change Auto-Lock time to {}?
+SUBTITLE__SET_AUTO_LOCK = 1054
 # Set Auto Shutdown
-TITLE_SET_AUTO_SHUTDOWN = 1055
-# Do you want to change Auto-Shutdown time to {time}?
-SUBTITLE_SET_AUTO_SHUTDOWN = 1056
+TITLE__SET_AUTO_SHUTDOWN = 1055
+# Do you want to change Auto-Shutdown time to {}?
+SUBTITLE__SET_AUTO_SHUTDOWN = 1056
 # Do you want to open Haptic ?
-SUBTITLE_OPEN_VIBRATION_HAPTIC = 1057
+SUBTITLE__OPEN_VIBRATION_HAPTIC = 1057
 # Do you want to close Haptic ?
-SUBTITLE_CLOSE_VIBRATION_HAPTIC = 1058
+SUBTITLE__CLOSE_VIBRATION_HAPTIC = 1058
 # Do you want to switch PIN Keypad to default ? (The numbers on PIN keypad arr
 # anged in sequence)
 SUBTITLE_SWITCH_PIN_KEYPAD_DEFAULT = 1059
@@ -2364,7 +2364,7 @@ TITLE__SET_SUCCESSFULLY = 1069
 # Apply
 BUTTON__APPLY = 1070
 # Open
-BUTTON_OPEN = 1071
+BUTTON__OPEN = 1071
 # Set Brightness
 TITLE__SET_BRIGHTNESS = 1072
 # fmt: on

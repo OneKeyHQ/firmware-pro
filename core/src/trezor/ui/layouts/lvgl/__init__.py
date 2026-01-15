@@ -92,6 +92,7 @@ __all__ = (
     "confirm_safe_exec_transaction",
     "should_show_details_eip7702",
     "request_pin_onboarding",
+    "request_change_brightness",
 )
 
 
@@ -622,13 +623,13 @@ async def confirm_output(
     br_code: ButtonRequestType = ButtonRequestType.ConfirmOutput,
     icon: str = ui.ICON_SEND,
 ) -> None:
-    from trezor.lvglui.scrs.template import TransactionOverviewSend
+    from trezor.lvglui.scrs.template import TransactionOverview
     from trezor.strings import strip_amount
 
     await raise_if_cancelled(
         interact(
             ctx,
-            TransactionOverviewSend(
+            TransactionOverview(
                 _(i18n_keys.TITLE__SEND_MULTILINE).format(strip_amount(amount)[0]),
                 primary_color=ctx.primary_color,
                 icon_path=ctx.icon_path,
@@ -645,17 +646,31 @@ async def should_show_details(
     address: str,
     title: str,
     br_code: ButtonRequestType = ButtonRequestType.ConfirmOutput,
+    group_header: str | None = None,
+    group_icon: str | None = None,
+    use_default_group_item: bool = True,
+    additional_group_items: tuple[tuple[str, str], ...] | None = None,
+    banner_text: str | None = None,
+    banner_level: int = 2,
+    is_send: bool = True,
 ) -> bool:
-    from trezor.lvglui.scrs.template import TransactionOverviewSend
+    from trezor.lvglui.scrs.template import TransactionOverview
 
     res = await interact(
         ctx,
-        TransactionOverviewSend(
+        TransactionOverview(
             title,
-            primary_color=ctx.primary_color,
-            icon_path=ctx.icon_path,
+            ctx.primary_color,
+            ctx.icon_path,
+            address,
+            group_header=group_header,
+            group_icon=group_icon,
+            use_default_group_item=use_default_group_item,
+            additional_group_items=additional_group_items,
+            banner_text=banner_text,
+            banner_level=banner_level,
             has_details=True,
-            address=address,
+            is_send=is_send,
         ),
         "confirm_output",
         br_code,
@@ -1460,7 +1475,7 @@ async def confirm_sol_transfer(
 
     striped_amount, striped = strip_amount(amount)
     title = _(i18n_keys.TITLE__SEND_MULTILINE).format(striped_amount)
-    if should_show_details(ctx, to_addr, title):
+    if await should_show_details(ctx, to_addr, title):
         from trezor.lvglui.scrs.template import SolTransfer
 
         screen = SolTransfer(
@@ -1504,44 +1519,73 @@ async def confirm_sol_create_ata(
     wallet_address: str,
     token_mint: str,
 ):
-    from trezor.lvglui.scrs.template import SolCreateAssociatedTokenAccount
+    if await should_show_details(
+        ctx,
+        None,
+        _(i18n_keys.TITLE__CREATE_TOKEN_ACCOUNT),
+        br_code=ButtonRequestType.ProtectCall,
+        group_header=_(i18n_keys.OVERVIEW),
+        group_icon="A:/res/group-icon-directions.png",
+        use_default_group_item=False,
+        additional_group_items=(
+            (_(i18n_keys.LIST_KEY__NEW_TOKEN_ACCOUNT), associated_token_account),
+            (_(i18n_keys.LIST_KEY__OWNER), wallet_address),
+        ),
+        is_send=False,
+    ):
+        from trezor.lvglui.scrs.template import SolCreateAssociatedTokenAccount
 
-    screen = SolCreateAssociatedTokenAccount(
-        fee_payer,
-        funding_account,
-        associated_token_account,
-        wallet_address,
-        token_mint,
-        primary_color=ctx.primary_color,
-    )
-    await raise_if_cancelled(
-        interact(ctx, screen, "sol_create_ata", ButtonRequestType.ProtectCall)
-    )
+        screen = SolCreateAssociatedTokenAccount(
+            fee_payer,
+            funding_account,
+            associated_token_account,
+            wallet_address,
+            token_mint,
+            primary_color=ctx.primary_color,
+            icon_path=ctx.icon_path,
+        )
+        await raise_if_cancelled(
+            interact(ctx, screen, "sol_create_ata", ButtonRequestType.ProtectCall)
+        )
 
 
 async def confirm_sol_token_transfer(
     ctx: wire.GenericContext,
-    from_addr: str,
-    to_addr: str,
     amount: str,
+    from_ata_addr: str,
+    to_ata_addr: str,
     source_owner: str,
-    fee_payer: str,
-    token_mint: str = None,
+    destination_owner: str | None = None,
+    token_mint: str | None = None,
 ):
     from trezor.strings import strip_amount
 
     striped_amount, striped = strip_amount(amount)
     title = _(i18n_keys.TITLE__SEND_MULTILINE).format(striped_amount)
-    if should_show_details(ctx, to_addr, title):
+    additional_group_items = ()
+    if destination_owner is None:
+        additional_group_items += (
+            (_(i18n_keys.LIST_KEY__TO_TOKEN_ACCOUNT__COLON), to_ata_addr),
+        )
+    if token_mint:
+        additional_group_items = ((_(i18n_keys.LIST_KEY__MINT_ADDRESS), token_mint),)
+    if await should_show_details(
+        ctx,
+        destination_owner,
+        title,
+        use_default_group_item=True if destination_owner else False,
+        additional_group_items=additional_group_items or None,
+        banner_text=_(i18n_keys.WARNING_UNRECOGNIZED_TOKEN) if token_mint else None,
+    ):
         from trezor.lvglui.scrs.template import SolTokenTransfer
 
         screen = SolTokenTransfer(
             title,
-            from_addr,
-            to_addr,
             amount,
+            from_ata_addr,
+            to_ata_addr,
             source_owner,
-            fee_payer,
+            destination_owner,
             primary_color=ctx.primary_color,
             icon_path=ctx.icon_path,
             token_mint=token_mint,
@@ -2834,5 +2878,19 @@ async def confirm_safe_exec_transaction(
     await raise_if_cancelled(
         interact(
             ctx, screen, "confirm_safe_exec_transaction", ButtonRequestType.ProtectCall
+        )
+    )
+
+
+async def request_change_brightness(ctx: wire.GenericContext) -> None:
+
+    from trezor.lvglui.scrs.template import BrightnessControl
+
+    await raise_if_cancelled(
+        interact(
+            ctx,
+            BrightnessControl(),
+            "request_change_brightness",
+            ButtonRequestType.ProtectCall,
         )
     )

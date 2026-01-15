@@ -286,3 +286,46 @@ passphrase.aliases = {
     "enabled": passphrase_on,
     "disabled": passphrase_off,
 }
+
+@cli.command()
+@click.argument("delay", type=str)
+@with_client
+def auto_shutdown_delay(client: "TrezorClient", delay: str) -> str:
+    """Set auto-shutdown delay (in seconds)."""
+
+    if not client.features.pin_protection:
+        raise click.ClickException("Set up a PIN first")
+
+    value, unit = delay[:-1], delay[-1:]
+    units = {"s": 1, "m": 60, "h": 3600}
+    if unit in units:
+        seconds = float(value) * units[unit]
+    else:
+        seconds = float(delay)  # assume seconds if no unit is specified
+    return device.apply_settings(client, auto_shutdown_delay_ms=int(seconds * 1000))
+
+
+@cli.command()
+@click.argument("lang_code", type=str)
+@with_client
+def language(client: "TrezorClient", lang_code: str) -> str:
+    """Set Language by a ISO_639-1 language key."""
+    if lang_code == "en-US":
+        lang_code = "en"
+    return device.apply_settings(client, language=lang_code)
+
+
+@cli.command()
+@with_client
+def brightness(client: "TrezorClient") -> str:
+    """Request change brightness."""
+    return device.apply_settings(client, change_brightness=True)
+
+
+@cli.command()
+@click.argument("enable", type=ChoiceType({"on": True, "off": False}))
+@with_client
+def haptic_feedback(client: "TrezorClient", enable: bool) -> str:
+    """Enable or disable Haptic feedback.
+    """
+    return device.apply_settings(client, haptic_feedback=enable)

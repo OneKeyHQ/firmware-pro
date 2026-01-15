@@ -17,7 +17,7 @@
 
 from typing import TYPE_CHECKING
 
-from typing import Optional
+from typing import Optional, List, Any, Tuple
 
 import base58
 import click
@@ -40,6 +40,30 @@ MESSAGE_FORMATS = {
     "utf8": messages.SolanaOffChainMessageFormat.V0_LIMITED_UTF8,
 }
 
+
+def _parse_ata_details_list(
+    ctx: click.Context, param: Any, value: Tuple[str, ...]
+) -> List[messages.SolanaTxATADetails]:
+    return [_parse_ata_details_list_item(val) for val in value]
+
+
+def _parse_ata_details_list_item(value: str) -> messages.SolanaTxATADetails:
+    try:
+        arr = value.split(":")
+        owner_address, program_id, mint_address, associated_token_address = arr
+        assert owner_address, "owner_address is required"
+        assert program_id, "program_id is requierd"
+        assert mint_address, "mint_address is required"
+        return messages.SolanaTxATADetails(
+            owner_address=owner_address,
+            program_id=program_id,
+            mint_address=mint_address,
+            associated_token_address=associated_token_address,
+        )
+    except Exception:
+        raise click.BadParameter("Associated token account details format is invlaid")
+
+
 @click.group(name="sol")
 def cli():
     """Solana commands."""
@@ -58,12 +82,30 @@ def get_address(client: "TrezorClient", address: str, show_display: bool) -> str
 @cli.command()
 @click.option("-n", "--address", required=True, help=PATH_HELP)
 @click.option("-d", "--raw_tx", required=True, help=PATH_RAW_TX)
+@click.option(
+    "-e",
+    "--ata_deatils_list",
+    help="ATA deatils List",
+    callback=_parse_ata_details_list,
+    multiple=True,
+)
 @with_client
-def sign_tx(client: "TrezorClient", address: str, raw_tx: str) -> str:
+def sign_tx(
+    client: "TrezorClient",
+    address: str,
+    raw_tx: str,
+    ata_deatils_list: List[messages.SolanaTxATADetails],
+) -> str:
     """Sign Solala transaction."""
     address_n = tools.parse_path(address)
-    transaction = solana.sign_tx(client, address_n, base58.b58decode(raw_tx))
+    transaction = solana.sign_tx(
+        client,
+        address_n,
+        base58.b58decode(raw_tx),
+        messages.SolanaTxExtraInfo(ata_details=ata_deatils_list),
+    )
     return transaction.signature.hex()
+
 
 @cli.command()
 @click.option("-n", "--address", required=True, help=PATH_HELP)

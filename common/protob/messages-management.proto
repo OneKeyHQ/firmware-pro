@@ -77,6 +77,10 @@ enum OneKeySEState {
     APP = 0x01;
 }
 
+// enum PinKeyboardLayout {
+//     LAYOUT_NORMAL = 0;
+//     LAYOUT_RANDOMIZED = 1;
+// }
 /**
  * Response: Reports various information about the device
  * @end
@@ -144,6 +148,7 @@ message Features {
     optional uint32 auto_lock_delay_ms = 38;    // number of milliseconds after which the device locks itself
     optional uint32 display_rotation = 39;      // in degrees from North
     optional bool experimental_features = 40;   // are experimental message types enabled?
+    optional bool busy = 41;                                // is the device busy, showing "Do not disconnect"?
 
     optional uint32 offset = 500;
     optional string ble_name = 501;             // OneKey BLE name
@@ -166,7 +171,12 @@ message Features {
     optional uint32 coin_switch = 517;
     optional bytes build_id = 518;
     optional string boardloader_version = 519;
-    optional bool busy = 41;                    // is the device busy, showing "Do not disconnect"?
+    reserved 520, 521, 530, 531; // used by battery_level(520) product(521) se_build_id(530) se_hash(531) in another device type 
+    optional uint32 brightness_percent = 522;                // current brightness of device
+    optional bool haptic_feedback = 523;                    // is the vibration & haptic enabled
+    optional uint32 auto_shutdown_delay_ms = 524;           // number of milliseconds after which the device will poweroff
+    // optional PinKeyboardLayout pin_keyboard_layout = 524;   // the layout of the pin input keyboard
+    // optional bool usb_lock = 525;                           // the device will auto lock when usb plug/ununplug with usb lock enabled
 
     optional OneKeyDeviceType onekey_device_type = 600;
     optional OneKeySeType onekey_se_type = 601;
@@ -292,6 +302,13 @@ message ApplySettings {
     optional bool passphrase_always_on_device = 8;  // do not prompt for passphrase, enforce device entry
     optional SafetyCheckLevel safety_checks = 9;  // Safety check level, set to Prompt to limit path namespace enforcement
     optional bool experimental_features = 10;  // enable experimental message types
+    
+    reserved 11 to 499;
+    optional uint32 auto_shutdown_delay_ms = 500;
+    optional bool change_brightness = 501;
+    optional bool haptic_feedback = 502;
+    // optional PinKeyboardLayout keybaord_layout = 503;
+    // optional bool usb_lock = 504;
 }
 
 /**

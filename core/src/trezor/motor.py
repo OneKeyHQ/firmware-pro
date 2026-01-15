@@ -24,7 +24,7 @@ if not utils.EMULATOR:
     def vibrate(
         style: VIBRATE_STYLE = LIGHT, force: bool = False
     ) -> VIBRATE_STYLE | None:
-        if not storage_device.keyboard_haptic_enabled() and not force:
+        if not storage_device.haptic_enabled() and not force:
             return None
         if style == WHISPER:
             MOTOR_CTL.play_whisper()

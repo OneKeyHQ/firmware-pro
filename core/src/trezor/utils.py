@@ -386,6 +386,12 @@ def get_default_wallpaper():
         return "A:/res/wallpaper-7.jpg"
 
 
+def brightness2_percent_str(brightness: int) -> str:
+    from trezor.ui import style
+
+    return f"{int(brightness / style.BACKLIGHT_MAX * 100)}%"
+
+
 def unimport_begin() -> set[str]:
     return set(sys.modules)
 

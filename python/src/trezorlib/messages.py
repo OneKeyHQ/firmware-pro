@@ -4433,6 +4433,7 @@ class Features(protobuf.MessageType):
         38: protobuf.Field("auto_lock_delay_ms", "uint32", repeated=False, required=False),
         39: protobuf.Field("display_rotation", "uint32", repeated=False, required=False),
         40: protobuf.Field("experimental_features", "bool", repeated=False, required=False),
+        41: protobuf.Field("busy", "bool", repeated=False, required=False),
         500: protobuf.Field("offset", "uint32", repeated=False, required=False),
         501: protobuf.Field("ble_name", "string", repeated=False, required=False),
         502: protobuf.Field("ble_ver", "string", repeated=False, required=False),
@@ -4452,7 +4453,9 @@ class Features(protobuf.MessageType):
         517: protobuf.Field("coin_switch", "uint32", repeated=False, required=False),
         518: protobuf.Field("build_id", "bytes", repeated=False, required=False),
         519: protobuf.Field("boardloader_version", "string", repeated=False, required=False),
-        41: protobuf.Field("busy", "bool", repeated=False, required=False),
+        522: protobuf.Field("brightness_percent", "uint32", repeated=False, required=False),
+        523: protobuf.Field("haptic_feedback", "bool", repeated=False, required=False),
+        524: protobuf.Field("auto_shutdown_delay_ms", "uint32", repeated=False, required=False),
         600: protobuf.Field("onekey_device_type", "OneKeyDeviceType", repeated=False, required=False),
         601: protobuf.Field("onekey_se_type", "OneKeySeType", repeated=False, required=False),
         602: protobuf.Field("onekey_board_version", "string", repeated=False, required=False),
@@ -4523,6 +4526,7 @@ class Features(protobuf.MessageType):
         auto_lock_delay_ms: Optional["int"] = None,
         display_rotation: Optional["int"] = None,
         experimental_features: Optional["bool"] = None,
+        busy: Optional["bool"] = None,
         offset: Optional["int"] = None,
         ble_name: Optional["str"] = None,
         ble_ver: Optional["str"] = None,
@@ -4542,7 +4546,9 @@ class Features(protobuf.MessageType):
         coin_switch: Optional["int"] = None,
         build_id: Optional["bytes"] = None,
         boardloader_version: Optional["str"] = None,
-        busy: Optional["bool"] = None,
+        brightness_percent: Optional["int"] = None,
+        haptic_feedback: Optional["bool"] = None,
+        auto_shutdown_delay_ms: Optional["int"] = None,
         onekey_device_type: Optional["OneKeyDeviceType"] = None,
         onekey_se_type: Optional["OneKeySeType"] = None,
         onekey_board_version: Optional["str"] = None,
@@ -4609,6 +4615,7 @@ class Features(protobuf.MessageType):
         self.auto_lock_delay_ms = auto_lock_delay_ms
         self.display_rotation = display_rotation
         self.experimental_features = experimental_features
+        self.busy = busy
         self.offset = offset
         self.ble_name = ble_name
         self.ble_ver = ble_ver
@@ -4628,7 +4635,9 @@ class Features(protobuf.MessageType):
         self.coin_switch = coin_switch
         self.build_id = build_id
         self.boardloader_version = boardloader_version
-        self.busy = busy
+        self.brightness_percent = brightness_percent
+        self.haptic_feedback = haptic_feedback
+        self.auto_shutdown_delay_ms = auto_shutdown_delay_ms
         self.onekey_device_type = onekey_device_type
         self.onekey_se_type = onekey_se_type
         self.onekey_board_version = onekey_board_version
@@ -4836,6 +4845,9 @@ class ApplySettings(protobuf.MessageType):
         8: protobuf.Field("passphrase_always_on_device", "bool", repeated=False, required=False),
         9: protobuf.Field("safety_checks", "SafetyCheckLevel", repeated=False, required=False),
         10: protobuf.Field("experimental_features", "bool", repeated=False, required=False),
+        500: protobuf.Field("auto_shutdown_delay_ms", "uint32", repeated=False, required=False),
+        501: protobuf.Field("change_brightness", "bool", repeated=False, required=False),
+        502: protobuf.Field("haptic_feedback", "bool", repeated=False, required=False),
     }
 
     def __init__(
@@ -4851,6 +4863,9 @@ class ApplySettings(protobuf.MessageType):
         passphrase_always_on_device: Optional["bool"] = None,
         safety_checks: Optional["SafetyCheckLevel"] = None,
         experimental_features: Optional["bool"] = None,
+        auto_shutdown_delay_ms: Optional["int"] = None,
+        change_brightness: Optional["bool"] = None,
+        haptic_feedback: Optional["bool"] = None,
     ) -> None:
         self.language = language
         self.label = label
@@ -4862,6 +4877,9 @@ class ApplySettings(protobuf.MessageType):
         self.passphrase_always_on_device = passphrase_always_on_device
         self.safety_checks = safety_checks
         self.experimental_features = experimental_features
+        self.auto_shutdown_delay_ms = auto_shutdown_delay_ms
+        self.change_brightness = change_brightness
+        self.haptic_feedback = haptic_feedback
 
 
 class ApplyFlags(protobuf.MessageType):
@@ -10209,11 +10227,49 @@ class SolanaAddress(protobuf.MessageType):
         self.address = address
 
 
+class SolanaTxATADetails(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = None
+    FIELDS = {
+        1: protobuf.Field("owner_address", "string", repeated=False, required=True),
+        2: protobuf.Field("program_id", "string", repeated=False, required=True),
+        3: protobuf.Field("mint_address", "string", repeated=False, required=True),
+        4: protobuf.Field("associated_token_address", "string", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        owner_address: "str",
+        program_id: "str",
+        mint_address: "str",
+        associated_token_address: "str",
+    ) -> None:
+        self.owner_address = owner_address
+        self.program_id = program_id
+        self.mint_address = mint_address
+        self.associated_token_address = associated_token_address
+
+
+class SolanaTxExtraInfo(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = None
+    FIELDS = {
+        1: protobuf.Field("ata_details", "SolanaTxATADetails", repeated=True, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        ata_details: Optional[Sequence["SolanaTxATADetails"]] = None,
+    ) -> None:
+        self.ata_details: Sequence["SolanaTxATADetails"] = ata_details if ata_details is not None else []
+
+
 class SolanaSignTx(protobuf.MessageType):
     MESSAGE_WIRE_TYPE = 10102
     FIELDS = {
         1: protobuf.Field("address_n", "uint32", repeated=True, required=False),
         2: protobuf.Field("raw_tx", "bytes", repeated=False, required=True),
+        3: protobuf.Field("extra_info", "SolanaTxExtraInfo", repeated=False, required=False),
     }
 
     def __init__(
@@ -10221,9 +10277,11 @@ class SolanaSignTx(protobuf.MessageType):
         *,
         raw_tx: "bytes",
         address_n: Optional[Sequence["int"]] = None,
+        extra_info: Optional["SolanaTxExtraInfo"] = None,
     ) -> None:
         self.address_n: Sequence["int"] = address_n if address_n is not None else []
         self.raw_tx = raw_tx
+        self.extra_info = extra_info
 
 
 class SolanaSignedTx(protobuf.MessageType):

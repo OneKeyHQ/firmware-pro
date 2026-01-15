@@ -455,10 +455,6 @@ def replace_wallpaper_if_in_use(
     return replaced
 
 
-def brightness2_percent_str(brightness: int) -> str:
-    return f"{int(brightness / style.BACKLIGHT_MAX * 100)}%"
-
-
 GRID_CELL_SIZE_ROWS = const(240)
 GRID_CELL_SIZE_COLS = const(144)
 
@@ -3541,7 +3537,7 @@ class DisplayScreen(AnimScreen):
             self._init = True
         else:
             self.backlight.label_right.set_text(
-                brightness2_percent_str(storage_device.get_brightness())
+                utils.brightness2_percent_str(storage_device.get_brightness())
             )
             self.autolock.label_right.set_text(get_autolock_delay_str())
             self.shutdown.label_right.set_text(get_autoshutdown_delay_str())
@@ -3567,7 +3563,7 @@ class DisplayScreen(AnimScreen):
         self.backlight = ListItemBtn(
             self.container,
             _(i18n_keys.ITEM__BRIGHTNESS),
-            brightness2_percent_str(storage_device.get_brightness()),
+            utils.brightness2_percent_str(storage_device.get_brightness()),
         )
 
         # Auto lock and shutdown container
@@ -5034,226 +5030,199 @@ class WallperChange(AnimScreen):
             self.on_click(event_obj)
 
 
-class ShutdownSetting(AnimScreen):
-    cur_auto_shutdown = ""
-    cur_auto_shutdown_ms = 0
+# class ShutdownSetting(AnimScreen):
+#     cur_auto_shutdown = ""
+#     cur_auto_shutdown_ms = 0
 
-    def collect_animation_targets(self) -> list:
-        targets = []
-        if hasattr(self, "container") and self.container:
-            targets.append(self.container)
-        return targets
+#     def collect_animation_targets(self) -> list:
+#         targets = []
+#         if hasattr(self, "container") and self.container:
+#             targets.append(self.container)
+#         return targets
 
-    def __init__(self, prev_scr=None):
-        ShutdownSetting.cur_auto_shutdown_ms = (
-            storage_device.get_autoshutdown_delay_ms()
-        )
-        ShutdownSetting.cur_auto_shutdown = self.get_str_from_ms(
-            ShutdownSetting.cur_auto_shutdown_ms
-        )
-        if not hasattr(self, "_init"):
-            self._init = True
-        else:
-            if self.cur_auto_shutdown:
-                self.auto_shutdown.label_right.set_text(
-                    ShutdownSetting.cur_auto_shutdown
-                )
-            self.refresh_text()
-            return
+#     def __init__(self, prev_scr=None):
+#         ShutdownSetting.cur_auto_shutdown_ms = (
+#             storage_device.get_autoshutdown_delay_ms()
+#         )
+#         ShutdownSetting.cur_auto_shutdown = self.get_str_from_ms(
+#             ShutdownSetting.cur_auto_shutdown_ms
+#         )
+#         if not hasattr(self, "_init"):
+#             self._init = True
+#         else:
+#             if self.cur_auto_shutdown:
+#                 self.auto_shutdown.label_right.set_text(
+#                     ShutdownSetting.cur_auto_shutdown
+#                 )
+#             self.refresh_text()
+#             return
 
-        super().__init__(prev_scr=prev_scr, title="自动关机", nav_back=True)
+#         super().__init__(prev_scr=prev_scr, title="自动关机", nav_back=True)
 
-        self.container = ContainerFlexCol(
-            self.content_area, self.title, padding_row=2, pos=(0, 40)
-        )
+#         self.container = ContainerFlexCol(
+#             self.content_area, self.title, padding_row=2, pos=(0, 40)
+#         )
 
-        self.auto_shutdown = ListItemBtn(
-            self.container,
-            "自动关机",
-            ShutdownSetting.cur_auto_shutdown,
-        )
+#         self.auto_shutdown = ListItemBtn(
+#             self.container,
+#             "自动关机",
+#             ShutdownSetting.cur_auto_shutdown,
+#         )
 
-        self.container.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
-        self.load_screen(self)
-        gc.collect()
+#         self.container.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
+#         self.load_screen(self)
+#         gc.collect()
 
-    def get_str_from_ms(self, delay_ms: int) -> str:
-        if delay_ms in (0, storage_device.AUTOSHUTDOWN_DELAY_MAXIMUM):
-            return "从不"
-        elif delay_ms < 60000:
-            return f"{delay_ms // 1000}秒"
-        elif delay_ms < 3600000:
-            return f"{delay_ms // 60000}分钟"
-        else:
-            return f"{delay_ms // 3600000}小时"
+#     def get_str_from_ms(self, delay_ms: int) -> str:
+#         if delay_ms in (0, storage_device.AUTOSHUTDOWN_DELAY_MAXIMUM):
+#             return "从不"
+#         elif delay_ms < 60000:
+#             return f"{delay_ms // 1000}秒"
+#         elif delay_ms < 3600000:
+#             return f"{delay_ms // 60000}分钟"
+#         else:
+#             return f"{delay_ms // 3600000}小时"
 
-    def refresh_text(self):
-        self.title.set_text("自动关机")
-        self.auto_shutdown.label_left.set_text("自动关机")
+#     def refresh_text(self):
+#         self.title.set_text("自动关机")
+#         self.auto_shutdown.label_left.set_text("自动关机")
 
-    def on_click(self, event_obj):
-        code = event_obj.code
-        target = event_obj.get_target()
-        if code == lv.EVENT.CLICKED:
-            if utils.lcd_resume():
-                return
-            if target == self.auto_shutdown:
-                # Use the direct auto-shutdown setting screen
-                AutoShutDownSetting(self)
+#     def on_click(self, event_obj):
+#         code = event_obj.code
+#         target = event_obj.get_target()
+#         if code == lv.EVENT.CLICKED:
+#             if utils.lcd_resume():
+#                 return
+#             if target == self.auto_shutdown:
+#                 # Use the direct auto-shutdown setting screen
+#                 AutoShutDownSetting(self)
 
 
 def get_autolock_delay_str() -> str:
+    from trezor.strings import format_duration_ms
+
     delay_ms = storage_device.get_autolock_delay_ms()
 
-    if delay_ms in (0, storage_device.AUTOLOCK_DELAY_MAXIMUM):
-        result = _(i18n_keys.OPTION__NEVER)
-    elif delay_ms < 60000:
-        seconds = delay_ms // 1000
-        result = _(i18n_keys.OPTION__STR_SECONDS).format(seconds)
-    elif delay_ms < 3600000:
-        minutes = delay_ms // 60000
-        result = _(
-            i18n_keys.OPTION__STR_MINUTE
-            if minutes == 1
-            else i18n_keys.OPTION__STR_MINUTES
-        ).format(minutes)
-    else:
-        hours = delay_ms // 3600000
-        result = _(
-            i18n_keys.OPTION__STR_HOUR if hours == 1 else i18n_keys.OPTION__STR_HOURS
-        ).format(hours)
-
-    return result
+    return format_duration_ms(delay_ms, storage_device.AUTOLOCK_DELAY_MAXIMUM)
 
 
 def get_autoshutdown_delay_str() -> str:
+    from trezor.strings import format_duration_ms
+
     delay_ms = storage_device.get_autoshutdown_delay_ms()
-    if delay_ms in (0, storage_device.AUTOSHUTDOWN_DELAY_MAXIMUM):
-        return _(i18n_keys.OPTION__NEVER)
-    elif delay_ms < 60000:
-        seconds = delay_ms // 1000
-        return _(i18n_keys.OPTION__STR_SECONDS).format(seconds)
-    elif delay_ms < 3600000:
-        minutes = delay_ms // 60000
-        return _(
-            i18n_keys.OPTION__STR_MINUTE
-            if minutes == 1
-            else i18n_keys.OPTION__STR_MINUTES
-        ).format(minutes)
-    else:
-        hours = delay_ms // 3600000
-        return _(
-            i18n_keys.OPTION__STR_HOUR if hours == 1 else i18n_keys.OPTION__STR_HOURS
-        ).format(hours)
+    return format_duration_ms(delay_ms, storage_device.AUTOSHUTDOWN_DELAY_MAXIMUM)
 
 
-class Autolock_and_ShutingDown(AnimScreen):
-    cur_auto_lock = ""
-    cur_auto_lock_ms = 0
-    cur_auto_shutdown = ""
-    cur_auto_shutdown_ms = 0
+# class Autolock_and_ShutingDown(AnimScreen):
+#     cur_auto_lock = ""
+#     cur_auto_lock_ms = 0
+#     cur_auto_shutdown = ""
+#     cur_auto_shutdown_ms = 0
 
-    def collect_animation_targets(self) -> list:
-        targets = []
-        if hasattr(self, "container") and self.container:
-            targets.append(self.container)
-        return targets
+#     def collect_animation_targets(self) -> list:
+#         targets = []
+#         if hasattr(self, "container") and self.container:
+#             targets.append(self.container)
+#         return targets
 
-    def __init__(self, prev_scr=None):
-        Autolock_and_ShutingDown.cur_auto_lock_ms = (
-            storage_device.get_autolock_delay_ms()
-        )
-        Autolock_and_ShutingDown.cur_auto_shutdown_ms = (
-            storage_device.get_autoshutdown_delay_ms()
-        )
-        Autolock_and_ShutingDown.cur_auto_lock = (
-            Autolock_and_ShutingDown.get_str_from_ms(
-                Autolock_and_ShutingDown.cur_auto_lock_ms
-            )
-        )
-        Autolock_and_ShutingDown.cur_auto_shutdown = (
-            Autolock_and_ShutingDown.get_str_from_ms(
-                Autolock_and_ShutingDown.cur_auto_shutdown_ms
-            )
-        )
+#     def __init__(self, prev_scr=None):
+#         Autolock_and_ShutingDown.cur_auto_lock_ms = (
+#             storage_device.get_autolock_delay_ms()
+#         )
+#         Autolock_and_ShutingDown.cur_auto_shutdown_ms = (
+#             storage_device.get_autoshutdown_delay_ms()
+#         )
+#         Autolock_and_ShutingDown.cur_auto_lock = (
+#             Autolock_and_ShutingDown.get_str_from_ms(
+#                 Autolock_and_ShutingDown.cur_auto_lock_ms
+#             )
+#         )
+#         Autolock_and_ShutingDown.cur_auto_shutdown = (
+#             Autolock_and_ShutingDown.get_str_from_ms(
+#                 Autolock_and_ShutingDown.cur_auto_shutdown_ms
+#             )
+#         )
 
-        if not hasattr(self, "_init"):
-            self._init = True
-        else:
-            if self.cur_auto_lock:
-                self.auto_lock.label_right.set_text(
-                    Autolock_and_ShutingDown.cur_auto_lock
-                )
-            if self.cur_auto_shutdown:
-                self.auto_shutdown.label_right.set_text(
-                    Autolock_and_ShutingDown.cur_auto_shutdown
-                )
-            self.refresh_text()
-            return
+#         if not hasattr(self, "_init"):
+#             self._init = True
+#         else:
+#             if self.cur_auto_lock:
+#                 self.auto_lock.label_right.set_text(
+#                     Autolock_and_ShutingDown.cur_auto_lock
+#                 )
+#             if self.cur_auto_shutdown:
+#                 self.auto_shutdown.label_right.set_text(
+#                     Autolock_and_ShutingDown.cur_auto_shutdown
+#                 )
+#             self.refresh_text()
+#             return
 
-        super().__init__(
-            prev_scr=prev_scr,
-            title=_(i18n_keys.ITEM__AUTO_LOCK_AND_SHUTDOWN),
-            nav_back=True,
-        )
-        self.container = ContainerFlexCol(self.content_area, self.title, padding_row=2)
-        self.auto_lock = ListItemBtn(
-            self.container, _(i18n_keys.ITEM__AUTO_LOCK), self.cur_auto_lock
-        )
-        self.auto_shutdown = ListItemBtn(
-            self.container, _(i18n_keys.ITEM__SHUTDOWN), self.cur_auto_shutdown
-        )
-        self.container.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
-        self.load_screen(self)
-        gc.collect()
+#         super().__init__(
+#             prev_scr=prev_scr,
+#             title=_(i18n_keys.ITEM__AUTO_LOCK_AND_SHUTDOWN),
+#             nav_back=True,
+#         )
+#         self.container = ContainerFlexCol(self.content_area, self.title, padding_row=2)
+#         self.auto_lock = ListItemBtn(
+#             self.container, _(i18n_keys.ITEM__AUTO_LOCK), self.cur_auto_lock
+#         )
+#         self.auto_shutdown = ListItemBtn(
+#             self.container, _(i18n_keys.ITEM__SHUTDOWN), self.cur_auto_shutdown
+#         )
+#         self.container.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
+#         self.load_screen(self)
+#         gc.collect()
 
-    def refresh_text(self):
-        self.title.set_text(_(i18n_keys.ITEM__AUTO_LOCK_AND_SHUTDOWN))
-        self.auto_lock.label_left.set_text(_(i18n_keys.ITEM__AUTO_LOCK))
-        self.auto_shutdown.label_left.set_text(_(i18n_keys.ITEM__SHUTDOWN))
+#     def refresh_text(self):
+#         self.title.set_text(_(i18n_keys.ITEM__AUTO_LOCK_AND_SHUTDOWN))
+#         self.auto_lock.label_left.set_text(_(i18n_keys.ITEM__AUTO_LOCK))
+#         self.auto_shutdown.label_left.set_text(_(i18n_keys.ITEM__SHUTDOWN))
 
-    @staticmethod
-    def get_str_from_ms(time_ms) -> str:
+#     @staticmethod
+#     def get_str_from_ms(time_ms) -> str:
 
-        if time_ms == storage_device.AUTOLOCK_DELAY_MAXIMUM:
-            text = _(i18n_keys.ITEM__STATUS__NEVER)
-        else:
-            auto_lock_time = time_ms / 1000 // 60
-            if auto_lock_time > 60:
-                value = str(auto_lock_time // 60).split(".")[0]
-                text = _(
-                    i18n_keys.OPTION__STR_HOUR
-                    if value == "1"
-                    else i18n_keys.OPTION__STR_HOURS
-                ).format(value)
-            elif auto_lock_time < 1:
-                value = str(time_ms // 1000).split(".")[0]
-                text = _(i18n_keys.OPTION__STR_SECONDS).format(value)
-            else:
-                value = str(auto_lock_time).split(".")[0]
-                text = _(
-                    i18n_keys.OPTION__STR_MINUTE
-                    if value == "1"
-                    else i18n_keys.OPTION__STR_MINUTES
-                ).format(value)
-        return text
+#         if time_ms == storage_device.AUTOLOCK_DELAY_MAXIMUM:
+#             text = _(i18n_keys.ITEM__STATUS__NEVER)
+#         else:
+#             auto_lock_time = time_ms / 1000 // 60
+#             if auto_lock_time > 60:
+#                 value = str(auto_lock_time // 60).split(".")[0]
+#                 text = _(
+#                     i18n_keys.OPTION__STR_HOUR
+#                     if value == "1"
+#                     else i18n_keys.OPTION__STR_HOURS
+#                 ).format(value)
+#             elif auto_lock_time < 1:
+#                 value = str(time_ms // 1000).split(".")[0]
+#                 text = _(i18n_keys.OPTION__STR_SECONDS).format(value)
+#             else:
+#                 value = str(auto_lock_time).split(".")[0]
+#                 text = _(
+#                     i18n_keys.OPTION__STR_MINUTE
+#                     if value == "1"
+#                     else i18n_keys.OPTION__STR_MINUTES
+#                 ).format(value)
+#         return text
 
-    def on_click(self, event_obj):
-        code = event_obj.code
-        target = event_obj.get_target()
-        if code == lv.EVENT.CLICKED:
-            if utils.lcd_resume():
-                return
-            if target == self.auto_lock:
-                AutoLockSetting(self)
-            elif target == self.auto_shutdown:
-                AutoShutDownSetting(self)
-            else:
-                pass
+#     def on_click(self, event_obj):
+#         code = event_obj.code
+#         target = event_obj.get_target()
+#         if code == lv.EVENT.CLICKED:
+#             if utils.lcd_resume():
+#                 return
+#             if target == self.auto_lock:
+#                 AutoLockSetting(self)
+#             elif target == self.auto_shutdown:
+#                 AutoShutDownSetting(self)
+#             else:
+#                 pass
 
 
 # pyright: off
 class AutoLockSetting(AnimScreen):
+    cur_auto_lock_ms = 0
+    cur_auto_lock = ""
+
     def collect_animation_targets(self) -> list:
         targets = []
         if hasattr(self, "container") and self.container:
@@ -5262,18 +5231,16 @@ class AutoLockSetting(AnimScreen):
             targets.append(self.tips)
         return targets
 
-    # TODO: i18n
     def __init__(self, prev_scr=None):
         # Initialize the class variables first
-        Autolock_and_ShutingDown.cur_auto_lock_ms = (
-            storage_device.get_autolock_delay_ms()
-        )
-        Autolock_and_ShutingDown.cur_auto_lock = (
-            Autolock_and_ShutingDown.get_str_from_ms(
-                Autolock_and_ShutingDown.cur_auto_lock_ms
-            )
-        )
+        cur_auto_lock_ms = storage_device.get_autolock_delay_ms()
+        from trezor.strings import format_duration_ms
 
+        cur_auto_lock = format_duration_ms(
+            cur_auto_lock_ms, storage_device.AUTOLOCK_DELAY_MAXIMUM
+        )
+        AutoLockSetting.cur_auto_lock_ms = cur_auto_lock_ms
+        AutolockSetting.cur_auto_lock = cur_auto_lock
         if not hasattr(self, "_init"):
             self._init = True
         else:
@@ -5308,7 +5275,7 @@ class AutoLockSetting(AnimScreen):
             )
             self.btns[index].add_check_img()
 
-            if item == Autolock_and_ShutingDown.cur_auto_lock:
+            if item == cur_auto_lock:
                 has_custom = False
                 self.btns[index].set_checked()
                 self.checked_index = index
@@ -5317,7 +5284,7 @@ class AutoLockSetting(AnimScreen):
             self.custom = storage_device.get_autolock_delay_ms()
             self.btns[-1] = ListItemBtn(
                 self.container,
-                f"{Autolock_and_ShutingDown.cur_auto_lock}({_(i18n_keys.OPTION__CUSTOM__INSERT)})",
+                f"{cur_auto_lock}({_(i18n_keys.OPTION__CUSTOM__INSERT)})",
                 has_next=False,
                 use_transition=False,
             )
@@ -5356,7 +5323,7 @@ class AutoLockSetting(AnimScreen):
         else:
             self.tips.set_text(
                 _(i18n_keys.CONTENT__SETTINGS_GENERAL_AUTO_LOCK_ON_HINT).format(
-                    item_text or Autolock_and_ShutingDown.cur_auto_lock[:1]
+                    item_text or AutolockSetting.cur_auto_lock[:1]
                 )
             )
 
@@ -5379,7 +5346,7 @@ class AutoLockSetting(AnimScreen):
                         else:
                             auto_lock_time = self.setting_items[index] * 60 * 1000
                         storage_device.set_autolock_delay_ms(int(auto_lock_time))
-                        Autolock_and_ShutingDown.cur_auto_lock_ms = auto_lock_time
+                        AutolockSetting.cur_auto_lock_ms = auto_lock_time
                         self.fresh_tips()
                         from apps.base import reload_settings_from_storage
 
@@ -5482,11 +5449,12 @@ class BacklightSetting(AnimScreen):
         self.slider.add_style(
             StyleWrapper().radius(0).bg_color(lv_colors.WHITE), lv.PART.INDICATOR
         )
-        self.percent = lv.label(self.container)
+        self.percent = lv.label(self.slider)
         self.percent.add_style(
             StyleWrapper().text_font(font_GeistRegular30).text_color(lv_colors.BLACK), 0
         )
-        self.percent.set_text(brightness2_percent_str(self.current_brightness))
+        self.percent.set_text(utils.brightness2_percent_str(self.current_brightness))
+        self.percent.align(lv.ALIGN.TOP_LEFT, 24, 30)
         self.slider.add_event_cb(self.on_value_changed, lv.EVENT.VALUE_CHANGED, None)
         self.slider.clear_flag(lv.obj.FLAG.GESTURE_BUBBLE)
         self.load_screen(self)
@@ -5504,7 +5472,7 @@ class BacklightSetting(AnimScreen):
             value = target.get_value()
             self.temp_brightness = value
             display.backlight(value)
-            self.percent.set_text(brightness2_percent_str(value))
+            self.percent.set_text(utils.brightness2_percent_str(value))
 
     def eventhandler(self, event_obj):
         event = event_obj.code
@@ -5643,7 +5611,7 @@ class TouchSetting(AnimScreen):
         self.description.align_to(self.tap_awake, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 16)
 
         # Set keyboard haptic state
-        if storage_device.keyboard_haptic_enabled():
+        if storage_device.haptic_enabled():
             self.keyboard.add_state()
         else:
             self.keyboard.clear_state()

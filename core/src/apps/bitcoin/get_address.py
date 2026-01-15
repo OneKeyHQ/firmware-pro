@@ -49,10 +49,11 @@ async def get_address(
             ctx,
             keychain,
             msg.address_n,
+            not msg.multisig,
             validate_path_against_script_type(coin, msg),
         )
 
-    node = keychain.derive(msg.address_n)
+    node = keychain.derive(msg.address_n, force_strict=not msg.multisig)
 
     address = addresses.get_address(msg.script_type, coin, node, msg.multisig)
     address_short = addresses.address_short(coin, address)

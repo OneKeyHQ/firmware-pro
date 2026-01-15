@@ -602,7 +602,7 @@ class Message(FullSizeWindow):
                 )
 
 
-class TransactionOverview(FullSizeWindow):
+class TransactionOverviewBase(FullSizeWindow):
     def __init__(
         self,
         title,
@@ -659,23 +659,37 @@ class TransactionOverview(FullSizeWindow):
                 self.channel.publish(2)
 
 
-class TransactionOverviewSend(TransactionOverview):
+class TransactionOverview(TransactionOverviewBase):
     def __init__(
         self,
         title,
         primary_color,
         icon_path,
         address,
-        has_details=False,
+        group_header: str | None = None,
+        group_icon: str | None = None,
+        use_default_group_item: bool = True,
+        additional_group_items: tuple[tuple[str, str], ...] = None,
+        banner_text: str | None = None,
+        banner_level: int = 2,
+        has_details: bool = False,
+        is_send: bool = True,
     ):
+        group_items = ()
+        if use_default_group_item:
+            group_items = ((_(i18n_keys.LIST_KEY__TO__COLON), address),)
+        if additional_group_items:
+            group_items += additional_group_items
         super().__init__(
             title,
             primary_color,
-            "A:/res/icon-send.png",
-            icon_path or "A:/res/evm-eth.png",
-            _(i18n_keys.FORM__DIRECTIONS),
-            "A:/res/group-icon-directions.png",
-            items=((_(i18n_keys.LIST_KEY__TO__COLON), address),),
+            "A:/res/icon-send.png" if is_send else icon_path,
+            (icon_path or "A:/res/evm-eth.png") if is_send else None,
+            _(i18n_keys.FORM__DIRECTIONS) if group_header is None else group_header,
+            "A:/res/group-icon-directions.png" if group_icon is None else group_icon,
+            items=group_items,
+            banner_text=banner_text,
+            banner_level=banner_level,
             has_details=has_details,
         )
 
@@ -3409,6 +3423,7 @@ class SolCreateAssociatedTokenAccount(FullSizeWindow):
         associated_token_account: str,
         wallet_address: str,
         token_mint: str,
+        icon_path: str,
         primary_color,
     ):
         super().__init__(
@@ -3417,6 +3432,7 @@ class SolCreateAssociatedTokenAccount(FullSizeWindow):
             confirm_text=_(i18n_keys.BUTTON__CONTINUE),
             cancel_text=_(i18n_keys.BUTTON__REJECT),
             primary_color=primary_color,
+            icon_path=icon_path,
         )
         self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
         self.group_directions = ContainerFlexCol(
@@ -3463,11 +3479,11 @@ class SolTokenTransfer(FullSizeWindow):
     def __init__(
         self,
         title,
-        from_addr: str,
-        to: str,
         amount: str,
+        from_ata_addr: str,
+        to_ata_addr: str,
         source_owner: str,
-        fee_payer: str,
+        destination_owner: str | None,
         primary_color,
         icon_path,
         token_mint: str | None = None,
@@ -3483,21 +3499,19 @@ class SolTokenTransfer(FullSizeWindow):
             sub_icon_path=icon_path,
         )
 
-        if token_mint:
-            self.banner = Banner(
-                self.content_area,
-                level=LEVEL.WARNING,
-                text=_(i18n_keys.WARNING_UNRECOGNIZED_TOKEN),
-            )
-            self.banner.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, 30)
-            self.container = ContainerFlexCol(
-                self.content_area, self.banner, pos=(0, 8), padding_row=8
-            )
+        # if token_mint:
+        #     self.banner = Banner(
+        #         self.content_area,
+        #         level=LEVEL.WARNING,
+        #         text=_(i18n_keys.WARNING_UNRECOGNIZED_TOKEN),
+        #     )
+        #     self.banner.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, 30)
+        #     self.container = ContainerFlexCol(
+        #         self.content_area, self.banner, pos=(0, 8), padding_row=8
+        #     )
 
-        else:
-            self.container = ContainerFlexCol(
-                self.content_area, self.title, pos=(0, 40)
-            )
+        # else:
+        self.container = ContainerFlexCol(self.content_area, self.title, pos=(0, 40))
 
         if striped:
             self.group_amounts = ContainerFlexCol(
@@ -3525,13 +3539,17 @@ class SolTokenTransfer(FullSizeWindow):
         )
         self.item_group_body_to_ata_addr = DisplayItem(
             self.group_directions,
-            _(i18n_keys.LIST_KEY__TO_TOKEN_ACCOUNT__COLON),
-            to,
+            _(i18n_keys.LIST_KEY__TO_TOKEN_ACCOUNT__COLON)
+            if destination_owner is None
+            else _(i18n_keys.LIST_KEY__TO__COLON),
+            to_ata_addr if destination_owner is None else destination_owner,
         )
         self.item_group_body_from_ata_addr = DisplayItem(
             self.group_directions,
-            _(i18n_keys.LIST_KEY__FROM_TOKEN_ACCOUNT__COLON),
-            from_addr,
+            _(i18n_keys.LIST_KEY__FROM_TOKEN_ACCOUNT__COLON)
+            if destination_owner is None
+            else _(i18n_keys.LIST_KEY__FROM__COLON),
+            from_ata_addr if destination_owner is None else source_owner,
         )
         self.group_directions.add_dummy()
 
@@ -3542,7 +3560,7 @@ class SolTokenTransfer(FullSizeWindow):
             self.group_fees, _(i18n_keys.FORM__FEES), "A:/res/group-icon-fees.png"
         )
         self.item_group_body_fee_payer = DisplayItem(
-            self.group_fees, _(i18n_keys.LIST_KEY__FEE_PAYER__COLON), fee_payer
+            self.group_fees, _(i18n_keys.LIST_KEY__FEE_PAYER__COLON), source_owner
         )
         self.group_fees.add_dummy()
 
@@ -3552,12 +3570,24 @@ class SolTokenTransfer(FullSizeWindow):
         self.item_group_header = CardHeader(
             self.group_more, _(i18n_keys.FORM__MORE), "A:/res/group-icon-more.png"
         )
-        self.item_group_body_signer = DisplayItem(
-            self.group_more, _(i18n_keys.LIST_KEY__SIGNER__COLON), source_owner
-        )
         if token_mint:
             self.item_group_body_mint_addr = DisplayItem(
                 self.group_more, _(i18n_keys.LIST_KEY__MINT_ADDRESS), token_mint
+            )
+        if destination_owner is None:
+            self.item_group_body_signer = DisplayItem(
+                self.group_more, _(i18n_keys.LIST_KEY__SIGNER__COLON), source_owner
+            )
+        else:
+            self.item_group_body_to_ata_addr = DisplayItem(
+                self.group_more,
+                _(i18n_keys.LIST_KEY__TO_TOKEN_ACCOUNT__COLON),
+                to_ata_addr,
+            )
+            self.item_group_body_from_ata_addr = DisplayItem(
+                self.group_more,
+                _(i18n_keys.LIST_KEY__FROM_TOKEN_ACCOUNT__COLON),
+                from_ata_addr,
             )
         self.group_more.add_dummy()
 
@@ -6065,3 +6095,74 @@ class CertificationInfo(FullSizeWindow):
             _dir = lv.indev_get_act().get_gesture_dir()
             if _dir == lv.DIR.RIGHT:
                 lv.event_send(self.nav_back.nav_btn, lv.EVENT.CLICKED, None)
+
+
+class BrightnessControl(FullSizeWindow):
+    def __init__(self):
+        super().__init__(
+            _(i18n_keys.TITLE__SET_BRIGHTNESS),
+            None,
+            _(i18n_keys.BUTTON__APPLY),
+            _(i18n_keys.BUTTON__CANCEL),
+        )
+        from trezor.ui import style
+        import storage.device as storage_device
+
+        current_brightness = storage_device.get_brightness()
+        slider = lv.slider(self.content_area)
+        slider.align_to(self.title, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 40)
+        slider.set_size(456, 94)
+        slider.set_ext_click_area(100)
+        slider.set_range(style.BACKLIGHT_MIN, style.BACKLIGHT_MAX)
+        slider.set_value(current_brightness, lv.ANIM.OFF)
+        slider.add_style(
+            StyleWrapper().border_width(0).radius(40).bg_color(lv_colors.GRAY_1), 0
+        )
+        slider.add_style(
+            StyleWrapper().bg_color(lv_colors.WHITE).pad_all(-50), lv.PART.KNOB
+        )
+        slider.add_style(
+            StyleWrapper().radius(0).bg_color(lv_colors.WHITE), lv.PART.INDICATOR
+        )
+        percent = lv.label(slider)
+        percent.add_style(
+            StyleWrapper().text_font(font_GeistRegular30).text_color(lv_colors.BLACK), 0
+        )
+        percent.set_text(utils.brightness2_percent_str(current_brightness))
+        percent.align(lv.ALIGN.TOP_LEFT, 24, 30)
+        slider.add_event_cb(self.on_value_changed, lv.EVENT.VALUE_CHANGED, None)
+        slider.clear_flag(lv.obj.FLAG.GESTURE_BUBBLE)
+        self.slider = slider
+        self.percent = percent
+        self.current_brightness = current_brightness
+        self.brightness_backup = current_brightness
+
+    def on_value_changed(self, event_obj):
+        target = event_obj.get_target()
+        if target == self.slider:
+            from trezor.ui import display
+
+            value = target.get_value()
+            self.current_brightness = value
+            display.backlight(value)
+            self.percent.set_text(utils.brightness2_percent_str(value))
+
+    def destroy(self, _delay_ms=10):
+        return self.delete()
+
+    def eventhandler(self, event_obj):
+        code = event_obj.code
+        target = event_obj.get_target()
+        if code == lv.EVENT.CLICKED:
+            if target == self.btn_no:
+                from trezor.ui import display
+
+                self.show_dismiss_anim()
+                display.backlight(self.brightness_backup)
+                self.channel.publish(0)
+            elif target == self.btn_yes:
+                import storage.device as storage_device
+
+                self.show_unload_anim()
+                self.channel.publish(1)
+                storage_device.set_brightness(self.current_brightness)

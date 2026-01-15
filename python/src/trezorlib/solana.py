@@ -22,12 +22,15 @@ def sign_tx(
     client: "TrezorClient",
     n: "Address",  # fee_payer
     raw_tx: bytes,
+    extra_info: Optional[messages.SolanaTxExtraInfo],
 ):
     msg = messages.SolanaSignTx(
         raw_tx=raw_tx,
         address_n=n,
+        extra_info=extra_info,
     )
     return client.call(msg)
+
 
 @expect(messages.SolanaMessageSignature)
 def sign_offchain_message(
