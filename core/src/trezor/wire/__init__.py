@@ -430,6 +430,11 @@ async def _handle_single_message(
         )
 
     res_msg: protobuf.MessageType | None = None
+    if use_workflow and utils.has_pending_sleep_after_cancel():
+        res_msg = failure(loop.TASK_CLOSED)
+        await ctx.write(res_msg)
+        await _handle_pending_sleep_after_cancel(res_msg)
+        return None
 
     # We need to find a handler for this message type.  Should not raise.
     handler = find_handler(ctx.iface, msg.type)  # pylint: disable=assignment-from-none
@@ -506,6 +511,8 @@ async def _handle_single_message(
         # perform the write outside the big try-except block, so that usb write
         # problem bubbles up
         await ctx.write(res_msg)
+        if use_workflow:
+            await _handle_pending_sleep_after_cancel(res_msg)
     return None
 
 
@@ -537,6 +544,7 @@ async def handle_session(
                 # wait for a new one coming from the wire.
                 try:
                     msg = await ctx.read_from_wire()
+                    utils.set_wire_busy(True)
                     change_state(is_busy=True)
                 except codec_v1.CodecError as exc:
                     if __debug__:
@@ -567,6 +575,7 @@ async def handle_session(
                     utils.unimport_end(modules)
 
                     if next_msg is None and msg.type not in AVOID_RESTARTING_FOR:
+                        utils.set_wire_busy(False)
                         # Shut down the loop if there is no next message waiting.
                         # Let the session be restarted from `main`.
                         change_state()
@@ -578,6 +587,24 @@ async def handle_session(
             # loop.clear() above.
             if __debug__:
                 log.exception(__name__, exc)
+
+
+async def _handle_pending_sleep_after_cancel(
+    res_msg: protobuf.MessageType | None,
+) -> None:
+
+    if not utils.has_pending_sleep_after_cancel():
+        return
+
+    try:
+        if (
+            res_msg is not None
+            and Failure.is_type_of(res_msg)
+            and res_msg.code == FailureType.ActionCancelled
+        ):
+            await utils.sleep_after_action_cancel()
+    finally:
+        utils.clear_sleep_after_cancel()
 
 
 def _find_handler_placeholder(iface: WireInterface, msg_type: int) -> Handler | None:

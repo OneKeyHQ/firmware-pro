@@ -89,6 +89,8 @@ CHARGE_ENABLE: bool | None = None
 CHARGING = False
 USB_STATE_CHANGED = False
 RESTART_MAIN_LOOP = False
+_WIRE_BUSY = False
+_PENDING_SLEEP_AFTER_CANCEL = False
 
 if __debug__:
     MAX_FP_ATTEMPTS = 50
@@ -200,6 +202,7 @@ def lcd_resume(timeouts_ms: int | None = None) -> bool:
 async def internal_reloop():
     from trezor import loop
 
+    clear_sleep_after_cancel()
     loop.clear()
 
 
@@ -217,6 +220,39 @@ async def turn_off_lcd():
         global RESTART_MAIN_LOOP
         RESTART_MAIN_LOOP = True
         loop.clear()
+
+
+def set_wire_busy(is_busy: bool) -> None:
+    global _WIRE_BUSY
+    _WIRE_BUSY = is_busy
+
+
+def is_wire_busy() -> bool:
+    return _WIRE_BUSY
+
+
+def request_sleep_after_cancel() -> None:
+    global _PENDING_SLEEP_AFTER_CANCEL
+    _PENDING_SLEEP_AFTER_CANCEL = True
+
+
+def clear_sleep_after_cancel() -> None:
+    global _PENDING_SLEEP_AFTER_CANCEL
+    _PENDING_SLEEP_AFTER_CANCEL = False
+
+
+def has_pending_sleep_after_cancel() -> bool:
+    return _PENDING_SLEEP_AFTER_CANCEL
+
+
+async def sleep_after_action_cancel() -> None:
+    from apps import base
+
+    if is_initialization_processing():
+        await turn_off_lcd()
+        return
+    base.lock_device()
+    await turn_off_lcd()
 
 
 def play_dead():

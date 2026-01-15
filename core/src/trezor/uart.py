@@ -421,9 +421,14 @@ async def _deal_button_press(value: bytes) -> None:
             return
     if res == _PRESS_SHORT:
         if display.backlight():
+            utils.request_sleep_after_cancel()
+            if utils.is_wire_busy():
+                workflow.close_others()
+                return
             display.backlight(0)
             if storage_device.is_initialized():
                 if utils.is_initialization_processing():
+                    utils.clear_sleep_after_cancel()
                     return
                 utils.AUTO_POWER_OFF = True
                 utils.RESTART_MAIN_LOOP = True
@@ -444,6 +449,7 @@ async def _deal_button_press(value: bytes) -> None:
                 workflow.spawn(utils.internal_reloop())
                 base.set_homescreen()
                 return
+            utils.clear_sleep_after_cancel()
         else:
             utils.turn_on_lcd_if_possible()
 
