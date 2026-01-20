@@ -2994,6 +2994,7 @@ if TYPE_CHECKING:
         auto_lock_delay_ms: "int | None"
         display_rotation: "int | None"
         experimental_features: "bool | None"
+        busy: "bool | None"
         offset: "int | None"
         ble_name: "str | None"
         ble_ver: "str | None"
@@ -3013,7 +3014,9 @@ if TYPE_CHECKING:
         coin_switch: "int | None"
         build_id: "bytes | None"
         boardloader_version: "str | None"
-        busy: "bool | None"
+        brightness_percent: "int | None"
+        haptic_feedback: "bool | None"
+        auto_shutdown_delay_ms: "int | None"
         onekey_device_type: "OneKeyDeviceType | None"
         onekey_se_type: "OneKeySeType | None"
         onekey_board_version: "str | None"
@@ -3082,6 +3085,7 @@ if TYPE_CHECKING:
             auto_lock_delay_ms: "int | None" = None,
             display_rotation: "int | None" = None,
             experimental_features: "bool | None" = None,
+            busy: "bool | None" = None,
             offset: "int | None" = None,
             ble_name: "str | None" = None,
             ble_ver: "str | None" = None,
@@ -3101,7 +3105,9 @@ if TYPE_CHECKING:
             coin_switch: "int | None" = None,
             build_id: "bytes | None" = None,
             boardloader_version: "str | None" = None,
-            busy: "bool | None" = None,
+            brightness_percent: "int | None" = None,
+            haptic_feedback: "bool | None" = None,
+            auto_shutdown_delay_ms: "int | None" = None,
             onekey_device_type: "OneKeyDeviceType | None" = None,
             onekey_se_type: "OneKeySeType | None" = None,
             onekey_board_version: "str | None" = None,
@@ -3272,6 +3278,9 @@ if TYPE_CHECKING:
         passphrase_always_on_device: "bool | None"
         safety_checks: "SafetyCheckLevel | None"
         experimental_features: "bool | None"
+        auto_shutdown_delay_ms: "int | None"
+        change_brightness: "bool | None"
+        haptic_feedback: "bool | None"
 
         def __init__(
             self,
@@ -3285,6 +3294,9 @@ if TYPE_CHECKING:
             passphrase_always_on_device: "bool | None" = None,
             safety_checks: "SafetyCheckLevel | None" = None,
             experimental_features: "bool | None" = None,
+            auto_shutdown_delay_ms: "int | None" = None,
+            change_brightness: "bool | None" = None,
+            haptic_feedback: "bool | None" = None,
         ) -> None:
             pass
 
@@ -8136,15 +8148,51 @@ if TYPE_CHECKING:
         def is_type_of(cls, msg: Any) -> TypeGuard["SolanaAddress"]:
             return isinstance(msg, cls)
 
+    class SolanaTxATADetails(protobuf.MessageType):
+        owner_address: "str"
+        program_id: "str"
+        mint_address: "str"
+        associated_token_address: "str"
+
+        def __init__(
+            self,
+            *,
+            owner_address: "str",
+            program_id: "str",
+            mint_address: "str",
+            associated_token_address: "str",
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["SolanaTxATADetails"]:
+            return isinstance(msg, cls)
+
+    class SolanaTxExtraInfo(protobuf.MessageType):
+        ata_details: "list[SolanaTxATADetails]"
+
+        def __init__(
+            self,
+            *,
+            ata_details: "list[SolanaTxATADetails] | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["SolanaTxExtraInfo"]:
+            return isinstance(msg, cls)
+
     class SolanaSignTx(protobuf.MessageType):
         address_n: "list[int]"
         raw_tx: "bytes"
+        extra_info: "SolanaTxExtraInfo | None"
 
         def __init__(
             self,
             *,
             raw_tx: "bytes",
             address_n: "list[int] | None" = None,
+            extra_info: "SolanaTxExtraInfo | None" = None,
         ) -> None:
             pass
 

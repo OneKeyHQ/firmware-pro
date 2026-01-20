@@ -241,6 +241,7 @@ class Context:
         self.primary_color = None
         self.icon_path = ""
         self.name = ""
+        self.extra: Any | None = None
 
     async def _call(
         self,

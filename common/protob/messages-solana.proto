@@ -39,6 +39,21 @@ message SolanaAddress {
 }
 
 /**
+ * @embed
+ */
+message SolanaTxATADetails {
+    required string owner_address = 1;
+    required string program_id = 2;
+    required string mint_address = 3;
+    required string associated_token_address = 4;
+}
+/**
+ * @embed
+ */
+message SolanaTxExtraInfo {
+    repeated SolanaTxATADetails ata_details = 1;
+}
+/**
  * Request: ask device to sign Solana transaction
  * @start
  * @next SolanaSignedTx
@@ -46,6 +61,7 @@ message SolanaAddress {
 message SolanaSignTx {
     repeated uint32 address_n = 1;          // BIP-32 path to derive the key from master node
     required bytes raw_tx = 2;              // serialized raw transaction
+    optional SolanaTxExtraInfo extra_info = 3; // extra information for the transaction
 }
 
 /**

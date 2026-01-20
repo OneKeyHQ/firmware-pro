@@ -105,6 +105,9 @@ async def sign_tx(
                 elif program_id == SPL_TOKEN_PROGRAM_ID:
                     from .spl.spl_token_program import parse
 
+                    if msg.extra_info:
+
+                        ctx.extra = msg.extra_info.ata_details
                     await parse(ctx, accounts, i.data)
                 elif program_id == SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID:
                     from .spl.ata_program import parse

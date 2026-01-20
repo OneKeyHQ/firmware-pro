@@ -78,7 +78,7 @@ def busy_expiry_ms() -> int:
 
 
 def get_features() -> Features:
-    import storage.recovery
+    # import storage.recovery
     import storage.sd_salt
     import storage  # workaround for https://github.com/microsoft/pyright/issues/2685
 
@@ -87,6 +87,7 @@ def get_features() -> Features:
     from trezor.messages import Features
     from trezor import uart
     from apps.common import mnemonic, safety_checks
+    from trezor.ui import style
 
     storage_serial_no = storage.device.get_serial()
     serial_no = storage_serial_no
@@ -125,6 +126,12 @@ def get_features() -> Features:
         onekey_serial_no=storage_serial_no,
         onekey_ble_name=uart.get_ble_name(),
         onekey_ble_version=uart.get_ble_version(),
+        haptic_feedback=storage.device.haptic_enabled(),
+        auto_lock_delay_ms=storage.device.get_autolock_delay_ms(),
+        auto_shutdown_delay_ms=storage.device.get_autoshutdown_delay_ms(),
+        brightness_percent=int(
+            storage.device.get_brightness() / style.BACKLIGHT_MAX * 100
+        ),
     )
 
     if utils.BITCOIN_ONLY:
@@ -188,7 +195,6 @@ def get_features() -> Features:
         f.wipe_code_protection = config.has_wipe_code()
         f.passphrase_always_on_device = storage.device.get_passphrase_always_on_device()
         f.safety_checks = safety_checks.read_setting()
-        f.auto_lock_delay_ms = storage.device.get_autolock_delay_ms()
         f.display_rotation = storage.device.get_rotation()
         f.experimental_features = storage.device.get_experimental_features()
 

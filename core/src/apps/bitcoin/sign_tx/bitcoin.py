@@ -179,7 +179,9 @@ class Bitcoin:
                     writers.write_tx_input_check(h_presigned_inputs_check, txi)
                 await self.process_external_input(txi)
             else:
-                node = self.keychain.derive(txi.address_n)
+                node = self.keychain.derive(
+                    txi.address_n, force_strict=not txi.multisig
+                )
                 await self.process_internal_input(txi, node)
 
             script_pubkey = self.input_derive_script(txi, node)
@@ -585,7 +587,7 @@ class Bitcoin:
         self.tx_info.check_input(txi)
 
         if txi.script_type == InputScriptType.SPENDP2SHWITNESS:
-            node = self.keychain.derive(txi.address_n)
+            node = self.keychain.derive(txi.address_n, force_strict=not txi.multisig)
             key_sign_pub = node.public_key()
         else:
             # Native SegWit has an empty scriptSig. Public key is not needed.
@@ -599,7 +601,7 @@ class Bitcoin:
             # script type than the one that was provided during the confirmation phase.
             raise wire.ProcessError("Transaction has changed during signing")
 
-        node = self.keychain.derive(txi.address_n)
+        node = self.keychain.derive(txi.address_n, force_strict=not txi.multisig)
         public_key = node.public_key()
 
         if txi.multisig:
@@ -629,7 +631,7 @@ class Bitcoin:
             self.get_sighash_type(txi),
         )
 
-        node = self.keychain.derive(txi.address_n)
+        node = self.keychain.derive(txi.address_n, not txi.multisig)
         return bip340_sign(node, sigmsg_digest)
 
     async def sign_segwit_input(self, i: int) -> None:
@@ -699,7 +701,9 @@ class Bitcoin:
                 txi_sign = txi
                 if not script_pubkey:
                     self.tx_info.check_input(txi)
-                    node = self.keychain.derive(txi.address_n)
+                    node = self.keychain.derive(
+                        txi.address_n, force_strict=not txi.multisig
+                    )
                     key_sign_pub = node.public_key()
                     if txi.multisig:
                         # Sanity check to ensure we are signing with a key that is included in the multisig.
@@ -917,7 +921,7 @@ class Bitcoin:
             return txi.script_pubkey
 
         if node is None:
-            node = self.keychain.derive(txi.address_n)
+            node = self.keychain.derive(txi.address_n, force_strict=not txi.multisig)
 
         address = addresses.get_address(txi.script_type, self.coin, node, txi.multisig)
         return scripts.output_derive_script(address, self.coin)
@@ -935,7 +939,7 @@ class Bitcoin:
                 ]
             except KeyError:
                 raise wire.DataError("Invalid script type")
-            node = self.keychain.derive(txo.address_n)
+            node = self.keychain.derive(txo.address_n, force_strict=not txo.multisig)
             txo.address = addresses.get_address(
                 input_script_type, self.coin, node, txo.multisig
             )

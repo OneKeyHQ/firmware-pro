@@ -73,23 +73,30 @@ def format_plural(string: str, count: int, plural: str) -> str:
     return string.format(count=count, plural=plural)
 
 
-def format_duration_ms(milliseconds: int) -> str:
+def format_duration_ms(milliseconds: int, maximum_ms: int | None) -> str:
     """
     Returns human-friendly representation of a duration. Truncates all decimals.
     """
-    units = (
-        ("hour", 60 * 60 * 1000),
-        ("minute", 60 * 1000),
-        ("second", 1000),
-    )
-    for unit, divisor in units:
-        if milliseconds >= divisor:
-            break
-    else:
-        unit = "millisecond"
-        divisor = 1
+    from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
 
-    return format_plural("{count} {plural}", milliseconds // divisor, unit)
+    if maximum_ms and milliseconds == maximum_ms:
+        return _(i18n_keys.OPTION__NEVER)
+    if milliseconds < 60000:
+        seconds = milliseconds // 1000
+        formated = _(i18n_keys.OPTION__STR_SECONDS).format(seconds)
+    elif milliseconds < 3600000:
+        minutes = milliseconds // 60000
+        formated = _(
+            i18n_keys.OPTION__STR_MINUTE
+            if minutes == 1
+            else i18n_keys.OPTION__STR_MINUTES
+        ).format(minutes)
+    else:
+        hours = milliseconds // 3600000
+        formated = _(
+            i18n_keys.OPTION__STR_HOUR if hours == 1 else i18n_keys.OPTION__STR_HOURS
+        ).format(hours)
+    return formated
 
 
 def format_timestamp(timestamp: int) -> str:
@@ -117,8 +124,10 @@ def format_customer_data(data: bytes | None) -> str:
         return ""
     try:
         formatted = data.decode()
-        if all((c <= 0x20 or c == 0x7F) for c in data[:33]):
-            raise UnicodeError  # non-printable characters
+        if all((c in (0x20, 0x0A, 0x0D)) for c in formatted[:10]):
+            raise UnicodeError  # whitespace only
+        elif any((ord(c) < 0x20 or ord(c) == 0x7F) for c in formatted[:10]):
+            raise UnicodeError  # contains non-printable characters
     except UnicodeError:  # mp has no UnicodeDecodeError
         from binascii import hexlify
 

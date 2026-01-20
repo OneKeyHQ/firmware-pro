@@ -1860,3 +1860,11 @@ def _networks_iterator() -> Iterator[NetworkInfoTuple]:
         "evm-dtt.png",  # icon
         0x1A2A5F,  # primary_color
     )
+    yield (
+        1672,  # chain_id
+        1672,  # slip44
+        "PROS",  # symbol
+        "Pharos",  # name
+        "evm-pros.png",  # icon
+        0x00FF33,  # primary_color
+    )

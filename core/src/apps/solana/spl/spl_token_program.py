@@ -350,11 +350,10 @@ async def parse(ctx: wire.Context, accounts: list[PublicKey], data: bytes) -> No
 
         await confirm_sol_token_transfer(
             ctx,
-            from_addr=str(params.source),
-            to_addr=str(params.dest),
             amount=f"{params.amount} Lamports Token",
+            from_ata_addr=str(params.source),
+            to_ata_addr=str(params.dest),
             source_owner=str(params.owner),
-            fee_payer=str(params.owner),
         )
     elif instruction_type == InstructionType.APPROVE:
         parsed_data = AMOUNT_LAYOUT.parse(data)
@@ -434,16 +433,30 @@ async def parse(ctx: wire.Context, accounts: list[PublicKey], data: bytes) -> No
         )
         from trezor.ui.layouts import confirm_sol_token_transfer
         from ..utils.helpers import sol_format_amount, get_spl_token
+        from ..spl.token_account import try_get_token_account_owner_address
+        from ..constents import SPL_TOKEN_PROGRAM_ID
 
+        owner_address = None
+        if hasattr(ctx, "extra"):
+            owner_address = try_get_token_account_owner_address(
+                params.dest.get(),
+                SPL_TOKEN_PROGRAM_ID.get(),
+                params.mint.get(),
+                ctx.extra,
+            )
+            # if owner_address is None:
+            #     raise wire.DataError("Invalid ata params")
         await confirm_sol_token_transfer(
             ctx,
-            from_addr=str(params.source),
-            to_addr=str(params.dest),
             amount=sol_format_amount(
                 params.amount, decimals=params.decimals, token_mint=params.mint
             ),
+            from_ata_addr=str(params.source),
+            to_ata_addr=str(params.dest),
             source_owner=str(params.owner),
-            fee_payer=str(params.owner),
+            destination_owner=str(PublicKey(owner_address))
+            if owner_address is not None
+            else None,
             token_mint=None if get_spl_token(str(params.mint)) else str(params.mint),
         )
     elif instruction_type == InstructionType.APPROVE2:

@@ -816,7 +816,7 @@ def set_device_name_display_enabled(enable: bool) -> None:
     _DEVICE_NAME_DISPLAY_ENABLED_VALUE = enable
 
 
-def keyboard_haptic_enabled() -> bool:
+def haptic_enabled() -> bool:
     global _KEYBOARD_HAPTIC_VALUE
     if _KEYBOARD_HAPTIC_VALUE is None:
         haptic_enabled = common.get(_NAMESPACE, _KEYBOARD_HAPTIC, public=True)
