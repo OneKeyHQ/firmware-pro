@@ -3452,7 +3452,7 @@ class SolCreateAssociatedTokenAccount(FullSizeWindow):
             self.group_directions, _(i18n_keys.LIST_KEY__OWNER), wallet_address
         )
         self.item_body_mint_addr = DisplayItem(
-            self.group_directions, _(i18n_keys.LIST_KEY__MINT_ADDRESS), token_mint
+            self.group_directions, _(i18n_keys.TOKEN_ADDRESS), token_mint
         )
         self.item_body_founder = DisplayItem(
             self.group_directions,
@@ -3572,7 +3572,7 @@ class SolTokenTransfer(FullSizeWindow):
         )
         if token_mint:
             self.item_group_body_mint_addr = DisplayItem(
-                self.group_more, _(i18n_keys.LIST_KEY__MINT_ADDRESS), token_mint
+                self.group_more, _(i18n_keys.TOKEN_ADDRESS), token_mint
             )
         if destination_owner is None:
             self.item_group_body_signer = DisplayItem(
