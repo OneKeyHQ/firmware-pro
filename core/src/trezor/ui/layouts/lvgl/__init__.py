@@ -735,10 +735,11 @@ async def should_show_details_eip7702(
             title,
             primary_color=ctx.primary_color,
             icon_path=delegator_icon_path,
-            sub_icon_path=None,
-            card_title=_(i18n_keys.OVERVIEW),
-            card_icon="A:/res/group-icon-more.png",
-            items=(
+            address=None,
+            group_header=_(i18n_keys.OVERVIEW),
+            group_icon="A:/res/group-icon-more.png",
+            use_default_group_item=False,
+            additional_group_items=(
                 (_(i18n_keys.FIELDS_ACCOUNT), authority_addr),
                 (_(i18n_keys.FIELDS_DELEGATE_TO), delegate_addr),
                 (
@@ -754,6 +755,7 @@ async def should_show_details_eip7702(
             if delegate_addr
             else _(i18n_keys.BANNER_REVOKE_SMART_ACCOUNT_WARNING),
             has_details=True,
+            is_send=False,
         ),
         "eip7702_authority_overview",
         br_code,
@@ -1568,7 +1570,7 @@ async def confirm_sol_token_transfer(
             (_(i18n_keys.LIST_KEY__TO_TOKEN_ACCOUNT__COLON), to_ata_addr),
         )
     if token_mint:
-        additional_group_items = ((_(i18n_keys.LIST_KEY__MINT_ADDRESS), token_mint),)
+        additional_group_items = ((_(i18n_keys.TOKEN_ADDRESS), token_mint),)
     if await should_show_details(
         ctx,
         destination_owner,
