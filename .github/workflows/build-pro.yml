@@ -2,7 +2,7 @@ name: "build-pro"
 
 on:
   push:
-    branches: [master]
+    branches: [main]
   workflow_dispatch:
 
 jobs:
