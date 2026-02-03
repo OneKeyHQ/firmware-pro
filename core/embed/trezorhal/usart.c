@@ -22,12 +22,12 @@ static DMA_HandleTypeDef hdma_rx;
 
 static bool uart_tx_done = false;
 
-#define UART_PACKET_MAX_LEN 128
+#define UART_PACKET_MAX_LEN 256
 static uint8_t dma_uart_rev_buf[UART_PACKET_MAX_LEN]
     __attribute__((section(".sram3")));
 static uint8_t dma_uart_send_buf[UART_PACKET_MAX_LEN]
     __attribute__((section(".sram3")));
-uint32_t usart_fifo_len = 0;
+static uint32_t usart_dma_rx_read_pos = 0;
 
 uint8_t uart_data_in[UART_BUF_MAX_LEN];
 
@@ -103,7 +103,7 @@ void ble_usart_init(void) {
   hdma_rx.Init.MemInc = DMA_MINC_ENABLE;
   hdma_rx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
   hdma_rx.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
-  hdma_rx.Init.Mode = DMA_NORMAL;
+  hdma_rx.Init.Mode = DMA_CIRCULAR;
   hdma_rx.Init.Priority = DMA_PRIORITY_MEDIUM;
 
   HAL_DMA_Init(&hdma_rx);
@@ -129,6 +129,7 @@ void ble_usart_init(void) {
   HAL_UART_ReceiverTimeout_Config(
       huart, (UART_TIMEOUT_MS * 1000) / UART_ONE_BIT_TIME_US);
   __HAL_UART_ENABLE_IT(huart, UART_IT_RTO);
+  usart_dma_rx_read_pos = 0;
   HAL_UART_Receive_DMA(huart, dma_uart_rev_buf, sizeof(dma_uart_rev_buf));
 }
 
@@ -189,6 +190,7 @@ void ble_usart_irq_ctrl(bool enable) {
   if (enable) {
     HAL_NVIC_EnableIRQ(UART4_IRQn);
     HAL_UART_Abort(huart);
+    usart_dma_rx_read_pos = 0;
     HAL_UART_Receive_DMA(huart, dma_uart_rev_buf, sizeof(dma_uart_rev_buf));
   } else {
     HAL_UART_Abort(huart);
@@ -206,74 +208,110 @@ uint32_t ble_usart_read(uint8_t *buf, uint32_t lenth) {
   return len + 3;
 }
 
-static uint8_t calXor(uint8_t *buf, uint32_t len) {
-  uint8_t tmp = 0;
-  uint32_t i;
-  for (i = 0; i < len; i++) {
-    tmp ^= buf[i];
-  }
-  return tmp;
-}
-
-static void usart_rev_package_dma(uint8_t *buf, uint32_t len) {
-  if (len < 5) {
+static void usart_rx_dma_process(void) {
+  uint32_t write_pos =
+      sizeof(dma_uart_rev_buf) - __HAL_DMA_GET_COUNTER(huart->hdmarx);
+  if (write_pos == usart_dma_rx_read_pos) {
     return;
   }
-  uint32_t index = 0;
-  uint8_t *p_header;
-  while (len > 0) {
-    if (buf[index] != 0xA5 || buf[index + 1] != 0x5A) {
-      index++;
-      len--;
+
+  uint32_t available_len;
+  if (write_pos > usart_dma_rx_read_pos) {
+    available_len = write_pos - usart_dma_rx_read_pos;
+  } else {
+    available_len =
+        sizeof(dma_uart_rev_buf) - usart_dma_rx_read_pos + write_pos;
+  }
+
+  uint32_t processed_len = 0;
+  uint32_t current_read_pos = usart_dma_rx_read_pos;
+  const uint32_t buf_len = sizeof(dma_uart_rev_buf);
+
+  while (processed_len < available_len) {
+    uint32_t remaining = available_len - processed_len;
+
+    if (remaining < 2) {
+      break;
+    }
+
+    uint8_t b0 = dma_uart_rev_buf[current_read_pos % buf_len];
+    uint8_t b1 = dma_uart_rev_buf[(current_read_pos + 1) % buf_len];
+    if (b0 != 0xA5 || b1 != 0x5A) {
+      current_read_pos = (current_read_pos + 1) % buf_len;
+      processed_len += 1;
       continue;
     }
-    p_header = buf + index;
-    index += 2;
-    len -= 2;
-    if (len < 2) {
-      return;
-    }
-    // length include xor byte
-    uint16_t data_len = (buf[index] << 8) + buf[index + 1];
-    index += 2;
-    len -= 2;
-    if (len < data_len) {
-      return;
-    }
-    index += data_len;
-    len -= data_len;
 
-    uint8_t xor = calXor(p_header, data_len + 3);
-    if (buf[index - 1] != xor) {
-      return;
+    if (remaining < 4) {
+      break;
     }
-    fifo_write_no_overflow(&uart_fifo_in, p_header, data_len + 3);
+
+    uint16_t data_len =
+        (dma_uart_rev_buf[(current_read_pos + 2) % buf_len] << 8) +
+        dma_uart_rev_buf[(current_read_pos + 3) % buf_len];
+
+    // Packet format: [0xA5][0x5A][LH][LL][payload...][XOR]
+    // data_len = len(payload) + len(XOR)
+    uint32_t packet_total_len = data_len + 4;  // Including header
+    uint32_t packet_store_len = data_len + 3;  // Excluding XOR byte
+
+    // Validate packet length
+    if (packet_total_len < 5 || packet_total_len > buf_len) {
+      current_read_pos = (current_read_pos + 1) % buf_len;
+      processed_len += 1;
+      continue;
+    }
+
+    if (remaining < packet_total_len) {
+      break;
+    }
+
+    uint8_t xor = 0;
+    uint32_t first_part_len = buf_len - current_read_pos;
+    if (first_part_len > packet_store_len) {
+      first_part_len = packet_store_len;
+    }
+    uint32_t second_part_len = packet_store_len - first_part_len;
+    for (uint32_t i = 0; i < first_part_len; i++) {
+      xor ^= dma_uart_rev_buf[current_read_pos + i];
+    }
+    for (uint32_t i = 0; i < second_part_len; i++) {
+      xor ^= dma_uart_rev_buf[i];
+    }
+    if (xor !=
+        dma_uart_rev_buf[(current_read_pos + packet_total_len - 1) % buf_len]) {
+      current_read_pos = (current_read_pos + 1) % buf_len;
+      processed_len += 1;
+      continue;
+    }
+
+    for (uint32_t i = 0; i < first_part_len; i++) {
+      fifo_put_no_overflow(&uart_fifo_in,
+                           dma_uart_rev_buf[current_read_pos + i]);
+    }
+    for (uint32_t i = 0; i < second_part_len; i++) {
+      fifo_put_no_overflow(&uart_fifo_in, dma_uart_rev_buf[i]);
+    }
+
+    fifo_lockpos_set(&uart_fifo_in);
+
+    current_read_pos = (current_read_pos + packet_total_len) % buf_len;
+    processed_len += packet_total_len;
   }
-}
 
-// void UART4_IRQHandler(void) {
-//   volatile uint8_t data = 0;
-//   (void)data;
-//   if (__HAL_UART_GET_FLAG(huart, UART_FLAG_WUF)) {
-//     __HAL_UART_CLEAR_FLAG(huart, UART_CLEAR_WUF);
-//   }
-//   if (__HAL_UART_GET_FLAG(huart, UART_FLAG_ORE) != 0) {
-//     data = (uint8_t)(huart->Instance->RDR);
-//     __HAL_UART_CLEAR_FLAG(huart, UART_CLEAR_OREF);
-//   }
-//   if (__HAL_UART_GET_FLAG(huart, UART_FLAG_RXFNE) != 0) {
-//     memset(dma_uart_rev_buf, 0x00, sizeof(dma_uart_rev_buf));
-//     usart_rev_package(dma_uart_rev_buf);
-//   }
-// }
+  usart_dma_rx_read_pos = current_read_pos;
+}
 
 void UARTx_DMA_TX_IRQHandler(void) { HAL_DMA_IRQHandler(huart->hdmatx); }
 
 void UARTx_DMA_RX_IRQHandler(void) { HAL_DMA_IRQHandler(huart->hdmarx); }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
-  usart_rev_package_dma(dma_uart_rev_buf, sizeof(dma_uart_rev_buf));
-  HAL_UART_Receive_DMA(huart, dma_uart_rev_buf, sizeof(dma_uart_rev_buf));
+  usart_rx_dma_process();
+}
+
+void HAL_UART_RxHalfCpltCallback(UART_HandleTypeDef *huart) {
+  usart_rx_dma_process();
 }
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) { uart_tx_done = true; }
@@ -284,16 +322,9 @@ void UART4_IRQHandler(void) {
   }
   if (__HAL_UART_GET_FLAG(huart, UART_FLAG_RTOF)) {
     __HAL_UART_CLEAR_FLAG(huart, UART_CLEAR_RTOF);
-    HAL_UART_Abort(huart);
-    usart_fifo_len =
-        sizeof(dma_uart_rev_buf) - __HAL_DMA_GET_COUNTER(huart->hdmarx);
-    if (usart_fifo_len > 0) {
-      usart_rev_package_dma(dma_uart_rev_buf, usart_fifo_len);
-    }
-    HAL_UART_Receive_DMA(huart, dma_uart_rev_buf, sizeof(dma_uart_rev_buf));
-  } else {
-    HAL_UART_IRQHandler(huart);
+    usart_rx_dma_process();
   }
+  HAL_UART_IRQHandler(huart);
 }
 
 void usart_print(const char *text, int text_len) {
