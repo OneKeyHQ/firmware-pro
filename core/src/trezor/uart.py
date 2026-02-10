@@ -660,7 +660,7 @@ def get_ble_name() -> str:
 def get_ble_version() -> str:
     """Get ble version."""
     if utils.EMULATOR:
-        return "1.0.0"
+        return "2.3.6"
     return NRF_VERSION if NRF_VERSION else ""
 
 
