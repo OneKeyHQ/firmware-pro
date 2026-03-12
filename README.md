@@ -1,75 +1,80 @@
+<h3 align="center">OneKey Pro Firmware</h3>
+
 <p align="center">
-<img width="200" src="https://github.com/rayston92/graph_bed/blob/e3b2c938fc5b17d68531f69178908afb16266e6a/img/onekey_logo_badge_border.png?raw=trueg"/>
+  Open-source firmware for the OneKey Pro hardware wallet.
+  <br />
+  Security-first · Fully verifiable · Community-driven
+</p>
+
+<p align="center">
+  <a href="https://github.com/OneKeyHQ/firmware-pro/stargazers"><img src="https://img.shields.io/github/stars/OneKeyHQ/firmware-pro?logo=github&style=for-the-badge&labelColor=000" alt="Stars" /></a>
+  <a href="https://github.com/OneKeyHQ/firmware-pro/releases"><img src="https://img.shields.io/github/release/OneKeyHQ/firmware-pro.svg?style=for-the-badge&labelColor=000" alt="Version" /></a>
+  <a href="https://github.com/OneKeyHQ/firmware-pro/commits/onekey"><img src="https://img.shields.io/github/last-commit/OneKeyHQ/firmware-pro.svg?style=for-the-badge&labelColor=000" alt="Last commit" /></a>
+  <br />
+  <a href="https://github.com/OneKeyHQ/firmware-pro/graphs/contributors"><img src="https://img.shields.io/github/contributors-anon/OneKeyHQ/firmware-pro?style=for-the-badge&labelColor=000" alt="Contributors" /></a>
+  <a href="https://github.com/OneKeyHQ/firmware-pro/issues?q=is%3Aissue+is%3Aopen"><img src="https://img.shields.io/github/issues-raw/OneKeyHQ/firmware-pro.svg?style=for-the-badge&labelColor=000" alt="Issues" /></a>
+  <a href="https://github.com/OneKeyHQ/firmware-pro/pulls?q=is%3Apr+is%3Aopen"><img src="https://img.shields.io/github/issues-pr-raw/OneKeyHQ/firmware-pro.svg?style=for-the-badge&labelColor=000" alt="Pull Requests" /></a>
+  <a href="https://twitter.com/OneKeyHQ"><img src="https://img.shields.io/twitter/follow/OneKeyHQ?style=for-the-badge&labelColor=000" alt="Twitter" /></a>
 </p>
 
 ---
 
-[![Github Stars](https://img.shields.io/github/stars/OneKeyHQ/firmware-pro?t&logo=github&style=for-the-badge&labelColor=000)](https://github.com/OneKeyHQ/firmware-pro/stargazers)
-[![Version](https://img.shields.io/github/release/OneKeyHQ/firmware-pro.svg?style=for-the-badge&labelColor=000)](https://github.com/OneKeyHQ/firmware-pro/releases)
-[![](https://img.shields.io/github/contributors-anon/OneKeyHQ/firmware-pro?style=for-the-badge&labelColor=000)](https://github.com/OneKeyHQ/firmware-pro/graphs/contributors)
-[![Last commit](https://img.shields.io/github/last-commit/OneKeyHQ/firmware-pro.svg?style=for-the-badge&labelColor=000)](https://github.com/OneKeyHQ/firmware-pro/commits/onekey)
-[![Issues](https://img.shields.io/github/issues-raw/OneKeyHQ/firmware-pro.svg?style=for-the-badge&labelColor=000)](https://github.com/OneKeyHQ/firmware-pro/issues?q=is%3Aissue+is%3Aopen)
-[![Pull Requests](https://img.shields.io/github/issues-pr-raw/OneKeyHQ/firmware-pro.svg?style=for-the-badge&labelColor=000)](https://github.com/OneKeyHQ/firmware-pro/pulls?q=is%3Apr+is%3Aopen)
-[![Twitter Follow](https://img.shields.io/twitter/follow/OneKeyHQ?style=for-the-badge&labelColor=000)](https://twitter.com/OneKeyHQ)
+## About
 
-## Document
+This repository contains the firmware source code for the **OneKey Pro** hardware wallet. Every release is built via GitHub CI, multi-signed by the OneKey team, and can be independently verified against this open-source codebase — ensuring full supply chain transparency from code to device.
 
-[Deepwiki](https://deepwiki.com/OneKeyHQ/firmware-pro/1-overview)
+> **Verify your device's firmware:** see [Open Source Code Verification](https://help.onekey.so/en/articles/12025839-verifying-onekey-pro-firmware-with-open-source-code) for step-by-step instructions.
 
-![CleanShot 2025-04-27 at 15 42 19@2x](https://github.com/user-attachments/assets/9d7cc41f-17a2-4ba6-87eb-21118225e401)
+## Documentation
 
+📖 &nbsp;**[Deep Wiki — Full Architecture & Codebase Guide](https://deepwiki.com/OneKeyHQ/firmware-pro/1-overview)**
+
+[![DeepWiki](https://github.com/user-attachments/assets/9d7cc41f-17a2-4ba6-87eb-21118225e401)](https://deepwiki.com/OneKeyHQ/firmware-pro/1-overview)
+
+## Getting Started
+
+### Prerequisites
+
+- [Nix](https://nixos.org/download.html) (package manager)
+- Git
+
+### Build & Run
+
+```bash
+# 1. Clone the repo (with submodules)
+git clone --recurse-submodules https://github.com/OneKeyHQ/firmware-pro.git
+cd firmware-pro
+
+# 2. Enter the Nix development shell & install dependencies
+nix-shell
+poetry install
+
+# 3. Build the Unix emulator
+cd core && poetry run make build_unix
+
+# 4. Start the emulator
+poetry run ./emu.py
+
+# 5. (Optional) Install the CLI client to interact with the emulator
+cd ../python && poetry run python3 -m pip install .
+```
+
+## Contributing
+
+We welcome contributions of all sizes. Before you start, please read the [contributing docs](docs/SUMMARY.md) — especially the [misc chapter](docs/misc/) for useful background knowledge.
+
+- **Bug fixes & small features** — File a PR directly. See [CONTRIBUTING.md](docs/misc/contributing.md) for PR requirements.
+- **New coin / token / network** — Follow the guide in [COINS.md](docs/misc/COINS.md).
+
+## Security
+
+> **If you discover a vulnerability, please report it responsibly.**
+
+- 📬 &nbsp;Email **[security@onekey.so](mailto:security@onekey.so)** — do **not** open a public issue.
+- 💰 &nbsp;We run a [Bug Bounty Program](https://github.com/OneKeyHQ/app-monorepo/blob/onekey/docs/BUG_RULES.md) to reward responsible disclosure.
 
 ## Community & Support
 
-- [Community Forum](https://github.com/orgs/OneKeyHQ/discussions). Best for: help with building, discussion about best practices.
-- [GitHub Issues](https://github.com/OneKeyHQ/firmware-pro/issues). Best for: bugs and errors you encounter using OneKey.
-
-
-## 🚀 Getting Onboard
-
-1. Install [nix](https://nixos.org/download.html)
-2. Pulling the latest code via the git command line tool,  setting up the development environment
-
-```
-  git clone --recurse-submodules https://github.com/OneKeyHQ/firmware-pro.git
-  cd firmware-pro
-  nix-shell
-  poetry install
-```
-
-3. Run the build with:
-
-```
-   cd core && poetry run make build_unix
-```
-
-4. Now you can start the emulator
-
-```
-   poetry run ./emu.py
-```
-
-5. You can now install the command line client utility to interact with the emulator
-
-```
-   cd python && poetry run python3 -m pip install .
-```
-
-## ✏ Contribute
-
-- Adding a small feature or a fix
-
-  If your change is somewhat subtle, feel free to file a PR in one of the appropriate repositories directly. See the PR requirements noted at [CONTRIBUTING.md](docs/misc/contributing.md)
-
-- Add new coin/token/network to the official onekey firmware
-
-  See [COINS.md](docs/misc/COINS.md)
-
-Also please have a look at the [docs](docs/SUMMARY.md) before contributing. The misc chapter should be read in particular because it contains some useful assorted knowledge.
-
-## 🔒 Security
-
-- Please read [Bug Bounty Rules](https://github.com/OneKeyHQ/app-monorepo/blob/onekey/docs/BUG_RULES.md), we have detailed the exact plan in this article.
-- Please report suspected security vulnerabilities in private to dev@onekey.so
-- Please do NOT create publicly viewable issues for suspected security vulnerabilities.
-- As an open source project, although we are not yet profitable, we try to give some rewards to white hat hackers who disclose vulnerabilities to us in a timely manner.
+- 💬 &nbsp;[Community Forum](https://github.com/orgs/OneKeyHQ/discussions) — Questions, ideas, and best practices.
+- 🐛 &nbsp;[GitHub Issues](https://github.com/OneKeyHQ/firmware-pro/issues) — Bug reports and feature requests.
+- 🐦 &nbsp;[Twitter / X](https://twitter.com/OneKeyHQ) — News and announcements.
