@@ -1,3 +1,5 @@
+import utime
+
 from trezor import motor
 from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
 
@@ -6,6 +8,13 @@ from ..widgets.style import StyleWrapper
 
 MAX_VISIBLE_VALUE = 175
 MIN_VISIBLE_VALUE = 20
+START_VALUE_TOLERANCE = 5
+# slider 456px, knob 82px, pad 16px => track ~358px, range 155 units => ~2.3px/unit
+MAX_FORWARD_JUMP = 60  # ~138px/frame
+MIN_PROGRESS_STEPS = 3  # normal slide produces 15-60 events
+MAX_DRAG_DURATION_MS = 3000  # max 3s per drag, blocks slow random touch accumulation
+TOUCH_BOUNDS_MARGIN_HORIZONTAL_PX = 12
+TOUCH_BOUNDS_MARGIN_VERTICAL_PX = 36
 
 
 class Slider(lv.slider):
@@ -76,6 +85,18 @@ class Slider(lv.slider):
         self.add_event_cb(self.on_event, lv.EVENT.DRAW_PART_BEGIN, None)
         self.add_event_cb(self.on_event, lv.EVENT.DRAW_PART_END, None)
 
+        self._drag_active = False
+        self._start_value = MIN_VISIBLE_VALUE
+        self._last_value = MIN_VISIBLE_VALUE
+        self._reached_end = False
+        self._progress_count = 0
+        self._invalid_jump = False
+        self._passed = False
+        self._drag_start_ms = 0
+        self._blocked_until_release = False
+        self._touch_point = lv.point_t()
+        self._slider_area = lv.area_t()
+
     def enable(self, enable: bool = True):
         if enable:
             self.disable = False
@@ -120,41 +141,118 @@ class Slider(lv.slider):
                 lv.PART.KNOB | lv.STATE.DEFAULT,
             )
 
+    def _clamp_value(self, value):
+        if value > MAX_VISIBLE_VALUE:
+            self.set_value(MAX_VISIBLE_VALUE, lv.ANIM.OFF)
+            return MAX_VISIBLE_VALUE
+        if value < MIN_VISIBLE_VALUE:
+            self.set_value(MIN_VISIBLE_VALUE, lv.ANIM.OFF)
+            return MIN_VISIBLE_VALUE
+        return value
+
+    def _reset_drag_state(self, value):
+        self._drag_active = True
+        self._start_value = value
+        self._last_value = value
+        self._reached_end = value >= MAX_VISIBLE_VALUE
+        self._progress_count = 0
+        self._invalid_jump = False
+        self._passed = False
+        self._drag_start_ms = utime.ticks_ms()
+        self._blocked_until_release = False
+
+    def _can_pass(self, current_value):
+        return (
+            self._drag_active
+            and self._start_value <= MIN_VISIBLE_VALUE + START_VALUE_TOLERANCE
+            and current_value >= MAX_VISIBLE_VALUE
+            and self._reached_end
+            and self._progress_count >= MIN_PROGRESS_STEPS
+            and not self._invalid_jump
+            and utime.ticks_diff(utime.ticks_ms(), self._drag_start_ms)
+            <= MAX_DRAG_DURATION_MS
+        )
+
+    def _abort_drag(self):
+        self._drag_active = False
+        self._blocked_until_release = True
+        self._invalid_jump = True
+        self._passed = False
+        self.tips.add_flag(lv.obj.FLAG.HIDDEN)
+        self.set_value(MIN_VISIBLE_VALUE, lv.ANIM.ON)
+        indev = lv.indev_get_act()
+        if indev:
+            indev.wait_release()
+
     def on_event(self, event):
         code = event.code
-        target = event.get_target()
-        current_value = target.get_value()
-        if code == lv.EVENT.PRESSED:
+        current_value = event.get_target().get_value()
+        if code == lv.EVENT.PRESSING:
+            current_value = self._clamp_value(current_value)
+            if self._blocked_until_release:
+                return
+            if not self._drag_active:
+                return
+            # timeout: reset slider immediately instead of waiting for RELEASED
+            if (
+                utime.ticks_diff(utime.ticks_ms(), self._drag_start_ms)
+                > MAX_DRAG_DURATION_MS
+            ):
+                self._abort_drag()
+                return
+            # check if touch is within slider component bounds (not knob-only hit_test)
+            indev = lv.indev_get_act()
+            if indev:
+                indev.get_point(self._touch_point)
+                self.get_coords(self._slider_area)
+                if (
+                    self._touch_point.x
+                    < self._slider_area.x1 - TOUCH_BOUNDS_MARGIN_HORIZONTAL_PX
+                    or self._touch_point.x
+                    > self._slider_area.x2 + TOUCH_BOUNDS_MARGIN_HORIZONTAL_PX
+                    or self._touch_point.y
+                    < self._slider_area.y1 - TOUCH_BOUNDS_MARGIN_VERTICAL_PX
+                    or self._touch_point.y
+                    > self._slider_area.y2 + TOUCH_BOUNDS_MARGIN_VERTICAL_PX
+                ):
+                    self._abort_drag()
+                    return
+            delta = current_value - self._last_value
+            if delta > 0:
+                self._progress_count += 1
+                if delta > MAX_FORWARD_JUMP:
+                    self._invalid_jump = True
+            self._last_value = current_value
+            if current_value >= MAX_VISIBLE_VALUE:
+                self._reached_end = True
+        elif code == lv.EVENT.PRESSED:
             motor.vibrate(motor.WHISPER)
-        elif code == lv.EVENT.PRESSING:
-            if current_value > MAX_VISIBLE_VALUE:
-                self.set_value(MAX_VISIBLE_VALUE, lv.ANIM.OFF)
-            elif current_value < MIN_VISIBLE_VALUE:
-                self.set_value(MIN_VISIBLE_VALUE, lv.ANIM.OFF)
+            current_value = self._clamp_value(current_value)
+            self._reset_drag_state(current_value)
         elif code == lv.EVENT.RELEASED:
-            if current_value < MAX_VISIBLE_VALUE:
+            self._blocked_until_release = False
+            self._passed = self._can_pass(current_value)
+            if self._passed:
+                self.tips.clear_flag(lv.obj.FLAG.HIDDEN)
+                if self.has_flag(lv.obj.FLAG.CLICKABLE):
+                    self.clear_flag(lv.obj.FLAG.CLICKABLE)
+                motor.vibrate(motor.SUCCESS)
+                lv.event_send(self, lv.EVENT.READY, None)
+            else:
                 motor.vibrate(motor.ERROR)
                 self.set_value(MIN_VISIBLE_VALUE, lv.ANIM.ON)
+                self.tips.add_flag(lv.obj.FLAG.HIDDEN)
+            self._drag_active = False
         elif code == lv.EVENT.DRAW_PART_BEGIN:
             dsc = lv.obj_draw_part_dsc_t.__cast__(event.get_param())
-            if dsc.part == lv.PART.KNOB:
-                if dsc.id == 0:
-                    if current_value < MAX_VISIBLE_VALUE:
-                        # if self.disable:
-                        #     dsc.rect_dsc.bg_img_src = (
-                        #         Slider.SLIDER_DISABLE_ARROW_IMG_SRC
-                        #     )
-                        # else:
-                        dsc.rect_dsc.bg_img_src = self.arrow_img_src
-                    else:
-                        self.tips.clear_flag(lv.obj.FLAG.HIDDEN)
-                        dsc.rect_dsc.bg_img_src = self.done_img_src
-                        if self.has_flag(lv.obj.FLAG.CLICKABLE):
-                            self.clear_flag(lv.obj.FLAG.CLICKABLE)
-                        else:
-                            return
-                        motor.vibrate(motor.SUCCESS)
-                        lv.event_send(self, lv.EVENT.READY, None)
+            if dsc.part == lv.PART.KNOB and dsc.id == 0:
+                show_done = self._passed or self._can_pass(current_value)
+                if show_done:
+                    self.tips.clear_flag(lv.obj.FLAG.HIDDEN)
+                    dsc.rect_dsc.bg_img_src = self.done_img_src
+                else:
+                    self.tips.add_flag(lv.obj.FLAG.HIDDEN)
+                    dsc.rect_dsc.bg_img_src = self.arrow_img_src
         elif code == lv.EVENT.DRAW_PART_END:
             dsc = lv.obj_draw_part_dsc_t.__cast__(event.get_param())
             if dsc.part == lv.PART.MAIN:
