@@ -8,7 +8,6 @@ from apps.common.signverify import decode_message
 
 from . import seed
 from .addresses import assert_params_cond
-from .helpers.paths import SCHEMA_STAKING_ANY_ACCOUNT
 
 if TYPE_CHECKING:
     from trezor.wire import Context
@@ -22,7 +21,8 @@ async def sign_message(
     from trezor.messages import CardanoMessageSignature, CardanoAddressParametersType
     from trezor.enums import CardanoAddressType
     from apps.common import paths
-    from .helpers.paths import SCHEMA_MINT, SCHEMA_PAYMENT
+    from .helpers.paths import SCHEMA_PAYMENT, SCHEMA_STAKING_ANY_ACCOUNT
+
     from trezor.crypto.curve import ed25519
     from trezor import wire
     from .helpers import network_ids, protocol_magics
@@ -38,10 +38,10 @@ async def sign_message(
         msg.address_n,
         True,
         # path must match the PUBKEY schema
-        (SCHEMA_PAYMENT.match(msg.address_n) or SCHEMA_MINT.match(msg.address_n)),
+        SCHEMA_PAYMENT.match(msg.address_n),
     )
-    if msg.network_id != network_ids.MAINNET:
-        raise wire.ProcessError("Invalid Networ ID")
+    if msg.protocol_magic is None and (msg.network_id != network_ids.MAINNET):
+        raise wire.ProcessError("Invalid Network id, need protocol magic provide")
 
     address_type = msg.address_type if msg.address_type else CardanoAddressType.BASE
     address_n = msg.address_n
@@ -70,7 +70,7 @@ async def sign_message(
             script_payment_hash=None,
             script_staking_hash=None,
         ),
-        protocol_magics.MAINNET,
+        protocol_magics.MAINNET if msg.protocol_magic is None else msg.protocol_magic,
         msg.network_id,
     )
     address = addresses.encode_human_readable(address_bytes)

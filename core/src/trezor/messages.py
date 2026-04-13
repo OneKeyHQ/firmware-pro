@@ -2431,6 +2431,7 @@ if TYPE_CHECKING:
         derivation_type: "CardanoDerivationType"
         network_id: "int"
         address_type: "CardanoAddressType | None"
+        protocol_magic: "int | None"
 
         def __init__(
             self,
@@ -2440,6 +2441,7 @@ if TYPE_CHECKING:
             network_id: "int",
             address_n: "list[int] | None" = None,
             address_type: "CardanoAddressType | None" = None,
+            protocol_magic: "int | None" = None,
         ) -> None:
             pass
 
