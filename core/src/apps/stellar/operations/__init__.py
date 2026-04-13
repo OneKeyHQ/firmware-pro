@@ -9,8 +9,11 @@ if TYPE_CHECKING:
 
 
 async def process_operation(
-    ctx: Context, w: Writer, op: consts.StellarMessageType
+    ctx: Context, w: Writer, op: consts.StellarMessageType, soroban_data_size: int = 0
 ) -> None:
+    if soroban_data_size > 0:
+        if not serialize.StellarInvokeHostFunctionOp.is_type_of(op):
+            raise ValueError("Stellar: unexpected operation for soroban transaction")
     if op.source_account:
         await layout.confirm_source_account(ctx, op.source_account)
     serialize.write_account(w, op.source_account)
@@ -54,5 +57,10 @@ async def process_operation(
     elif serialize.StellarSetOptionsOp.is_type_of(op):
         await layout.confirm_set_options_op(ctx, op)
         serialize.write_set_options_op(w, op)
+    elif serialize.StellarInvokeHostFunctionOp.is_type_of(op):
+        summary = await serialize.write_invoke_host_function_op(
+            ctx, w, op, soroban_data_size
+        )
+        await layout.confirm_invoke_host_function_op(ctx, summary)
     else:
         raise ValueError("Unknown operation")

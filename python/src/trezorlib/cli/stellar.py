@@ -105,7 +105,8 @@ def sign_transaction(
         sys.exit(1)
 
     address_n = tools.parse_path(address)
-    tx, operations = stellar.from_envelope(envelope)
-    resp = stellar.sign_tx(client, tx, operations, address_n, network_passphrase)
-
+    tx, operations, soroban_data_xdr = stellar.from_envelope(envelope)
+    resp = stellar.sign_tx(
+        client, tx, operations, address_n, soroban_data_xdr, network_passphrase
+    )
     return base64.b64encode(resp.signature)

@@ -212,6 +212,9 @@ class MessageType(IntEnum):
     StellarManageBuyOfferOp = 222
     StellarPathPaymentStrictSendOp = 223
     StellarSignedTx = 230
+    StellarInvokeHostFunctionOp = 260
+    StellarSorobanDataRequest = 261
+    StellarSorobanDataAck = 262
     CardanoGetPublicKey = 305
     CardanoPublicKey = 306
     CardanoGetAddress = 307
@@ -822,6 +825,12 @@ class StellarSignerType(IntEnum):
     ACCOUNT = 0
     PRE_AUTH = 1
     HASH = 2
+
+
+class StellarRequestType(IntEnum):
+    CALL = 0
+    AUTH = 1
+    EXT = 2
 
 
 class TezosContractType(IntEnum):
@@ -3809,6 +3818,7 @@ class CardanoSignMessage(protobuf.MessageType):
         3: protobuf.Field("derivation_type", "CardanoDerivationType", repeated=False, required=True),
         4: protobuf.Field("network_id", "uint32", repeated=False, required=True),
         5: protobuf.Field("address_type", "CardanoAddressType", repeated=False, required=False),
+        6: protobuf.Field("protocol_magic", "uint32", repeated=False, required=False),
     }
 
     def __init__(
@@ -3819,12 +3829,14 @@ class CardanoSignMessage(protobuf.MessageType):
         network_id: "int",
         address_n: Optional[Sequence["int"]] = None,
         address_type: Optional["CardanoAddressType"] = None,
+        protocol_magic: Optional["int"] = None,
     ) -> None:
         self.address_n: Sequence["int"] = address_n if address_n is not None else []
         self.message = message
         self.derivation_type = derivation_type
         self.network_id = network_id
         self.address_type = address_type
+        self.protocol_magic = protocol_magic
 
 
 class CardanoMessageSignature(protobuf.MessageType):
@@ -10574,6 +10586,7 @@ class StellarSignTx(protobuf.MessageType):
         12: protobuf.Field("memo_id", "uint64", repeated=False, required=False),
         13: protobuf.Field("memo_hash", "bytes", repeated=False, required=False),
         14: protobuf.Field("num_operations", "uint32", repeated=False, required=True),
+        60: protobuf.Field("soroban_data_size", "uint32", repeated=False, required=False),
     }
 
     def __init__(
@@ -10591,6 +10604,7 @@ class StellarSignTx(protobuf.MessageType):
         memo_text: Optional["str"] = None,
         memo_id: Optional["int"] = None,
         memo_hash: Optional["bytes"] = None,
+        soroban_data_size: Optional["int"] = 0,
     ) -> None:
         self.address_n: Sequence["int"] = address_n if address_n is not None else []
         self.network_passphrase = network_passphrase
@@ -10604,6 +10618,7 @@ class StellarSignTx(protobuf.MessageType):
         self.memo_text = memo_text
         self.memo_id = memo_id
         self.memo_hash = memo_hash
+        self.soroban_data_size = soroban_data_size
 
 
 class StellarTxOpRequest(protobuf.MessageType):
@@ -10957,6 +10972,69 @@ class StellarBumpSequenceOp(protobuf.MessageType):
         self.source_account = source_account
 
 
+class StellarInvokeHostFunctionOp(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 260
+    FIELDS = {
+        1: protobuf.Field("source_account", "string", repeated=False, required=False),
+        2: protobuf.Field("contract_address", "string", repeated=False, required=True),
+        3: protobuf.Field("function_name", "string", repeated=False, required=True),
+        4: protobuf.Field("call_args_xdr_size", "uint32", repeated=False, required=True),
+        5: protobuf.Field("call_args_xdr_initial_chunk", "bytes", repeated=False, required=True),
+        6: protobuf.Field("soroban_auth_xdr_size", "uint32", repeated=False, required=True),
+        7: protobuf.Field("soroban_auth_xdr_initial_chunk", "bytes", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        contract_address: "str",
+        function_name: "str",
+        call_args_xdr_size: "int",
+        call_args_xdr_initial_chunk: "bytes",
+        soroban_auth_xdr_size: "int",
+        soroban_auth_xdr_initial_chunk: "bytes",
+        source_account: Optional["str"] = None,
+    ) -> None:
+        self.contract_address = contract_address
+        self.function_name = function_name
+        self.call_args_xdr_size = call_args_xdr_size
+        self.call_args_xdr_initial_chunk = call_args_xdr_initial_chunk
+        self.soroban_auth_xdr_size = soroban_auth_xdr_size
+        self.soroban_auth_xdr_initial_chunk = soroban_auth_xdr_initial_chunk
+        self.source_account = source_account
+
+
+class StellarSorobanDataRequest(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 261
+    FIELDS = {
+        1: protobuf.Field("type", "StellarRequestType", repeated=False, required=True),
+        2: protobuf.Field("data_length", "uint32", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        type: "StellarRequestType",
+        data_length: "int",
+    ) -> None:
+        self.type = type
+        self.data_length = data_length
+
+
+class StellarSorobanDataAck(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 262
+    FIELDS = {
+        1: protobuf.Field("data_chunk_xdr", "bytes", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        data_chunk_xdr: "bytes",
+    ) -> None:
+        self.data_chunk_xdr = data_chunk_xdr
+
+
 class StellarSignedTx(protobuf.MessageType):
     MESSAGE_WIRE_TYPE = 230
     FIELDS = {
@@ -10972,6 +11050,49 @@ class StellarSignedTx(protobuf.MessageType):
     ) -> None:
         self.public_key = public_key
         self.signature = signature
+
+
+class StellarSignMessage(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = None
+    FIELDS = {
+        1: protobuf.Field("address_n", "uint32", repeated=True, required=False),
+        2: protobuf.Field("message", "bytes", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        message: "bytes",
+        address_n: Optional[Sequence["int"]] = None,
+    ) -> None:
+        self.address_n: Sequence["int"] = address_n if address_n is not None else []
+        self.message = message
+
+
+class StellarSignAuthorization(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = None
+    FIELDS = {
+        1: protobuf.Field("address_n", "uint32", repeated=True, required=False),
+        2: protobuf.Field("network_passphrase", "string", repeated=False, required=True),
+        3: protobuf.Field("nonce", "uint64", repeated=False, required=True),
+        4: protobuf.Field("expiration", "uint32", repeated=False, required=True),
+        5: protobuf.Field("invocation", "bytes", repeated=False, required=True),
+    }
+
+    def __init__(
+        self,
+        *,
+        network_passphrase: "str",
+        nonce: "int",
+        expiration: "int",
+        invocation: "bytes",
+        address_n: Optional[Sequence["int"]] = None,
+    ) -> None:
+        self.address_n: Sequence["int"] = address_n if address_n is not None else []
+        self.network_passphrase = network_passphrase
+        self.nonce = nonce
+        self.expiration = expiration
+        self.invocation = invocation
 
 
 class SuiGetAddress(protobuf.MessageType):

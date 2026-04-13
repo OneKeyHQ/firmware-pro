@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
-from trezor.enums import StellarAssetType
+from trezor.crypto import hashlib
+from trezor.enums import StellarAssetType, StellarRequestType
 from trezor.messages import (
     StellarAccountMergeOp,
     StellarAllowTrustOp,
@@ -9,6 +10,7 @@ from trezor.messages import (
     StellarChangeTrustOp,
     StellarCreateAccountOp,
     StellarCreatePassiveSellOfferOp,
+    StellarInvokeHostFunctionOp,
     StellarManageBuyOfferOp,
     StellarManageDataOp,
     StellarManageSellOfferOp,
@@ -16,10 +18,14 @@ from trezor.messages import (
     StellarPathPaymentStrictSendOp,
     StellarPaymentOp,
     StellarSetOptionsOp,
+    StellarSorobanDataAck,
+    StellarSorobanDataRequest,
 )
-from trezor.wire import DataError, ProcessError
+from trezor.utils import HashWriter
+from trezor.wire import Context, DataError, ProcessError
 
-from .. import writers
+from .. import consts, writers
+from ..helpers import InvokeHostFunctionOpSummary
 
 if TYPE_CHECKING:
     from trezor.utils import Writer
@@ -163,6 +169,100 @@ def write_set_options_op(w: Writer, msg: StellarSetOptionsOp) -> None:
         writers.write_uint32(w, msg.signer_type)
         writers.write_bytes_fixed(w, msg.signer_key, 32)
         writers.write_uint32(w, msg.signer_weight)
+
+
+async def write_invoke_host_function_op(
+    ctx: Context, w: Writer, msg: StellarInvokeHostFunctionOp, soroban_data_size: int
+) -> InvokeHostFunctionOpSummary:
+    writers.write_uint32(w, consts.STELLAR_HOST_FUNCTION_TYPE_INVOKE_CONTRACT)
+    writers.write_contract_id(w, msg.contract_address)
+    if not msg.function_name:
+        raise DataError("Stellar: Contract function name can not be empty")
+    if len(msg.call_args_xdr_initial_chunk) == 0:
+        raise DataError("Stellar: Contract function args can not be empty")
+    if len(msg.soroban_auth_xdr_initial_chunk) == 0:
+        raise DataError("Stellar: Contract authorization can not be empty")
+    writers.write_string(w, msg.function_name)
+
+    call_args_hash_writer = HashWriter(hashlib.sha256())
+    await _write_soroban_xdr(
+        ctx,
+        w,
+        StellarRequestType.CALL,
+        msg.call_args_xdr_size,
+        msg.call_args_xdr_initial_chunk,
+        call_args_hash_writer,
+    )
+
+    soroban_auth_hash_writer = HashWriter(hashlib.sha256())
+    await _write_soroban_xdr(
+        ctx,
+        w,
+        StellarRequestType.AUTH,
+        msg.soroban_auth_xdr_size,
+        msg.soroban_auth_xdr_initial_chunk,
+        soroban_auth_hash_writer,
+    )
+
+    soroban_tx_ext_hash_writer = HashWriter(hashlib.sha256())
+    writers.write_uint32(w, consts.STELLAR_TX_EXT_SOROBAN)
+    await _write_soroban_xdr(
+        ctx,
+        w,
+        StellarRequestType.EXT,
+        soroban_data_size,
+        b"",
+        soroban_tx_ext_hash_writer,
+    )
+
+    return InvokeHostFunctionOpSummary(
+        msg.contract_address,
+        msg.function_name,
+        call_args_hash_writer.get_digest(),
+        soroban_auth_hash_writer.get_digest(),
+        soroban_tx_ext_hash_writer.get_digest(),
+    )
+
+
+async def _write_soroban_xdr(
+    ctx: Context,
+    w: Writer,
+    request_type: StellarRequestType,
+    total_size: int,
+    initial_chunk: bytes,
+    hash_writer: HashWriter,
+) -> None:
+    if len(initial_chunk) > total_size:
+        raise DataError("Stellar: soroban chunk exceeds declared size")
+    if initial_chunk:
+        writers.write_bytes_unchecked(w, initial_chunk)
+        hash_writer.write(initial_chunk)
+    received = len(initial_chunk)
+
+    while received < total_size:
+        ack = await _send_chunk_request(ctx, request_type, total_size - received)
+        chunk = ack.data_chunk_xdr
+        if not chunk:
+            raise DataError("Stellar: empty soroban chunk")
+        received += len(chunk)
+        if received > total_size:
+            raise DataError("Stellar: soroban chunk exceeds declared size")
+        writers.write_bytes_unchecked(w, chunk)
+        hash_writer.write(chunk)
+
+    if received != total_size:
+        raise DataError("Stellar: soroban chunk size mismatch")
+
+
+async def _send_chunk_request(
+    ctx: Context, request_type: StellarRequestType, data_left: int
+) -> StellarSorobanDataAck:
+    if data_left <= 0:
+        raise ValueError("Invalid soroban chunk request size")
+    req = StellarSorobanDataRequest(
+        type=request_type, data_length=data_left if data_left <= 1024 else 1024
+    )
+    return await ctx.call(req, StellarSorobanDataAck)
 
 
 def _write_set_options_int(w: Writer, value: int | None) -> None:
