@@ -1073,5 +1073,7 @@ translations = [
     "Appliquer",
     "Ouvrir",
     "Régler la luminosité",
+    "Sélectionner l'adresse",
+    "Aller à l'adresse",
 ]
 # fmt: on

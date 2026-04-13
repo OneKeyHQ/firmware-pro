@@ -380,6 +380,7 @@ async def show_address_offline(
     addr_type: str | None = None,
     prev_scr=None,
     account_name: str = "",
+    address_index: int = 0,
 ) -> None:
     is_multisig = len(xpubs) > 0
     from trezor.lvglui.scrs.template import AddressOffline
@@ -416,6 +417,7 @@ async def show_address_offline(
             network=network,
             prev_scr=prev_scr,
             account_name=account_name,
+            address_index=address_index,
         ),
         "show_address",
         ButtonRequestType.Address,
@@ -1024,6 +1026,7 @@ async def confirm_properties(
     icon_color: int = ui.GREEN,  # TODO cleanup @ redesign
     hold: bool = False,
     br_code: ButtonRequestType = ButtonRequestType.ConfirmOutput,
+    warning_banner_text: str | None = None,
 ) -> None:
     para = []
     from trezor.lvglui.scrs.template import ConfirmProperties
@@ -1034,7 +1037,7 @@ async def confirm_properties(
                 para.append((key, val))
             elif isinstance(val, bytes):
                 para.append((key, hexlify(val).decode()))
-    screen = ConfirmProperties(title, para, ctx.primary_color)
+    screen = ConfirmProperties(title, para, ctx.primary_color, warning_banner_text)
     await raise_if_cancelled(interact(ctx, screen, br_type, br_code))
 
 

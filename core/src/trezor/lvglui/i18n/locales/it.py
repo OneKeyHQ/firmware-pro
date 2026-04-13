@@ -1073,5 +1073,7 @@ translations = [
     "Fare domanda a",
     "Apri",
     "Imposta luminosità",
+    "Seleziona l'indirizzo",
+    "Vai all'indirizzo",
 ]
 # fmt: on

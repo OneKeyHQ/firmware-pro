@@ -30,8 +30,10 @@ from .components.composite import (
     RawDataItem,
 )
 from .components.container import ContainerFlexCol
+from .components.label import ScreenTitle
 from .components.listitem import CardHeader, CardItem, DisplayItem
 from .components.qrcode import QRCode
+from .components.signatureinfo import OverviewComponent
 from .widgets.style import StyleWrapper
 
 
@@ -258,6 +260,241 @@ class ADDRESS_OFFLINE_RETURN_TYPE:
     DONE = 0
     COMMON_DRI_CONFIG_CHANGED = 1
     BTC_DRI_CONFIG_CHANGED = 2
+    BTC_ADDRESS_INDEX_CHANGED = 3
+
+
+class IndexSelectionScreen(FullSizeWindow):
+    SELECTION_TYPE_ACCOUNT = 0
+    SELECTION_TYPE_ADDRESS = 1
+    selection_type_text_mapping = {
+        SELECTION_TYPE_ACCOUNT: ("Account", _(i18n_keys.TITLE__SET_INITIAL_ACCOUNT)),
+        SELECTION_TYPE_ADDRESS: ("Address", _(i18n_keys.TITLE_GO_TO_ADDRESS)),
+    }
+
+    def __init__(self, parent, title, current_index, sel_type: int = 0):
+        super().__init__(
+            title="",
+            subtitle=None,
+            anim_dir=0,
+        )
+        self.title = ScreenTitle(self, None, (), title, 63)
+        import storage.device as storage_device
+        from trezor import workflow
+        from .components.navigation import Navigation
+
+        self._workflow = workflow
+        self.add_nav_back()
+        # # navi
+        self.nav_opt = Navigation(
+            self,
+            nav_btn_align=lv.ALIGN.RIGHT_MID,
+            btn_bg_img="A:/res/general.png",
+            align=lv.ALIGN.TOP_RIGHT,
+        )
+        self.parent = parent
+        self.container = ContainerFlexCol(
+            self.content_area, None, padding_row=2, no_align=True
+        )
+        self.container.align(lv.ALIGN.TOP_MID, 0, 32)
+        self.max_account = 1000000000
+        self.max_page = (self.max_account - 1) // 5
+
+        self.current_account = current_index + 1
+        self.current_page = (self.current_account - 1) // 5
+        self.button_label = self.selection_type_text_mapping[sel_type][0]
+        self.sel_type = sel_type
+        # account select btn
+        self.account_btns = []
+        for _i in range(5):
+            btn = ListItemBtn(
+                self.container,
+                "",
+                has_next=False,
+                use_transition=False,
+            )
+            btn.add_check_img()
+            self.account_btns.append(btn)
+        self.update_account_buttons()
+
+        self.next_btn = NormalButton(self, "")
+        self.next_btn.set_size(224, 98)
+        self.next_btn.align(lv.ALIGN.BOTTOM_RIGHT, -12, -8)
+        self.next_btn.set_style_bg_img_src("A:/res/arrow-right-2.png", 0)
+
+        self.back_btn = NormalButton(self, "")
+        self.back_btn.set_size(224, 98)
+        self.back_btn.align(lv.ALIGN.BOTTOM_LEFT, 12, -8)
+        self.back_btn.set_style_bg_img_src("A:/res/arrow-left-2.png", 0)
+
+        self.disable_style = (
+            StyleWrapper()
+            .bg_color(lv_colors.ONEKEY_BLACK_5)
+            .bg_img_recolor(lv_colors.ONEKEY_GRAY_1)
+            .bg_img_recolor_opa(lv.OPA.COVER)
+        )
+        self.enable_style = (
+            StyleWrapper().bg_color(lv_colors.ONEKEY_BLACK_3).bg_opa(lv.OPA.COVER)
+        )
+
+        self.update_page_buttons()
+        self.next_btn.add_style(self.enable_style, 0)
+        self.back_btn.add_style(self.enable_style, 0)
+
+        self.animations_next = []
+        self.animations_prev = []
+        if storage_device.is_animation_enabled():
+            self.animate_list_items()
+
+    def animate_list_items(self):
+        def create_move_cb_container(obj, item_index):
+            def cb(value):
+                obj.set_style_translate_x(value, 0)
+                obj.invalidate()
+
+            return cb
+
+        from .components.anim import Anim
+
+        container_move_anim = Anim(
+            50,
+            0,
+            create_move_cb_container(self.container, 0),
+            time=150,
+            delay=0,
+            path_cb=lv.anim_t.path_ease_out,
+        )
+
+        container_move_back_anim = Anim(
+            -50,
+            0,
+            create_move_cb_container(self.container, 0),
+            time=150,
+            delay=0,
+            path_cb=lv.anim_t.path_ease_out,
+        )
+
+        self.animations_next.append(container_move_anim)
+        container_move_anim.start()
+
+        self.animations_prev.append(container_move_back_anim)
+
+    def get_page_start(self):
+        return (self.current_page * 5) + 1
+
+    def update_account_buttons(self):
+        page_start = self.get_page_start()
+        for i, btn in enumerate(self.account_btns):
+            account_num = page_start + i
+            btn.label_left.set_text(f"{self.button_label} #{account_num}")
+
+            if account_num == self.current_account:
+                btn.set_checked()
+            else:
+                btn.set_uncheck()
+
+    def enable_page_buttons(self, btn):
+        btn.add_flag(lv.btn.FLAG.CLICKABLE)
+        btn.remove_style(self.disable_style, 0)
+        btn.add_style(self.enable_style, 0)
+
+    def disable_page_buttons(self, btn):
+        btn.clear_flag(lv.btn.FLAG.CLICKABLE)
+        btn.remove_style(self.enable_style, 0)
+        btn.add_style(self.disable_style, 0)
+
+    def update_page_buttons(self):
+        if self.current_page == 0:
+            self.disable_page_buttons(self.back_btn)
+            if not self.next_btn.has_flag(lv.btn.FLAG.CLICKABLE):
+                self.enable_page_buttons(self.next_btn)
+
+        elif self.current_page == self.max_page:
+            self.disable_page_buttons(self.next_btn)
+            if not self.back_btn.has_flag(lv.btn.FLAG.CLICKABLE):
+                self.enable_page_buttons(self.back_btn)
+
+        else:
+            if not self.next_btn.has_flag(lv.btn.FLAG.CLICKABLE):
+                self.enable_page_buttons(self.next_btn)
+            if not self.back_btn.has_flag(lv.btn.FLAG.CLICKABLE):
+                self.enable_page_buttons(self.back_btn)
+        gc.collect()
+
+    def next_page(self):
+        self.current_page += 1
+        self.update_account_buttons()
+        self.update_page_buttons()
+        for anim in self.animations_next:
+            anim.start()
+
+    def prev_page(self):
+        if self.current_page > 0:
+            self.current_page -= 1
+            self.update_account_buttons()
+            self.update_page_buttons()
+            for anim in self.animations_prev:
+                anim.start()
+
+    def eventhandler(self, event_obj):
+        event = event_obj.code
+        target = event_obj.get_target()
+        if event == lv.EVENT.CLICKED:
+            if utils.lcd_resume():
+                return
+
+            if isinstance(target, lv.imgbtn):
+                if target == self.nav_back.nav_btn:
+                    if hasattr(self.parent, "on_index_changed"):
+                        self.parent.on_index_changed(self.current_account - 1)
+                    self.destroy(200)
+                elif target == self.nav_opt.nav_btn:
+                    self._workflow.spawn(self.type_account_index())
+            else:
+                if target == self.back_btn:
+                    self.prev_page()
+                elif target == self.next_btn:
+                    self.next_page()
+                else:
+                    for i, btn in enumerate(self.account_btns):
+                        if target == btn:
+                            for other_btn in self.account_btns:
+                                other_btn.set_uncheck()
+
+                            btn.set_checked()
+
+                            self.current_account = self.get_page_start() + i
+                            self.parent.update_index(self.current_account - 1)
+                            break
+
+    async def type_account_index(self):
+        from trezor.lvglui.scrs.pinscreen import InputNum
+
+        result = None
+        while True:
+            numscreen = InputNum(
+                title=self.selection_type_text_mapping[self.sel_type][1],
+                subtitle=(
+                    _(i18n_keys.TITLE__SET_INITIAL_ACCOUNT_ERROR)
+                    if result is not None
+                    else ""
+                ),
+                is_pin=False,
+            )
+            result = await numscreen.request()
+
+            if not result:  # user cancelled
+                return
+
+            account_num = int(result)
+            if 1 <= account_num <= self.max_account:
+                break
+
+        self.current_account = account_num
+        self.current_page = (account_num - 1) // 5
+        self.parent.update_index(account_num - 1)
+
+        self.update_account_buttons()
+        self.update_page_buttons()
 
 
 class AddressOffline(FullSizeWindow):
@@ -280,6 +517,7 @@ class AddressOffline(FullSizeWindow):
         network: str = "",
         prev_scr=None,
         account_name: str = "",
+        address_index: int = 0,
     ):
         super().__init__(
             title,
@@ -301,6 +539,7 @@ class AddressOffline(FullSizeWindow):
         self.network = network
         self.prev_scr = prev_scr
         self.account_name = account_name
+        self.address_index = address_index
         if primary_color:
             self.title.add_style(StyleWrapper().text_color(primary_color), 0)
         self.qr_first = qr_first
@@ -323,7 +562,7 @@ class AddressOffline(FullSizeWindow):
         if self.network in ("Bitcoin", "Ethereum", "Solana", "Litecoin", "Kaspa"):
             self.derive_btn = ListItemBtn(
                 self.content_area,
-                self.addr_type,
+                self.addr_type or "",
                 left_img_src="A:/res/branches.png",
                 has_next=True,
             )
@@ -347,11 +586,18 @@ class AddressOffline(FullSizeWindow):
                 pos=(0, 40),
                 padding_row=0,
             )
+        card_clickable = self.network in ("Bitcoin",)
         self.item_group_header = CardHeader(
             self.group_address,
-            self.account_name,
+            f" Address #{self.address_index + 1}"
+            if card_clickable
+            else self.account_name,
             "A:/res/group-icon-wallet.png",
+            clickable=card_clickable,
         )
+        if card_clickable:
+            self.item_group_header.add_flag(lv.obj.FLAG.EVENT_BUBBLE)
+        self.card_clickable = card_clickable
         self.item_group_body = DisplayItem(
             self.group_address,
             None,
@@ -427,6 +673,18 @@ class AddressOffline(FullSizeWindow):
             raise ValueError(f"Unsupported network: {self.network}")
         self.destroy(50)
 
+    def on_index_changed(self, new_index: int):
+        if new_index == self.address_index:
+            return
+        self.channel.publish(
+            (ADDRESS_OFFLINE_RETURN_TYPE.BTC_ADDRESS_INDEX_CHANGED, new_index)
+        )
+        self.destroy(50)
+
+    def update_index(self, index):
+        self.current_index = index
+        self.item_group_header.label.set_text(f"Address #{index + 1}")
+
     def eventhandler(self, event_obj):
         code = event_obj.code
         target = event_obj.get_target()
@@ -440,6 +698,10 @@ class AddressOffline(FullSizeWindow):
             elif target == self.btn_yes:
                 self.destroy(50)
                 self.channel.publish(ADDRESS_OFFLINE_RETURN_TYPE.DONE)
+            elif self.card_clickable and target == self.item_group_header:
+                IndexSelectionScreen(
+                    self, _(i18n_keys.TITLE_SELECT_ADDRESS), self.address_index, 1
+                )
             elif hasattr(self, "derive_btn") and target == self.derive_btn:
                 title = _(i18n_keys.TITLE__SELECT_DERIVATION_PATH)
                 if self.network == "Bitcoin":
@@ -715,9 +977,6 @@ class TransactionOverviewNew(FullSizeWindow):
             icon_path="A:/res/icon-send.png",
             sub_icon_path=icon_path,
         )
-
-        from .components.signatureinfo import OverviewComponent
-        from .components.banner import Banner
 
         if banner_key:
             self.banner = Banner(
@@ -1446,10 +1705,10 @@ class TransactionDetailsETHNew(FullSizeWindow):
 
         from .components.signatureinfo import (
             AmountComponent,
+            DataComponent,
             DirectionComponent,
             FeeComponent,
             MoreInfoComponent,
-            DataComponent,
         )
 
         # 1. Amount Component(optional)
@@ -1532,9 +1791,6 @@ class ApproveErc20ETHOverview(FullSizeWindow):
         self.title.set_style_text_font(font_GeistSemiBold48, 0)
         self.primary_color = primary_color
 
-        from .components.signatureinfo import OverviewComponent
-        from .components.banner import Banner
-
         if is_unlimited:
             self.banner = Banner(
                 self.content_area,
@@ -1616,7 +1872,6 @@ class ApproveErc20ETH(FullSizeWindow):
             FeeComponent,
             MoreInfoComponent,
         )
-        from .components.banner import Banner
 
         if is_unlimited:
             self.banner = Banner(
@@ -2469,7 +2724,13 @@ class ConfirmSignIdentity(FullSizeWindow):
 
 
 class ConfirmProperties(FullSizeWindow):
-    def __init__(self, title: str, properties: list[tuple[str, str]], primary_color):
+    def __init__(
+        self,
+        title: str,
+        properties: list[tuple[str, str]],
+        primary_color,
+        warning_banner_text: str | None = None,
+    ):
         super().__init__(
             title,
             None,
@@ -2477,8 +2738,18 @@ class ConfirmProperties(FullSizeWindow):
             _(i18n_keys.BUTTON__CANCEL),
             primary_color=primary_color,
         )
+        if warning_banner_text:
+            self.warning_banner = Banner(
+                self.content_area,
+                3,
+                warning_banner_text,
+            )
+            self.warning_banner.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, 40)
         self.container = ContainerFlexCol(
-            self.content_area, self.title, pos=(0, 40), padding_row=0
+            self.content_area,
+            self.title if not warning_banner_text else self.warning_banner,
+            pos=(0, 40),
+            padding_row=0,
         )
         self.container.add_dummy()
         for key, value in properties:
@@ -5583,7 +5854,7 @@ class ConnectWalletTutorial(FullSizeWindow):
             self.item_group_header = CardHeader(
                 self.group,
                 step[0],
-                f"A:/res/group-icon-num-{i+1}.png",
+                f"A:/res/group-icon-num-{i + 1}.png",
             )
             self.item_group_body = DisplayItem(
                 self.group,
@@ -6105,8 +6376,8 @@ class BrightnessControl(FullSizeWindow):
             _(i18n_keys.BUTTON__APPLY),
             _(i18n_keys.BUTTON__CANCEL),
         )
-        from trezor.ui import style
         import storage.device as storage_device
+        from trezor.ui import style
 
         current_brightness = storage_device.get_brightness()
         slider = lv.slider(self.content_area)

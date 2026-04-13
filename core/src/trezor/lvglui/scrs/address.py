@@ -25,6 +25,7 @@ class AddressManager:
         self.current_handler = None
         self.current_chain_info = None
         self.current_index = 0
+        self.btc_address_index = 0
         self.btc_script_type = None
         self.use_standard_derivation = True
         self.user_interaction = None
@@ -61,6 +62,7 @@ class AddressManager:
             self.addr_type = "Taproot"
         pos = self.current_chain_info["index_pos"]
         path[pos] += self.current_index
+        path[-1] += self.btc_address_index
 
         msg_class = getattr(messages, self.current_chain_info["msg_class"])
         return msg_class(
@@ -327,7 +329,6 @@ class AddressManager:
         state = self.STATE.INIT
 
         while state not in (self.STATE.FINISH, self.STATE.ERROR):
-
             # pyright: off
             if state == self.STATE.INIT:
                 chain_info = self.get_chain_info(name)
@@ -370,6 +371,7 @@ class AddressManager:
                     address=address,
                     network=self.current_chain_info["name"],
                     addr_type=self.addr_type,
+                    address_index=self.btc_address_index,
                     account_name=f" Account #{self.current_index + 1}",
                 )
                 state = self.STATE.HANDLE_RESPONSE
@@ -390,6 +392,12 @@ class AddressManager:
                     ):
                         self.btc_script_type = value
                         state = self.STATE.SHOW_ADDRESS
+                    elif (
+                        return_type
+                        == ADDRESS_OFFLINE_RETURN_TYPE.BTC_ADDRESS_INDEX_CHANGED
+                    ):
+                        self.btc_address_index = value
+                        state = self.STATE.SHOW_ADDRESS
                 elif self.user_interaction == ADDRESS_OFFLINE_RETURN_TYPE.DONE:
                     state = self.STATE.FINISH
                 else:
@@ -406,6 +414,7 @@ class AddressManager:
         self.user_interaction = None
         self.addr_type = None
         self.current_index = 0
+        self.btc_address_index = 0
         self.btc_script_type = None
         self.use_standard_derivation = True
         self.addr_type = None

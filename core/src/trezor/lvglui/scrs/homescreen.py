@@ -53,6 +53,7 @@ from .preview_utils import (
     create_top_mask,
     refresh_preview_device_labels,
 )
+from .template import IndexSelectionScreen
 from .widgets.style import StyleWrapper
 
 _attach_to_pin_task_running = False
@@ -1928,7 +1929,7 @@ class ShowAddress(AnimScreen):
                 align=lv.ALIGN.TOP_RIGHT,
             )
 
-        # Account button
+        # Account indicator
         self.index_btn = ListItemBtn(
             self.content_area,
             f" Account #{self.current_index + 1}",
@@ -1950,16 +1951,15 @@ class ShowAddress(AnimScreen):
 
         # Initialize variables
         self.chains = chains_brief_info()
-        self.visible_chains_count = 8
+        # self.visible_chains_count = 8
 
-        self.is_expanded = False
+        # self.is_expanded = False
         self.chain_buttons = []
-        self.created_count = 0
+        # self.created_count = 0
         self.current_page = 0
         self.items_per_page = 5
         self.max_pages = 0
 
-        self.chain_buttons = []
         for _i in range(self.items_per_page):
             btn = ListItemBtn(
                 self.container,
@@ -1968,23 +1968,11 @@ class ShowAddress(AnimScreen):
                 min_height=87,
                 pad_ver=5,
             )
-            self.chain_buttons.append(btn)
             btn.add_flag(lv.obj.FLAG.HIDDEN)
+            self.chain_buttons.append(btn)
 
         self._create_visible_chain_buttons()
         self.max_pages = (len(self.chains) - 1) // self.items_per_page
-
-        if self.max_pages > 0:
-            self.next_btn = NormalButton(self, "")
-            self.next_btn.set_size(224, 98)
-            self.next_btn.align(lv.ALIGN.BOTTOM_RIGHT, -12, -8)
-            self.next_btn.set_style_bg_img_src("A:/res/arrow-right-2.png", 0)
-
-            self.back_btn = NormalButton(self, "")
-            self.back_btn.set_size(224, 98)
-            self.back_btn.align(lv.ALIGN.BOTTOM_LEFT, 12, -8)
-            self.back_btn.set_style_bg_img_src("A:/res/arrow-left-2.png", 0)
-
         self.disable_style = (
             StyleWrapper()
             .bg_color(lv_colors.ONEKEY_BLACK_5)
@@ -1997,16 +1985,22 @@ class ShowAddress(AnimScreen):
             .bg_opa(lv.OPA.COVER)
             .radius(98)
         )
-
-        self._create_visible_chain_buttons()
-
         if self.max_pages > 0:
+            self.next_btn = NormalButton(self, "")
+            self.next_btn.set_size(224, 98)
+            self.next_btn.align(lv.ALIGN.BOTTOM_RIGHT, -12, -8)
+            self.next_btn.set_style_bg_img_src("A:/res/arrow-right-2.png", 0)
+
+            self.back_btn = NormalButton(self, "")
+            self.back_btn.set_size(224, 98)
+            self.back_btn.align(lv.ALIGN.BOTTOM_LEFT, 12, -8)
+            self.back_btn.set_style_bg_img_src("A:/res/arrow-left-2.png", 0)
             self.update_page_buttons()
-            self.next_btn.add_style(self.enable_style, 0)
+            # self.next_btn.add_style(self.enable_style, 0)
 
         self.animations_next = []
         self.animations_prev = []
-        self.list_items = self.chain_buttons
+        # self.list_items = self.chain_buttons
 
         if storage_device.is_animation_enabled():
             self.animate_list_items()
@@ -2084,7 +2078,9 @@ class ShowAddress(AnimScreen):
             self.update_page_buttons()
 
     def on_index_click(self, event):
-        IndexSelectionScreen(self)
+        IndexSelectionScreen(
+            self, _(i18n_keys.TITLE__SELECT_ACCOUNT), self.current_index
+        )
 
     def on_chain_click(self, event, name):
         if utils.lcd_resume():
@@ -2092,8 +2088,9 @@ class ShowAddress(AnimScreen):
 
         workflow.spawn(self.addr_manager.generate_address(name, self.current_index))
 
-    def update_index_btn_text(self):
-        self.index_btn.label_left.set_text(f"Account #{self.current_index + 1}")
+    def update_index(self, index):
+        self.current_index = index
+        self.index_btn.label_left.set_text(f"Account #{index + 1}")
 
     def eventhandler(self, event_obj):
         event = event_obj.code
@@ -2119,227 +2116,6 @@ class ShowAddress(AnimScreen):
                     self.prev_page()
                 elif hasattr(self, "next_btn") and target == self.next_btn:
                     self.next_page()
-
-    async def _handle_passphrase_change(self, coro):
-        await coro
-        self.init_ui()
-
-
-class IndexSelectionScreen(AnimScreen):
-    def __init__(self, prev_scr=None):
-        if not hasattr(self, "_init"):
-            self._init = True
-        super().__init__(
-            prev_scr, title=_(i18n_keys.TITLE__SELECT_ACCOUNT), nav_back=True
-        )
-
-        from .components.navigation import Navigation
-
-        # # navi
-        self.nav_opt = Navigation(
-            self.content_area,
-            nav_btn_align=lv.ALIGN.RIGHT_MID,
-            btn_bg_img="A:/res/general.png",
-            align=lv.ALIGN.TOP_RIGHT,
-        )
-
-        self.container = ContainerFlexCol(self.content_area, self.title, padding_row=2)
-
-        self.max_account = 1000000000
-        self.max_page = (self.max_account - 1) // 5
-
-        self.current_account = self.prev_scr.current_index + 1
-        self.current_page = (self.current_account - 1) // 5
-
-        # account select btn
-        self.account_btns = []
-        for _i in range(5):
-            btn = ListItemBtn(
-                self.container,
-                "",
-                has_next=False,
-                use_transition=False,
-            )
-            btn.add_check_img()
-            self.account_btns.append(btn)
-        self.update_account_buttons()
-
-        self.next_btn = NormalButton(self, "")
-        self.next_btn.set_size(224, 98)
-        self.next_btn.align(lv.ALIGN.BOTTOM_RIGHT, -12, -8)
-        self.next_btn.set_style_bg_img_src("A:/res/arrow-right-2.png", 0)
-
-        self.back_btn = NormalButton(self, "")
-        self.back_btn.set_size(224, 98)
-        self.back_btn.align(lv.ALIGN.BOTTOM_LEFT, 12, -8)
-        self.back_btn.set_style_bg_img_src("A:/res/arrow-left-2.png", 0)
-
-        self.disable_style = (
-            StyleWrapper()
-            .bg_color(lv_colors.ONEKEY_BLACK_5)
-            .bg_img_recolor(lv_colors.ONEKEY_GRAY_1)
-            .bg_img_recolor_opa(lv.OPA.COVER)
-        )
-        self.enable_style = (
-            StyleWrapper().bg_color(lv_colors.ONEKEY_BLACK_3).bg_opa(lv.OPA.COVER)
-        )
-
-        self.update_page_buttons()
-        self.next_btn.add_style(self.enable_style, 0)
-        self.back_btn.add_style(self.enable_style, 0)
-
-        self.animations_next = []
-        self.animations_prev = []
-        if storage_device.is_animation_enabled():
-            self.animate_list_items()
-
-    def animate_list_items(self):
-        def create_move_cb_container(obj, item_index):
-            def cb(value):
-                obj.set_style_translate_x(value, 0)
-                obj.invalidate()
-
-            return cb
-
-        container_move_anim = Anim(
-            50,
-            0,
-            create_move_cb_container(self.container, 0),
-            time=150,
-            delay=0,
-            path_cb=lv.anim_t.path_ease_out,
-        )
-
-        container_move_back_anim = Anim(
-            -50,
-            0,
-            create_move_cb_container(self.container, 0),
-            time=150,
-            delay=0,
-            path_cb=lv.anim_t.path_ease_out,
-        )
-
-        self.animations_next.append(container_move_anim)
-        container_move_anim.start()
-
-        self.animations_prev.append(container_move_back_anim)
-
-    def get_page_start(self):
-        return (self.current_page * 5) + 1
-
-    def update_account_buttons(self):
-        page_start = self.get_page_start()
-        for i, btn in enumerate(self.account_btns):
-            account_num = page_start + i
-            btn.label_left.set_text(f"Account #{account_num}")
-
-            if account_num == self.current_account:
-                btn.set_checked()
-            else:
-                btn.set_uncheck()
-
-    def enable_page_buttons(self, btn):
-        btn.add_flag(lv.btn.FLAG.CLICKABLE)
-        btn.remove_style(self.disable_style, 0)
-        btn.add_style(self.enable_style, 0)
-
-    def disable_page_buttons(self, btn):
-        btn.clear_flag(lv.btn.FLAG.CLICKABLE)
-        btn.remove_style(self.enable_style, 0)
-        btn.add_style(self.disable_style, 0)
-
-    def update_page_buttons(self):
-        if self.current_page == 0:
-            self.disable_page_buttons(self.back_btn)
-            if not self.next_btn.has_flag(lv.btn.FLAG.CLICKABLE):
-                self.enable_page_buttons(self.next_btn)
-
-        elif self.current_page == self.max_page:
-            self.disable_page_buttons(self.next_btn)
-            if not self.back_btn.has_flag(lv.btn.FLAG.CLICKABLE):
-                self.enable_page_buttons(self.back_btn)
-
-        else:
-            if not self.next_btn.has_flag(lv.btn.FLAG.CLICKABLE):
-                self.enable_page_buttons(self.next_btn)
-            if not self.back_btn.has_flag(lv.btn.FLAG.CLICKABLE):
-                self.enable_page_buttons(self.back_btn)
-        gc.collect()
-
-    def next_page(self):
-        self.current_page += 1
-        self.update_account_buttons()
-        self.update_page_buttons()
-        for anim in self.animations_next:
-            anim.start()
-
-    def prev_page(self):
-        if self.current_page > 0:
-            self.current_page -= 1
-            self.update_account_buttons()
-            self.update_page_buttons()
-            for anim in self.animations_prev:
-                anim.start()
-
-    def eventhandler(self, event_obj):
-        event = event_obj.code
-        target = event_obj.get_target()
-        if event == lv.EVENT.CLICKED:
-            if utils.lcd_resume():
-                return
-
-            if isinstance(target, lv.imgbtn):
-                if target == self.nav_back.nav_btn:
-                    if self.prev_scr is not None:
-                        self.load_screen(self.prev_scr, destroy_self=True)
-                elif target == self.nav_opt.nav_btn:
-                    workflow.spawn(self.type_account_index())
-            else:
-                if target == self.back_btn:
-                    self.prev_page()
-                elif target == self.next_btn:
-                    self.next_page()
-                else:
-                    for i, btn in enumerate(self.account_btns):
-                        if target == btn:
-                            for other_btn in self.account_btns:
-                                other_btn.set_uncheck()
-
-                            btn.set_checked()
-
-                            self.current_account = self.get_page_start() + i
-                            self.prev_scr.current_index = self.current_account - 1
-                            self.prev_scr.update_index_btn_text()
-                            break
-
-    async def type_account_index(self):
-        from trezor.lvglui.scrs.pinscreen import InputNum
-
-        result = None
-        while True:
-            numscreen = InputNum(
-                title=_(i18n_keys.TITLE__SET_INITIAL_ACCOUNT),
-                subtitle=_(i18n_keys.TITLE__SET_INITIAL_ACCOUNT_ERROR)
-                if result is not None
-                else "",
-                is_pin=False,
-            )
-            result = await numscreen.request()
-
-            if not result:  # user cancelled
-                return
-
-            account_num = int(result)
-            if 1 <= account_num <= self.max_account:
-                break
-
-        self.current_account = account_num
-        self.current_page = (account_num - 1) // 5
-        self.prev_scr.current_index = account_num - 1
-        self.prev_scr.update_index_btn_text()
-
-        self.update_account_buttons()
-        self.update_page_buttons()
 
 
 class SettingsScreen(AnimScreen):

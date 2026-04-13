@@ -195,7 +195,7 @@ class DisplayItemWithFont_30(DisplayItem):
 
 
 class CardHeader(lv.obj):
-    def __init__(self, parent, title, icon):
+    def __init__(self, parent, title, icon, clickable=False):
         super().__init__(parent)
         self.remove_style_all()
         self.set_size(456, 63)
@@ -217,6 +217,11 @@ class CardHeader(lv.obj):
         self.icon.set_src(icon)
         self.icon.set_size(32, 32)
         self.icon.align(lv.ALIGN.TOP_LEFT, 0, 0)
+        if clickable:
+            self.right_arrow = lv.img(self)
+            self.right_arrow.set_src("A:/res/arrow-right.png")
+            self.right_arrow.set_size(32, 32)
+            self.right_arrow.align(lv.ALIGN.TOP_RIGHT, 0, 0)
         self.label = lv.label(self)
         self.label.set_text(title)
         self.label.set_size(360, lv.SIZE.CONTENT)
