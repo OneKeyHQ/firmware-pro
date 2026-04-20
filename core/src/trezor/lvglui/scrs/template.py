@@ -2741,7 +2741,7 @@ class ConfirmProperties(FullSizeWindow):
         if warning_banner_text:
             self.warning_banner = Banner(
                 self.content_area,
-                3,
+                2,
                 warning_banner_text,
             )
             self.warning_banner.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, 40)

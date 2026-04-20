@@ -8869,44 +8869,6 @@ if TYPE_CHECKING:
         def is_type_of(cls, msg: Any) -> TypeGuard["StellarSignedTx"]:
             return isinstance(msg, cls)
 
-    class StellarSignMessage(protobuf.MessageType):
-        address_n: "list[int]"
-        message: "bytes"
-
-        def __init__(
-            self,
-            *,
-            message: "bytes",
-            address_n: "list[int] | None" = None,
-        ) -> None:
-            pass
-
-        @classmethod
-        def is_type_of(cls, msg: Any) -> TypeGuard["StellarSignMessage"]:
-            return isinstance(msg, cls)
-
-    class StellarSignAuthorization(protobuf.MessageType):
-        address_n: "list[int]"
-        network_passphrase: "str"
-        nonce: "int"
-        expiration: "int"
-        invocation: "bytes"
-
-        def __init__(
-            self,
-            *,
-            network_passphrase: "str",
-            nonce: "int",
-            expiration: "int",
-            invocation: "bytes",
-            address_n: "list[int] | None" = None,
-        ) -> None:
-            pass
-
-        @classmethod
-        def is_type_of(cls, msg: Any) -> TypeGuard["StellarSignAuthorization"]:
-            return isinstance(msg, cls)
-
     class SuiGetAddress(protobuf.MessageType):
         address_n: "list[int]"
         show_display: "bool | None"

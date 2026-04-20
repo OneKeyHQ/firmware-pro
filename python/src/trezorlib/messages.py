@@ -11052,49 +11052,6 @@ class StellarSignedTx(protobuf.MessageType):
         self.signature = signature
 
 
-class StellarSignMessage(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = None
-    FIELDS = {
-        1: protobuf.Field("address_n", "uint32", repeated=True, required=False),
-        2: protobuf.Field("message", "bytes", repeated=False, required=True),
-    }
-
-    def __init__(
-        self,
-        *,
-        message: "bytes",
-        address_n: Optional[Sequence["int"]] = None,
-    ) -> None:
-        self.address_n: Sequence["int"] = address_n if address_n is not None else []
-        self.message = message
-
-
-class StellarSignAuthorization(protobuf.MessageType):
-    MESSAGE_WIRE_TYPE = None
-    FIELDS = {
-        1: protobuf.Field("address_n", "uint32", repeated=True, required=False),
-        2: protobuf.Field("network_passphrase", "string", repeated=False, required=True),
-        3: protobuf.Field("nonce", "uint64", repeated=False, required=True),
-        4: protobuf.Field("expiration", "uint32", repeated=False, required=True),
-        5: protobuf.Field("invocation", "bytes", repeated=False, required=True),
-    }
-
-    def __init__(
-        self,
-        *,
-        network_passphrase: "str",
-        nonce: "int",
-        expiration: "int",
-        invocation: "bytes",
-        address_n: Optional[Sequence["int"]] = None,
-    ) -> None:
-        self.address_n: Sequence["int"] = address_n if address_n is not None else []
-        self.network_passphrase = network_passphrase
-        self.nonce = nonce
-        self.expiration = expiration
-        self.invocation = invocation
-
-
 class SuiGetAddress(protobuf.MessageType):
     MESSAGE_WIRE_TYPE = 11100
     FIELDS = {

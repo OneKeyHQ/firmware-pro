@@ -437,7 +437,7 @@ async def parse(ctx: wire.Context, accounts: list[PublicKey], data: bytes) -> No
         from ..constents import SPL_TOKEN_PROGRAM_ID
 
         owner_address = None
-        if hasattr(ctx, "extra"):
+        if ctx.extra is not None:
             owner_address = try_get_token_account_owner_address(
                 params.dest.get(),
                 SPL_TOKEN_PROGRAM_ID.get(),

@@ -822,7 +822,9 @@ def boot() -> None:
     )
     workflow_handlers.register(MessageType.UnLockDevice, handle_UnLockDevice)
 
-    reload_settings_from_storage()
+    reload_settings_from_storage(
+        timeout_ms=10 * 1000 if utils.is_rest_by_usb_lock() else None
+    )
     from trezor.lvglui.scrs import fingerprints
 
     if config.is_unlocked() and fingerprints.is_unlocked():
