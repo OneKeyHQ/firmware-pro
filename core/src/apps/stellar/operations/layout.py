@@ -29,6 +29,7 @@ from trezor.ui.layouts import (
 from trezor.wire import DataError, ProcessError
 
 from .. import consts, helpers
+from ..helpers import InvokeHostFunctionOpSummary
 from ..layout import format_amount, format_asset
 
 if TYPE_CHECKING:
@@ -342,4 +343,24 @@ async def confirm_asset_issuer(ctx: Context, asset: StellarAsset) -> None:
         asset.issuer,
         description=f"{asset.code} issuer:",
         br_type="confirm_asset_issuer",
+    )
+
+
+async def confirm_invoke_host_function_op(
+    ctx: Context, summary: InvokeHostFunctionOpSummary
+) -> None:
+    from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
+
+    await confirm_properties(
+        ctx,
+        "op_invoke_host_function",
+        "Invoke Contract",
+        props=(
+            ("Contract", summary.contract_address),
+            ("Function", summary.function_name),
+            ("Args Hash", summary.call_args_hash),
+            ("Auths Hash", summary.soroban_auth_hash),
+            ("Ext Hash", summary.soroban_tx_ext_hash),
+        ),
+        warning_banner_text=_(i18n_keys.SECURITY__SOLANA_RAW_SIGNING_TX_WARNING),
     )

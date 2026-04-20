@@ -196,6 +196,9 @@ if not utils.BITCOIN_ONLY:
     StellarManageBuyOfferOp = 222
     StellarPathPaymentStrictSendOp = 223
     StellarSignedTx = 230
+    StellarInvokeHostFunctionOp = 260
+    StellarSorobanDataRequest = 261
+    StellarSorobanDataAck = 262
     CardanoGetPublicKey = 305
     CardanoPublicKey = 306
     CardanoGetAddress = 307

@@ -67,7 +67,8 @@ async def sign_tx(
                 print(
                     f"Invalid signer used: {PublicKey(fee_payer.get())} != {PublicKey(signer_pub_key_bytes)}"
                 )
-            raise wire.DataError("Invalid signer used")
+            else:
+                raise wire.DataError("Invalid signer used")
     else:
         if PublicKey(signer_pub_key_bytes) not in accounts_keys[:sigs_count]:
             raise wire.DataError("Invalid transaction params")

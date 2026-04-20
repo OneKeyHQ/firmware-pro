@@ -7,6 +7,7 @@ from trezor.enums import StellarMemoType
 from trezor.lvglui.scrs import lv
 from trezor.messages import StellarSignedTx, StellarSignTx, StellarTxOpRequest
 from trezor.ui.layouts import confirm_final
+from trezor.utils import HashWriter
 from trezor.wire import DataError, ProcessError
 
 from apps.common import paths, seed
@@ -33,26 +34,36 @@ async def sign_tx(
 
     if msg.num_operations == 0:
         raise ProcessError("Stellar: At least one operation is required")
-
-    w = bytearray()
+    is_soroban_tx = msg.soroban_data_size > 0
+    if is_soroban_tx:
+        if msg.num_operations != 1:
+            raise ProcessError(
+                "Stellar: Soroban transaction must have exactly one operation"
+            )
+        if msg.memo_type != StellarMemoType.NONE:
+            raise ProcessError("Stellar: Soroban transaction must have no memo")
+    w = HashWriter(sha256())
     ctx.primary_color, ctx.icon_path = lv.color_hex(PRIMARY_COLOR), ICON
     await _init(ctx, w, pubkey, msg)
     await _timebounds(ctx, w, msg.timebounds_start, msg.timebounds_end)
     await _memo(ctx, w, msg)
-    await _operations(ctx, w, msg.num_operations)
-    await _final(ctx, w, msg)
+    await _operations(ctx, w, msg.num_operations, msg.soroban_data_size)
+    await _final(ctx, w, msg, is_soroban_tx)
 
     # sign
-    digest = sha256(w).digest()
+    digest = w.get_digest()
     signature = ed25519.sign(node.private_key(), digest)
     await confirm_final(ctx, "XLM")
     # Add the public key for verification that the right account was used for signing
     return StellarSignedTx(public_key=pubkey, signature=signature)
 
 
-async def _final(ctx: Context, w: Writer, msg: StellarSignTx) -> None:
-    # 4 null bytes representing a (currently unused) empty union
-    writers.write_uint32(w, 0)
+async def _final(
+    ctx: Context, w: Writer, msg: StellarSignTx, is_soroban_tx: bool = False
+) -> None:
+    if not is_soroban_tx:
+        # 4 null bytes representing a (currently unused) empty unioin for non-soroban legacy transactions
+        writers.write_uint32(w, 0)
     # final confirm
     await layout.require_confirm_final(ctx, msg.fee, msg.num_operations)
 
@@ -85,15 +96,19 @@ async def _timebounds(ctx: Context, w: Writer, start: int, end: int) -> None:
     writers.write_uint64(w, end)
 
 
-async def _operations(ctx: Context, w: Writer, num_operations: int) -> None:
+async def _operations(
+    ctx: Context, w: Writer, num_operations: int, soroban_data_size: int = 0
+) -> None:
     writers.write_uint32(w, num_operations)
     for _ in range(num_operations):
         op = await ctx.call_any(StellarTxOpRequest(), *consts.op_wire_types)
-        await process_operation(ctx, w, op)  # type: ignore [Argument of type "MessageType" cannot be assigned to parameter "op" of type "StellarMessageType" in function "process_operation"]
+        await process_operation(ctx, w, op, soroban_data_size)  # type: ignore [Argument of type "MessageType" cannot be assigned to parameter "op" of type "StellarMessageType" in function "process_operation"]
 
 
 async def _memo(ctx: Context, w: Writer, msg: StellarSignTx) -> None:
     writers.write_uint32(w, msg.memo_type)
+    if msg.soroban_data_size > 0:
+        return
     if msg.memo_type == StellarMemoType.NONE:
         # nothing is serialized
         memo_confirm_text = ""

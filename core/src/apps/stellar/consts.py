@@ -20,6 +20,7 @@ if TYPE_CHECKING:
         StellarPathPaymentStrictSendOp,
         StellarPaymentOp,
         StellarSetOptionsOp,
+        StellarInvokeHostFunctionOp,
     )
 
     StellarMessageType = (
@@ -36,6 +37,7 @@ if TYPE_CHECKING:
         | StellarPathPaymentStrictSendOp
         | StellarPaymentOp
         | StellarSetOptionsOp
+        | StellarInvokeHostFunctionOp
     )
 
 
@@ -57,6 +59,7 @@ op_codes: dict[int, int] = {
     MessageType.StellarPathPaymentStrictSendOp: 13,
     MessageType.StellarPaymentOp: 1,
     MessageType.StellarSetOptionsOp: 5,
+    MessageType.StellarInvokeHostFunctionOp: 24,
 }
 
 op_wire_types = [
@@ -73,6 +76,7 @@ op_wire_types = [
     MessageType.StellarPathPaymentStrictSendOp,
     MessageType.StellarPaymentOp,
     MessageType.StellarSetOptionsOp,
+    MessageType.StellarInvokeHostFunctionOp,
 ]
 
 # https://github.com/stellar/go/blob/e0ffe19f58879d3c31e2976b97a5bf10e13a337b/xdr/xdr_generated.go#L584
@@ -93,6 +97,12 @@ FLAG_AUTH_REQUIRED = const(1)
 FLAG_AUTH_REVOCABLE = const(2)
 FLAG_AUTH_IMMUTABLE = const(4)
 FLAGS_MAX_SIZE = const(7)
+STELLAR_KEY_TYPE_ED25519 = const(0)
+STELLAR_KEY_TYPE_CONTRACT = const(1)
+STELLAR_STRKEY_VERSION_CONTRACT = const(0x10)
+STELLAR_STRKEY_VERSION_ED25519_PUBLIC_KEY = const(0x30)
+STELLAR_HOST_FUNCTION_TYPE_INVOKE_CONTRACT = const(0)
+STELLAR_TX_EXT_SOROBAN = const(1)
 
 
 def get_op_code(msg: protobuf.MessageType) -> int:

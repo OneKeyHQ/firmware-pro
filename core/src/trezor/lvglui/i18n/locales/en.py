@@ -984,7 +984,7 @@ translations = [
     "Approve {token} for {name}",
     "Overview",
     "Contract address",
-    "Token address",
+    "Token Address",
     "Approve to",
     "Approve unlimited {token} for {name}",
     "This action grants the contract unlimited access to this asset. Trust the dApp before proceeding.",
@@ -1021,7 +1021,7 @@ translations = [
     "This authorization delegates authority to a smart contract not included on the whitelist.",
     "Revoke on Network",
     "Understand",
-    "3 failed attempts. Slide to continue. You do not have Passphrase turned on.",
+    "3 failed tries. Slide to continue. You do not have Passphrase turned on.",
     "Disabling the Passphrase will prevent you from using the hidden wallet PIN to unlock your device.",
     "Touch",
     "Home Screen",
@@ -1073,5 +1073,7 @@ translations = [
     "Apply",
     "Open",
     "Set Brightness",
+    "Select Address",
+    "Go To Address",
 ]
 # fmt: on

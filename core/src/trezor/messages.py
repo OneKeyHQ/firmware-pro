@@ -65,6 +65,7 @@ if TYPE_CHECKING:
     from trezor.enums import SolanaOffChainMessageVersion  # noqa: F401
     from trezor.enums import StellarAssetType  # noqa: F401
     from trezor.enums import StellarMemoType  # noqa: F401
+    from trezor.enums import StellarRequestType  # noqa: F401
     from trezor.enums import StellarSignerType  # noqa: F401
     from trezor.enums import TezosBallotType  # noqa: F401
     from trezor.enums import TezosContractType  # noqa: F401
@@ -2430,6 +2431,7 @@ if TYPE_CHECKING:
         derivation_type: "CardanoDerivationType"
         network_id: "int"
         address_type: "CardanoAddressType | None"
+        protocol_magic: "int | None"
 
         def __init__(
             self,
@@ -2439,6 +2441,7 @@ if TYPE_CHECKING:
             network_id: "int",
             address_n: "list[int] | None" = None,
             address_type: "CardanoAddressType | None" = None,
+            protocol_magic: "int | None" = None,
         ) -> None:
             pass
 
@@ -8471,6 +8474,7 @@ if TYPE_CHECKING:
         memo_id: "int | None"
         memo_hash: "bytes | None"
         num_operations: "int"
+        soroban_data_size: "int"
 
         def __init__(
             self,
@@ -8487,6 +8491,7 @@ if TYPE_CHECKING:
             memo_text: "str | None" = None,
             memo_id: "int | None" = None,
             memo_hash: "bytes | None" = None,
+            soroban_data_size: "int | None" = None,
         ) -> None:
             pass
 
@@ -8790,6 +8795,62 @@ if TYPE_CHECKING:
 
         @classmethod
         def is_type_of(cls, msg: Any) -> TypeGuard["StellarBumpSequenceOp"]:
+            return isinstance(msg, cls)
+
+    class StellarInvokeHostFunctionOp(protobuf.MessageType):
+        source_account: "str | None"
+        contract_address: "str"
+        function_name: "str"
+        call_args_xdr_size: "int"
+        call_args_xdr_initial_chunk: "bytes"
+        soroban_auth_xdr_size: "int"
+        soroban_auth_xdr_initial_chunk: "bytes"
+
+        def __init__(
+            self,
+            *,
+            contract_address: "str",
+            function_name: "str",
+            call_args_xdr_size: "int",
+            call_args_xdr_initial_chunk: "bytes",
+            soroban_auth_xdr_size: "int",
+            soroban_auth_xdr_initial_chunk: "bytes",
+            source_account: "str | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["StellarInvokeHostFunctionOp"]:
+            return isinstance(msg, cls)
+
+    class StellarSorobanDataRequest(protobuf.MessageType):
+        type: "StellarRequestType"
+        data_length: "int"
+
+        def __init__(
+            self,
+            *,
+            type: "StellarRequestType",
+            data_length: "int",
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["StellarSorobanDataRequest"]:
+            return isinstance(msg, cls)
+
+    class StellarSorobanDataAck(protobuf.MessageType):
+        data_chunk_xdr: "bytes"
+
+        def __init__(
+            self,
+            *,
+            data_chunk_xdr: "bytes",
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["StellarSorobanDataAck"]:
             return isinstance(msg, cls)
 
     class StellarSignedTx(protobuf.MessageType):

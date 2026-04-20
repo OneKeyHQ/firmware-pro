@@ -88,6 +88,7 @@ CHARGE_WIRELESS_STATUS = CHARGE_WIRELESS_STOP
 CHARGE_ENABLE: bool | None = None
 CHARGING = False
 USB_STATE_CHANGED = False
+_REST_AFTER_USB_LOCK = False
 RESTART_MAIN_LOOP = False
 _WIRE_BUSY = False
 _PENDING_SLEEP_AFTER_CANCEL = False
@@ -385,6 +386,22 @@ def is_collecting_fingerprint():
 def mark_collecting_fingerprint_done():
     global _COLLECTING_FINGERPRINT
     _COLLECTING_FINGERPRINT = False
+
+
+def is_rest_by_usb_lock():
+    return _REST_AFTER_USB_LOCK
+
+
+def mark_rest_by_usb_lock():
+    global _REST_AFTER_USB_LOCK
+
+    _REST_AFTER_USB_LOCK = True
+
+
+def unmark_rest_by_usb_lock():
+    global _REST_AFTER_USB_LOCK
+
+    _REST_AFTER_USB_LOCK = False
 
 
 def set_backup_none():

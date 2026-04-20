@@ -14,8 +14,12 @@
 # You should have received a copy of the License along with this library.
 # If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.
 
+from copy import deepcopy
 from decimal import Decimal
 from typing import TYPE_CHECKING, List, Tuple, Union
+from stellar_sdk import operation
+from stellar_sdk.xdr import SorobanTransactionData
+from xdrlib3 import Packer
 
 from . import exceptions, messages
 from .tools import expect
@@ -68,6 +72,8 @@ try:
         Network,
         ManageBuyOffer,
         MuxedAccount,
+        InvokeHostFunction,
+        StrKey,
     )
     from stellar_sdk.xdr.signer_key_type import SignerKeyType
 
@@ -83,7 +89,7 @@ DEFAULT_BIP32_PATH = "m/44h/148h/0h"
 
 def from_envelope(
     envelope: "TransactionEnvelope",
-) -> Tuple[messages.StellarSignTx, List["StellarMessageType"]]:
+) -> Tuple[messages.StellarSignTx, List["StellarMessageType"], bytes]:
     """Parses transaction envelope into a map with the following keys:
     tx - a StellarSignTx describing the transaction header
     operations - an array of protobuf message objects for each operation
@@ -92,7 +98,7 @@ def from_envelope(
         raise RuntimeError("Stellar SDK not available")
 
     parsed_tx = envelope.transaction
-    if parsed_tx.time_bounds is None:
+    if parsed_tx.preconditions.time_bounds is None:
         raise ValueError("Timebounds are mandatory")
 
     memo_type = messages.StellarMemoType.NONE
@@ -118,22 +124,24 @@ def from_envelope(
         raise ValueError("Unsupported memo type")
 
     _raise_if_account_muxed_id_exists(parsed_tx.source)
+    soroban_data_xdr = parsed_tx.soroban_data.to_xdr_bytes()
     tx = messages.StellarSignTx(
         source_account=parsed_tx.source.account_id,
         fee=parsed_tx.fee,
         sequence_number=parsed_tx.sequence,
-        timebounds_start=parsed_tx.time_bounds.min_time,
-        timebounds_end=parsed_tx.time_bounds.max_time,
+        timebounds_start=parsed_tx.preconditions.time_bounds.min_time,
+        timebounds_end=parsed_tx.preconditions.time_bounds.max_time,
         memo_type=memo_type,
         memo_text=memo_text,
         memo_id=memo_id,
         memo_hash=memo_hash,
         num_operations=len(parsed_tx.operations),
         network_passphrase=envelope.network_passphrase,
+        soroban_data_size=len(soroban_data_xdr),
     )
 
     operations = [_read_operation(op) for op in parsed_tx.operations]
-    return tx, operations
+    return tx, operations, soroban_data_xdr
 
 
 def _read_operation(op: "Operation") -> "StellarMessageType":
@@ -143,6 +151,31 @@ def _read_operation(op: "Operation") -> "StellarMessageType":
         source_account = op.source.account_id
     else:
         source_account = None
+    if isinstance(op, InvokeHostFunction):
+        args = op.host_function.invoke_contract.args
+        packer = Packer()
+        packer.pack_uint(len(args))
+        for args_item in args:
+            args_item.pack(packer)
+        args = packer.get_buffer()
+
+        auths = op.auth
+        packer.reset()
+        packer.pack_uint(len(auths))
+        for auth_item in auths:
+            auth_item.pack(packer)
+        auths = packer.get_buffer()
+        return messages.StellarInvokeHostFunctionOp(
+            source_account=source_account,
+            contract_address=StrKey.encode_contract(
+                op.host_function.invoke_contract.contract_address.contract_id.contract_id.hash
+            ),
+            function_name=op.host_function.invoke_contract.function_name.sc_symbol.decode(),
+            call_args_xdr_size=len(args),
+            call_args_xdr_initial_chunk=args,
+            soroban_auth_xdr_size=len(auths),
+            soroban_auth_xdr_initial_chunk=auths,
+        )
     if isinstance(op, CreateAccount):
         return messages.StellarCreateAccountOp(
             source_account=source_account,
@@ -336,6 +369,7 @@ def sign_tx(
     tx: messages.StellarSignTx,
     operations: List["StellarMessageType"],
     address_n: "Address",
+    soroban_transaction_data_xdr: bytes,
     network_passphrase: str = DEFAULT_NETWORK_PASSPHRASE,
 ) -> messages.StellarSignedTx:
     tx.network_passphrase = network_passphrase
@@ -349,9 +383,47 @@ def sign_tx(
     # 4. Send operations one by one until all operations have been sent. If there are more operations to sign, the device will send a StellarTxOpRequest message
     # 5. The final message received will be StellarSignedTx which is returned from this method
     resp = client.call(tx)
+    soroban_operation = None
     try:
+        initial_chunk_size = 1024
         while isinstance(resp, messages.StellarTxOpRequest):
-            resp = client.call(operations.pop(0))
+            _opreation = operations.pop(0)
+            if isinstance(_opreation, messages.StellarInvokeHostFunctionOp):
+                soroban_operation = deepcopy(_opreation)
+                _opreation.call_args_xdr_initial_chunk = (
+                    _opreation.call_args_xdr_initial_chunk[:initial_chunk_size]
+                )
+                _opreation.soroban_auth_xdr_initial_chunk = (
+                    _opreation.soroban_auth_xdr_initial_chunk[:initial_chunk_size]
+                )
+            resp = client.call(_opreation)
+        if soroban_operation is not None:
+            offset_call = initial_chunk_size
+            offset_auth = initial_chunk_size
+            offset_ext = 0
+            while isinstance(resp, messages.StellarSorobanDataRequest):
+                if resp.type == messages.StellarRequestType.CALL:
+                    data_chunk = soroban_operation.call_args_xdr_initial_chunk[
+                        offset_call : offset_call + resp.data_length
+                    ]
+                    offset_call += resp.data_length
+                elif resp.type == messages.StellarRequestType.AUTH:
+                    data_chunk = soroban_operation.soroban_auth_xdr_initial_chunk[
+                        offset_auth : offset_auth + resp.data_length
+                    ]
+                    offset_auth += resp.data_length
+                elif resp.type == messages.StellarRequestType.EXT:
+                    data_chunk = soroban_transaction_data_xdr[
+                        offset_ext : offset_ext + resp.data_length
+                    ]
+                    offset_ext += resp.data_length
+                else:
+                    raise exceptions.TrezorException(
+                        "Invalid Stellar data request type."
+                    )
+                resp = client.call(
+                    messages.StellarSorobanDataAck(data_chunk_xdr=data_chunk)
+                )
     except IndexError:
         # pop from empty list
         raise exceptions.TrezorException(

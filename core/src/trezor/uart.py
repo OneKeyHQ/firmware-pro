@@ -182,6 +182,7 @@ async def handle_usb_state():
     while True:
         try:
             utils.USB_STATE_CHANGED = False
+            utils.unmark_rest_by_usb_lock()
             usb_state = loop.wait(io.USB_STATE)
             state, enable = await usb_state
             if enable is not None and utils.is_usb_enabled():
@@ -226,6 +227,7 @@ async def handle_usb_state():
                         else:
                             config.lock()
                         await safe_reloop()
+                        utils.mark_rest_by_usb_lock()
                         await workflow.spawn(utils.internal_reloop())
                 elif not usb_auto_lock and not state:
                     await safe_reloop(ack=False)

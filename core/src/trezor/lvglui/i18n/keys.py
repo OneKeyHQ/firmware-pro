@@ -2165,7 +2165,7 @@ APPROVE_TOKEN_AMOUNT = 981
 OVERVIEW = 982
 # Contract address
 CONTRACT_ADDRESS = 983
-# Token address
+# Token Address
 TOKEN_ADDRESS = 984
 # Approve to
 APPROVE_PROVIDER = 985
@@ -2246,7 +2246,7 @@ BANNER_NOT_IN_SMART_ACCOUNT_WHITELIST = 1018
 FIELDS_REVOKE_ON_NETWORK = 1019
 # Understand
 BUTTON_UNDERSTAND = 1020
-# 3 failed attempts. Slide to continue. You do not have Passphrase turned on.
+# 3 failed tries. Slide to continue. You do not have Passphrase turned on.
 CONTENT__STR_FAILED_TRIES_SLIDE_TO_CONTINUE_DISABLE_PASSPHRASE = 1021
 # Disabling the Passphrase will prevent you from using the hidden wallet PIN t
 # o unlock your device.
@@ -2367,4 +2367,8 @@ BUTTON__APPLY = 1070
 BUTTON__OPEN = 1071
 # Set Brightness
 TITLE__SET_BRIGHTNESS = 1072
+# Select Address
+TITLE_SELECT_ADDRESS = 1073
+# Go To Address
+TITLE_GO_TO_ADDRESS = 1074
 # fmt: on

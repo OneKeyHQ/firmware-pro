@@ -1129,6 +1129,8 @@ if not utils.BITCOIN_ONLY:
     import trezor.enums.StellarAssetType
     trezor.enums.StellarMemoType
     import trezor.enums.StellarMemoType
+    trezor.enums.StellarRequestType
+    import trezor.enums.StellarRequestType
     trezor.enums.StellarSignerType
     import trezor.enums.StellarSignerType
     trezor.enums.TezosBallotType

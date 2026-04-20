@@ -3,15 +3,35 @@ import ustruct
 from trezor.crypto import base32
 from trezor.wire import ProcessError
 
+from . import consts
+
+
+class InvokeHostFunctionOpSummary:
+    def __init__(
+        self,
+        contract_address: str,
+        function_name: str,
+        call_args_hash: bytes,
+        soroban_auth_hash: bytes,
+        soroban_tx_ext_hash: bytes,
+    ) -> None:
+        self.contract_address = contract_address
+        self.function_name = function_name
+        self.call_args_hash = call_args_hash
+        self.soroban_auth_hash = soroban_auth_hash
+        self.soroban_tx_ext_hash = soroban_tx_ext_hash
+
 
 def public_key_from_address(address: str) -> bytes:
-    """Extracts public key from an address
-    Stellar address is in format:
-    <1-byte version> <32-bytes ed25519 public key> <2-bytes CRC-16 checksum>
-    """
-    b = base32.decode(address)
-    _crc16_checksum_verify(b[:-2], b[-2:])
-    return b[1:-2]
+    return _raw_payload_from_address(
+        address, version=consts.STELLAR_STRKEY_VERSION_ED25519_PUBLIC_KEY
+    )
+
+
+def contract_id_from_address(c_address: str) -> bytes:
+    return _raw_payload_from_address(
+        c_address, version=consts.STELLAR_STRKEY_VERSION_CONTRACT
+    )
 
 
 def address_from_public_key(pubkey: bytes) -> str:
@@ -48,3 +68,15 @@ def _crc16_checksum(data: bytes) -> bytes:
                 crc ^= polynomial
 
     return ustruct.pack("<H", crc & 0xFFFF)
+
+
+def _raw_payload_from_address(address: str, version: int) -> bytes:
+    """Extracts raw payload from an address
+    Stellar address is in format:
+    <1-byte version> <32-bytes raw payload> <2-bytes CRC-16 checksum>
+    """
+    b = base32.decode(address)
+    if b[0] != version:
+        raise ProcessError("Invalid address version")
+    _crc16_checksum_verify(b[:-2], b[-2:])
+    return b[1:-2]

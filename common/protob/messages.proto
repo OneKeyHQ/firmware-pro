@@ -296,6 +296,9 @@ enum MessageType {
     MessageType_StellarManageBuyOfferOp = 222 [(wire_in) = true];
     MessageType_StellarPathPaymentStrictSendOp = 223 [(wire_in) = true];
     MessageType_StellarSignedTx = 230 [(wire_out) = true];
+    MessageType_StellarInvokeHostFunctionOp = 260 [(wire_in) = true];
+    MessageType_StellarSorobanDataRequest = 261 [(wire_out) = true];
+    MessageType_StellarSorobanDataAck = 262 [(wire_in) = true];
 
     // Cardano
     // dropped Sign/VerifyMessage ids 300-302

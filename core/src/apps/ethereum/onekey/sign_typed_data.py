@@ -593,4 +593,5 @@ async def confirm_domain(ctx: Context, typed_data_envelope: TypedDataEnvelope) -
         eip712_domain[member.name] = value
     from ..layout import confirm_domain
 
-    await confirm_domain(ctx, eip712_domain)
+    if eip712_domain:
+        await confirm_domain(ctx, eip712_domain)

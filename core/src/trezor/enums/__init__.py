@@ -203,6 +203,9 @@ if TYPE_CHECKING:
         StellarManageBuyOfferOp = 222
         StellarPathPaymentStrictSendOp = 223
         StellarSignedTx = 230
+        StellarInvokeHostFunctionOp = 260
+        StellarSorobanDataRequest = 261
+        StellarSorobanDataAck = 262
         CardanoGetPublicKey = 305
         CardanoPublicKey = 306
         CardanoGetAddress = 307
@@ -761,6 +764,11 @@ if TYPE_CHECKING:
         ACCOUNT = 0
         PRE_AUTH = 1
         HASH = 2
+
+    class StellarRequestType(IntEnum):
+        CALL = 0
+        AUTH = 1
+        EXT = 2
 
     class TezosContractType(IntEnum):
         Implicit = 0
