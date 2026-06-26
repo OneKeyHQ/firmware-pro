@@ -9,12 +9,10 @@ class FIDOApp:
         label: str,
         icon: str | None,
         use_sign_count: bool | None,
-        use_self_attestation: bool | None,
     ) -> None:
         self.label = label
         self.icon = icon
         self.use_sign_count = use_sign_count
-        self.use_self_attestation = use_self_attestation
 
 
 <%
@@ -42,7 +40,6 @@ def by_rp_id_hash(rp_id_hash: bytes) -> FIDOApp | None:
             label=${black_repr(label)},
             icon=${black_repr(app.icon_res)},
             use_sign_count=${black_repr(app.use_sign_count)},
-            use_self_attestation=${black_repr(app.use_self_attestation)},
         )
 % endfor
 
