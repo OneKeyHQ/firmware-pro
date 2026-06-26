@@ -25,12 +25,45 @@ async def confirm_webauthn(
         if app_name == account_name:
             account_name = None
     confirm = ConfirmWebauthn(title, icon_path, app_name, account_name)
-    if ctx is None:
-        return bool(await confirm.request())
-    else:
-        return bool(
-            await interact(ctx, confirm, "confirm_webauthn", ButtonRequestType.Other)
-        )
+    # Remember the shown window so an external CTAPHID_CANCEL can dismiss it; the
+    # lvgl overlay is not removed automatically when the workflow coroutine is killed.
+    info.screen = confirm
+    try:
+        if ctx is None:
+            return bool(await confirm.request())
+        else:
+            return bool(
+                await interact(
+                    ctx, confirm, "confirm_webauthn", ButtonRequestType.Other
+                )
+            )
+    finally:
+        info.screen = None
+
+
+async def select_webauthn_account(
+    ctx: wire.GenericContext | None,
+    info: ConfirmInfo,
+) -> int | None:
+
+    from trezor.lvglui.scrs.webauthn import SelectWebauthnAccount
+
+    select = SelectWebauthnAccount(
+        info.get_header(), info.app_icon, info.app_name(), info.account_names()
+    )
+    info.screen = select
+    try:
+        if ctx is None:
+            result = await select.request()
+        else:
+            result = await interact(
+                ctx, select, "select_webauthn_account", ButtonRequestType.Other
+            )
+        if isinstance(result, int) and result >= 0:
+            return result
+        return None
+    finally:
+        info.screen = None
 
 
 async def confirm_webauthn_reset() -> bool:

@@ -278,9 +278,11 @@ class Fido2Credential(Credential):
         return self.rp_id
 
     def account_name(self) -> str | None:
-        if self.user_name:
+        # Some relying parties send a blank/whitespace-only "name" (e.g. " ");
+        # treat those as absent and fall back to displayName, then user id.
+        if self.user_name and self.user_name.strip():
             return self.user_name
-        elif self.user_display_name:
+        elif self.user_display_name and self.user_display_name.strip():
             return self.user_display_name
         elif self.user_id:
             return hexlify(self.user_id).decode()
