@@ -119,3 +119,39 @@ message TonSignedProof {
     optional bytes signature = 1;                   // signed transaction message
 }
 
+
+/**
+ * Request: Require Device to sign TON Connect sign data payload
+ * @start
+ * @next TonSignedData
+ * @next Failure
+ */
+message TonSignData {
+    repeated uint32 address_n = 1;                                  // BIP-32 path to derive the key from master node
+    required TonSignDataType type = 2;                              // payload type
+    required bytes payload = 3;                                     // payload bytes: TEXT=utf-8 bytes, BINARY=raw bytes, CELL=BOC bytes
+    optional string schema = 4;                                     // CELL only: schema string included in digest as crc32(utf8(schema))
+    required string appdomain = 5;                                  // app domain / origin
+    required uint64 timestamp = 6;                                  // UNIX timestamp in seconds (UTC) at the moment on creating the signature
+    optional string from_address = 7;                               // expected signer address for validation only (not part of signed digest)
+    optional TonWalletVersion wallet_version = 8 [default=V4R2];    // ton wallet version
+    optional uint32 wallet_id = 9 [default=698983191];              // subwallet_id value
+    optional TonWorkChain workchain = 10 [default=BASECHAIN];
+    optional bool is_bounceable = 11 [default=false];               // affects derived/displayed signer address format only
+    optional bool is_testnet_only = 12 [default=false];             // affects derived/displayed signer address format only
+
+    enum TonSignDataType {
+        TEXT = 0;
+        BINARY = 1;
+        CELL = 2;
+    }
+}
+
+/**
+ * Response: signature corresponding to TonSignData
+ * @end
+ */
+message TonSignedData {
+    optional bytes signature = 1;                                   // ed25519 signature over digest field
+    optional bytes digest = 2;                                      // exact 32-byte TON Connect signData digest that was signed
+}

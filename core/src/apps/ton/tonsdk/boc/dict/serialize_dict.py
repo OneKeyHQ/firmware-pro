@@ -23,7 +23,8 @@ def remove_prefix_map(src, length):
 
 
 def fork_map(src):
-    assert len(src) > 0, "Internal inconsistency"
+    if not src:
+        raise RuntimeError("Internal inconsistency")
     left = {}
     right = {}
     for k in src:
@@ -32,13 +33,16 @@ def fork_map(src):
         else:
             right[k[1:]] = src[k]
 
-    assert len(left) > 0, "Internal inconsistency. Left empty."
-    assert len(right) > 0, "Internal inconsistency. Left empty."
+    if not left:
+        raise RuntimeError("Internal inconsistency. Left empty.")
+    if not right:
+        raise RuntimeError("Internal inconsistency. Right empty.")
     return left, right
 
 
 def build_node(src):
-    assert len(src) > 0, "Internal inconsistency"
+    if not src:
+        raise RuntimeError("Internal inconsistency")
     if len(src) == 1:
         return {"type": "leaf", "value": list(src.values())[0]}
 
@@ -47,7 +51,8 @@ def build_node(src):
 
 
 def build_edge(src):
-    assert len(src) > 0, "Internal inconsistency"
+    if not src:
+        raise RuntimeError("Internal inconsistency")
     label = find_common_prefix(list(src.keys()))
     return {"label": label, "node": build_node(remove_prefix_map(src, len(label)))}
 

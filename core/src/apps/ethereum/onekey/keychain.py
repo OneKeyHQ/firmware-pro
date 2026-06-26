@@ -43,7 +43,11 @@ if TYPE_CHECKING:
 # tools (MEW, Metamask) do not use such scheme and set a = 0 and then
 # iterate the address index i. For compatibility, we allow this scheme as well.
 
-PATTERNS_ADDRESS = (paths.PATTERN_BIP44, paths.PATTERN_SEP5)
+PATTERNS_ADDRESS = (
+    paths.PATTERN_BIP44,
+    paths.PATTERN_SEP5,
+    paths.PATTERN_SEP5_LEDGER_LIVE_LEGACY,
+)
 
 
 def _schemas_from_address_n(

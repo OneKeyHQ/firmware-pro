@@ -259,6 +259,7 @@ def scan_qr(callback_obj):
                                 await callback_obj.transition_to(
                                     callback_obj.SCAN_STATE_IDLE
                                 )
+                                gc.collect()
                                 continue
             await loop.sleep(5)
 

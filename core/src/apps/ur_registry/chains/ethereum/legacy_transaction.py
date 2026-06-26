@@ -15,7 +15,8 @@ class EthereumSignTxTransacion:
         self.qr = None
         self.encoder = None
 
-    # Format: rlp([nonce, gasPrice, gasLimit, to, value, data, v, r, s])
+    # Format: rlp([nonce, gasPrice, gasLimit, to, value, data])
+    # or rlp([chainId, nonce, gasPrice, gasLimit, to, value, data, chainId, 0, 0]) for EIP-155
     @staticmethod
     def fromSerializedTx(serialized, chainId, address_n):
         tx = decode(serialized)

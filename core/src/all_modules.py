@@ -137,6 +137,8 @@ trezor.enums.SolanaOffChainMessageFormat
 import trezor.enums.SolanaOffChainMessageFormat
 trezor.enums.SolanaOffChainMessageVersion
 import trezor.enums.SolanaOffChainMessageVersion
+trezor.enums.TonSignDataType
+import trezor.enums.TonSignDataType
 trezor.enums.TonWalletVersion
 import trezor.enums.TonWalletVersion
 trezor.enums.TonWorkChain
@@ -891,6 +893,8 @@ apps.ton.get_address
 import apps.ton.get_address
 apps.ton.layout
 import apps.ton.layout
+apps.ton.sign_data
+import apps.ton.sign_data
 apps.ton.sign_message
 import apps.ton.sign_message
 apps.ton.sign_proof

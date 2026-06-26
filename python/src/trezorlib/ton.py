@@ -130,3 +130,37 @@ def sign_proof(client: "TrezorClient",
             is_test_only=test_only,
         )
     )
+
+
+@expect(messages.TonSignedData)
+def sign_data(
+    client: "TrezorClient",
+    n: "Address",
+    type: messages.TonSignDataType,
+    payload: bytes,
+    appdomain: str,
+    timestamp: int,
+    schema: str = None,
+    from_address: str = None,
+    version: messages.TonWalletVersion = messages.TonWalletVersion.V4R2,
+    wallet_id: int = 698983191,
+    workchain: messages.TonWorkChain = messages.TonWorkChain.BASECHAIN,
+    bounceable: bool = False,
+    test_only: bool = False,
+):
+    return client.call(
+        messages.TonSignData(
+            address_n=n,
+            type=type,
+            payload=payload,
+            schema=schema,
+            appdomain=appdomain,
+            timestamp=timestamp,
+            from_address=from_address,
+            wallet_version=version,
+            wallet_id=wallet_id,
+            workchain=workchain,
+            is_bounceable=bounceable,
+            is_testnet_only=test_only,
+        )
+    )

@@ -318,7 +318,7 @@ def parse_boc_header(serialized_boc):
 
 
 def deserialize_boc(serialized_boc):
-    if type(serialized_boc) == str:
+    if type(serialized_boc) is str:
         serialized_boc = unhexlify(serialized_boc)
 
     header = parse_boc_header(serialized_boc)
