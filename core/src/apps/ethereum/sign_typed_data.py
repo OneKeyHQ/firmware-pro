@@ -160,6 +160,18 @@ def keccak256(message: bytes) -> bytes:
     return h.get_digest()
 
 
+def _require_entry_type(field: EthereumFieldType) -> EthereumFieldType:
+    if field.entry_type is None:
+        raise wire.DataError("Missing entry_type in array")
+    return field.entry_type
+
+
+def _require_struct_name(field: EthereumFieldType) -> str:
+    if field.struct_name is None:
+        raise wire.DataError("Missing struct_name in struct")
+    return field.struct_name
+
+
 class TypedDataEnvelope:
     """Encapsulates the type information for the message being hashed and signed."""
 
@@ -188,14 +200,12 @@ class TypedDataEnvelope:
             member_type = member.type
             validate_field_type(member_type)
             while member_type.data_type == EthereumDataType.ARRAY:
-                assert member_type.entry_type is not None  # validate_field_type
-                member_type = member_type.entry_type
+                member_type = _require_entry_type(member_type)
             if (
                 member_type.data_type == EthereumDataType.STRUCT
                 and member_type.struct_name not in self.types
             ):
-                assert member_type.struct_name is not None  # validate_field_type
-                await self._collect_types(member_type.struct_name)
+                await self._collect_types(_require_struct_name(member_type))
 
     async def hash_struct(
         self,
@@ -259,11 +269,9 @@ class TypedDataEnvelope:
         for member in self.types[primary_type].members:
             member_type = member.type
             while member_type.data_type == EthereumDataType.ARRAY:
-                assert member_type.entry_type is not None  # validate_field_type
-                member_type = member_type.entry_type
+                member_type = _require_entry_type(member_type)
             if member_type.data_type == EthereumDataType.STRUCT:
-                assert member_type.struct_name is not None  # validate_field_type
-                self.find_typed_dependencies(member_type.struct_name, results)
+                self.find_typed_dependencies(_require_struct_name(member_type), results)
 
     async def get_and_encode_data(
         self,
@@ -291,8 +299,7 @@ class TypedDataEnvelope:
 
             # Arrays and structs need special recursive handling
             if field_type.data_type == EthereumDataType.STRUCT:
-                assert field_type.struct_name is not None  # validate_field_type
-                struct_name = field_type.struct_name
+                struct_name = _require_struct_name(field_type)
                 current_parent_objects[-1] = field_name
 
                 if show_data:
@@ -320,8 +327,7 @@ class TypedDataEnvelope:
                 else:
                     array_size = field_type.size
 
-                assert field_type.entry_type is not None  # validate_field_type
-                entry_type = field_type.entry_type
+                entry_type = _require_entry_type(field_type)
                 current_parent_objects[-1] = field_name
 
                 if show_data:
@@ -340,8 +346,7 @@ class TypedDataEnvelope:
                     el_member_path[-1] = i
                     # TODO: we do not support arrays of arrays, check if we should
                     if entry_type.data_type == EthereumDataType.STRUCT:
-                        assert entry_type.struct_name is not None  # validate_field_type
-                        struct_name = entry_type.struct_name
+                        struct_name = _require_struct_name(entry_type)
                         # Metamask V4 implementation has a bug, that causes the
                         # behavior of structs in array be different from SPEC
                         # Explanation at https://github.com/MetaMask/eth-sig-util/pull/107
@@ -432,7 +437,8 @@ def encode_field(
 
 
 def write_leftpad32(w: HashWriter, value: bytes, signed: bool = False) -> None:
-    assert len(value) <= 32
+    if len(value) > 32:
+        raise wire.DataError("Invalid length")
 
     # Values need to be sign-extended, so accounting for negative ints
     if signed and value[0] & 0x80:
@@ -446,7 +452,8 @@ def write_leftpad32(w: HashWriter, value: bytes, signed: bool = False) -> None:
 
 
 def write_rightpad32(w: HashWriter, value: bytes) -> None:
-    assert len(value) <= 32
+    if len(value) > 32:
+        raise wire.DataError("Invalid length")
 
     w.extend(value)
     for _i in range(32 - len(value)):

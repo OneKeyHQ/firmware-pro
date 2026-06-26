@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+from trezor import wire
 from trezor.crypto.curve import secp256k1
 from trezor.crypto.hashlib import sha3_256
 from trezor.lvglui.scrs import lv
@@ -33,7 +34,8 @@ async def sign_message_cip23(
     await paths.validate_path(ctx, keychain, msg.address_n)
 
     node = keychain.derive(msg.address_n)
-    assert msg.domain_hash is not None, "domain_hash is required"
+    if msg.domain_hash is None:
+        raise wire.DataError("domain_hash is required")
 
     message_hash = msg.message_hash or b""
     address = address_from_bytes(node.ethereum_pubkeyhash())

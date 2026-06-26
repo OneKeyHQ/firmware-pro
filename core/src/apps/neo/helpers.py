@@ -8,7 +8,8 @@ NETWORK_TESTNET = 894710606
 
 
 def build_check_sig_script_hash(pubkey: bytes) -> bytes:
-    assert len(pubkey) == 33, "Compressed public key is expected"
+    if len(pubkey) != 33:
+        raise ValueError("Compressed public key is expected")
     verification_script = b"\x0C\x21" + pubkey + b"\x41\x56\xe7\xb3\x27"
     return scripts.sha256_ripemd160(verification_script).digest()
 
@@ -21,7 +22,8 @@ def neo_address_from_pubkey(pubkey: bytes, version: bytes = ADDRESS_VERSION) -> 
 def neo_address_from_script_hash(
     script_hash: bytes, version: bytes = ADDRESS_VERSION
 ) -> str:
-    assert len(script_hash) == 20, "Script hash is expected to be 20 bytes"
+    if len(script_hash) != 20:
+        raise ValueError("Script hash is expected to be 20 bytes")
     return base58.encode_check(version + script_hash)
 
 

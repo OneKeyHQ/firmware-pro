@@ -133,7 +133,8 @@ def address_p2wsh_in_p2sh(witness_script_hash: bytes, coin: CoinInfo) -> str:
 
 
 def address_p2wpkh(pubkey: bytes, coin: CoinInfo) -> str:
-    assert coin.bech32_prefix is not None
+    if coin.bech32_prefix is None:
+        raise wire.ProcessError("Bech32 not enabled on this coin")
     pubkeyhash = ecdsa_hash_pubkey(pubkey, coin)
     return encode_bech32_address(coin.bech32_prefix, 0, pubkeyhash)
 
@@ -143,13 +144,15 @@ def address_p2wsh(witness_script_hash: bytes, hrp: str) -> str:
 
 
 def address_p2tr(pubkey: bytes, coin: CoinInfo) -> str:
-    assert coin.bech32_prefix is not None
+    if coin.bech32_prefix is None:
+        raise wire.ProcessError("Bech32 not enabled on this coin")
     output_pubkey = bip340.tweak_public_key(pubkey[1:])
     return encode_bech32_address(coin.bech32_prefix, 1, output_pubkey)
 
 
 def address_to_cashaddr(address: str, coin: CoinInfo) -> str:
-    assert coin.cashaddr_prefix is not None
+    if coin.cashaddr_prefix is None:
+        raise wire.ProcessError("Cashaddr not enabled on this coin")
     raw = base58.decode_check(address, coin.b58_hash)
     version, data = raw[0], raw[1:]
     if version == coin.address_type:

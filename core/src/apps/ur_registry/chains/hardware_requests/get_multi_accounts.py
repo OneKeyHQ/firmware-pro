@@ -116,7 +116,8 @@ class GetMultiAccountsRequest:
                                 root_fingerprint,
                             )
                         keys.append(hdkey)
-            assert root_fingerprint is not None, "Root fingerprint should not be None"
+            if root_fingerprint is None:
+                raise ValueError("Root fingerprint should not be None")
             name = helpers.reveal_name(wire.QR_CONTEXT, root_fingerprint)
             cma = CryptoMultiAccounts(
                 root_fingerprint,

@@ -27,7 +27,8 @@ class Slip21Node:
 
                 self.data = se_thd89.slip21_node()
         else:
-            assert seed is None or data is None, "Specify exactly one of: seed, data"
+            if seed is not None and data is not None:
+                raise ValueError("Specify exactly one of: seed, data")
             if data is not None:
                 self.data = data
             elif seed is not None:
@@ -129,7 +130,8 @@ if not utils.BITCOIN_ONLY:
         await derive_and_store_roots(ctx)
         common_seed = cache.get(cache.APP_COMMON_SEED)
         if not utils.USE_THD89:
-            assert common_seed is not None
+            if common_seed is None:
+                raise RuntimeError("Seed cache missing")
             return common_seed
         else:
             return b""

@@ -65,8 +65,10 @@ class Zip243SigHasher:
             )
         )
 
-        assert tx.version_group_id is not None
-        assert tx.expiry is not None
+        if tx.version_group_id is None:
+            raise wire.DataError("Version group ID is missing")
+        if tx.expiry is None:
+            raise wire.DataError("Expiry is missing")
         zero_hash = b"\x00" * TX_HASH_SIZE
 
         # 1. nVersion | fOverwintered
@@ -186,7 +188,8 @@ class ZcashV4(Bitcoinlike):
             write_uint32(w, tx.version_group_id)  # nVersionGroupId
 
     def write_tx_footer(self, w: Writer, tx: SignTx | PrevTx) -> None:
-        assert tx.expiry is not None  # checked in sanitize_*
+        if tx.expiry is None:
+            raise wire.DataError("Expiry is missing")
         write_uint32(w, tx.lock_time)
         if tx.version >= 3:
             write_uint32(w, tx.expiry)  # expiryHeight

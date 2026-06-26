@@ -35,7 +35,8 @@ def H_round(i: int, left: memoryview, right: memoryview) -> None:
 
 
 def f4jumble(message: memoryview) -> None:
-    assert 48 <= len(message) <= 4194368
+    if not 48 <= len(message) <= 4194368:
+        raise ValueError("Invalid F4Jumble message length")
     left_length = min(HASH_LENGTH, len(message) // 2)
 
     left = message[:left_length]
@@ -47,7 +48,8 @@ def f4jumble(message: memoryview) -> None:
 
 
 def f4unjumble(message: memoryview) -> None:
-    assert 48 <= len(message) <= 4194368
+    if not 48 <= len(message) <= 4194368:
+        raise ValueError("Invalid F4Jumble message length")
     left_length = min(HASH_LENGTH, len(message) // 2)
 
     left = message[:left_length]

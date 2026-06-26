@@ -239,7 +239,8 @@ class Decred(Bitcoin):
                             h_witness, ecdsa_hash_pubkey(key_sign_pub, self.coin)
                         )
                     elif txi_sign.script_type == InputScriptType.SPENDMULTISIG:
-                        assert txi_sign.multisig is not None
+                        if txi_sign.multisig is None:
+                            raise wire.DataError("Missing multisig data")
                         scripts_decred.write_output_script_multisig(
                             h_witness,
                             multisig.multisig_get_pubkeys(txi_sign.multisig),
@@ -328,7 +329,8 @@ class Decred(Bitcoin):
         return scripts_decred.output_script_paytoopreturn(op_return_data)
 
     async def approve_staking_ticket(self) -> None:
-        assert isinstance(self.approver, DecredApprover)
+        if not isinstance(self.approver, DecredApprover):
+            raise RuntimeError("Invalid Decred approver")
 
         if self.tx_info.tx.outputs_count != 3:
             raise wire.DataError("Ticket has wrong number of outputs.")
@@ -389,7 +391,8 @@ class Decred(Bitcoin):
         writers.write_uint32(w, version)
 
     def write_tx_footer(self, w: writers.Writer, tx: SignTx | PrevTx) -> None:
-        assert tx.expiry is not None  # checked in sanitize_*
+        if tx.expiry is None:
+            raise wire.DataError("Missing expiry")
         writers.write_uint32(w, tx.lock_time)
         writers.write_uint32(w, tx.expiry)
 

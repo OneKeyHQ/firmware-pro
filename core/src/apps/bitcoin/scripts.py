@@ -69,7 +69,8 @@ def write_input_script_prefixed(
         write_bytes_prefixed(w, script_sig)
     elif script_type == InputScriptType.SPENDMULTISIG:
         # p2sh multisig
-        assert multisig is not None  # checked in sanitize_tx_input
+        if multisig is None:
+            raise wire.ProcessError("Missing multisig data")
         signature_index = multisig_pubkey_index(multisig, pubkey)
         write_input_script_multisig_prefixed(
             w, multisig, signature, signature_index, sighash_type, coin

@@ -89,9 +89,12 @@ async def require_confirm_properties(
     # levy
     if definition.levy:
         # asserts below checked in nem.validators._validate_mosaic_creation
-        assert definition.levy_address is not None
-        assert definition.levy_namespace is not None
-        assert definition.levy_mosaic is not None
+        if (
+            definition.levy_address is None
+            or definition.levy_namespace is None
+            or definition.levy_mosaic is None
+        ):
+            raise ValueError("Missing mosaic levy data")
 
         properties.append(("Levy recipient:", definition.levy_address))
 

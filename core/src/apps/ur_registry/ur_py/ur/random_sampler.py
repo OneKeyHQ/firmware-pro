@@ -9,11 +9,13 @@
 class RandomSampler:
     def __init__(self, probs):
         for p in probs:
-            assert p > 0
+            if p <= 0:
+                raise ValueError("Probabilities must be positive")
 
         # Normalize given probabilities
         total = sum(probs)
-        assert total > 0
+        if total <= 0:
+            raise ValueError("Probability total must be positive")
 
         n = len(probs)
 

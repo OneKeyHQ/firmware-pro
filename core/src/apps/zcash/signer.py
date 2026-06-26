@@ -100,9 +100,12 @@ class Zcash(Bitcoinlike):
         self, w: Writer, tx: SignTx | PrevTx, witness_marker: bool
     ) -> None:
         # defined in ZIP-225 (see https://zips.z.cash/zip-0225)
-        assert tx.version_group_id is not None
-        assert tx.branch_id is not None  # checked in sanitize_*
-        assert tx.expiry is not None
+        if tx.version_group_id is None:
+            raise DataError("Missing version group ID")
+        if tx.branch_id is None:
+            raise DataError("Missing branch ID")
+        if tx.expiry is None:
+            raise DataError("Missing expiry")
 
         write_uint32_le(w, tx.version | OVERWINTERED)  # nVersion | fOverwintered
         write_uint32_le(w, tx.version_group_id)  # nVersionGroupId
@@ -120,7 +123,8 @@ class Zcash(Bitcoinlike):
     def output_derive_script(self, txo: TxOutput) -> bytes:
         # unified addresses
         if txo.address is not None and txo.address[0] == "u":
-            assert txo.script_type is OutputScriptType.PAYTOADDRESS
+            if txo.script_type is not OutputScriptType.PAYTOADDRESS:
+                raise DataError("Invalid output script type")
 
             receivers = unified_addresses.decode(txo.address, self.coin)
             if Typecode.P2PKH in receivers:

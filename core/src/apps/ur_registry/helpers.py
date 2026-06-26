@@ -26,7 +26,8 @@ def generate_HDKey(
     note: str | None = None,
 ) -> CryptoHDKey:
     hdkey = CryptoHDKey()
-    assert root_fingerprint is not None, "Root fingerprint should not be None"
+    if root_fingerprint is None:
+        raise ValueError("Root fingerprint should not be None")
     hdkey.new_extended_key(
         False,
         pubkey.node.public_key,
@@ -96,9 +97,8 @@ def generate_hdkey_ETHStandard(
     ctx, pubkey: PublicKey, eth_only: bool = True
 ) -> CryptoHDKey:
     if eth_only:
-        assert (
-            pubkey.root_fingerprint is not None
-        ), "Root fingerprint should not be None"
+        if pubkey.root_fingerprint is None:
+            raise ValueError("Root fingerprint should not be None")
         name = reveal_name(ctx, pubkey.root_fingerprint, True)
     else:
         name = None

@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 
 from trezor.crypto.hashlib import blake2b
 from trezor.utils import HashWriter, empty_bytearray
+from trezor.wire import DataError
 
 from apps.bitcoin.common import SigHashType
 from apps.bitcoin.writers import (
@@ -45,7 +46,8 @@ class ZcashHasher:
         self.sapling = SaplingHasher()
         self.orchard = OrchardHasher()
 
-        assert tx.branch_id is not None  # checked in sanitize_sign_tx
+        if tx.branch_id is None:
+            raise DataError("Missing branch ID")
         tx_hash_person = empty_bytearray(16)
         write_bytes_fixed(tx_hash_person, b"ZcashTxHash_", 12)
         write_uint32(tx_hash_person, tx.branch_id)
@@ -124,9 +126,12 @@ class HeaderHasher:
     def __init__(self, tx: SignTx | PrevTx):
         h = HashWriter(blake2b(outlen=32, personal=b"ZTxIdHeadersHash"))
 
-        assert tx.version_group_id is not None
-        assert tx.branch_id is not None  # checked in sanitize_*
-        assert tx.expiry is not None
+        if tx.version_group_id is None:
+            raise DataError("Missing version group ID")
+        if tx.branch_id is None:
+            raise DataError("Missing branch ID")
+        if tx.expiry is None:
+            raise DataError("Missing expiry")
 
         write_uint32(h, tx.version | (1 << 31))  # T.1a
         write_uint32(h, tx.version_group_id)  # T.1b
@@ -210,8 +215,8 @@ class TransparentHasher:
         """
 
         if self.empty:
-            assert txi is None
-            assert script_pubkey is None
+            if txi is not None or script_pubkey is not None:
+                raise RuntimeError("Unexpected transparent input")
             return self.digest()
 
         h = HashWriter(blake2b(outlen=32, personal=b"ZTxIdTranspaHash"))
@@ -241,7 +246,8 @@ def _txin_sig_digest(
     h = HashWriter(blake2b(outlen=32, personal=b"Zcash___TxInHash"))
 
     if txi is not None:
-        assert script_pubkey is not None
+        if script_pubkey is None:
+            raise RuntimeError("Missing script pubkey")
 
         write_prevout(h, txi)  # 2.Sg.i
         write_uint64(h, txi.amount)  # 2.Sg.ii

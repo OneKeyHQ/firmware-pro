@@ -55,9 +55,12 @@ async def sign_taproot(
     found_ours = False
     contains_script_path_spending = False
     for i, input in enumerate(psbt.inputs):
-        assert input.prev_txid is not None
-        assert input.prev_out is not None
-        assert input.sequence is not None
+        if input.prev_txid is None:
+            raise wire.DataError("Missing previous transaction ID")
+        if input.prev_out is None:
+            raise wire.DataError("Missing previous output index")
+        if input.sequence is None:
+            raise wire.DataError("Missing input sequence")
 
         if input.non_witness_utxo is not None:
             # TODO: check if non-witness UTXO is presigned
@@ -71,7 +74,8 @@ async def sign_taproot(
         amount = input.witness_utxo.nValue
         is_wit, wit_ver, _ = is_witness(scriptPub)
 
-        assert is_wit and wit_ver == 1, "Only taproot input is allowed"
+        if not is_wit or wit_ver != 1:
+            raise wire.DataError("Only taproot input is allowed")
         total_in += amount
         for key, (_, origin) in input.tap_bip32_paths.items():
             if origin.fingerprint != master_fp:
@@ -82,12 +86,15 @@ async def sign_taproot(
                 raise wire.DataError("Wallet mismatch")
             node = keychain.derive(origin.path)
             intend_key = node.public_key()[1:]
-            assert intend_key == key, "Invalid key"
+            if intend_key != key:
+                raise wire.DataError("Invalid key")
             if not input.tap_scripts:
-                assert key == input.tap_internal_key, "Invalid internal key"
+                if key != input.tap_internal_key:
+                    raise wire.DataError("Invalid internal key")
             else:
                 script, _ = list(input.tap_scripts.keys())[0]
-                assert key in script, "Invalid script"
+                if key not in script:
+                    raise wire.DataError("Invalid script")
                 if not contains_script_path_spending:
                     contains_script_path_spending = True
 
@@ -114,7 +121,8 @@ async def sign_taproot(
         wit, ver, prog = out.is_witness()
         out_address = None
         if wit:
-            assert coin.bech32_prefix is not None
+            if coin.bech32_prefix is None:
+                raise wire.DataError("Bech32 not enabled on this coin")
             out_address = encode_bech32_address(coin.bech32_prefix, ver, prog)
         elif out.is_p2pkh():
             out_address = base58.encode_check(
@@ -128,9 +136,8 @@ async def sign_taproot(
             )
         elif out.is_opreturn():
             if out.nValue != 0:
-                assert (
-                    contains_script_path_spending and len(psbt.inputs) == 1
-                ), "OpReturn output should have 0 value"
+                if not (contains_script_path_spending and len(psbt.inputs) == 1):
+                    raise wire.DataError("OpReturn output should have 0 value")
             op_return_data = out.scriptPubKey[2:]
         else:
             raise Exception("Invalid output type")
@@ -228,7 +235,8 @@ async def sign_taproot(
             if not script_path_spending:
                 input.tap_key_sig = signature
             else:
-                assert leaf_hash is not None
+                if leaf_hash is None:
+                    raise RuntimeError("Missing leaf hash")
                 input.tap_script_sigs[(key, leaf_hash)] = signature
 
     return SignedPsbt(psbt=psbt.serialize())

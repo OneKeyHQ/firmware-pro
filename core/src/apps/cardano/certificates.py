@@ -166,7 +166,8 @@ def cborize(
             certificate.pool,
         )
     elif cert_type == CardanoCertificateType.VOTE_DELEGATION:
-        assert certificate.drep is not None
+        if certificate.drep is None:
+            raise ProcessError("Invalid certificate")
         return (
             cert_type,
             cborize_stake_credential(
@@ -202,10 +203,12 @@ def cborize_pool_registration_init(
 ) -> CborSequence:
     from apps.common import cbor
 
-    assert certificate.type == CardanoCertificateType.STAKE_POOL_REGISTRATION
+    if certificate.type != CardanoCertificateType.STAKE_POOL_REGISTRATION:
+        raise ProcessError("Invalid certificate")
 
     pool_parameters = certificate.pool_parameters
-    assert pool_parameters is not None
+    if pool_parameters is None:
+        raise ProcessError("Invalid certificate")
 
     return (
         certificate.type,
@@ -325,10 +328,12 @@ def validate_pool_relay(pool_relay: messages.CardanoPoolRelayParameters) -> None
 
 def cborize_drep(drep: messages.CardanoDRep) -> tuple[int, bytes] | tuple[int]:
     if drep.type == CardanoDRepType.KEY_HASH:
-        assert drep.key_hash is not None
+        if drep.key_hash is None:
+            raise ProcessError("Invalid certificate")
         return 0, drep.key_hash
     elif drep.type == CardanoDRepType.SCRIPT_HASH:
-        assert drep.script_hash is not None
+        if drep.script_hash is None:
+            raise ProcessError("Invalid certificate")
         return 1, drep.script_hash
     elif drep.type == CardanoDRepType.ABSTAIN:
         return (2,)
@@ -354,7 +359,8 @@ def _cborize_ipv6_address(ipv6_address: bytes | None) -> bytes | None:
         return None
 
     # ipv6 addresses are serialized to CBOR as uint_32[4] little endian
-    assert len(ipv6_address) == _IPV6_ADDRESS_SIZE
+    if len(ipv6_address) != _IPV6_ADDRESS_SIZE:
+        raise ValueError("Invalid IPv6 address length")
 
     result = b""
     for i in range(0, 4):

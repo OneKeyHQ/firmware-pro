@@ -91,6 +91,7 @@ def address_from_public_key(pubkey: bytes, hrp: str) -> str:
 
     h = sha256_ripemd160(pubkey).digest()
 
-    assert (len(h) * 8) % 5 == 0  # no padding will be added by convertbits
+    if (len(h) * 8) % 5 != 0:
+        raise RuntimeError("Unexpected address hash length")
     convertedbits = bech32.convertbits(h, 8, 5)
     return bech32.bech32_encode(hrp, convertedbits, bech32.Encoding.BECH32)

@@ -52,7 +52,8 @@ class TxWeightCalculator:
     def input_script_size(cls, i: TxInput) -> int:
         script_type = i.script_type
         if common.input_is_external_unverified(i):
-            assert i.script_pubkey is not None  # checked in sanitize_tx_input
+            if i.script_pubkey is None:
+                raise wire.DataError("Missing script pubkey")
 
             # Guess the script type from the scriptPubKey.
             if i.script_pubkey[0] == 0x76:  # OP_DUP (P2PKH)

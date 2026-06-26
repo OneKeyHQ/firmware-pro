@@ -80,7 +80,8 @@ async def _init_step(
 async def _sync_step(
     s: KeyImageSync, ctx: wire.Context, tds: MoneroKeyImageSyncStepRequest
 ) -> MoneroKeyImageSyncStepAck:
-    assert s.creds is not None
+    if s.creds is None:
+        raise RuntimeError("Key image credentials missing")
 
     if not tds.tdis:
         raise wire.DataError("Empty")

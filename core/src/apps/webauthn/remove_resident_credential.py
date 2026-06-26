@@ -41,6 +41,7 @@ async def remove_resident_credential(
     if not await confirm_webauthn(ctx, ConfirmRemoveCredential(cred)):
         raise wire.ActionCancelled
 
-    assert cred.index is not None
+    if cred.index is None:
+        raise wire.ProcessError("Invalid credential index.")
     storage.resident_credentials.delete(cred.index)
     return Success(message="Credential removed")

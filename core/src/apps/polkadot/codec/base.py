@@ -85,7 +85,8 @@ class ScaleDecoder:
         #     self.build_type_mapping()
 
         if data:
-            assert type(data) == ScaleBytes
+            if type(data) is not ScaleBytes:
+                raise TypeError("data must be ScaleBytes")
 
         if runtime_config:
             self.runtime_config = runtime_config

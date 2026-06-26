@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from trezor import messages
+from trezor import messages, wire
 from trezor.enums import (
     ButtonRequestType,
     CardanoAddressType,
@@ -32,7 +32,6 @@ if TYPE_CHECKING:
 
     from .helpers.credential import Credential
     from .seed import Keychain
-    from trezor import wire
 
 ADDRESS_TYPE_NAMES = {
     CardanoAddressType.BYRON: "Legacy",
@@ -114,13 +113,15 @@ async def show_native_script(
     append = props.append  # local_cache_attribute
 
     if script_type == CNST.PUB_KEY:
-        assert key_hash is not None or key_path  # validate_script
+        if key_hash is None and not key_path:
+            raise wire.DataError("Invalid native script")
         if key_hash:
             append((None, bech32.encode(bech32.HRP_SHARED_KEY_HASH, key_hash)))
         elif key_path:
             append((address_n_to_str(key_path), None))
     elif script_type == CNST.N_OF_K:
-        assert script.required_signatures_count is not None  # validate_script
+        if script.required_signatures_count is None:
+            raise wire.DataError("Invalid native script")
         append(
             (
                 f"Requires {script.required_signatures_count} out of {len(scripts)} signatures.",
@@ -128,10 +129,12 @@ async def show_native_script(
             )
         )
     elif script_type == CNST.INVALID_BEFORE:
-        assert script.invalid_before is not None  # validate_script
+        if script.invalid_before is None:
+            raise wire.DataError("Invalid native script")
         append((str(script.invalid_before), None))
     elif script_type == CNST.INVALID_HEREAFTER:
-        assert script.invalid_hereafter is not None  # validate_script
+        if script.invalid_hereafter is None:
+            raise wire.DataError("Invalid native script")
         append((str(script.invalid_hereafter), None))
 
     if script_type in (
@@ -139,7 +142,8 @@ async def show_native_script(
         CNST.ANY,
         CNST.N_OF_K,
     ):
-        assert scripts  # validate_script
+        if not scripts:
+            raise wire.DataError("Invalid native script")
         append((f"Contains {len(scripts)} nested scripts.", None))
 
     await confirm_properties(
@@ -160,10 +164,11 @@ async def show_script_hash(
     display_format: CardanoNativeScriptHashDisplayFormat,
 ) -> None:
 
-    assert display_format in (
+    if display_format not in (
         CardanoNativeScriptHashDisplayFormat.BECH32,
         CardanoNativeScriptHashDisplayFormat.POLICY_ID,
-    )
+    ):
+        raise wire.DataError("Invalid native script hash display format")
 
     if display_format == CardanoNativeScriptHashDisplayFormat.BECH32:
         await confirm_properties(
@@ -240,7 +245,8 @@ async def confirm_sending(
 async def confirm_sending_token(
     ctx: wire.Context, policy_id: bytes, token: messages.CardanoToken
 ) -> None:
-    assert token.amount is not None  # _validate_token
+    if token.amount is None:
+        raise wire.DataError("Invalid token")
 
     await confirm_properties(
         ctx,
@@ -576,7 +582,8 @@ async def confirm_certificate(
 ) -> None:
     # stake pool registration requires custom confirmation logic not covered
     # in this call
-    assert certificate.type != CardanoCertificateType.STAKE_POOL_REGISTRATION
+    if certificate.type == CardanoCertificateType.STAKE_POOL_REGISTRATION:
+        raise wire.DataError("Invalid certificate")
 
     if certificate.type == CardanoCertificateType.STAKE_REGISTRATION:
         transaction_type_value = _(i18n_keys.LIST_VALUE__STAKE_KEY_REGISTRATION)
@@ -595,7 +602,8 @@ async def confirm_certificate(
     ]
 
     if certificate.type == CardanoCertificateType.STAKE_DELEGATION:
-        assert certificate.pool is not None  # validate_certificate
+        if certificate.pool is None:
+            raise wire.DataError("Invalid certificate")
         props.append(
             (
                 _(i18n_keys.LIST_KEY__TO_POOL__COLON),
@@ -606,7 +614,8 @@ async def confirm_certificate(
         CardanoCertificateType.STAKE_REGISTRATION_CONWAY,
         CardanoCertificateType.STAKE_DEREGISTRATION_CONWAY,
     ):
-        assert certificate.deposit is not None  # validate_certificate
+        if certificate.deposit is None:
+            raise wire.DataError("Invalid certificate")
         props.append(
             (
                 _(i18n_keys.LIST_VALUE__DEPOSIT) + ":",
@@ -615,7 +624,8 @@ async def confirm_certificate(
         )
 
     elif certificate.type == CardanoCertificateType.VOTE_DELEGATION:
-        assert certificate.drep is not None  # validate_certificate
+        if certificate.drep is None:
+            raise wire.DataError("Invalid certificate")
         props.append(_format_drep(certificate.drep))
 
     await confirm_properties(
@@ -683,7 +693,8 @@ async def confirm_stake_pool_owner(
             )
         )
     else:
-        assert owner.staking_key_hash is not None  # validate_pool_owners
+        if owner.staking_key_hash is None:
+            raise wire.DataError("Invalid pool owner")
         props.append(
             (
                 "Pool owner:",
@@ -818,13 +829,15 @@ def _format_stake_credential(
 
 def _format_drep(drep: messages.CardanoDRep) -> tuple[str, str]:
     if drep.type == CardanoDRepType.KEY_HASH:
-        assert drep.key_hash is not None  # validate_drep
+        if drep.key_hash is None:
+            raise wire.DataError("Invalid DRep")
         return (
             "Delegating to key hash:",
             bech32.encode(bech32.HRP_DREP_KEY_HASH, drep.key_hash),
         )
     elif drep.type == CardanoDRepType.SCRIPT_HASH:
-        assert drep.script_hash is not None  # validate_drep
+        if drep.script_hash is None:
+            raise wire.DataError("Invalid DRep")
         return (
             "Delegating to script:",
             bech32.encode(bech32.HRP_DREP_SCRIPT_HASH, drep.script_hash),
@@ -930,7 +943,8 @@ async def show_auxiliary_data_hash(
 async def confirm_token_minting(
     ctx: wire.Context, policy_id: bytes, token: messages.CardanoToken
 ) -> None:
-    assert token.mint_amount is not None  # _validate_token
+    if token.mint_amount is None:
+        raise wire.DataError("Invalid token")
     await confirm_properties(
         ctx,
         "confirm_mint",
@@ -1012,9 +1026,8 @@ async def confirm_reference_input(
 async def confirm_required_signer(
     ctx: wire.Context, required_signer: messages.CardanoTxRequiredSigner
 ) -> None:
-    assert (
-        required_signer.key_hash is not None or required_signer.key_path
-    )  # _validate_required_signer
+    if required_signer.key_hash is None and not required_signer.key_path:
+        raise wire.DataError("Invalid required signer")
     formatted_signer = (
         bech32.encode(bech32.HRP_REQUIRED_SIGNER_KEY_HASH, required_signer.key_hash)
         if required_signer.key_hash is not None

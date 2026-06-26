@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from trezor import strings, ui
+from trezor import strings, ui, wire
 from trezor.enums import ButtonRequestType
 from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
 from trezor.ui.layouts import (
@@ -135,7 +135,8 @@ async def _require_confirm_output(
     addr = encode_addr(
         version, dst.addr.spend_public_key, dst.addr.view_public_key, payment_id
     )
-    assert dst.amount is not None
+    if dst.amount is None:
+        raise wire.DataError("Missing destination amount")
     await confirm_output(
         ctx,
         address=addr,

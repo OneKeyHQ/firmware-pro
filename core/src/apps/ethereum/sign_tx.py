@@ -180,9 +180,8 @@ async def handle_erc_721_or_1155(
         token_id = int.from_bytes(msg.data_initial_chunk[68:100], "big")
 
         value = int.from_bytes(msg.data_initial_chunk[100:132], "big")
-        assert (
-            int.from_bytes(msg.data_initial_chunk[132:164], "big") == 0xA0
-        )  # dyn data position
+        if int.from_bytes(msg.data_initial_chunk[132:164], "big") != 0xA0:
+            raise wire.DataError("Invalid call data")
         data_len = int.from_bytes(msg.data_initial_chunk[164:196], "big")
         data = msg.data_initial_chunk[-data_len:]
         if not (data_len == 1 and data == b"\x00"):
@@ -200,7 +199,8 @@ async def handle_erc_721_or_1155(
         token_id = int.from_bytes(msg.data_initial_chunk[68:100], "big")
         value = 1
     if from_addr:
-        assert recipient is not None
+        if recipient is None:
+            raise wire.DataError("Invalid call data")
         return from_addr, recipient, token_id, value
     else:
         return None

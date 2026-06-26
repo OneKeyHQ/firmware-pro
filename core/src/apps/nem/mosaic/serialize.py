@@ -44,10 +44,13 @@ def serialize_mosaic_creation(
 
     if creation.definition.levy:
         # all below asserts checked by nem.validators._validate_mosaic_creation
-        assert creation.definition.levy_namespace is not None
-        assert creation.definition.levy_mosaic is not None
-        assert creation.definition.levy_address is not None
-        assert creation.definition.fee is not None
+        if (
+            creation.definition.levy_namespace is None
+            or creation.definition.levy_mosaic is None
+            or creation.definition.levy_address is None
+            or creation.definition.fee is None
+        ):
+            raise ValueError("Missing mosaic levy data")
 
         levy_identifier_w = bytearray()
         write_bytes_with_len(

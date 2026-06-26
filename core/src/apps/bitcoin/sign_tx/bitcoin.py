@@ -236,7 +236,8 @@ class Bitcoin:
                     writers.write_tx_input_check(h_check, txi)
 
                     # txi.script_pubkey checked in sanitize_tx_input
-                    assert txi.script_pubkey is not None
+                    if txi.script_pubkey is None:
+                        raise wire.DataError("Missing script pubkey")
                     await self.verify_presigned_external_input(
                         i, txi, txi.script_pubkey
                     )
@@ -338,7 +339,8 @@ class Bitcoin:
         await self.approver.add_internal_input(txi, node)
 
     async def process_external_input(self, txi: TxInput) -> None:
-        assert txi.script_pubkey is not None  # checked in sanitize_tx_input
+        if txi.script_pubkey is None:
+            raise wire.DataError("Missing script pubkey")
 
         self.approver.add_external_input(txi)
 
@@ -353,8 +355,10 @@ class Bitcoin:
                 raise wire.DataError("Invalid external input")
 
     async def process_original_input(self, txi: TxInput, script_pubkey: bytes) -> None:
-        assert txi.orig_hash is not None
-        assert txi.orig_index is not None
+        if txi.orig_hash is None:
+            raise wire.DataError("Missing original transaction hash")
+        if txi.orig_index is None:
+            raise wire.DataError("Missing original transaction index")
 
         for orig in self.orig_txs:
             if orig.orig_hash == txi.orig_hash:
@@ -422,8 +426,10 @@ class Bitcoin:
     async def get_original_output(
         self, txo: TxOutput, script_pubkey: bytes
     ) -> TxOutput:
-        assert txo.orig_hash is not None
-        assert txo.orig_index is not None
+        if txo.orig_hash is None:
+            raise wire.DataError("Missing original transaction hash")
+        if txo.orig_index is None:
+            raise wire.DataError("Missing original transaction index")
 
         for orig in self.orig_txs:
             if orig.orig_hash == txo.orig_hash:
@@ -710,7 +716,8 @@ class Bitcoin:
                         multisig.multisig_pubkey_index(txi.multisig, key_sign_pub)
 
                     if txi.script_type == InputScriptType.SPENDMULTISIG:
-                        assert txi.multisig is not None  # checked in sanitize_tx_input
+                        if txi.multisig is None:
+                            raise wire.DataError("Missing multisig data")
                         script_pubkey = scripts.output_script_multisig(
                             multisig.multisig_get_pubkeys(txi.multisig),
                             txi.multisig.m,
@@ -755,7 +762,8 @@ class Bitcoin:
             raise wire.ProcessError("Transaction has changed during signing")
 
         tx_digest, txi, node = await self.get_legacy_tx_digest(i, self.tx_info)
-        assert node is not None
+        if node is None:
+            raise RuntimeError("Signing node missing")
 
         # compute the signature from the tx digest
         signature = ecdsa_sign(node, tx_digest)
@@ -814,7 +822,8 @@ class Bitcoin:
                 script_pubkey = txo_bin.script_pubkey
                 self.check_prevtx_output(txo_bin)
 
-        assert script_pubkey is not None  # prev_index < tx.outputs_count
+        if script_pubkey is None:
+            raise wire.DataError("Missing previous output script")
 
         await self.write_prev_tx_footer(txh, tx, prev_hash)
 
@@ -904,7 +913,8 @@ class Bitcoin:
 
     def set_serialized_signature(self, index: int, signature: bytes) -> None:
         # Only one signature per TxRequest can be serialized.
-        assert self.tx_req.serialized is not None
+        if self.tx_req.serialized is None:
+            raise RuntimeError("Tx request serialized data missing")
         ensure(self.tx_req.serialized.signature is None)
 
         self.tx_req.serialized.signature_index = index
@@ -917,7 +927,8 @@ class Bitcoin:
         self, txi: TxInput, node: bip32.HDNode | None = None
     ) -> bytes:
         if input_is_external(txi):
-            assert txi.script_pubkey is not None  # checked in sanitize_tx_input
+            if txi.script_pubkey is None:
+                raise wire.DataError("Missing script pubkey")
             return txi.script_pubkey
 
         if node is None:
@@ -928,7 +939,8 @@ class Bitcoin:
 
     def output_derive_script(self, txo: TxOutput) -> bytes:
         if txo.script_type == OutputScriptType.PAYTOOPRETURN:
-            assert txo.op_return_data is not None  # checked in sanitize_tx_output
+            if txo.op_return_data is None:
+                raise wire.DataError("Missing OP_RETURN data")
             return scripts.output_script_paytoopreturn(txo.op_return_data)
 
         if txo.address_n:
@@ -944,6 +956,7 @@ class Bitcoin:
                 input_script_type, self.coin, node, txo.multisig
             )
 
-        assert txo.address is not None  # checked in sanitize_tx_output
+        if txo.address is None:
+            raise wire.DataError("Missing output address")
 
         return scripts.output_derive_script(txo.address, self.coin)

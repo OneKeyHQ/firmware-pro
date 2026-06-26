@@ -110,9 +110,8 @@ class FeeMarketEIP1559Transaction:
                 break
             try:
                 if messages.EthereumTxRequestOneKey.is_type_of(response):
-                    assert (
-                        FeeMarketEIP1559Transaction.CALL_DATA is not None
-                    ), "CALL_DATA is None"
+                    if FeeMarketEIP1559Transaction.CALL_DATA is None:
+                        raise RuntimeError("CALL_DATA is None")
                     request_data_length = response.data_length
                     response = messages.EthereumTxAckOneKey(
                         data_chunk=FeeMarketEIP1559Transaction.CALL_DATA[

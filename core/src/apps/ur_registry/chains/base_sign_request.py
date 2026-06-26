@@ -174,7 +174,8 @@ class BaseSignRequest:
 
     async def common_check(self):
         key_path: CryptoKeyPath | None = self.derivation_path
-        assert key_path is not None
+        if key_path is None:
+            raise Exception("Missing derivation path")
         if not key_path.source_fingerprint:
             raise Exception("Missing source_fingerprint")
 

@@ -48,15 +48,18 @@ def prefix(coin: CoinInfo) -> str:
 
 
 def padding(hrp: str) -> bytes:
-    assert len(hrp) <= 16
+    if len(hrp) > 16:
+        raise ValueError("Address prefix is too long")
     return hrp.encode() + bytes(16 - len(hrp))
 
 
 def encode(receivers: dict[Typecode, bytes], coin: CoinInfo) -> str:
     # multiple transparent receivers forbidden
-    assert not (Typecode.P2PKH in receivers and Typecode.P2SH in receivers)
+    if Typecode.P2PKH in receivers and Typecode.P2SH in receivers:
+        raise DataError("Multiple transparent receivers are forbidden")
     # at least one shielded address must be present
-    assert Typecode.SAPLING in receivers or Typecode.ORCHARD in receivers
+    if Typecode.SAPLING not in receivers and Typecode.ORCHARD not in receivers:
+        raise DataError("Unified address requires a shielded receiver")
 
     length = 16  # 16 bytes for padding
     for receiver_bytes in receivers.values():
@@ -87,9 +90,8 @@ def decode(addr_str: str, coin: CoinInfo) -> dict[int, bytes]:
         hrp, data, encoding = bech32_decode(addr_str, 1000)
     except ValueError:
         raise DataError("Bech32m decoding failed.")
-    assert hrp is not None  # to satisfy typecheckers
-    assert data is not None  # to satisfy typecheckers
-    assert encoding is not None  # to satisfy typecheckers
+    if hrp is None or data is None or encoding is None:
+        raise DataError("Bech32m decoding failed.")
     if hrp != prefix(coin):
         raise DataError("Unexpected address prefix.")
     if encoding != Encoding.BECH32M:

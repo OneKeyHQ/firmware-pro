@@ -255,9 +255,12 @@ class SignPsbt:
                 []
             )  # Note down which inputs whose signatures we're going to ignore
             for input_num, psbt_in in enumerate(psbt.inputs):
-                assert psbt_in.prev_txid is not None
-                assert psbt_in.prev_out is not None
-                assert psbt_in.sequence is not None
+                if psbt_in.prev_txid is None:
+                    raise wire.DataError("Missing previous transaction ID")
+                if psbt_in.prev_out is None:
+                    raise wire.DataError("Missing previous output index")
+                if psbt_in.sequence is None:
+                    raise wire.DataError("Missing input sequence")
 
                 txinputtype = TxInputType(
                     prev_hash=bytes(reversed(psbt_in.prev_txid)),
@@ -473,7 +476,8 @@ class SignPsbt:
 
             self.signatures: List[bytes | None] = [None] * len(inputs)
             # Sign the transaction
-            assert psbt.tx_version is not None
+            if psbt.tx_version is None:
+                raise wire.DataError("Missing transaction version")
             # if __debug__:
             #     utils.mem_trace(__name__, 3)
             mods = utils.unimport_begin()
@@ -498,8 +502,10 @@ class SignPsbt:
             utils.unimport_end(mods)
             # pyright: on
             await wire.QR_CONTEXT.interact_stop()  # signal finshed
-            assert messages.TxRequest.is_type_of(res)
-            assert res.request_type == RequestType.TXFINISHED
+            if not messages.TxRequest.is_type_of(res):
+                raise RuntimeError("Invalid transaction request")
+            if res.request_type != RequestType.TXFINISHED:
+                raise RuntimeError("Transaction signing did not finish")
             # if __debug__:
             #     utils.mem_trace(__name__, 5)
             self._retrieval_signatures(res)
@@ -513,7 +519,8 @@ class SignPsbt:
                 for pubkey in psbt_in.hd_keypaths.keys():
                     fp = psbt_in.hd_keypaths[pubkey].fingerprint
                     if fp == master_fp and pubkey not in psbt_in.partial_sigs:
-                        assert sig is not None, "signature should not be None"
+                        if sig is None:
+                            raise RuntimeError("Signature missing")
                         psbt_in.partial_sigs[pubkey] = sig + b"\x01"
                         if __debug__:
                             import binascii
@@ -528,7 +535,8 @@ class SignPsbt:
                         )
                 if len(psbt_in.tap_internal_key) > 0 and len(psbt_in.tap_key_sig) == 0:
                     # Assume key path sig
-                    assert sig is not None, "signature should not be None"
+                    if sig is None:
+                        raise RuntimeError("Signature missing")
                     psbt_in.tap_key_sig = sig
                     if __debug__:
                         import binascii
@@ -556,7 +564,8 @@ class SignPsbt:
 
     async def interact(self):
 
-        assert self.tx is not None, "transaction should not be None"
+        if self.tx is None:
+            raise RuntimeError("Transaction missing")
         current_tx = TransactionType(
             inputs=self.inputs,
             outputs=self.outputs,
@@ -579,10 +588,12 @@ class SignPsbt:
                 if __debug__:
                     print(f"tx request type: {res.request_type}")
 
-                assert res.details is not None, "device did not provide details"
+                if res.details is None:
+                    raise RuntimeError("Device did not provide details")
 
                 if res.request_type in (RequestType.TXINPUT,):
-                    assert res.details.request_index is not None
+                    if res.details.request_index is None:
+                        raise RuntimeError("Device did not provide request index")
                     # pyright: off
                     msg = messages.TxAckInput(
                         tx=messages.TxAckInputWrapper(
@@ -622,7 +633,8 @@ class SignPsbt:
                     )
                     # pyright: on
                 elif res.request_type == RequestType.TXOUTPUT:
-                    assert res.details.request_index is not None
+                    if res.details.request_index is None:
+                        raise RuntimeError("Device did not provide request index")
                     msg = messages.TxAckOutput(
                         tx=messages.TxAckOutputWrapper(
                             output=messages.TxOutput(
@@ -662,9 +674,8 @@ class SignPsbt:
             if __debug__:
                 print(f"got signature at index: {res.serialized.signature_index}")
             if res.serialized.signature_index is not None:
-                assert (
-                    res.serialized.signature is not None
-                ), "signature should not be None"
+                if res.serialized.signature is None:
+                    raise RuntimeError("Signature missing")
                 idx = res.serialized.signature_index
                 sig = res.serialized.signature
                 if self.signatures[idx] is not None:

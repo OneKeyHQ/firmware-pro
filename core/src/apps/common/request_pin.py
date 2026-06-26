@@ -293,7 +293,7 @@ async def error_pin_invalid(ctx: wire.GenericContext) -> NoReturn:
         red=True,
         exc=wire.PinInvalid,
     )
-    assert False
+    raise wire.PinInvalid
 
 
 async def error_pin_used(ctx: wire.Context) -> NoReturn:
@@ -307,7 +307,7 @@ async def error_pin_used(ctx: wire.Context) -> NoReturn:
         red=True,
         exc=wire.PinInvalid,
     )
-    assert False
+    raise wire.PinInvalid
 
 
 async def passphrase_pin_used(ctx: wire.Context):
@@ -400,4 +400,4 @@ async def error_pin_matches_wipe_code(ctx: wire.Context) -> NoReturn:
         red=True,
         exc=wire.PinInvalid,
     )
-    assert False
+    raise wire.PinInvalid

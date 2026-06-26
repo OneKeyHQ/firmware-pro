@@ -800,8 +800,10 @@ class PartiallySignedOutput:
 
         :returns: The CTxOut
         """
-        assert self.amount is not None
-        assert len(self.script) != 0
+        if self.amount is None:
+            raise Exception("Output amount is required")
+        if len(self.script) == 0:
+            raise Exception("Output script is required")
         return CTxOut(self.amount, self.script)
 
 
@@ -1067,7 +1069,8 @@ class PSBT:
         r += serialize_HDKeypath(self.xpub, ser_compact_size(PSBT.PSBT_GLOBAL_XPUB))
 
         if self.version >= 2:
-            assert self.tx_version is not None
+            if self.tx_version is None:
+                raise Exception("PSBT_GLOBAL_TX_VERSION is required in PSBTv2")
             r += ser_string(ser_compact_size(PSBT.PSBT_GLOBAL_TX_VERSION))
             r += ser_string(struct.pack("<I", self.tx_version))
 
@@ -1192,16 +1195,20 @@ class PSBT:
         if not self.tx.is_null():
             return self.tx
 
-        assert self.tx_version is not None
+        if self.tx_version is None:
+            raise Exception("PSBT_GLOBAL_TX_VERSION is required in PSBTv2")
 
         tx = CTransaction()
         tx.nVersion = self.tx_version
         self.nLockTime = self.compute_lock_time()
 
         for psbt_in in self.inputs:
-            assert psbt_in.prev_txid is not None
-            assert psbt_in.prev_out is not None
-            assert psbt_in.sequence is not None
+            if psbt_in.prev_txid is None:
+                raise Exception("Previous TXID is required in PSBTv2")
+            if psbt_in.prev_out is None:
+                raise Exception("Previous output's index is required in PSBTv2")
+            if psbt_in.sequence is None:
+                raise Exception("Input sequence is required in PSBTv2")
 
             txin = CTxIn(
                 COutPoint(uint256_from_str(psbt_in.prev_txid), psbt_in.prev_out),
@@ -1211,7 +1218,8 @@ class PSBT:
             tx.vin.append(txin)
 
         for psbt_out in self.outputs:
-            assert psbt_out.amount is not None
+            if psbt_out.amount is None:
+                raise Exception("PSBT_OUTPUT_AMOUNT is required in PSBTv2")
 
             txout = CTxOut(psbt_out.amount, psbt_out.script)
             tx.vout.append(txout)

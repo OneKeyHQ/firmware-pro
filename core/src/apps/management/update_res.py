@@ -94,7 +94,7 @@ async def update_res(ctx: wire.Context, msg: ResourceUpdate) -> Success:
                 # make sure the outgoing USB buffer is flushed
                 await loop.wait(ctx.iface.iface_num() | io.POLL_WRITE)
                 utils.reset()
-                assert False  # this should be not reachable
+                raise wire.FirmwareError("Device reset did not happen")
         return Success(message="Success")
 
 

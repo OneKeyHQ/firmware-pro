@@ -86,7 +86,8 @@ class PaymentRequestVerifier:
 
     def _add_output(self, txo: TxOutput) -> None:
         # For change outputs txo.address filled in by output_derive_script().
-        assert txo.address is not None
+        if txo.address is None:
+            raise wire.DataError("Missing output address")
         writers.write_uint64(self.h_outputs, txo.amount)
         writers.write_bytes_prefixed(self.h_outputs, txo.address.encode())
 

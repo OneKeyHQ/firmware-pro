@@ -100,7 +100,8 @@ async def _continue_recovery_process(
     is_first_step = backup_type is None
 
     if not is_first_step:
-        assert word_count is not None
+        if word_count is None:
+            raise RuntimeError("Recovery word count missing")
         # If we continue recovery, show starting screen with word count immediately.
         await _request_share_first_screen(ctx, word_count)
 
@@ -119,7 +120,8 @@ async def _continue_recovery_process(
                     #     word_count = 12
                 # ...and only then show the starting screen with word count.
                 await _request_share_first_screen(ctx, word_count)
-            assert word_count is not None
+            if word_count is None:
+                raise RuntimeError("Recovery word count missing")
 
             # ask for mnemonic words one by one
             try:
@@ -151,12 +153,14 @@ async def _continue_recovery_process(
             # its result) and word_count (from _request_word_count earlier), which means
             # that the first step is complete.
         except MnemonicError:
-            assert words is not None
+            if words is None:
+                raise RuntimeError("Recovery words missing")
             words_list = words.split(" ")
             while True:
                 result = await layout.show_invalid_mnemonic(ctx, words_list)
                 if result is not None:
-                    assert word_count is not None
+                    if word_count is None:
+                        raise RuntimeError("Recovery word count missing")
                     try:
                         word = await request_word(
                             ctx,
@@ -178,7 +182,8 @@ async def _continue_recovery_process(
 
         #     sys.print_exception(e)
 
-    assert backup_type is not None
+    if backup_type is None:
+        raise RuntimeError("Recovery backup type missing")
     if dry_run:
         result = await _finish_recovery_dry_run(ctx, secret, backup_type)
     else:
@@ -303,7 +308,8 @@ async def _process_words(
     if __debug__:
         print(f"secret: {secret}, backup_type: {backup_type}")
     if secret is None:  # SLIP-39
-        assert share is not None
+        if share is None:
+            raise RuntimeError("Recovery share missing")
         if share.group_count and share.group_count > 1:
             if __debug__:
                 print(

@@ -45,7 +45,8 @@ AUTHORIZATION_MAGIC = 0x05
 
 
 def authorization_list_item_length(item: EthereumAuthorizationOneKey) -> int:
-    assert item.signature is not None, "Authorization signature is required"
+    if item.signature is None:
+        raise wire.DataError("Authorization signature is required")
     return rlp.length(
         [
             item.chain_id,
@@ -75,7 +76,8 @@ def write_authorization_list(
     )
     rlp.write_header(w, payload_length, rlp.LIST_HEADER_BYTE)
     for item in authorization_list:
-        assert item.signature is not None, "Authorization signature is required"
+        if item.signature is None:
+            raise wire.DataError("Authorization signature is required")
         rlp.write(
             w,
             [

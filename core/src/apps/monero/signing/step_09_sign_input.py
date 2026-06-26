@@ -176,7 +176,8 @@ async def sign_input(
 
     state.mem_trace(5, True)
 
-    assert state.full_message is not None
+    if state.full_message is None:
+        raise RuntimeError("Full message missing")
     state.mem_trace("CLSAG")
     clsag.generate_clsag_simple(
         state.full_message,

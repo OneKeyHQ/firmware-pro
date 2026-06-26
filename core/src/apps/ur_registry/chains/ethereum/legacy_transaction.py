@@ -100,9 +100,8 @@ class EthereumSignTxTransacion:
                 break
             try:
                 if messages.EthereumTxRequestOneKey.is_type_of(response):
-                    assert (
-                        EthereumSignTxTransacion.CALL_DATA is not None
-                    ), "CALL_DATA is None"
+                    if EthereumSignTxTransacion.CALL_DATA is None:
+                        raise RuntimeError("CALL_DATA is None")
                     request_data_length = response.data_length
                     response = messages.EthereumTxAckOneKey(
                         data_chunk=EthereumSignTxTransacion.CALL_DATA[

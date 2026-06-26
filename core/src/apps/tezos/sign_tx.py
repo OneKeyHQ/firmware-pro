@@ -211,7 +211,8 @@ def _get_operation_bytes(w: Writer, msg: TezosSignTx) -> None:
             elif parameters_manager.cancel_delegate is not None:
                 _encode_manager_delegation_remove(w)
             elif parameters_manager.transfer is not None:
-                assert parameters_manager.transfer.destination is not None
+                if parameters_manager.transfer.destination is None:
+                    raise wire.DataError("Missing manager transfer destination")
                 if (
                     parameters_manager.transfer.destination.tag
                     == TezosContractType.Implicit

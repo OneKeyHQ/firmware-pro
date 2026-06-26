@@ -66,7 +66,8 @@ async def sign_input(ctx, msg: Signable, keychain) -> bytes:
     if msg.address_n not in addresses:
         addresses.append(msg.address_n)
         await confirm_blind_sign_common(ctx, address, msg.raw_message)
-    assert msg.raw_message[-4:] == b"\x00\x00\x00\x00", "Invalid sighash type."
+    if msg.raw_message[-4:] != b"\x00\x00\x00\x00":
+        raise wire.DataError("Invalid sighash type.")
     sig_hash = sha256(sha256(msg.raw_message).digest()).digest()
     signature = schnorr_bch.sign(node.private_key(), sig_hash)
     return signature
