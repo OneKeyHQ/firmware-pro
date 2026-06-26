@@ -22,14 +22,23 @@ import time
 from trezorlib import ton, tools
 from trezorlib.cli import with_client, ChoiceType
 from trezorlib import messages
+import base64
+
 if TYPE_CHECKING:
     from ..client import TrezorClient
-PATH_HELP = "BIP-32 path, e.g. m/44'/607'/0'/0'"
+PATH_HELP = "BIP-32 path, e.g. m/44'/607'/0'"
 
 WORKCHAIN = {
     "base": messages.TonWorkChain.BASECHAIN,
     "master": messages.TonWorkChain.MASTERCHAIN,
 }
+
+SIGN_DATA_TYPE = {
+    "text": messages.TonSignDataType.TEXT,
+    "binary": messages.TonSignDataType.BINARY,
+    "cell": messages.TonSignDataType.CELL,
+}
+
 WALLET_VERSION = {
     # "v3r1": messages.TonWalletVersion.V3R1,
     # "v3r2": messages.TonWalletVersion.V3R2,
@@ -187,3 +196,64 @@ def sign_proof(client: "TrezorClient",
     ).signature.hex()
 
     return {"signature": f"0x{signature}"}
+
+
+@cli.command()
+@click.option("-n", "--address", required=True, help=PATH_HELP)
+@click.option("-t", "--data-type", type=ChoiceType(SIGN_DATA_TYPE), required=True)
+@click.option("-p", "--payload", required=True, type=str)
+@click.option("-d", "--appdomain", required=True, type=str)
+@click.option("-ts", "--timestamp", required=True, type=int)
+@click.option("-s", "--schema", type=str)
+@click.option("-a", "--from-address", type=str)
+@click.option("-v", "--wallet-version", type=ChoiceType(WALLET_VERSION), default="v4r2")
+@click.option("-i", "--wallet-id", type=int, default=698983191)
+@click.option("-w", "--workchain", type=ChoiceType(WORKCHAIN), default="base")
+@click.option("-b", "--bounceable", is_flag=True)
+@click.option("--test-only", is_flag=True)
+@with_client
+def sign_data(
+    client: "TrezorClient",
+    address: str,
+    data_type: messages.TonSignDataType,
+    payload: str,
+    appdomain: str,
+    timestamp: int,
+    schema: str,
+    from_address: str,
+    wallet_version: messages.TonWalletVersion,
+    wallet_id: int,
+    workchain: messages.TonWorkChain,
+    bounceable: bool,
+    test_only: bool,
+):
+    """Sign Ton SignData payload."""
+    address_n = tools.parse_path(address)
+
+    if data_type == messages.TonSignDataType.TEXT:
+        payload_bytes = payload.encode("utf-8")
+    elif data_type == messages.TonSignDataType.BINARY:
+        payload_bytes = bytes.fromhex(payload)
+    else:
+        payload_bytes = base64.b64decode(payload)
+
+    resp = ton.sign_data(
+        client,
+        address_n,
+        data_type,
+        payload_bytes,
+        appdomain,
+        timestamp,
+        schema,
+        from_address,
+        wallet_version,
+        wallet_id,
+        workchain,
+        bounceable,
+        test_only
+    )
+
+    signature_hex = resp.signature.hex() if resp.signature is not None else ""
+    digest_hex = resp.digest.hex() if resp.digest is not None else ""
+
+    return {"signature": signature_hex, "digest": digest_hex}

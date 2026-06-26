@@ -75,7 +75,8 @@ class Transaction:
         """Confirm that a value is 32 bytes. If all zeros, or a falsy value, return None"""
         if not hash:
             return None
-        assert isinstance(hash, (bytes, bytearray)), f"{hash} is not bytes"
+        if not isinstance(hash, (bytes, bytearray)):
+            raise TypeError(f"{hash} is not bytes")
         if len(hash) != constants.hash_len:
             raise error.WrongHashLengthError
         if not any(hash):
@@ -1191,9 +1192,12 @@ class ApplicationCallTxn(Transaction):
     @staticmethod
     def state_schema(schema):
         """Confirm the argument is a StateSchema, or false which is coerced to None"""
-        if not schema or not schema.dictify():
+        if not schema:
             return None  # Coerce false/empty values to None, to help __eq__
-        assert isinstance(schema, StateSchema), f"{schema} is not a StateSchema"
+        if not isinstance(schema, StateSchema):
+            raise TypeError(f"{schema} is not a StateSchema")
+        if not schema.dictify():
+            return None  # Coerce empty values to None, to help __eq__
         return schema
 
     @staticmethod
@@ -1201,7 +1205,8 @@ class ApplicationCallTxn(Transaction):
         """Confirm the argument is bytes-like, or false which is coerced to None"""
         if not teal:
             return None  # Coerce false values like "" to None, to help __eq__
-        assert isinstance(teal, (bytes, bytearray)), f"Program {teal} is not bytes"
+        if not isinstance(teal, (bytes, bytearray)):
+            raise TypeError(f"Program {teal} is not bytes")
         return teal
 
     @staticmethod
@@ -1216,7 +1221,7 @@ class ApplicationCallTxn(Transaction):
             if isinstance(e, int):
                 # Uses 8 bytes, big endian to match TEAL's btoi
                 return e.to_bytes(8, "big")  # raises for negative or too big
-            assert False, f"{e} is not bytes, str, or int"
+            raise TypeError(f"{e} is not bytes, str, or int")
 
         if not lst:
             return None

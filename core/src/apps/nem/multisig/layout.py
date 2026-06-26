@@ -13,8 +13,8 @@ if TYPE_CHECKING:
 
 
 async def ask_multisig(ctx: Context, msg: NEMSignTx) -> None:
-    assert msg.multisig is not None  # sign_tx
-    assert msg.multisig.signer is not None  # sign_tx
+    if msg.multisig is None or msg.multisig.signer is None:
+        raise ValueError("Missing multisig signer")
     address = nem.compute_address(msg.multisig.signer, msg.transaction.network)
     if msg.cosigning:
         await _require_confirm_address(ctx, "Cosign transaction for", address)

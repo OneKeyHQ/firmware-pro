@@ -270,7 +270,7 @@ class FountainDecoder:
         elif self.is_failure():
             return "Exception: {}".format(self.result)
         else:
-            assert False
+            raise RuntimeError("Invalid fountain decoder result state")
 
     def print_part(self, p):
         if __debug__:

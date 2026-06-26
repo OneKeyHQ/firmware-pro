@@ -393,10 +393,10 @@ async def handle_DoPreauthorized(
 
     req = await ctx.call_any(PreauthorizedRequest(), *wire_types)
 
-    assert req.MESSAGE_WIRE_TYPE is not None
-    handler = workflow_handlers.find_registered_handler(
-        ctx.iface, req.MESSAGE_WIRE_TYPE
-    )
+    wire_type = req.MESSAGE_WIRE_TYPE
+    if wire_type is None:
+        return wire.unexpected_message()
+    handler = workflow_handlers.find_registered_handler(ctx.iface, wire_type)
     if handler is None:
         return wire.unexpected_message()
 
@@ -444,11 +444,12 @@ async def handle_UnlockPath(ctx: wire.Context, msg: UnlockPath) -> protobuf.Mess
     wire_types = (MessageType.GetAddress, MessageType.GetPublicKey, MessageType.SignTx)
     req = await ctx.call_any(UnlockedPathRequest(mac=expected_mac), *wire_types)
 
-    assert req.MESSAGE_WIRE_TYPE in wire_types
-    handler = workflow_handlers.find_registered_handler(
-        ctx.iface, req.MESSAGE_WIRE_TYPE
-    )
-    assert handler is not None
+    wire_type = req.MESSAGE_WIRE_TYPE
+    if wire_type is None or wire_type not in wire_types:
+        return wire.unexpected_message()
+    handler = workflow_handlers.find_registered_handler(ctx.iface, wire_type)
+    if handler is None:
+        return wire.unexpected_message()
     return await handler(ctx, req, msg)  # type: ignore [Expected 2 positional arguments]
 
 

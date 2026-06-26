@@ -48,11 +48,13 @@ def encode_address(
         pubkey = (
             bip340.tweak_public_key(raw_pubkey[1:]) if use_tweak else raw_pubkey[1:]
         )
-        assert len(pubkey) == Version.public_key_len(Version.PubKey)
+        if len(pubkey) != Version.public_key_len(Version.PubKey):
+            raise RuntimeError("Invalid public key length")
         version = Version.PubKey
     else:
         pubkey = raw_pubkey
-        assert len(pubkey) == Version.public_key_len(Version.PubKeyECDSA)
+        if len(pubkey) != Version.public_key_len(Version.PubKeyECDSA):
+            raise RuntimeError("Invalid public key length")
         version = Version.PubKeyECDSA
 
     return cashaddr.encode(prefix, version, pubkey)

@@ -399,6 +399,8 @@ if TYPE_CHECKING:
         TonSignProof = 11905
         TonSignedProof = 11906
         TonTxAck = 11907
+        TonSignData = 11908
+        TonSignedData = 11909
         ScdoGetAddress = 12001
         ScdoAddress = 12002
         ScdoSignTx = 12003
@@ -785,6 +787,11 @@ if TYPE_CHECKING:
     class TonWorkChain(IntEnum):
         BASECHAIN = 0
         MASTERCHAIN = 1
+
+    class TonSignDataType(IntEnum):
+        TEXT = 0
+        BINARY = 1
+        CELL = 2
 
     class TronMessageType(IntEnum):
         V1 = 1

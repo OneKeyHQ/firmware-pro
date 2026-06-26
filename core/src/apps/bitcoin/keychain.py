@@ -102,13 +102,15 @@ def validate_path_against_script_type(
     patterns = []
 
     if msg is not None:
-        assert address_n is None and script_type is None
+        if address_n is not None or script_type is not None:
+            raise ValueError("Provide either msg or explicit path/script type")
         address_n = msg.address_n
         script_type = msg.script_type or InputScriptType.SPENDADDRESS
         multisig = bool(getattr(msg, "multisig", False))
 
     else:
-        assert address_n is not None and script_type is not None
+        if address_n is None or script_type is None:
+            raise ValueError("Missing path or script type")
 
     if script_type == InputScriptType.SPENDADDRESS and not multisig:
         patterns.append(PATTERN_BIP44)

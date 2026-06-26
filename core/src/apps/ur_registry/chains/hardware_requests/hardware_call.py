@@ -72,7 +72,8 @@ class HardwareCall:
         resp = await bitcoin_get_public_key.get_public_key(QR_CONTEXT, btc_pubkey_msg)
         # pyright: on
         expected_fingerprint = self.get_xfp()
-        assert resp.root_fingerprint is not None, "Root fingerprint should not be None"
+        if resp.root_fingerprint is None:
+            raise ValueError("Root fingerprint should not be None")
         xfp = hexlify(int.to_bytes(resp.root_fingerprint, 4, "big")).decode()
         if xfp != expected_fingerprint:
             raise MismatchError(

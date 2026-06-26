@@ -57,12 +57,13 @@ async def all_outputs_set(state: State) -> MoneroTransactionAllOutSetAck:
         rv_type=state.tx_type,
     )
 
+    if state.full_message_hasher is None:
+        raise RuntimeError("Full message hasher missing")
     _out_pk(state)
     state.full_message_hasher.rctsig_base_done()
     state.current_output_index = None
     state.current_input_index = -1
 
-    assert state.full_message_hasher is not None
     state.full_message = state.full_message_hasher.get_digest()
     state.full_message_hasher = None
     state.output_pk_commitments = None

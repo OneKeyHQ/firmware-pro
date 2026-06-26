@@ -26,6 +26,11 @@ class HashBuilderCollection:
         self.parent: "HashBuilderCollection | None" = None
         self.has_unfinished_child = False
 
+    def _require_hash_fn(self):
+        if self.hash_fn is None:
+            raise RuntimeError("Hash builder is not started")
+        return self.hash_fn
+
     def start(self, hash_fn: HashContext) -> "HashBuilderCollection":
         self.hash_fn = hash_fn
         self.hash_fn.update(self._header_bytes())
@@ -33,28 +38,28 @@ class HashBuilderCollection:
 
     def _insert_child(self, child: "HashBuilderCollection") -> None:
         child.parent = self
-        assert self.hash_fn is not None
-        child.start(self.hash_fn)
+        child.start(self._require_hash_fn())
         self.has_unfinished_child = True
 
     def _do_enter_item(self) -> None:
-        assert self.hash_fn is not None
-        assert self.remaining > 0
+        self._require_hash_fn()
+        if self.remaining <= 0:
+            raise RuntimeError("Too many items added")
         if self.has_unfinished_child:
             raise RuntimeError  # can't add item until child is finished
 
         self.remaining -= 1
 
     def _hash_item(self, item: Any) -> bytes:
-        assert self.hash_fn is not None
+        hash_fn = self._require_hash_fn()
         encoded_item = cbor.encode(item)
-        self.hash_fn.update(encoded_item)
+        hash_fn.update(encoded_item)
         return encoded_item
 
     def _hash_item_streamed(self, item: Any) -> None:
-        assert self.hash_fn is not None
+        hash_fn = self._require_hash_fn()
         for chunk in cbor.encode_streamed(item):
-            self.hash_fn.update(chunk)
+            hash_fn.update(chunk)
 
     def _header_bytes(self) -> bytes:
         raise NotImplementedError
@@ -68,7 +73,7 @@ class HashBuilderCollection:
         self.parent = None
 
     def __enter__(self) -> "HashBuilderCollection":
-        assert self.hash_fn is not None
+        self._require_hash_fn()
         return self
 
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
@@ -116,7 +121,8 @@ class HashBuilderDict(HashBuilderCollection, Generic[K, V]):
         self._do_enter_item()
 
         # enter key, this must not nest
-        assert not isinstance(key, HashBuilderCollection)
+        if isinstance(key, HashBuilderCollection):
+            raise RuntimeError("Hash builder key cannot be nested")
         encoded_key = self._hash_item(key)
 
         # check key ordering
@@ -144,10 +150,11 @@ class HashBuilderEmbeddedCBOR(HashBuilderCollection):
     """
 
     def add(self, chunk: bytes) -> None:
-        assert self.hash_fn is not None
-        assert self.remaining >= len(chunk)
+        hash_fn = self._require_hash_fn()
+        if self.remaining < len(chunk):
+            raise RuntimeError("Embedded CBOR data exceeds declared size")
         self.remaining -= len(chunk)
-        self.hash_fn.update(chunk)
+        hash_fn.update(chunk)
 
     def _header_bytes(self) -> bytes:
         return cbor.create_embedded_cbor_bytes_header(self.size)

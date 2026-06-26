@@ -77,7 +77,8 @@ async def sign_tx(ctx: wire.Context, msg: NEMSignTx, keychain: Keychain) -> NEMS
     if msg.multisig:
         # wrap transaction in multisig wrapper
         if msg.cosigning:
-            assert msg.multisig.signer is not None
+            if msg.multisig.signer is None:
+                raise wire.DataError("Missing multisig signer")
             tx = multisig.cosign(
                 seed.remove_ed25519_prefix(node.public_key()),
                 msg.transaction,

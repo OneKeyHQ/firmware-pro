@@ -113,7 +113,8 @@ def is_out_to_account(
 
         if sub_pub_key and crypto.point_eq(subaddress_spendkey_obj, sub_pub_key):
             # sub_pub_key is only set if sub_addr_{major, minor} are set
-            assert sub_addr_major is not None and sub_addr_minor is not None
+            if sub_addr_major is None or sub_addr_minor is None:
+                raise RuntimeError("Subaddress index missing")
             return (sub_addr_major, sub_addr_minor), additional_derivation
 
         if subaddresses:

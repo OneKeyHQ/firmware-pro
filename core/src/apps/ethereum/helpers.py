@@ -1,6 +1,8 @@
 from typing import TYPE_CHECKING
 from ubinascii import hexlify
 
+from trezor import wire
+
 from . import networks
 
 if TYPE_CHECKING:
@@ -49,7 +51,6 @@ def address_from_bytes(
 
 def bytes_from_address(address: str) -> bytes:
     from ubinascii import unhexlify
-    from trezor import wire
 
     if len(address) == 40:
         return unhexlify(address)
@@ -82,17 +83,20 @@ def get_type_name(field: EthereumFieldType) -> str:
     }
 
     if data_type == EthereumDataType.STRUCT:
-        assert field.struct_name is not None  # validate_field_type
+        if field.struct_name is None:
+            raise wire.DataError("Missing struct_name in struct")
         return field.struct_name
     elif data_type == EthereumDataType.ARRAY:
-        assert field.entry_type is not None  # validate_field_type
+        if field.entry_type is None:
+            raise wire.DataError("Missing entry_type in array")
         type_name = get_type_name(field.entry_type)
         if size is None:
             return f"{type_name}[]"
         else:
             return f"{type_name}[{size}]"
     elif data_type in (EthereumDataType.UINT, EthereumDataType.INT):
-        assert size is not None  # validate_field_type
+        if size is None:
+            raise wire.DataError("Invalid size in int/uint")
         return TYPE_TRANSLATION_DICT[data_type] + str(size * 8)
     elif data_type == EthereumDataType.BYTES:
         if size:
@@ -122,17 +126,20 @@ def get_type_name_onekey(field: EthereumFieldTypeOneKey) -> str:
     }
 
     if data_type == EthereumDataTypeOneKey.STRUCT:
-        assert field.struct_name is not None  # validate_field_type
+        if field.struct_name is None:
+            raise wire.DataError("Missing struct_name in struct")
         return field.struct_name
     elif data_type == EthereumDataTypeOneKey.ARRAY:
-        assert field.entry_type is not None  # validate_field_type
+        if field.entry_type is None:
+            raise wire.DataError("Missing entry_type in array")
         type_name = get_type_name_onekey(field.entry_type)
         if size is None:
             return f"{type_name}[]"
         else:
             return f"{type_name}[{size}]"
     elif data_type in (EthereumDataTypeOneKey.UINT, EthereumDataTypeOneKey.INT):
-        assert size is not None  # validate_field_type
+        if size is None:
+            raise wire.DataError("Invalid size in int/uint")
         return TYPE_TRANSLATION_DICT[data_type] + str(size * 8)
     elif data_type == EthereumDataTypeOneKey.BYTES:
         if size:

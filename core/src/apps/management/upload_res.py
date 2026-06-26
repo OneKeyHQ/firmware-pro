@@ -295,7 +295,8 @@ async def upload_res(ctx: wire.Context, msg: ResourceUpload) -> Success:
 
         if res_type == ResourceType.Nft and config_path:
             with io.fatfs.open(config_path, "w") as f:
-                assert msg.nft_meta_data
+                if not msg.nft_meta_data:
+                    raise wire.DataError("NFT metadata is required")
                 f.write(msg.nft_meta_data)
                 f.sync()
             _verify_file_size(config_path, metadata_len)

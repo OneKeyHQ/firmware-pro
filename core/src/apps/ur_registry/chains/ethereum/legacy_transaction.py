@@ -15,7 +15,8 @@ class EthereumSignTxTransacion:
         self.qr = None
         self.encoder = None
 
-    # Format: rlp([nonce, gasPrice, gasLimit, to, value, data, v, r, s])
+    # Format: rlp([nonce, gasPrice, gasLimit, to, value, data])
+    # or rlp([chainId, nonce, gasPrice, gasLimit, to, value, data, chainId, 0, 0]) for EIP-155
     @staticmethod
     def fromSerializedTx(serialized, chainId, address_n):
         tx = decode(serialized)
@@ -99,9 +100,8 @@ class EthereumSignTxTransacion:
                 break
             try:
                 if messages.EthereumTxRequestOneKey.is_type_of(response):
-                    assert (
-                        EthereumSignTxTransacion.CALL_DATA is not None
-                    ), "CALL_DATA is None"
+                    if EthereumSignTxTransacion.CALL_DATA is None:
+                        raise RuntimeError("CALL_DATA is None")
                     request_data_length = response.data_length
                     response = messages.EthereumTxAckOneKey(
                         data_chunk=EthereumSignTxTransacion.CALL_DATA[

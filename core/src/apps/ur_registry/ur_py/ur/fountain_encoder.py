@@ -92,7 +92,8 @@ class Part:
 
 class FountainEncoder:
     def __init__(self, message, max_fragment_len, first_seq_num=0, min_fragment_len=10):
-        assert len(message) <= MAX_UINT32
+        if len(message) > MAX_UINT32:
+            raise ValueError("Message length exceeds maximum")
         self.message_len = len(message)
         self.checksum = crc32_int(message)
         self.fragment_len = FountainEncoder.find_nominal_fragment_length(
@@ -103,9 +104,12 @@ class FountainEncoder:
 
     @staticmethod
     def find_nominal_fragment_length(message_len, min_fragment_len, max_fragment_len):
-        assert message_len > 0
-        assert min_fragment_len > 0
-        assert max_fragment_len >= min_fragment_len
+        if message_len <= 0:
+            raise ValueError("Message length must be positive")
+        if min_fragment_len <= 0:
+            raise ValueError("Minimum fragment length must be positive")
+        if max_fragment_len < min_fragment_len:
+            raise ValueError("Maximum fragment length must not be smaller than minimum")
         max_fragment_count = message_len // min_fragment_len
         fragment_len = None
 
@@ -114,7 +118,8 @@ class FountainEncoder:
             if fragment_len <= max_fragment_len:
                 break
 
-        assert fragment_len is not None
+        if fragment_len is None:
+            raise ValueError("Unable to determine fragment length")
         return fragment_len
 
     @staticmethod

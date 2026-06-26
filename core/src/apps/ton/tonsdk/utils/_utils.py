@@ -68,6 +68,25 @@ def crc32c(bytes_array):
     return bytes(arr)
 
 
+def crc32(bytes_arr) -> int:
+    POLY = 0xEDB88320
+
+    crc = 0xFFFFFFFF
+
+    for n in range(len(bytes_arr)):
+        crc ^= bytes_arr[n]
+        crc = (crc >> 1) ^ POLY if crc & 1 else crc >> 1
+        crc = (crc >> 1) ^ POLY if crc & 1 else crc >> 1
+        crc = (crc >> 1) ^ POLY if crc & 1 else crc >> 1
+        crc = (crc >> 1) ^ POLY if crc & 1 else crc >> 1
+        crc = (crc >> 1) ^ POLY if crc & 1 else crc >> 1
+        crc = (crc >> 1) ^ POLY if crc & 1 else crc >> 1
+        crc = (crc >> 1) ^ POLY if crc & 1 else crc >> 1
+        crc = (crc >> 1) ^ POLY if crc & 1 else crc >> 1
+
+    return crc ^ 0xFFFFFFFF
+
+
 def crc16(data):
     POLY = 0x1021
     reg = 0

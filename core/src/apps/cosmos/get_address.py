@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+from trezor import wire
 from trezor.crypto import bech32
 from trezor.crypto.scripts import sha256_ripemd160
 from trezor.lvglui.scrs import lv
@@ -28,7 +29,8 @@ async def get_address(
     hrp = msg.hrp if msg.hrp is not None else DEFAULT_BECH32_HRP
     h = sha256_ripemd160(public_key).digest()
     convertedbits = bech32.convertbits(h, 8, 5)
-    assert convertedbits is not None, "Unsuccessful bech32.convertbits call"
+    if convertedbits is None:
+        raise wire.ProcessError("Unsuccessful bech32.convertbits call")
     address = bech32.bech32_encode(hrp, convertedbits, bech32.Encoding.BECH32)
     if msg.show_display:
         path = paths.address_n_to_str(msg.address_n)

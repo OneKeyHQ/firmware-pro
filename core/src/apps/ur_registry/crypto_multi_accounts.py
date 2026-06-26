@@ -194,9 +194,8 @@ async def generate_crypto_multi_accounts(ctx: wire.Context) -> UREncoder:
             ]
         )
 
-    assert (
-        btc_legacy_pub.root_fingerprint is not None
-    ), "Root fingerprint should not be None"
+    if btc_legacy_pub.root_fingerprint is None:
+        raise ValueError("Root fingerprint should not be None")
     name = helpers.reveal_name(ctx, btc_legacy_pub.root_fingerprint)
 
     cma = CryptoMultiAccounts(

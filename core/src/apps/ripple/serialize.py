@@ -74,19 +74,24 @@ def write(w: Writer, field: RippleField, value: int | bytes | str | None) -> Non
         return
     write_type(w, field)
     if field.type == FIELD_TYPE_INT16:
-        assert isinstance(value, int)
+        if not isinstance(value, int):
+            raise TypeError("Expected int value")
         w.extend(value.to_bytes(2, "big"))
     elif field.type == FIELD_TYPE_INT32:
-        assert isinstance(value, int)
+        if not isinstance(value, int):
+            raise TypeError("Expected int value")
         w.extend(value.to_bytes(4, "big"))
     elif field.type == FIELD_TYPE_AMOUNT:
-        assert isinstance(value, int)
+        if not isinstance(value, int):
+            raise TypeError("Expected int value")
         w.extend(serialize_amount(value))
     elif field.type == FIELD_TYPE_ACCOUNT:
-        assert isinstance(value, str)
+        if not isinstance(value, str):
+            raise TypeError("Expected str value")
         write_bytes_varint(w, helpers.decode_address(value))
     elif field.type == FIELD_TYPE_VL:
-        assert isinstance(value, (bytes, bytearray))
+        if not isinstance(value, (bytes, bytearray)):
+            raise TypeError("Expected bytes value")
         write_bytes_varint(w, value)
     else:
         raise ValueError("Unknown field type")

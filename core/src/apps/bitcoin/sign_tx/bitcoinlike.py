@@ -77,7 +77,8 @@ class Bitcoinlike(Bitcoin):
     ) -> None:
         writers.write_uint32(w, tx.version)  # nVersion
         if self.coin.timestamp:
-            assert tx.timestamp is not None  # checked in sanitize_*
+            if tx.timestamp is None:
+                raise wire.DataError("Missing timestamp")
             writers.write_uint32(w, tx.timestamp)
         if witness_marker:
             write_compact_size(w, 0x00)  # segwit witness marker

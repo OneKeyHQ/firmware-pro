@@ -55,7 +55,8 @@ class AccountPathChecker:
 
         self_account_path = self.account_path  # local_cache_attribute
 
-        assert isinstance(self_account_path, list)
+        if not isinstance(self_account_path, list):
+            raise RuntimeError("Cardano account path missing")
         is_control_path_byron_or_shelley = seed.is_byron_path(
             self_account_path
         ) or seed.is_shelley_path(self_account_path)

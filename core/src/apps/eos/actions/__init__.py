@@ -12,6 +12,12 @@ if TYPE_CHECKING:
     from trezor.utils import Writer
 
 
+def _require_action_payload(payload):
+    if payload is None:
+        raise ValueError("Invalid action")
+    return payload
+
+
 async def process_action(
     ctx: wire.Context, sha: HashWriter, action: EosTxActionAck
 ) -> None:
@@ -24,59 +30,59 @@ async def process_action(
     w = bytearray()
     if account == "eosio":
         if name == "buyram":
-            assert action.buy_ram is not None  # check_action
-            await layout.confirm_action_buyram(ctx, action.buy_ram)
-            writers.write_action_buyram(w, action.buy_ram)
+            buy_ram = _require_action_payload(action.buy_ram)
+            await layout.confirm_action_buyram(ctx, buy_ram)
+            writers.write_action_buyram(w, buy_ram)
         elif name == "buyrambytes":
-            assert action.buy_ram_bytes is not None  # check_action
-            await layout.confirm_action_buyrambytes(ctx, action.buy_ram_bytes)
-            writers.write_action_buyrambytes(w, action.buy_ram_bytes)
+            buy_ram_bytes = _require_action_payload(action.buy_ram_bytes)
+            await layout.confirm_action_buyrambytes(ctx, buy_ram_bytes)
+            writers.write_action_buyrambytes(w, buy_ram_bytes)
         elif name == "sellram":
-            assert action.sell_ram is not None  # check_action
-            await layout.confirm_action_sellram(ctx, action.sell_ram)
-            writers.write_action_sellram(w, action.sell_ram)
+            sell_ram = _require_action_payload(action.sell_ram)
+            await layout.confirm_action_sellram(ctx, sell_ram)
+            writers.write_action_sellram(w, sell_ram)
         elif name == "delegatebw":
-            assert action.delegate is not None  # check_action
-            await layout.confirm_action_delegate(ctx, action.delegate)
-            writers.write_action_delegate(w, action.delegate)
+            delegate = _require_action_payload(action.delegate)
+            await layout.confirm_action_delegate(ctx, delegate)
+            writers.write_action_delegate(w, delegate)
         elif name == "undelegatebw":
-            assert action.undelegate is not None  # check_action
-            await layout.confirm_action_undelegate(ctx, action.undelegate)
-            writers.write_action_undelegate(w, action.undelegate)
+            undelegate = _require_action_payload(action.undelegate)
+            await layout.confirm_action_undelegate(ctx, undelegate)
+            writers.write_action_undelegate(w, undelegate)
         elif name == "refund":
-            assert action.refund is not None  # check_action
-            await layout.confirm_action_refund(ctx, action.refund)
-            writers.write_action_refund(w, action.refund)
+            refund = _require_action_payload(action.refund)
+            await layout.confirm_action_refund(ctx, refund)
+            writers.write_action_refund(w, refund)
         elif name == "voteproducer":
-            assert action.vote_producer is not None  # check_action
-            await layout.confirm_action_voteproducer(ctx, action.vote_producer)
-            writers.write_action_voteproducer(w, action.vote_producer)
+            vote_producer = _require_action_payload(action.vote_producer)
+            await layout.confirm_action_voteproducer(ctx, vote_producer)
+            writers.write_action_voteproducer(w, vote_producer)
         elif name == "updateauth":
-            assert action.update_auth is not None  # check_action
-            await layout.confirm_action_updateauth(ctx, action.update_auth)
-            writers.write_action_updateauth(w, action.update_auth)
+            update_auth = _require_action_payload(action.update_auth)
+            await layout.confirm_action_updateauth(ctx, update_auth)
+            writers.write_action_updateauth(w, update_auth)
         elif name == "deleteauth":
-            assert action.delete_auth is not None  # check_action
-            await layout.confirm_action_deleteauth(ctx, action.delete_auth)
-            writers.write_action_deleteauth(w, action.delete_auth)
+            delete_auth = _require_action_payload(action.delete_auth)
+            await layout.confirm_action_deleteauth(ctx, delete_auth)
+            writers.write_action_deleteauth(w, delete_auth)
         elif name == "linkauth":
-            assert action.link_auth is not None  # check_action
-            await layout.confirm_action_linkauth(ctx, action.link_auth)
-            writers.write_action_linkauth(w, action.link_auth)
+            link_auth = _require_action_payload(action.link_auth)
+            await layout.confirm_action_linkauth(ctx, link_auth)
+            writers.write_action_linkauth(w, link_auth)
         elif name == "unlinkauth":
-            assert action.unlink_auth is not None  # check_action
-            await layout.confirm_action_unlinkauth(ctx, action.unlink_auth)
-            writers.write_action_unlinkauth(w, action.unlink_auth)
+            unlink_auth = _require_action_payload(action.unlink_auth)
+            await layout.confirm_action_unlinkauth(ctx, unlink_auth)
+            writers.write_action_unlinkauth(w, unlink_auth)
         elif name == "newaccount":
-            assert action.new_account is not None  # check_action
-            await layout.confirm_action_newaccount(ctx, action.new_account)
-            writers.write_action_newaccount(w, action.new_account)
+            new_account = _require_action_payload(action.new_account)
+            await layout.confirm_action_newaccount(ctx, new_account)
+            writers.write_action_newaccount(w, new_account)
         else:
             raise ValueError("Unrecognized action type for eosio")
     elif name == "transfer":
-        assert action.transfer is not None  # check_action
-        await layout.confirm_action_transfer(ctx, action.transfer, account)
-        writers.write_action_transfer(w, action.transfer)
+        transfer = _require_action_payload(action.transfer)
+        await layout.confirm_action_transfer(ctx, transfer, account)
+        writers.write_action_transfer(w, transfer)
     else:
         await process_unknown_action(ctx, w, action)
 
@@ -87,7 +93,8 @@ async def process_action(
 async def process_unknown_action(
     ctx: wire.Context, w: Writer, action: EosTxActionAck
 ) -> None:
-    assert action.unknown is not None
+    if action.unknown is None:
+        raise ValueError("Bad response. Unknown struct expected.")
     checksum = HashWriter(sha256())
     writers.write_uvarint(checksum, action.unknown.data_size)
     checksum.extend(action.unknown.data_chunk)

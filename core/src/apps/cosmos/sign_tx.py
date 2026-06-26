@@ -46,7 +46,8 @@ async def sign_tx(
     else:
         h = sha256_ripemd160(public_key).digest()
         convertedbits = bech32.convertbits(h, 8, 5)
-        assert convertedbits is not None, "Unsuccessful bech32.convertbits call"
+        if convertedbits is None:
+            raise RuntimeError("Unsuccessful bech32.convertbits call")
         signer = bech32.bech32_encode(hrp, convertedbits, bech32.Encoding.BECH32)
     _chain_name, primary_color, ctx.icon_path = retrieve_theme_by_hrp(hrp)
     ctx.primary_color = lv.color_hex(primary_color)

@@ -169,7 +169,8 @@ async def _show_cvote_registration(
         )
     else:
         address_parameters = parameters.payment_address_parameters
-        assert address_parameters  # _validate_cvote_registration_parameters
+        if address_parameters is None:
+            raise wire.ProcessError("Invalid auxiliary data")
         show_both_credentials = should_show_credentials(address_parameters)
         show_payment_warning = _should_show_payment_warning(
             address_parameters.address_type
@@ -226,7 +227,8 @@ def get_hash_and_supplement(
         )
         return auxiliary_data_hash, auxiliary_data_supplement
     else:
-        assert auxiliary_data.hash is not None  # validate_auxiliary_data
+        if auxiliary_data.hash is None:
+            raise wire.ProcessError("Invalid auxiliary data")
         return auxiliary_data.hash, messages.CardanoTxAuxiliaryDataSupplement(
             type=CardanoTxAuxiliaryDataSupplementType.NONE
         )
@@ -280,7 +282,8 @@ def _get_signed_cvote_registration_payload(
         payment_address = addresses.get_bytes_unsafe(parameters.payment_address)
     else:
         address_parameters = parameters.payment_address_parameters
-        assert address_parameters  # _validate_cvote_registration_parameters
+        if address_parameters is None:
+            raise wire.ProcessError("Invalid auxiliary data")
         payment_address = addresses.derive_bytes(
             keychain,
             address_parameters,

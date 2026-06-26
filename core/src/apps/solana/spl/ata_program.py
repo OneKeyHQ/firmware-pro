@@ -39,8 +39,12 @@ async def parse(ctx: wire.Context, accounts: list[PublicKey], data: bytes) -> No
             raise wire.DataError(
                 f"Instruction type {instruction_type} is not supported"
             )
-    assert accounts[4] == constents.SYS_PROGRAM_ID
-    assert accounts[5] == constents.SPL_TOKEN_PROGRAM_ID
+    if len(accounts) < 6:
+        raise wire.DataError("Invalid associated token account instruction")
+    if accounts[4] != constents.SYS_PROGRAM_ID:
+        raise wire.DataError("Invalid system program")
+    if accounts[5] != constents.SPL_TOKEN_PROGRAM_ID:
+        raise wire.DataError("Invalid SPL token program")
     params = CreateAssociatedTokenAccountParams(
         funding_account=accounts[0],
         associated_token_account=accounts[1],

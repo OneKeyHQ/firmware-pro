@@ -93,7 +93,8 @@ async def sign_tx(
         req = signer.send(res)
         if isinstance(req, tuple):
             request_class, req = req
-            assert TxRequest.is_type_of(req)
+            if not TxRequest.is_type_of(req):
+                raise RuntimeError("Invalid transaction request")
             if req.request_type == RequestType.TXFINISHED:
                 from trezor.ui.layouts import confirm_final
 

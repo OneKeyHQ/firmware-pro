@@ -3,6 +3,8 @@ from ._cell import Cell
 
 
 class Builder:
+    SNAKE_DATA_CHUNK_BYTES = 127
+
     def __init__(self):
         self.bits = BitString(1023)
         self.refs = []
@@ -56,6 +58,28 @@ class Builder:
     def store_bytes(self, value):
         self.bits.write_bytes(value)
         return self
+
+    def store_string_tail(self, value):
+        if isinstance(value, str):
+            value = value.encode("utf-8")
+        elif isinstance(value, bytearray):
+            value = bytes(value)
+        elif not isinstance(value, bytes):
+            raise TypeError("store_string_tail expects str or bytes-like input")
+        if not value:
+            return self
+
+        chunk_size = self.SNAKE_DATA_CHUNK_BYTES
+        self.store_bytes(value[:chunk_size])
+
+        if len(value) <= chunk_size:
+            return self
+
+        tail = begin_cell().store_string_tail(value[chunk_size:]).end_cell()
+        return self.store_ref(tail)
+
+    def store_string_ref_tail(self, value):
+        return self.store_ref(begin_cell().store_string_tail(value).end_cell())
 
     def store_bit_string(self, value):
         self.bits.write_bit_string(value)

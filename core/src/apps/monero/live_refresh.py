@@ -71,7 +71,8 @@ async def _init_step(
 async def _refresh_step(
     s: LiveRefreshState, ctx: Context, msg: MoneroLiveRefreshStepRequest
 ) -> MoneroLiveRefreshStepAck:
-    assert s.creds is not None
+    if s.creds is None:
+        raise RuntimeError("Live refresh credentials missing")
 
     buff = bytearray(32 * 3)
     buff_mv = memoryview(buff)

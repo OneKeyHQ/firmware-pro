@@ -374,7 +374,8 @@ class Signer:
             )
             await self._show_output_credentials(output.address_parameters)
         else:
-            assert output.address is not None  # _validate_output
+            if output.address is None:
+                raise ProcessError("Invalid output")
             address = output.address
 
         await layout.confirm_sending(
@@ -521,7 +522,8 @@ class Signer:
         should_show_tokens: bool,
     ) -> None:
         """Should be used only when the output contains tokens."""
-        assert output.asset_groups_count > 0
+        if output.asset_groups_count <= 0:
+            raise ProcessError("Invalid token bundle in output")
 
         output_value_list.append(output.amount)
 
@@ -595,7 +597,8 @@ class Signer:
             if should_show_tokens:
                 await layout.confirm_sending_token(self.ctx, policy_id, token)
 
-            assert token.amount is not None  # _validate_token
+            if token.amount is None:
+                raise ProcessError("Invalid token bundle in output")
             tokens_dict.add(token.asset_name_bytes, token.amount)
 
     def _validate_token(
@@ -625,7 +628,8 @@ class Signer:
         inline_datum_size: int,
         should_show: bool,
     ) -> None:
-        assert inline_datum_size > 0
+        if inline_datum_size <= 0:
+            raise ProcessError("Invalid inline datum chunk")
 
         chunks_count = self._get_chunks_count(inline_datum_size)
         for chunk_number in range(chunks_count):
@@ -652,7 +656,8 @@ class Signer:
         reference_script_size: int,
         should_show: bool,
     ) -> None:
-        assert reference_script_size > 0
+        if reference_script_size <= 0:
+            raise ProcessError("Invalid reference script chunk")
 
         chunks_count = self._get_chunks_count(reference_script_size)
         for chunk_number in range(chunks_count):
@@ -685,7 +690,8 @@ class Signer:
 
             if certificate.type == CardanoCertificateType.STAKE_POOL_REGISTRATION:
                 pool_parameters = certificate.pool_parameters
-                assert pool_parameters is not None  # _validate_certificate
+                if pool_parameters is None:
+                    raise ProcessError("Invalid certificate")
 
                 pool_items_list: HashBuilderList = HashBuilderList(
                     _POOL_REGISTRATION_CERTIFICATE_ITEMS_COUNT
@@ -737,7 +743,8 @@ class Signer:
             )
 
         if certificate.type == CardanoCertificateType.STAKE_POOL_REGISTRATION:
-            assert certificate.pool_parameters is not None
+            if certificate.pool_parameters is None:
+                raise ProcessError("Invalid certificate")
             await layout.confirm_stake_pool_parameters(
                 self.ctx, certificate.pool_parameters, self.msg.network_id
             )
@@ -899,13 +906,15 @@ class Signer:
             self._validate_token(token, is_mint=True)
             await layout.confirm_token_minting(self.ctx, policy_id, token)
 
-            assert token.mint_amount is not None  # _validate_token
+            if token.mint_amount is None:
+                raise ProcessError("Invalid mint token bundle")
             tokens.add(token.asset_name_bytes, token.mint_amount)
 
     # script data hash
 
     async def _process_script_data_hash(self) -> None:
-        assert self.msg.script_data_hash is not None
+        if self.msg.script_data_hash is None:
+            raise ProcessError("Invalid script data hash")
         self._validate_script_data_hash()
         await self._show_if_showing_details(
             layout.confirm_script_data_hash(self.ctx, self.msg.script_data_hash)
@@ -915,7 +924,8 @@ class Signer:
     def _validate_script_data_hash(self) -> None:
         from ..helpers import SCRIPT_DATA_HASH_SIZE
 
-        assert self.msg.script_data_hash is not None
+        if self.msg.script_data_hash is None:
+            raise ProcessError("Invalid script data hash")
         if len(self.msg.script_data_hash) != SCRIPT_DATA_HASH_SIZE:
             raise ProcessError("Invalid script data hash")
 
@@ -1058,7 +1068,8 @@ class Signer:
                 output.address_parameters,
             )
         else:
-            assert output.address is not None  # _validate_output
+            if output.address is None:
+                raise ProcessError("Invalid collateral return")
             address = output.address
 
         await layout.confirm_sending(
@@ -1172,13 +1183,15 @@ class Signer:
                 self.msg.network_id,
             )
         else:
-            assert output.address is not None  # _validate_output
+            if output.address is None:
+                raise ProcessError("Invalid output")
             return addresses.get_bytes_unsafe(output.address)
 
     def _get_output_address_type(self, output: CardanoTxOutput) -> CardanoAddressType:
         if output.address_parameters:
             return output.address_parameters.address_type
-        assert output.address is not None  # _validate_output
+        if output.address is None:
+            raise ProcessError("Invalid output")
         return addresses.get_type(addresses.get_bytes_unsafe(output.address))
 
     def _derive_withdrawal_address_bytes(
@@ -1204,7 +1217,8 @@ class Signer:
         )
 
     def _get_chunks_count(self, data_size: int) -> int:
-        assert data_size > 0
+        if data_size <= 0:
+            raise ProcessError("Invalid tx signing request")
         return (data_size - 1) // _MAX_CHUNK_SIZE + 1
 
     def _validate_chunk(

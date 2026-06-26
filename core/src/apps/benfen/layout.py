@@ -17,7 +17,8 @@ async def require_show_overview(
     if value == "All":
         amount_str = "All"
     else:
-        assert isinstance(value, int)
+        if not isinstance(value, int):
+            raise TypeError("value must be int")
         amount_str = format_benfen_amount(value, currency_symbol)
     return await should_show_details(
         ctx,
@@ -42,7 +43,8 @@ async def require_confirm_fee(
     if value == "All":
         amount_str = "All"
     else:
-        assert isinstance(value, int)
+        if not isinstance(value, int):
+            raise TypeError("value must be int")
         amount_str = format_benfen_amount(value, currency_symbol)
         total_amount = (
             format_benfen_amount(value + gas_price, currency_symbol)

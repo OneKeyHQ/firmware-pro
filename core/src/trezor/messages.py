@@ -69,6 +69,7 @@ if TYPE_CHECKING:
     from trezor.enums import StellarSignerType  # noqa: F401
     from trezor.enums import TezosBallotType  # noqa: F401
     from trezor.enums import TezosContractType  # noqa: F401
+    from trezor.enums import TonSignDataType  # noqa: F401
     from trezor.enums import TonWalletVersion  # noqa: F401
     from trezor.enums import TonWorkChain  # noqa: F401
     from trezor.enums import TronMessageType  # noqa: F401
@@ -9481,6 +9482,58 @@ if TYPE_CHECKING:
 
         @classmethod
         def is_type_of(cls, msg: Any) -> TypeGuard["TonSignedProof"]:
+            return isinstance(msg, cls)
+
+    class TonSignData(protobuf.MessageType):
+        address_n: "list[int]"
+        type: "TonSignDataType"
+        payload: "bytes"
+        schema: "str | None"
+        appdomain: "str"
+        timestamp: "int"
+        from_address: "str | None"
+        wallet_version: "TonWalletVersion"
+        wallet_id: "int"
+        workchain: "TonWorkChain"
+        is_bounceable: "bool"
+        is_testnet_only: "bool"
+
+        def __init__(
+            self,
+            *,
+            type: "TonSignDataType",
+            payload: "bytes",
+            appdomain: "str",
+            timestamp: "int",
+            address_n: "list[int] | None" = None,
+            schema: "str | None" = None,
+            from_address: "str | None" = None,
+            wallet_version: "TonWalletVersion | None" = None,
+            wallet_id: "int | None" = None,
+            workchain: "TonWorkChain | None" = None,
+            is_bounceable: "bool | None" = None,
+            is_testnet_only: "bool | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["TonSignData"]:
+            return isinstance(msg, cls)
+
+    class TonSignedData(protobuf.MessageType):
+        signature: "bytes | None"
+        digest: "bytes | None"
+
+        def __init__(
+            self,
+            *,
+            signature: "bytes | None" = None,
+            digest: "bytes | None" = None,
+        ) -> None:
+            pass
+
+        @classmethod
+        def is_type_of(cls, msg: Any) -> TypeGuard["TonSignedData"]:
             return isinstance(msg, cls)
 
     class TronGetAddress(protobuf.MessageType):

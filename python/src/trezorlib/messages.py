@@ -408,6 +408,8 @@ class MessageType(IntEnum):
     TonSignProof = 11905
     TonSignedProof = 11906
     TonTxAck = 11907
+    TonSignData = 11908
+    TonSignedData = 11909
     ScdoGetAddress = 12001
     ScdoAddress = 12002
     ScdoSignTx = 12003
@@ -851,6 +853,12 @@ class TonWalletVersion(IntEnum):
 class TonWorkChain(IntEnum):
     BASECHAIN = 0
     MASTERCHAIN = 1
+
+
+class TonSignDataType(IntEnum):
+    TEXT = 0
+    BINARY = 1
+    CELL = 2
 
 
 class TronMessageType(IntEnum):
@@ -11761,6 +11769,70 @@ class TonSignedProof(protobuf.MessageType):
         signature: Optional["bytes"] = None,
     ) -> None:
         self.signature = signature
+
+
+class TonSignData(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 11908
+    FIELDS = {
+        1: protobuf.Field("address_n", "uint32", repeated=True, required=False),
+        2: protobuf.Field("type", "TonSignDataType", repeated=False, required=True),
+        3: protobuf.Field("payload", "bytes", repeated=False, required=True),
+        4: protobuf.Field("schema", "string", repeated=False, required=False),
+        5: protobuf.Field("appdomain", "string", repeated=False, required=True),
+        6: protobuf.Field("timestamp", "uint64", repeated=False, required=True),
+        7: protobuf.Field("from_address", "string", repeated=False, required=False),
+        8: protobuf.Field("wallet_version", "TonWalletVersion", repeated=False, required=False),
+        9: protobuf.Field("wallet_id", "uint32", repeated=False, required=False),
+        10: protobuf.Field("workchain", "TonWorkChain", repeated=False, required=False),
+        11: protobuf.Field("is_bounceable", "bool", repeated=False, required=False),
+        12: protobuf.Field("is_testnet_only", "bool", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        type: "TonSignDataType",
+        payload: "bytes",
+        appdomain: "str",
+        timestamp: "int",
+        address_n: Optional[Sequence["int"]] = None,
+        schema: Optional["str"] = None,
+        from_address: Optional["str"] = None,
+        wallet_version: Optional["TonWalletVersion"] = TonWalletVersion.V4R2,
+        wallet_id: Optional["int"] = 698983191,
+        workchain: Optional["TonWorkChain"] = TonWorkChain.BASECHAIN,
+        is_bounceable: Optional["bool"] = False,
+        is_testnet_only: Optional["bool"] = False,
+    ) -> None:
+        self.address_n: Sequence["int"] = address_n if address_n is not None else []
+        self.type = type
+        self.payload = payload
+        self.appdomain = appdomain
+        self.timestamp = timestamp
+        self.schema = schema
+        self.from_address = from_address
+        self.wallet_version = wallet_version
+        self.wallet_id = wallet_id
+        self.workchain = workchain
+        self.is_bounceable = is_bounceable
+        self.is_testnet_only = is_testnet_only
+
+
+class TonSignedData(protobuf.MessageType):
+    MESSAGE_WIRE_TYPE = 11909
+    FIELDS = {
+        1: protobuf.Field("signature", "bytes", repeated=False, required=False),
+        2: protobuf.Field("digest", "bytes", repeated=False, required=False),
+    }
+
+    def __init__(
+        self,
+        *,
+        signature: Optional["bytes"] = None,
+        digest: Optional["bytes"] = None,
+    ) -> None:
+        self.signature = signature
+        self.digest = digest
 
 
 class TronGetAddress(protobuf.MessageType):

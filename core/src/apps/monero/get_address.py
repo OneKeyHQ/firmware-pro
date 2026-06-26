@@ -42,7 +42,8 @@ async def get_address(
         raise wire.DataError("Subaddress cannot be integrated")
 
     if have_payment_id:
-        assert msg.payment_id is not None
+        if msg.payment_id is None:
+            raise wire.DataError("Payment ID is required")
         if len(msg.payment_id) != 8:
             raise ValueError("Invalid payment ID length")
         addr = addresses.encode_addr(
@@ -53,8 +54,8 @@ async def get_address(
         )
 
     if have_subaddress:
-        assert msg.account is not None
-        assert msg.minor is not None
+        if msg.account is None or msg.minor is None:
+            raise wire.ProcessError("Invalid subaddress indexes")
 
         pub_spend, pub_view = monero.generate_sub_address_keys(
             creds.view_key_private, creds.spend_key_public, msg.account, msg.minor

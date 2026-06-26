@@ -43,7 +43,8 @@ async def init_transaction(
 
     state.input_count = tsx_data.num_inputs
     state.output_count = len(tsx_data.outputs)
-    assert state.input_count is not None
+    if state.input_count is None:
+        raise RuntimeError("Input count missing")
     state.progress_total = 4 + 3 * state.input_count + state.output_count
     state.progress_cur = 0
 

@@ -8,18 +8,24 @@ class DictBuilder:
         self.items = {}
         self.ended = False
 
+    def _ensure_not_ended(self):
+        if self.ended:
+            raise RuntimeError("Already ended")
+
     def store_cell(self, index, value: Cell):
-        assert self.ended is False, "Already ended"
-        if type(index) == bytes:
+        self._ensure_not_ended()
+        if type(index) is bytes:
             index = int(index.hex(), 16)
 
-        assert type(index) == int, "Invalid index type"
-        assert not (index in self.items), f"Item {index} already exist"
+        if type(index) is not int:
+            raise TypeError("Invalid index type")
+        if index in self.items:
+            raise ValueError(f"Item {index} already exists")
         self.items[index] = value
         return self
 
     def store_ref(self, index, value: Cell):
-        assert self.ended is False, "Already ended"
+        self._ensure_not_ended()
 
         cell = Cell()
         cell.refs.append(value)
@@ -27,7 +33,7 @@ class DictBuilder:
         return self
 
     def end_dict(self) -> Cell:
-        assert self.ended is False, "Already ended"
+        self._ensure_not_ended()
         self.ended = True
         if not self.items:
             return Cell()  # ?
@@ -38,8 +44,9 @@ class DictBuilder:
         return serialize_dict(self.items, self.key_size, default_serializer)
 
     def end_cell(self) -> Cell:
-        assert self.ended is False, "Already ended"
-        assert self.items, "Dict is empty"
+        self._ensure_not_ended()
+        if not self.items:
+            raise ValueError("Dict is empty")
         return self.end_dict()
 
 

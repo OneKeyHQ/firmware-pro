@@ -51,17 +51,15 @@ async def sign_proof(
     # from trezor.ui.layouts import confirm_ton_connect
     # await confirm_ton_connect(ctx, msg.appdomain.decode("UTF-8"), address, msg.comment.decode("UTF-8"))
 
-    from trezor.ui.layouts import confirm_ton_signverify
+    from trezor.ui.layouts import confirm_ton_sign_request
 
-    if msg.appdomain is None:
-        raise ValueError("Domain cannot be None")
-    await confirm_ton_signverify(
+    if not msg.appdomain:
+        raise ValueError("Domain cannot be Empty")
+    await confirm_ton_sign_request(
         ctx,
-        "TON",
         msg.comment.decode("UTF-8") if msg.comment else "",
         address,
         msg.appdomain.decode("UTF-8"),
-        verify=False,
     )
 
     ton_proof_prefix = "ton-proof-item-v2/"

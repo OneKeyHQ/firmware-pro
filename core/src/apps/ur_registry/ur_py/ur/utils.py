@@ -69,7 +69,8 @@ def join_bytes(list_of_ba):
 
 def xor_into(target, source):
     count = len(target)
-    assert count == len(source)  # Must be the same length
+    if count != len(source):
+        raise ValueError("Byte arrays must be the same length")
     for i in range(count):
         target[i] ^= source[i]
 

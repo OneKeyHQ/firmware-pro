@@ -85,11 +85,12 @@ class Keychain:
             path_root = self._get_path_root(node_path)
 
         # this is true now, so for simplicity we don't branch on path type
-        assert (
+        if not (
             len(BYRON_ROOT) == len(SHELLEY_ROOT)
             and len(MULTISIG_ROOT) == len(SHELLEY_ROOT)
             and len(MINTING_ROOT) == len(SHELLEY_ROOT)
-        )
+        ):
+            raise RuntimeError("Cardano root path length mismatch")
         suffix = node_path[len(SHELLEY_ROOT) :]
 
         # derive child node from the root
@@ -117,21 +118,24 @@ def is_minting_path(path: Bip32Path) -> bool:
 
 
 def derive_and_store_secrets(passphrase: str) -> None:
-    assert device.is_initialized()
+    if not device.is_initialized():
+        raise wire.NotInitialized("Device is not initialized")
 
     if not mnemonic.is_bip39():
         # nothing to do for SLIP-39, where we can derive the root from the main seed
         return
 
     if not utils.USE_THD89:
-        assert cache.get(cache.APP_COMMON_DERIVE_CARDANO)
+        if not cache.get(cache.APP_COMMON_DERIVE_CARDANO):
+            raise RuntimeError("Cardano derivation is not enabled")
 
         icarus_secret = mnemonic.derive_cardano_icarus(
             passphrase, trezor_derivation=False
         )
 
         words = mnemonic.get_secret()
-        assert words is not None, "Mnemonic is not set"
+        if words is None:
+            raise RuntimeError("Mnemonic is not set")
         # count ASCII spaces, add 1 to get number of words
         words_count = sum(c == 0x20 for c in words) + 1
 
@@ -156,7 +160,8 @@ async def _get_secret(ctx: wire.Context, cache_entry: int) -> bytes:
     if secret is None:
         await derive_and_store_roots(ctx)
         secret = cache.get(cache_entry)
-        assert secret is not None
+        if secret is None:
+            raise RuntimeError("Cardano secret missing")
     return secret
 
 

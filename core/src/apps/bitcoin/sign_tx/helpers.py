@@ -273,10 +273,22 @@ def confirm_nondefault_locktime(lock_time: int, lock_time_disabled: bool) -> Awa
     return (yield UiConfirmNonDefaultLocktime(lock_time, lock_time_disabled))
 
 
+def _require_details(tx_req: TxRequest):
+    if tx_req.details is None:
+        raise RuntimeError("Tx request details missing")
+    return tx_req.details
+
+
+def _require_serialized(tx_req: TxRequest):
+    if tx_req.serialized is None:
+        raise RuntimeError("Tx request serialized data missing")
+    return tx_req.serialized
+
+
 def request_tx_meta(tx_req: TxRequest, coin: CoinInfo, tx_hash: bytes | None = None) -> Awaitable[PrevTx]:  # type: ignore [awaitable-is-generator]
-    assert tx_req.details is not None
+    details = _require_details(tx_req)
     tx_req.request_type = RequestType.TXMETA
-    tx_req.details.tx_hash = tx_hash
+    details.tx_hash = tx_hash
     ack = yield TxAckPrevMeta, tx_req
     _clear_tx_request(tx_req)
     return sanitize_tx_meta(ack.tx, coin)
@@ -285,57 +297,57 @@ def request_tx_meta(tx_req: TxRequest, coin: CoinInfo, tx_hash: bytes | None = N
 def request_tx_extra_data(
     tx_req: TxRequest, offset: int, size: int, tx_hash: bytes | None = None
 ) -> Awaitable[bytearray]:  # type: ignore [awaitable-is-generator]
-    assert tx_req.details is not None
+    details = _require_details(tx_req)
     tx_req.request_type = RequestType.TXEXTRADATA
-    tx_req.details.extra_data_offset = offset
-    tx_req.details.extra_data_len = size
-    tx_req.details.tx_hash = tx_hash
+    details.extra_data_offset = offset
+    details.extra_data_len = size
+    details.tx_hash = tx_hash
     ack = yield TxAckPrevExtraData, tx_req
     _clear_tx_request(tx_req)
     return ack.tx.extra_data_chunk
 
 
 def request_tx_input(tx_req: TxRequest, i: int, coin: CoinInfo, tx_hash: bytes | None = None) -> Awaitable[TxInput]:  # type: ignore [awaitable-is-generator]
-    assert tx_req.details is not None
+    details = _require_details(tx_req)
     if tx_hash:
         tx_req.request_type = RequestType.TXORIGINPUT
-        tx_req.details.tx_hash = tx_hash
+        details.tx_hash = tx_hash
     else:
         tx_req.request_type = RequestType.TXINPUT
-    tx_req.details.request_index = i
+    details.request_index = i
     ack = yield TxAckInput, tx_req
     _clear_tx_request(tx_req)
     return sanitize_tx_input(ack.tx.input, coin)
 
 
 def request_tx_prev_input(tx_req: TxRequest, i: int, coin: CoinInfo, tx_hash: bytes | None = None) -> Awaitable[PrevInput]:  # type: ignore [awaitable-is-generator]
-    assert tx_req.details is not None
+    details = _require_details(tx_req)
     tx_req.request_type = RequestType.TXINPUT
-    tx_req.details.request_index = i
-    tx_req.details.tx_hash = tx_hash
+    details.request_index = i
+    details.tx_hash = tx_hash
     ack = yield TxAckPrevInput, tx_req
     _clear_tx_request(tx_req)
     return sanitize_tx_prev_input(ack.tx.input, coin)
 
 
 def request_tx_output(tx_req: TxRequest, i: int, coin: CoinInfo, tx_hash: bytes | None = None) -> Awaitable[TxOutput]:  # type: ignore [awaitable-is-generator]
-    assert tx_req.details is not None
+    details = _require_details(tx_req)
     if tx_hash:
         tx_req.request_type = RequestType.TXORIGOUTPUT
-        tx_req.details.tx_hash = tx_hash
+        details.tx_hash = tx_hash
     else:
         tx_req.request_type = RequestType.TXOUTPUT
-    tx_req.details.request_index = i
+    details.request_index = i
     ack = yield TxAckOutput, tx_req
     _clear_tx_request(tx_req)
     return sanitize_tx_output(ack.tx.output, coin)
 
 
 def request_tx_prev_output(tx_req: TxRequest, i: int, coin: CoinInfo, tx_hash: bytes | None = None) -> Awaitable[PrevOutput]:  # type: ignore [awaitable-is-generator]
-    assert tx_req.details is not None
+    details = _require_details(tx_req)
     tx_req.request_type = RequestType.TXOUTPUT
-    tx_req.details.request_index = i
-    tx_req.details.tx_hash = tx_hash
+    details.request_index = i
+    details.tx_hash = tx_hash
     ack = yield TxAckPrevOutput, tx_req
     _clear_tx_request(tx_req)
     # return sanitize_tx_prev_output(ack.tx, coin)  # no sanitize is required
@@ -343,9 +355,9 @@ def request_tx_prev_output(tx_req: TxRequest, i: int, coin: CoinInfo, tx_hash: b
 
 
 def request_payment_req(tx_req: TxRequest, i: int) -> Awaitable[TxAckPaymentRequest]:  # type: ignore [awaitable-is-generator]
-    assert tx_req.details is not None
+    details = _require_details(tx_req)
     tx_req.request_type = RequestType.TXPAYMENTREQ
-    tx_req.details.request_index = i
+    details.request_index = i
     ack = yield TxAckPaymentRequest, tx_req
     _clear_tx_request(tx_req)
     return sanitize_payment_req(ack)
@@ -358,19 +370,20 @@ def request_tx_finish(tx_req: TxRequest) -> Awaitable[None]:  # type: ignore [aw
 
 
 def _clear_tx_request(tx_req: TxRequest) -> None:
-    assert tx_req.details is not None
-    assert tx_req.serialized is not None
-    assert tx_req.serialized.serialized_tx is not None
+    details = _require_details(tx_req)
+    serialized = _require_serialized(tx_req)
+    if serialized.serialized_tx is None:
+        raise RuntimeError("Serialized transaction missing")
     tx_req.request_type = None
-    tx_req.details.request_index = None
-    tx_req.details.tx_hash = None
-    tx_req.details.extra_data_len = None
-    tx_req.details.extra_data_offset = None
-    tx_req.serialized.signature = None
-    tx_req.serialized.signature_index = None
+    details.request_index = None
+    details.tx_hash = None
+    details.extra_data_len = None
+    details.extra_data_offset = None
+    serialized.signature = None
+    serialized.signature_index = None
     # typechecker thinks serialized_tx is `bytes`, which is immutable
     # we know that it is `bytearray` in reality
-    tx_req.serialized.serialized_tx[:] = bytes()  # type: ignore ["__setitem__" method not defined on type "bytes"]
+    serialized.serialized_tx[:] = bytes()  # type: ignore ["__setitem__" method not defined on type "bytes"]
 
 
 # Data sanitizers

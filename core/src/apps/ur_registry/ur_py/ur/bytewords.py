@@ -136,7 +136,7 @@ class Bytewords:
         elif style == Bytewords_Style_minimal:
             return encode_minimal(bytes)
         else:
-            assert False
+            raise ValueError("Invalid Bytewords style.")
 
     @staticmethod
     def decode(style, str):
@@ -147,4 +147,4 @@ class Bytewords:
         elif style == Bytewords_Style_minimal:
             return decode(str, 0, 2)
         else:
-            assert False
+            raise ValueError("Invalid Bytewords style.")

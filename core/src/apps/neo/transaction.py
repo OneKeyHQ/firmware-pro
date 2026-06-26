@@ -427,56 +427,68 @@ class RawTransaction:
         self._token: NeoTokenInfo | None = None
 
     def deserialize(self, reader: BufferReader) -> None:
-        assert reader.remaining_count() > self.HEADER_SIZE, "transaction is too short"
+        if reader.remaining_count() <= self.HEADER_SIZE:
+            raise ValueError("transaction is too short")
         self._version = reader.get()
-        assert self._version == 0, "version must be 0"
+        if self._version != 0:
+            raise ValueError("version must be 0")
         self._nonce = readers.read_uint32_le(reader)
         self._system_fee = readers.read_int64_le(reader)
-        assert self._system_fee >= 0, "system_fee must be positive"
+        if self._system_fee < 0:
+            raise ValueError("system_fee must be positive")
         self._network_fee = readers.read_int64_le(reader)
-        assert self._network_fee >= 0, "network_fee must be positive"
+        if self._network_fee < 0:
+            raise ValueError("network_fee must be positive")
         self._valid_until_block = readers.read_uint32_le(reader)
 
         signers_count = readers.read_compact_size(reader)
-        assert signers_count > 0, "signers must be non-empty"
+        if signers_count == 0:
+            raise ValueError("signers must be non-empty")
         self._signers = [Signer().deserialize(reader) for _ in range(signers_count)]
-        assert signers_count == len(set(self._signers)), "signers must be unique"
+        if signers_count != len(set(self._signers)):
+            raise ValueError("signers must be unique")
 
         attributes_count = readers.read_compact_size(reader)
-        assert (
-            attributes_count <= self.MAX_TX_ATTRIBUTES
-        ), f"attributes must be less than or equal to {self.MAX_TX_ATTRIBUTES}"
+        if attributes_count > self.MAX_TX_ATTRIBUTES:
+            raise ValueError(
+                f"attributes must be less than or equal to {self.MAX_TX_ATTRIBUTES}"
+            )
         self._attributes = [
             TransactionAttribute.deserialize_from(reader)
             for _ in range(attributes_count)
         ]
-        assert attributes_count == len(
-            set(self._attributes)
-        ), "attributes must be unique"
+        if attributes_count != len(set(self._attributes)):
+            raise ValueError("attributes must be unique")
 
         script_length = readers.read_compact_size(reader)
-        assert script_length > 0, "script must be non-empty"
+        if script_length == 0:
+            raise ValueError("script must be non-empty")
         self._script = reader.read(script_length)
-        assert reader.remaining_count() == 0, "reader must be empty"
+        if reader.remaining_count() != 0:
+            raise ValueError("reader must be empty")
 
         if not self.parse_asset_transfer():
             self.parse_vote()
 
     def sender(self) -> str:
         account = self._signers[0].account
-        assert account is not None, "signers must be non-empty"
+        if account is None:
+            raise RuntimeError("signers must be non-empty")
         return neo_address_from_script_hash(account)
 
     def source(self) -> str:
-        assert self._source_script_hash is not None, "Invalid transaction state"
+        if self._source_script_hash is None:
+            raise RuntimeError("Invalid transaction state")
         return neo_address_from_script_hash(self._source_script_hash)
 
     def destination(self) -> str:
-        assert self._destination_script_hash is not None, "Invalid transaction state"
+        if self._destination_script_hash is None:
+            raise RuntimeError("Invalid transaction state")
         return neo_address_from_script_hash(self._destination_script_hash)
 
     def vote_to(self) -> str:
-        assert self._vote_to is not None, "Invalid transaction state"
+        if self._vote_to is None:
+            raise RuntimeError("Invalid transaction state")
         from .helpers import neo_address_from_pubkey
 
         return neo_address_from_pubkey(self._vote_to)
@@ -485,12 +497,14 @@ class RawTransaction:
         if self._token is None:
             from .tokens import token_by_contract_script_hash
 
-            assert self._contract_script_hash is not None, "Invalid transaction state"
+            if self._contract_script_hash is None:
+                raise RuntimeError("Invalid transaction state")
             self._token = token_by_contract_script_hash(self._contract_script_hash)
         return self._token
 
     def token_contract_hash(self) -> str:
-        assert self._contract_script_hash is not None, "Invalid transaction state"
+        if self._contract_script_hash is None:
+            raise RuntimeError("Invalid transaction state")
         from binascii import hexlify
 
         return hexlify(bytes(reversed(self._contract_script_hash))).decode()
@@ -502,7 +516,8 @@ class RawTransaction:
         return token == UNKNOWN_TOKEN
 
     def display_amount(self) -> str:
-        assert self._is_asset_transfer, "Invalid transaction state"
+        if not self._is_asset_transfer:
+            raise RuntimeError("Invalid transaction state")
 
         token = self.token()
         return f"{format_amount(self._amount, token.decimals)} {token.symbol}"
@@ -520,7 +535,8 @@ class RawTransaction:
         return f"{format_amount(self._system_fee + self._network_fee, 8)} GAS"
 
     def parse_asset_transfer(self) -> bool:
-        assert self._script, "Invalid transaction state"
+        if not self._script:
+            raise RuntimeError("Invalid transaction state")
         reader = BufferReader(self._script)
         op_code = reader.get()
         # first byte should be 0xb (OpCode.PUSHNULL), indicating no data for the Nep17.transfer() 'data' argument
@@ -567,14 +583,14 @@ class RawTransaction:
         ending_script = reader.read(len(CONTRACT_SYSCALL_SEQUENCE))
         if ending_script != CONTRACT_SYSCALL_SEQUENCE:
             return False
-        assert (
-            reader.remaining_count() == 0
-        ), "extra code after the transfer script is not allowed"
+        if reader.remaining_count() != 0:
+            raise ValueError("extra code after the transfer script is not allowed")
         self._is_asset_transfer = True
         return True
 
     def parse_vote(self) -> bool:
-        assert self._script, "Invalid transaction state"
+        if not self._script:
+            raise RuntimeError("Invalid transaction state")
         reader = BufferReader(self._script)
         op_code = reader.get()
         # first byte should be 0xb when removing a vote, or 0x0C when voting
@@ -587,7 +603,8 @@ class RawTransaction:
             if op_code != 0x21:
                 return False
             self._vote_to = reader.read(_COMPRESSED_PUBLIC_KEY_SIZE)
-            assert self._vote_to[0] in [0x02, 0x03], "invalid compressed public key"
+            if self._vote_to[0] not in (0x02, 0x03):
+                raise ValueError("invalid compressed public key")
             self._is_remove_vote = False
         # check for source script hash
         op_code = reader.get()
@@ -611,8 +628,7 @@ class RawTransaction:
         ending_script = reader.read(len(CONTRACT_SYSCALL_SEQUENCE))
         if ending_script != CONTRACT_SYSCALL_SEQUENCE:
             return False
-        assert (
-            reader.remaining_count() == 0
-        ), "extra code after the vote script is not allowed"
+        if reader.remaining_count() != 0:
+            raise ValueError("extra code after the vote script is not allowed")
         self._is_vote = True
         return True

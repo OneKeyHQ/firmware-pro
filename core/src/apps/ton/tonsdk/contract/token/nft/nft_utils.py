@@ -24,7 +24,8 @@ def create_offchain_uri_cell(uri):
 
 
 def parse_offchain_uri_cell(cell):
-    assert cell.bits[0] == OFFCHAIN_CONTENT_PREFIX, "Invalid offchain uri cell"
+    if len(cell.bits) == 0 or cell.bits[0] != OFFCHAIN_CONTENT_PREFIX:
+        raise ValueError("Invalid offchain uri cell")
     length = 0
     c = cell
     while c:

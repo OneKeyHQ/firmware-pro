@@ -543,6 +543,8 @@ enum MessageType {
     MessageType_TonSignProof = 11905 [(wire_in) = true];
     MessageType_TonSignedProof = 11906 [(wire_out) = true];
     MessageType_TonTxAck = 11907 [(wire_in) = true];
+    MessageType_TonSignData = 11908 [(wire_in) = true];
+    MessageType_TonSignedData = 11909 [(wire_out) = true];
 
     // scdo
     MessageType_ScdoGetAddress = 12001 [(wire_in) = true];

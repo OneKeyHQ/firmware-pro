@@ -106,8 +106,7 @@ STELLAR_TX_EXT_SOROBAN = const(1)
 
 
 def get_op_code(msg: protobuf.MessageType) -> int:
-    wire = msg.MESSAGE_WIRE_TYPE
-    if wire not in op_codes:
+    wire_type = msg.MESSAGE_WIRE_TYPE
+    if not isinstance(wire_type, int) or wire_type not in op_codes:
         raise ValueError("Stellar: op code unknown")
-    assert isinstance(wire, int)
-    return op_codes[wire]
+    return op_codes[wire_type]

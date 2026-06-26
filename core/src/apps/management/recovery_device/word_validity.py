@@ -87,7 +87,8 @@ def _check_slip39_advanced(
                 if current_word == group[0].split(" ")[current_index]:
                     remaining_shares = storage.recovery.fetch_slip39_remaining_shares()
                     # if backup_type is not None, some share was already entered -> remaining needs to be set
-                    assert remaining_shares is not None
+                    if remaining_shares is None:
+                        raise RuntimeError
                     if remaining_shares[i] == 0:
                         raise ThresholdReached
 

@@ -3127,19 +3127,12 @@ class TonConnect(FullSizeWindow):
 
 class TonMessage(FullSizeWindow):
     def __init__(
-        self,
-        title,
-        address,
-        message,
-        domain,
-        primary_color,
-        icon_path,
-        verify: bool = False,
+        self, title, address, message, domain, primary_color, icon_path, clear_sign
     ):
         super().__init__(
             title,
             None,
-            _(i18n_keys.BUTTON__VERIFY) if verify else _(i18n_keys.BUTTON__SIGN),
+            _(i18n_keys.BUTTON__SIGN),
             _(i18n_keys.BUTTON__CANCEL),
             anim_dir=2,
             primary_color=primary_color,
@@ -3153,13 +3146,25 @@ class TonMessage(FullSizeWindow):
             self.long_message = True
         else:
             self.message = message
+        if not clear_sign:
+            self.warning_banner = Banner(
+                self.content_area,
+                2,
+                _(i18n_keys.SECURITY__SOLANA_RAW_SIGNING_TX_WARNING),
+            )
+            self.warning_banner.align_to(self.title, lv.ALIGN.OUT_BOTTOM_MID, 0, 40)
         self.item_message = CardItem(
             self.content_area,
             _(i18n_keys.LIST_KEY__MESSAGE__COLON),
             self.message,
             "A:/res/group-icon-data.png",
         )
-        self.item_message.align_to(self.title, lv.ALIGN.OUT_BOTTOM_LEFT, 0, 40)
+        self.item_message.align_to(
+            self.title if clear_sign else self.warning_banner,
+            lv.ALIGN.OUT_BOTTOM_LEFT,
+            0,
+            40,
+        )
         if self.long_message:
             self.show_full_message = NormalButton(
                 self.item_message.content, _(i18n_keys.BUTTON__VIEW_DATA)

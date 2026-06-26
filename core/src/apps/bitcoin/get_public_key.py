@@ -51,19 +51,23 @@ async def get_public_key(
         and script_type == InputScriptType.SPENDP2SHWITNESS
         and (msg.ignore_xpub_magic or coin.xpub_magic_segwit_p2sh is not None)
     ):
-        assert coin.xpub_magic_segwit_p2sh is not None
-        node_xpub = node.serialize_public(
+        xpub_magic = (
             coin.xpub_magic if msg.ignore_xpub_magic else coin.xpub_magic_segwit_p2sh
         )
+        if xpub_magic is None:
+            raise wire.DataError("Invalid xpub magic")
+        node_xpub = node.serialize_public(xpub_magic)
     elif (
         coin.segwit
         and script_type == InputScriptType.SPENDWITNESS
         and (msg.ignore_xpub_magic or coin.xpub_magic_segwit_native is not None)
     ):
-        assert coin.xpub_magic_segwit_native is not None
-        node_xpub = node.serialize_public(
+        xpub_magic = (
             coin.xpub_magic if msg.ignore_xpub_magic else coin.xpub_magic_segwit_native
         )
+        if xpub_magic is None:
+            raise wire.DataError("Invalid xpub magic")
+        node_xpub = node.serialize_public(xpub_magic)
     else:
         raise wire.DataError("Invalid combination of coin and script_type")
 

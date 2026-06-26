@@ -392,6 +392,8 @@ if not utils.BITCOIN_ONLY:
     TonSignProof = 11905
     TonSignedProof = 11906
     TonTxAck = 11907
+    TonSignData = 11908
+    TonSignedData = 11909
     ScdoGetAddress = 12001
     ScdoAddress = 12002
     ScdoSignTx = 12003

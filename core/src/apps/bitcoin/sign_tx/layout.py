@@ -48,7 +48,8 @@ async def confirm_output(
 ) -> None:
     if output.script_type == OutputScriptType.PAYTOOPRETURN:
         data = output.op_return_data
-        assert data is not None
+        if data is None:
+            raise wire.DataError("Missing OP_RETURN data")
         if omni.is_valid(data):
             # OMNI transaction
             layout = layouts.confirm_metadata(
@@ -62,7 +63,8 @@ async def confirm_output(
             # generic OP_RETURN
             layout = confirm_op_return(ctx, data, output.amount, coin)
     else:
-        assert output.address is not None
+        if output.address is None:
+            raise wire.DataError("Missing output address")
         address_short = addresses.address_short(coin, output.address)
 
         layout = layouts.confirm_output(
@@ -77,7 +79,8 @@ async def confirm_output(
 async def confirm_decred_sstx_submission(
     ctx: wire.Context, output: TxOutput, coin: CoinInfo, amount_unit: AmountUnit
 ) -> None:
-    assert output.address is not None
+    if output.address is None:
+        raise wire.DataError("Missing output address")
     address_short = addresses.address_short(coin, output.address)
 
     await altcoin.confirm_decred_sstx_submission(
@@ -102,7 +105,8 @@ async def confirm_payment_request(
         else:
             raise wire.DataError("Unrecognized memo type in payment request memo.")
 
-    assert msg.amount is not None
+    if msg.amount is None:
+        raise wire.DataError("Missing payment request amount")
 
     return await layouts.confirm_payment_request(
         ctx,
@@ -130,7 +134,8 @@ async def confirm_modify_output(
     coin: CoinInfo,
     amount_unit: AmountUnit,
 ) -> None:
-    assert txo.address is not None
+    if txo.address is None:
+        raise wire.DataError("Missing output address")
     address_short = addresses.address_short(coin, txo.address)
     amount_change = txo.amount - orig_txo.amount
     await layouts.confirm_modify_output(
