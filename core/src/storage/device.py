@@ -1131,9 +1131,13 @@ def store_mnemonic_secret(
         common.set_bool(_NAMESPACE, INITIALIZED, True, public=True)
     else:
         if backup_type == BackupType.Bip39:
-            config.se_import_mnemonic(secret)
+            if not config.se_import_mnemonic(secret):
+                raise RuntimeError("Failed to import mnemonic into the secure element")
         else:
-            config.se_import_slip39(secret, backup_type, identifier, iteration_exponent)
+            if not config.se_import_slip39(
+                secret, backup_type, identifier, iteration_exponent
+            ):
+                raise RuntimeError("Failed to import secret into the secure element")
     common.set_uint8(_NAMESPACE, _BACKUP_TYPE, backup_type)
     common.set_true_or_delete(_NAMESPACE, _NO_BACKUP, no_backup)
     if not no_backup:
