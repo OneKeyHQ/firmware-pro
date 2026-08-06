@@ -13,7 +13,30 @@ def is_opreturn(script: bytes) -> bool:
     :param script: The script
     :returns: Whether the script is an OP_RETURN output script
     """
-    return script[0] == 0x6A
+    return len(script) > 2 and script[0] == 0x6A
+
+
+def parse_op_return_data(script: bytes) -> bytes | None:
+    """Return the OP_RETURN payload if it uses a supported encoding."""
+    if not is_opreturn(script):
+        return None
+
+    push_opcode = script[1]
+    if push_opcode < 0x4C:
+        payload_offset = 2
+        payload_length = push_opcode
+    elif push_opcode == 0x4C:
+        payload_offset = 3
+        payload_length = script[2]
+        if payload_length < 0x4C:
+            return None
+    else:
+        return None
+
+    if len(script) != payload_offset + payload_length:
+        return None
+
+    return script[payload_offset:]
 
 
 def is_p2sh(script: bytes) -> bool:

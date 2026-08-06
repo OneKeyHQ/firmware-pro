@@ -828,7 +828,7 @@ translations = [
     "Conectar dispositivo",
     "Abre la aplicación OneKey y conecta tu dispositivo para crear una billetera. La verificación del dispositivo se realizará automáticamente.",
     "Verificar dispositivo",
-    "Visita https://bit.ly/3ZsHB40 para métodos de verificación adicionales",
+    "Visita https://help.onekey.so/en/articles/11461153 para métodos de verificación adicionales",
     "Más redes",
     "Mostrar menos",
     "La URL del bootloader requiere verificación del dispositivo en la aplicación OneKey 5.5.0+",

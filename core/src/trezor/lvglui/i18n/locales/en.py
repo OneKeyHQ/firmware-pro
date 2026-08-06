@@ -828,7 +828,7 @@ translations = [
     "Connect Device",
     "Open OneKey App and connect your device to create a wallet. Device verification will be performed automatically",
     "Verify Device",
-    "Visit https://bit.ly/3ZsHB40 for additional verification methods",
+    "Visit https://help.onekey.so/en/articles/11461153 for additional verification methods",
     "More Networks",
     "Show Less",
     "Bootloader URL requires device verification in OneKey App 5.5.0+",

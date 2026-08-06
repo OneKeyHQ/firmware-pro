@@ -828,7 +828,7 @@ translations = [
     "Conectar Dispositivo",
     "Abra o aplicativo OneKey e conecte seu dispositivo para criar uma carteira. A verificação do dispositivo será realizada automaticamente",
     "Verificar Dispositivo",
-    "Visite https://bit.ly/3ZsHB40 para métodos adicionais de verificação",
+    "Visite https://help.onekey.so/en/articles/11461153 para métodos adicionais de verificação",
     "Mais Redes",
     "Mostrar menos",
     "A URL do Bootloader requer verificação do dispositivo no OneKey App 5.5.0+",
