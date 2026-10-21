@@ -200,7 +200,9 @@ static secbool se_get_rand_ex(uint8_t addr, uint8_t *rand, uint16_t rand_len) {
 
   rand_cmd[5] = (rand_len >> 8) & 0xff;
   rand_cmd[6] = rand_len & 0xff;
-  return thd89_transmit_ex(addr, rand_cmd, sizeof(rand_cmd), rand, &resp_len);
+  return sectrue * (thd89_transmit_ex(addr, rand_cmd, sizeof(rand_cmd), rand,
+                                      &resp_len) == sectrue &&
+                    resp_len == rand_len);
 }
 
 secbool se_get_rand(uint8_t *rand, uint16_t rand_len) {
@@ -485,10 +487,10 @@ secbool se_random_encrypted(uint8_t *rand, uint16_t len) {
   uint16_t recv_len = len;
   data[0] = (len >> 8) & 0xff;
   data[1] = len & 0xff;
-  if (!se_transmit_mac(0x84, 0x00, 0x00, data, 2, rand, &recv_len)) {
+  if (se_transmit_mac(0x84, 0x00, 0x00, data, 2, rand, &recv_len) != sectrue) {
     return secfalse;
   }
-  return sectrue;
+  return sectrue * (recv_len == len);
 }
 
 secbool se_random_encrypted_ex(uint8_t addr, uint8_t *session_key,
@@ -881,9 +883,9 @@ secbool se_fp_reset_storage(void) {
 }
 
 secbool se_reset_storage(void) {
-  _se_reset_storage();
-  se_fp_reset_storage();
-  return sectrue;
+  secbool reset_result = _se_reset_storage();
+  secbool fp_reset_result = se_fp_reset_storage();
+  return sectrue * (reset_result == sectrue && fp_reset_result == sectrue);
 }
 
 secbool se_set_sn(const char *serial, uint8_t len) {

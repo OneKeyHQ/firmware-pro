@@ -391,7 +391,8 @@ void device_generate_trng_data(void) {
     batch_processed_bytes = 0;
     while (batch_processed_bytes < batch_total_bytes) {
       // get trng
-      se_get_rand(se_rand_buffer, sizeof(se_rand_buffer));
+      ensure(se_get_rand(se_rand_buffer, sizeof(se_rand_buffer)),
+             "SE random failed");
 
       // write to file
       ensure_emmcfs(emmc_fs_file_write(path_buf, batch_processed_bytes,
