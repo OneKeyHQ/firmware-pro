@@ -215,8 +215,11 @@ int se_nem_aes256_encrypt(const uint8_t *ed25519_public_key, const uint8_t *iv,
 int se_nem_aes256_decrypt(const uint8_t *ed25519_public_key, const uint8_t *iv,
                           const uint8_t *salt, uint8_t *payload, uint16_t size,
                           uint8_t *out);
-int se_slip21_node(uint8_t *data);
-int se_slip21_fido_node(uint8_t *data);
+secbool se_slip21_ownership_id(const uint8_t *script_pubkey,
+                               uint16_t script_pubkey_len, uint8_t out[32]);
+secbool se_slip21_address_mac(uint32_t slip44, const uint8_t *address,
+                              uint16_t address_len, uint8_t out[32]);
+secbool se_slip21_slip25_mac(uint8_t out[32]);
 
 secbool se_authorization_set(const uint32_t authorization_type,
                              const uint8_t *authorization,
@@ -254,6 +257,21 @@ secbool se_derive_fido_keys(HDNode *out, const char *curve,
                             uint32_t *fingerprint);
 secbool se_fido_hdnode_sign_digest(const uint8_t *hash, uint8_t *sig);
 secbool se_fido_att_sign_digest(const uint8_t *hash, uint8_t *sig);
+secbool se_fido_credential_encrypt(const uint8_t rp_id_hash[32],
+                                   const uint8_t *plaintext,
+                                   uint16_t plaintext_len,
+                                   uint8_t *credential_id,
+                                   uint16_t *credential_id_len);
+secbool se_fido_credential_peek(const uint8_t *credential_id,
+                                uint16_t credential_id_len, uint8_t *plaintext,
+                                uint16_t *plaintext_len);
+secbool se_fido_credential_decrypt(const uint8_t rp_id_hash[32],
+                                   const uint8_t *credential_id,
+                                   uint16_t credential_id_len,
+                                   uint8_t *plaintext, uint16_t *plaintext_len);
+secbool se_fido_hmac_secret(const uint8_t *credential_id,
+                            uint16_t credential_id_len, const uint8_t *salt,
+                            uint16_t salt_len, uint8_t *out);
 secbool se_get_fido2_resident_credentials(uint32_t index, uint8_t *dest,
                                           uint16_t *dst_len);
 secbool se_set_fido2_resident_credentials(uint32_t index, const uint8_t *src,

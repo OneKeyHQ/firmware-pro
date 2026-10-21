@@ -57,7 +57,15 @@ typedef enum {
   SE_FIDO_DERIVE_NODE,
   SE_FIDO_NODE_SIGN,
   SE_FIDO_ATT_SIGN,
+  SE_FIDO_SLIP21_CREDENTIAL_ENCRYPT,
+  SE_FIDO_SLIP21_CREDENTIAL_PEEK,
+  SE_FIDO_SLIP21_CREDENTIAL_DECRYPT,
+  SE_FIDO_SLIP21_HMAC_SECRET,
 } SE_FIDO_P2;
+
+#define SE_FIDO_CREDENTIAL_ID_MIN_LEN 33U
+#define SE_FIDO_CREDENTIAL_ID_MAX_LEN 512U
+#define SE_FIDO_CREDENTIAL_PLAINTEXT_MAX_LEN 480U
 
 #define SE_PIN_RETRY_MAX 5
 #define SE_SW_PIN_RETRY_LIMIT_REACHED 0x6983
@@ -2683,22 +2691,54 @@ int se_nem_aes256_decrypt(const uint8_t *ed25519_pubkey, const uint8_t *iv,
   return 0;
 }
 
-int se_slip21_node(uint8_t *data) {
-  uint16_t resp_len = 64;
+secbool se_slip21_ownership_id(const uint8_t *script_pubkey,
+                               uint16_t script_pubkey_len, uint8_t out[32]) {
+  uint16_t resp_len = 32;
 
-  if (!se_transmit_mac(0xEB, 0x00, 0x00, NULL, 0, data, &resp_len)) {
-    return -1;
+  if (script_pubkey == NULL || script_pubkey_len == 0 ||
+      script_pubkey_len > SE_DATA_MAX_LEN || out == NULL) {
+    return secfalse;
   }
-  return 0;
+  if (!se_transmit_mac(0xEB, 0x01, 0x00, (uint8_t *)script_pubkey,
+                       script_pubkey_len, out, &resp_len) ||
+      resp_len != 32) {
+    return secfalse;
+  }
+  return sectrue;
 }
-// seed without passphrase
-int se_slip21_fido_node(uint8_t *data) {
-  uint16_t resp_len = 64;
 
-  if (!se_transmit_mac(0xEB, 0x00, 0x01, NULL, 0, data, &resp_len)) {
-    return -1;
+secbool se_slip21_address_mac(uint32_t slip44, const uint8_t *address,
+                              uint16_t address_len, uint8_t out[32]) {
+  uint16_t resp_len = 32;
+
+  if (address == NULL || address_len == 0 ||
+      address_len > SE_DATA_MAX_LEN - 6U || out == NULL) {
+    return secfalse;
   }
-  return 0;
+  APDU_DATA[0] = (uint8_t)slip44;
+  APDU_DATA[1] = (uint8_t)(slip44 >> 8);
+  APDU_DATA[2] = (uint8_t)(slip44 >> 16);
+  APDU_DATA[3] = (uint8_t)(slip44 >> 24);
+  APDU_DATA[4] = (uint8_t)(address_len >> 8);
+  APDU_DATA[5] = (uint8_t)address_len;
+  memcpy(APDU_DATA + 6, address, address_len);
+  if (!se_transmit_mac(0xEB, 0x01, 0x01, APDU_DATA, address_len + 6U, out,
+                       &resp_len) ||
+      resp_len != 32) {
+    return secfalse;
+  }
+  return sectrue;
+}
+
+secbool se_slip21_slip25_mac(uint8_t out[32]) {
+  uint16_t resp_len = 32;
+
+  if (out == NULL ||
+      !se_transmit_mac(0xEB, 0x01, 0x02, NULL, 0, out, &resp_len) ||
+      resp_len != 32) {
+    return secfalse;
+  }
+  return sectrue;
 }
 
 secbool se_authorization_set(const uint32_t authorization_type,

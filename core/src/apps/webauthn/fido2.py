@@ -2073,16 +2073,11 @@ def cbor_get_assertion_hmac_secret(cred: Credential, hmac_secret: dict) -> bytes
         raise CborError(_ERR_EXTENSION_FIRST)
     salt = aes(aes.CBC, shared_secret).decrypt(salt_enc)
 
-    # Get cred_random - a constant symmetric key associated with the credential.
-    cred_random = cred.hmac_secret_key()
-    if cred_random is None:
+    # Compute hmac-secret without exposing CredRandom outside its key domain.
+    output = cred.hmac_secret_output(salt)
+    if output is None:
         # The credential does not have the hmac-secret extension enabled.
         return None
-
-    # Compute the hmac-secret output.
-    output = hmac(hmac.SHA256, cred_random, salt[:32]).digest()
-    if len(salt) == 64:
-        output += hmac(hmac.SHA256, cred_random, salt[32:]).digest()
 
     # Encrypt the hmac-secret output.
     return aes(aes.CBC, shared_secret).encrypt(output)

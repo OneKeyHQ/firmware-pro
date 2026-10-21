@@ -529,35 +529,53 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(
     mod_trezorcrypto_se_thd89_aes256_decrypt_obj, 2, 3,
     mod_trezorcrypto_se_thd89_aes256_decrypt);
 
-/// def slip21_node() -> bytes:
-///     """
-///     Returns slip21 node.
-///     """
-STATIC mp_obj_t mod_trezorcrypto_se_thd89_slip21_node(void) {
-  vstr_t vstr = {0};
-  vstr_init_len(&vstr, 64);
-  if (se_slip21_node((uint8_t *)vstr.buf) != 0) {
-    mp_raise_ValueError("slip21_node failed");
+/// def slip21_ownership_id(script_pubkey: bytes) -> bytes:
+///     """Return the SLIP-0019 ownership identifier for script_pubkey."""
+STATIC mp_obj_t
+mod_trezorcrypto_se_thd89_slip21_ownership_id(mp_obj_t script_pubkey) {
+  mp_buffer_info_t script = {0};
+  uint8_t out[32] = {0};
+  mp_get_buffer_raise(script_pubkey, &script, MP_BUFFER_READ);
+  if (script.len == 0 || script.len > 1024 ||
+      se_slip21_ownership_id(script.buf, script.len, out) != sectrue) {
+    mp_raise_ValueError("slip21 ownership id failed");
   }
-  return mp_obj_new_str_from_vstr(&mp_type_bytes, &vstr);
+  return mp_obj_new_bytes(out, sizeof(out));
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorcrypto_se_thd89_slip21_node_obj,
-                                 mod_trezorcrypto_se_thd89_slip21_node);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(
+    mod_trezorcrypto_se_thd89_slip21_ownership_id_obj,
+    mod_trezorcrypto_se_thd89_slip21_ownership_id);
 
-/// def slip21_fido_node() -> bytes:
-///     """
-///     Returns slip21 fido node, seed without passphrase.
-///     """
-STATIC mp_obj_t mod_trezorcrypto_se_thd89_slip21_fido_node(void) {
-  vstr_t vstr = {0};
-  vstr_init_len(&vstr, 64);
-  if (se_slip21_fido_node((uint8_t *)vstr.buf) != 0) {
-    mp_raise_ValueError("slip21 fido node failed");
+/// def slip21_address_mac(slip44: int, address: bytes) -> bytes:
+///     """Return the SLIP-0024 address MAC."""
+STATIC mp_obj_t mod_trezorcrypto_se_thd89_slip21_address_mac(
+    mp_obj_t slip44_obj, mp_obj_t address_obj) {
+  uint32_t slip44 = trezor_obj_get_uint(slip44_obj);
+  mp_buffer_info_t address = {0};
+  uint8_t out[32] = {0};
+  mp_get_buffer_raise(address_obj, &address, MP_BUFFER_READ);
+  if (address.len == 0 || address.len > 1018 ||
+      se_slip21_address_mac(slip44, address.buf, address.len, out) != sectrue) {
+    mp_raise_ValueError("slip21 address MAC failed");
   }
-  return mp_obj_new_str_from_vstr(&mp_type_bytes, &vstr);
+  return mp_obj_new_bytes(out, sizeof(out));
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorcrypto_se_thd89_slip21_fido_node_obj,
-                                 mod_trezorcrypto_se_thd89_slip21_fido_node);
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(
+    mod_trezorcrypto_se_thd89_slip21_address_mac_obj,
+    mod_trezorcrypto_se_thd89_slip21_address_mac);
+
+/// def slip21_slip25_mac() -> bytes:
+///     """Return the SLIP-0025 keychain authorization MAC."""
+STATIC mp_obj_t mod_trezorcrypto_se_thd89_slip21_slip25_mac(void) {
+  uint8_t out[32] = {0};
+  if (se_slip21_slip25_mac(out) != sectrue) {
+    mp_raise_ValueError("slip21 SLIP-0025 MAC failed");
+  }
+  return mp_obj_new_bytes(out, sizeof(out));
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(
+    mod_trezorcrypto_se_thd89_slip21_slip25_mac_obj,
+    mod_trezorcrypto_se_thd89_slip21_slip25_mac);
 
 /// def authorization_set(
 ///     authorization_type: int,
@@ -974,6 +992,108 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(
     mod_trezorcrypto_se_thd89_fido_att_sign_digest_obj,
     mod_trezorcrypto_se_thd89_fido_att_sign_digest);
 
+/// def fido_credential_encrypt(rp_id_hash: bytes, plaintext: bytes) -> bytes:
+///     """Encrypt a SLIP-0022 credential ID inside the secure element."""
+STATIC mp_obj_t mod_trezorcrypto_se_thd89_fido_credential_encrypt(
+    mp_obj_t rp_id_hash_obj, mp_obj_t plaintext_obj) {
+  mp_buffer_info_t rp_id_hash = {0};
+  mp_buffer_info_t plaintext = {0};
+  uint16_t credential_id_len = 0;
+  vstr_t credential_id = {0};
+  mp_get_buffer_raise(rp_id_hash_obj, &rp_id_hash, MP_BUFFER_READ);
+  mp_get_buffer_raise(plaintext_obj, &plaintext, MP_BUFFER_READ);
+  if (rp_id_hash.len != 32 || plaintext.len == 0 || plaintext.len > 480) {
+    mp_raise_ValueError("invalid FIDO credential data");
+  }
+  vstr_init_len(&credential_id, 512);
+  if (se_fido_credential_encrypt(rp_id_hash.buf, plaintext.buf, plaintext.len,
+                                 (uint8_t *)credential_id.buf,
+                                 &credential_id_len) != sectrue) {
+    mp_raise_ValueError("FIDO credential encryption failed");
+  }
+  credential_id.len = credential_id_len;
+  return mp_obj_new_str_from_vstr(&mp_type_bytes, &credential_id);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(
+    mod_trezorcrypto_se_thd89_fido_credential_encrypt_obj,
+    mod_trezorcrypto_se_thd89_fido_credential_encrypt);
+
+/// def fido_credential_peek(credential_id: bytes) -> bytes:
+///     """Tentatively decrypt a credential for legacy RP-ID discovery."""
+STATIC mp_obj_t
+mod_trezorcrypto_se_thd89_fido_credential_peek(mp_obj_t credential_id_obj) {
+  mp_buffer_info_t credential_id = {0};
+  uint16_t plaintext_len = 0;
+  vstr_t plaintext = {0};
+  mp_get_buffer_raise(credential_id_obj, &credential_id, MP_BUFFER_READ);
+  if (credential_id.len < 33 || credential_id.len > 512) {
+    mp_raise_ValueError("invalid FIDO credential ID");
+  }
+  vstr_init_len(&plaintext, 480);
+  if (se_fido_credential_peek(credential_id.buf, credential_id.len,
+                              (uint8_t *)plaintext.buf,
+                              &plaintext_len) != sectrue) {
+    mp_raise_ValueError("FIDO credential peek failed");
+  }
+  plaintext.len = plaintext_len;
+  return mp_obj_new_str_from_vstr(&mp_type_bytes, &plaintext);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(
+    mod_trezorcrypto_se_thd89_fido_credential_peek_obj,
+    mod_trezorcrypto_se_thd89_fido_credential_peek);
+
+/// def fido_credential_decrypt(
+///     rp_id_hash: bytes, credential_id: bytes
+/// ) -> bytes:
+///     """Authenticate and decrypt a SLIP-0022 credential ID."""
+STATIC mp_obj_t mod_trezorcrypto_se_thd89_fido_credential_decrypt(
+    mp_obj_t rp_id_hash_obj, mp_obj_t credential_id_obj) {
+  mp_buffer_info_t rp_id_hash = {0};
+  mp_buffer_info_t credential_id = {0};
+  uint16_t plaintext_len = 0;
+  vstr_t plaintext = {0};
+  mp_get_buffer_raise(rp_id_hash_obj, &rp_id_hash, MP_BUFFER_READ);
+  mp_get_buffer_raise(credential_id_obj, &credential_id, MP_BUFFER_READ);
+  if (rp_id_hash.len != 32 || credential_id.len < 33 ||
+      credential_id.len > 512) {
+    mp_raise_ValueError("invalid FIDO credential data");
+  }
+  vstr_init_len(&plaintext, 480);
+  if (se_fido_credential_decrypt(rp_id_hash.buf, credential_id.buf,
+                                 credential_id.len, (uint8_t *)plaintext.buf,
+                                 &plaintext_len) != sectrue) {
+    mp_raise_ValueError("FIDO credential decryption failed");
+  }
+  plaintext.len = plaintext_len;
+  return mp_obj_new_str_from_vstr(&mp_type_bytes, &plaintext);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(
+    mod_trezorcrypto_se_thd89_fido_credential_decrypt_obj,
+    mod_trezorcrypto_se_thd89_fido_credential_decrypt);
+
+/// def fido_hmac_secret(credential_id: bytes, salt: bytes) -> bytes:
+///     """Return the purpose-bound hmac-secret output for one or two salts."""
+STATIC mp_obj_t mod_trezorcrypto_se_thd89_fido_hmac_secret(
+    mp_obj_t credential_id_obj, mp_obj_t salt_obj) {
+  mp_buffer_info_t credential_id = {0};
+  mp_buffer_info_t salt = {0};
+  vstr_t out = {0};
+  mp_get_buffer_raise(credential_id_obj, &credential_id, MP_BUFFER_READ);
+  mp_get_buffer_raise(salt_obj, &salt, MP_BUFFER_READ);
+  if (credential_id.len < 33 || credential_id.len > 512 ||
+      (salt.len != 32 && salt.len != 64)) {
+    mp_raise_ValueError("invalid FIDO hmac-secret data");
+  }
+  vstr_init_len(&out, salt.len);
+  if (se_fido_hmac_secret(credential_id.buf, credential_id.len, salt.buf,
+                          salt.len, (uint8_t *)out.buf) != sectrue) {
+    mp_raise_ValueError("FIDO hmac-secret failed");
+  }
+  return mp_obj_new_str_from_vstr(&mp_type_bytes, &out);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_trezorcrypto_se_thd89_fido_hmac_secret_obj,
+                                 mod_trezorcrypto_se_thd89_fido_hmac_secret);
+
 /// def fido_delete_all_credentials() -> None:
 ///     """
 ///     Delete all FIDO2 credentials.
@@ -1186,10 +1306,12 @@ STATIC const mp_rom_map_elem_t mod_trezorcrypto_se_thd89_globals_table[] = {
      MP_ROM_PTR(&mod_trezorcrypto_se_thd89_aes256_encrypt_obj)},
     {MP_ROM_QSTR(MP_QSTR_aes256_decrypt),
      MP_ROM_PTR(&mod_trezorcrypto_se_thd89_aes256_decrypt_obj)},
-    {MP_ROM_QSTR(MP_QSTR_slip21_node),
-     MP_ROM_PTR(&mod_trezorcrypto_se_thd89_slip21_node_obj)},
-    {MP_ROM_QSTR(MP_QSTR_slip21_fido_node),
-     MP_ROM_PTR(&mod_trezorcrypto_se_thd89_slip21_fido_node_obj)},
+    {MP_ROM_QSTR(MP_QSTR_slip21_ownership_id),
+     MP_ROM_PTR(&mod_trezorcrypto_se_thd89_slip21_ownership_id_obj)},
+    {MP_ROM_QSTR(MP_QSTR_slip21_address_mac),
+     MP_ROM_PTR(&mod_trezorcrypto_se_thd89_slip21_address_mac_obj)},
+    {MP_ROM_QSTR(MP_QSTR_slip21_slip25_mac),
+     MP_ROM_PTR(&mod_trezorcrypto_se_thd89_slip21_slip25_mac_obj)},
     {MP_ROM_QSTR(MP_QSTR_authorization_set),
      MP_ROM_PTR(&mod_trezorcrypto_se_thd89_authorization_set_obj)},
     {MP_ROM_QSTR(MP_QSTR_authorization_get_type),
@@ -1218,6 +1340,14 @@ STATIC const mp_rom_map_elem_t mod_trezorcrypto_se_thd89_globals_table[] = {
      MP_ROM_PTR(&mod_trezorcrypto_se_thd89_fido_u2f_authenticate_obj)},
     {MP_ROM_QSTR(MP_QSTR_fido_u2f_validate),
      MP_ROM_PTR(&mod_trezorcrypto_se_thd89_fido_u2f_validate_obj)},
+    {MP_ROM_QSTR(MP_QSTR_fido_credential_encrypt),
+     MP_ROM_PTR(&mod_trezorcrypto_se_thd89_fido_credential_encrypt_obj)},
+    {MP_ROM_QSTR(MP_QSTR_fido_credential_peek),
+     MP_ROM_PTR(&mod_trezorcrypto_se_thd89_fido_credential_peek_obj)},
+    {MP_ROM_QSTR(MP_QSTR_fido_credential_decrypt),
+     MP_ROM_PTR(&mod_trezorcrypto_se_thd89_fido_credential_decrypt_obj)},
+    {MP_ROM_QSTR(MP_QSTR_fido_hmac_secret),
+     MP_ROM_PTR(&mod_trezorcrypto_se_thd89_fido_hmac_secret_obj)},
     {MP_ROM_QSTR(MP_QSTR_fido_sign_digest),
      MP_ROM_PTR(&mod_trezorcrypto_se_thd89_fido_sign_digest_obj)},
     {MP_ROM_QSTR(MP_QSTR_fido_att_sign_digest),

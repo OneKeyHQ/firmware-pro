@@ -152,17 +152,18 @@ bytes:
 
 
 # extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
-def slip21_node() -> bytes:
-    """
-    Returns slip21 node.
-    """
+def slip21_ownership_id(script_pubkey: bytes) -> bytes:
+    """Return the SLIP-0019 ownership identifier for script_pubkey."""
 
 
 # extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
-def slip21_fido_node() -> bytes:
-    """
-    Returns slip21 fido node, seed without passphrase.
-    """
+def slip21_address_mac(slip44: int, address: bytes) -> bytes:
+    """Return the SLIP-0024 address MAC."""
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
+def slip21_slip25_mac() -> bytes:
+    """Return the SLIP-0025 keychain authorization MAC."""
 
 
 # extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
@@ -304,6 +305,28 @@ def fido_att_sign_digest(
 ) -> bytes:
     """
     """
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
+def fido_credential_encrypt(rp_id_hash: bytes, plaintext: bytes) -> bytes:
+    """Encrypt a SLIP-0022 credential ID inside the secure element."""
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
+def fido_credential_peek(credential_id: bytes) -> bytes:
+    """Tentatively decrypt a credential for legacy RP-ID discovery."""
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
+def fido_credential_decrypt(
+    rp_id_hash: bytes, credential_id: bytes
+) -> bytes:
+    """Authenticate and decrypt a SLIP-0022 credential ID."""
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
+def fido_hmac_secret(credential_id: bytes, salt: bytes) -> bytes:
+    """Return the purpose-bound hmac-secret output for one or two salts."""
 
 
 # extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h

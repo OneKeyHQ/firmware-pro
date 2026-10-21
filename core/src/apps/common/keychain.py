@@ -169,9 +169,7 @@ class Keychain:
         ):
             raise FORBIDDEN_KEY_PATH
         if utils.USE_THD89:
-            node = Slip21Node(seed=b"\x00" * 32)
-            node.derive_path(path)
-            return node
+            raise FORBIDDEN_KEY_PATH
         else:
             return self._derive_with_cache(
                 prefix_len=1,
