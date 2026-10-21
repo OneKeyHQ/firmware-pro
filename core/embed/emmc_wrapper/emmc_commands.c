@@ -649,7 +649,7 @@ static int check_file_contents(uint8_t iface_num, const uint8_t* buffer, uint32_
             // check firmware header
             // check file header
             ExecuteCheck_MSGS_ADV(
-                load_vendor_header(p_data, FW_KEY_M, FW_KEY_N, FW_KEYS, &file_vhdr), sectrue,
+                load_vendor_header(p_data, buffer_len, FW_KEY_M, FW_KEY_N, FW_KEYS, &file_vhdr), sectrue,
                 {
                     send_failure(
                         iface_num, FailureType_Failure_ProcessError, "Update file vendor header invalid!"
@@ -657,6 +657,11 @@ static int check_file_contents(uint8_t iface_num, const uint8_t* buffer, uint32_
                     return -1;
                 }
             );
+            if ( file_vhdr.hdrlen > buffer_len || buffer_len - file_vhdr.hdrlen < IMAGE_HEADER_SIZE )
+            {
+                send_failure(iface_num, FailureType_Failure_ProcessError, "Update file header truncated!");
+                return -1;
+            }
             ExecuteCheck_MSGS_ADV(
                 load_image_header(
                     p_data + file_vhdr.hdrlen, FIRMWARE_IMAGE_MAGIC, FIRMWARE_IMAGE_MAXSIZE, file_vhdr.vsig_m,
@@ -668,6 +673,14 @@ static int check_file_contents(uint8_t iface_num, const uint8_t* buffer, uint32_
                     return -1;
                 }
             );
+
+            uint32_t firmware_item_len = file_vhdr.hdrlen + file_hdr.hdrlen;
+            if ( firmware_item_len > buffer_len || file_hdr.codelen > buffer_len - firmware_item_len )
+            {
+                send_failure(iface_num, FailureType_Failure_ProcessError, "Firmware file truncated!");
+                return -1;
+            }
+            firmware_item_len += file_hdr.codelen;
 
             if ( file_hdr.codelen - (FIRMWARE_IMAGE_INNER_SIZE - (file_vhdr.hdrlen + file_hdr.hdrlen)) >
                  FMC_SDRAM_FIRMWARE_P2_LEN )
@@ -690,20 +703,18 @@ static int check_file_contents(uint8_t iface_num, const uint8_t* buffer, uint32_
             );
 
             // check file size
-            ExecuteCheck_MSGS_ADV(
-                (file_vhdr.hdrlen + file_hdr.hdrlen + file_hdr.codelen <= FIRMWARE_IMAGE_MAXSIZE), true,
-                {
-                    send_failure(iface_num, FailureType_Failure_ProcessError, "Firmware file is too big!");
-                    return -1;
-                }
-            );
+            ExecuteCheck_MSGS_ADV((firmware_item_len <= FIRMWARE_IMAGE_MAXSIZE), true, {
+                send_failure(iface_num, FailureType_Failure_ProcessError, "Firmware file is too big!");
+                return -1;
+            });
 
             update_info.mcu_update_info.vendor_changed = sectrue;
             update_info.mcu_update_info.wipe_required = sectrue;
             update_info.mcu_update_info.purpose_changed = secfalse;
             // vhdr
             if ( load_vendor_header(
-                     (const uint8_t*)FIRMWARE_START, FW_KEY_M, FW_KEY_N, FW_KEYS, &current_vhdr
+                     (const uint8_t*)FIRMWARE_START, VENDOR_HEADER_MAX_SIZE, FW_KEY_M, FW_KEY_N, FW_KEYS,
+                     &current_vhdr
                  ) == sectrue )
             {
                 if ( load_image_header(
@@ -773,14 +784,13 @@ static int check_file_contents(uint8_t iface_num, const uint8_t* buffer, uint32_
 
             update_info.items[update_info.item_count].type = UPDATE_MCU;
             update_info.items[update_info.item_count].offset = p_data - buffer;
-            update_info.items[update_info.item_count].length =
-                file_vhdr.hdrlen + file_hdr.hdrlen + file_hdr.codelen;
+            update_info.items[update_info.item_count].length = firmware_item_len;
             update_info.item_count++;
             update_info.mcu_location = update_info.item_count;
             update_info.mcu_update_info.purpose = file_hdr.purpose;
 
-            p_data += file_vhdr.hdrlen + file_hdr.hdrlen + file_hdr.codelen;
-            buffer_len -= file_vhdr.hdrlen + file_hdr.hdrlen + file_hdr.codelen;
+            p_data += firmware_item_len;
+            buffer_len -= firmware_item_len;
             continue;
         }
         // SE

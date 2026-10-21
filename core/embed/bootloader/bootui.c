@@ -272,8 +272,9 @@ void ui_screen_install_confirm_newvendor_or_downgrade_wipe(char* new_version) {
   vendor_header current_vhdr;
   image_header current_hdr;
   // char str[128] = {0};
-  if (sectrue == load_vendor_header((const uint8_t*)FIRMWARE_START, FW_KEY_M,
-                                    FW_KEY_N, FW_KEYS, &current_vhdr)) {
+  if (sectrue == load_vendor_header((const uint8_t*)FIRMWARE_START,
+                                    VENDOR_HEADER_MAX_SIZE, FW_KEY_M, FW_KEY_N,
+                                    FW_KEYS, &current_vhdr)) {
     if (sectrue ==
         load_image_header((const uint8_t*)FIRMWARE_START + current_vhdr.hdrlen,
                           FIRMWARE_IMAGE_MAGIC, FIRMWARE_IMAGE_MAXSIZE,
