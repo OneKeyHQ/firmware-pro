@@ -164,7 +164,9 @@ class Fido2Credential(Credential):
 
         plaintext = cbor.encode(data)
         if utils.USE_THD89:
-            self.id = se_thd89.fido_credential_encrypt(self.rp_id_hash, plaintext)
+            self.id, slot, action = se_thd89.fido_credential_create(plaintext, False)
+            if slot != 0xFF or action != 0:
+                raise AssertionError
         else:
             key = seed.derive_slip21_node_without_passphrase(
                 [b"SLIP-0022", _CRED_ID_VERSION, b"Encryption key"]
@@ -186,16 +188,7 @@ class Fido2Credential(Credential):
         if len(cred_id) < CRED_ID_MIN_LENGTH or cred_id[0:4] != _CRED_ID_VERSION:
             raise ValueError  # invalid length or version
         if utils.USE_THD89:
-            if rp_id_hash is None:
-                candidate_data = se_thd89.fido_credential_peek(cred_id)
-                try:
-                    rp_id = cbor.decode(candidate_data)[_CRED_ID_RP_ID]
-                except Exception as e:
-                    raise ValueError from e  # CBOR decoding failed
-                rp_id_hash = hashlib.sha256(rp_id).digest()
-                del candidate_data
-                del rp_id
-            data = se_thd89.fido_credential_decrypt(rp_id_hash, cred_id)
+            data = se_thd89.fido_credential_validate(cred_id, rp_id_hash)
         else:
             key = seed.derive_slip21_node_without_passphrase(
                 [b"SLIP-0022", cred_id[0:4], b"Encryption key"]
@@ -220,8 +213,14 @@ class Fido2Credential(Credential):
             if not utils.consteq(ctx.finish(), tag):
                 raise ValueError  # inauthentic ciphertext
 
+        return cls.from_authenticated_plaintext(cred_id, data, rp_id_hash)
+
+    @classmethod
+    def from_authenticated_plaintext(
+        cls, cred_id: bytes, plaintext: bytes, rp_id_hash: bytes | None
+    ) -> "Fido2Credential":
         try:
-            data = cbor.decode(data)
+            data = cbor.decode(plaintext)
         except Exception as e:
             raise ValueError from e  # CBOR decoding failed
 
@@ -230,7 +229,6 @@ class Fido2Credential(Credential):
 
         cred = cls()
         cred.rp_id = data.get(_CRED_ID_RP_ID, None)
-        cred.rp_id_hash = rp_id_hash
         cred.rp_name = data.get(_CRED_ID_RP_NAME, None)
         cred.user_id = data.get(_CRED_ID_USER_ID, None)
         cred.user_name = data.get(_CRED_ID_USER_NAME, None)
@@ -246,9 +244,15 @@ class Fido2Credential(Credential):
             (_CRED_ID_ALGORITHM in data) != (_CRED_ID_CURVE in data)
             or not cred.check_required_fields()
             or not cred.check_data_types()
-            or hashlib.sha256(cred.rp_id).digest() != rp_id_hash
         ):
             raise ValueError  # data consistency check failed
+
+        calculated_rp_id_hash = hashlib.sha256(cred.rp_id).digest()
+        if rp_id_hash is None:
+            rp_id_hash = calculated_rp_id_hash
+        elif calculated_rp_id_hash != rp_id_hash:
+            raise ValueError  # data consistency check failed
+        cred.rp_id_hash = rp_id_hash
 
         return cred
 

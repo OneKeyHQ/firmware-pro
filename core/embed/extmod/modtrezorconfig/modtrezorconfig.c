@@ -419,17 +419,9 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_trezorconfig_get_val_len_obj, 2,
 ///     """
 STATIC mp_obj_t mod_trezorconfig_get(size_t n_args, const mp_obj_t *args) {
   uint8_t app = trezor_obj_get_uint8(args[0]);
-  // webauthn resident credentials, FIDO2
   if (app == 4) {
-    uint32_t index = trezor_obj_get_uint(args[1]);
-    uint16_t len = sizeof(CTAP_credential_id_storage) -
-                   FIDO2_RESIDENT_CREDENTIALS_HEADER_LEN;
-    CTAP_credential_id_storage cred_id = {0};
-
-    if (!se_get_fido2_resident_credentials(index, cred_id.rp_id_hash, &len)) {
-      return mp_const_none;
-    }
-    return mp_obj_new_bytes(cred_id.rp_id_hash, len);
+    mp_raise_msg(&mp_type_RuntimeError,
+                 "FIDO credentials are managed by the secure element");
   }
 
   uint32_t key = trezor_obj_get_uint(args[1]);
@@ -475,20 +467,9 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_trezorconfig_get_obj, 2, 3,
 ///     """
 STATIC mp_obj_t mod_trezorconfig_set(size_t n_args, const mp_obj_t *args) {
   uint8_t app = trezor_obj_get_uint8(args[0]);
-  // webauthn resident credentials, FIDO2
   if (app == 4) {
-    uint32_t index = trezor_obj_get_uint(args[1]);
-
-    mp_buffer_info_t cred_id;
-    mp_get_buffer_raise(args[2], &cred_id, MP_BUFFER_READ);
-    if (cred_id.len > sizeof(CTAP_credential_id_storage) -
-                          FIDO2_RESIDENT_CREDENTIALS_HEADER_LEN) {
-      mp_raise_msg(&mp_type_RuntimeError, "Credential ID too long");
-    }
-    if (!se_set_fido2_resident_credentials(index, cred_id.buf, cred_id.len)) {
-      mp_raise_msg(&mp_type_RuntimeError, "Could not save value");
-    }
-    return mp_const_none;
+    mp_raise_msg(&mp_type_RuntimeError,
+                 "FIDO credentials are managed by the secure element");
   }
 
   uint32_t key = trezor_obj_get_uint(args[1]);
@@ -525,13 +506,9 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_trezorconfig_set_obj, 3, 4,
 ///     """
 STATIC mp_obj_t mod_trezorconfig_delete(size_t n_args, const mp_obj_t *args) {
   uint8_t app = trezor_obj_get_uint8(args[0]);
-  // webauthn resident credentials, FIDO2
   if (app == 4) {
-    uint32_t index = trezor_obj_get_uint(args[1]);
-    if (!se_delete_fido2_resident_credentials(index)) {
-      mp_raise_msg(&mp_type_RuntimeError, "Could not delete value");
-    }
-    return mp_const_true;
+    mp_raise_msg(&mp_type_RuntimeError,
+                 "FIDO credentials are managed by the secure element");
   }
 
   uint32_t key = trezor_obj_get_uint(args[1]);

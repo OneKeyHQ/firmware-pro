@@ -44,19 +44,7 @@ typedef enum {
   PIN_TYPE_MAX
 } pin_type_t;
 
-#define FIDO2_RESIDENT_CREDENTIALS_SIZE (512)
 #define FIDO2_RESIDENT_CREDENTIALS_COUNT (60)
-#define FIDO2_RESIDENT_CREDENTIALS_FLAGS "\x66\x69\x64\x6F"  // "fido"
-#define FIDO2_RESIDENT_CREDENTIALS_HEADER_LEN (6)
-typedef struct {
-  uint8_t credential_id_flag[4];
-  uint16_t credential_length;
-  uint8_t rp_id_hash[32];
-  uint8_t credential_id[474];
-} __attribute__((packed)) CTAP_credential_id_storage;
-_Static_assert(sizeof(CTAP_credential_id_storage) ==
-                   FIDO2_RESIDENT_CREDENTIALS_SIZE,
-               "CTAP_credential_id_storage size must be flash page size");
 
 typedef secbool (*UI_WAIT_CALLBACK)(uint32_t wait, uint32_t progress,
                                     const char *message);
@@ -268,27 +256,25 @@ secbool se_derive_fido_keys(HDNode *out, const char *curve,
                             uint32_t *fingerprint);
 secbool se_fido_hdnode_sign_digest(const uint8_t *hash, uint8_t *sig);
 secbool se_fido_att_sign_digest(const uint8_t *hash, uint8_t *sig);
-secbool se_fido_credential_encrypt(const uint8_t rp_id_hash[32],
-                                   const uint8_t *plaintext,
-                                   uint16_t plaintext_len,
-                                   uint8_t *credential_id,
-                                   uint16_t *credential_id_len);
-secbool se_fido_credential_peek(const uint8_t *credential_id,
-                                uint16_t credential_id_len, uint8_t *plaintext,
-                                uint16_t *plaintext_len);
-secbool se_fido_credential_decrypt(const uint8_t rp_id_hash[32],
-                                   const uint8_t *credential_id,
-                                   uint16_t credential_id_len,
-                                   uint8_t *plaintext, uint16_t *plaintext_len);
+secbool se_fido_credential_create(const uint8_t *plaintext,
+                                  uint16_t plaintext_len, uint8_t resident,
+                                  uint8_t *response, uint16_t *response_len);
+secbool se_fido_credential_validate(const uint8_t rp_id_hash[32],
+                                    const uint8_t *credential_id,
+                                    uint16_t credential_id_len,
+                                    uint8_t *plaintext,
+                                    uint16_t *plaintext_len);
 secbool se_fido_hmac_secret(const uint8_t *credential_id,
                             uint16_t credential_id_len, const uint8_t *salt,
                             uint16_t salt_len, uint8_t *out);
-secbool se_get_fido2_resident_credentials(uint32_t index, uint8_t *dest,
-                                          uint16_t *dst_len);
-secbool se_set_fido2_resident_credentials(uint32_t index, const uint8_t *src,
-                                          uint16_t len);
-secbool se_delete_fido2_resident_credentials(uint32_t index);
-secbool se_delete_all_fido2_credentials(void);
+secbool se_fido_resident_credentials_list(uint8_t *indexes, uint16_t *count);
+secbool se_fido_resident_credential_read(uint8_t index, uint8_t *packed,
+                                         uint16_t *packed_len);
+secbool se_fido_resident_credential_import(const uint8_t *credential_id,
+                                           uint16_t credential_id_len,
+                                           uint8_t *slot, uint8_t *action);
+secbool se_fido_resident_credential_delete(uint8_t index);
+secbool se_fido_resident_credentials_clear(void);
 
 secbool se_query_progress_percent(uint8_t *percent);
 

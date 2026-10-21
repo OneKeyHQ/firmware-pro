@@ -1054,7 +1054,7 @@ void ui_bootloader_se_version_required(const image_header* const hdr) {
                       "SE firmware update required", -1, FONT_NORMAL,
                       COLOR_BL_FG, COLOR_BL_BG);
   display_text_center(DISPLAY_RESX / 2, SUBTITLE_OFFSET_Y + 36,
-                      "Version 1.3.0 or later is required", -1, FONT_NORMAL,
+                      "Version 1.3.2 or later is required", -1, FONT_NORMAL,
                       COLOR_BL_SUBTITLE, COLOR_BL_BG);
   display_text_center(DISPLAY_RESX / 2, SUBTITLE_OFFSET_Y + 72,
                       "Install an SE firmware update", -1, FONT_NORMAL,

@@ -4,12 +4,24 @@ from typing import Iterator
 import storage
 import storage.resident_credentials
 from storage.resident_credentials import MAX_RESIDENT_CREDENTIALS
+from trezor import utils
+from trezor.crypto import se_thd89
 
 from .credential import Fido2Credential
 from .fido_seed import ensure_fido_seed
 
 RP_ID_HASH_LENGTH = const(32)
-_ALLOW_RESIDENT_CREDENTIALS = storage.device.get_se01_version() >= "1.1.5"
+_ALLOW_RESIDENT_CREDENTIALS = storage.device.se01_version_at_least(
+    *((1, 3, 2) if utils.USE_THD89 else (1, 1, 5))
+)
+
+
+def _credential_from_se(
+    index: int, cred_id: bytes, plaintext: bytes
+) -> Fido2Credential:
+    cred = Fido2Credential.from_authenticated_plaintext(cred_id, plaintext, None)
+    cred.index = index
+    return cred
 
 
 def _credential_from_data(index: int, data: bytes) -> Fido2Credential:
@@ -24,6 +36,12 @@ def _credential_from_data(index: int, data: bytes) -> Fido2Credential:
 def find_all() -> Iterator[Fido2Credential]:
     if not _ALLOW_RESIDENT_CREDENTIALS:
         return
+    if utils.USE_THD89:
+        for index in se_thd89.fido_resident_credentials_list():
+            cred_id, plaintext = se_thd89.fido_resident_credential_read(index)
+            yield _credential_from_se(index, cred_id, plaintext)
+        return
+
     registered_count = storage.resident_credentials.get_fido2_counter()
     if registered_count == 0:
         return
@@ -41,6 +59,14 @@ def find_all() -> Iterator[Fido2Credential]:
 def find_by_rp_id_hash(rp_id_hash: bytes) -> Iterator[Fido2Credential]:
     if not _ALLOW_RESIDENT_CREDENTIALS:
         return
+    if utils.USE_THD89:
+        for index in se_thd89.fido_resident_credentials_list():
+            cred_id, plaintext = se_thd89.fido_resident_credential_read(index)
+            cred = _credential_from_se(index, cred_id, plaintext)
+            if cred.rp_id_hash == rp_id_hash:
+                yield cred
+        return
+
     for index in range(MAX_RESIDENT_CREDENTIALS):
         data = storage.resident_credentials.get(index)
 
@@ -62,10 +88,15 @@ def get_resident_credential(index: int) -> Fido2Credential | None:
     if not 0 <= index < MAX_RESIDENT_CREDENTIALS:
         return None
 
+    if utils.USE_THD89:
+        if index not in se_thd89.fido_resident_credentials_list():
+            return None
+        cred_id, plaintext = se_thd89.fido_resident_credential_read(index)
+        return _credential_from_se(index, cred_id, plaintext)
+
     data = storage.resident_credentials.get(index)
     if data is None:
         return None
-
     return _credential_from_data(index, data)
 
 
@@ -73,6 +104,16 @@ def get_resident_credential(index: int) -> Fido2Credential | None:
 def store_resident_credential(cred: Fido2Credential) -> bool:
     if not _ALLOW_RESIDENT_CREDENTIALS:
         return False
+    if utils.USE_THD89:
+        try:
+            slot, action = se_thd89.fido_resident_credential_import(cred.id)
+        except ValueError:
+            return False
+        if not 0 <= slot < MAX_RESIDENT_CREDENTIALS or action not in (1, 2):
+            return False
+        cred.index = slot
+        return True
+
     if storage.resident_credentials.get_fido2_counter() >= MAX_RESIDENT_CREDENTIALS:
         return False
 

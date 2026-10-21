@@ -57,15 +57,22 @@ typedef enum {
   SE_FIDO_DERIVE_NODE,
   SE_FIDO_NODE_SIGN,
   SE_FIDO_ATT_SIGN,
-  SE_FIDO_SLIP21_CREDENTIAL_ENCRYPT,
-  SE_FIDO_SLIP21_CREDENTIAL_PEEK,
-  SE_FIDO_SLIP21_CREDENTIAL_DECRYPT,
-  SE_FIDO_SLIP21_HMAC_SECRET,
+  SE_FIDO_SLIP21_HMAC_SECRET = 0x0E,
+  SE_FIDO_LIST_RESIDENT_CREDENTIALS,
+  SE_FIDO_READ_RESIDENT_CREDENTIAL,
+  SE_FIDO_CREATE_CREDENTIAL,
+  SE_FIDO_VALIDATE_CREDENTIAL,
+  SE_FIDO_DELETE_RESIDENT_CREDENTIAL,
+  SE_FIDO_CLEAR_RESIDENT_CREDENTIALS,
+  SE_FIDO_IMPORT_RESIDENT_CREDENTIAL,
 } SE_FIDO_P2;
 
 #define SE_FIDO_CREDENTIAL_ID_MIN_LEN 33U
 #define SE_FIDO_CREDENTIAL_ID_MAX_LEN 512U
 #define SE_FIDO_CREDENTIAL_PLAINTEXT_MAX_LEN 480U
+#define SE_FIDO_RESIDENT_CREDENTIAL_ID_MAX_LEN 474U
+#define SE_FIDO_RESIDENT_CREDENTIAL_PLAINTEXT_MAX_LEN 442U
+#define SE_FIDO_RESIDENT_CREDENTIAL_READ_MAX_LEN 920U
 
 #define SE_PIN_RETRY_MAX 5
 #define SE_SW_PIN_RETRY_LIMIT_REACHED 0x6983
@@ -3220,76 +3227,6 @@ secbool se_fido_att_sign_digest(const uint8_t *hash, uint8_t *sig) {
   return sectrue;
 }
 
-secbool se_fido_credential_encrypt(const uint8_t rp_id_hash[32],
-                                   const uint8_t *plaintext,
-                                   uint16_t plaintext_len,
-                                   uint8_t *credential_id,
-                                   uint16_t *credential_id_len) {
-  uint16_t resp_len = SE_FIDO_CREDENTIAL_ID_MAX_LEN;
-
-  if (rp_id_hash == NULL || plaintext == NULL || plaintext_len == 0 ||
-      plaintext_len > SE_FIDO_CREDENTIAL_PLAINTEXT_MAX_LEN ||
-      credential_id == NULL || credential_id_len == NULL) {
-    return secfalse;
-  }
-  memcpy(APDU_DATA, rp_id_hash, 32);
-  memcpy(APDU_DATA + 32, plaintext, plaintext_len);
-  if (!se_transmit_mac(SE_INS_FIDO, 0x00, SE_FIDO_SLIP21_CREDENTIAL_ENCRYPT,
-                       APDU_DATA, plaintext_len + 32U, credential_id,
-                       &resp_len) ||
-      resp_len != plaintext_len + 32U) {
-    return secfalse;
-  }
-  *credential_id_len = resp_len;
-  return sectrue;
-}
-
-secbool se_fido_credential_peek(const uint8_t *credential_id,
-                                uint16_t credential_id_len, uint8_t *plaintext,
-                                uint16_t *plaintext_len) {
-  uint16_t resp_len = SE_FIDO_CREDENTIAL_PLAINTEXT_MAX_LEN;
-
-  if (credential_id == NULL ||
-      credential_id_len < SE_FIDO_CREDENTIAL_ID_MIN_LEN ||
-      credential_id_len > SE_FIDO_CREDENTIAL_ID_MAX_LEN || plaintext == NULL ||
-      plaintext_len == NULL) {
-    return secfalse;
-  }
-  if (!se_transmit_mac(SE_INS_FIDO, 0x00, SE_FIDO_SLIP21_CREDENTIAL_PEEK,
-                       (uint8_t *)credential_id, credential_id_len, plaintext,
-                       &resp_len) ||
-      resp_len != credential_id_len - 32U) {
-    return secfalse;
-  }
-  *plaintext_len = resp_len;
-  return sectrue;
-}
-
-secbool se_fido_credential_decrypt(const uint8_t rp_id_hash[32],
-                                   const uint8_t *credential_id,
-                                   uint16_t credential_id_len,
-                                   uint8_t *plaintext,
-                                   uint16_t *plaintext_len) {
-  uint16_t resp_len = SE_FIDO_CREDENTIAL_PLAINTEXT_MAX_LEN;
-
-  if (rp_id_hash == NULL || credential_id == NULL ||
-      credential_id_len < SE_FIDO_CREDENTIAL_ID_MIN_LEN ||
-      credential_id_len > SE_FIDO_CREDENTIAL_ID_MAX_LEN || plaintext == NULL ||
-      plaintext_len == NULL) {
-    return secfalse;
-  }
-  memcpy(APDU_DATA, rp_id_hash, 32);
-  memcpy(APDU_DATA + 32, credential_id, credential_id_len);
-  if (!se_transmit_mac(SE_INS_FIDO, 0x00, SE_FIDO_SLIP21_CREDENTIAL_DECRYPT,
-                       APDU_DATA, credential_id_len + 32U, plaintext,
-                       &resp_len) ||
-      resp_len != credential_id_len - 32U) {
-    return secfalse;
-  }
-  *plaintext_len = resp_len;
-  return sectrue;
-}
-
 secbool se_fido_hmac_secret(const uint8_t *credential_id,
                             uint16_t credential_id_len, const uint8_t *salt,
                             uint16_t salt_len, uint8_t *out) {
@@ -3314,79 +3251,263 @@ secbool se_fido_hmac_secret(const uint8_t *credential_id,
   return sectrue;
 }
 
-secbool se_get_fido2_data(uint16_t offset, uint8_t *dest, uint16_t len) {
-  uint8_t cmd[4] = {0};
-  uint16_t recv_len = len;
-  cmd[0] = (offset >> 8) & 0xFF;
-  cmd[1] = offset & 0xFF;
-  cmd[2] = (len >> 8) & 0xFF;
-  cmd[3] = len & 0xFF;
-  if (!se_transmit_mac(SE_INS_READ_DATA, 0x00, 0x03, cmd, sizeof(cmd), dest,
-                       &recv_len)) {
+secbool se_fido_credential_create(const uint8_t *plaintext,
+                                  uint16_t plaintext_len, uint8_t resident,
+                                  uint8_t *response, uint16_t *response_len) {
+  uint16_t response_capacity = 0;
+  uint16_t response_received = 0;
+  uint16_t credential_id_len = 0;
+  uint16_t expected_len = 0;
+
+  if (response_len != NULL) {
+    response_capacity = *response_len;
+    *response_len = 0;
+  }
+  if (plaintext == NULL || plaintext_len == 0 ||
+      plaintext_len > SE_FIDO_CREDENTIAL_PLAINTEXT_MAX_LEN || resident > 1 ||
+      response == NULL || response_len == NULL ||
+      (resident != 0 &&
+       plaintext_len > SE_FIDO_RESIDENT_CREDENTIAL_PLAINTEXT_MAX_LEN)) {
+    goto cleanup;
+  }
+
+  credential_id_len = plaintext_len + 32U;
+  expected_len = credential_id_len + 4U;
+  if (response_capacity < expected_len) {
+    goto cleanup;
+  }
+
+  APDU_DATA[0] = resident;
+  memcpy(APDU_DATA + 1, plaintext, plaintext_len);
+  response_received = response_capacity;
+  if (!se_transmit_mac(SE_INS_FIDO, 0x00, SE_FIDO_CREATE_CREDENTIAL, APDU_DATA,
+                       plaintext_len + 1U, response, &response_received) ||
+      response_received != expected_len ||
+      (((uint16_t)response[0] << 8) | response[1]) != credential_id_len) {
+    goto cleanup;
+  }
+
+  if ((resident == 0 && (response[expected_len - 2] != 0xff ||
+                         response[expected_len - 1] != 0)) ||
+      (resident != 0 &&
+       (response[expected_len - 2] >= FIDO2_RESIDENT_CREDENTIALS_COUNT ||
+        (response[expected_len - 1] != 1 &&
+         response[expected_len - 1] != 2)))) {
+    goto cleanup;
+  }
+
+  *response_len = response_received;
+  return sectrue;
+
+cleanup:
+  if (response != NULL) {
+    memzero(response, response_capacity);
+  }
+  return secfalse;
+}
+
+secbool se_fido_credential_validate(const uint8_t rp_id_hash[32],
+                                    const uint8_t *credential_id,
+                                    uint16_t credential_id_len,
+                                    uint8_t *plaintext,
+                                    uint16_t *plaintext_len) {
+  uint16_t plaintext_capacity = 0;
+  uint16_t plaintext_received = 0;
+  uint16_t expected_len = 0;
+  uint16_t request_len = 0;
+
+  if (plaintext_len != NULL) {
+    plaintext_capacity = *plaintext_len;
+    *plaintext_len = 0;
+  }
+  if (credential_id == NULL ||
+      credential_id_len < SE_FIDO_CREDENTIAL_ID_MIN_LEN ||
+      credential_id_len > SE_FIDO_CREDENTIAL_ID_MAX_LEN || plaintext == NULL ||
+      plaintext_len == NULL) {
+    goto cleanup;
+  }
+
+  expected_len = credential_id_len - 32U;
+  if (plaintext_capacity < expected_len) {
+    goto cleanup;
+  }
+
+  APDU_DATA[0] = rp_id_hash != NULL ? 1 : 0;
+  request_len = 1;
+  if (rp_id_hash != NULL) {
+    memcpy(APDU_DATA + request_len, rp_id_hash, 32);
+    request_len += 32;
+  }
+  memcpy(APDU_DATA + request_len, credential_id, credential_id_len);
+  request_len += credential_id_len;
+  plaintext_received = plaintext_capacity;
+  if (!se_transmit_mac(SE_INS_FIDO, 0x00, SE_FIDO_VALIDATE_CREDENTIAL,
+                       APDU_DATA, request_len, plaintext,
+                       &plaintext_received) ||
+      plaintext_received != expected_len) {
+    goto cleanup;
+  }
+
+  *plaintext_len = plaintext_received;
+  return sectrue;
+
+cleanup:
+  if (plaintext != NULL) {
+    memzero(plaintext, plaintext_capacity);
+  }
+  return secfalse;
+}
+
+secbool se_fido_resident_credentials_list(uint8_t *indexes, uint16_t *count) {
+  uint8_t response[FIDO2_RESIDENT_CREDENTIALS_COUNT + 1] = {0};
+  uint16_t count_capacity = 0;
+  uint16_t response_len = sizeof(response);
+  uint8_t response_count = 0;
+  uint8_t previous = 0;
+
+  if (count != NULL) {
+    count_capacity = *count;
+    *count = 0;
+  }
+  if (indexes == NULL || count == NULL ||
+      !se_transmit_mac(SE_INS_FIDO, 0x00, SE_FIDO_LIST_RESIDENT_CREDENTIALS,
+                       NULL, 0, response, &response_len) ||
+      response_len == 0) {
+    goto cleanup;
+  }
+
+  response_count = response[0];
+  if (response_count > FIDO2_RESIDENT_CREDENTIALS_COUNT ||
+      response_len != (uint16_t)response_count + 1U ||
+      count_capacity < response_count) {
+    goto cleanup;
+  }
+  for (uint8_t i = 0; i < response_count; i++) {
+    if (response[i + 1] >= FIDO2_RESIDENT_CREDENTIALS_COUNT ||
+        (i != 0 && response[i + 1] <= previous)) {
+      goto cleanup;
+    }
+    previous = response[i + 1];
+  }
+
+  memcpy(indexes, response + 1, response_count);
+  *count = response_count;
+  memzero(response, sizeof(response));
+  return sectrue;
+
+cleanup:
+  memzero(response, sizeof(response));
+  if (indexes != NULL) {
+    memzero(indexes, count_capacity);
+  }
+  return secfalse;
+}
+
+secbool se_fido_resident_credential_read(uint8_t index, uint8_t *packed,
+                                         uint16_t *packed_len) {
+  uint16_t packed_capacity = 0;
+  uint16_t packed_received = 0;
+  uint16_t credential_id_len = 0;
+  uint16_t plaintext_len = 0;
+  uint16_t expected_len = 0;
+
+  if (packed_len != NULL) {
+    packed_capacity = *packed_len;
+    *packed_len = 0;
+  }
+  if (index >= FIDO2_RESIDENT_CREDENTIALS_COUNT || packed == NULL ||
+      packed_len == NULL) {
+    goto cleanup;
+  }
+
+  packed_received = packed_capacity;
+  if (!se_transmit_mac(SE_INS_FIDO, 0x00, SE_FIDO_READ_RESIDENT_CREDENTIAL,
+                       &index, 1, packed, &packed_received) ||
+      packed_received < 5U) {
+    goto cleanup;
+  }
+  credential_id_len = ((uint16_t)packed[0] << 8) | packed[1];
+  if (credential_id_len < SE_FIDO_CREDENTIAL_ID_MIN_LEN ||
+      credential_id_len > SE_FIDO_RESIDENT_CREDENTIAL_ID_MAX_LEN ||
+      packed_received < credential_id_len + 4U) {
+    goto cleanup;
+  }
+  plaintext_len = ((uint16_t)packed[credential_id_len + 2] << 8) |
+                  packed[credential_id_len + 3];
+  expected_len = credential_id_len + plaintext_len + 4U;
+  if (plaintext_len == 0 ||
+      plaintext_len > SE_FIDO_RESIDENT_CREDENTIAL_PLAINTEXT_MAX_LEN ||
+      plaintext_len != credential_id_len - 32U ||
+      packed_received != expected_len ||
+      packed_received > SE_FIDO_RESIDENT_CREDENTIAL_READ_MAX_LEN) {
+    goto cleanup;
+  }
+
+  *packed_len = packed_received;
+  return sectrue;
+
+cleanup:
+  if (packed != NULL) {
+    memzero(packed, packed_capacity);
+  }
+  return secfalse;
+}
+
+secbool se_fido_resident_credential_import(const uint8_t *credential_id,
+                                           uint16_t credential_id_len,
+                                           uint8_t *slot, uint8_t *action) {
+  uint8_t response[2] = {0};
+  uint16_t response_len = sizeof(response);
+
+  if (slot != NULL) {
+    *slot = 0;
+  }
+  if (action != NULL) {
+    *action = 0;
+  }
+  if (credential_id == NULL ||
+      credential_id_len < SE_FIDO_CREDENTIAL_ID_MIN_LEN ||
+      credential_id_len > SE_FIDO_RESIDENT_CREDENTIAL_ID_MAX_LEN ||
+      slot == NULL || action == NULL ||
+      !se_transmit_mac(SE_INS_FIDO, 0x00, SE_FIDO_IMPORT_RESIDENT_CREDENTIAL,
+                       (uint8_t *)credential_id, credential_id_len, response,
+                       &response_len) ||
+      response_len != sizeof(response) ||
+      response[0] >= FIDO2_RESIDENT_CREDENTIALS_COUNT ||
+      (response[1] != 1 && response[1] != 2)) {
+    goto cleanup;
+  }
+
+  *slot = response[0];
+  *action = response[1];
+  memzero(response, sizeof(response));
+  return sectrue;
+
+cleanup:
+  memzero(response, sizeof(response));
+  return secfalse;
+}
+
+secbool se_fido_resident_credential_delete(uint8_t index) {
+  uint16_t response_len = 0;
+
+  if (index >= FIDO2_RESIDENT_CREDENTIALS_COUNT) {
+    return secfalse;
+  }
+  if (se_transmit_mac(SE_INS_FIDO, 0x00, SE_FIDO_DELETE_RESIDENT_CREDENTIAL,
+                      &index, 1, NULL, &response_len) != sectrue ||
+      response_len != 0) {
     return secfalse;
   }
   return sectrue;
 }
 
-secbool se_set_fido2_data(uint16_t offset, const uint8_t *src, uint16_t len) {
-  uint8_t cmd[4] = {0};
-  cmd[0] = (offset >> 8) & 0xFF;
-  cmd[1] = offset & 0xFF;
-  cmd[2] = (len >> 8) & 0xFF;
-  cmd[3] = len & 0xFF;
-  memcpy(APDU_DATA, cmd, 4);
-  memcpy(APDU_DATA + 4, src, len);
-  if (!se_transmit_mac(SE_INS_WRITE_DATA, 0x00, 0x03, APDU_DATA, 4 + len, NULL,
-                       NULL)) {
-    return secfalse;
-  }
-  return sectrue;
-}
+secbool se_fido_resident_credentials_clear(void) {
+  uint16_t response_len = 0;
 
-secbool se_get_fido2_resident_credentials(uint32_t index, uint8_t *dest,
-                                          uint16_t *dst_len) {
-  if (index >= FIDO2_RESIDENT_CREDENTIALS_COUNT) return secfalse;
-  uint8_t buffer[FIDO2_RESIDENT_CREDENTIALS_SIZE];
-  CTAP_credential_id_storage *cred_id = (CTAP_credential_id_storage *)buffer;
-  if (!se_get_fido2_data(index * FIDO2_RESIDENT_CREDENTIALS_SIZE, buffer, 6)) {
-    return secfalse;
-  }
-  if (memcmp(cred_id->credential_id_flag, FIDO2_RESIDENT_CREDENTIALS_FLAGS,
-             4) != 0) {
-    return secfalse;
-  }
-  if (*dst_len < cred_id->credential_length) {
-    return secfalse;
-  }
-  if (!se_get_fido2_data(index * FIDO2_RESIDENT_CREDENTIALS_SIZE + 6,
-                         buffer + 6, cred_id->credential_length)) {
-    return secfalse;
-  }
-  *dst_len = cred_id->credential_length;
-  memcpy(dest, cred_id->rp_id_hash, *dst_len);
-  return sectrue;
-}
-
-secbool se_set_fido2_resident_credentials(uint32_t index, const uint8_t *src,
-                                          uint16_t len) {
-  if (index >= FIDO2_RESIDENT_CREDENTIALS_COUNT) return secfalse;
-  if (len > (FIDO2_RESIDENT_CREDENTIALS_SIZE - 6)) return secfalse;
-  CTAP_credential_id_storage cred_id = {0};
-  memcpy(cred_id.credential_id_flag, FIDO2_RESIDENT_CREDENTIALS_FLAGS, 4);
-  cred_id.credential_length = len;
-  memcpy(cred_id.rp_id_hash, src, len);
-  return se_set_fido2_data(index * FIDO2_RESIDENT_CREDENTIALS_SIZE,
-                           (uint8_t *)&cred_id, 6 + len);
-}
-
-secbool se_delete_fido2_resident_credentials(uint32_t index) {
-  uint8_t buffer[FIDO2_RESIDENT_CREDENTIALS_HEADER_LEN] = {0xff};
-  return se_set_fido2_data(index * FIDO2_RESIDENT_CREDENTIALS_SIZE, buffer,
-                           FIDO2_RESIDENT_CREDENTIALS_HEADER_LEN);
-}
-
-secbool se_delete_all_fido2_credentials(void) {
-  if (!se_transmit_mac(SE_INS_WRITE_DATA, 0x00, 0x04, NULL, 0, NULL, NULL)) {
+  if (se_transmit_mac(SE_INS_FIDO, 0x00, SE_FIDO_CLEAR_RESIDENT_CREDENTIALS,
+                      NULL, 0, NULL, &response_len) != sectrue ||
+      response_len != 0) {
     return secfalse;
   }
   return sectrue;

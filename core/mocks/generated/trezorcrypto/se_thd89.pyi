@@ -32,7 +32,7 @@ def cardano_seed(
 
 # extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
 def start_session(
-    session_id: bytes,
+    session_id: bytes | None = None,
 ) -> bytes:
     """
     start session.
@@ -113,8 +113,9 @@ def bip340_sign(
 
 
 # extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
-def ed25519_sign(secret_key: bytes, message: bytes, hasher: str = "") ->
-bytes:
+def ed25519_sign(
+    secret_key: bytes, message: bytes, hasher: str = ""
+) -> bytes:
     """
     Uses secret key to produce the signature of message.
     """
@@ -136,16 +137,18 @@ def uncompress_pubkey(curve: str, pubkey: bytes) -> bytes:
 
 
 # extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
-def aes256_encrypt(data: bytes, value: bytes, iv: bytes | None) ->
-bytes:
+def aes256_encrypt(
+    data: bytes, value: bytes, iv: bytes | None
+) -> bytes:
     """
     Uses secret key to produce the signature of message.
     """
 
 
 # extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
-def aes256_decrypt(data: bytes, value: bytes, iv: bytes | None) ->
-bytes:
+def aes256_decrypt(
+    data: bytes, value: bytes, iv: bytes | None
+) -> bytes:
     """
     Uses secret key to produce the signature of message.
     """
@@ -329,32 +332,63 @@ def fido_att_sign_digest(
 
 
 # extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
-def fido_credential_encrypt(rp_id_hash: bytes, plaintext: bytes) -> bytes:
-    """Encrypt a SLIP-0022 credential ID inside the secure element."""
+def fido_credential_create(
+    plaintext: bytes, resident: bool
+) -> tuple[bytes, int, int]:
+    """
+    Create a FIDO credential and return credential id, slot, and action.
+    """
 
 
 # extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
-def fido_credential_peek(credential_id: bytes) -> bytes:
-    """Tentatively decrypt a credential for legacy RP-ID discovery."""
-
-
-# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
-def fido_credential_decrypt(
-    rp_id_hash: bytes, credential_id: bytes
+def fido_credential_validate(
+    credential_id: bytes, rp_id_hash: bytes | None
 ) -> bytes:
-    """Authenticate and decrypt a SLIP-0022 credential ID."""
+    """
+    Validate a FIDO credential id and return its plaintext.
+    """
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
+def fido_resident_credentials_list() -> tuple[int, ...]:
+    """
+    Return indexes of stored resident credentials.
+    """
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
+def fido_resident_credential_read(index: int) -> tuple[bytes, bytes]:
+    """
+    Read a resident credential id and plaintext by index.
+    """
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
+def fido_resident_credential_import(
+    credential_id: bytes,
+) -> tuple[int, int]:
+    """
+    Import a resident credential and return its slot and action.
+    """
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
+def fido_resident_credential_delete(index: int) -> None:
+    """
+    Delete one resident credential by index.
+    """
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
+def fido_resident_credentials_clear() -> None:
+    """
+    Delete every resident credential.
+    """
 
 
 # extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
 def fido_hmac_secret(credential_id: bytes, salt: bytes) -> bytes:
     """Return the purpose-bound hmac-secret output for one or two salts."""
-
-
-# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
-def fido_delete_all_credentials() -> None:
-    """
-    Delete all FIDO2 credentials.
-    """
 
 
 # extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
@@ -365,8 +399,9 @@ def get_pin_passphrase_space() -> int:
 
 
 # extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
-def save_pin_passphrase(pin: str, passphrase_pin: str, passphrase: str) ->
-tuple[bool, bool]:
+def save_pin_passphrase(
+    pin: str, passphrase_pin: str, passphrase: str
+) -> tuple[bool, bool]:
     """
     Save the pin and passphrase to the list.
     Returns True on success, False on failure.
@@ -375,8 +410,7 @@ tuple[bool, bool]:
 
 
 # extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
-def delete_pin_passphrase(passphrase_pin: str) ->
-tuple[bool,bool]:
+def delete_pin_passphrase(passphrase_pin: str) -> tuple[bool, bool]:
     """
     Delete the pin and passphrase pin from the list.
     Returns True on success, False on failure.

@@ -213,7 +213,9 @@ _RESULT_TIMEOUT = const(4)  # Request exceeded _FIDO2_CONFIRM_TIMEOUT_MS.
 
 # FIDO2 configuration.
 _ALLOW_FIDO2 = True
-_ALLOW_RESIDENT_CREDENTIALS = storage.device.get_se01_version() >= "1.1.5"
+_ALLOW_RESIDENT_CREDENTIALS = storage.device.se01_version_at_least(
+    *((1, 3, 2) if utils.USE_THD89 else (1, 1, 5))
+)
 _ALLOW_WINK = False
 
 # The default value of the use_sign_count flag for newly created credentials.

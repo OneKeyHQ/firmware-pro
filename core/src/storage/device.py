@@ -864,6 +864,10 @@ def get_wp_cnts() -> int:
 
 def get_fido2_counter() -> int:
     global _FIDO2_COUNTER_VALUE
+    if utils.USE_THD89:
+        from trezor.crypto import se_thd89
+
+        return len(se_thd89.fido_resident_credentials_list())
     if _FIDO2_COUNTER_VALUE is None:
         counter = common.get(_NAMESPACE, _FIDO2_COUNTER, public=True)
         if counter is None:
@@ -883,6 +887,8 @@ def get_fido2_counter() -> int:
 
 def set_fido2_counter(value: int) -> None:
     global _FIDO2_COUNTER_VALUE
+    if utils.USE_THD89:
+        raise RuntimeError("FIDO credentials are managed by the secure element")
     from .resident_credentials import MAX_RESIDENT_CREDENTIALS
 
     assert (
@@ -1417,6 +1423,23 @@ def get_se01_version() -> str:
     if _SE01_VERSION_VALUE is None:
         _SE01_VERSION_VALUE = utils.se_version(SE_1ST_ADDRESS)
     return _SE01_VERSION_VALUE
+
+
+def se01_version_at_least(major: int, minor: int, patch: int) -> bool:
+    components = get_se01_version().split(".")
+    if len(components) not in (3, 4):
+        return False
+
+    version = []
+    for component in components:
+        if not component or any(char < "0" or char > "9" for char in component):
+            return False
+        value = int(component)
+        if value > 0xFF:
+            return False
+        version.append(value)
+
+    return tuple(version[:3]) >= (major, minor, patch)
 
 
 def get_se01_boot_hash() -> bytes:

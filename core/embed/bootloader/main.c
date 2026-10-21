@@ -62,7 +62,7 @@
 
 #define REQUIRED_SE_VERSION_MAJOR 1
 #define REQUIRED_SE_VERSION_MINOR 3
-#define REQUIRED_SE_VERSION_PATCH 0
+#define REQUIRED_SE_VERSION_PATCH 2
 
 #if defined(STM32H747xx)
 #include "stm32h7xx_hal.h"
