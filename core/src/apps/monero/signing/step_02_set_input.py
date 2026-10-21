@@ -13,7 +13,7 @@ key derived for exactly this purpose.
 """
 from typing import TYPE_CHECKING
 
-from apps.monero import layout
+from apps.monero import layout, misc
 from apps.monero.xmr import crypto, crypto_helpers, monero, serialize
 
 from .state import State
@@ -57,7 +57,12 @@ async def set_input(
 
     # Calculates `derivation = Ra`, private spend key `x = H(Ra||i) + b` to be able
     # to spend the UTXO; and key image `I = x*H(P||i)`
-    xi, ki, _di = monero.generate_tx_spend_and_key_image_and_derivation(
+    (
+        xi,
+        ki,
+        recv_derivation,
+        received_index,
+    ) = monero.generate_tx_spend_and_key_image_and_derivation(
         state.creds,
         state.subaddresses,
         out_key,
@@ -106,10 +111,26 @@ async def set_input(
         crypto_helpers.encodeint(alpha),
     )
 
-    spend_enc = chacha_poly.encrypt_pack(
-        offloading_keys.enc_key_spend(state.key_enc, state.current_input_index),
-        crypto_helpers.encodeint(xi),
-    )
+    if xi is None:
+        spend_plain = misc.encode_xmr_se_input_token(
+            crypto_helpers.encodepoint(recv_derivation),
+            src_entr.real_output_in_tx_index,
+            misc.xmr_subaddress_secret_key(
+                state.creds.view_key_private, received_index
+            ),
+            crypto_helpers.encodepoint(out_key),
+        )
+        spend_enc = chacha_poly.encrypt_pack(
+            offloading_keys.enc_key_spend(state.key_enc, state.current_input_index),
+            spend_plain,
+        )
+        for i in range(len(spend_plain)):
+            spend_plain[i] = 0
+    else:
+        spend_enc = chacha_poly.encrypt_pack(
+            offloading_keys.enc_key_spend(state.key_enc, state.current_input_index),
+            crypto_helpers.encodeint(xi),
+        )
 
     state.last_step = state.STEP_INP
     if state.current_input_index + 1 == state.input_count:

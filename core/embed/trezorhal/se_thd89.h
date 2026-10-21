@@ -181,10 +181,21 @@ secbool se_derive_keys(HDNode *out, const char *curve,
 secbool se_derive_xmr_key(const char *curve, const uint32_t *address_n,
                           size_t address_n_count, uint8_t *pubkey,
                           uint8_t *prikey_hash);
-secbool se_derive_xmr_private_key(const uint8_t *pubkey, const uint32_t index,
-                                  uint8_t *prikey);
 secbool se_xmr_get_tx_key(const uint8_t *rand, const uint8_t *hash,
                           uint8_t *out);
+secbool se_xmr_generate_key_image(const uint8_t recv_deriv[32],
+                                  uint32_t real_idx,
+                                  const uint8_t subaddr_sk[32],
+                                  const uint8_t out_key[32],
+                                  uint8_t key_image[32]);
+secbool se_xmr_secret_nonce_begin(const uint8_t recv_deriv[32],
+                                  uint32_t real_idx,
+                                  const uint8_t subaddr_sk[32],
+                                  const uint8_t out_key[32], uint8_t out[97]);
+secbool se_xmr_secret_response_finish(uint8_t session_id, const uint8_t c[32],
+                                      const uint8_t mu_p[32],
+                                      const uint8_t mu_c[32],
+                                      const uint8_t z[32], uint8_t s[32]);
 secbool se_node_sign_digest(const uint8_t *hash, uint8_t *sig, uint8_t *by);
 int se_ecdsa_sign_digest(const uint8_t curve, const uint8_t canonical,
                          const uint8_t *digest, uint8_t *sig, uint8_t *pby);

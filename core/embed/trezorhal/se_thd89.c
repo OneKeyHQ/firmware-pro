@@ -818,25 +818,6 @@ secbool se_derive_xmr_key(const char *curve, const uint32_t *address_n,
   return sectrue;
 }
 
-secbool se_derive_xmr_private_key(const uint8_t *pubkey, const uint32_t index,
-                                  uint8_t *prikey) {
-  uint8_t resp[32];
-  uint16_t resp_len = sizeof(resp);
-
-  uint8_t data[32 + 4];
-
-  memcpy(data, pubkey, 32);
-  memcpy(data + 32, &index, 4);
-
-  if (!se_transmit_mac(SE_INS_DERIVE, 0x00, 0x02, data, sizeof(data), resp,
-                       &resp_len)) {
-    return secfalse;
-  }
-  memcpy(prikey, resp, 32);
-
-  return sectrue;
-}
-
 secbool se_xmr_get_tx_key(const uint8_t *rand, const uint8_t *hash,
                           uint8_t *out) {
   uint8_t resp[32];
@@ -854,6 +835,125 @@ secbool se_xmr_get_tx_key(const uint8_t *rand, const uint8_t *hash,
   memcpy(out, resp, 32);
 
   return sectrue;
+}
+
+secbool se_xmr_generate_key_image(const uint8_t recv_deriv[32],
+                                  uint32_t real_idx,
+                                  const uint8_t subaddr_sk[32],
+                                  const uint8_t out_key[32],
+                                  uint8_t key_image[32]) {
+  uint8_t data[100] = {0};
+  uint8_t response[32] = {0};
+  uint16_t response_len = sizeof(response);
+  secbool result = secfalse;
+
+  if (recv_deriv == NULL || subaddr_sk == NULL || out_key == NULL ||
+      key_image == NULL) {
+    goto cleanup;
+  }
+
+  memcpy(data, recv_deriv, 32);
+  data[32] = (uint8_t)real_idx;
+  data[33] = (uint8_t)(real_idx >> 8);
+  data[34] = (uint8_t)(real_idx >> 16);
+  data[35] = (uint8_t)(real_idx >> 24);
+  memcpy(data + 36, subaddr_sk, 32);
+  memcpy(data + 68, out_key, 32);
+
+  if (se_transmit_mac(SE_INS_DERIVE, 0x00, 0x06, data, sizeof(data), response,
+                      &response_len) != sectrue ||
+      response_len != sizeof(response)) {
+    goto cleanup;
+  }
+
+  memcpy(key_image, response, sizeof(response));
+  result = sectrue;
+
+cleanup:
+  if (result != sectrue && key_image != NULL) {
+    memzero(key_image, 32);
+  }
+  memzero(data, sizeof(data));
+  memzero(response, sizeof(response));
+  return result;
+}
+
+secbool se_xmr_secret_nonce_begin(const uint8_t recv_deriv[32],
+                                  uint32_t real_idx,
+                                  const uint8_t subaddr_sk[32],
+                                  const uint8_t out_key[32], uint8_t out[97]) {
+  uint8_t data[100] = {0};
+  uint8_t response[97] = {0};
+  uint16_t response_len = sizeof(response);
+  secbool result = secfalse;
+
+  if (recv_deriv == NULL || subaddr_sk == NULL || out_key == NULL ||
+      out == NULL) {
+    goto cleanup;
+  }
+
+  memcpy(data, recv_deriv, 32);
+  data[32] = (uint8_t)real_idx;
+  data[33] = (uint8_t)(real_idx >> 8);
+  data[34] = (uint8_t)(real_idx >> 16);
+  data[35] = (uint8_t)(real_idx >> 24);
+  memcpy(data + 36, subaddr_sk, 32);
+  memcpy(data + 68, out_key, 32);
+
+  if (se_transmit_mac(SE_INS_DERIVE, 0x00, 0x07, data, sizeof(data), response,
+                      &response_len) != sectrue ||
+      response_len != sizeof(response) || response[96] == 0) {
+    goto cleanup;
+  }
+
+  memcpy(out, response, sizeof(response));
+  result = sectrue;
+
+cleanup:
+  if (result != sectrue && out != NULL) {
+    memzero(out, 97);
+  }
+  memzero(data, sizeof(data));
+  memzero(response, sizeof(response));
+  return result;
+}
+
+secbool se_xmr_secret_response_finish(uint8_t session_id, const uint8_t c[32],
+                                      const uint8_t mu_p[32],
+                                      const uint8_t mu_c[32],
+                                      const uint8_t z[32], uint8_t s[32]) {
+  uint8_t data[129] = {0};
+  uint8_t response[32] = {0};
+  uint16_t response_len = sizeof(response);
+  secbool result = secfalse;
+
+  if (session_id == 0 || c == NULL || mu_p == NULL || mu_c == NULL ||
+      z == NULL || s == NULL) {
+    goto cleanup;
+  }
+
+  data[0] = session_id;
+  memcpy(data + 1, c, 32);
+  memcpy(data + 33, mu_p, 32);
+  memcpy(data + 65, mu_c, 32);
+  memcpy(data + 97, z, 32);
+
+  if (se_transmit_mac(SE_INS_DERIVE, 0x00, 0x08, data, sizeof(data), response,
+                      &response_len) != sectrue ||
+      response_len != sizeof(response)) {
+    goto cleanup;
+  }
+
+  memcpy(s, response, sizeof(response));
+  result = sectrue;
+
+cleanup:
+  if (result != sectrue && s != NULL) {
+    memzero(s, 32);
+  }
+  memzero(data, sizeof(data));
+  memzero(response, sizeof(response));
+  return result;
 }
 
 static secbool _se_reset_storage(void) {

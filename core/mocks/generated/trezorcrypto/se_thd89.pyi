@@ -216,30 +216,51 @@ def sign_message(msg: bytes) -> bytes:
 
 
 # extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
-def derive_xmr(
-    path: Sequence[int]
-    digest: bytes,
-) -> tuple[bytes, bytes]:
-
-
-# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
-def derive_xmr_privare(
-    deriv: bytes
-    index: int,
-) -> bytes:
+def derive_xmr(path: Sequence[int]) -> tuple[bytes, bytes]:
     """
-    base + H_s(derivation || varint(output_index))
+    Derive a Monero public key and private-key hash for path.
     """
 
 
 # extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
 def xmr_get_tx_key(
-    rand: bytes
+    rand: bytes,
     hash: bytes,
 ) -> bytes:
     """
     base + H_s(derivation || varint(output_index))
     """
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
+def xmr_generate_key_image(
+    recv_deriv: bytes,
+    real_idx: int,
+    subaddr_sk: bytes,
+    out_key: bytes,
+) -> bytes:
+    """Generates a key image without exporting the one-time spend key."""
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
+def xmr_secret_nonce_begin(
+    recv_deriv: bytes,
+    real_idx: int,
+    subaddr_sk: bytes,
+    out_key: bytes,
+) -> tuple[bytes, bytes, bytes, int]:
+    """Starts a one-time XMR secret-response session."""
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
+def xmr_secret_response_finish(
+    session_id: int,
+    c: bytes,
+    mu_p: bytes,
+    mu_c: bytes,
+    z: bytes,
+) -> bytes:
+    """Finishes a one-time XMR secret-response session."""
 
 
 # extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h

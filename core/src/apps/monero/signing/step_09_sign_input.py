@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING
 
 from trezor import utils
 
-from apps.monero import layout
+from apps.monero import layout, misc
 from apps.monero.xmr import crypto, crypto_helpers
 
 from .state import State
@@ -79,6 +79,7 @@ async def sign_input(
         raise ValueError("Key image order invalid")
 
     state.last_ki = cur_ki if state.current_input_index < state.input_count else None
+    expected_ki = cur_ki
     del (cur_ki, vini_bin, vini_hmac, vini_hmac_comp)
 
     gc.collect()
@@ -122,13 +123,20 @@ async def sign_input(
 
     state.mem_trace(2, True)
 
-    # Spending secret
-    spend_key = crypto_helpers.decodeint(
-        chacha_poly.decrypt_pack(
-            offloading_keys.enc_key_spend(state.key_enc, input_position),
-            bytes(spend_enc),
-        )
+    spend_plain = chacha_poly.decrypt_pack(
+        offloading_keys.enc_key_spend(state.key_enc, input_position),
+        bytes(spend_enc),
     )
+    if utils.USE_THD89:
+        (
+            recv_deriv,
+            real_out_idx,
+            subaddr_sk,
+            se_out_key,
+        ) = misc.decode_xmr_se_input_token(spend_plain)
+        spend_key = crypto.Scalar()
+    else:
+        spend_key = crypto_helpers.decodeint(spend_plain)
 
     del (
         offloading_keys,
@@ -147,14 +155,21 @@ async def sign_input(
     index = src_entr.real_output
     input_secret_key = CtKey(spend_key, crypto_helpers.decodeint(src_entr.mask))
 
-    # Private key correctness test
-    utils.ensure(
-        crypto.point_eq(
-            crypto_helpers.decodepoint(src_entr.outputs[src_entr.real_output].key.dest),
-            crypto.scalarmult_base_into(None, input_secret_key.dest),
-        ),
-        "Real source entry's destination does not equal spend key's",
-    )
+    real_out_key = src_entr.outputs[src_entr.real_output].key.dest
+    if utils.USE_THD89:
+        utils.ensure(
+            crypto.ct_equals(real_out_key, se_out_key),
+            "Real source entry's destination does not equal SE token's",
+        )
+    else:
+        # Private key correctness test
+        utils.ensure(
+            crypto.point_eq(
+                crypto_helpers.decodepoint(real_out_key),
+                crypto.scalarmult_base_into(None, input_secret_key.dest),
+            ),
+            "Real source entry's destination does not equal spend key's",
+        )
     utils.ensure(
         crypto.point_eq(
             crypto_helpers.decodepoint(
@@ -166,6 +181,34 @@ async def sign_input(
     )
 
     state.mem_trace(4, True)
+
+    se_secret = None
+    if utils.USE_THD89:
+        from trezor.crypto import se_thd89
+
+        aG, aH, key_image, session_id = se_thd89.xmr_secret_nonce_begin(
+            recv_deriv, real_out_idx, subaddr_sk, se_out_key
+        )
+        utils.ensure(
+            crypto.ct_equals(key_image, expected_ki),
+            "SE key image does not equal vini's",
+        )
+
+        def se_response(
+            c: crypto.Scalar,
+            mu_p: crypto.Scalar,
+            mu_c: crypto.Scalar,
+            z: crypto.Scalar,
+        ) -> bytes:
+            return se_thd89.xmr_secret_response_finish(
+                session_id,
+                crypto_helpers.encodeint(c),
+                crypto_helpers.encodeint(mu_p),
+                crypto_helpers.encodeint(mu_c),
+                crypto_helpers.encodeint(z),
+            )
+
+        se_secret = (aG, aH, key_image, se_response)
 
     from apps.monero.xmr import clsag
 
@@ -187,6 +230,7 @@ async def sign_input(
         pseudo_out_c,
         index,
         mg_buffer,
+        se_secret,
     )
 
     del (CtKey, input_secret_key, pseudo_out_alpha, clsag, ring_pubkeys)

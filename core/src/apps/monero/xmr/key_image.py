@@ -4,11 +4,14 @@ from apps.monero.xmr import crypto, crypto_helpers, monero
 from apps.monero.xmr.serialize.int_serialize import dump_uvarint_b
 
 if TYPE_CHECKING:
+    from typing import Callable
+
     from apps.monero.xmr.credentials import AccountCreds
     from trezor.messages import MoneroTransferDetails
 
     Subaddresses = dict[bytes, tuple[int, int]]
     Sig = list[list[crypto.Scalar]]
+    SecretResponse = Callable[[crypto.Scalar], bytes]
 
 
 def compute_hash(rr: MoneroTransferDetails) -> bytes:
@@ -66,6 +69,65 @@ def _export_key_image(
     """
     Generates key image for the TXO + signature for the key image
     """
+    from trezor import utils
+
+    if utils.USE_THD89:
+        from apps.monero import misc
+        from trezor.crypto import se_thd89
+
+        recv_derivation = crypto_helpers.generate_key_derivation(
+            tx_pub_key, creds.view_key_private
+        )
+        additional_recv_derivation = (
+            crypto_helpers.generate_key_derivation(
+                additional_tx_pub_key, creds.view_key_private
+            )
+            if additional_tx_pub_key
+            else None
+        )
+        subaddr_recv_info = monero.is_out_to_account(
+            subaddresses,
+            pkey,
+            recv_derivation,
+            additional_recv_derivation,
+            out_idx,
+            creds,
+            sub_addr_major,
+            sub_addr_minor,
+        )
+        if subaddr_recv_info is None:
+            raise monero.XmrNoSuchAddressException("No such addr")
+
+        received_index, derivation = subaddr_recv_info
+        out_key = crypto_helpers.encodepoint(pkey)
+        aG, aH, key_image, session_id = se_thd89.xmr_secret_nonce_begin(
+            crypto_helpers.encodepoint(derivation),
+            out_idx,
+            misc.xmr_subaddress_secret_key(creds.view_key_private, received_index),
+            out_key,
+        )
+        ki = crypto_helpers.decodepoint(key_image)
+
+        def se_response(c: crypto.Scalar) -> bytes:
+            return se_thd89.xmr_secret_response_finish(
+                session_id,
+                crypto_helpers.encodeint(c),
+                crypto_helpers.encodeint(crypto.Scalar(1)),
+                crypto_helpers.encodeint(crypto.Scalar(0)),
+                crypto_helpers.encodeint(crypto.Scalar(0)),
+            )
+
+        sig = generate_ring_signature(
+            key_image,
+            ki,
+            [pkey],
+            crypto.Scalar(),
+            0,
+            test,
+            (aG, aH, se_response),
+        )
+        return ki, sig
+
     r = monero.generate_tx_spend_and_key_image_and_derivation(
         creds,
         subaddresses,
@@ -77,6 +139,8 @@ def _export_key_image(
         sub_addr_minor,
     )
     xi, ki, _ = r[:3]
+    if xi is None:
+        raise RuntimeError("XMR spend key missing")
 
     phash = crypto_helpers.encodepoint(ki)
     sig = generate_ring_signature(phash, ki, [pkey], xi, 0, test)
@@ -91,6 +155,7 @@ def generate_ring_signature(
     sec: crypto.Scalar,
     sec_idx: int,
     test: bool = False,
+    se_secret: tuple[bytes, bytes, "SecretResponse"] | None = None,
 ) -> Sig:
     """
     Generates ring signature with key image.
@@ -99,15 +164,18 @@ def generate_ring_signature(
     from trezor.utils import memcpy
 
     if test:
-        t = crypto.scalarmult_base_into(None, sec)
-        if not crypto.point_eq(t, pubs[sec_idx]):
-            raise ValueError("Invalid sec key")
-
-        k_i = monero.generate_key_image(crypto_helpers.encodepoint(pubs[sec_idx]), sec)
-        if not crypto.point_eq(k_i, image):
-            raise ValueError("Key image invalid")
         for k in pubs:
             crypto.ge25519_check(k)
+        if se_secret is None:
+            t = crypto.scalarmult_base_into(None, sec)
+            if not crypto.point_eq(t, pubs[sec_idx]):
+                raise ValueError("Invalid sec key")
+
+            k_i = monero.generate_key_image(
+                crypto_helpers.encodepoint(pubs[sec_idx]), sec
+            )
+            if not crypto.point_eq(k_i, image):
+                raise ValueError("Key image invalid")
 
     buff_off = len(prefix_hash)
     buff = bytearray(buff_off + 2 * 32 * len(pubs))
@@ -123,14 +191,22 @@ def generate_ring_signature(
 
     for i in range(len(pubs)):
         if i == sec_idx:
-            k = crypto.random_scalar()
-            tmp3 = crypto.scalarmult_base_into(None, k)
-            crypto.encodepoint_into(mvbuff[buff_off : buff_off + 32], tmp3)
+            if se_secret is None:
+                k = crypto.random_scalar()
+                tmp3 = crypto.scalarmult_base_into(None, k)
+                crypto.encodepoint_into(mvbuff[buff_off : buff_off + 32], tmp3)
+            else:
+                mvbuff[buff_off : buff_off + 32] = se_secret[0]
             buff_off += 32
 
-            tmp3 = crypto.hash_to_point_into(None, crypto_helpers.encodepoint(pubs[i]))
-            tmp2 = crypto.scalarmult_into(None, tmp3, k)
-            crypto.encodepoint_into(mvbuff[buff_off : buff_off + 32], tmp2)
+            if se_secret is None:
+                tmp3 = crypto.hash_to_point_into(
+                    None, crypto_helpers.encodepoint(pubs[i])
+                )
+                tmp2 = crypto.scalarmult_into(None, tmp3, k)
+                crypto.encodepoint_into(mvbuff[buff_off : buff_off + 32], tmp2)
+            else:
+                mvbuff[buff_off : buff_off + 32] = se_secret[1]
             buff_off += 32
 
         else:
@@ -151,5 +227,8 @@ def generate_ring_signature(
 
     h = crypto.hash_to_scalar_into(None, buff)
     sig[sec_idx][0] = crypto.sc_sub_into(None, h, sum)
-    sig[sec_idx][1] = crypto.sc_mulsub_into(None, sig[sec_idx][0], sec, k)
+    if se_secret is None:
+        sig[sec_idx][1] = crypto.sc_mulsub_into(None, sig[sec_idx][0], sec, k)
+    else:
+        sig[sec_idx][1] = crypto_helpers.decodeint(se_secret[2](sig[sec_idx][0]))
     return sig

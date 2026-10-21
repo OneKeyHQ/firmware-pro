@@ -49,7 +49,7 @@ from apps.monero.xmr import crypto, crypto_helpers
 from apps.monero.xmr.serialize import int_serialize
 
 if TYPE_CHECKING:
-    from typing import Any, TypeGuard, TypeVar
+    from typing import Any, Callable, TypeGuard, TypeVar
 
     from .serialize_messages.tx_ct_key import CtKey
     from trezor.messages import MoneroRctKeyPublic
@@ -58,6 +58,10 @@ if TYPE_CHECKING:
 
     def list_of_type(lst: list[Any], typ: type[T]) -> TypeGuard[list[T]]:
         ...
+
+    SecretResponse = Callable[
+        [crypto.Scalar, crypto.Scalar, crypto.Scalar, crypto.Scalar], bytes
+    ]
 
 
 _HASH_KEY_CLSAG_ROUND = b"CLSAG_round\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
@@ -73,6 +77,7 @@ def generate_clsag_simple(
     cout: crypto.Point,
     index: int,
     mg_buff: list[bytearray],
+    se_secret: tuple[bytes, bytes, bytes, "SecretResponse"] | None = None,
 ) -> list[bytes]:
     """
     CLSAG for RctType.Simple
@@ -105,7 +110,7 @@ def generate_clsag_simple(
     del pubs
     gc.collect()
 
-    return _generate_clsag(message, P, p, C_nonzero, z, cout, index, mg_buff)
+    return _generate_clsag(message, P, p, C_nonzero, z, cout, index, mg_buff, se_secret)
 
 
 def _generate_clsag(
@@ -117,11 +122,12 @@ def _generate_clsag(
     Cout: crypto.Point,
     index: int,
     mg_buff: list[bytearray],
+    se_secret: tuple[bytes, bytes, bytes, "SecretResponse"] | None = None,
 ) -> list[bytes]:
     sI = crypto.Point()  # sig.I
     sD = crypto.Point()  # sig.D
     sc1 = crypto.Scalar()  # sig.c1
-    a = crypto.random_scalar()
+    a = crypto.random_scalar() if se_secret is None else crypto.Scalar()
     H = crypto.Point()
     D = crypto.Point()
     Cout_bf = crypto_helpers.encodepoint(Cout)
@@ -131,7 +137,10 @@ def _generate_clsag(
     tmp_bf = bytearray(32)
 
     crypto.hash_to_point_into(H, P[index])
-    crypto.scalarmult_into(sI, H, p)  # I = p*H
+    if se_secret is None:
+        crypto.scalarmult_into(sI, H, p)  # I = p*H
+    else:
+        crypto.decodepoint_into(sI, se_secret[2])
     crypto.scalarmult_into(D, H, z)  # D = z*H
     crypto.sc_mul_into(tmp_sc, z, crypto_helpers.INV_EIGHT_SC)  # 1/8*z
     crypto.scalarmult_into(sD, H, tmp_sc)  # sig.D = 1/8*z*H
@@ -170,10 +179,14 @@ def _generate_clsag(
     c_to_hash.update(message)
 
     chasher = c_to_hash.copy()
-    crypto.scalarmult_base_into(tmp, a)
-    chasher.update(crypto.encodepoint_into(tmp_bf, tmp))  # aG
-    crypto.scalarmult_into(tmp, H, a)
-    chasher.update(crypto.encodepoint_into(tmp_bf, tmp))  # aH
+    if se_secret is None:
+        crypto.scalarmult_base_into(tmp, a)
+        chasher.update(crypto.encodepoint_into(tmp_bf, tmp))  # aG
+        crypto.scalarmult_into(tmp, H, a)
+        chasher.update(crypto.encodepoint_into(tmp_bf, tmp))  # aH
+    else:
+        chasher.update(se_secret[0])
+        chasher.update(se_secret[1])
     c = crypto_helpers.decodeint(chasher.digest())
     del (chasher, H)
 
@@ -224,10 +237,13 @@ def _generate_clsag(
             gc.collect()
 
     # Final scalar = a - c * (mu_P * p + mu_c * Z)
-    crypto.sc_mul_into(tmp_sc, mu_P, p)
-    crypto.sc_muladd_into(tmp_sc, mu_C, z, tmp_sc)
-    crypto.sc_mulsub_into(tmp_sc, c, tmp_sc, a)
-    crypto.encodeint_into(mg_buff[index + 1], tmp_sc)
+    if se_secret is None:
+        crypto.sc_mul_into(tmp_sc, mu_P, p)
+        crypto.sc_muladd_into(tmp_sc, mu_C, z, tmp_sc)
+        crypto.sc_mulsub_into(tmp_sc, c, tmp_sc, a)
+        crypto.encodeint_into(mg_buff[index + 1], tmp_sc)
+    else:
+        mg_buff[index + 1][:] = se_secret[3](c, mu_P, mu_C, z)
 
     if TYPE_CHECKING:
         assert list_of_type(mg_buff, bytes)

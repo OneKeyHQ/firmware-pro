@@ -20,6 +20,7 @@
 #include "py/objstr.h"
 #include "py/runtime.h"
 
+#include "memzero.h"
 #include "se_thd89.h"
 
 /// package: trezorcrypto.se_thd89
@@ -697,10 +698,10 @@ STATIC mp_obj_t mod_trezorcrypto_se_thd89_sign_message(mp_obj_t msg) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorcrypto_se_thd89_sign_message_obj,
                                  mod_trezorcrypto_se_thd89_sign_message);
 
-/// def derive_xmr(
-///     path: Sequence[int]
-///     digest: bytes,
-/// ) -> tuple[bytes, bytes]:
+/// def derive_xmr(path: Sequence[int]) -> tuple[bytes, bytes]:
+///     """
+///     Derive a Monero public key and private-key hash for path.
+///     """
 STATIC mp_obj_t mod_trezorcrypto_se_thd89_derive_xmr(mp_obj_t path) {
   // get path objects and length
   size_t plen = 0;
@@ -730,34 +731,8 @@ STATIC mp_obj_t mod_trezorcrypto_se_thd89_derive_xmr(mp_obj_t path) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorcrypto_se_thd89_derive_xmr_obj,
                                  mod_trezorcrypto_se_thd89_derive_xmr);
 
-/// def derive_xmr_privare(
-///     deriv: bytes
-///     index: int,
-/// ) -> bytes:
-///     """
-///     base + H_s(derivation || varint(output_index))
-///     """
-STATIC mp_obj_t mod_trezorcrypto_se_thd89_derive_xmr_private(mp_obj_t deriv,
-                                                             mp_obj_t index) {
-  mp_buffer_info_t pub_key = {0};
-  mp_get_buffer_raise(deriv, &pub_key, MP_BUFFER_READ);
-
-  uint32_t idx = mp_obj_get_int(index);
-
-  uint8_t out_pri[32];
-  if (!se_derive_xmr_private_key(pub_key.buf, idx, out_pri)) {
-    mp_raise_ValueError("Failed to derive private key");
-  }
-
-  return mp_obj_new_str_copy(&mp_type_bytes, (const uint8_t *)out_pri, 32);
-}
-
-STATIC MP_DEFINE_CONST_FUN_OBJ_2(
-    mod_trezorcrypto_se_thd89_derive_xmr_private_obj,
-    mod_trezorcrypto_se_thd89_derive_xmr_private);
-
 /// def xmr_get_tx_key(
-///     rand: bytes
+///     rand: bytes,
 ///     hash: bytes,
 /// ) -> bytes:
 ///     """
@@ -781,6 +756,122 @@ STATIC mp_obj_t mod_trezorcrypto_se_thd89_xmr_get_tx_key(mp_obj_t rand,
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_trezorcrypto_se_thd89_xmr_get_tx_key_obj,
                                  mod_trezorcrypto_se_thd89_xmr_get_tx_key);
+
+/// def xmr_generate_key_image(
+///     recv_deriv: bytes,
+///     real_idx: int,
+///     subaddr_sk: bytes,
+///     out_key: bytes,
+/// ) -> bytes:
+///     """Generates a key image without exporting the one-time spend key."""
+STATIC mp_obj_t mod_trezorcrypto_se_thd89_xmr_generate_key_image(
+    size_t n_args, const mp_obj_t *args) {
+  mp_buffer_info_t recv_deriv = {0};
+  mp_buffer_info_t subaddr_sk = {0};
+  mp_buffer_info_t out_key = {0};
+  uint8_t key_image[32] = {0};
+
+  mp_get_buffer_raise(args[0], &recv_deriv, MP_BUFFER_READ);
+  mp_get_buffer_raise(args[2], &subaddr_sk, MP_BUFFER_READ);
+  mp_get_buffer_raise(args[3], &out_key, MP_BUFFER_READ);
+  if (recv_deriv.len != 32 || subaddr_sk.len != 32 || out_key.len != 32) {
+    mp_raise_ValueError("Invalid XMR key data length");
+  }
+
+  uint32_t real_idx = trezor_obj_get_uint(args[1]);
+  if (se_xmr_generate_key_image(recv_deriv.buf, real_idx, subaddr_sk.buf,
+                                out_key.buf, key_image) != sectrue) {
+    mp_raise_ValueError("Failed to generate XMR key image");
+  }
+
+  mp_obj_t result = mp_obj_new_bytes(key_image, sizeof(key_image));
+  memzero(key_image, sizeof(key_image));
+  return result;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(
+    mod_trezorcrypto_se_thd89_xmr_generate_key_image_obj, 4, 4,
+    mod_trezorcrypto_se_thd89_xmr_generate_key_image);
+
+/// def xmr_secret_nonce_begin(
+///     recv_deriv: bytes,
+///     real_idx: int,
+///     subaddr_sk: bytes,
+///     out_key: bytes,
+/// ) -> tuple[bytes, bytes, bytes, int]:
+///     """Starts a one-time XMR secret-response session."""
+STATIC mp_obj_t mod_trezorcrypto_se_thd89_xmr_secret_nonce_begin(
+    size_t n_args, const mp_obj_t *args) {
+  mp_buffer_info_t recv_deriv = {0};
+  mp_buffer_info_t subaddr_sk = {0};
+  mp_buffer_info_t out_key = {0};
+  uint8_t response[97] = {0};
+
+  mp_get_buffer_raise(args[0], &recv_deriv, MP_BUFFER_READ);
+  mp_get_buffer_raise(args[2], &subaddr_sk, MP_BUFFER_READ);
+  mp_get_buffer_raise(args[3], &out_key, MP_BUFFER_READ);
+  if (recv_deriv.len != 32 || subaddr_sk.len != 32 || out_key.len != 32) {
+    mp_raise_ValueError("Invalid XMR key data length");
+  }
+
+  uint32_t real_idx = trezor_obj_get_uint(args[1]);
+  if (se_xmr_secret_nonce_begin(recv_deriv.buf, real_idx, subaddr_sk.buf,
+                                out_key.buf, response) != sectrue) {
+    mp_raise_ValueError("Failed to start XMR secret response");
+  }
+
+  mp_obj_tuple_t *result = MP_OBJ_TO_PTR(mp_obj_new_tuple(4, NULL));
+  result->items[0] = mp_obj_new_bytes(response, 32);
+  result->items[1] = mp_obj_new_bytes(response + 32, 32);
+  result->items[2] = mp_obj_new_bytes(response + 64, 32);
+  result->items[3] = MP_OBJ_NEW_SMALL_INT(response[96]);
+  memzero(response, sizeof(response));
+  return MP_OBJ_FROM_PTR(result);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(
+    mod_trezorcrypto_se_thd89_xmr_secret_nonce_begin_obj, 4, 4,
+    mod_trezorcrypto_se_thd89_xmr_secret_nonce_begin);
+
+/// def xmr_secret_response_finish(
+///     session_id: int,
+///     c: bytes,
+///     mu_p: bytes,
+///     mu_c: bytes,
+///     z: bytes,
+/// ) -> bytes:
+///     """Finishes a one-time XMR secret-response session."""
+STATIC mp_obj_t mod_trezorcrypto_se_thd89_xmr_secret_response_finish(
+    size_t n_args, const mp_obj_t *args) {
+  mp_buffer_info_t c = {0};
+  mp_buffer_info_t mu_p = {0};
+  mp_buffer_info_t mu_c = {0};
+  mp_buffer_info_t z = {0};
+  uint8_t response[32] = {0};
+
+  uint32_t session_id = trezor_obj_get_uint(args[0]);
+  if (session_id == 0 || session_id > 0xFF) {
+    mp_raise_ValueError("Invalid XMR session ID");
+  }
+
+  mp_get_buffer_raise(args[1], &c, MP_BUFFER_READ);
+  mp_get_buffer_raise(args[2], &mu_p, MP_BUFFER_READ);
+  mp_get_buffer_raise(args[3], &mu_c, MP_BUFFER_READ);
+  mp_get_buffer_raise(args[4], &z, MP_BUFFER_READ);
+  if (c.len != 32 || mu_p.len != 32 || mu_c.len != 32 || z.len != 32) {
+    mp_raise_ValueError("Invalid XMR scalar length");
+  }
+
+  if (se_xmr_secret_response_finish((uint8_t)session_id, c.buf, mu_p.buf,
+                                    mu_c.buf, z.buf, response) != sectrue) {
+    mp_raise_ValueError("Failed to finish XMR secret response");
+  }
+
+  mp_obj_t result = mp_obj_new_bytes(response, sizeof(response));
+  memzero(response, sizeof(response));
+  return result;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(
+    mod_trezorcrypto_se_thd89_xmr_secret_response_finish_obj, 5, 5,
+    mod_trezorcrypto_se_thd89_xmr_secret_response_finish);
 
 /// def fido_seed(
 ///     callback: Callable[[int, int], None] | None = None,
@@ -1326,10 +1417,14 @@ STATIC const mp_rom_map_elem_t mod_trezorcrypto_se_thd89_globals_table[] = {
      MP_ROM_PTR(&mod_trezorcrypto_se_thd89_sign_message_obj)},
     {MP_ROM_QSTR(MP_QSTR_derive_xmr),
      MP_ROM_PTR(&mod_trezorcrypto_se_thd89_derive_xmr_obj)},
-    {MP_ROM_QSTR(MP_QSTR_derive_xmr_private),
-     MP_ROM_PTR(&mod_trezorcrypto_se_thd89_derive_xmr_private_obj)},
     {MP_ROM_QSTR(MP_QSTR_xmr_get_tx_key),
      MP_ROM_PTR(&mod_trezorcrypto_se_thd89_xmr_get_tx_key_obj)},
+    {MP_ROM_QSTR(MP_QSTR_xmr_generate_key_image),
+     MP_ROM_PTR(&mod_trezorcrypto_se_thd89_xmr_generate_key_image_obj)},
+    {MP_ROM_QSTR(MP_QSTR_xmr_secret_nonce_begin),
+     MP_ROM_PTR(&mod_trezorcrypto_se_thd89_xmr_secret_nonce_begin_obj)},
+    {MP_ROM_QSTR(MP_QSTR_xmr_secret_response_finish),
+     MP_ROM_PTR(&mod_trezorcrypto_se_thd89_xmr_secret_response_finish_obj)},
     {MP_ROM_QSTR(MP_QSTR_fido_seed),
      MP_ROM_PTR(&mod_trezorcrypto_se_thd89_fido_seed_obj)},
     {MP_ROM_QSTR(MP_QSTR_fido_u2f_register),
