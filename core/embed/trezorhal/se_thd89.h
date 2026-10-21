@@ -256,5 +256,9 @@ secbool se_set_fido2_resident_credentials(uint32_t index, const uint8_t *src,
 secbool se_delete_fido2_resident_credentials(uint32_t index);
 secbool se_delete_all_fido2_credentials(void);
 
-secbool session_generate_seed_percent(uint8_t *percent);
+secbool se_query_progress_percent(uint8_t *percent);
+
+secbool se_get_component_version(uint8_t slot, uint32_t *version);
+secbool se_set_component_version(uint8_t slot, uint32_t version);
+
 #endif

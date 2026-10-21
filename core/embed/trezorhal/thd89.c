@@ -407,14 +407,16 @@ HAL_StatusTypeDef i2c_master_send(I2C_HandleTypeDef *hi2c, uint16_t DevAddress,
 
 #define I2C_RECV_BUFFER_TOO_SMALL (0x80)
 #define I2C_RECV_TIMEOUT (5 * 1000)  // 5s
+#define I2C_RECV_MAX_FRAME_LEN (2u + 1024u + 64u)
 
 int i2c_master_recive(I2C_HandleTypeDef *hi2c, uint16_t DevAddress,
                       uint8_t *pData, uint16_t *Size, uint32_t Timeout) {
   // uint32_t tickstart, tickstart1;
   uint8_t data[4];
-  uint16_t temp_len, data_len;
+  uint16_t frame_len, temp_len, data_len;
   uint8_t *data_ptr = pData;
   uint8_t xor = 0x00;
+  bool buffer_too_small = false;
   sw1 = sw2 = 0;
 
   if (hi2c->State == HAL_I2C_STATE_READY) {
@@ -468,12 +470,19 @@ int i2c_master_recive(I2C_HandleTypeDef *hi2c, uint16_t DevAddress,
       }
       data[1] = (uint8_t)hi2c->Instance->RXDR;
 
-      temp_len = (data[0] << 8) + data[1] - 2;
+      frame_len = ((uint16_t)data[0] << 8) | data[1];
+      if (frame_len < 2u || frame_len > I2C_RECV_MAX_FRAME_LEN) {
+        *Size = 0;
+        SET_BIT(hi2c->Instance->CR2, I2C_CR2_STOP);
+        hi2c->State = HAL_I2C_STATE_READY;
+        hi2c->Mode = HAL_I2C_MODE_NONE;
+        __HAL_UNLOCK(hi2c);
+        return HAL_ERROR;
+      }
+      temp_len = frame_len - 2u;
       data_len = temp_len;
 
-      if (data_len > *Size) {
-        return I2C_RECV_BUFFER_TOO_SMALL;
-      }
+      buffer_too_small = data_len > *Size;
 
       xor = xor_check(0, data, 2);
       while (temp_len > 0) {
@@ -485,7 +494,11 @@ int i2c_master_recive(I2C_HandleTypeDef *hi2c, uint16_t DevAddress,
           if (I2C_WaitOnRXNEFlagUntilTimeout(hi2c, Timeout, 0) != HAL_OK) {
             return HAL_ERROR;
           }
-          *data_ptr++ = (uint8_t)hi2c->Instance->RXDR;
+          uint8_t received = (uint8_t)hi2c->Instance->RXDR;
+          xor ^= received;
+          if (!buffer_too_small) {
+            *data_ptr++ = received;
+          }
         }
         temp_len -= data_len_tmp;
       }
@@ -521,7 +534,6 @@ int i2c_master_recive(I2C_HandleTypeDef *hi2c, uint16_t DevAddress,
 
     /* Process Unlocked */
     __HAL_UNLOCK(hi2c);
-    xor = xor_check(xor, pData, data_len);
     xor = xor_check(xor, data, 2);
     if (xor != data[2]) {
       *Size = 0;
@@ -532,14 +544,15 @@ int i2c_master_recive(I2C_HandleTypeDef *hi2c, uint16_t DevAddress,
 
     *Size = data_len;
 
-    return HAL_OK;
+    return buffer_too_small ? I2C_RECV_BUFFER_TOO_SMALL : HAL_OK;
   } else {
     return HAL_BUSY;
   }
 }
 
-static secbool _thd89_transmit_ex(uint8_t addr, uint8_t *cmd, uint16_t len,
-                                  uint8_t *resp, uint16_t *resp_len) {
+static secbool _thd89_transmit_raw_ex(uint8_t addr, uint8_t *cmd, uint16_t len,
+                                      uint8_t *resp, uint16_t *resp_len,
+                                      uint16_t *sw1sw2) {
   int ret = 0;
   char err_info[64] = {0};
   uint32_t irq = disable_irq();
@@ -569,25 +582,48 @@ static secbool _thd89_transmit_ex(uint8_t addr, uint8_t *cmd, uint16_t len,
     }
     return secfalse;
   }
-  if ((0x90 != sw1) || (0x00 != sw2)) {
-    return secfalse;
+  if (sw1sw2 != NULL) {
+    *sw1sw2 = ((uint16_t)sw1 << 8) | sw2;
   }
-
   return sectrue;
 }
 
 int thd89_irq_nest = 0;
 
-secbool thd89_transmit_ex(uint8_t addr, uint8_t *cmd, uint16_t len,
-                          uint8_t *resp, uint16_t *resp_len) {
+secbool thd89_transmit_raw_ex(uint8_t addr, uint8_t *cmd, uint16_t len,
+                              uint8_t *resp, uint16_t *resp_len,
+                              uint16_t *sw1sw2) {
+  uint16_t empty_resp_len = 0;
+  uint16_t *io_resp_len = resp_len;
+
+  if (resp == NULL) {
+    io_resp_len = &empty_resp_len;
+  } else if (resp_len == NULL) {
+    return secfalse;
+  }
+
   uint32_t irq = disable_irq();
   thd89_irq_nest++;
-  secbool result = _thd89_transmit_ex(addr, cmd, len, resp, resp_len);
+  secbool result =
+      _thd89_transmit_raw_ex(addr, cmd, len, resp, io_resp_len, sw1sw2);
   thd89_irq_nest--;
   if (thd89_irq_nest == 0) {
     enable_irq(irq);
   }
+  if (resp == NULL && resp_len != NULL) {
+    *resp_len = empty_resp_len;
+  }
   return result;
+}
+
+secbool thd89_transmit_ex(uint8_t addr, uint8_t *cmd, uint16_t len,
+                          uint8_t *resp, uint16_t *resp_len) {
+  uint16_t sw1sw2 = 0;
+  if (thd89_transmit_raw_ex(addr, cmd, len, resp, resp_len, &sw1sw2) !=
+      sectrue) {
+    return secfalse;
+  }
+  return sectrue * (sw1sw2 == 0x9000);
 }
 
 secbool thd89_transmit(uint8_t *cmd, uint16_t len, uint8_t *resp,

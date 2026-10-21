@@ -461,7 +461,7 @@ STATIC mp_obj_t mod_trezorutils_se_boot_build_id(mp_obj_t se_addr) {
   return mp_obj_new_str_copy(&mp_type_str, (const uint8_t *)"EMULATOR", 8);
 #else
   int addr = mp_obj_get_int(se_addr);
-  char str[8] = {0};
+  char str[16] = {0};
   se_get_boot_build_id(addr, str, sizeof(str));
 
   return mp_obj_new_str_copy(&mp_type_str, (const uint8_t *)str, strlen(str));
