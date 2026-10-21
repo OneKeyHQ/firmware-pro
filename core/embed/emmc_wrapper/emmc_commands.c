@@ -1,5 +1,6 @@
 #include "emmc_commands.h"
 #include "emmc_commands_macros.h"
+#include "emmc_ui_progress.h"
 
 #include "bootui.h"
 #include "fw_keys.h"
@@ -10,28 +11,29 @@
 // SDRAM BUFFER
 bootloader_buffer* bl_buffer = (bootloader_buffer*)FMC_SDRAM_BOOLOADER_BUFFER_ADDRESS;
 
+static emmc_ui_progress_state ui_progress_state = EMMC_UI_PROGRESS_STATE_INIT;
+
 static int ui_progress_bar_handle_update(int percentage, const char* title)
 {
-    static uint32_t ui_percentage_last = 0xff;
     char* progress_title = (char*)((title != NULL) ? title : "Transferring Data");
+    emmc_ui_progress_action action =
+        emmc_ui_progress_next_action(&ui_progress_state, true, percentage, ui_progress_bar_is_visible());
 
-    if ( (percentage < 0) || (percentage > 100) )
+    if ( action == EMMC_UI_PROGRESS_ACTION_INVALID )
     {
         return -1;
     }
 
-    if ( ui_percentage_last == (uint32_t)percentage )
+    if ( action == EMMC_UI_PROGRESS_ACTION_NONE )
     {
         return 0;
     }
 
-    ui_percentage_last = (uint32_t)percentage;
-
-    if ( percentage < 100 )
+    if ( action == EMMC_UI_PROGRESS_ACTION_UPDATE )
     {
         ui_screen_progress_bar_update(progress_title, NULL, percentage);
     }
-    else
+    else if ( action == EMMC_UI_PROGRESS_ACTION_COMPLETE )
     {
         ui_screen_progress_bar_update(progress_title, NULL, percentage);
         ui_fadeout();
@@ -44,9 +46,14 @@ static int ui_progress_bar_handle_update(int percentage, const char* title)
 
 static void ui_progress_bar_handle_clear(void)
 {
-    ui_progress_bar_visible_clear();
-    display_clear();
-    ui_bootloader_first(NULL);
+    emmc_ui_progress_action action =
+        emmc_ui_progress_next_action(&ui_progress_state, false, 0, ui_progress_bar_is_visible());
+
+    if ( action == EMMC_UI_PROGRESS_ACTION_CLEAR )
+    {
+        display_clear();
+        ui_bootloader_first(NULL);
+    }
 }
 
 static void packet_generate_first(

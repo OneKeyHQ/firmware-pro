@@ -366,6 +366,7 @@ static bool ui_progress_bar_visible = false;
 void ui_screen_progress_bar_init(char* title, char* notes, int progress) {
   ui_statusbar_update();
   ui_logo_onekey();
+  ui_progress_bar_visible = true;
   if (title != NULL) {
     display_text_center(DISPLAY_RESX / 2, TITLE_OFFSET_Y, title, -1,
                         FONT_PJKS_BOLD_38, COLOR_BL_FG, COLOR_BL_BG);
@@ -407,6 +408,8 @@ void ui_screen_progress_bar_update(char* title, char* notes, int progress) {
     display_progress(notes ? notes : "Keep connected.", 0);
   }
 }
+
+bool ui_progress_bar_is_visible(void) { return ui_progress_bar_visible; }
 
 void ui_progress_bar_visible_clear(void) { ui_progress_bar_visible = false; }
 
@@ -542,6 +545,7 @@ void ui_screen_fail(void) {
 void ui_fadein(void) { display_fade(0, BACKLIGHT_NORMAL, 200); }
 
 void ui_fadeout(void) {
+  ui_progress_bar_visible_clear();
   display_fade(BACKLIGHT_NORMAL, 0, 200);
   display_clear();
 }
