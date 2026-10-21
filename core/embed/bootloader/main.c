@@ -60,10 +60,6 @@
 
 #define MSG_NAME_TO_ID(x) MessageType_MessageType_##x
 
-#define REQUIRED_SE_VERSION_MAJOR 1
-#define REQUIRED_SE_VERSION_MINOR 3
-#define REQUIRED_SE_VERSION_PATCH 2
-
 #if defined(STM32H747xx)
 #include "stm32h7xx_hal.h"
 #endif
@@ -647,6 +643,17 @@ static bool enter_boot_forced(void) {
   return *BOOT_TARGET_FLAG_ADDR == BOOT_TARGET_BOOTLOADER;
 }
 
+static secbool refresh_supported_se(uint8_t* se_mode) {
+  *se_mode = se_get_state();
+  if (*se_mode != 0) {
+    return secfalse;
+  }
+
+  return se_all_versions_at_least(SE_MINIMUM_VERSION_MAJOR,
+                                  SE_MINIMUM_VERSION_MINOR,
+                                  SE_MINIMUM_VERSION_PATCH);
+}
+
 static BOOT_TARGET decide_boot_target(vendor_header* const vhdr,
                                       image_header* const hdr,
                                       secbool* vhdr_valid, secbool* hdr_valid,
@@ -759,25 +766,12 @@ int main(void) {
   thd89_reset();
   thd89_init();
 
-  uint8_t se_mode = se_get_state();
-  secbool se_version_supported = sectrue;
-
-  if (se_mode == 0) {
-    se_version_supported = se_all_versions_at_least(
-        REQUIRED_SE_VERSION_MAJOR, REQUIRED_SE_VERSION_MINOR,
-        REQUIRED_SE_VERSION_PATCH);
-    if (se_version_supported == sectrue) {
-      device_para_init();
-    }
-  }
-
-  if ((!device_serial_set() || !se_has_cerrificate()) && se_mode == 0) {
-    display_clear();
-    device_set_factory_mode(true);
-    ui_bootloader_factory();
-    if (bootloader_usb_loop_factory(NULL, NULL) != sectrue) {
-      return 1;
-    }
+  uint8_t se_mode;
+  bool device_parameters_initialized = false;
+  secbool se_version_supported = refresh_supported_se(&se_mode);
+  if (se_version_supported == sectrue) {
+    device_para_init();
+    device_parameters_initialized = true;
   }
 
 #if !PRODUCTION
@@ -798,10 +792,6 @@ int main(void) {
   // }
 
   // device_test(true);
-
-  device_backup_otp(false);
-  // device_restore_otp();
-
 #endif
 
 #if PRODUCTION
@@ -815,6 +805,31 @@ int main(void) {
     check_firmware_from_file(USB_IFACE_NULL);
   }
 
+  // The file update may replace the SE application without rebooting. Refresh
+  // its state and versions before selecting the boot UI or factory flow.
+  se_version_supported = refresh_supported_se(&se_mode);
+  if (se_version_supported == sectrue && !device_parameters_initialized) {
+    device_para_init();
+    device_parameters_initialized = true;
+  }
+
+  if (se_mode == 0 && se_version_supported == sectrue &&
+      (!device_serial_set() || !se_has_cerrificate())) {
+    display_clear();
+    device_set_factory_mode(true);
+    ui_bootloader_factory();
+    if (bootloader_usb_loop_factory(NULL, NULL) != sectrue) {
+      return 1;
+    }
+  }
+
+#if !PRODUCTION
+
+  device_backup_otp(false);
+  // device_restore_otp();
+
+#endif
+
   vendor_header vhdr;
   image_header hdr;
   secbool vhdr_valid = secfalse;
@@ -823,8 +838,7 @@ int main(void) {
 
   BOOT_TARGET boot_target =
       decide_boot_target(&vhdr, &hdr, &vhdr_valid, &hdr_valid, &code_valid);
-  if (boot_target == BOOT_TARGET_NORMAL &&
-      se_version_supported != sectrue) {
+  if (boot_target == BOOT_TARGET_NORMAL && se_version_supported != sectrue) {
     boot_target = BOOT_TARGET_BOOTLOADER;
   }
   // boot_target = BOOT_TARGET_BOOTLOADER;

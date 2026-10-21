@@ -87,8 +87,9 @@ static void __attribute__((noreturn)) show_se_version_required(void) {
                 sizeof(toi_icon_warning) - 12);
   display_text(8, 140, "SE firmware update required.", -1, FONT_NORMAL,
                COLOR_WHITE, COLOR_BLACK);
-  display_text(8, 720, "Version 1.3.2 or later is required.", -1,
-               FONT_NORMAL, RGB16(0x69, 0x69, 0x69), COLOR_BLACK);
+  display_text(8, 720,
+               "Version " SE_MINIMUM_VERSION_STRING " or later is required.",
+               -1, FONT_NORMAL, RGB16(0x69, 0x69, 0x69), COLOR_BLACK);
   display_text(8, 784, "Tap to enter Update Mode.", -1, FONT_NORMAL,
                COLOR_WHITE, COLOR_BLACK);
   while (!touch_click()) {
