@@ -79,6 +79,23 @@
 // from util.s
 extern void shutdown_privileged(void);
 
+static void __attribute__((noreturn)) show_se_version_required(void) {
+  display_orientation(0);
+  display_clear();
+  display_backlight(255);
+  display_image(9, 50, 46, 40, toi_icon_warning + 12,
+                sizeof(toi_icon_warning) - 12);
+  display_text(8, 140, "SE firmware update required.", -1, FONT_NORMAL,
+               COLOR_WHITE, COLOR_BLACK);
+  display_text(8, 720, "Version 1.3.0 or later is required.", -1,
+               FONT_NORMAL, RGB16(0x69, 0x69, 0x69), COLOR_BLACK);
+  display_text(8, 784, "Tap to enter Update Mode.", -1, FONT_NORMAL,
+               COLOR_WHITE, COLOR_BLACK);
+  while (!touch_click()) {
+  }
+  reboot_to_bootloader();
+}
+
 static void copyflash2sdram(void) {
   extern int _flash2_load_addr, _flash2_start, _flash2_end;
   volatile uint32_t *dst = (volatile uint32_t *)&_flash2_start;
@@ -150,6 +167,11 @@ int main(void) {
 
   motor_init();
   thd89_init();
+  if (se_all_versions_at_least(SE_MINIMUM_VERSION_MAJOR,
+                               SE_MINIMUM_VERSION_MINOR,
+                               SE_MINIMUM_VERSION_PATCH) != sectrue) {
+    show_se_version_required();
+  }
   camera_init();
   fingerprint_init();
   nfc_init();

@@ -15,8 +15,8 @@
 
 // Minimum SE version required for firmware upgrade
 #define SE_MINIMUM_VERSION_MAJOR 1
-#define SE_MINIMUM_VERSION_MINOR 1
-#define SE_MINIMUM_VERSION_PATCH 7
+#define SE_MINIMUM_VERSION_MINOR 3
+#define SE_MINIMUM_VERSION_PATCH 0
 #define SE_MINIMUM_VERSION_UINT32                               \
   (SE_MINIMUM_VERSION_MAJOR | (SE_MINIMUM_VERSION_MINOR << 8) | \
    (SE_MINIMUM_VERSION_PATCH << 16) | (0 << 24))

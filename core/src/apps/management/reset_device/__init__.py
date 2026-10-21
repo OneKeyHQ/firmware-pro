@@ -91,7 +91,6 @@ async def reset_device(
     storage_device.store_mnemonic_secret(
         secret,  # for SLIP-39, this is the EMS
         backup_type,
-        needs_backup=not perform_backup,
         no_backup=bool(msg.no_backup),
         identifier=storage_device.get_slip39_identifier(),
         iteration_exponent=storage_device.get_slip39_iteration_exponent(),

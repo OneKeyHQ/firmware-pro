@@ -1046,6 +1046,21 @@ void ui_bootloader_first(const image_header* const hdr) {
   }
 }
 
+void ui_bootloader_se_version_required(const image_header* const hdr) {
+  ui_bootloader_first(hdr);
+  ui_logo_warning();
+  display_bar(0, SUBTITLE_OFFSET_Y - 10, DISPLAY_RESX, 150, COLOR_BL_BG);
+  display_text_center(DISPLAY_RESX / 2, SUBTITLE_OFFSET_Y,
+                      "SE firmware update required", -1, FONT_NORMAL,
+                      COLOR_BL_FG, COLOR_BL_BG);
+  display_text_center(DISPLAY_RESX / 2, SUBTITLE_OFFSET_Y + 36,
+                      "Version 1.3.0 or later is required", -1, FONT_NORMAL,
+                      COLOR_BL_SUBTITLE, COLOR_BL_BG);
+  display_text_center(DISPLAY_RESX / 2, SUBTITLE_OFFSET_Y + 72,
+                      "Install an SE firmware update", -1, FONT_NORMAL,
+                      COLOR_BL_SUBTITLE, COLOR_BL_BG);
+}
+
 void ui_bootloader_main_menu(const image_header* const hdr) {
   ui_bootloader_page_current = 5;
 

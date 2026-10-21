@@ -258,7 +258,6 @@ async def _finish_recovery(
     storage_device.store_mnemonic_secret(
         secret,
         backup_type,
-        needs_backup=False,
         no_backup=False,
         identifier=identifier,
         iteration_exponent=exponent,

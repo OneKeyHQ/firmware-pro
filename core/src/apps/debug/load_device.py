@@ -38,7 +38,6 @@ async def load_device(ctx: wire.Context, msg: LoadDevice) -> Success:
     storage.device.store_mnemonic_secret(
         secret,
         backup_type,
-        needs_backup=msg.needs_backup is True,
         no_backup=msg.no_backup is True,
         identifier=identifier,
         iteration_exponent=iteration_exponent,

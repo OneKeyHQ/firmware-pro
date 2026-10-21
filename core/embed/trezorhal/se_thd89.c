@@ -18,6 +18,7 @@
 #include "thd89.h"
 
 #define PIN_MAX_LEN (50)
+#define MNEMONIC_EXPORT_PIN_MIN_LEN (4)
 
 #define CURVE_NIST256P1 (0x00)
 #define CURVE_SECP256K1 (0x01)
@@ -86,8 +87,15 @@ typedef enum {
   SE_SECURE_RESPONSE_INVALID,
 } se_secure_response_result_t;
 
+typedef enum {
+  SE_FATAL_STATUS_NONE = 0,
+  SE_FATAL_STATUS_SECURITY_ALERT,
+  SE_FATAL_STATUS_CONFIGURATION_ERROR,
+} se_fatal_status_t;
+
 static se_long_operation_t se_pending_operation = SE_LONG_OPERATION_NONE;
 static se_long_operation_t se_fp_pending_operation = SE_LONG_OPERATION_NONE;
+static se_fatal_status_t se_pending_fatal_status = SE_FATAL_STATUS_NONE;
 
 static secbool se_query_progress_percent_ex(uint8_t addr, uint8_t *percent);
 
@@ -126,6 +134,49 @@ static void se_invalidate_session(uint8_t addr) {
     se_session_init = false;
     se_pending_operation = SE_LONG_OPERATION_NONE;
   }
+}
+
+static void se_record_fatal_status(uint16_t sw1sw2) {
+  se_fatal_status_t status = SE_FATAL_STATUS_NONE;
+  if (sw1sw2 == 0x6601) {
+    status = SE_FATAL_STATUS_SECURITY_ALERT;
+  } else if (sw1sw2 == 0x6f01) {
+    status = SE_FATAL_STATUS_CONFIGURATION_ERROR;
+  }
+  if (status == SE_FATAL_STATUS_NONE) {
+    return;
+  }
+  se_invalidate_session(THD89_MASTER_ADDRESS);
+  se_invalidate_session(THD89_FINGER_ADDRESS);
+  if (se_pending_fatal_status == SE_FATAL_STATUS_NONE) {
+    se_pending_fatal_status = status;
+  }
+}
+
+static void se_halt_for_pending_fatal_status(void) {
+  se_fatal_status_t status = se_pending_fatal_status;
+  if (status == SE_FATAL_STATUS_NONE) {
+    return;
+  }
+
+  se_pending_fatal_status = SE_FATAL_STATUS_NONE;
+  memzero(se_send_buffer, sizeof(se_send_buffer));
+  memzero(se_recv_buffer, sizeof(se_recv_buffer));
+  se_recv_len = 0;
+  pin_result_type = PIN_FAILED;
+  pin_passphrase_ret = PIN_FAILED;
+
+  if (status == SE_FATAL_STATUS_SECURITY_ALERT) {
+    error_shutdown("Security alert", "Secure element authentication", "failed.",
+                   "Please restart.");
+  }
+  error_shutdown("SE configuration error", "Secure element configuration",
+                 "failed.", "Please restart.");
+}
+
+void se_handle_status(uint16_t sw1sw2) {
+  se_record_fatal_status(sw1sw2);
+  se_halt_for_pending_fatal_status();
 }
 
 static secbool se_session_is_initialized(uint8_t addr,
@@ -334,6 +385,8 @@ static se_secure_response_result_t se_transmit_mac_result_ex(
     goto cleanup;
   }
 
+  se_record_fatal_status(sw1sw2);
+
   if (sw1sw2 != 0x9000) {
     result = SE_SECURE_RESPONSE_AUTHENTICATED_ERROR;
     goto cleanup;
@@ -382,6 +435,9 @@ cleanup:
   memzero(se_send_buffer, sizeof(se_send_buffer));
   memzero(se_recv_buffer, sizeof(se_recv_buffer));
   se_recv_len = 0;
+  if (thd89_irq_nest == 0) {
+    se_halt_for_pending_fatal_status();
+  }
   return result;
 }
 
@@ -404,6 +460,7 @@ secbool se_transmit_mac(uint8_t ins, uint8_t p1, uint8_t p2, uint8_t *data,
   if (thd89_irq_nest == 0) {
     enable_irq(irq);
   }
+  se_halt_for_pending_fatal_status();
   return result;
 }
 
@@ -419,6 +476,7 @@ secbool se_fp_transmit_mac(uint8_t ins, uint8_t p1, uint8_t p2, uint8_t *data,
   if (thd89_irq_nest == 0) {
     enable_irq(irq);
   }
+  se_halt_for_pending_fatal_status();
   return result;
 }
 
@@ -480,6 +538,7 @@ secbool se_random_encrypted_ex(uint8_t addr, uint8_t *session_key,
     se_invalidate_session(addr);
     goto cleanup;
   }
+  se_record_fatal_status(sw1sw2);
   if (sw1sw2 != 0x9000) {
     goto cleanup;
   }
@@ -519,6 +578,9 @@ cleanup:
   memzero(mac, sizeof(mac));
   memzero(transaction, sizeof(transaction));
   memzero(se_recv_buffer, sizeof(se_recv_buffer));
+  if (thd89_irq_nest == 0) {
+    se_halt_for_pending_fatal_status();
+  }
   return ret;
 }
 
@@ -560,6 +622,7 @@ static secbool se_get_session_random_ex(uint8_t addr, uint8_t se_random[16]) {
                             &sw1sw2) != sectrue) {
     return secfalse;
   }
+  se_handle_status(sw1sw2);
   return sectrue * (sw1sw2 == 0x9000 && recv_len == 16);
 }
 
@@ -624,8 +687,11 @@ static secbool se_sync_session_key_ex(uint8_t addr, uint8_t *session_key,
   memcpy(sync_cmd + 5, request_data, sizeof(request_data));
 
   if (thd89_transmit_raw_ex(addr, sync_cmd, sizeof(sync_cmd), confirmation,
-                            &recv_len, &sw1sw2) != sectrue ||
-      sw1sw2 != 0x9000 || recv_len != sizeof(confirmation)) {
+                            &recv_len, &sw1sw2) != sectrue) {
+    goto cleanup;
+  }
+  se_handle_status(sw1sw2);
+  if (sw1sw2 != 0x9000 || recv_len != sizeof(confirmation)) {
     goto cleanup;
   }
 
@@ -860,6 +926,85 @@ static int _se_get_ver_info(uint8_t addr, uint8_t cmd, uint8_t *out,
 
 int se_get_version(uint8_t addr, char *ver, uint16_t in_len) {
   return _se_get_ver_info(addr, 0x00, (uint8_t *)ver, in_len);
+}
+
+static secbool se_parse_version_component(const char **cursor,
+                                          uint8_t *component) {
+  uint16_t value = 0;
+  bool has_digit = false;
+
+  while (**cursor >= '0' && **cursor <= '9') {
+    value = value * 10U + (uint8_t)(**cursor - '0');
+    if (value > UINT8_MAX) {
+      return secfalse;
+    }
+    has_digit = true;
+    (*cursor)++;
+  }
+  if (!has_digit) {
+    return secfalse;
+  }
+  *component = (uint8_t)value;
+  return sectrue;
+}
+
+static secbool se_version_is_at_least(const char *version,
+                                      uint8_t required_major,
+                                      uint8_t required_minor,
+                                      uint8_t required_patch) {
+  uint8_t components[4] = {0};
+  const char *cursor = version;
+
+  if (cursor == NULL) {
+    return secfalse;
+  }
+  for (uint8_t index = 0; index < 4; index++) {
+    if (se_parse_version_component(&cursor, &components[index]) != sectrue) {
+      return secfalse;
+    }
+    if (*cursor == '\0') {
+      if (index < 2) {
+        return secfalse;
+      }
+      break;
+    }
+    if (*cursor != '.' || index == 3) {
+      return secfalse;
+    }
+    cursor++;
+  }
+  if (components[0] != required_major) {
+    return sectrue * (components[0] > required_major);
+  }
+  if (components[1] != required_minor) {
+    return sectrue * (components[1] > required_minor);
+  }
+  return sectrue * (components[2] >= required_patch);
+}
+
+secbool se_all_versions_at_least(uint8_t required_major, uint8_t required_minor,
+                                 uint8_t required_patch) {
+  static const uint8_t addresses[] = {
+      THD89_1ST_ADDRESS,
+      THD89_2ND_ADDRESS,
+      THD89_3RD_ADDRESS,
+      THD89_4TH_ADDRESS,
+  };
+
+  for (size_t i = 0; i < sizeof(addresses); i++) {
+    char version[16] = {0};
+    int version_len =
+        se_get_version(addresses[i], version, sizeof(version) - 1U);
+    if (version_len <= 0 || version_len >= (int)sizeof(version)) {
+      return secfalse;
+    }
+    version[version_len] = '\0';
+    if (se_version_is_at_least(version, required_major, required_minor,
+                               required_patch) != sectrue) {
+      return secfalse;
+    }
+  }
+  return sectrue;
 }
 
 int se_get_build_id(uint8_t addr, char *build_id, uint16_t in_len) {
@@ -1927,33 +2072,60 @@ secbool se_containsMnemonic(const char *mnemonic) {
   return sectrue * (verify == 0x55);
 }
 
-secbool se_exportMnemonic(char *mnemonic, uint16_t dest_size) {
-  uint16_t len = dest_size;
+secbool se_exportMnemonic(const uint8_t *pin, uint16_t pin_len, char *mnemonic,
+                          uint16_t dest_size) {
+  uint8_t request[1 + PIN_MAX_LEN] = {0};
+  uint16_t response_len = dest_size > 0 ? dest_size - 1U : 0;
 
-  if (!se_transmit_mac(0xE2, 0x00, 0x02, NULL, 0, (uint8_t *)mnemonic, &len)) {
+  if (mnemonic == NULL || dest_size == 0 || pin == NULL ||
+      pin_len < MNEMONIC_EXPORT_PIN_MIN_LEN || pin_len > PIN_MAX_LEN) {
     return secfalse;
   }
-  mnemonic[len] = 0;
+  request[0] = (uint8_t)pin_len;
+  if (pin_len != 0) {
+    memcpy(&request[1], pin, pin_len);
+  }
+  if (!se_transmit_mac(0xE2, 0x00, 0x02, request, pin_len + 1U,
+                       (uint8_t *)mnemonic, &response_len) ||
+      response_len >= dest_size) {
+    memzero(request, sizeof(request));
+    memzero(mnemonic, dest_size);
+    return secfalse;
+  }
+  mnemonic[response_len] = '\0';
+  memzero(request, sizeof(request));
   return sectrue;
 }
 
-secbool se_set_needs_backup(bool needs_backup) {
-  if (!se_transmit_mac(0xE2, 0x00, 0x03, (uint8_t *)&needs_backup, 1, NULL,
-                       NULL)) {
+secbool se_set_mnemonic_export_enabled(bool enabled, const uint8_t *pin,
+                                       uint16_t pin_len) {
+  uint8_t request[2 + PIN_MAX_LEN] = {enabled ? 0x55 : 0x00, (uint8_t)pin_len};
+
+  if (pin == NULL || pin_len < MNEMONIC_EXPORT_PIN_MIN_LEN ||
+      pin_len > PIN_MAX_LEN) {
     return secfalse;
   }
-
+  if (pin_len != 0) {
+    memcpy(&request[2], pin, pin_len);
+  }
+  if (!se_transmit_mac(0xE2, 0x00, 0x03, request, pin_len + 2U, NULL, NULL)) {
+    memzero(request, sizeof(request));
+    return secfalse;
+  }
+  memzero(request, sizeof(request));
   return sectrue;
 }
 
-secbool se_get_needs_backup(bool *needs_backup) {
-  uint16_t len = 1;
-  uint8_t needs_backup_buf = 0xff;
-  if (!se_transmit_mac(0xE2, 0x00, 0x04, NULL, 0, &needs_backup_buf, &len)) {
+secbool se_get_mnemonic_export_enabled(bool *enabled) {
+  uint8_t response = 0;
+  uint16_t response_len = sizeof(response);
+
+  if (enabled == NULL ||
+      !se_transmit_mac(0xE2, 0x00, 0x04, NULL, 0, &response, &response_len) ||
+      response_len != 1 || (response != 0x00 && response != 0x55)) {
     return secfalse;
   }
-  *needs_backup = needs_backup_buf == 0 ? false : true;
-
+  *enabled = response == 0x55;
   return sectrue;
 }
 
@@ -2192,8 +2364,12 @@ static secbool se_query_progress_percent_ex(uint8_t addr, uint8_t *percent) {
   }
 
   if (thd89_transmit_raw_ex(addr, cmd, sizeof(cmd), NULL, &recv_len, &sw1sw2) !=
-          sectrue ||
-      recv_len != 0) {
+      sectrue) {
+    *pending_operation = SE_LONG_OPERATION_NONE;
+    return secfalse;
+  }
+  se_handle_status(sw1sw2);
+  if (recv_len != 0) {
     *pending_operation = SE_LONG_OPERATION_NONE;
     return secfalse;
   }
@@ -2899,6 +3075,100 @@ secbool se_fido_att_sign_digest(const uint8_t *hash, uint8_t *sig) {
     return secfalse;
   }
   memcpy(sig, resp, resp_len);
+  return sectrue;
+}
+
+secbool se_fido_credential_encrypt(const uint8_t rp_id_hash[32],
+                                   const uint8_t *plaintext,
+                                   uint16_t plaintext_len,
+                                   uint8_t *credential_id,
+                                   uint16_t *credential_id_len) {
+  uint16_t resp_len = SE_FIDO_CREDENTIAL_ID_MAX_LEN;
+
+  if (rp_id_hash == NULL || plaintext == NULL || plaintext_len == 0 ||
+      plaintext_len > SE_FIDO_CREDENTIAL_PLAINTEXT_MAX_LEN ||
+      credential_id == NULL || credential_id_len == NULL) {
+    return secfalse;
+  }
+  memcpy(APDU_DATA, rp_id_hash, 32);
+  memcpy(APDU_DATA + 32, plaintext, plaintext_len);
+  if (!se_transmit_mac(SE_INS_FIDO, 0x00, SE_FIDO_SLIP21_CREDENTIAL_ENCRYPT,
+                       APDU_DATA, plaintext_len + 32U, credential_id,
+                       &resp_len) ||
+      resp_len != plaintext_len + 32U) {
+    return secfalse;
+  }
+  *credential_id_len = resp_len;
+  return sectrue;
+}
+
+secbool se_fido_credential_peek(const uint8_t *credential_id,
+                                uint16_t credential_id_len, uint8_t *plaintext,
+                                uint16_t *plaintext_len) {
+  uint16_t resp_len = SE_FIDO_CREDENTIAL_PLAINTEXT_MAX_LEN;
+
+  if (credential_id == NULL ||
+      credential_id_len < SE_FIDO_CREDENTIAL_ID_MIN_LEN ||
+      credential_id_len > SE_FIDO_CREDENTIAL_ID_MAX_LEN || plaintext == NULL ||
+      plaintext_len == NULL) {
+    return secfalse;
+  }
+  if (!se_transmit_mac(SE_INS_FIDO, 0x00, SE_FIDO_SLIP21_CREDENTIAL_PEEK,
+                       (uint8_t *)credential_id, credential_id_len, plaintext,
+                       &resp_len) ||
+      resp_len != credential_id_len - 32U) {
+    return secfalse;
+  }
+  *plaintext_len = resp_len;
+  return sectrue;
+}
+
+secbool se_fido_credential_decrypt(const uint8_t rp_id_hash[32],
+                                   const uint8_t *credential_id,
+                                   uint16_t credential_id_len,
+                                   uint8_t *plaintext,
+                                   uint16_t *plaintext_len) {
+  uint16_t resp_len = SE_FIDO_CREDENTIAL_PLAINTEXT_MAX_LEN;
+
+  if (rp_id_hash == NULL || credential_id == NULL ||
+      credential_id_len < SE_FIDO_CREDENTIAL_ID_MIN_LEN ||
+      credential_id_len > SE_FIDO_CREDENTIAL_ID_MAX_LEN || plaintext == NULL ||
+      plaintext_len == NULL) {
+    return secfalse;
+  }
+  memcpy(APDU_DATA, rp_id_hash, 32);
+  memcpy(APDU_DATA + 32, credential_id, credential_id_len);
+  if (!se_transmit_mac(SE_INS_FIDO, 0x00, SE_FIDO_SLIP21_CREDENTIAL_DECRYPT,
+                       APDU_DATA, credential_id_len + 32U, plaintext,
+                       &resp_len) ||
+      resp_len != credential_id_len - 32U) {
+    return secfalse;
+  }
+  *plaintext_len = resp_len;
+  return sectrue;
+}
+
+secbool se_fido_hmac_secret(const uint8_t *credential_id,
+                            uint16_t credential_id_len, const uint8_t *salt,
+                            uint16_t salt_len, uint8_t *out) {
+  uint16_t resp_len = salt_len;
+
+  if (credential_id == NULL ||
+      credential_id_len < SE_FIDO_CREDENTIAL_ID_MIN_LEN ||
+      credential_id_len > SE_FIDO_CREDENTIAL_ID_MAX_LEN || salt == NULL ||
+      (salt_len != 32 && salt_len != 64) || out == NULL) {
+    return secfalse;
+  }
+  APDU_DATA[0] = (uint8_t)(credential_id_len >> 8);
+  APDU_DATA[1] = (uint8_t)credential_id_len;
+  memcpy(APDU_DATA + 2, credential_id, credential_id_len);
+  APDU_DATA[2 + credential_id_len] = (uint8_t)salt_len;
+  memcpy(APDU_DATA + 3 + credential_id_len, salt, salt_len);
+  if (!se_transmit_mac(SE_INS_FIDO, 0x00, SE_FIDO_SLIP21_HMAC_SECRET, APDU_DATA,
+                       credential_id_len + salt_len + 3U, out, &resp_len) ||
+      resp_len != salt_len) {
+    return secfalse;
+  }
   return sectrue;
 }
 

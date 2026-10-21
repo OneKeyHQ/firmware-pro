@@ -102,16 +102,16 @@ def change_wipe_code(
 
 
 # extmod/modtrezorconfig/modtrezorconfig.c
-def get_needs_backup() -> bool:
+def get_mnemonic_export_enabled() -> bool:
     """
-    Returns needs_backup.
+    Returns whether mnemonic export is enabled in the SE.
     """
 
 
 # extmod/modtrezorconfig/modtrezorconfig.c
-def set_needs_backup(needs_backup: bool = False) -> bool:
+def set_mnemonic_export_enabled(enabled: bool, pin: str) -> bool:
     """
-    Set needs_backup.
+    Enable or disable mnemonic export in the SE.
     """
 
 
@@ -191,7 +191,7 @@ None, iteration_exponent: int | None) -> bool:
 
 
 # extmod/modtrezorconfig/modtrezorconfig.c
-def se_export_mnemonic() -> bytes:
+def se_export_mnemonic(pin: str) -> bytes:
     """
     Export mnemonic from SE.
     """

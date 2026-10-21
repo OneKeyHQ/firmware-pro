@@ -17,6 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdint.h>
 #include <string.h>
 #include <sys/types.h>
 
@@ -58,6 +59,10 @@
 #include "usart.h"
 
 #define MSG_NAME_TO_ID(x) MessageType_MessageType_##x
+
+#define REQUIRED_SE_VERSION_MAJOR 1
+#define REQUIRED_SE_VERSION_MINOR 3
+#define REQUIRED_SE_VERSION_PATCH 0
 
 #if defined(STM32H747xx)
 #include "stm32h7xx_hal.h"
@@ -755,9 +760,15 @@ int main(void) {
   thd89_init();
 
   uint8_t se_mode = se_get_state();
-  // all se in app mode
+  secbool se_version_supported = sectrue;
+
   if (se_mode == 0) {
-    device_para_init();
+    se_version_supported = se_all_versions_at_least(
+        REQUIRED_SE_VERSION_MAJOR, REQUIRED_SE_VERSION_MINOR,
+        REQUIRED_SE_VERSION_PATCH);
+    if (se_version_supported == sectrue) {
+      device_para_init();
+    }
   }
 
   if ((!device_serial_set() || !se_has_cerrificate()) && se_mode == 0) {
@@ -812,18 +823,30 @@ int main(void) {
 
   BOOT_TARGET boot_target =
       decide_boot_target(&vhdr, &hdr, &vhdr_valid, &hdr_valid, &code_valid);
+  if (boot_target == BOOT_TARGET_NORMAL &&
+      se_version_supported != sectrue) {
+    boot_target = BOOT_TARGET_BOOTLOADER;
+  }
   // boot_target = BOOT_TARGET_BOOTLOADER;
 
   if (boot_target == BOOT_TARGET_BOOTLOADER) {
     display_clear();
 
     if (sectrue == vhdr_valid && sectrue == hdr_valid) {
-      ui_bootloader_first(&hdr);
+      if (se_version_supported == sectrue) {
+        ui_bootloader_first(&hdr);
+      } else {
+        ui_bootloader_se_version_required(&hdr);
+      }
       if (bootloader_usb_loop(&vhdr, &hdr) != sectrue) {
         return 1;
       }
     } else {
-      ui_bootloader_first(NULL);
+      if (se_version_supported == sectrue) {
+        ui_bootloader_first(NULL);
+      } else {
+        ui_bootloader_se_version_required(NULL);
+      }
       if (bootloader_usb_loop(NULL, NULL) != sectrue) {
         return 1;
       }

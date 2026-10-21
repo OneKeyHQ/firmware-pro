@@ -61,6 +61,7 @@ _Static_assert(sizeof(CTAP_credential_id_storage) ==
 typedef secbool (*UI_WAIT_CALLBACK)(uint32_t wait, uint32_t progress,
                                     const char *message);
 void se_set_ui_callback(UI_WAIT_CALLBACK callback);
+void se_handle_status(uint16_t sw1sw2);
 
 secbool se_transmit_mac(uint8_t ins, uint8_t p1, uint8_t p2, uint8_t *data,
                         uint16_t data_len, uint8_t *recv, uint16_t *recv_len);
@@ -78,6 +79,8 @@ secbool se_reset_storage(void);
 secbool se_set_sn(const char *serial, uint8_t len);
 secbool se_get_sn(char **serial);
 int se_get_version(uint8_t addr, char *ver, uint16_t in_len);
+secbool se_all_versions_at_least(uint8_t required_major, uint8_t required_minor,
+                                 uint8_t required_patch);
 int se_get_build_id(uint8_t addr, char *build_id, uint16_t in_len);
 int se_get_hash(uint8_t addr, uint8_t *hash, uint16_t in_len);
 int se_get_boot_version(uint8_t addr, char *ver, uint16_t in_len);
@@ -162,9 +165,11 @@ secbool se_set_session_key_ex(uint8_t addr, const uint8_t *session_key);
 secbool se_set_session_key(const uint8_t *session_key);
 
 secbool se_containsMnemonic(const char *mnemonic);
-secbool se_exportMnemonic(char *mnemonic, uint16_t dest_size);
-secbool se_set_needs_backup(bool needs_backup);
-secbool se_get_needs_backup(bool *needs_backup);
+secbool se_exportMnemonic(const uint8_t *pin, uint16_t pin_len, char *mnemonic,
+                          uint16_t dest_size);
+secbool se_set_mnemonic_export_enabled(bool enabled, const uint8_t *pin,
+                                       uint16_t pin_len);
+secbool se_get_mnemonic_export_enabled(bool *enabled);
 secbool se_hasWipeCode(void);
 secbool se_changeWipeCode(const char *pin, const char *wipe_code);
 

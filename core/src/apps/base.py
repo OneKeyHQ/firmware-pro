@@ -168,6 +168,7 @@ def get_features() -> Features:
 
     f.sd_card_present = sdcard.is_present()
     f.initialized = storage.device.is_initialized()
+    f.needs_backup = False
 
     current_space = se_thd89.get_pin_passphrase_space()
     if current_space < 30:
@@ -185,7 +186,6 @@ def get_features() -> Features:
             f.passphrase_protection = False
         else:
             f.passphrase_protection = storage.device.is_passphrase_enabled()
-        f.needs_backup = storage.device.needs_backup()
         f.unfinished_backup = storage.device.unfinished_backup()
         f.no_backup = storage.device.no_backup()
         f.flags = storage.device.get_flags()
@@ -563,8 +563,6 @@ def get_state() -> str | None:
         dev_state = _(i18n_keys.MSG__SEEDLESS)
     elif storage.device.unfinished_backup():
         dev_state = _(i18n_keys.MSG__BACKUP_FAILED)
-    elif storage.device.needs_backup():
-        dev_state = _(i18n_keys.MSG__NEEDS_BACKUP)
     elif not config.has_pin():
         dev_state = _(i18n_keys.MSG__PIN_NOT_SET)
     elif storage.device.get_experimental_features():

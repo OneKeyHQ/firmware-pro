@@ -93,6 +93,7 @@ int ui_input_poll(int zones, bool poll);
 int ui_input_match(int zones, uint32_t evt);
 void ui_bootloader_simple(void);
 void ui_bootloader_first(const image_header* const hdr);
+void ui_bootloader_se_version_required(const image_header* const hdr);
 void ui_bootloader_view_details(const image_header* const hdr);
 void ui_wipe_confirm(const image_header* const hdr);
 void ui_show_version_info(int y, char* current_ver, char* new_ver);
