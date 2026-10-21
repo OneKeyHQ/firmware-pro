@@ -23,7 +23,15 @@ g_header:
     . = . + 8                        // reserved
     . = . + 512                      // hash1 ... hash16
     . = . + 399                      // reserved
-    .string  BUILD_COMMIT            // commit_id
+    // Keep this field aligned with image_header.build_id[16].
+g_build_id:
+    .string BUILD_COMMIT             // NUL-terminated commit ID
+g_build_id_end:
+    .if (g_build_id_end - g_build_id) > 16
+    .error "BUILD_COMMIT must be at most 15 characters"
+    .else
+    .fill 16 - (g_build_id_end - g_build_id), 1, 0
+    .endif
     .byte 0                          // sigmask
     . = . + 64                       // sig
 g_header_end:
