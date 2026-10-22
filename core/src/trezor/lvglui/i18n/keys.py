@@ -1823,7 +1823,8 @@ VERIFY_DEVICE_CONNECT_DEVICE_TITLE = 825
 VERIFY_DEVICE_CONNECT_DEVICE_DESC = 826
 # Verify Device
 TITLE__VEIRIFY_DEVICE = 827
-# Visit https://bit.ly/3ZsHB40 for additional verification methods
+# Visit https://help.onekey.so/en/articles/11461153 for additional verificatio
+# n methods
 VERIFY_DEVICE_HELP_CENTER_TEXT = 828
 # More Networks
 BUTTON__MORE_NETWORKS = 829

@@ -828,7 +828,7 @@ translations = [
     "Collega dispositivo",
     "Apri l'app OneKey e collega il tuo dispositivo per creare un portafoglio. La verifica del dispositivo verrà eseguita automaticamente",
     "Verifica dispositivo",
-    "Visita https://bit.ly/3ZsHB40 per metodi di verifica aggiuntivi",
+    "Visita https://help.onekey.so/en/articles/11461153 per metodi di verifica aggiuntivi",
     "Altre reti",
     "Mostra meno",
     "L'URL del bootloader richiede la verifica del dispositivo nell'app OneKey 5.5.0+",

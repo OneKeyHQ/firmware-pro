@@ -51,6 +51,8 @@ async def confirm_output(
         if data is None:
             raise wire.DataError("Missing OP_RETURN data")
         if omni.is_valid(data):
+            if output.amount != 0:
+                raise wire.DataError("OMNI output should have 0 value")
             # OMNI transaction
             layout = layouts.confirm_metadata(
                 ctx,

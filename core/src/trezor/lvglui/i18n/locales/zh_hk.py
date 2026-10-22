@@ -828,7 +828,7 @@ translations = [
     "連接裝置",
     "打開 OneKey App 並連接您的設備以創建錢包。設備驗證將自動進行",
     "驗證裝置",
-    "請訪問 https://bit.ly/3ZsHB40 以獲取其他驗證方法",
+    "請訪問 https://help.onekey.so/en/articles/11461153 以獲取其他驗證方法",
     "更多網絡",
     "顯示更少",
     "Bootloader URL 需要在 OneKey App 5.5.0+ 中進行設備驗證",

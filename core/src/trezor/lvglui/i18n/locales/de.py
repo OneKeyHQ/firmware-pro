@@ -828,7 +828,7 @@ translations = [
     "Gerät verbinden",
     "Öffnen Sie die OneKey App und verbinden Sie Ihr Gerät, um eine Wallet zu erstellen. Die Geräteüberprüfung wird automatisch durchgeführt.",
     "Gerät verifizieren",
-    "Besuchen Sie https://bit.ly/3ZsHB40 für zusätzliche Verifizierungsmethoden",
+    "Besuchen Sie https://help.onekey.so/en/articles/11461153 für zusätzliche Verifizierungsmethoden",
     "Weitere Netzwerke",
     "Weniger zeigen",
     "Bootloader-URL erfordert Geräteverifizierung in der OneKey App 5.5.0+",
