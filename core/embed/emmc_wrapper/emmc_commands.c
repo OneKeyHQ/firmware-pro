@@ -4,6 +4,7 @@
 
 #include "bootui.h"
 #include "fw_keys.h"
+#include "mini_printf.h"
 #include "se_thd89.h"
 #include "thd89_boot.h"
 
@@ -510,10 +511,10 @@ void send_failure_detailed(uint8_t iface_num, FailureType type, const char* fmt,
         return;
     }
     // format message
-    char msg_buff[256];
+    char msg_buff[256] = {0};
     va_list argptr;
     va_start(argptr, fmt);
-    vsnprintf(msg_buff, sizeof(msg_buff) / sizeof(char), fmt, argptr);
+    mini_vsnprintf(msg_buff, sizeof(msg_buff), fmt, argptr);
     va_end(argptr);
 
     MSG_INIT(msg_send, Failure);

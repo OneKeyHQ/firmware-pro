@@ -23,8 +23,12 @@ void emmc_fs_dbgex_clr()
 }
 void emmc_fs_format_status(char* str, size_t str_len)
 {
+    if ( str_len == 0 )
+        return;
+    str[0] = '\0';
+
     // clang-format off
-    snprintf(
+    mini_snprintf(
         str, str_len, 
         "\nis_inited=%s\nis_mounted_onekey_data=%s\nis_mounted_user_data=%s\nfrom_function=%s\nff_call=%s\nff_result=%x\ndebug_extra=%s\n",
         emmc_wrapper_status.is_inited?"True":"False",
@@ -316,7 +320,8 @@ bool emmc_fs_fix_permission_internal(char* path_buff_internal)
             continue;
 
         // get full path
-        sprintf(&path_buff_internal[i], "/%s", finfo.fname);
+        path_buff_internal[i] = '/';
+        strcpy(&path_buff_internal[i + 1], finfo.fname);
 
         // remove all attribute
         ExecuteCheck_OKEMMC_SIMPLE(f_chmod(path_buff_internal, 0, AM_RDO | AM_HID | AM_SYS | AM_ARC));
@@ -555,9 +560,12 @@ bool emmc_fs_dir_list_internal(
 
         // get full path
         if ( i == 2 )
-            sprintf(&path_buff_internal[i], "%s", finfo.fname);
+            strcpy(&path_buff_internal[i], finfo.fname);
         else
-            sprintf(&path_buff_internal[i], "/%s", finfo.fname);
+        {
+            path_buff_internal[i] = '/';
+            strcpy(&path_buff_internal[i + 1], finfo.fname);
+        }
 
         // if is dir
         if ( finfo.fattrib & AM_DIR )
@@ -756,7 +764,8 @@ bool emmc_fs_dir_delete_internal(char* path_buff_internal)
             continue;
 
         // get full path
-        sprintf(&path_buff_internal[i], "/%s", finfo.fname);
+        path_buff_internal[i] = '/';
+        strcpy(&path_buff_internal[i + 1], finfo.fname);
 
         // remove readonly attribute
         ExecuteCheck_OKEMMC_SIMPLE(f_chmod(path_buff_internal, 0, AM_RDO));
