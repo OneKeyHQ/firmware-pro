@@ -170,13 +170,19 @@ secbool load_thd89_image_header(const uint8_t* const data, const uint32_t magic,
   return sectrue;
 }
 
-secbool read_vendor_header(const uint8_t* const data,
+secbool read_vendor_header(const uint8_t* const data, size_t data_size,
                            vendor_header* const vhdr) {
+  // The fixed fields and the first possible vendor-string length byte must fit.
+  if (data == NULL || vhdr == NULL || data_size < 33) return secfalse;
+
   memcpy(&vhdr->magic, data, 4);
   if (vhdr->magic != 0x56544B4F) return secfalse;  // OKTV
 
   memcpy(&vhdr->hdrlen, data + 4, 4);
-  if (vhdr->hdrlen > 64 * 1024) return secfalse;
+  if (vhdr->hdrlen < IMAGE_SIG_SIZE || vhdr->hdrlen > VENDOR_HEADER_MAX_SIZE ||
+      vhdr->hdrlen > data_size) {
+    return secfalse;
+  }
 
   memcpy(&vhdr->expiry, data + 8, 4);
   if (vhdr->expiry != 0) return secfalse;
@@ -191,6 +197,12 @@ secbool read_vendor_header(const uint8_t* const data,
     return secfalse;
   }
 
+  const size_t signature_offset = vhdr->hdrlen - IMAGE_SIG_SIZE;
+  const size_t vstr_len_offset = 32 + (size_t)vhdr->vsig_n * 32;
+  if (vstr_len_offset >= signature_offset) {
+    return secfalse;
+  }
+
   for (int i = 0; i < vhdr->vsig_n; i++) {
     vhdr->vpub[i] = data + 32 + i * 32;
   }
@@ -198,26 +210,34 @@ secbool read_vendor_header(const uint8_t* const data,
     vhdr->vpub[i] = 0;
   }
 
-  memcpy(&vhdr->vstr_len, data + 32 + vhdr->vsig_n * 32, 1);
+  memcpy(&vhdr->vstr_len, data + vstr_len_offset, 1);
 
-  vhdr->vstr = (const char*)(data + 32 + vhdr->vsig_n * 32 + 1);
+  const size_t vstr_offset = vstr_len_offset + 1;
+  if ((size_t)vhdr->vstr_len > signature_offset - vstr_offset) {
+    return secfalse;
+  }
 
-  vhdr->vimg = data + 32 + vhdr->vsig_n * 32 + 1 + vhdr->vstr_len;
+  vhdr->vstr = (const char*)(data + vstr_offset);
+
+  vhdr->vimg = data + vstr_offset + vhdr->vstr_len;
   // align to 4 bytes
   vhdr->vimg += (-(uintptr_t)vhdr->vimg) & 3;
+  if (vhdr->vimg > data + signature_offset) {
+    return secfalse;
+  }
 
-  memcpy(&vhdr->sigmask, data + vhdr->hdrlen - IMAGE_SIG_SIZE, 1);
+  memcpy(&vhdr->sigmask, data + signature_offset, 1);
 
-  memcpy(vhdr->sig, data + vhdr->hdrlen - IMAGE_SIG_SIZE + 1,
-         IMAGE_SIG_SIZE - 1);
+  memcpy(vhdr->sig, data + signature_offset + 1, IMAGE_SIG_SIZE - 1);
 
   return sectrue;
 }
 
-secbool load_vendor_header(const uint8_t* const data, uint8_t key_m,
-                           uint8_t key_n, const uint8_t* const* keys,
+secbool load_vendor_header(const uint8_t* const data, size_t data_size,
+                           uint8_t key_m, uint8_t key_n,
+                           const uint8_t* const* keys,
                            vendor_header* const vhdr) {
-  if (sectrue != read_vendor_header(data, vhdr)) {
+  if (sectrue != read_vendor_header(data, data_size, vhdr)) {
     return secfalse;
   }
 
@@ -712,14 +732,14 @@ secbool verify_firmware(vendor_header* const vhdr, image_header* const hdr,
   const size_t fw_external_size = FMC_SDRAM_FIRMWARE_P2_LEN;
 
   // verify vhdr
-  ExecuteCheck_ADV(load_vendor_header((const uint8_t*)FIRMWARE_START, FW_KEY_M,
-                                      FW_KEY_N, FW_KEYS, &_vhdr),
-                   sectrue, {
-                     if (error_msg != NULL)
-                       strncpy(error_msg, "Firmware vendor header invalid!",
-                               error_msg_len);
-                     return secfalse;
-                   });
+  ExecuteCheck_ADV(
+      load_vendor_header((const uint8_t*)FIRMWARE_START, VENDOR_HEADER_MAX_SIZE,
+                         FW_KEY_M, FW_KEY_N, FW_KEYS, &_vhdr),
+      sectrue, {
+        if (error_msg != NULL)
+          strncpy(error_msg, "Firmware vendor header invalid!", error_msg_len);
+        return secfalse;
+      });
   _vhdr_valid = sectrue;
   if (vhdr != NULL) memcpy(vhdr, &_vhdr, sizeof(vendor_header));
   if (vhdr_valid != NULL) *vhdr_valid = _vhdr_valid;

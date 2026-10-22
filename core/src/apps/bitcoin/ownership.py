@@ -144,6 +144,11 @@ def read_scriptsig_witness(ownership_proof: bytes) -> tuple[memoryview, memoryvi
 
 
 def get_identifier(script_pubkey: bytes, keychain: Keychain) -> bytes:
+    if utils.USE_THD89:
+        from trezor.crypto import se_thd89
+
+        return se_thd89.slip21_ownership_id(script_pubkey)
+
     # k = Key(m/"SLIP-0019"/"Ownership identification key")
     node = keychain.derive_slip21(_OWNERSHIP_ID_KEY_PATH)
 

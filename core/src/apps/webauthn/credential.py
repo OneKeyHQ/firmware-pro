@@ -98,6 +98,9 @@ class Credential:
     def hmac_secret_key(self) -> bytes | None:
         return None
 
+    def hmac_secret_output(self, salt: bytes) -> bytes | None:
+        return None
+
     def next_signature_counter(self) -> int:
         return storage.device.next_u2f_counter() or 0
 
@@ -159,15 +162,21 @@ class Fido2Credential(Credential):
             data[_CRED_ID_ALGORITHM] = self.algorithm
             data[_CRED_ID_CURVE] = self.curve
 
-        key = seed.derive_slip21_node_without_passphrase(
-            [b"SLIP-0022", _CRED_ID_VERSION, b"Encryption key"]
-        ).key()
-        iv = random.bytes(12)
-        ctx = chacha20poly1305(key, iv)
-        ctx.auth(self.rp_id_hash)
-        ciphertext = ctx.encrypt(cbor.encode(data))
-        tag = ctx.finish()
-        self.id = _CRED_ID_VERSION + iv + ciphertext + tag
+        plaintext = cbor.encode(data)
+        if utils.USE_THD89:
+            self.id, slot, action = se_thd89.fido_credential_create(plaintext, False)
+            if slot != 0xFF or action != 0:
+                raise AssertionError
+        else:
+            key = seed.derive_slip21_node_without_passphrase(
+                [b"SLIP-0022", _CRED_ID_VERSION, b"Encryption key"]
+            ).key()
+            iv = random.bytes(12)
+            ctx = chacha20poly1305(key, iv)
+            ctx.auth(self.rp_id_hash)
+            ciphertext = ctx.encrypt(plaintext)
+            tag = ctx.finish()
+            self.id = _CRED_ID_VERSION + iv + ciphertext + tag
 
         if len(self.id) > CRED_ID_MAX_LENGTH:
             raise AssertionError
@@ -178,31 +187,40 @@ class Fido2Credential(Credential):
     ) -> "Fido2Credential":
         if len(cred_id) < CRED_ID_MIN_LENGTH or cred_id[0:4] != _CRED_ID_VERSION:
             raise ValueError  # invalid length or version
-        key = seed.derive_slip21_node_without_passphrase(
-            [b"SLIP-0022", cred_id[0:4], b"Encryption key"]
-        ).key()
-        iv = cred_id[4:16]
-        ciphertext = cred_id[16:-16]
-        tag = cred_id[-16:]
+        if utils.USE_THD89:
+            data = se_thd89.fido_credential_validate(cred_id, rp_id_hash)
+        else:
+            key = seed.derive_slip21_node_without_passphrase(
+                [b"SLIP-0022", cred_id[0:4], b"Encryption key"]
+            ).key()
+            iv = cred_id[4:16]
+            ciphertext = cred_id[16:-16]
+            tag = cred_id[-16:]
 
-        if rp_id_hash is None:
+            if rp_id_hash is None:
+                ctx = chacha20poly1305(key, iv)
+                candidate_data = ctx.decrypt(ciphertext)
+                try:
+                    rp_id = cbor.decode(candidate_data)[_CRED_ID_RP_ID]
+                except Exception as e:
+                    raise ValueError from e  # CBOR decoding failed
+                rp_id_hash = hashlib.sha256(rp_id).digest()
+
             ctx = chacha20poly1305(key, iv)
+            ctx.auth(rp_id_hash)
             data = ctx.decrypt(ciphertext)
-            try:
-                rp_id = cbor.decode(data)[_CRED_ID_RP_ID]
-            except Exception as e:
-                raise ValueError from e  # CBOR decoding failed
-            rp_id_hash = hashlib.sha256(rp_id).digest()
 
-        ctx = chacha20poly1305(key, iv)
-        ctx.auth(rp_id_hash)
-        data = ctx.decrypt(ciphertext)
+            if not utils.consteq(ctx.finish(), tag):
+                raise ValueError  # inauthentic ciphertext
 
-        if not utils.consteq(ctx.finish(), tag):
-            raise ValueError  # inauthentic ciphertext
+        return cls.from_authenticated_plaintext(cred_id, data, rp_id_hash)
 
+    @classmethod
+    def from_authenticated_plaintext(
+        cls, cred_id: bytes, plaintext: bytes, rp_id_hash: bytes | None
+    ) -> "Fido2Credential":
         try:
-            data = cbor.decode(data)
+            data = cbor.decode(plaintext)
         except Exception as e:
             raise ValueError from e  # CBOR decoding failed
 
@@ -211,7 +229,6 @@ class Fido2Credential(Credential):
 
         cred = cls()
         cred.rp_id = data.get(_CRED_ID_RP_ID, None)
-        cred.rp_id_hash = rp_id_hash
         cred.rp_name = data.get(_CRED_ID_RP_NAME, None)
         cred.user_id = data.get(_CRED_ID_USER_ID, None)
         cred.user_name = data.get(_CRED_ID_USER_NAME, None)
@@ -227,9 +244,15 @@ class Fido2Credential(Credential):
             (_CRED_ID_ALGORITHM in data) != (_CRED_ID_CURVE in data)
             or not cred.check_required_fields()
             or not cred.check_data_types()
-            or hashlib.sha256(cred.rp_id).digest() != rp_id_hash
         ):
             raise ValueError  # data consistency check failed
+
+        calculated_rp_id_hash = hashlib.sha256(cred.rp_id).digest()
+        if rp_id_hash is None:
+            rp_id_hash = calculated_rp_id_hash
+        elif calculated_rp_id_hash != rp_id_hash:
+            raise ValueError  # data consistency check failed
+        cred.rp_id_hash = rp_id_hash
 
         return cred
 
@@ -368,7 +391,7 @@ class Fido2Credential(Credential):
     def hmac_secret_key(self) -> bytes | None:
         # Returns the symmetric key for the hmac-secret extension also known as CredRandom.
 
-        if not self.hmac_secret:
+        if not self.hmac_secret or utils.USE_THD89:
             return None
 
         node = seed.derive_slip21_node_without_passphrase(
@@ -376,6 +399,20 @@ class Fido2Credential(Credential):
         )
 
         return node.key()
+
+    def hmac_secret_output(self, salt: bytes) -> bytes | None:
+        if not self.hmac_secret:
+            return None
+        if utils.USE_THD89:
+            return se_thd89.fido_hmac_secret(self.id, salt)
+
+        cred_random = self.hmac_secret_key()
+        if cred_random is None:
+            return None
+        output = hmac(hmac.SHA256, cred_random, salt[:32]).digest()
+        if len(salt) == 64:
+            output += hmac(hmac.SHA256, cred_random, salt[32:]).digest()
+        return output
 
     def next_signature_counter(self) -> int:
         if not self.use_sign_count:

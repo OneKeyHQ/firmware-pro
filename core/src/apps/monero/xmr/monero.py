@@ -131,7 +131,7 @@ def generate_tx_spend_and_key_image(
     recv_derivation: crypto.Point,
     real_output_index: int,
     received_index: tuple[int, int],
-) -> tuple[crypto.Scalar, crypto.Point]:
+) -> tuple[crypto.Scalar | None, crypto.Point]:
     """
     Generates UTXO spending key and key image.
     Corresponds to generate_key_image_helper_precomp() in the Monero codebase.
@@ -147,12 +147,16 @@ def generate_tx_spend_and_key_image(
     from trezor import utils
 
     if utils.USE_THD89:
+        from apps.monero import misc
         from trezor.crypto import se_thd89
 
-        recv_derivation = crypto_helpers.encodepoint(recv_derivation)
-        # derive secret key with subaddress - step 1: original CN derivation
-        scalar_step1 = se_thd89.derive_xmr_private(recv_derivation, real_output_index)
-        scalar_step1 = crypto_helpers.decodeint(scalar_step1)
+        key_image = se_thd89.xmr_generate_key_image(
+            crypto_helpers.encodepoint(recv_derivation),
+            real_output_index,
+            misc.xmr_subaddress_secret_key(ack.view_key_private, received_index),
+            crypto_helpers.encodepoint(out_key),
+        )
+        return None, crypto_helpers.decodepoint(key_image)
     else:
         if crypto.sc_iszero(ack.spend_key_private):
             raise ValueError("Watch-only wallet not supported")
@@ -206,9 +210,9 @@ def generate_tx_spend_and_key_image_and_derivation(
     real_output_index: int | None,
     sub_addr_major: int | None,
     sub_addr_minor: int | None,
-) -> tuple[crypto.Scalar, crypto.Point, crypto.Point]:
+) -> tuple[crypto.Scalar | None, crypto.Point, crypto.Point, tuple[int, int]]:
     """
-    Generates UTXO spending key and key image and corresponding derivation.
+    Generates a UTXO spending key, key image, derivation and received index.
     Supports subaddresses.
     Corresponds to generate_key_image_helper() in the Monero codebase.
 
@@ -250,7 +254,7 @@ def generate_tx_spend_and_key_image_and_derivation(
     xi, ki = generate_tx_spend_and_key_image(
         creds, out_key, subaddr_recv_info[1], real_output_index, subaddr_recv_info[0]
     )
-    return xi, ki, recv_derivation
+    return xi, ki, subaddr_recv_info[1], subaddr_recv_info[0]
 
 
 def compute_subaddresses(

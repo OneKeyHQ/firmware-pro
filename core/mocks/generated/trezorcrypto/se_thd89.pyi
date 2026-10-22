@@ -32,7 +32,7 @@ def cardano_seed(
 
 # extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
 def start_session(
-    session_id: bytes,
+    session_id: bytes | None = None,
 ) -> bytes:
     """
     start session.
@@ -113,8 +113,9 @@ def bip340_sign(
 
 
 # extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
-def ed25519_sign(secret_key: bytes, message: bytes, hasher: str = "") ->
-bytes:
+def ed25519_sign(
+    secret_key: bytes, message: bytes, hasher: str = ""
+) -> bytes:
     """
     Uses secret key to produce the signature of message.
     """
@@ -136,33 +137,36 @@ def uncompress_pubkey(curve: str, pubkey: bytes) -> bytes:
 
 
 # extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
-def aes256_encrypt(data: bytes, value: bytes, iv: bytes | None) ->
-bytes:
+def aes256_encrypt(
+    data: bytes, value: bytes, iv: bytes | None
+) -> bytes:
     """
     Uses secret key to produce the signature of message.
     """
 
 
 # extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
-def aes256_decrypt(data: bytes, value: bytes, iv: bytes | None) ->
-bytes:
+def aes256_decrypt(
+    data: bytes, value: bytes, iv: bytes | None
+) -> bytes:
     """
     Uses secret key to produce the signature of message.
     """
 
 
 # extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
-def slip21_node() -> bytes:
-    """
-    Returns slip21 node.
-    """
+def slip21_ownership_id(script_pubkey: bytes) -> bytes:
+    """Return the SLIP-0019 ownership identifier for script_pubkey."""
 
 
 # extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
-def slip21_fido_node() -> bytes:
-    """
-    Returns slip21 fido node, seed without passphrase.
-    """
+def slip21_address_mac(slip44: int, address: bytes) -> bytes:
+    """Return the SLIP-0024 address MAC."""
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
+def slip21_slip25_mac() -> bytes:
+    """Return the SLIP-0025 keychain authorization MAC."""
 
 
 # extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
@@ -215,30 +219,51 @@ def sign_message(msg: bytes) -> bytes:
 
 
 # extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
-def derive_xmr(
-    path: Sequence[int]
-    digest: bytes,
-) -> tuple[bytes, bytes]:
-
-
-# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
-def derive_xmr_privare(
-    deriv: bytes
-    index: int,
-) -> bytes:
+def derive_xmr(path: Sequence[int]) -> tuple[bytes, bytes]:
     """
-    base + H_s(derivation || varint(output_index))
+    Derive a Monero public key and private-key hash for path.
     """
 
 
 # extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
 def xmr_get_tx_key(
-    rand: bytes
+    rand: bytes,
     hash: bytes,
 ) -> bytes:
     """
     base + H_s(derivation || varint(output_index))
     """
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
+def xmr_generate_key_image(
+    recv_deriv: bytes,
+    real_idx: int,
+    subaddr_sk: bytes,
+    out_key: bytes,
+) -> bytes:
+    """Generates a key image without exporting the one-time spend key."""
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
+def xmr_secret_nonce_begin(
+    recv_deriv: bytes,
+    real_idx: int,
+    subaddr_sk: bytes,
+    out_key: bytes,
+) -> tuple[bytes, bytes, bytes, int]:
+    """Starts a one-time XMR secret-response session."""
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
+def xmr_secret_response_finish(
+    session_id: int,
+    c: bytes,
+    mu_p: bytes,
+    mu_c: bytes,
+    z: bytes,
+) -> bytes:
+    """Finishes a one-time XMR secret-response session."""
 
 
 # extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
@@ -307,10 +332,63 @@ def fido_att_sign_digest(
 
 
 # extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
-def fido_delete_all_credentials() -> None:
+def fido_credential_create(
+    plaintext: bytes, resident: bool
+) -> tuple[bytes, int, int]:
     """
-    Delete all FIDO2 credentials.
+    Create a FIDO credential and return credential id, slot, and action.
     """
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
+def fido_credential_validate(
+    credential_id: bytes, rp_id_hash: bytes | None
+) -> bytes:
+    """
+    Validate a FIDO credential id and return its plaintext.
+    """
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
+def fido_resident_credentials_list() -> tuple[int, ...]:
+    """
+    Return indexes of stored resident credentials.
+    """
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
+def fido_resident_credential_read(index: int) -> tuple[bytes, bytes]:
+    """
+    Read a resident credential id and plaintext by index.
+    """
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
+def fido_resident_credential_import(
+    credential_id: bytes,
+) -> tuple[int, int]:
+    """
+    Import a resident credential and return its slot and action.
+    """
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
+def fido_resident_credential_delete(index: int) -> None:
+    """
+    Delete one resident credential by index.
+    """
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
+def fido_resident_credentials_clear() -> None:
+    """
+    Delete every resident credential.
+    """
+
+
+# extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
+def fido_hmac_secret(credential_id: bytes, salt: bytes) -> bytes:
+    """Return the purpose-bound hmac-secret output for one or two salts."""
 
 
 # extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
@@ -321,8 +399,9 @@ def get_pin_passphrase_space() -> int:
 
 
 # extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
-def save_pin_passphrase(pin: str, passphrase_pin: str, passphrase: str) ->
-tuple[bool, bool]:
+def save_pin_passphrase(
+    pin: str, passphrase_pin: str, passphrase: str
+) -> tuple[bool, bool]:
     """
     Save the pin and passphrase to the list.
     Returns True on success, False on failure.
@@ -331,8 +410,7 @@ tuple[bool, bool]:
 
 
 # extmod/modtrezorcrypto/modtrezorcrypto-se-thd89.h
-def delete_pin_passphrase(passphrase_pin: str) ->
-tuple[bool,bool]:
+def delete_pin_passphrase(passphrase_pin: str) -> tuple[bool, bool]:
     """
     Delete the pin and passphrase pin from the list.
     Returns True on success, False on failure.

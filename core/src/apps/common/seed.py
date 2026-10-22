@@ -23,9 +23,7 @@ class Slip21Node:
             if data is not None:
                 self.data = data
             else:
-                from trezor.crypto import se_thd89
-
-                self.data = se_thd89.slip21_node()
+                raise ValueError("THD89 SLIP21 roots are not exportable")
         else:
             if seed is not None and data is not None:
                 raise ValueError("Specify exactly one of: seed, data")
@@ -199,9 +197,7 @@ def derive_fido_node_with_se(
 
 def derive_slip21_node_without_passphrase(path: Slip21Path) -> Slip21Node:
     if utils.USE_THD89:
-        from trezor.crypto import se_thd89
-
-        node = Slip21Node(data=se_thd89.slip21_fido_node())
+        raise ValueError("THD89 SLIP21 roots are not exportable")
     else:
         seed = _get_seed_without_passphrase()
         node = Slip21Node(seed)

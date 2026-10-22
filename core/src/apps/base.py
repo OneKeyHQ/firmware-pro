@@ -168,6 +168,7 @@ def get_features() -> Features:
 
     f.sd_card_present = sdcard.is_present()
     f.initialized = storage.device.is_initialized()
+    f.needs_backup = False
 
     current_space = se_thd89.get_pin_passphrase_space()
     if current_space < 30:
@@ -185,7 +186,6 @@ def get_features() -> Features:
             f.passphrase_protection = False
         else:
             f.passphrase_protection = storage.device.is_passphrase_enabled()
-        f.needs_backup = storage.device.needs_backup()
         f.unfinished_backup = storage.device.unfinished_backup()
         f.no_backup = storage.device.no_backup()
         f.flags = storage.device.get_flags()
@@ -404,14 +404,9 @@ async def handle_DoPreauthorized(
 
 
 async def handle_UnlockPath(ctx: wire.Context, msg: UnlockPath) -> protobuf.MessageType:
-    from trezor.crypto import hmac
     from trezor.messages import UnlockedPathRequest
     from trezor.ui.layouts import confirm_action
     from apps.common.paths import SLIP25_PURPOSE
-    from apps.common.seed import Slip21Node, get_seed
-    from apps.common.writers import write_uint32_le
-
-    _KEYCHAIN_MAC_KEY_PATH = [b"TREZOR", b"Keychain MAC key"]
 
     # UnlockPath is relevant only for SLIP-25 paths.
     # Note: Currently we only allow unlocking the entire SLIP-25 purpose subtree instead of
@@ -419,13 +414,23 @@ async def handle_UnlockPath(ctx: wire.Context, msg: UnlockPath) -> protobuf.Mess
     if msg.address_n != [SLIP25_PURPOSE]:
         raise wire.DataError("Invalid path")
 
-    seed = await get_seed(ctx)
-    node = Slip21Node(seed)
-    node.derive_path(_KEYCHAIN_MAC_KEY_PATH)
-    mac = utils.HashWriter(hmac(hmac.SHA256, node.key()))
-    for i in msg.address_n:
-        write_uint32_le(mac, i)
-    expected_mac = mac.get_digest()
+    if utils.USE_THD89:
+        from apps.common.seed import get_seed
+
+        await get_seed(ctx)
+        expected_mac = se_thd89.slip21_slip25_mac()
+    else:
+        from trezor.crypto import hmac
+        from apps.common.seed import Slip21Node, get_seed
+        from apps.common.writers import write_uint32_le
+
+        seed = await get_seed(ctx)
+        node = Slip21Node(seed)
+        node.derive_path([b"TREZOR", b"Keychain MAC key"])
+        mac = utils.HashWriter(hmac(hmac.SHA256, node.key()))
+        for i in msg.address_n:
+            write_uint32_le(mac, i)
+        expected_mac = mac.get_digest()
 
     # Require confirmation to access SLIP25 paths unless already authorized.
     if msg.mac:
@@ -563,8 +568,6 @@ def get_state() -> str | None:
         dev_state = _(i18n_keys.MSG__SEEDLESS)
     elif storage.device.unfinished_backup():
         dev_state = _(i18n_keys.MSG__BACKUP_FAILED)
-    elif storage.device.needs_backup():
-        dev_state = _(i18n_keys.MSG__NEEDS_BACKUP)
     elif not config.has_pin():
         dev_state = _(i18n_keys.MSG__PIN_NOT_SET)
     elif storage.device.get_experimental_features():

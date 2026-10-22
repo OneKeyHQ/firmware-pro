@@ -20,6 +20,7 @@
 #include "py/objstr.h"
 #include "py/runtime.h"
 
+#include "memzero.h"
 #include "se_thd89.h"
 
 /// package: trezorcrypto.se_thd89
@@ -103,7 +104,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(
     mod_trezorcrypto_se_thd89_cardano_seed);
 
 /// def start_session(
-///     session_id: bytes,
+///     session_id: bytes | None = None,
 /// ) -> bytes:
 ///     """
 ///     start session.
@@ -322,8 +323,9 @@ STATIC mp_obj_t mod_trezorcrypto_se_thd89_bip340_sign(mp_obj_t secret_key,
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_trezorcrypto_se_thd89_bip340_sign_obj,
                                  mod_trezorcrypto_se_thd89_bip340_sign);
 
-/// def ed25519_sign(secret_key: bytes, message: bytes, hasher: str = "") ->
-/// bytes:
+/// def ed25519_sign(
+///     secret_key: bytes, message: bytes, hasher: str = ""
+/// ) -> bytes:
 ///     """
 ///     Uses secret key to produce the signature of message.
 ///     """
@@ -457,8 +459,9 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_2(
     mod_trezorcrypto_se_thd89_uncompress_pubkey_obj,
     mod_trezorcrypto_se_thd89_uncompress_pubkey);
 
-/// def aes256_encrypt(data: bytes, value: bytes, iv: bytes | None) ->
-/// bytes:
+/// def aes256_encrypt(
+///     data: bytes, value: bytes, iv: bytes | None
+/// ) -> bytes:
 ///     """
 ///     Uses secret key to produce the signature of message.
 ///     """
@@ -493,8 +496,9 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(
     mod_trezorcrypto_se_thd89_aes256_encrypt_obj, 2, 3,
     mod_trezorcrypto_se_thd89_aes256_encrypt);
 
-/// def aes256_decrypt(data: bytes, value: bytes, iv: bytes | None) ->
-/// bytes:
+/// def aes256_decrypt(
+///     data: bytes, value: bytes, iv: bytes | None
+/// ) -> bytes:
 ///     """
 ///     Uses secret key to produce the signature of message.
 ///     """
@@ -529,35 +533,53 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(
     mod_trezorcrypto_se_thd89_aes256_decrypt_obj, 2, 3,
     mod_trezorcrypto_se_thd89_aes256_decrypt);
 
-/// def slip21_node() -> bytes:
-///     """
-///     Returns slip21 node.
-///     """
-STATIC mp_obj_t mod_trezorcrypto_se_thd89_slip21_node(void) {
-  vstr_t vstr = {0};
-  vstr_init_len(&vstr, 64);
-  if (se_slip21_node((uint8_t *)vstr.buf) != 0) {
-    mp_raise_ValueError("slip21_node failed");
+/// def slip21_ownership_id(script_pubkey: bytes) -> bytes:
+///     """Return the SLIP-0019 ownership identifier for script_pubkey."""
+STATIC mp_obj_t
+mod_trezorcrypto_se_thd89_slip21_ownership_id(mp_obj_t script_pubkey) {
+  mp_buffer_info_t script = {0};
+  uint8_t out[32] = {0};
+  mp_get_buffer_raise(script_pubkey, &script, MP_BUFFER_READ);
+  if (script.len == 0 || script.len > 1024 ||
+      se_slip21_ownership_id(script.buf, script.len, out) != sectrue) {
+    mp_raise_ValueError("slip21 ownership id failed");
   }
-  return mp_obj_new_str_from_vstr(&mp_type_bytes, &vstr);
+  return mp_obj_new_bytes(out, sizeof(out));
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorcrypto_se_thd89_slip21_node_obj,
-                                 mod_trezorcrypto_se_thd89_slip21_node);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(
+    mod_trezorcrypto_se_thd89_slip21_ownership_id_obj,
+    mod_trezorcrypto_se_thd89_slip21_ownership_id);
 
-/// def slip21_fido_node() -> bytes:
-///     """
-///     Returns slip21 fido node, seed without passphrase.
-///     """
-STATIC mp_obj_t mod_trezorcrypto_se_thd89_slip21_fido_node(void) {
-  vstr_t vstr = {0};
-  vstr_init_len(&vstr, 64);
-  if (se_slip21_fido_node((uint8_t *)vstr.buf) != 0) {
-    mp_raise_ValueError("slip21 fido node failed");
+/// def slip21_address_mac(slip44: int, address: bytes) -> bytes:
+///     """Return the SLIP-0024 address MAC."""
+STATIC mp_obj_t mod_trezorcrypto_se_thd89_slip21_address_mac(
+    mp_obj_t slip44_obj, mp_obj_t address_obj) {
+  uint32_t slip44 = trezor_obj_get_uint(slip44_obj);
+  mp_buffer_info_t address = {0};
+  uint8_t out[32] = {0};
+  mp_get_buffer_raise(address_obj, &address, MP_BUFFER_READ);
+  if (address.len == 0 || address.len > 1018 ||
+      se_slip21_address_mac(slip44, address.buf, address.len, out) != sectrue) {
+    mp_raise_ValueError("slip21 address MAC failed");
   }
-  return mp_obj_new_str_from_vstr(&mp_type_bytes, &vstr);
+  return mp_obj_new_bytes(out, sizeof(out));
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorcrypto_se_thd89_slip21_fido_node_obj,
-                                 mod_trezorcrypto_se_thd89_slip21_fido_node);
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(
+    mod_trezorcrypto_se_thd89_slip21_address_mac_obj,
+    mod_trezorcrypto_se_thd89_slip21_address_mac);
+
+/// def slip21_slip25_mac() -> bytes:
+///     """Return the SLIP-0025 keychain authorization MAC."""
+STATIC mp_obj_t mod_trezorcrypto_se_thd89_slip21_slip25_mac(void) {
+  uint8_t out[32] = {0};
+  if (se_slip21_slip25_mac(out) != sectrue) {
+    mp_raise_ValueError("slip21 SLIP-0025 MAC failed");
+  }
+  return mp_obj_new_bytes(out, sizeof(out));
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(
+    mod_trezorcrypto_se_thd89_slip21_slip25_mac_obj,
+    mod_trezorcrypto_se_thd89_slip21_slip25_mac);
 
 /// def authorization_set(
 ///     authorization_type: int,
@@ -679,10 +701,10 @@ STATIC mp_obj_t mod_trezorcrypto_se_thd89_sign_message(mp_obj_t msg) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorcrypto_se_thd89_sign_message_obj,
                                  mod_trezorcrypto_se_thd89_sign_message);
 
-/// def derive_xmr(
-///     path: Sequence[int]
-///     digest: bytes,
-/// ) -> tuple[bytes, bytes]:
+/// def derive_xmr(path: Sequence[int]) -> tuple[bytes, bytes]:
+///     """
+///     Derive a Monero public key and private-key hash for path.
+///     """
 STATIC mp_obj_t mod_trezorcrypto_se_thd89_derive_xmr(mp_obj_t path) {
   // get path objects and length
   size_t plen = 0;
@@ -712,34 +734,8 @@ STATIC mp_obj_t mod_trezorcrypto_se_thd89_derive_xmr(mp_obj_t path) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorcrypto_se_thd89_derive_xmr_obj,
                                  mod_trezorcrypto_se_thd89_derive_xmr);
 
-/// def derive_xmr_privare(
-///     deriv: bytes
-///     index: int,
-/// ) -> bytes:
-///     """
-///     base + H_s(derivation || varint(output_index))
-///     """
-STATIC mp_obj_t mod_trezorcrypto_se_thd89_derive_xmr_private(mp_obj_t deriv,
-                                                             mp_obj_t index) {
-  mp_buffer_info_t pub_key = {0};
-  mp_get_buffer_raise(deriv, &pub_key, MP_BUFFER_READ);
-
-  uint32_t idx = mp_obj_get_int(index);
-
-  uint8_t out_pri[32];
-  if (!se_derive_xmr_private_key(pub_key.buf, idx, out_pri)) {
-    mp_raise_ValueError("Failed to derive private key");
-  }
-
-  return mp_obj_new_str_copy(&mp_type_bytes, (const uint8_t *)out_pri, 32);
-}
-
-STATIC MP_DEFINE_CONST_FUN_OBJ_2(
-    mod_trezorcrypto_se_thd89_derive_xmr_private_obj,
-    mod_trezorcrypto_se_thd89_derive_xmr_private);
-
 /// def xmr_get_tx_key(
-///     rand: bytes
+///     rand: bytes,
 ///     hash: bytes,
 /// ) -> bytes:
 ///     """
@@ -763,6 +759,122 @@ STATIC mp_obj_t mod_trezorcrypto_se_thd89_xmr_get_tx_key(mp_obj_t rand,
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_trezorcrypto_se_thd89_xmr_get_tx_key_obj,
                                  mod_trezorcrypto_se_thd89_xmr_get_tx_key);
+
+/// def xmr_generate_key_image(
+///     recv_deriv: bytes,
+///     real_idx: int,
+///     subaddr_sk: bytes,
+///     out_key: bytes,
+/// ) -> bytes:
+///     """Generates a key image without exporting the one-time spend key."""
+STATIC mp_obj_t mod_trezorcrypto_se_thd89_xmr_generate_key_image(
+    size_t n_args, const mp_obj_t *args) {
+  mp_buffer_info_t recv_deriv = {0};
+  mp_buffer_info_t subaddr_sk = {0};
+  mp_buffer_info_t out_key = {0};
+  uint8_t key_image[32] = {0};
+
+  mp_get_buffer_raise(args[0], &recv_deriv, MP_BUFFER_READ);
+  mp_get_buffer_raise(args[2], &subaddr_sk, MP_BUFFER_READ);
+  mp_get_buffer_raise(args[3], &out_key, MP_BUFFER_READ);
+  if (recv_deriv.len != 32 || subaddr_sk.len != 32 || out_key.len != 32) {
+    mp_raise_ValueError("Invalid XMR key data length");
+  }
+
+  uint32_t real_idx = trezor_obj_get_uint(args[1]);
+  if (se_xmr_generate_key_image(recv_deriv.buf, real_idx, subaddr_sk.buf,
+                                out_key.buf, key_image) != sectrue) {
+    mp_raise_ValueError("Failed to generate XMR key image");
+  }
+
+  mp_obj_t result = mp_obj_new_bytes(key_image, sizeof(key_image));
+  memzero(key_image, sizeof(key_image));
+  return result;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(
+    mod_trezorcrypto_se_thd89_xmr_generate_key_image_obj, 4, 4,
+    mod_trezorcrypto_se_thd89_xmr_generate_key_image);
+
+/// def xmr_secret_nonce_begin(
+///     recv_deriv: bytes,
+///     real_idx: int,
+///     subaddr_sk: bytes,
+///     out_key: bytes,
+/// ) -> tuple[bytes, bytes, bytes, int]:
+///     """Starts a one-time XMR secret-response session."""
+STATIC mp_obj_t mod_trezorcrypto_se_thd89_xmr_secret_nonce_begin(
+    size_t n_args, const mp_obj_t *args) {
+  mp_buffer_info_t recv_deriv = {0};
+  mp_buffer_info_t subaddr_sk = {0};
+  mp_buffer_info_t out_key = {0};
+  uint8_t response[97] = {0};
+
+  mp_get_buffer_raise(args[0], &recv_deriv, MP_BUFFER_READ);
+  mp_get_buffer_raise(args[2], &subaddr_sk, MP_BUFFER_READ);
+  mp_get_buffer_raise(args[3], &out_key, MP_BUFFER_READ);
+  if (recv_deriv.len != 32 || subaddr_sk.len != 32 || out_key.len != 32) {
+    mp_raise_ValueError("Invalid XMR key data length");
+  }
+
+  uint32_t real_idx = trezor_obj_get_uint(args[1]);
+  if (se_xmr_secret_nonce_begin(recv_deriv.buf, real_idx, subaddr_sk.buf,
+                                out_key.buf, response) != sectrue) {
+    mp_raise_ValueError("Failed to start XMR secret response");
+  }
+
+  mp_obj_tuple_t *result = MP_OBJ_TO_PTR(mp_obj_new_tuple(4, NULL));
+  result->items[0] = mp_obj_new_bytes(response, 32);
+  result->items[1] = mp_obj_new_bytes(response + 32, 32);
+  result->items[2] = mp_obj_new_bytes(response + 64, 32);
+  result->items[3] = MP_OBJ_NEW_SMALL_INT(response[96]);
+  memzero(response, sizeof(response));
+  return MP_OBJ_FROM_PTR(result);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(
+    mod_trezorcrypto_se_thd89_xmr_secret_nonce_begin_obj, 4, 4,
+    mod_trezorcrypto_se_thd89_xmr_secret_nonce_begin);
+
+/// def xmr_secret_response_finish(
+///     session_id: int,
+///     c: bytes,
+///     mu_p: bytes,
+///     mu_c: bytes,
+///     z: bytes,
+/// ) -> bytes:
+///     """Finishes a one-time XMR secret-response session."""
+STATIC mp_obj_t mod_trezorcrypto_se_thd89_xmr_secret_response_finish(
+    size_t n_args, const mp_obj_t *args) {
+  mp_buffer_info_t c = {0};
+  mp_buffer_info_t mu_p = {0};
+  mp_buffer_info_t mu_c = {0};
+  mp_buffer_info_t z = {0};
+  uint8_t response[32] = {0};
+
+  uint32_t session_id = trezor_obj_get_uint(args[0]);
+  if (session_id == 0 || session_id > 0xFF) {
+    mp_raise_ValueError("Invalid XMR session ID");
+  }
+
+  mp_get_buffer_raise(args[1], &c, MP_BUFFER_READ);
+  mp_get_buffer_raise(args[2], &mu_p, MP_BUFFER_READ);
+  mp_get_buffer_raise(args[3], &mu_c, MP_BUFFER_READ);
+  mp_get_buffer_raise(args[4], &z, MP_BUFFER_READ);
+  if (c.len != 32 || mu_p.len != 32 || mu_c.len != 32 || z.len != 32) {
+    mp_raise_ValueError("Invalid XMR scalar length");
+  }
+
+  if (se_xmr_secret_response_finish((uint8_t)session_id, c.buf, mu_p.buf,
+                                    mu_c.buf, z.buf, response) != sectrue) {
+    mp_raise_ValueError("Failed to finish XMR secret response");
+  }
+
+  mp_obj_t result = mp_obj_new_bytes(response, sizeof(response));
+  memzero(response, sizeof(response));
+  return result;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(
+    mod_trezorcrypto_se_thd89_xmr_secret_response_finish_obj, 5, 5,
+    mod_trezorcrypto_se_thd89_xmr_secret_response_finish);
 
 /// def fido_seed(
 ///     callback: Callable[[int, int], None] | None = None,
@@ -974,18 +1086,233 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(
     mod_trezorcrypto_se_thd89_fido_att_sign_digest_obj,
     mod_trezorcrypto_se_thd89_fido_att_sign_digest);
 
-/// def fido_delete_all_credentials() -> None:
+/// def fido_credential_create(
+///     plaintext: bytes, resident: bool
+/// ) -> tuple[bytes, int, int]:
 ///     """
-///     Delete all FIDO2 credentials.
+///     Create a FIDO credential and return credential id, slot, and action.
 ///     """
-STATIC mp_obj_t mod_trezorcrypto_se_thd89_fido_delete_all_credentials(void) {
-  se_delete_all_fido2_credentials();
+STATIC mp_obj_t mod_trezorcrypto_se_thd89_fido_credential_create(
+    mp_obj_t plaintext_obj, mp_obj_t resident_obj) {
+  mp_buffer_info_t plaintext = {0};
+  uint16_t response_len = 516;
+  uint16_t credential_id_len = 0;
+  vstr_t response = {0};
+  mp_obj_t result[3] = {0};
+
+  mp_get_buffer_raise(plaintext_obj, &plaintext, MP_BUFFER_READ);
+  if (plaintext.len == 0 || plaintext.len > 480 ||
+      (resident_obj != mp_const_false && resident_obj != mp_const_true)) {
+    mp_raise_ValueError("invalid FIDO credential data");
+  }
+  vstr_init_len(&response, response_len);
+  if (se_fido_credential_create(
+          plaintext.buf, plaintext.len, resident_obj == mp_const_true ? 1 : 0,
+          (uint8_t *)response.buf, &response_len) != sectrue) {
+    memzero(response.buf, response.len);
+    vstr_clear(&response);
+    mp_raise_ValueError("FIDO credential creation failed");
+  }
+  credential_id_len =
+      ((uint16_t)(uint8_t)response.buf[0] << 8) | (uint8_t)response.buf[1];
+  result[0] =
+      mp_obj_new_bytes((const uint8_t *)response.buf + 2, credential_id_len);
+  result[1] = mp_obj_new_int((uint8_t)response.buf[credential_id_len + 2]);
+  result[2] = mp_obj_new_int((uint8_t)response.buf[credential_id_len + 3]);
+  memzero(response.buf, response.len);
+  vstr_clear(&response);
+  return mp_obj_new_tuple(3, result);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(
+    mod_trezorcrypto_se_thd89_fido_credential_create_obj,
+    mod_trezorcrypto_se_thd89_fido_credential_create);
+
+/// def fido_credential_validate(
+///     credential_id: bytes, rp_id_hash: bytes | None
+/// ) -> bytes:
+///     """
+///     Validate a FIDO credential id and return its plaintext.
+///     """
+STATIC mp_obj_t mod_trezorcrypto_se_thd89_fido_credential_validate(
+    mp_obj_t credential_id_obj, mp_obj_t rp_id_hash_obj) {
+  mp_buffer_info_t credential_id = {0};
+  mp_buffer_info_t rp_id_hash = {0};
+  const uint8_t *rp_id_hash_ptr = NULL;
+  uint16_t plaintext_len = 0;
+  vstr_t plaintext = {0};
+
+  mp_get_buffer_raise(credential_id_obj, &credential_id, MP_BUFFER_READ);
+  if (credential_id.len < 33 || credential_id.len > 512) {
+    mp_raise_ValueError("invalid FIDO credential ID");
+  }
+  if (rp_id_hash_obj != mp_const_none) {
+    mp_get_buffer_raise(rp_id_hash_obj, &rp_id_hash, MP_BUFFER_READ);
+    if (rp_id_hash.len != 32) {
+      mp_raise_ValueError("invalid FIDO RP ID hash");
+    }
+    rp_id_hash_ptr = rp_id_hash.buf;
+  }
+  plaintext_len = credential_id.len - 32;
+  vstr_init_len(&plaintext, plaintext_len);
+  if (se_fido_credential_validate(rp_id_hash_ptr, credential_id.buf,
+                                  credential_id.len, (uint8_t *)plaintext.buf,
+                                  &plaintext_len) != sectrue) {
+    memzero(plaintext.buf, plaintext.len);
+    vstr_clear(&plaintext);
+    mp_raise_ValueError("FIDO credential validation failed");
+  }
+  plaintext.len = plaintext_len;
+  return mp_obj_new_str_from_vstr(&mp_type_bytes, &plaintext);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(
+    mod_trezorcrypto_se_thd89_fido_credential_validate_obj,
+    mod_trezorcrypto_se_thd89_fido_credential_validate);
+
+/// def fido_resident_credentials_list() -> tuple[int, ...]:
+///     """
+///     Return indexes of stored resident credentials.
+///     """
+STATIC mp_obj_t mod_trezorcrypto_se_thd89_fido_resident_credentials_list(void) {
+  uint8_t indexes[FIDO2_RESIDENT_CREDENTIALS_COUNT] = {0};
+  uint16_t count = FIDO2_RESIDENT_CREDENTIALS_COUNT;
+  mp_obj_tuple_t *result = NULL;
+
+  if (se_fido_resident_credentials_list(indexes, &count) != sectrue) {
+    mp_raise_ValueError("FIDO resident credential list failed");
+  }
+  result = MP_OBJ_TO_PTR(mp_obj_new_tuple(count, NULL));
+  for (uint16_t i = 0; i < count; i++) {
+    result->items[i] = mp_obj_new_int(indexes[i]);
+  }
+  return MP_OBJ_FROM_PTR(result);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(
+    mod_trezorcrypto_se_thd89_fido_resident_credentials_list_obj,
+    mod_trezorcrypto_se_thd89_fido_resident_credentials_list);
+
+/// def fido_resident_credential_read(index: int) -> tuple[bytes, bytes]:
+///     """
+///     Read a resident credential id and plaintext by index.
+///     """
+STATIC mp_obj_t
+mod_trezorcrypto_se_thd89_fido_resident_credential_read(mp_obj_t index_obj) {
+  uint8_t index = trezor_obj_get_uint8(index_obj);
+  uint16_t packed_len = 920;
+  uint16_t credential_id_len = 0;
+  uint16_t plaintext_len = 0;
+  vstr_t packed = {0};
+  mp_obj_t result[2] = {0};
+
+  if (index >= FIDO2_RESIDENT_CREDENTIALS_COUNT) {
+    mp_raise_ValueError("invalid FIDO resident credential index");
+  }
+  vstr_init_len(&packed, packed_len);
+  if (se_fido_resident_credential_read(index, (uint8_t *)packed.buf,
+                                       &packed_len) != sectrue) {
+    memzero(packed.buf, packed.len);
+    vstr_clear(&packed);
+    mp_raise_ValueError("FIDO resident credential read failed");
+  }
+  credential_id_len =
+      ((uint16_t)(uint8_t)packed.buf[0] << 8) | (uint8_t)packed.buf[1];
+  plaintext_len = ((uint16_t)(uint8_t)packed.buf[credential_id_len + 2] << 8) |
+                  (uint8_t)packed.buf[credential_id_len + 3];
+  result[0] =
+      mp_obj_new_bytes((const uint8_t *)packed.buf + 2, credential_id_len);
+  result[1] = mp_obj_new_bytes(
+      (const uint8_t *)packed.buf + credential_id_len + 4, plaintext_len);
+  memzero(packed.buf, packed.len);
+  vstr_clear(&packed);
+  return mp_obj_new_tuple(2, result);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(
+    mod_trezorcrypto_se_thd89_fido_resident_credential_read_obj,
+    mod_trezorcrypto_se_thd89_fido_resident_credential_read);
+
+/// def fido_resident_credential_import(
+///     credential_id: bytes,
+/// ) -> tuple[int, int]:
+///     """
+///     Import a resident credential and return its slot and action.
+///     """
+STATIC mp_obj_t mod_trezorcrypto_se_thd89_fido_resident_credential_import(
+    mp_obj_t credential_id_obj) {
+  mp_buffer_info_t credential_id = {0};
+  uint8_t slot = 0;
+  uint8_t action = 0;
+  mp_obj_t result[2] = {0};
+
+  mp_get_buffer_raise(credential_id_obj, &credential_id, MP_BUFFER_READ);
+  if (credential_id.len < 33 || credential_id.len > 474) {
+    mp_raise_ValueError("invalid FIDO credential ID");
+  }
+  if (se_fido_resident_credential_import(credential_id.buf, credential_id.len,
+                                         &slot, &action) != sectrue) {
+    mp_raise_ValueError("FIDO resident credential import failed");
+  }
+  result[0] = mp_obj_new_int(slot);
+  result[1] = mp_obj_new_int(action);
+  return mp_obj_new_tuple(2, result);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(
+    mod_trezorcrypto_se_thd89_fido_resident_credential_import_obj,
+    mod_trezorcrypto_se_thd89_fido_resident_credential_import);
+
+/// def fido_resident_credential_delete(index: int) -> None:
+///     """
+///     Delete one resident credential by index.
+///     """
+STATIC mp_obj_t
+mod_trezorcrypto_se_thd89_fido_resident_credential_delete(mp_obj_t index_obj) {
+  uint8_t index = trezor_obj_get_uint8(index_obj);
+
+  if (index >= FIDO2_RESIDENT_CREDENTIALS_COUNT ||
+      se_fido_resident_credential_delete(index) != sectrue) {
+    mp_raise_ValueError("FIDO resident credential delete failed");
+  }
   return mp_const_none;
 }
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(
+    mod_trezorcrypto_se_thd89_fido_resident_credential_delete_obj,
+    mod_trezorcrypto_se_thd89_fido_resident_credential_delete);
 
+/// def fido_resident_credentials_clear() -> None:
+///     """
+///     Delete every resident credential.
+///     """
+STATIC mp_obj_t
+mod_trezorcrypto_se_thd89_fido_resident_credentials_clear(void) {
+  if (se_fido_resident_credentials_clear() != sectrue) {
+    mp_raise_ValueError("FIDO resident credential clear failed");
+  }
+  return mp_const_none;
+}
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(
-    mod_trezorcrypto_se_thd89_fido_delete_all_credentials_obj,
-    mod_trezorcrypto_se_thd89_fido_delete_all_credentials);
+    mod_trezorcrypto_se_thd89_fido_resident_credentials_clear_obj,
+    mod_trezorcrypto_se_thd89_fido_resident_credentials_clear);
+
+/// def fido_hmac_secret(credential_id: bytes, salt: bytes) -> bytes:
+///     """Return the purpose-bound hmac-secret output for one or two salts."""
+STATIC mp_obj_t mod_trezorcrypto_se_thd89_fido_hmac_secret(
+    mp_obj_t credential_id_obj, mp_obj_t salt_obj) {
+  mp_buffer_info_t credential_id = {0};
+  mp_buffer_info_t salt = {0};
+  vstr_t out = {0};
+  mp_get_buffer_raise(credential_id_obj, &credential_id, MP_BUFFER_READ);
+  mp_get_buffer_raise(salt_obj, &salt, MP_BUFFER_READ);
+  if (credential_id.len < 33 || credential_id.len > 512 ||
+      (salt.len != 32 && salt.len != 64)) {
+    mp_raise_ValueError("invalid FIDO hmac-secret data");
+  }
+  vstr_init_len(&out, salt.len);
+  if (se_fido_hmac_secret(credential_id.buf, credential_id.len, salt.buf,
+                          salt.len, (uint8_t *)out.buf) != sectrue) {
+    mp_raise_ValueError("FIDO hmac-secret failed");
+  }
+  return mp_obj_new_str_from_vstr(&mp_type_bytes, &out);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_trezorcrypto_se_thd89_fido_hmac_secret_obj,
+                                 mod_trezorcrypto_se_thd89_fido_hmac_secret);
 
 /// def get_pin_passphrase_space() -> int:
 ///     """
@@ -1002,8 +1329,9 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(
     mod_trezorcrypto_se_thd89_get_pin_passphrase_space_obj,
     mod_trezorcrypto_se_thd89_get_pin_passphrase_space);
 
-/// def save_pin_passphrase(pin: str, passphrase_pin: str, passphrase: str) ->
-/// tuple[bool, bool]:
+/// def save_pin_passphrase(
+///     pin: str, passphrase_pin: str, passphrase: str
+/// ) -> tuple[bool, bool]:
 ///     """
 ///     Save the pin and passphrase to the list.
 ///     Returns True on success, False on failure.
@@ -1059,8 +1387,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_3(
     mod_trezorcrypto_se_thd89_save_pin_passphrase_obj,
     mod_trezorcrypto_se_thd89_save_pin_passphrase);
 
-/// def delete_pin_passphrase(passphrase_pin: str) ->
-/// tuple[bool,bool]:
+/// def delete_pin_passphrase(passphrase_pin: str) -> tuple[bool, bool]:
 ///     """
 ///     Delete the pin and passphrase pin from the list.
 ///     Returns True on success, False on failure.
@@ -1186,10 +1513,12 @@ STATIC const mp_rom_map_elem_t mod_trezorcrypto_se_thd89_globals_table[] = {
      MP_ROM_PTR(&mod_trezorcrypto_se_thd89_aes256_encrypt_obj)},
     {MP_ROM_QSTR(MP_QSTR_aes256_decrypt),
      MP_ROM_PTR(&mod_trezorcrypto_se_thd89_aes256_decrypt_obj)},
-    {MP_ROM_QSTR(MP_QSTR_slip21_node),
-     MP_ROM_PTR(&mod_trezorcrypto_se_thd89_slip21_node_obj)},
-    {MP_ROM_QSTR(MP_QSTR_slip21_fido_node),
-     MP_ROM_PTR(&mod_trezorcrypto_se_thd89_slip21_fido_node_obj)},
+    {MP_ROM_QSTR(MP_QSTR_slip21_ownership_id),
+     MP_ROM_PTR(&mod_trezorcrypto_se_thd89_slip21_ownership_id_obj)},
+    {MP_ROM_QSTR(MP_QSTR_slip21_address_mac),
+     MP_ROM_PTR(&mod_trezorcrypto_se_thd89_slip21_address_mac_obj)},
+    {MP_ROM_QSTR(MP_QSTR_slip21_slip25_mac),
+     MP_ROM_PTR(&mod_trezorcrypto_se_thd89_slip21_slip25_mac_obj)},
     {MP_ROM_QSTR(MP_QSTR_authorization_set),
      MP_ROM_PTR(&mod_trezorcrypto_se_thd89_authorization_set_obj)},
     {MP_ROM_QSTR(MP_QSTR_authorization_get_type),
@@ -1204,10 +1533,14 @@ STATIC const mp_rom_map_elem_t mod_trezorcrypto_se_thd89_globals_table[] = {
      MP_ROM_PTR(&mod_trezorcrypto_se_thd89_sign_message_obj)},
     {MP_ROM_QSTR(MP_QSTR_derive_xmr),
      MP_ROM_PTR(&mod_trezorcrypto_se_thd89_derive_xmr_obj)},
-    {MP_ROM_QSTR(MP_QSTR_derive_xmr_private),
-     MP_ROM_PTR(&mod_trezorcrypto_se_thd89_derive_xmr_private_obj)},
     {MP_ROM_QSTR(MP_QSTR_xmr_get_tx_key),
      MP_ROM_PTR(&mod_trezorcrypto_se_thd89_xmr_get_tx_key_obj)},
+    {MP_ROM_QSTR(MP_QSTR_xmr_generate_key_image),
+     MP_ROM_PTR(&mod_trezorcrypto_se_thd89_xmr_generate_key_image_obj)},
+    {MP_ROM_QSTR(MP_QSTR_xmr_secret_nonce_begin),
+     MP_ROM_PTR(&mod_trezorcrypto_se_thd89_xmr_secret_nonce_begin_obj)},
+    {MP_ROM_QSTR(MP_QSTR_xmr_secret_response_finish),
+     MP_ROM_PTR(&mod_trezorcrypto_se_thd89_xmr_secret_response_finish_obj)},
     {MP_ROM_QSTR(MP_QSTR_fido_seed),
      MP_ROM_PTR(&mod_trezorcrypto_se_thd89_fido_seed_obj)},
     {MP_ROM_QSTR(MP_QSTR_fido_u2f_register),
@@ -1218,12 +1551,29 @@ STATIC const mp_rom_map_elem_t mod_trezorcrypto_se_thd89_globals_table[] = {
      MP_ROM_PTR(&mod_trezorcrypto_se_thd89_fido_u2f_authenticate_obj)},
     {MP_ROM_QSTR(MP_QSTR_fido_u2f_validate),
      MP_ROM_PTR(&mod_trezorcrypto_se_thd89_fido_u2f_validate_obj)},
+    {MP_ROM_QSTR(MP_QSTR_fido_credential_create),
+     MP_ROM_PTR(&mod_trezorcrypto_se_thd89_fido_credential_create_obj)},
+    {MP_ROM_QSTR(MP_QSTR_fido_credential_validate),
+     MP_ROM_PTR(&mod_trezorcrypto_se_thd89_fido_credential_validate_obj)},
+    {MP_ROM_QSTR(MP_QSTR_fido_resident_credentials_list),
+     MP_ROM_PTR(&mod_trezorcrypto_se_thd89_fido_resident_credentials_list_obj)},
+    {MP_ROM_QSTR(MP_QSTR_fido_resident_credential_read),
+     MP_ROM_PTR(&mod_trezorcrypto_se_thd89_fido_resident_credential_read_obj)},
+    {MP_ROM_QSTR(MP_QSTR_fido_resident_credential_import),
+     MP_ROM_PTR(
+         &mod_trezorcrypto_se_thd89_fido_resident_credential_import_obj)},
+    {MP_ROM_QSTR(MP_QSTR_fido_resident_credential_delete),
+     MP_ROM_PTR(
+         &mod_trezorcrypto_se_thd89_fido_resident_credential_delete_obj)},
+    {MP_ROM_QSTR(MP_QSTR_fido_resident_credentials_clear),
+     MP_ROM_PTR(
+         &mod_trezorcrypto_se_thd89_fido_resident_credentials_clear_obj)},
+    {MP_ROM_QSTR(MP_QSTR_fido_hmac_secret),
+     MP_ROM_PTR(&mod_trezorcrypto_se_thd89_fido_hmac_secret_obj)},
     {MP_ROM_QSTR(MP_QSTR_fido_sign_digest),
      MP_ROM_PTR(&mod_trezorcrypto_se_thd89_fido_sign_digest_obj)},
     {MP_ROM_QSTR(MP_QSTR_fido_att_sign_digest),
      MP_ROM_PTR(&mod_trezorcrypto_se_thd89_fido_att_sign_digest_obj)},
-    {MP_ROM_QSTR(MP_QSTR_fido_delete_all_credentials),
-     MP_ROM_PTR(&mod_trezorcrypto_se_thd89_fido_delete_all_credentials_obj)},
     {MP_ROM_QSTR(MP_QSTR_FIDO2_CRED_COUNT_MAX),
      MP_ROM_INT(FIDO2_RESIDENT_CREDENTIALS_COUNT)},
     {MP_ROM_QSTR(MP_QSTR_get_pin_passphrase_space),

@@ -197,7 +197,7 @@ STATIC mp_obj_t mod_trezorutils_firmware_vendor(void) {
   vendor_header vhdr = {0};
   uint32_t size = flash_sector_size(FLASH_SECTOR_FIRMWARE_START);
   const void *data = flash_get_address(FLASH_SECTOR_FIRMWARE_START, 0, size);
-  if (data == NULL || sectrue != read_vendor_header(data, &vhdr)) {
+  if (data == NULL || sectrue != read_vendor_header(data, size, &vhdr)) {
     mp_raise_msg(&mp_type_RuntimeError, "Failed to read vendor header.");
   }
   return mp_obj_new_str_copy(&mp_type_str, (const uint8_t *)vhdr.vstr,
@@ -461,7 +461,7 @@ STATIC mp_obj_t mod_trezorutils_se_boot_build_id(mp_obj_t se_addr) {
   return mp_obj_new_str_copy(&mp_type_str, (const uint8_t *)"EMULATOR", 8);
 #else
   int addr = mp_obj_get_int(se_addr);
-  char str[8] = {0};
+  char str[16] = {0};
   se_get_boot_build_id(addr, str, sizeof(str));
 
   return mp_obj_new_str_copy(&mp_type_str, (const uint8_t *)str, strlen(str));

@@ -20,6 +20,7 @@
 #ifndef __TREZORHAL_IMAGE_H__
 #define __TREZORHAL_IMAGE_H__
 
+#include <stddef.h>
 #include <stdint.h>
 #include "secbool.h"
 
@@ -33,6 +34,7 @@
 
 #define IMAGE_HEADER_SIZE 0x400  // size of the bootloader or firmware header
 #define IMAGE_SIG_SIZE 65
+#define VENDOR_HEADER_MAX_SIZE (64 * 1024)
 #define IMAGE_CHUNK_SIZE (128 * 1024)
 #define IMAGE_INIT_CHUNK_SIZE (16 * 1024)
 
@@ -179,11 +181,12 @@ secbool __wur load_thd89_image_header(const uint8_t* const data,
                                       const uint32_t maxsize,
                                       image_header_th89* const hdr);
 
-secbool __wur load_vendor_header(const uint8_t* const data, uint8_t key_m,
-                                 uint8_t key_n, const uint8_t* const* keys,
+secbool __wur load_vendor_header(const uint8_t* const data, size_t data_size,
+                                 uint8_t key_m, uint8_t key_n,
+                                 const uint8_t* const* keys,
                                  vendor_header* const vhdr);
 
-secbool __wur read_vendor_header(const uint8_t* const data,
+secbool __wur read_vendor_header(const uint8_t* const data, size_t data_size,
                                  vendor_header* const vhdr);
 
 void vendor_header_hash(const vendor_header* const vhdr, uint8_t* hash);

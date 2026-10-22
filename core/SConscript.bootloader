@@ -40,6 +40,7 @@ SOURCE_MOD += [
     'vendor/trezor-crypto/secp256k1.c',
     'vendor/trezor-crypto/memzero.c',
     'vendor/trezor-crypto/rand.c',
+    'vendor/trezor-crypto/hmac.c',
     'vendor/trezor-crypto/sha2.c',
     'vendor/trezor-crypto/aes/aes_modes.c',
     'vendor/trezor-crypto/aes/aescrypt.c',
@@ -178,6 +179,7 @@ SOURCE_TREZORHAL = [
     'embed/trezorhal/thd89.c',
     'embed/trezorhal/thd89_boot.c',
     'embed/trezorhal/se_thd89.c',
+    'embed/trezorhal/se_thd89_v2.c',
     'embed/trezorhal/util.s',
     'embed/trezorhal/vectortable.s',
     'embed/trezorhal/camera.c',
@@ -238,9 +240,13 @@ env.Replace(
     '-fsingle-precision-constant -fdata-sections -ffunction-sections '
     '-ffreestanding '
     '-fstack-protector '
+    # CCFLAGS are used for both compilation and the custom ELF link action.
+    '-flto=auto '
     + CPU_CCFLAGS + CCFLAGS_MOD,
     CCFLAGS_QSTR='-DNO_QSTR -DN_X64 -DN_X86 -DN_THUMB',
     LINKFLAGS='-T embed/bootloader/memory.ld -Wl,--gc-sections -Wl,-Map=build/bootloader/bootloader.map -Wl,--warn-common '
+    # Stack-protector calls are generated during LTO; retain the handler.
+    '-Wl,--undefined=__stack_chk_fail '
     '-Wl,-L embed/fp_sensor_wrapper -Wl,-whole-archive -Wl,-no-whole-archive',
     CPPPATH=[
         'embed/bootloader',

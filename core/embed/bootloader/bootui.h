@@ -55,6 +55,7 @@ void ui_screen_confirm(char* title, char* note_l1, char* note_l2, char* note_l3,
 void ui_screen_progress_bar_init(char* title, char* notes, int progress);
 void ui_screen_progress_bar_prepare(char* title, char* notes);
 void ui_screen_progress_bar_update(char* msg_status, char* notes, int progress);
+bool ui_progress_bar_is_visible(void);
 void ui_progress_bar_visible_clear(void);
 
 void ui_screen_wipe_confirm(void);
@@ -92,6 +93,7 @@ int ui_input_poll(int zones, bool poll);
 int ui_input_match(int zones, uint32_t evt);
 void ui_bootloader_simple(void);
 void ui_bootloader_first(const image_header* const hdr);
+void ui_bootloader_se_version_required(const image_header* const hdr);
 void ui_bootloader_view_details(const image_header* const hdr);
 void ui_wipe_confirm(const image_header* const hdr);
 void ui_show_version_info(int y, char* current_ver, char* new_ver);

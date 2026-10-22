@@ -378,20 +378,21 @@ void device_generate_trng_data(void) {
   // loop
   while (batch_current <= batch_total) {
     // ui init
-    snprintf(note_buf, sizeof(note_buf), "Batch   %u / %u", batch_current,
-             batch_total);
+    mini_snprintf(note_buf, sizeof(note_buf), "Batch   %u / %u", batch_current,
+                  batch_total);
     display_clear();
     ui_screen_progress_bar_prepare(title_buf, note_buf);
 
     // path
-    snprintf(path_buf, sizeof(path_buf), "0:TRNG_Test_Data/batch_%u.bin",
-             batch_current);
+    mini_snprintf(path_buf, sizeof(path_buf), "0:TRNG_Test_Data/batch_%u.bin",
+                  batch_current);
 
     // batch
     batch_processed_bytes = 0;
     while (batch_processed_bytes < batch_total_bytes) {
       // get trng
-      se_get_rand(se_rand_buffer, sizeof(se_rand_buffer));
+      ensure(se_get_rand(se_rand_buffer, sizeof(se_rand_buffer)),
+             "SE random failed");
 
       // write to file
       ensure_emmcfs(emmc_fs_file_write(path_buf, batch_processed_bytes,

@@ -44,23 +44,12 @@ typedef enum {
   PIN_TYPE_MAX
 } pin_type_t;
 
-#define FIDO2_RESIDENT_CREDENTIALS_SIZE (512)
 #define FIDO2_RESIDENT_CREDENTIALS_COUNT (60)
-#define FIDO2_RESIDENT_CREDENTIALS_FLAGS "\x66\x69\x64\x6F"  // "fido"
-#define FIDO2_RESIDENT_CREDENTIALS_HEADER_LEN (6)
-typedef struct {
-  uint8_t credential_id_flag[4];
-  uint16_t credential_length;
-  uint8_t rp_id_hash[32];
-  uint8_t credential_id[474];
-} __attribute__((packed)) CTAP_credential_id_storage;
-_Static_assert(sizeof(CTAP_credential_id_storage) ==
-                   FIDO2_RESIDENT_CREDENTIALS_SIZE,
-               "CTAP_credential_id_storage size must be flash page size");
 
 typedef secbool (*UI_WAIT_CALLBACK)(uint32_t wait, uint32_t progress,
                                     const char *message);
 void se_set_ui_callback(UI_WAIT_CALLBACK callback);
+void se_handle_status(uint16_t sw1sw2);
 
 secbool se_transmit_mac(uint8_t ins, uint8_t p1, uint8_t p2, uint8_t *data,
                         uint16_t data_len, uint8_t *recv, uint16_t *recv_len);
@@ -78,6 +67,8 @@ secbool se_reset_storage(void);
 secbool se_set_sn(const char *serial, uint8_t len);
 secbool se_get_sn(char **serial);
 int se_get_version(uint8_t addr, char *ver, uint16_t in_len);
+secbool se_all_versions_at_least(uint8_t required_major, uint8_t required_minor,
+                                 uint8_t required_patch);
 int se_get_build_id(uint8_t addr, char *build_id, uint16_t in_len);
 int se_get_hash(uint8_t addr, uint8_t *hash, uint16_t in_len);
 int se_get_boot_version(uint8_t addr, char *ver, uint16_t in_len);
@@ -162,9 +153,11 @@ secbool se_set_session_key_ex(uint8_t addr, const uint8_t *session_key);
 secbool se_set_session_key(const uint8_t *session_key);
 
 secbool se_containsMnemonic(const char *mnemonic);
-secbool se_exportMnemonic(char *mnemonic, uint16_t dest_size);
-secbool se_set_needs_backup(bool needs_backup);
-secbool se_get_needs_backup(bool *needs_backup);
+secbool se_exportMnemonic(const uint8_t *pin, uint16_t pin_len, char *mnemonic,
+                          uint16_t dest_size);
+secbool se_set_mnemonic_export_enabled(bool enabled, const uint8_t *pin,
+                                       uint16_t pin_len);
+secbool se_get_mnemonic_export_enabled(bool *enabled);
 secbool se_hasWipeCode(void);
 secbool se_changeWipeCode(const char *pin, const char *wipe_code);
 
@@ -176,10 +169,21 @@ secbool se_derive_keys(HDNode *out, const char *curve,
 secbool se_derive_xmr_key(const char *curve, const uint32_t *address_n,
                           size_t address_n_count, uint8_t *pubkey,
                           uint8_t *prikey_hash);
-secbool se_derive_xmr_private_key(const uint8_t *pubkey, const uint32_t index,
-                                  uint8_t *prikey);
 secbool se_xmr_get_tx_key(const uint8_t *rand, const uint8_t *hash,
                           uint8_t *out);
+secbool se_xmr_generate_key_image(const uint8_t recv_deriv[32],
+                                  uint32_t real_idx,
+                                  const uint8_t subaddr_sk[32],
+                                  const uint8_t out_key[32],
+                                  uint8_t key_image[32]);
+secbool se_xmr_secret_nonce_begin(const uint8_t recv_deriv[32],
+                                  uint32_t real_idx,
+                                  const uint8_t subaddr_sk[32],
+                                  const uint8_t out_key[32], uint8_t out[97]);
+secbool se_xmr_secret_response_finish(uint8_t session_id, const uint8_t c[32],
+                                      const uint8_t mu_p[32],
+                                      const uint8_t mu_c[32],
+                                      const uint8_t z[32], uint8_t s[32]);
 secbool se_node_sign_digest(const uint8_t *hash, uint8_t *sig, uint8_t *by);
 int se_ecdsa_sign_digest(const uint8_t curve, const uint8_t canonical,
                          const uint8_t *digest, uint8_t *sig, uint8_t *pby);
@@ -210,8 +214,11 @@ int se_nem_aes256_encrypt(const uint8_t *ed25519_public_key, const uint8_t *iv,
 int se_nem_aes256_decrypt(const uint8_t *ed25519_public_key, const uint8_t *iv,
                           const uint8_t *salt, uint8_t *payload, uint16_t size,
                           uint8_t *out);
-int se_slip21_node(uint8_t *data);
-int se_slip21_fido_node(uint8_t *data);
+secbool se_slip21_ownership_id(const uint8_t *script_pubkey,
+                               uint16_t script_pubkey_len, uint8_t out[32]);
+secbool se_slip21_address_mac(uint32_t slip44, const uint8_t *address,
+                              uint16_t address_len, uint8_t out[32]);
+secbool se_slip21_slip25_mac(uint8_t out[32]);
 
 secbool se_authorization_set(const uint32_t authorization_type,
                              const uint8_t *authorization,
@@ -249,12 +256,29 @@ secbool se_derive_fido_keys(HDNode *out, const char *curve,
                             uint32_t *fingerprint);
 secbool se_fido_hdnode_sign_digest(const uint8_t *hash, uint8_t *sig);
 secbool se_fido_att_sign_digest(const uint8_t *hash, uint8_t *sig);
-secbool se_get_fido2_resident_credentials(uint32_t index, uint8_t *dest,
-                                          uint16_t *dst_len);
-secbool se_set_fido2_resident_credentials(uint32_t index, const uint8_t *src,
-                                          uint16_t len);
-secbool se_delete_fido2_resident_credentials(uint32_t index);
-secbool se_delete_all_fido2_credentials(void);
+secbool se_fido_credential_create(const uint8_t *plaintext,
+                                  uint16_t plaintext_len, uint8_t resident,
+                                  uint8_t *response, uint16_t *response_len);
+secbool se_fido_credential_validate(const uint8_t rp_id_hash[32],
+                                    const uint8_t *credential_id,
+                                    uint16_t credential_id_len,
+                                    uint8_t *plaintext,
+                                    uint16_t *plaintext_len);
+secbool se_fido_hmac_secret(const uint8_t *credential_id,
+                            uint16_t credential_id_len, const uint8_t *salt,
+                            uint16_t salt_len, uint8_t *out);
+secbool se_fido_resident_credentials_list(uint8_t *indexes, uint16_t *count);
+secbool se_fido_resident_credential_read(uint8_t index, uint8_t *packed,
+                                         uint16_t *packed_len);
+secbool se_fido_resident_credential_import(const uint8_t *credential_id,
+                                           uint16_t credential_id_len,
+                                           uint8_t *slot, uint8_t *action);
+secbool se_fido_resident_credential_delete(uint8_t index);
+secbool se_fido_resident_credentials_clear(void);
 
-secbool session_generate_seed_percent(uint8_t *percent);
+secbool se_query_progress_percent(uint8_t *percent);
+
+secbool se_get_component_version(uint8_t slot, uint32_t *version);
+secbool se_set_component_version(uint8_t slot, uint32_t version);
+
 #endif

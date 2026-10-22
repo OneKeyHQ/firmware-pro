@@ -9,6 +9,7 @@
 
 #include "emmc.h"
 #include "ff.h"
+#include "mini_printf.h"
 
 // emmc wrapper status
 typedef struct
@@ -95,18 +96,19 @@ typedef enum
     ExecuteCheck_OKEMMC_ADVANCED(func_call, (EC_res == FR_OK), { return false; }); \
   }
 
-#define ensure_emmcfs(expr, msg)                                                                            \
-  {                                                                                                         \
-    if ( !(expr) )                                                                                          \
-    {                                                                                                       \
-      char gg[512];                                                                                         \
-      sprintf(                                                                                              \
-          gg, "msg=%s, f_func=%s, ff_call=%s, ff_ret=%x, extra=%s", msg, emmc_wrapper_status.from_function, \
-          emmc_wrapper_status.ff_call, emmc_wrapper_status.ff_result, emmc_wrapper_status.debug_extra       \
-      );                                                                                                    \
-                                                                                                            \
-      __fatal_error(#expr, gg, __FILE__, __LINE__, __func__);                                               \
-    }                                                                                                       \
+#define ensure_emmcfs(expr, msg)                                                                         \
+  {                                                                                                      \
+    if ( !(expr) )                                                                                       \
+    {                                                                                                    \
+      char gg[512];                                                                                      \
+      mini_snprintf(                                                                                     \
+          gg, sizeof(gg), "msg=%s, f_func=%s, ff_call=%s, ff_ret=%x, extra=%s", msg,                     \
+          emmc_wrapper_status.from_function, emmc_wrapper_status.ff_call, emmc_wrapper_status.ff_result, \
+          emmc_wrapper_status.debug_extra                                                                \
+      );                                                                                                 \
+                                                                                                         \
+      __fatal_error(#expr, gg, __FILE__, __LINE__, __func__);                                            \
+    }                                                                                                    \
   }
 
 // functions

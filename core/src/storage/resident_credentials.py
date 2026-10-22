@@ -13,6 +13,8 @@ else:
 def get(index: int) -> bytes | None:
     if not 0 <= index < MAX_RESIDENT_CREDENTIALS:
         raise ValueError  # invalid credential index
+    if utils.USE_THD89:
+        raise RuntimeError("FIDO credentials are managed by the secure element")
 
     return common.get(common.APP_WEBAUTHN, index + _RESIDENT_CREDENTIAL_START_KEY)
 
@@ -20,6 +22,8 @@ def get(index: int) -> bytes | None:
 def set(index: int, data: bytes, is_overwritten: bool = False) -> None:
     if not 0 <= index < MAX_RESIDENT_CREDENTIALS:
         raise ValueError  # invalid credential index
+    if utils.USE_THD89:
+        raise RuntimeError("FIDO credentials are managed by the secure element")
 
     common.set(common.APP_WEBAUTHN, index + _RESIDENT_CREDENTIAL_START_KEY, data)
     if not is_overwritten:
@@ -29,23 +33,28 @@ def set(index: int, data: bytes, is_overwritten: bool = False) -> None:
 def delete(index: int) -> None:
     if not 0 <= index < MAX_RESIDENT_CREDENTIALS:
         raise ValueError  # invalid credential index
+    if utils.USE_THD89:
+        se_thd89.fido_resident_credential_delete(index)
+        return
 
     common.delete(common.APP_WEBAUTHN, index + _RESIDENT_CREDENTIAL_START_KEY)
     _decrement_fido2_counter()
 
 
 def delete_all() -> None:
-    if device.get_fido2_counter() == 0:
-        return
     if utils.USE_THD89:
-        se_thd89.fido_delete_all_credentials()
+        se_thd89.fido_resident_credentials_clear()
     else:
+        if device.get_fido2_counter() == 0:
+            return
         for i in range(MAX_RESIDENT_CREDENTIALS):
             common.delete(common.APP_WEBAUTHN, i + _RESIDENT_CREDENTIAL_START_KEY)
-    _reset_fido2_counter()
+        _reset_fido2_counter()
 
 
 def get_fido2_counter() -> int:
+    if utils.USE_THD89:
+        return len(se_thd89.fido_resident_credentials_list())
     return device.get_fido2_counter()
 
 

@@ -52,8 +52,6 @@ class Homescreen(HomescreenBase):
             ui.header_error("SEEDLESS")
         elif storage.device.is_initialized() and storage.device.unfinished_backup():
             ui.header_error("BACKUP FAILED!")
-        elif storage.device.is_initialized() and storage.device.needs_backup():
-            ui.header_warning("NEEDS BACKUP!")
         elif storage.device.is_initialized() and not config.has_pin():
             ui.header_warning("PIN NOT SET!")
         elif storage.device.get_experimental_features():

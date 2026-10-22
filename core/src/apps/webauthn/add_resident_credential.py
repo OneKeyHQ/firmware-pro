@@ -1,5 +1,5 @@
 import storage.device
-from trezor import wire
+from trezor import utils, wire
 from trezor.lvglui.i18n import gettext as _, keys as i18n_keys
 from trezor.messages import Success, WebAuthnAddResidentCredential
 from trezor.ui.components.common.webauthn import ConfirmInfo
@@ -7,6 +7,7 @@ from trezor.ui.layouts import show_error_and_raise
 from trezor.ui.layouts.lvgl.webauthn import confirm_webauthn
 
 from .credential import Fido2Credential
+from .fido_seed import ensure_fido_seed_ready
 from .resident_credentials import store_resident_credential
 
 
@@ -35,6 +36,8 @@ async def add_resident_credential(
         raise wire.ProcessError("Missing credential ID parameter.")
 
     try:
+        if utils.USE_THD89:
+            ensure_fido_seed_ready()
         cred = Fido2Credential.from_cred_id(bytes(msg.credential_id), None)
     except Exception:
         await show_error_and_raise(

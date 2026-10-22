@@ -2,7 +2,7 @@ import gc
 from typing import TYPE_CHECKING
 
 import storage.cache
-from trezor import log
+from trezor import log, utils
 from trezor.enums import MessageType
 from trezor.messages import (
     MoneroLiveRefreshFinalAck,
@@ -83,21 +83,51 @@ async def _refresh_step(
     if __debug__:
         log.debug(__name__, "refresh, step i: %d", s.current_output)
 
-    # Compute spending secret key and the key image
-    # spend_priv = Hs(recv_deriv || real_out_idx) + spend_key_private
-    # If subaddr:
-    #   spend_priv += Hs("SubAddr" || view_key_private || major || minor)
-    # out_key = spend_priv * G, KI: spend_priv * Hp(out_key)
     out_key = crypto_helpers.decodepoint(msg.out_key)
     recv_deriv = crypto_helpers.decodepoint(msg.recv_deriv)
     received_index = msg.sub_addr_major, msg.sub_addr_minor
-    spend_priv, ki = monero.generate_tx_spend_and_key_image(
-        s.creds, out_key, recv_deriv, msg.real_out_idx, received_index
-    )
 
-    ki_enc = crypto_helpers.encodepoint(ki)
-    sig = key_image.generate_ring_signature(ki_enc, ki, [out_key], spend_priv, 0, False)
-    del spend_priv  # spend_priv never leaves the device
+    if utils.USE_THD89:
+        from trezor.crypto import se_thd89
+
+        aG, aH, ki_enc, session_id = se_thd89.xmr_secret_nonce_begin(
+            msg.recv_deriv,
+            msg.real_out_idx,
+            misc.xmr_subaddress_secret_key(s.creds.view_key_private, received_index),
+            msg.out_key,
+        )
+        ki = crypto_helpers.decodepoint(ki_enc)
+
+        def se_response(c: crypto.Scalar) -> bytes:
+            return se_thd89.xmr_secret_response_finish(
+                session_id,
+                crypto_helpers.encodeint(c),
+                crypto_helpers.encodeint(crypto.Scalar(1)),
+                crypto_helpers.encodeint(crypto.Scalar(0)),
+                crypto_helpers.encodeint(crypto.Scalar(0)),
+            )
+
+        sig = key_image.generate_ring_signature(
+            ki_enc,
+            ki,
+            [out_key],
+            crypto.Scalar(),
+            0,
+            False,
+            (aG, aH, se_response),
+        )
+    else:
+        # Compute spending secret key and the key image.
+        spend_priv, ki = monero.generate_tx_spend_and_key_image(
+            s.creds, out_key, recv_deriv, msg.real_out_idx, received_index
+        )
+        if spend_priv is None:
+            raise RuntimeError("XMR spend key missing")
+        ki_enc = crypto_helpers.encodepoint(ki)
+        sig = key_image.generate_ring_signature(
+            ki_enc, ki, [out_key], spend_priv, 0, False
+        )
+        del spend_priv
 
     # Serialize into buff
     buff[0:32] = ki_enc

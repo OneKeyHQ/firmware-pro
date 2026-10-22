@@ -1,8 +1,10 @@
 #include "emmc_commands.h"
 #include "emmc_commands_macros.h"
+#include "emmc_ui_progress.h"
 
 #include "bootui.h"
 #include "fw_keys.h"
+#include "mini_printf.h"
 #include "se_thd89.h"
 #include "thd89_boot.h"
 
@@ -10,28 +12,29 @@
 // SDRAM BUFFER
 bootloader_buffer* bl_buffer = (bootloader_buffer*)FMC_SDRAM_BOOLOADER_BUFFER_ADDRESS;
 
+static emmc_ui_progress_state ui_progress_state = EMMC_UI_PROGRESS_STATE_INIT;
+
 static int ui_progress_bar_handle_update(int percentage, const char* title)
 {
-    static uint32_t ui_percentage_last = 0xff;
     char* progress_title = (char*)((title != NULL) ? title : "Transferring Data");
+    emmc_ui_progress_action action =
+        emmc_ui_progress_next_action(&ui_progress_state, true, percentage, ui_progress_bar_is_visible());
 
-    if ( (percentage < 0) || (percentage > 100) )
+    if ( action == EMMC_UI_PROGRESS_ACTION_INVALID )
     {
         return -1;
     }
 
-    if ( ui_percentage_last == (uint32_t)percentage )
+    if ( action == EMMC_UI_PROGRESS_ACTION_NONE )
     {
         return 0;
     }
 
-    ui_percentage_last = (uint32_t)percentage;
-
-    if ( percentage < 100 )
+    if ( action == EMMC_UI_PROGRESS_ACTION_UPDATE )
     {
         ui_screen_progress_bar_update(progress_title, NULL, percentage);
     }
-    else
+    else if ( action == EMMC_UI_PROGRESS_ACTION_COMPLETE )
     {
         ui_screen_progress_bar_update(progress_title, NULL, percentage);
         ui_fadeout();
@@ -44,9 +47,14 @@ static int ui_progress_bar_handle_update(int percentage, const char* title)
 
 static void ui_progress_bar_handle_clear(void)
 {
-    ui_progress_bar_visible_clear();
-    display_clear();
-    ui_bootloader_first(NULL);
+    emmc_ui_progress_action action =
+        emmc_ui_progress_next_action(&ui_progress_state, false, 0, ui_progress_bar_is_visible());
+
+    if ( action == EMMC_UI_PROGRESS_ACTION_CLEAR )
+    {
+        display_clear();
+        ui_bootloader_first(NULL);
+    }
 }
 
 static void packet_generate_first(
@@ -503,10 +511,10 @@ void send_failure_detailed(uint8_t iface_num, FailureType type, const char* fmt,
         return;
     }
     // format message
-    char msg_buff[256];
+    char msg_buff[256] = {0};
     va_list argptr;
     va_start(argptr, fmt);
-    vsnprintf(msg_buff, sizeof(msg_buff) / sizeof(char), fmt, argptr);
+    mini_vsnprintf(msg_buff, sizeof(msg_buff), fmt, argptr);
     va_end(argptr);
 
     MSG_INIT(msg_send, Failure);
@@ -649,7 +657,7 @@ static int check_file_contents(uint8_t iface_num, const uint8_t* buffer, uint32_
             // check firmware header
             // check file header
             ExecuteCheck_MSGS_ADV(
-                load_vendor_header(p_data, FW_KEY_M, FW_KEY_N, FW_KEYS, &file_vhdr), sectrue,
+                load_vendor_header(p_data, buffer_len, FW_KEY_M, FW_KEY_N, FW_KEYS, &file_vhdr), sectrue,
                 {
                     send_failure(
                         iface_num, FailureType_Failure_ProcessError, "Update file vendor header invalid!"
@@ -657,6 +665,11 @@ static int check_file_contents(uint8_t iface_num, const uint8_t* buffer, uint32_
                     return -1;
                 }
             );
+            if ( file_vhdr.hdrlen > buffer_len || buffer_len - file_vhdr.hdrlen < IMAGE_HEADER_SIZE )
+            {
+                send_failure(iface_num, FailureType_Failure_ProcessError, "Update file header truncated!");
+                return -1;
+            }
             ExecuteCheck_MSGS_ADV(
                 load_image_header(
                     p_data + file_vhdr.hdrlen, FIRMWARE_IMAGE_MAGIC, FIRMWARE_IMAGE_MAXSIZE, file_vhdr.vsig_m,
@@ -668,6 +681,14 @@ static int check_file_contents(uint8_t iface_num, const uint8_t* buffer, uint32_
                     return -1;
                 }
             );
+
+            uint32_t firmware_item_len = file_vhdr.hdrlen + file_hdr.hdrlen;
+            if ( firmware_item_len > buffer_len || file_hdr.codelen > buffer_len - firmware_item_len )
+            {
+                send_failure(iface_num, FailureType_Failure_ProcessError, "Firmware file truncated!");
+                return -1;
+            }
+            firmware_item_len += file_hdr.codelen;
 
             if ( file_hdr.codelen - (FIRMWARE_IMAGE_INNER_SIZE - (file_vhdr.hdrlen + file_hdr.hdrlen)) >
                  FMC_SDRAM_FIRMWARE_P2_LEN )
@@ -690,20 +711,18 @@ static int check_file_contents(uint8_t iface_num, const uint8_t* buffer, uint32_
             );
 
             // check file size
-            ExecuteCheck_MSGS_ADV(
-                (file_vhdr.hdrlen + file_hdr.hdrlen + file_hdr.codelen <= FIRMWARE_IMAGE_MAXSIZE), true,
-                {
-                    send_failure(iface_num, FailureType_Failure_ProcessError, "Firmware file is too big!");
-                    return -1;
-                }
-            );
+            ExecuteCheck_MSGS_ADV((firmware_item_len <= FIRMWARE_IMAGE_MAXSIZE), true, {
+                send_failure(iface_num, FailureType_Failure_ProcessError, "Firmware file is too big!");
+                return -1;
+            });
 
             update_info.mcu_update_info.vendor_changed = sectrue;
             update_info.mcu_update_info.wipe_required = sectrue;
             update_info.mcu_update_info.purpose_changed = secfalse;
             // vhdr
             if ( load_vendor_header(
-                     (const uint8_t*)FIRMWARE_START, FW_KEY_M, FW_KEY_N, FW_KEYS, &current_vhdr
+                     (const uint8_t*)FIRMWARE_START, VENDOR_HEADER_MAX_SIZE, FW_KEY_M, FW_KEY_N, FW_KEYS,
+                     &current_vhdr
                  ) == sectrue )
             {
                 if ( load_image_header(
@@ -773,14 +792,13 @@ static int check_file_contents(uint8_t iface_num, const uint8_t* buffer, uint32_
 
             update_info.items[update_info.item_count].type = UPDATE_MCU;
             update_info.items[update_info.item_count].offset = p_data - buffer;
-            update_info.items[update_info.item_count].length =
-                file_vhdr.hdrlen + file_hdr.hdrlen + file_hdr.codelen;
+            update_info.items[update_info.item_count].length = firmware_item_len;
             update_info.item_count++;
             update_info.mcu_location = update_info.item_count;
             update_info.mcu_update_info.purpose = file_hdr.purpose;
 
-            p_data += file_vhdr.hdrlen + file_hdr.hdrlen + file_hdr.codelen;
-            buffer_len -= file_vhdr.hdrlen + file_hdr.hdrlen + file_hdr.codelen;
+            p_data += firmware_item_len;
+            buffer_len -= firmware_item_len;
             continue;
         }
         // SE

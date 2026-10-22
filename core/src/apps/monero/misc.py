@@ -9,6 +9,77 @@ if TYPE_CHECKING:
     from .xmr.crypto import Scalar
     from .xmr.credentials import AccountCreds
 
+_XMR_SE_INPUT_TOKEN_MAGIC = b"XMRSE01"
+_XMR_SE_INPUT_TOKEN_LEN = len(_XMR_SE_INPUT_TOKEN_MAGIC) + 32 + 4 + 32 + 32
+
+
+def encode_xmr_se_input_token(
+    recv_deriv: bytes, real_idx: int, subaddr_sk: bytes, out_key: bytes
+) -> bytearray:
+    if len(recv_deriv) != 32 or len(subaddr_sk) != 32 or len(out_key) != 32:
+        raise ValueError("Invalid XMR SE token key length")
+    if real_idx < 0 or real_idx > 0xFFFFFFFF:
+        raise ValueError("Invalid XMR output index")
+
+    token = bytearray(_XMR_SE_INPUT_TOKEN_LEN)
+    offset = 0
+    token[offset : offset + len(_XMR_SE_INPUT_TOKEN_MAGIC)] = _XMR_SE_INPUT_TOKEN_MAGIC
+    offset += len(_XMR_SE_INPUT_TOKEN_MAGIC)
+    token[offset : offset + 32] = recv_deriv
+    offset += 32
+    token[offset : offset + 4] = bytes(
+        (
+            real_idx & 0xFF,
+            (real_idx >> 8) & 0xFF,
+            (real_idx >> 16) & 0xFF,
+            (real_idx >> 24) & 0xFF,
+        )
+    )
+    offset += 4
+    token[offset : offset + 32] = subaddr_sk
+    offset += 32
+    token[offset : offset + 32] = out_key
+    return token
+
+
+def decode_xmr_se_input_token(token: bytes) -> tuple[bytes, int, bytes, bytes]:
+    if len(token) != _XMR_SE_INPUT_TOKEN_LEN:
+        raise ValueError("Invalid XMR SE token length")
+    if token[: len(_XMR_SE_INPUT_TOKEN_MAGIC)] != _XMR_SE_INPUT_TOKEN_MAGIC:
+        raise ValueError("Invalid XMR SE token magic")
+
+    offset = len(_XMR_SE_INPUT_TOKEN_MAGIC)
+    recv_deriv = token[offset : offset + 32]
+    offset += 32
+    real_idx = (
+        token[offset]
+        | (token[offset + 1] << 8)
+        | (token[offset + 2] << 16)
+        | (token[offset + 3] << 24)
+    )
+    offset += 4
+    subaddr_sk = token[offset : offset + 32]
+    offset += 32
+    out_key = token[offset : offset + 32]
+    return recv_deriv, real_idx, subaddr_sk, out_key
+
+
+def xmr_subaddress_secret_key(
+    view_key_private: Scalar, received_index: tuple[int, int]
+) -> bytes:
+    if received_index == (0, 0):
+        return b"\x00" * 32
+
+    from apps.monero.xmr import crypto_helpers, monero
+
+    return crypto_helpers.encodeint(
+        monero.get_subaddress_secret_key(
+            view_key_private,
+            major=received_index[0],
+            minor=received_index[1],
+        )
+    )
+
 
 def get_creds(
     keychain: Keychain, address_n: Bip32Path, network_type: MoneroNetworkType

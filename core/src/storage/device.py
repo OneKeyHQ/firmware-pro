@@ -87,7 +87,6 @@ _STORAGE_SIZE_VALUE: str | None = None
 _SERIAL_NUMBER_VALUE: str | None = None
 _DEVICE_ID_VALUE: str | None = None
 _TREZOR_COMPATIBLE_VALUE: bool | None = None
-_NEEDS_BACKUP_VALUE: bool | None = None
 _FIDO_SEED_GEN = False
 _FIDO2_COUNTER_VALUE: int | None = None
 _FIDO_ENABLED_VALUE: bool | None = None
@@ -865,6 +864,10 @@ def get_wp_cnts() -> int:
 
 def get_fido2_counter() -> int:
     global _FIDO2_COUNTER_VALUE
+    if utils.USE_THD89:
+        from trezor.crypto import se_thd89
+
+        return len(se_thd89.fido_resident_credentials_list())
     if _FIDO2_COUNTER_VALUE is None:
         counter = common.get(_NAMESPACE, _FIDO2_COUNTER, public=True)
         if counter is None:
@@ -884,6 +887,8 @@ def get_fido2_counter() -> int:
 
 def set_fido2_counter(value: int) -> None:
     global _FIDO2_COUNTER_VALUE
+    if utils.USE_THD89:
+        raise RuntimeError("FIDO credentials are managed by the secure element")
     from .resident_credentials import MAX_RESIDENT_CREDENTIALS
 
     assert (
@@ -1001,8 +1006,7 @@ def set_language(lang: str) -> None:
 def get_mnemonic_secret() -> bytes | None:
     if utils.EMULATOR:
         return common.get(_NAMESPACE, _MNEMONIC_SECRET)
-    else:
-        return config.se_export_mnemonic()
+    return None
 
 
 def get_backup_type() -> BackupType:
@@ -1115,7 +1119,6 @@ def set_appdrawer_background(full_path: str) -> None:
 def store_mnemonic_secret(
     secret: bytes,
     backup_type: BackupType | int,
-    needs_backup: bool = False,
     no_backup: bool = False,
     identifier: int | None = None,
     iteration_exponent: int | None = None,
@@ -1123,7 +1126,6 @@ def store_mnemonic_secret(
     from trezor.enums import BackupType
 
     global _NO_BACKUP_VALUE
-    global _NEEDS_BACKUP_VALUE
     global _INITIALIZED_VALUE
     set_version(common.STORAGE_VERSION_CURRENT)
     if utils.EMULATOR:
@@ -1136,29 +1138,8 @@ def store_mnemonic_secret(
             config.se_import_slip39(secret, backup_type, identifier, iteration_exponent)
     common.set_uint8(_NAMESPACE, _BACKUP_TYPE, backup_type)
     common.set_true_or_delete(_NAMESPACE, _NO_BACKUP, no_backup)
-    if not no_backup:
-        set_backed_up(needs_backup)
-        _NEEDS_BACKUP_VALUE = needs_backup
     _NO_BACKUP_VALUE = no_backup
     _INITIALIZED_VALUE = True
-
-
-def needs_backup() -> bool:
-    if utils.EMULATOR:
-        return common.get_bool(_NAMESPACE, _NEEDS_BACKUP)
-    global _NEEDS_BACKUP_VALUE
-    if _NEEDS_BACKUP_VALUE is None:
-        _NEEDS_BACKUP_VALUE = config.get_needs_backup()
-    return _NEEDS_BACKUP_VALUE or False
-
-
-def set_backed_up(stat: bool) -> None:
-    if utils.EMULATOR:
-        return common.delete(_NAMESPACE, _NEEDS_BACKUP)
-    global _NEEDS_BACKUP_VALUE
-    config.set_needs_backup(stat)
-    _NEEDS_BACKUP_VALUE = stat
-    return None
 
 
 def unfinished_backup() -> bool:
@@ -1444,6 +1425,23 @@ def get_se01_version() -> str:
     return _SE01_VERSION_VALUE
 
 
+def se01_version_at_least(major: int, minor: int, patch: int) -> bool:
+    components = get_se01_version().split(".")
+    if len(components) not in (3, 4):
+        return False
+
+    version = []
+    for component in components:
+        if not component or any(char < "0" or char > "9" for char in component):
+            return False
+        value = int(component)
+        if value > 0xFF:
+            return False
+        version.append(value)
+
+    return tuple(version[:3]) >= (major, minor, patch)
+
+
 def get_se01_boot_hash() -> bytes:
     global _SE01_BOOT_HASH_VALUE
     if _SE01_BOOT_HASH_VALUE is None:
@@ -1672,7 +1670,6 @@ def clear_global_cache() -> None:
     global _FLAGS_VALUE
     global _UNFINISHED_BACKUP_VALUE
     global _NO_BACKUP_VALUE
-    global _NEEDS_BACKUP_VALUE
     global _BACKUP_TYPE_VALUE
     global _SAFETY_CHECK_LEVEL_VALUE
     global _AIRGAP_MODE_VALUE
@@ -1713,7 +1710,6 @@ def clear_global_cache() -> None:
     _FLAGS_VALUE = None
     _UNFINISHED_BACKUP_VALUE = None
     _NO_BACKUP_VALUE = None
-    _NEEDS_BACKUP_VALUE = None
     _BACKUP_TYPE_VALUE = None
     _SAFETY_CHECK_LEVEL_VALUE = None
     _AIRGAP_MODE_VALUE = None

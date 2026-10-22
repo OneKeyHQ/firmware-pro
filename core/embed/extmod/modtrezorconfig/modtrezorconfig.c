@@ -339,37 +339,42 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(
     mod_trezorconfig_change_wipe_code_obj, 3, 3,
     mod_trezorconfig_change_wipe_code);
 
-/// def get_needs_backup() -> bool:
+/// def get_mnemonic_export_enabled() -> bool:
 ///     """
-///     Returns needs_backup.
+///     Returns whether mnemonic export is enabled in the SE.
 ///     """
-STATIC mp_obj_t mod_trezorconfig_get_needs_backup(void) {
-  bool needs_backup = false;
-  if (sectrue != se_get_needs_backup(&needs_backup)) {
+STATIC mp_obj_t mod_trezorconfig_get_mnemonic_export_enabled(void) {
+  bool enabled = false;
+  if (sectrue != se_get_mnemonic_export_enabled(&enabled)) {
     return mp_const_false;
   }
-
-  return needs_backup ? mp_const_true : mp_const_false;
+  return enabled ? mp_const_true : mp_const_false;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorconfig_get_needs_backup_obj,
-                                 mod_trezorconfig_get_needs_backup);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(
+    mod_trezorconfig_get_mnemonic_export_enabled_obj,
+    mod_trezorconfig_get_mnemonic_export_enabled);
 
-/// def set_needs_backup(needs_backup: bool = False) -> bool:
+/// def set_mnemonic_export_enabled(enabled: bool, pin: str) -> bool:
 ///     """
-///     Set needs_backup.
+///     Enable or disable mnemonic export in the SE.
 ///     """
-STATIC mp_obj_t mod_trezorconfig_set_needs_backup(mp_obj_t needs_backup) {
-  bool needs_backup_b = mp_obj_is_true(needs_backup);
-
-  if (sectrue != se_set_needs_backup(needs_backup_b)) {
-    return mp_const_false;
+STATIC mp_obj_t mod_trezorconfig_set_mnemonic_export_enabled(mp_obj_t enabled,
+                                                             mp_obj_t pin) {
+  mp_buffer_info_t pin_b = {0};
+  mp_get_buffer_raise(pin, &pin_b, MP_BUFFER_READ);
+  if (pin_b.len < 4 || pin_b.len > PIN_MAX_LENGTH) {
+    mp_raise_ValueError("Invalid PIN length");
   }
 
+  if (sectrue != se_set_mnemonic_export_enabled(mp_obj_is_true(enabled),
+                                                pin_b.buf, pin_b.len)) {
+    return mp_const_false;
+  }
   return mp_const_true;
 }
-
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorconfig_set_needs_backup_obj,
-                                 mod_trezorconfig_set_needs_backup);
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(
+    mod_trezorconfig_set_mnemonic_export_enabled_obj,
+    mod_trezorconfig_set_mnemonic_export_enabled);
 
 /// def get_val_len(app: int, key: int, public: bool = False) -> int:
 ///     """
@@ -414,17 +419,9 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_trezorconfig_get_val_len_obj, 2,
 ///     """
 STATIC mp_obj_t mod_trezorconfig_get(size_t n_args, const mp_obj_t *args) {
   uint8_t app = trezor_obj_get_uint8(args[0]);
-  // webauthn resident credentials, FIDO2
   if (app == 4) {
-    uint32_t index = trezor_obj_get_uint(args[1]);
-    uint16_t len = sizeof(CTAP_credential_id_storage) -
-                   FIDO2_RESIDENT_CREDENTIALS_HEADER_LEN;
-    CTAP_credential_id_storage cred_id = {0};
-
-    if (!se_get_fido2_resident_credentials(index, cred_id.rp_id_hash, &len)) {
-      return mp_const_none;
-    }
-    return mp_obj_new_bytes(cred_id.rp_id_hash, len);
+    mp_raise_msg(&mp_type_RuntimeError,
+                 "FIDO credentials are managed by the secure element");
   }
 
   uint32_t key = trezor_obj_get_uint(args[1]);
@@ -470,20 +467,9 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_trezorconfig_get_obj, 2, 3,
 ///     """
 STATIC mp_obj_t mod_trezorconfig_set(size_t n_args, const mp_obj_t *args) {
   uint8_t app = trezor_obj_get_uint8(args[0]);
-  // webauthn resident credentials, FIDO2
   if (app == 4) {
-    uint32_t index = trezor_obj_get_uint(args[1]);
-
-    mp_buffer_info_t cred_id;
-    mp_get_buffer_raise(args[2], &cred_id, MP_BUFFER_READ);
-    if (cred_id.len > sizeof(CTAP_credential_id_storage) -
-                          FIDO2_RESIDENT_CREDENTIALS_HEADER_LEN) {
-      mp_raise_msg(&mp_type_RuntimeError, "Credential ID too long");
-    }
-    if (!se_set_fido2_resident_credentials(index, cred_id.buf, cred_id.len)) {
-      mp_raise_msg(&mp_type_RuntimeError, "Could not save value");
-    }
-    return mp_const_none;
+    mp_raise_msg(&mp_type_RuntimeError,
+                 "FIDO credentials are managed by the secure element");
   }
 
   uint32_t key = trezor_obj_get_uint(args[1]);
@@ -520,13 +506,9 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_trezorconfig_set_obj, 3, 4,
 ///     """
 STATIC mp_obj_t mod_trezorconfig_delete(size_t n_args, const mp_obj_t *args) {
   uint8_t app = trezor_obj_get_uint8(args[0]);
-  // webauthn resident credentials, FIDO2
   if (app == 4) {
-    uint32_t index = trezor_obj_get_uint(args[1]);
-    if (!se_delete_fido2_resident_credentials(index)) {
-      mp_raise_msg(&mp_type_RuntimeError, "Could not delete value");
-    }
-    return mp_const_true;
+    mp_raise_msg(&mp_type_RuntimeError,
+                 "FIDO credentials are managed by the secure element");
   }
 
   uint32_t key = trezor_obj_get_uint(args[1]);
@@ -641,14 +623,21 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(
     mod_trezorconfig_se_import_slip39_obj, 4, 4,
     mod_trezorconfig_se_import_slip39);
 
-/// def se_export_mnemonic() -> bytes:
+/// def se_export_mnemonic(pin: str) -> bytes:
 ///     """
 ///     Export mnemonic from SE.
 ///     """
-STATIC mp_obj_t mod_trezorconfig_se_export_mnemonic(void) {
-  char mnemonic[MAX_MNEMONIC_LEN + 1];
+STATIC mp_obj_t mod_trezorconfig_se_export_mnemonic(mp_obj_t pin) {
+  mp_buffer_info_t pin_b = {0};
+  char mnemonic[MAX_MNEMONIC_LEN + 1] = {0};
+  mp_get_buffer_raise(pin, &pin_b, MP_BUFFER_READ);
+  if (pin_b.len < 4 || pin_b.len > PIN_MAX_LENGTH) {
+    mp_raise_ValueError("Invalid PIN length");
+  }
 
-  if (sectrue != se_exportMnemonic(mnemonic, sizeof(mnemonic))) {
+  if (sectrue !=
+      se_exportMnemonic(pin_b.buf, pin_b.len, mnemonic, sizeof(mnemonic))) {
+    memzero(mnemonic, sizeof(mnemonic));
     mp_raise_ValueError("Get se mnemonic");
   }
 
@@ -658,7 +647,7 @@ STATIC mp_obj_t mod_trezorconfig_se_export_mnemonic(void) {
   return res;
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorconfig_se_export_mnemonic_obj,
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorconfig_se_export_mnemonic_obj,
                                  mod_trezorconfig_se_export_mnemonic);
 
 /// def fingerprint_is_unlocked() -> bool:
@@ -834,10 +823,10 @@ STATIC const mp_rom_map_elem_t mp_module_trezorconfig_globals_table[] = {
      MP_ROM_PTR(&mod_trezorconfig_get_serial_obj)},
     {MP_ROM_QSTR(MP_QSTR_get_capacity),
      MP_ROM_PTR(&mod_trezorconfig_get_capacity_obj)},
-    {MP_ROM_QSTR(MP_QSTR_get_needs_backup),
-     MP_ROM_PTR(&mod_trezorconfig_get_needs_backup_obj)},
-    {MP_ROM_QSTR(MP_QSTR_set_needs_backup),
-     MP_ROM_PTR(&mod_trezorconfig_set_needs_backup_obj)},
+    {MP_ROM_QSTR(MP_QSTR_get_mnemonic_export_enabled),
+     MP_ROM_PTR(&mod_trezorconfig_get_mnemonic_export_enabled_obj)},
+    {MP_ROM_QSTR(MP_QSTR_set_mnemonic_export_enabled),
+     MP_ROM_PTR(&mod_trezorconfig_set_mnemonic_export_enabled_obj)},
     {MP_ROM_QSTR(MP_QSTR_fingerprint_is_unlocked),
      MP_ROM_PTR(&mod_trezorcrypto_se_fingerprint_is_unlocked_obj)},
     {MP_ROM_QSTR(MP_QSTR_fingerprint_lock),

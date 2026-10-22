@@ -121,6 +121,7 @@ const char* format_ver(const char* format, uint32_t version) {
 
 static uint16_t boot_background;
 static bool ble_name_show = false;
+static bool se_version_required = false;
 static int ui_bootloader_page_current = 0;
 static bool trng_from_menu = false;
 
@@ -272,8 +273,9 @@ void ui_screen_install_confirm_newvendor_or_downgrade_wipe(char* new_version) {
   vendor_header current_vhdr;
   image_header current_hdr;
   // char str[128] = {0};
-  if (sectrue == load_vendor_header((const uint8_t*)FIRMWARE_START, FW_KEY_M,
-                                    FW_KEY_N, FW_KEYS, &current_vhdr)) {
+  if (sectrue == load_vendor_header((const uint8_t*)FIRMWARE_START,
+                                    VENDOR_HEADER_MAX_SIZE, FW_KEY_M, FW_KEY_N,
+                                    FW_KEYS, &current_vhdr)) {
     if (sectrue ==
         load_image_header((const uint8_t*)FIRMWARE_START + current_vhdr.hdrlen,
                           FIRMWARE_IMAGE_MAGIC, FIRMWARE_IMAGE_MAXSIZE,
@@ -365,6 +367,7 @@ static bool ui_progress_bar_visible = false;
 void ui_screen_progress_bar_init(char* title, char* notes, int progress) {
   ui_statusbar_update();
   ui_logo_onekey();
+  ui_progress_bar_visible = true;
   if (title != NULL) {
     display_text_center(DISPLAY_RESX / 2, TITLE_OFFSET_Y, title, -1,
                         FONT_PJKS_BOLD_38, COLOR_BL_FG, COLOR_BL_BG);
@@ -406,6 +409,8 @@ void ui_screen_progress_bar_update(char* title, char* notes, int progress) {
     display_progress(notes ? notes : "Keep connected.", 0);
   }
 }
+
+bool ui_progress_bar_is_visible(void) { return ui_progress_bar_visible; }
 
 void ui_progress_bar_visible_clear(void) { ui_progress_bar_visible = false; }
 
@@ -541,6 +546,7 @@ void ui_screen_fail(void) {
 void ui_fadein(void) { display_fade(0, BACKLIGHT_NORMAL, 200); }
 
 void ui_fadeout(void) {
+  ui_progress_bar_visible_clear();
   display_fade(BACKLIGHT_NORMAL, 0, 200);
   display_clear();
 }
@@ -993,16 +999,30 @@ void ui_bootloader_first(const image_header* const hdr) {
     current_hdr = (image_header*)hdr;
   }
 
+  display_bar(0, STATUS_BAR_HEIGHT, DISPLAY_RESX,
+              DISPLAY_RESY - STATUS_BAR_HEIGHT, COLOR_BL_BG);
   ui_statusbar_update();
+  se_state = se_get_state();
+  if (se_version_required && se_state == 0 &&
+      se_all_versions_at_least(SE_MINIMUM_VERSION_MAJOR,
+                               SE_MINIMUM_VERSION_MINOR,
+                               SE_MINIMUM_VERSION_PATCH) == sectrue) {
+    se_version_required = false;
+  }
   // info icon 48 * 48 - the entry point of the bootloader details
   display_icon(INFO_ICON_OFFSET_X, INFO_ICON_OFFSET_Y, INFO_ICON_SIZE,
                INFO_ICON_SIZE, toi_ok_icon_info + 12,
                sizeof(toi_ok_icon_info) - 12, COLOR_BL_FG_INFO_ICON,
                COLOR_BL_BG);
-  ui_logo_onekey();
+  if (se_version_required) {
+    ui_logo_warning();
+  } else {
+    ui_logo_onekey();
+  }
   display_text_center(DISPLAY_RESX / 2, TITLE_OFFSET_Y, "Update Mode", -1,
                       FONT_PJKS_BOLD_38, COLOR_BL_FG, COLOR_BL_BG);
 
+  ble_name_show = false;
   if (ble_name_state()) {
     char* ble_name;
     ble_name = ble_get_name();
@@ -1018,8 +1038,18 @@ void ui_bootloader_first(const image_header* const hdr) {
     display_text_center(DISPLAY_RESX / 2, DISPLAY_RESY - 50, ver_str, -1,
                         FONT_NORMAL, COLOR_BL_SUBTITLE, COLOR_BL_BG);
   }
-  se_state = se_get_state();
-  if (se_state != 0) {
+  if (se_version_required) {
+    display_text_center(DISPLAY_RESX / 2, SUBTITLE_OFFSET_Y + 64,
+                        "SE firmware update required", -1, FONT_NORMAL,
+                        COLOR_BL_FG, COLOR_BL_BG);
+    display_text_center(DISPLAY_RESX / 2, SUBTITLE_OFFSET_Y + 100,
+                        "Version " SE_MINIMUM_VERSION_STRING
+                        " or later is required",
+                        -1, FONT_NORMAL, COLOR_BL_SUBTITLE, COLOR_BL_BG);
+    display_text_center(DISPLAY_RESX / 2, SUBTITLE_OFFSET_Y + 136,
+                        "Install an SE firmware update", -1, FONT_NORMAL,
+                        COLOR_BL_SUBTITLE, COLOR_BL_BG);
+  } else if (se_state != 0) {
     strcat(se_info, "SE ");
     if (se_state & THD89_1ST_IN_BOOT) {
       strcat(se_info, "1st ");
@@ -1039,6 +1069,11 @@ void ui_bootloader_first(const image_header* const hdr) {
     display_text_center(DISPLAY_RESX / 2, 330, "please install se firmware", -1,
                         FONT_NORMAL, COLOR_BL_SUBTITLE, COLOR_BL_BG);
   }
+}
+
+void ui_bootloader_se_version_required(const image_header* const hdr) {
+  se_version_required = true;
+  ui_bootloader_first(hdr);
 }
 
 void ui_bootloader_main_menu(const image_header* const hdr) {
@@ -1274,6 +1309,7 @@ void ui_bootloader_page_switch(const image_header* const hdr) {
       ui_bootloader_main_menu(hdr);
 
       // ui_bootloader_view_details(hdr);
+      return;
     }
     if (!ble_name_show && ble_name_state()) {
       ui_bootloader_first(hdr);
