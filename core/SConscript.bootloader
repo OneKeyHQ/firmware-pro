@@ -238,9 +238,13 @@ env.Replace(
     '-fsingle-precision-constant -fdata-sections -ffunction-sections '
     '-ffreestanding '
     '-fstack-protector '
+    # CCFLAGS are used for both compilation and the custom ELF link action.
+    '-flto=auto '
     + CPU_CCFLAGS + CCFLAGS_MOD,
     CCFLAGS_QSTR='-DNO_QSTR -DN_X64 -DN_X86 -DN_THUMB',
     LINKFLAGS='-T embed/bootloader/memory.ld -Wl,--gc-sections -Wl,-Map=build/bootloader/bootloader.map -Wl,--warn-common '
+    # Stack-protector calls are generated during LTO; retain the handler.
+    '-Wl,--undefined=__stack_chk_fail '
     '-Wl,-L embed/fp_sensor_wrapper -Wl,-whole-archive -Wl,-no-whole-archive',
     CPPPATH=[
         'embed/bootloader',
