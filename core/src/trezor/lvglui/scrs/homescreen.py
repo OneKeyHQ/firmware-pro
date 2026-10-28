@@ -2700,16 +2700,15 @@ class BackupWallet(Screen):
         from trezor.enums import BackupType
 
         is_bip39 = storage_device.get_backup_type() == BackupType.Bip39
-        self.lite = ListItemBtn(
-            self.container,
-            "OneKey Lite",
-            left_img_src="A:/res/icon-lite-48.png",
-        )
-
         self.keytag = ListItemBtn(
             self.container,
-            "OneKey Keytag",
+            _(i18n_keys.TITLE__KEYTAG),
             left_img_src="A:/res/icon-dot-48.png",
+        )
+        self.lite = ListItemBtn(
+            self.container,
+            "SeedCard (Lite)",
+            left_img_src="A:/res/icon-lite-48.png",
         )
 
         if not is_bip39:

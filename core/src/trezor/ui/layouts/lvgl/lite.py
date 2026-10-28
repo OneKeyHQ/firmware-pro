@@ -142,6 +142,29 @@ async def backup_with_lite(
                             elif flag == LITE_CARD_BUTTON_CONFIRM:
                                 continue
 
+                        elif final_status_code == LITE_CARD_HAS_BEEN_RESET:
+                            await show_fullsize_window(
+                                ctx,
+                                _(i18n_keys.TITLE__LITE_HAS_BEEN_RESET),
+                                _(i18n_keys.TITLE__LITE_HAS_BEEN_RESET_DESC),
+                                _(i18n_keys.BUTTON__I_GOT_IT),
+                                icon_path="A:/res/danger.png",
+                            )
+                            return LITE_CARD_HAS_BEEN_RESET
+
+                        elif str(final_status_code)[:3] in ("63C", "63D"):
+                            retry_count = int(str(final_status_code)[-1], 16)
+                            await show_fullsize_window(
+                                ctx,
+                                _(i18n_keys.TITLE__LITE_PIN_ERROR),
+                                _(i18n_keys.TITLE__LITE_PIN_ERROR_DESC).format(
+                                    f"#FF0000 {retry_count}#"
+                                ),
+                                _(i18n_keys.BUTTON__I_GOT_IT),
+                                icon_path="A:/res/danger.png",
+                            )
+                            return LITE_CARD_PIN_ERROR
+
                     else:
                         break
             else:
@@ -230,7 +253,7 @@ async def backup_with_lite(
                                     )
                                     return LITE_CARD_HAS_BEEN_RESET
 
-                                elif str(final_status_code).startswith("63C"):
+                                elif str(final_status_code)[:3] in ("63C", "63D"):
                                     retry_count = int(str(final_status_code)[-1], 16)
                                     await show_fullsize_window(
                                         ctx,
@@ -380,7 +403,7 @@ async def backup_with_lite_import(ctx: wire.GenericContext):
                                 icon_path="A:/res/danger.png",
                             )
                             first_placement = False
-                        elif str(mnemonic_phrase).startswith("63C"):
+                        elif str(mnemonic_phrase)[:3] in ("63C", "63D"):
                             retry_count = int(str(mnemonic_phrase)[-1], 16)
                             flag = await show_fullsize_window(
                                 ctx,

@@ -808,7 +808,7 @@ translations = [
     "以下交易輸出包含合約資料：",
     "您正在使用 {type} 授權，請確保當前 dApp 可信，否則可能導致資產損失。",
     "備份受限",
-    "Airgap 模式已啓用，NFC 功能被禁用，無法備份到 OneKey Lite，請關閉 Airgap 模式後重試。",
+    "Airgap 模式已啓用，NFC 功能被禁用，無法備份到 OneKey SeedCard (Lite)，請關閉 Airgap 模式後重試。",
     "前往設定",
     "設備認證",
     "我的地址",
