@@ -2371,4 +2371,34 @@ TITLE__SET_BRIGHTNESS = 1072
 TITLE_SELECT_ADDRESS = 1073
 # Go To Address
 TITLE_GO_TO_ADDRESS = 1074
+# Wallet Transfer
+TITLE__WALLET_TRANSFER = 1075
+# Transfer your wallet to another compatible OneKey device. Your wallet will r
+# emain on this device.
+SUBTITLE__WALLET_TRANSFER_INTRO = 1076
+# Ready to Transfer
+TITLE__READY_TO_TRANSFER = 1077
+# Hold both devices back to back and keep them touching.
+SUBTITLE__WALLET_TRANSFER_HOLD_BACK_TO_BACK = 1078
+# Transferring...
+TITLE__KEEP_HOLDING = 1079
+# Wallet Transferred
+TITLE__WALLET_TRANSFERRED = 1080
+# You can now use your wallet on both devices.
+SUBTITLE__WALLET_TRANSFER_USE_ON_BOTH_DEVICES = 1081
+# Transfer Failed
+TITLE__TRANSFER_FAILED = 1082
+# Make sure both devices are ready for Wallet Transfer, then hold them back to
+# back and try again.
+SUBTITLE__WALLET_TRANSFER_FAILED = 1083
+# Transfer Timeout
+TITLE__TRANSFER_TIMEOUT = 1084
+# Hold both devices back to back and try again.
+SUBTITLE__WALLET_TRANSFER_TIMEOUT = 1085
+# Transfer Interrupted
+TITLE__TRANSFER_INTERRUPTED = 1086
+# Keep both devices back to back and restart the transfer.
+SUBTITLE__WALLET_TRANSFER_INTERRUPTED = 1087
+# Keep both devices touching until the transfer is complete.
+SUBTITLE__WALLET_TRANSFER_TRANSFERRING = 1088
 # fmt: on
