@@ -1,11 +1,17 @@
 #ifndef _SCP_11_H_
 #define _SCP_11_H_
 
+#include <stdbool.h>
+#include <stdint.h>
+
 #include "tag.h"
 #include "tlv.h"
 
 #define SCP11_MAX_CERTIFICATE_SIZE 256
 #define SPC11_SESSION_KEY_SIZE 16
+#define SCP11_P256_PRIVKEY_SIZE 32
+#define SCP11_P256_PUBKEY_SIZE 65
+#define SCP11_RECEIPT_SIZE 16
 
 typedef struct {
   TLV_FIELD(GPC_TLV_SCP11CRT_ENTITY);
@@ -24,22 +30,6 @@ typedef struct {
   uint8_t raw[SCP11_MAX_CERTIFICATE_SIZE];
   uint16_t raw_len;
 } scp11_certificate;
-
-// typedef struct {
-//   TLV_VAR(GPC_TLV_SHAREDINFO_SCP_ID_PARAM);
-//   TLV_VAR(GPC_TLV_SHAREDINFO_KEYUSAGE);
-//   TLV_VAR(GPC_TLV_SHAREDINFO_KEYTYPE);
-//   TLV_VAR(GPC_TLV_SHAREDINFO_KEYLENGTH);
-//   TLV_VAR(GPC_TLV_SHAREDINFO_HOSTID);
-// } scp11_shared_info;
-
-// typedef struct {
-//   uint8_t scp_id_param[2];
-//   uint8_t key_usage;
-//   uint8_t key_type;
-//   uint8_t key_length;
-//   uint8_t host_id[8];
-// } scp11_shared_info_data;
 
 typedef struct {
   uint8_t len;
@@ -79,13 +69,24 @@ typedef struct {
   scp11_session_key session_key;
 } scp11_context;
 
+// Root CA public key the card's SD certificate is checked against, per card
+// generation. Also the key that signed our own OCE certificate.
+const uint8_t *scp11_root_pubkey(uint8_t version);
+
+// Parse a GP SCP11 certificate and verify its signature against verify_pubkey
+// (uncompressed P-256 point, 65 bytes).
 bool scp11_certificate_parse_and_verify(uint8_t *cert_raw, uint16_t cert_len,
+                                        const uint8_t *verify_pubkey,
                                         scp11_certificate *cert);
 bool scp11_get_mutual_auth_data(uint8_t *data, uint8_t *data_len,
-                                scp11_context scp11_ctx);
-bool scp11_open_secure_channel(scp11_context *scp11_ctx);
+                                const scp11_context *scp11_ctx);
+// Runs the ECDH pair, derives the session keys and checks the card receipt.
+// The static ECDH and the key derivation both differ per card generation.
+bool scp11_open_secure_channel(scp11_context *scp11_ctx, uint8_t version);
 void scp11_close_secure_channel(scp11_context *scp11_ctx);
 bool scp11_get_secure_channel_status(scp11_context *scp11_ctx);
-void scp11_init(scp11_context *scp11_ctx);
+// Loads the OCE certificate for the card generation and generates the ephemeral
+// key pair. Returns false if the built-in certificate fails to parse.
+bool scp11_init(scp11_context *scp11_ctx, uint8_t version);
 
 #endif
