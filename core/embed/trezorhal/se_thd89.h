@@ -238,6 +238,7 @@ secbool se_fp_read(uint32_t offset, void *val_dest, uint32_t len, uint8_t index,
                    uint8_t total);
 
 int se_lite_card_ecdh(const uint8_t *publickey, uint8_t *sessionkey);
+int se_seed_card_ecdh(const uint8_t *publickey, uint8_t *sessionkey);
 
 secbool se_gen_fido_seed(uint8_t *percent);
 secbool se_u2f_register(const uint8_t app_id[32], const uint8_t challenge[32],
