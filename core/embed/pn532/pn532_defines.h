@@ -1,5 +1,4 @@
-#ifndef _PN532_DEFINES_
-#define _PN532_DEFINES_
+#pragma once
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -9,13 +8,6 @@
 // ---------------------- Interface ----------------------
 
 // ---------------------- HAL ----------------------
-typedef enum
-{
-    PN532_SPI_STATREAD = 0x02,
-    PN532_SPI_DATAWRITE = 0x01,
-    PN532_SPI_DATAREAD = 0x03,
-    PN532_SPI_READY = 0x01,
-} PN532_FRAME_TYPE_SPI;
 
 // ---------------------- Frame ----------------------
 // Config
@@ -33,9 +25,9 @@ typedef enum
 
 // Frame Length
 // usual case, 255 byte data with normal info frame
-#define PN532_FRAME_NORMAL_INFO_MAX_LENGTH 0x00ff + 7
+#define PN532_FRAME_NORMAL_INFO_MAX_LENGTH (0x00ff + 7) // 262 bytes
 // extended case, 65535 byte data with exended info frame
-#define PN532_FRAME_EXTENDED_INFO_MAX_LENGTH 0xffff + 10
+#define PN532_FRAME_EXTENDED_INFO_MAX_LENGTH (0xffff + 10)
 
 #ifndef PN532_SUPPORT_EXTENDED_INFO_FRAME
   #define PN532_FRAME_MAX_LENGTH PN532_FRAME_NORMAL_INFO_MAX_LENGTH
@@ -52,17 +44,26 @@ typedef enum
     PN532_FRAME_ERROR,
 } PN532_FRAME_TYPE;
 
-// Frame Container (since we have no vector in C)
-// lifecycle: pack -> use -> discard(free)
-typedef struct
-{
-    PN532_FRAME_TYPE type;
-    uint16_t length;
-    uint8_t data[];
-} PN532_FRAME;
+// Frame Container - static allocation (no malloc in embedded HAL)
+// Max data size = 265 bytes: the chip's real packet-data ceiling
+// (UM0701-02 sec 7.4.7 Fig 109: TFI + CMD + Tg + 262-byte payload), reached
+// only via extended info frames - a normal frame LEN caps packet data at 255.
+#define PN532_FRAME_DATA_MAX 265
 
-// ---------------------- Functions ----------------------
-#define PN532_COMMAND_TIMEOUT 0xff
+// Raw wire size of the largest frame either side can send: extended info
+// frame overhead is 10 bytes (preamble, start code, FF FF, LENM/LENL, LCS,
+// DCS, postamble) around the 265-byte packet data. The chip answers with an
+// extended frame whenever the response exceeds a normal frame, regardless of
+// what the host sent, so RX buffers must always be this size.
+#define PN532_FRAME_RAW_MAX (PN532_FRAME_DATA_MAX + 10)
+
+typedef enum
+{
+    PN532_SPI_STATREAD = 0x02,
+    PN532_SPI_DATAWRITE = 0x01,
+    PN532_SPI_DATAREAD = 0x03,
+    PN532_SPI_READY = 0x01,
+} PN532_FRAME_TYPE_SPI;
 
 typedef enum
 {
@@ -103,31 +104,25 @@ typedef enum
     PN532_COMMAND_TGGETTARGETSTATUS = 0x8A,
 } PN532_COMMAND;
 
+typedef struct
+{
+    PN532_FRAME_TYPE type;
+    uint16_t length;
+    uint8_t data[PN532_FRAME_DATA_MAX];
+} PN532_FRAME;
+
+// ---------------------- Functions ----------------------
+// Covers typical ISO-DEP operations including FWT extensions. 2000 ms gives
+// the PN532 firmware room to complete anti-collision + ATS.
+#define PN532_COMMAND_TIMEOUT 2000
+
 // Miscellaneous Functions
 // Diagnose
-typedef enum
-{
-    PN532_DIAG_CommunicationLineTest = 0x00,
-    PN532_DIAG_ROMTest = 0x01,
-    PN532_DIAG_RAMTest = 0x02,
-    PN532_DIAG_PollingTestToTarget = 0x04,
-    PN532_DIAG_EchoBackTest = 0x05,
-    PN532_DIAG_AttentionRequestTest = 0x06,
-    PN532_DIAG_SelfAntenaTest = 0x07
-} PN532_DIAG;
-#define PN532_DIAG_BUFF_SIZE 1 + 262 // NumTst, Max Param
 
 // GetFirmwareVersion
-#define PN532_FW_VER_BUFF_SIZE 1 + 1 + 1 + 1 // IC, VER, Rev, Support
-typedef struct __attribute__((__packed__))
-{
-    uint8_t IC;
-    uint8_t Ver;
-    uint8_t Rev;
-    uint8_t Support;
-} PN532_FW_VER;
 
 // GetGeneralStatus
+#define PN532_GENERALSTATUS_MAX_TG 2
 
 // ReadRegister
 // WriteRegister
@@ -137,6 +132,12 @@ typedef struct __attribute__((__packed__))
 
 // SetSerialBaudRate
 // SetParameters
+#define PN532_PARAM_NAD_USED            (1U << 0)
+#define PN532_PARAM_DID_USED            (1U << 1)
+#define PN532_PARAM_AUTOMATIC_ATR_RES   (1U << 2)
+#define PN532_PARAM_AUTOMATIC_RATS      (1U << 4)
+#define PN532_PARAM_ISO14443_4_PICC     (1U << 5)
+#define PN532_PARAM_REMOVE_PREPOSTAMBLE (1U << 6)
 
 // SAMConfiguration
 typedef enum
@@ -149,71 +150,51 @@ typedef enum
 #define PN532_SAM_CONFIG_BUFF_SIZE 1 + 1 + 1 // Mode, Timeout, IRQ
 
 // PowerDown
+#define PN532_POWERDOWN_WAKEUP_I2C      (1U << 7)
+#define PN532_POWERDOWN_WAKEUP_GPIO     (1U << 6)
+#define PN532_POWERDOWN_WAKEUP_SPI      (1U << 5)
+#define PN532_POWERDOWN_WAKEUP_HSU      (1U << 4)
+#define PN532_POWERDOWN_WAKEUP_RF_LEVEL (1U << 3)
+#define PN532_POWERDOWN_WAKEUP_INT1     (1U << 1)
+#define PN532_POWERDOWN_WAKEUP_INT0     (1U << 0)
 
 // RF communication Functions
 // RFConfiguration
-// RFRegulationTest
-
-// Initiator Functions
-// InJumpForDEP
-// InJumpForPSL
-// InListPassiveTarget
-// + max buffer calculate
-/*
-InitiatorData:
-106k_typeA 12 bytes
-212k/424k 5 bytes
-106k_typeB 2 bytes
-106k_Jewel 0 bytes
-TargetData:
-106k_typeA unknown // ATS size????
-212k/424k 21 bytes
-106k_typeB unknown // ATTRIB_RES size???
-106k_Jewel 7 bytes
-*/
-#define PN532_InListPassiveTarget_BUFF_SIZE      PN532_FRAME_MAX_LENGTH // use max since it can't be predicted
-#define PN532_InListPassiveTarget_DATA_BUFF_SIZE 64                     // this is a guessed value!
+#define PN532_RFConfiguration_BUFF_SIZE 1 + 11 // CfgItem type, largest CfgItem data
 typedef enum
 {
-    PN532_InListPassiveTarget_BrTy_106k_typeA = 0x00,
-    PN532_InListPassiveTarget_BrTy_212k = 0x01,
-    PN532_InListPassiveTarget_BrTy_424k = 0x02,
-    PN532_InListPassiveTarget_BrTy_106k_typeB = 0x03,
-    PN532_InListPassiveTarget_BrTy_106k_Jewel = 0x04
-} PN532_InListPassiveTarget_BrTy;
+    PN532_RFConfiguration_CfgItem_RFField = 0x01,
+    PN532_RFConfiguration_CfgItem_VariousTimings = 0x02,
+    PN532_RFConfiguration_CfgItem_MaxRtyCOM = 0x04,
+    PN532_RFConfiguration_CfgItem_MaxRetries = 0x05,
+    PN532_RFConfiguration_CfgItem_AnalogSettings_106k_typeA = 0x0a,
+    PN532_RFConfiguration_CfgItem_AnalogSettings_212k_424k = 0x0b,
+    PN532_RFConfiguration_CfgItem_AnalogSettings_typeB = 0x0c,
+    PN532_RFConfiguration_CfgItem_AnalogSettings_212k_424k_848k_iso4443dash4 = 0x0d,
+} PN532_RFConfiguration_CfgItem;
+
+// Initiator Functions
+#define PN532_NFCID3_LEN 10
+// InListPassiveTarget
+#define PN532_InListPassiveTarget_BUFF_SIZE PN532_FRAME_MAX_LENGTH // use max since it can't be predicted
+// Upper bound on per-target data from InListPassiveTarget: the longest is
+// typeA (NFCID + SAK + ATS) which UM0701-02 section 7.3.5 caps around 32 B;
+// 48 B leaves headroom for maximum ATS and forward compatibility.
+#define PN532_InListPassiveTarget_DATA_BUFF_SIZE  48
+#define PN532_InListPassiveTarget_BrTy_106k_typeA 0x00
 typedef struct
 {
     uint8_t MaxTg;
-    PN532_InListPassiveTarget_BrTy BrTy;
-    uint8_t InitiatorData_len;
-    uint8_t InitiatorData[PN532_InListPassiveTarget_DATA_BUFF_SIZE];
 } PN532_InListPassiveTarget_Params;
 typedef struct
 {
     uint8_t NbTg;
-    PN532_InListPassiveTarget_BrTy BrTy;
     uint8_t TargetData_len;
     uint8_t TargetData[PN532_InListPassiveTarget_DATA_BUFF_SIZE];
 } PN532_InListPassiveTarget_Results;
-// InATR
-// InPSL
 // InDataExchange
-#define PN532_InDataExchange_BUFF_SIZE 1 + 262 // Tg/Status + DataOut/DataIn
-// InCommunicateThru
-// InDeselect
-// InRelease
-// InSelect
-// InAutoPoll
-
-// Target Functions
-// TgInitAsTarget
-// TgSetGeneralBytes
-// TgGetData
-// TgSetData
-// TgSetMetaData
-// TgGetInitiatorCommand
-// TgResponseToInitiator
-// TgGetTargetStatus
+#define PN532_DATA_MAX_LEN             262
+#define PN532_InDataExchange_BUFF_SIZE (1 + PN532_DATA_MAX_LEN) // Tg/Status + DataOut/DataIn
 
 // ---------------------- Misc ----------------------
 // GPIO
@@ -226,6 +207,6 @@ typedef struct
 #define PN532_GPIO_P35           (5)
 
 // ---------------------- Registers ----------------------
+// CIU register (long address form for Read/WriteRegister), used for the RF gain
+// boost after activation.
 #define PN532_REG_CIU_RFCfg 0x6316
-
-#endif //_PN532_DEFINES_

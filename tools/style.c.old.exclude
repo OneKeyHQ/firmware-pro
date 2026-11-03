@@ -22,3 +22,4 @@
 ^\./core/embed/trezorhal/nfc.*
 ^\./core/embed/quirc
 ^\./core/embed/zbar
+^\./core/embed/secure_channels

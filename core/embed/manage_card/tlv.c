@@ -2,7 +2,14 @@
 
 bool tlv_parse_tag(const uint8_t *data, uint8_t *end, uint16_t *tag,
                    uint16_t *offset) {
+  if (data >= end) {
+    return false;
+  }
+
   if ((*data & 0x1f) == 0x1f) {
+    if (end - data < 2) {
+      return false;
+    }
     *tag = (*data << 8) | *(data + 1);
     *offset = 2;
   } else {
@@ -16,9 +23,13 @@ bool tlv_parse_tag(const uint8_t *data, uint8_t *end, uint16_t *tag,
 bool tlv_parse_length(const uint8_t *data, uint8_t *end, uint16_t *length,
                       uint16_t *offset) {
   *length = 0;
+  if (data >= end) {
+    return false;
+  }
+
   if (*data & 0x80) {
     uint8_t len_bytes = *data & 0x7f;
-    if (len_bytes > 2) {
+    if (len_bytes > 2 || end - data < len_bytes + 1) {
       return false;
     }
 

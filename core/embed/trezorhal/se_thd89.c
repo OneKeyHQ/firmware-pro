@@ -2644,16 +2644,30 @@ int se_curve25519_ecdh(const uint8_t *publickey, uint8_t *sessionkey) {
   return 0;
 }
 
-int se_lite_card_ecdh(const uint8_t *publickey, uint8_t *sessionkey) {
+// p2 selects the card-reader key: 0x02 Lite Card, 0x03 Seed Card. The SE
+// answers the uncompressed 65-byte shared point.
+static int se_card_ecdh(uint8_t p2, const uint8_t *publickey,
+                        uint8_t *sessionkey) {
   uint8_t resp[128];
   uint16_t resp_len = sizeof(resp);
+  int ret = -1;
 
-  if (!se_transmit_mac(SE_INS_ECDH, 0x00, 0x02, (uint8_t *)publickey, 64, resp,
-                       &resp_len)) {
-    return -1;
+  if (se_transmit_mac(SE_INS_ECDH, 0x00, p2, (uint8_t *)publickey, 64, resp,
+                      &resp_len) &&
+      resp_len == 65 && resp[0] == 0x04) {
+    memcpy(sessionkey, resp, resp_len);
+    ret = 0;
   }
-  memcpy(sessionkey, resp, resp_len);
-  return 0;
+  memzero(resp, sizeof(resp));
+  return ret;
+}
+
+int se_lite_card_ecdh(const uint8_t *publickey, uint8_t *sessionkey) {
+  return se_card_ecdh(0x02, publickey, sessionkey);
+}
+
+int se_seed_card_ecdh(const uint8_t *publickey, uint8_t *sessionkey) {
+  return se_card_ecdh(0x03, publickey, sessionkey);
 }
 
 int se_get_shared_key(const char *curve, const uint8_t *peer_public_key,

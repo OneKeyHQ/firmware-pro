@@ -433,7 +433,7 @@ void device_generate_trng_data(void) {
 
 #if DEVICE_TEST
 
-#include "lite_card.h"
+#include "manage_card.h"
 
 static FATFS fs_instance;
 
@@ -586,7 +586,7 @@ static bool _nfc_test() {
   while (1) {
     if (nfc_poll_card()) {
       if (nfc_select_aid((uint8_t *)"\xD1\x56\x00\x01\x32\x83\x40\x01", 8)) {
-        if (lite_card_data_exchange_test()) {
+        if (manage_card_data_exchange_test()) {
           nfc_pwr_ctl(false);
           return true;
         }
@@ -596,7 +596,7 @@ static bool _nfc_test() {
               (uint8_t
                    *)"\x6f\x6e\x65\x6b\x65\x79\x2e\x62\x61\x63\x6b\x75\x70\x01",
               14)) {
-        if (lite_card_data_exchange_test()) {
+        if (manage_card_data_exchange_test()) {
           nfc_pwr_ctl(false);
           return true;
         }
@@ -1021,14 +1021,14 @@ void device_burnin_test(bool force) {
               if (nfc_poll_card()) {
                 if (nfc_select_aid(
                         (uint8_t *)"\xD1\x56\x00\x01\x32\x83\x40\x01", 8)) {
-                  if (lite_card_data_exchange_test()) {
+                  if (manage_card_data_exchange_test()) {
                     break;
                   }
                 } else if (nfc_select_aid(
                                (uint8_t *)"\x6f\x6e\x65\x6b\x65\x79\x2e\x62"
                                           "\x61\x63\x6b\x75\x70\x01",
                                14)) {
-                  if (lite_card_data_exchange_test()) {
+                  if (manage_card_data_exchange_test()) {
                     break;
                   }
                 }
