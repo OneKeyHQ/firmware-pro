@@ -1517,6 +1517,22 @@ secbool se_sign_message_with_write_key(uint8_t *msg, uint32_t msg_len,
   return thd89_transmit(sign, sizeof(sign), signature, &signature_len);
 }
 
+secbool se_sign_digest_with_write_key(const uint8_t digest[32],
+                                      uint8_t signature[64]) {
+  uint8_t sign[37] = {0x00, 0xF5, 0x00, 0x04, 0x20};
+  uint16_t signature_len = 64;
+
+  if (digest == NULL || signature == NULL) {
+    return secfalse;
+  }
+  memcpy(sign + 5, digest, 32);
+  if (thd89_transmit(sign, sizeof(sign), signature, &signature_len) !=
+      sectrue) {
+    return secfalse;
+  }
+  return sectrue * (signature_len == 64);
+}
+
 secbool se_set_private_key_extern(uint8_t key[32]) {
   uint8_t set_key[37] = {0x00, 0xF6, 0x00, 0x03, 0x20};
   uint16_t resp_len = 0;
@@ -2244,6 +2260,40 @@ secbool se_get_mnemonic_export_enabled(bool *enabled) {
   }
   *enabled = response == 0x55;
   return sectrue;
+}
+
+secbool se_get_mnemonic_type(uint8_t *type) {
+  uint16_t len = 1;
+  uint8_t value = 0xFF;
+
+  if (type == NULL) {
+    return secfalse;
+  }
+  if (!se_transmit_mac(0xE2, 0x00, 0x06, NULL, 0, &value, &len)) {
+    return secfalse;
+  }
+  if (len != 1 || value > 0x01) {
+    return secfalse;
+  }
+  *type = value;
+  return sectrue;
+}
+
+secbool se_verify_transfer_peer(const uint8_t *proof, uint16_t proof_len) {
+  uint16_t resp_len = 0;
+
+  if (proof == NULL || proof_len < SE_TRANSFER_PEER_PROOF_MIN_LEN ||
+      proof_len > SE_TRANSFER_PEER_PROOF_MAX_LEN) {
+    return secfalse;
+  }
+  // se_transmit_mac only reads the data buffer
+  return se_transmit_mac(0xF5, 0x00, 0x0A, (uint8_t *)proof, proof_len, NULL,
+                         &resp_len);
+}
+
+secbool se_cancel_transfer(void) {
+  uint16_t resp_len = 0;
+  return se_transmit_mac(0xF5, 0x00, 0x0B, NULL, 0, NULL, &resp_len);
 }
 
 secbool se_hasWipeCode(void) {

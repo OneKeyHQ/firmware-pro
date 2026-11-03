@@ -27,5 +27,6 @@ secbool thd89_transmit_raw_ex(uint8_t addr, uint8_t *cmd, uint16_t len,
                               uint8_t *resp, uint16_t *resp_len,
                               uint16_t *sw1sw2);
 uint16_t thd89_last_error();
+void thd89_clear_last_error(void);
 
 #endif
