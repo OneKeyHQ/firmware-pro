@@ -148,6 +148,8 @@ secbool se_has_cerrificate(void);
 secbool se_sign_message(uint8_t *msg, uint32_t msg_len, uint8_t *signature);
 secbool se_sign_message_with_write_key(uint8_t *msg, uint32_t msg_len,
                                        uint8_t *signature);
+secbool se_sign_digest_with_write_key(const uint8_t digest[32],
+                                      uint8_t signature[64]);
 secbool se_set_private_key_extern(uint8_t key[32]);
 secbool se_set_session_key_ex(uint8_t addr, const uint8_t *session_key);
 secbool se_set_session_key(const uint8_t *session_key);
@@ -158,6 +160,12 @@ secbool se_exportMnemonic(const uint8_t *pin, uint16_t pin_len, char *mnemonic,
 secbool se_set_mnemonic_export_enabled(bool enabled, const uint8_t *pin,
                                        uint16_t pin_len);
 secbool se_get_mnemonic_export_enabled(bool *enabled);
+secbool se_get_mnemonic_type(uint8_t *type);
+// ca_id(1) || certificate(1..512) || sigma(64) || role(1) || T(32) || H(32)
+#define SE_TRANSFER_PEER_PROOF_MIN_LEN 131
+#define SE_TRANSFER_PEER_PROOF_MAX_LEN 642
+secbool se_verify_transfer_peer(const uint8_t *proof, uint16_t proof_len);
+secbool se_cancel_transfer(void);
 secbool se_hasWipeCode(void);
 secbool se_changeWipeCode(const char *pin, const char *wipe_code);
 
