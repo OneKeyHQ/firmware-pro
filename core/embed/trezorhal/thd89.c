@@ -637,3 +637,10 @@ secbool thd89_fp_transmit(uint8_t *cmd, uint16_t len, uint8_t *resp,
 }
 
 uint16_t thd89_last_error() { return sw1 << 8 | sw2; }
+
+// Drop the last status word so a caller polling thd89_last_error() after a
+// failed call never reads a stale SW from an earlier command.
+void thd89_clear_last_error(void) {
+  sw1 = 0;
+  sw2 = 0;
+}

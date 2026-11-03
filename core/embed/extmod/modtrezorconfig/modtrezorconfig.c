@@ -354,6 +354,21 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(
     mod_trezorconfig_get_mnemonic_export_enabled_obj,
     mod_trezorconfig_get_mnemonic_export_enabled);
 
+/// def get_mnemonic_type() -> int:
+///     """
+///     Ask the SE which mnemonic it holds: 0 = BIP39, 1 = SLIP39.
+///     Raises RuntimeError when the SE holds no mnemonic.
+///     """
+STATIC mp_obj_t mod_trezorconfig_get_mnemonic_type(void) {
+  uint8_t type = 0xFF;
+  if (sectrue != se_get_mnemonic_type(&type)) {
+    mp_raise_msg(&mp_type_RuntimeError, "Failed to get SE mnemonic type.");
+  }
+  return mp_obj_new_int(type);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorconfig_get_mnemonic_type_obj,
+                                 mod_trezorconfig_get_mnemonic_type);
+
 /// def set_mnemonic_export_enabled(enabled: bool, pin: str) -> bool:
 ///     """
 ///     Enable or disable mnemonic export in the SE.
@@ -827,6 +842,8 @@ STATIC const mp_rom_map_elem_t mp_module_trezorconfig_globals_table[] = {
      MP_ROM_PTR(&mod_trezorconfig_get_mnemonic_export_enabled_obj)},
     {MP_ROM_QSTR(MP_QSTR_set_mnemonic_export_enabled),
      MP_ROM_PTR(&mod_trezorconfig_set_mnemonic_export_enabled_obj)},
+    {MP_ROM_QSTR(MP_QSTR_get_mnemonic_type),
+     MP_ROM_PTR(&mod_trezorconfig_get_mnemonic_type_obj)},
     {MP_ROM_QSTR(MP_QSTR_fingerprint_is_unlocked),
      MP_ROM_PTR(&mod_trezorcrypto_se_fingerprint_is_unlocked_obj)},
     {MP_ROM_QSTR(MP_QSTR_fingerprint_lock),
