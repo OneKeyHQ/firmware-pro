@@ -11,6 +11,8 @@ from apps.common.request_pin import error_pin_invalid, request_pin_and_sd_salt
 from .homescreen import recovery_process
 
 if TYPE_CHECKING:
+    from typing import Callable
+
     from trezor.messages import RecoveryDevice
 
 
@@ -21,7 +23,10 @@ DRY_RUN_ALLOWED_FIELDS = ("dry_run", "word_count", "enforce_wordlist", "type")
 
 
 async def recovery_device(
-    ctx: wire.GenericContext, msg: RecoveryDevice, type: str = "phrase"
+    ctx: wire.GenericContext,
+    msg: RecoveryDevice,
+    type: str = "phrase",
+    on_verified: Callable[[bytes], None] | None = None,
 ) -> Success:
     """
     Recover BIP39/SLIP39 seed into empty device.
@@ -31,6 +36,8 @@ async def recovery_device(
     """
 
     _validate(msg)
+    if on_verified is not None and (not msg.dry_run or type != "phrase"):
+        raise wire.ProcessError("Verified mnemonic requires a phrase check")
     if msg.dry_run:
         utils.mark_initialization_processing()
         utils.play_dead()
@@ -69,7 +76,7 @@ async def recovery_device(
         storage.recovery.set_in_progress(True)
         storage.recovery.set_dry_run(bool(msg.dry_run))
         # workflow.set_default(recovery_homescreen)
-        result = await recovery_process(ctx, type)
+        result = await recovery_process(ctx, type, on_verified=on_verified)
     except BaseException as e:
         raise e
     else:
