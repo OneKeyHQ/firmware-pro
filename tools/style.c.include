@@ -6,4 +6,6 @@
 ^\./core/embed/trezorhal/i2c.*
 ^\./core/embed/trezorhal/camera.*
 ^\./core/embed/trezorhal/nfc.*
+^\./core/embed/device_transfer
 ^\./core/embed/secure_channels
+^\./core/embed/secure_p2p
