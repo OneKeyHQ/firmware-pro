@@ -2710,10 +2710,15 @@ class BackupWallet(Screen):
             "SeedCard (Lite)",
             left_img_src="A:/res/icon-lite-48.png",
         )
-
+        self.transfer = ListItemBtn(
+            self.container,
+            _(i18n_keys.TITLE__WALLET_TRANSFER),
+            left_img_src="A:/res/icon-wallet-transfer-48.png",
+        )
         if not is_bip39:
-            self.lite.disable()
-            self.keytag.disable()
+            for item in (self.keytag, self.lite, self.transfer):
+                item.disable()
+                item.img_left.set_style_img_opa(lv.OPA._40, 0)
 
         self.add_event_cb(self.on_click, lv.EVENT.CLICKED, None)
 
@@ -2721,6 +2726,22 @@ class BackupWallet(Screen):
         code = event_obj.code
         target = event_obj.get_target()
         if code == lv.EVENT.CLICKED:
+            if target == self.transfer:
+                if storage_device.is_airgap_mode():
+                    screen = FullSizeWindow(
+                        _(i18n_keys.TITLE__BACKUP_LIMITED),
+                        _(i18n_keys.TITLE__BACKUP_LIMITED_DESC),
+                        confirm_text=_(i18n_keys.BUTTON__GO_SETTINGS),
+                        cancel_text=_(i18n_keys.BUTTON__BACK),
+                        anim_dir=0,
+                    )
+                    screen.btn_layout_ver()
+                    workflow.spawn(self.handle_airgap_response(screen))
+                else:
+                    from apps.management.device_transfer import device_transfer
+
+                    workflow.spawn(device_transfer(wire.DUMMY_CONTEXT))
+                return
             if target in [self.lite, self.keytag]:
                 from trezor.wire import DUMMY_CONTEXT
                 from apps.management.recovery_device import recovery_device
