@@ -192,9 +192,15 @@ if TREZOR_MODEL in ('T',):
     SOURCE_MOD.extend(Glob('embed/manage_card/*.c'))
     SOURCE_MOD.extend(Glob('embed/manage_card/lite_card/*.c'))
     SOURCE_MOD.extend(Glob('embed/manage_card/seed_card/*.c'))
-    # GP SCP03 secure messaging for the Seed Card
+    # GP SCP03 secure messaging for the Seed Card and device transfer
     SOURCE_MOD.extend(Glob('embed/secure_channels/*.c'))
     SOURCE_MOD.extend(Glob('embed/secure_channels/scp03/*.c'))
+    # device-to-device transfer pipe
+    SOURCE_MOD.extend(Glob('embed/secure_p2p/*.c'))
+    SOURCE_MOD.extend(Glob('embed/secure_p2p/identity/*.c'))
+    SOURCE_MOD.extend(Glob('embed/secure_p2p/handshake/*.c'))
+    SOURCE_MOD.extend(Glob('embed/secure_p2p/transfer/*.c'))
+    SOURCE_MOD.extend(Glob('embed/device_transfer/*.c'))
 
 # modtrezorui
 CPPPATH_MOD += [
@@ -739,6 +745,13 @@ if PRODUCTION_MODEL == 'H':
             'embed/manage_card',
             'embed/manage_card/lite_card',
             'embed/manage_card/seed_card',
+            'embed/secure_p2p',
+            'embed/secure_p2p/identity',
+            'embed/secure_p2p/handshake',
+            'embed/secure_p2p/transfer',
+            # <crypto.h> shim for the secure_p2p sources
+            'embed/secure_p2p/port',
+            'embed/device_transfer',
         ] + CPPPATH_MOD,
         CPPDEFINES=[
             'TREZOR_MODEL_'+TREZOR_MODEL,

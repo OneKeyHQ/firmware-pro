@@ -5,6 +5,9 @@
 #include "memzero.h"
 #include "nfc.h"
 
+#include "device_transfer_export.h"
+#include "device_transfer_se.h"
+
 /// package: trezorio.nfc
 
 /// def pwr_ctrl(on_off: bool) -> bool:
@@ -84,6 +87,60 @@ STATIC mp_obj_t mod_trezorio_NFC_close_secure_channel(void) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorio_NFC_close_secure_channel_obj,
                                  mod_trezorio_NFC_close_secure_channel);
 
+/// def p2p_export_start(
+///     mnemonic: AnyBytes,
+///     listen_timeout_ms: int,
+///     turn_timeout_ms: int,
+/// ) -> int:
+///     """Start one exporter session. Returns 0 on start, otherwise an error.
+///     Copies verified user-entered BIP39 text for SE sealing with E2/09.
+///     Does not change the SE export switch.
+///     """
+STATIC mp_obj_t mod_trezorio_NFC_p2p_export_start(size_t n_args,
+                                                  const mp_obj_t *args) {
+  mp_buffer_info_t mnemonic = {0};
+  mp_get_buffer_raise(args[0], &mnemonic, MP_BUFFER_READ);
+  mp_int_t listen = trezor_obj_get_int(args[1]);
+  mp_int_t turn = trezor_obj_get_int(args[2]);
+  if (listen <= 0 || turn <= 0) mp_raise_ValueError("Invalid timeout");
+  if (mnemonic.len == 0 || mnemonic.len > DEVICE_TRANSFER_MNEMONIC_MAX_LEN)
+    mp_raise_ValueError("Invalid mnemonic length");
+  manage_card_reset();
+  return mp_obj_new_int(device_transfer_export_start(
+      mnemonic.buf, (uint16_t)mnemonic.len, (uint32_t)listen, (uint32_t)turn));
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(
+    mod_trezorio_NFC_p2p_export_start_obj, 3, 3,
+    mod_trezorio_NFC_p2p_export_start);
+
+/// def p2p_export_poll() -> tuple[int, int, int, int, int]:
+///     """Poll without waiting for RF. Returns (result, in, out, export_sw,
+///     state). Result -1 means pending, 0 means success, 10 means cancelled;
+///     other values are device_transfer_export_result_t.
+///     """
+STATIC mp_obj_t mod_trezorio_NFC_p2p_export_poll(void) {
+  device_transfer_export_stats_t stats = {0};
+  int result = device_transfer_export_poll(&stats);
+  mp_obj_t values[] = {mp_obj_new_int(result),
+                       mp_obj_new_int_from_uint(stats.frames_in),
+                       mp_obj_new_int_from_uint(stats.frames_out),
+                       mp_obj_new_int_from_uint(stats.export_sw),
+                       mp_obj_new_int_from_uint(stats.last_state)};
+  return mp_obj_new_tuple(5, values);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorio_NFC_p2p_export_poll_obj,
+                                 mod_trezorio_NFC_p2p_export_poll);
+
+/// def p2p_export_close() -> None:
+///     """Cancel and wipe the exporter session, then power NFC down.
+///     Idempotent."""
+STATIC mp_obj_t mod_trezorio_NFC_p2p_export_close(void) {
+  device_transfer_export_close();
+  return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorio_NFC_p2p_export_close_obj,
+                                 mod_trezorio_NFC_p2p_export_close);
+
 STATIC const mp_rom_map_elem_t mod_trezorio_NFC_globals_table[] = {
     {MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_nfc)},
     {MP_ROM_QSTR(MP_QSTR_pwr_ctrl), MP_ROM_PTR(&mod_trezorio_NFC_pwr_ctrl_obj)},
@@ -93,6 +150,12 @@ STATIC const mp_rom_map_elem_t mod_trezorio_NFC_globals_table[] = {
      MP_ROM_PTR(&mod_trezorio_NFC_send_recv_obj)},
     {MP_ROM_QSTR(MP_QSTR_close_secure_channel),
      MP_ROM_PTR(&mod_trezorio_NFC_close_secure_channel_obj)},
+    {MP_ROM_QSTR(MP_QSTR_p2p_export_start),
+     MP_ROM_PTR(&mod_trezorio_NFC_p2p_export_start_obj)},
+    {MP_ROM_QSTR(MP_QSTR_p2p_export_poll),
+     MP_ROM_PTR(&mod_trezorio_NFC_p2p_export_poll_obj)},
+    {MP_ROM_QSTR(MP_QSTR_p2p_export_close),
+     MP_ROM_PTR(&mod_trezorio_NFC_p2p_export_close_obj)},
 };
 
 STATIC MP_DEFINE_CONST_DICT(mod_trezorio_NFC_globals,
