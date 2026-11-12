@@ -13,6 +13,12 @@ void pn532_spi_deinit(void)
     spi_deinit_by_device(SPI_NFC);
 }
 
+// Whole-buffer transfers. The PN532's SPI slave is paced by slowing SCK to
+// ~1.5 MHz (SPI6 prescaler 64, see trezorhal/spi.c) rather than by per-byte
+// HAL-call overhead, since an unpaced burst at 3.125 MHz corrupts frames longer
+// than ~200 bytes. Must stay paired with the exact-length frame read in pn532.c
+// (pn532_read_frame_exact): an over-read of the ACK would swallow the
+// response frame that becomes ready meanwhile.
 void pn532_spi_write(uint8_t* buf, uint32_t size)
 {
     HAL_SPI_Transmit(spi_handle_nfc, buf, size, 1000);

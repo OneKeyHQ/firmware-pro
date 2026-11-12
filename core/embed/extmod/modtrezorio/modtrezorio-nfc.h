@@ -1,7 +1,8 @@
 
 #include "embed/extmod/trezorobj.h"
 
-#include "lite_card.h"
+#include "manage_card.h"
+#include "memzero.h"
 #include "nfc.h"
 
 /// package: trezorio.nfc
@@ -11,7 +12,13 @@
 ///     Control NFC power.
 ///     """
 STATIC mp_obj_t mod_trezorio_NFC_pwr_ctrl(mp_obj_t on_off) {
-  return nfc_pwr_ctl(mp_obj_is_true(on_off)) ? mp_const_true : mp_const_false;
+  bool on = mp_obj_is_true(on_off);
+  if (!on) {
+    // Field down: the next card on the reader need not be the same one, so the
+    // secure channel and the detected card generation both go with it.
+    manage_card_reset();
+  }
+  return nfc_pwr_ctl(on) ? mp_const_true : mp_const_false;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_trezorio_NFC_pwr_ctrl_obj,
                                  mod_trezorio_NFC_pwr_ctrl);
@@ -44,12 +51,13 @@ STATIC mp_obj_t mod_trezorio_NFC_send_recv(size_t n_args,
   uint8_t resp[256] = {0};
   uint16_t resp_len = sizeof(resp);
 
-  bool success = lite_card_apdu((uint8_t *)apdu.buf, apdu.len, resp, &resp_len,
-                                sw1sw2, safe);
+  bool success = manage_card_apdu((uint8_t *)apdu.buf, apdu.len, resp,
+                                  &resp_len, sw1sw2, safe);
 
   mp_obj_tuple_t *tuple = MP_OBJ_TO_PTR(mp_obj_new_tuple(2, NULL));
 
   tuple->items[0] = mp_obj_new_str_copy(&mp_type_bytes, resp, resp_len);
+  memzero(resp, sizeof(resp));
 
   if (!success) {
     sw1sw2[0] = 0x99;
@@ -63,6 +71,19 @@ STATIC mp_obj_t mod_trezorio_NFC_send_recv(size_t n_args,
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_trezorio_NFC_send_recv_obj, 1, 2,
                                            mod_trezorio_NFC_send_recv);
 
+/// def close_secure_channel() -> None:
+///     """
+///     Tear down the SCP11/SCP03 session. The next APDU sent with safe=True
+///     negotiates a fresh one. Needed where the card drops the session on its
+///     own side without the applet being re-selected.
+///     """
+STATIC mp_obj_t mod_trezorio_NFC_close_secure_channel(void) {
+  manage_card_close_secure_channel();
+  return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorio_NFC_close_secure_channel_obj,
+                                 mod_trezorio_NFC_close_secure_channel);
+
 STATIC const mp_rom_map_elem_t mod_trezorio_NFC_globals_table[] = {
     {MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_nfc)},
     {MP_ROM_QSTR(MP_QSTR_pwr_ctrl), MP_ROM_PTR(&mod_trezorio_NFC_pwr_ctrl_obj)},
@@ -70,6 +91,8 @@ STATIC const mp_rom_map_elem_t mod_trezorio_NFC_globals_table[] = {
      MP_ROM_PTR(&mod_trezorio_NFC_poll_card_obj)},
     {MP_ROM_QSTR(MP_QSTR_send_recv),
      MP_ROM_PTR(&mod_trezorio_NFC_send_recv_obj)},
+    {MP_ROM_QSTR(MP_QSTR_close_secure_channel),
+     MP_ROM_PTR(&mod_trezorio_NFC_close_secure_channel_obj)},
 };
 
 STATIC MP_DEFINE_CONST_DICT(mod_trezorio_NFC_globals,

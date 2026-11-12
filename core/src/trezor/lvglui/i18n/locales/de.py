@@ -808,7 +808,7 @@ translations = [
     "Die folgende Transaktionsausgabe enthält Vertragsdaten:",
     "Sie nutzen die {type}-Autorisierung, prüfen Sie die Vertrauenswürdigkeit der dApp.",
     "Sicherung nicht möglich",
-    "Der Airgap-Modus ist aktiviert und NFC ist deaktiviert, daher können Sie kein Backup auf OneKey Lite erstellen. Bitte deaktivieren Sie den Airgap-Modus und versuchen Sie es erneut.",
+    "Der Airgap-Modus ist aktiviert und NFC ist deaktiviert, daher können Sie kein Backup auf OneKey SeedCard (Lite) erstellen. Bitte deaktivieren Sie den Airgap-Modus und versuchen Sie es erneut.",
     "Gehe zu Einstellungen",
     "Zertifizierungen",
     "Meine Adresse",

@@ -808,7 +808,7 @@ translations = [
     "Il seguente output di transazione contiene i dati del contratto:",
     "Stai utilizzando l'autorizzazione {type} , assicurati che la dApp sia affidabile per evitare la perdita di risorse.",
     "Impossibile eseguire il backup",
-    "La modalità Airgap è abilitata e NFC è disabilitato, quindi non puoi eseguire il backup su OneKey Lite. Disattiva la modalità Airgap e riprova.",
+    "La modalità Airgap è abilitata e NFC è disabilitato, quindi non puoi eseguire il backup su OneKey SeedCard (Lite). Disattiva la modalità Airgap e riprova.",
     "Vai a Impostazioni",
     "Certificazioni",
     "Il mio indirizzo",

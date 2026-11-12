@@ -189,7 +189,12 @@ if TREZOR_MODEL in ('T',):
         'embed/trezorhal/fatfs/diskio.c',
     ]
     SOURCE_MOD.extend(Glob('embed/pn532/*.c'))
-    SOURCE_MOD.extend(Glob('embed/lite_card/*.c'))
+    SOURCE_MOD.extend(Glob('embed/manage_card/*.c'))
+    SOURCE_MOD.extend(Glob('embed/manage_card/lite_card/*.c'))
+    SOURCE_MOD.extend(Glob('embed/manage_card/seed_card/*.c'))
+    # GP SCP03 secure messaging for the Seed Card
+    SOURCE_MOD.extend(Glob('embed/secure_channels/*.c'))
+    SOURCE_MOD.extend(Glob('embed/secure_channels/scp03/*.c'))
 
 # modtrezorui
 CPPPATH_MOD += [
@@ -591,9 +596,11 @@ SOURCE_EMMC_WRAPPER.extend(Glob('embed/emmc_wrapper/emmc_fs.c'))
 SOURCE_PN532_WRAPPER = []
 SOURCE_PN532_WRAPPER.extend(Glob('embed/pn532/*.c'))
 
-# lite card wrapper
-SOURCE_LITE_CARD_WRAPPER = []
-SOURCE_LITE_CARD_WRAPPER.extend(Glob('embed/lite_card/*.c'))
+# manage card wrapper (Lite Card + Seed Card)
+SOURCE_MANAGE_CARD_WRAPPER = []
+SOURCE_MANAGE_CARD_WRAPPER.extend(Glob('embed/manage_card/*.c'))
+SOURCE_MANAGE_CARD_WRAPPER.extend(Glob('embed/manage_card/lite_card/*.c'))
+SOURCE_MANAGE_CARD_WRAPPER.extend(Glob('embed/manage_card/seed_card/*.c'))
 
 # fp_sensor wrapper
 SOURCE_FP_SENSOR_WRAPPER = []
@@ -729,7 +736,9 @@ if PRODUCTION_MODEL == 'H':
             'embed/zbar/qrcode',
             'embed/zbar/decoder', 
             'embed/bytewords/', 
-            'embed/lite_card',
+            'embed/manage_card',
+            'embed/manage_card/lite_card',
+            'embed/manage_card/seed_card',
         ] + CPPPATH_MOD,
         CPPDEFINES=[
             'TREZOR_MODEL_'+TREZOR_MODEL,
