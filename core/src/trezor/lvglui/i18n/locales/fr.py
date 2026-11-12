@@ -828,7 +828,7 @@ translations = [
     "Connecter l'appareil",
     "Ouvrez l'application OneKey et connectez votre appareil pour créer un portefeuille. La vérification de l'appareil sera effectuée automatiquement.",
     "Vérifier l'appareil",
-    "Visitez https://bit.ly/3ZsHB40 pour des méthodes de vérification supplémentaires",
+    "Visitez https://help.onekey.so/en/articles/11461153 pour des méthodes de vérification supplémentaires",
     "Plus de réseaux",
     "Afficher moins",
     "L'URL du bootloader nécessite une vérification de l'appareil dans l'application OneKey 5.5.0+.",

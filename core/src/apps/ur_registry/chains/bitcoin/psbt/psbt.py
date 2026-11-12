@@ -1200,7 +1200,7 @@ class PSBT:
 
         tx = CTransaction()
         tx.nVersion = self.tx_version
-        self.nLockTime = self.compute_lock_time()
+        tx.nLockTime = self.compute_lock_time()
 
         for psbt_in in self.inputs:
             if psbt_in.prev_txid is None:

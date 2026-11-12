@@ -2,15 +2,16 @@ from typing import TYPE_CHECKING
 
 from trezor import wire
 from trezor.crypto import base58
-from trezor.enums import AmountUnit, OutputScriptType
+from trezor.enums import AmountUnit, InputScriptType, OutputScriptType
 from trezor.lvglui.scrs import lv
 from trezor.messages import SignedPsbt, SignTx, TxInput, TxOutput
 
 from apps.common import address_type
 from apps.ur_registry.chains.bitcoin.psbt.psbt import PSBT
-from apps.ur_registry.chains.bitcoin.psbt.script import is_witness
+from apps.ur_registry.chains.bitcoin.psbt.script import is_witness, parse_op_return_data
 from apps.ur_registry.chains.bitcoin.psbt.serialize import ser_string
 
+from . import addresses, scripts
 from .common import (
     SigHashType,
     bip340_sign,
@@ -25,15 +26,29 @@ from .sign_tx.sig_hasher import BitcoinSigHasher
 # from .sign_tx import tx_weight
 
 if TYPE_CHECKING:
+    from trezor.crypto import bip32
     from apps.common.coininfo import CoinInfo
     from apps.common.keychain import Keychain
     from trezor.messages import SignPsbt
+
+
+def _validate_change_output_script(
+    script_type: InputScriptType,
+    node: "bip32.HDNode",
+    script_pubkey: bytes,
+    coin: "CoinInfo",
+) -> None:
+    address = addresses.get_address(script_type, coin, node)
+    if scripts.output_derive_script(address, coin) != script_pubkey:
+        raise wire.DataError("Invalid change output script")
 
 
 @with_keychain
 async def sign_taproot(
     ctx: wire.Context, msg: SignPsbt, keychain: Keychain, coin: CoinInfo
 ) -> SignedPsbt:
+    if not coin.taproot:
+        raise wire.DataError("Taproot is not enabled on this coin")
     if not msg.psbt:
         raise wire.DataError("Missing psbt")
     try:
@@ -55,7 +70,7 @@ async def sign_taproot(
     found_ours = False
     contains_script_path_spending = False
     for i, input in enumerate(psbt.inputs):
-        if input.prev_txid is None:
+        if not input.prev_txid:
             raise wire.DataError("Missing previous transaction ID")
         if input.prev_out is None:
             raise wire.DataError("Missing previous output index")
@@ -138,9 +153,23 @@ async def sign_taproot(
             if out.nValue != 0:
                 if not (contains_script_path_spending and len(psbt.inputs) == 1):
                     raise wire.DataError("OpReturn output should have 0 value")
-            op_return_data = out.scriptPubKey[2:]
+            op_return_data = parse_op_return_data(out.scriptPubKey)
+            if op_return_data is None or len(op_return_data) > 80:
+                raise wire.DataError("Invalid PSBT, unsupported OP_RETURN")
         else:
             raise Exception("Invalid output type")
+
+        if len(output.hd_keypaths) + len(output.tap_bip32_paths) > 1:
+            raise wire.DataError("Multiple derivation paths are not allowed")
+
+        change_key_origin = None
+        change_script_type = None
+        if out.is_p2pkh():
+            change_script_type = InputScriptType.SPENDADDRESS
+        elif out.is_p2sh():
+            change_script_type = InputScriptType.SPENDP2SHWITNESS
+        elif wit and ver == 0:
+            change_script_type = InputScriptType.SPENDWITNESS
 
         if not wit or (wit and ver == 0):
             for _, keypath in output.hd_keypaths.items():
@@ -153,9 +182,10 @@ async def sign_taproot(
                         raise wire.DataError(
                             "Master fingerprint does not match master key"
                         )
-                change_out += out.nValue
-                is_change_out = True
+                if change_script_type is not None:
+                    change_key_origin = keypath
         elif wit and ver == 1:
+            change_script_type = InputScriptType.SPENDTAPROOT
             for key, (_, origin) in output.tap_bip32_paths.items():
                 if not (
                     key == output.tap_internal_key and origin.fingerprint == master_fp
@@ -163,8 +193,18 @@ async def sign_taproot(
                     raise wire.DataError(
                         "Invalid parameters, only key path change is allowed"
                     )
-                change_out += out.nValue
-                is_change_out = True
+                change_key_origin = origin
+
+        if change_key_origin is not None and change_script_type is not None:
+            node = keychain.derive(change_key_origin.path)
+            _validate_change_output_script(
+                change_script_type,
+                node,
+                out.scriptPubKey,
+                coin,
+            )
+            change_out += out.nValue
+            is_change_out = True
         sig_hasher.add_output(
             txo=TxOutput(
                 amount=out.nValue,
@@ -179,7 +219,7 @@ async def sign_taproot(
                     "op_return_data": op_return_data,
                     "script_type": OutputScriptType.PAYTOOPRETURN,
                 }
-                if op_return_data
+                if op_return_data is not None
                 else {}
             )
             await layout.confirm_output(
@@ -188,7 +228,7 @@ async def sign_taproot(
                 coin,
                 AmountUnit.BITCOIN,
             )
-    if total_in <= total_out:
+    if total_in < total_out:
         raise wire.DataError("Insufficient funds")
     tx_locktime = psbt.compute_lock_time()
 
