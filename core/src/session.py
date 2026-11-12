@@ -1,3 +1,5 @@
+import sys
+
 from trezor import log, loop, utils
 from trezor.lvglui import lvgl_tick
 from trezor.lvglui.scrs import fingerprints
@@ -72,6 +74,12 @@ loop.schedule(handle_stop_mode())
 utils.set_up()
 
 loop.run()
+
+# loop.clear() drops running tasks without unwinding them, so a wallet
+# transfer interrupted by a lock or a scheduler reset is released here.
+_transfer = sys.modules.get("apps.management.device_transfer")
+if _transfer is not None:
+    _transfer.abandon()
 
 fingerprints.clean_register_cache()
 

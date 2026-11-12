@@ -1,3 +1,5 @@
+from typing import Callable
+
 import storage
 import storage.device as storage_device
 import storage.recovery as storage_recovery
@@ -28,7 +30,11 @@ from . import layout, recover
 #     await recovery_process(ctx)
 
 
-async def recovery_process(ctx: wire.GenericContext, type: str = "phrase") -> Success:
+async def recovery_process(
+    ctx: wire.GenericContext,
+    type: str = "phrase",
+    on_verified: Callable[[bytes], None] | None = None,
+) -> Success:
     wire.AVOID_RESTARTING_FOR = (
         MessageType.Initialize,
         MessageType.GetFeatures,
@@ -36,7 +42,7 @@ async def recovery_process(ctx: wire.GenericContext, type: str = "phrase") -> Su
     )
     try:
         if type == "phrase":
-            return await _continue_recovery_process(ctx)
+            return await _continue_recovery_process(ctx, on_verified=on_verified)
         else:
             return await _continue_recovery_process_lite(ctx)
 
@@ -88,6 +94,7 @@ async def _continue_recovery_process_lite(
 
 async def _continue_recovery_process(
     ctx: wire.GenericContext,
+    on_verified: Callable[[bytes], None] | None = None,
 ) -> Success:
     # gather the current recovery state from storage
     dry_run = storage_recovery.is_dry_run()
@@ -185,7 +192,9 @@ async def _continue_recovery_process(
     if backup_type is None:
         raise RuntimeError("Recovery backup type missing")
     if dry_run:
-        result = await _finish_recovery_dry_run(ctx, secret, backup_type)
+        result = await _finish_recovery_dry_run(
+            ctx, secret, backup_type, on_verified=on_verified
+        )
     else:
         result = await _finish_recovery(ctx, secret, backup_type)
 
@@ -193,7 +202,10 @@ async def _continue_recovery_process(
 
 
 async def _finish_recovery_dry_run(
-    ctx: wire.GenericContext, secret: bytes, backup_type: BackupType
+    ctx: wire.GenericContext,
+    secret: bytes,
+    backup_type: BackupType,
+    on_verified: Callable[[bytes], None] | None = None,
 ) -> Success:
     if backup_type is None:
         raise RuntimeError
@@ -229,6 +241,12 @@ async def _finish_recovery_dry_run(
     await layout.show_dry_run_result(ctx, result, is_slip39, secret)
 
     if result:
+        # This local callback receives only the text entered and verified on
+        # this device; mnemonic bytes must never be put in the wire response.
+        if on_verified is not None:
+            if is_slip39:
+                raise wire.ProcessError("Only a BIP39 phrase can be transferred")
+            on_verified(secret)
         return Success(message="The seed is valid and matches the one in the device")
     else:
         raise wire.ProcessError("The seed does not match the one in the device")
@@ -305,7 +323,7 @@ async def _process_words(
 
     backup_type = backup_types.infer_backup_type(is_slip39, share)
     if __debug__:
-        print(f"secret: {secret}, backup_type: {backup_type}")
+        print(f"backup_type: {backup_type}")
     if secret is None:  # SLIP-39
         if share is None:
             raise RuntimeError("Recovery share missing")

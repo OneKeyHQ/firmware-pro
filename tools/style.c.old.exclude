@@ -22,4 +22,6 @@
 ^\./core/embed/trezorhal/nfc.*
 ^\./core/embed/quirc
 ^\./core/embed/zbar
+^\./core/embed/device_transfer
 ^\./core/embed/secure_channels
+^\./core/embed/secure_p2p

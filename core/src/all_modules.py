@@ -253,6 +253,8 @@ trezor.lvglui.scrs.components.theme
 import trezor.lvglui.scrs.components.theme
 trezor.lvglui.scrs.components.transition
 import trezor.lvglui.scrs.components.transition
+trezor.lvglui.scrs.device_transfer
+import trezor.lvglui.scrs.device_transfer
 trezor.lvglui.scrs.deviceinfo
 import trezor.lvglui.scrs.deviceinfo
 trezor.lvglui.scrs.fingerprints
@@ -677,6 +679,8 @@ apps.management.change_pin
 import apps.management.change_pin
 apps.management.change_wipe_code
 import apps.management.change_wipe_code
+apps.management.device_transfer
+import apps.management.device_transfer
 apps.management.get_next_u2f_counter
 import apps.management.get_next_u2f_counter
 apps.management.get_nonce

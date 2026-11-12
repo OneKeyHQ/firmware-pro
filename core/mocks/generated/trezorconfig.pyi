@@ -109,6 +109,14 @@ def get_mnemonic_export_enabled() -> bool:
 
 
 # extmod/modtrezorconfig/modtrezorconfig.c
+def get_mnemonic_type() -> int:
+    """
+    Ask the SE which mnemonic it holds: 0 = BIP39, 1 = SLIP39.
+    Raises RuntimeError when the SE holds no mnemonic.
+    """
+
+
+# extmod/modtrezorconfig/modtrezorconfig.c
 def set_mnemonic_export_enabled(enabled: bool, pin: str) -> bool:
     """
     Enable or disable mnemonic export in the SE.
